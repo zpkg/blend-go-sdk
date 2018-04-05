@@ -55,7 +55,10 @@ func main() {
 	if walkErr != nil {
 		fmt.Fprintf(os.Stderr, "%+v\n", walkErr)
 		os.Exit(1)
+		return
 	}
+	fmt.Fprintf(os.Stdout, "profanity ok!\n")
+	os.Exit(0)
 }
 
 // Contains creates a simple contains rule.

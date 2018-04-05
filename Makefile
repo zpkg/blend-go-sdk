@@ -9,7 +9,7 @@ VERSION 		:= $(shell cat ./VERSION)
 export GIT_REF
 export VERSION
 
-all: format vet test build-commands
+all: format vet test profanity
 
 format:
 	@echo "$(VERSION)/$(GIT_REF) >> formatting code"
