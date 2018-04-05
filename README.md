@@ -4,7 +4,8 @@ go-sdk
 # Design Guidelines
 
 - `assert` should reference nothing else outside the stdlib.
-- `util` should reference assert and sub-packages only.
+- `exception` should reference `assert` and nothing else outside the stdlib.
+- `util` should reference `assert`, `exception` and sub-packages only.
 - `logger` should reference `util` and `assert` only.
 - Everything else is fair game.
 - Where possible, don't add external dependencies. Use the stdlib, or inline if small. 
