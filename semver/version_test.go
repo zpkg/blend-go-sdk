@@ -2,7 +2,6 @@ package semver
 
 import (
 	"fmt"
-	"reflect"
 	"sort"
 	"testing"
 
@@ -87,6 +86,8 @@ func TestVersionCompare(t *testing.T) {
 }
 
 func TestComparePreReleases(t *testing.T) {
+	assert := assert.New(t)
+
 	cases := []struct {
 		v1       string
 		v2       string
@@ -113,27 +114,20 @@ func TestComparePreReleases(t *testing.T) {
 
 	for _, tc := range cases {
 		v1, err := NewVersion(tc.v1)
-		if err != nil {
-			t.Fatalf("err: %s", err)
-		}
+		assert.Nil(err)
 
 		v2, err := NewVersion(tc.v2)
-		if err != nil {
-			t.Fatalf("err: %s", err)
-		}
+		assert.Nil(err)
 
 		actual := v1.Compare(v2)
 		expected := tc.expected
-		if actual != expected {
-			t.Fatalf(
-				"%s <=> %s\nexpected: %d\nactual: %d",
-				tc.v1, tc.v2,
-				expected, actual)
-		}
+		assert.Equal(expected, actual)
 	}
 }
 
 func TestVersionMetadata(t *testing.T) {
+	assert := assert.New(t)
+
 	cases := []struct {
 		version  string
 		expected string
@@ -147,19 +141,17 @@ func TestVersionMetadata(t *testing.T) {
 
 	for _, tc := range cases {
 		v, err := NewVersion(tc.version)
-		if err != nil {
-			t.Fatalf("err: %s", err)
-		}
+		assert.Nil(err)
 
 		actual := v.Metadata()
 		expected := tc.expected
-		if actual != expected {
-			t.Fatalf("expected: %s\nactual: %s", expected, actual)
-		}
+		assert.Equal(expected, actual)
 	}
 }
 
 func TestVersionPrerelease(t *testing.T) {
+	assert := assert.New(t)
+
 	cases := []struct {
 		version  string
 		expected string
@@ -173,19 +165,17 @@ func TestVersionPrerelease(t *testing.T) {
 
 	for _, tc := range cases {
 		v, err := NewVersion(tc.version)
-		if err != nil {
-			t.Fatalf("err: %s", err)
-		}
+		assert.Nil(err)
 
 		actual := v.Prerelease()
 		expected := tc.expected
-		if actual != expected {
-			t.Fatalf("expected: %s\nactual: %s", expected, actual)
-		}
+		assert.Equal(expected, actual)
 	}
 }
 
 func TestVersionSegments(t *testing.T) {
+	assert := assert.New(t)
+
 	cases := []struct {
 		version  string
 		expected []int
@@ -199,19 +189,17 @@ func TestVersionSegments(t *testing.T) {
 
 	for _, tc := range cases {
 		v, err := NewVersion(tc.version)
-		if err != nil {
-			t.Fatalf("err: %s", err)
-		}
+		assert.Nil(err)
 
 		actual := v.Segments()
 		expected := tc.expected
-		if !reflect.DeepEqual(actual, expected) {
-			t.Fatalf("expected: %#v\nactual: %#v", expected, actual)
-		}
+		assert.Equal(expected, actual)
 	}
 }
 
 func TestVersionSegments64(t *testing.T) {
+	assert := assert.New(t)
+
 	cases := []struct {
 		version  string
 		expected []int64
@@ -225,19 +213,17 @@ func TestVersionSegments64(t *testing.T) {
 
 	for _, tc := range cases {
 		v, err := NewVersion(tc.version)
-		if err != nil {
-			t.Fatalf("err: %s", err)
-		}
+		assert.Nil(err)
 
 		actual := v.Segments64()
 		expected := tc.expected
-		if !reflect.DeepEqual(actual, expected) {
-			t.Fatalf("expected: %#v\nactual: %#v", expected, actual)
-		}
+		assert.Equal(expected, actual)
 	}
 }
 
 func TestVersionString(t *testing.T) {
+	assert := assert.New(t)
+
 	cases := [][]string{
 		{"1.2.3", "1.2.3"},
 		{"1.2-beta", "1.2.0-beta"},
@@ -248,19 +234,17 @@ func TestVersionString(t *testing.T) {
 
 	for _, tc := range cases {
 		v, err := NewVersion(tc[0])
-		if err != nil {
-			t.Fatalf("err: %s", err)
-		}
+		assert.Nil(err)
 
 		actual := v.String()
 		expected := tc[1]
-		if actual != expected {
-			t.Fatalf("expected: %s\nactual: %s", expected, actual)
-		}
+		assert.Equal(expected, actual)
 	}
 }
 
 func TestCollection(t *testing.T) {
+	assert := assert.New(t)
+
 	versionsRaw := []string{
 		"1.1.1",
 		"1.0",
@@ -272,10 +256,7 @@ func TestCollection(t *testing.T) {
 	versions := make([]*Version, len(versionsRaw))
 	for i, raw := range versionsRaw {
 		v, err := NewVersion(raw)
-		if err != nil {
-			t.Fatalf("err: %s", err)
-		}
-
+		assert.Nil(err)
 		versions[i] = v
 	}
 
@@ -294,7 +275,5 @@ func TestCollection(t *testing.T) {
 		"2.0.0",
 	}
 
-	if !reflect.DeepEqual(actual, expected) {
-		t.Fatalf("bad: %#v", actual)
-	}
+	assert.Equal(expected, actual)
 }
