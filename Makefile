@@ -11,6 +11,9 @@ export VERSION
 
 all: format vet test profanity
 
+new-install:
+	@go get -u github.com/lib/lq
+
 format:
 	@echo "$(VERSION)/$(GIT_REF) >> formatting code"
 	@go fmt $(PKGS)
