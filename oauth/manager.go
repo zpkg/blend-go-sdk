@@ -20,6 +20,7 @@ import (
 // You must either enable `SkipDomainvalidation` or provide valid domains.
 func New() *Manager {
 	return &Manager{
+		secret:       util.Crypto.MustCreateKey(32),
 		nonceTimeout: DefaultNonceTimeout,
 	}
 }
@@ -32,7 +33,7 @@ func NewFromEnv() *Manager {
 // NewFromConfig returns a new oauth manager from a config.
 func NewFromConfig(cfg *Config) *Manager {
 	return &Manager{
-		secret:               cfg.GetSecret(),
+		secret:               cfg.GetSecret(util.Crypto.MustCreateKey(32)),
 		skipDomainValidation: cfg.GetSkipDomainValidation(),
 		redirectURI:          cfg.GetRedirectURI(),
 		validDomains:         cfg.GetValidDomains(),

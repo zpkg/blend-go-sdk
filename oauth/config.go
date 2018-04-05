@@ -1,7 +1,6 @@
 package oauth
 
 import (
-	"encoding/base64"
 	"time"
 
 	"github.com/blend/go-sdk/env"
@@ -43,10 +42,16 @@ func (c Config) IsZero() bool {
 	return len(c.ClientID) == 0 || len(c.ClientSecret) == 0
 }
 
-// GetSecret gets the secret.
-func (c Config) GetSecret() []byte {
-	decoded, _ := base64.StdEncoding.DecodeString(c.Secret)
-	return decoded
+// GetSecret gets the secret if set or a default.
+func (c Config) GetSecret(defaults ...[]byte) []byte {
+	if len(c.Secret) > 0 {
+		decoded, _ := Base64Decode(c.Secret)
+		return decoded
+	}
+	if len(defaults) > 0 {
+		return defaults[0]
+	}
+	return nil
 }
 
 // GetSkipDomainValidation returns if we should skip domain validation.

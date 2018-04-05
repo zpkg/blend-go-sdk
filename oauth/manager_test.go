@@ -20,10 +20,22 @@ func TestNewFromConfig(t *testing.T) {
 		ClientSecret:         "bar_secret",
 	})
 
+	assert.NotEmpty(m.Secret())
 	assert.Equal("https://app.com/oauth/google", m.RedirectURI())
 	assert.Len(2, m.ValidDomains())
 	assert.Equal("foo_client", m.ClientID())
 	assert.Equal("bar_secret", m.ClientSecret())
+}
+
+func TestNewFromConfigWithSecret(t *testing.T) {
+	assert := assert.New(t)
+
+	m := NewFromConfig(&Config{
+		Secret: Base64Encode([]byte("test string")),
+	})
+
+	assert.NotEmpty(m.Secret())
+	assert.Equal("test string", string(m.Secret()))
 }
 
 func TestManagerValidDomains(t *testing.T) {
@@ -65,7 +77,7 @@ func TestManagerOAuthURL(t *testing.T) {
 		WithRedirectURI("https://local.shortcut-service.centrio.com/oauth/google")
 
 	_, err := m.OAuthURL()
-	assert.NotNil(err, "we require a secret")
+	assert.Nil(err)
 }
 
 func TestManagerOAuthURLSecurity(t *testing.T) {
