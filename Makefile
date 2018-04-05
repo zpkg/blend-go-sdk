@@ -4,7 +4,7 @@ SHASUMCMD 		:= $(shell command -v sha1sum || command -v shasum; 2> /dev/null)
 TARCMD 			:= $(shell command -v tar || command -v tar; 2> /dev/null)
 GIT_REF 		:= $(shell git log --pretty=format:'%h' -n 1)
 CURRENT_USER 	:= $(shell whoami)
-VERSION 		:= $(shell cat ./VERSION)
+VERSION 		:= $(shell cat ./.version)
 
 export GIT_REF
 export VERSION
@@ -32,21 +32,21 @@ test:
 
 increment-patch:
 	@echo "Current Version $(VERSION)"
-	@go run _bin/increment_version/main.go patch ./VERSION > ./NEW_VERSION
-	@mv ./NEW_VERSION ./VERSION
-	@cat ./VERSION
+	@go run _bin/increment_version/main.go patch ./.version > ./NEW_VERSION
+	@mv ./NEW_VERSION ./.version
+	@cat ./.version
 
 increment-minor:
 	@echo "Current Version $(VERSION)"
-	@go run _bin/increment_version/main.go minor ./VERSION > ./NEW_VERSION
-	@mv ./NEW_VERSION ./VERSION
-	@cat ./VERSION
+	@go run _bin/increment_version/main.go minor ./.version > ./NEW_VERSION
+	@mv ./NEW_VERSION ./.version
+	@cat ./.version
 
 increment-major:
 	@echo "Current Version $(VERSION)"
-	@go run _bin/increment_version/main.go minor ./VERSION > ./NEW_VERSION
-	@mv ./NEW_VERSION ./VERSION
-	@cat ./VERSION
+	@go run _bin/increment_version/main.go major ./.version > ./NEW_VERSION
+	@mv ./NEW_VERSION ./.version
+	@cat ./.version
 
 tag-version:
 	git tag -f $(VERSION)
