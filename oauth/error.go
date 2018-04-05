@@ -1,4 +1,4 @@
-package google
+package oauth
 
 const (
 	// ErrCodeMissing is returned if the code was missing from an oauth return request.

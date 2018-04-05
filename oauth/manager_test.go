@@ -1,4 +1,4 @@
-package google
+package oauth
 
 import (
 	"net/url"
@@ -85,7 +85,7 @@ func TestManagerOAuthURLSecurity(t *testing.T) {
 	assert.Equal("test_client_id", u.Query().Get("client_id"))
 
 	state := u.Query().Get("state")
-	deserialized, err := DeserializeOAuthState(state)
+	deserialized, err := DeserializeState(state)
 	assert.Nil(err)
 	assert.Nil(m.ValidateOAuthState(deserialized))
 }
@@ -106,7 +106,7 @@ func TestManagerOAuthURLRedirect(t *testing.T) {
 	assert.NotEmpty(u.Query().Get("state"))
 
 	state := u.Query().Get("state")
-	deserialized, err := DeserializeOAuthState(state)
+	deserialized, err := DeserializeState(state)
 	assert.Nil(err)
 	assert.Nil(m.ValidateOAuthState(deserialized))
 	assert.Equal("bar_foo", deserialized.RedirectURL)
@@ -187,7 +187,7 @@ func TestManagerState(t *testing.T) {
 	assert.Nil(err)
 	assert.NotEmpty(serialized, "if we provide a valid string it should create a serialized state object")
 
-	deserialized, err := DeserializeOAuthState(serialized)
+	deserialized, err := DeserializeState(serialized)
 	assert.Nil(err)
 	assert.Nil(m.ValidateOAuthState(deserialized))
 	assert.Equal("foo", deserialized.RedirectURL)
@@ -197,7 +197,7 @@ func TestManagerState(t *testing.T) {
 	assert.Nil(err)
 	assert.NotEmpty(serialized, "if we provide a valid string it should create a serialized state object")
 
-	deserialized, err = DeserializeOAuthState(serialized)
+	deserialized, err = DeserializeState(serialized)
 	assert.Nil(err)
 	assert.Nil(m.ValidateOAuthState(deserialized))
 	assert.Equal("foo", deserialized.RedirectURL)
@@ -206,7 +206,7 @@ func TestManagerState(t *testing.T) {
 	assert.Nil(err)
 	assert.NotEmpty(serialized, "state should be issued if we have a secret, even if we don't provide a redirect")
 
-	deserialized, err = DeserializeOAuthState(serialized)
+	deserialized, err = DeserializeState(serialized)
 	assert.Nil(err)
 	assert.Nil(m.ValidateOAuthState(deserialized))
 	assert.Empty(deserialized.RedirectURL)

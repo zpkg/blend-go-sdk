@@ -1,4 +1,4 @@
-package google
+package oauth
 
 import (
 	"testing"
@@ -10,7 +10,7 @@ import (
 func TestSerializeOAuthState(t *testing.T) {
 	assert := assert.New(t)
 
-	state := OAuthState{
+	state := State{
 		RedirectURL: "https://foo.com/bar",
 		Token:       util.String.RandomLetters(32),
 		Secure:      util.String.RandomLetters(64),
@@ -20,7 +20,7 @@ func TestSerializeOAuthState(t *testing.T) {
 	assert.Nil(err)
 	assert.NotEmpty(contents)
 
-	deserialized, err := DeserializeOAuthState(contents)
+	deserialized, err := DeserializeState(contents)
 	assert.Nil(err)
 	assert.NotNil(deserialized)
 	assert.Equal(state.RedirectURL, deserialized.RedirectURL)

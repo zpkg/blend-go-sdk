@@ -1,4 +1,4 @@
-package google
+package oauth
 
 import (
 	"crypto/hmac"
@@ -195,8 +195,8 @@ func (m *Manager) OAuthURL(redirect ...string) (string, error) {
 }
 
 // Finish processes the returned code, exchanging for an access token, and fetches the user profile.
-func (m *Manager) Finish(r *http.Request) (*OAuthResult, error) {
-	result := OAuthResult{}
+func (m *Manager) Finish(r *http.Request) (*Result, error) {
+	result := Result{}
 
 	// grab the code off the request.
 	code := r.URL.Query().Get("code")
@@ -207,7 +207,7 @@ func (m *Manager) Finish(r *http.Request) (*OAuthResult, error) {
 	// fetch the state
 	state := r.URL.Query().Get("state")
 	if len(state) > 0 {
-		deserialized, err := DeserializeOAuthState(state)
+		deserialized, err := DeserializeState(state)
 		if err != nil {
 			return nil, err
 		}
@@ -268,16 +268,16 @@ func (m *Manager) State(redirect ...string) (string, error) {
 }
 
 // CreateState creates auth state.
-func (m *Manager) CreateState(redirect ...string) *OAuthState {
+func (m *Manager) CreateState(redirect ...string) *State {
 	token, secure := m.CreateAntiForgeryTokenPair()
-	state := &OAuthState{
+	state := &State{
 		Token:  token,
 		Secure: secure,
 	}
 
 	if len(redirect) > 0 && len(redirect[0]) > 0 {
 		if state == nil {
-			state = &OAuthState{}
+			state = &State{}
 		}
 		state.RedirectURL = redirect[0]
 	}
@@ -286,8 +286,8 @@ func (m *Manager) CreateState(redirect ...string) *OAuthState {
 }
 
 // TokenExchange performs the second phase of the oauth 2.0 flow with google.
-func (m *Manager) TokenExchange(code string) (*OAuthResponse, error) {
-	var oar OAuthResponse
+func (m *Manager) TokenExchange(code string) (*Response, error) {
+	var oar Response
 	meta, err := request.New().
 		AsPost().
 		WithScheme("https").
@@ -421,7 +421,7 @@ func (m *Manager) ValidateProfile(p *Profile) error {
 }
 
 // ValidateOAuthState validates oauth state.
-func (m *Manager) ValidateOAuthState(s *OAuthState) error {
+func (m *Manager) ValidateOAuthState(s *State) error {
 	expected := m.hash(s.Token)
 	actual := s.Secure
 	if !hmac.Equal([]byte(expected), []byte(actual)) {

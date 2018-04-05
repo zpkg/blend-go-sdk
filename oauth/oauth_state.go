@@ -1,4 +1,4 @@
-package google
+package oauth
 
 import (
 	"bytes"
@@ -8,14 +8,14 @@ import (
 	"github.com/blend/go-sdk/exception"
 )
 
-// DeserializeOAuthState deserializes the oauth state.
-func DeserializeOAuthState(raw string) (*OAuthState, error) {
+// DeserializeState deserializes the oauth state.
+func DeserializeState(raw string) (*State, error) {
 	corpus, err := base64.StdEncoding.DecodeString(raw)
 	if err != nil {
 		return nil, exception.Wrap(err)
 	}
 	buffer := bytes.NewBuffer(corpus)
-	var state OAuthState
+	var state State
 	if err := gob.NewDecoder(buffer).Decode(&state); err != nil {
 		return nil, exception.Wrap(err)
 	}
@@ -24,7 +24,7 @@ func DeserializeOAuthState(raw string) (*OAuthState, error) {
 }
 
 // SerializeOAuthState serializes the oauth state.
-func SerializeOAuthState(state *OAuthState) (output string, err error) {
+func SerializeOAuthState(state *State) (output string, err error) {
 	buffer := bytes.NewBuffer(nil)
 	err = gob.NewEncoder(buffer).Encode(state)
 	if err != nil {
@@ -34,8 +34,8 @@ func SerializeOAuthState(state *OAuthState) (output string, err error) {
 	return
 }
 
-// OAuthState is the oauth state.
-type OAuthState struct {
+// State is the oauth state.
+type State struct {
 	Token       string
 	Secure      string
 	RedirectURL string

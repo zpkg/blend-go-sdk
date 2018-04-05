@@ -1,10 +1,10 @@
-package google
+package oauth
 
-// OAuthResult is the full result of an oauth exchange.
-type OAuthResult struct {
+// Result is the full result of an oauth exchange.
+type Result struct {
 	UniqueID string
 	Profile  *Profile
 	IDToken  *JWTPayload
-	Response *OAuthResponse
-	State    *OAuthState
+	Response *Response
+	State    *State
 }

@@ -1,4 +1,4 @@
-package google
+package oauth
 
 import (
 	"encoding/base64"
