@@ -5,7 +5,7 @@ import (
 	"encoding/base64"
 	"encoding/gob"
 
-	exception "github.com/blendlabs/go-exception"
+	"github.com/blend/go-sdk/exception"
 )
 
 // DeserializeOAuthState deserializes the oauth state.

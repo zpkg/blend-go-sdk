@@ -4,7 +4,7 @@ import "time"
 
 const (
 	// PackageName is the full name of this package.
-	PackageName = "github.com/blendlabs/go-web"
+	PackageName = "github.com/blend/go-sdk/web"
 
 	// HeaderAllow is a common header.
 	HeaderAllow = "Allow"

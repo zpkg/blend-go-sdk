@@ -4,7 +4,7 @@ import (
 	"testing"
 
 	"github.com/blend/go-sdk/assert"
-	"github.com/blendlabs/go-util"
+	"github.com/blend/go-sdk/util"
 )
 
 func TestStringArray(t *testing.T) {

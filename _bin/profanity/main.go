@@ -22,28 +22,30 @@ func main() {
 	// for each file named by the gob filter
 	// run the rules on it
 
-	walkErr := filepath.Walk("./", func(root string, info os.FileInfo, err error) error {
+	walkErr := filepath.Walk("./", func(file string, info os.FileInfo, err error) error {
 		if err != nil {
 			return err
 		}
 
-		if info.IsDir() && strings.HasSuffix(info.Name(), ".git") {
+		if info.IsDir() && strings.HasSuffix(file, ".git") {
+			return filepath.SkipDir
+		}
+		if info.IsDir() && strings.HasSuffix(file, "_bin") {
+			return filepath.SkipDir
+		}
+
+		if !strings.HasSuffix(file, ".go") {
 			return nil
 		}
 
-		if !strings.HasSuffix(info.Name(), ".go") {
-			return nil
-		}
-
-		contents, err := ioutil.ReadFile(info.Name())
+		contents, err := ioutil.ReadFile(file)
 		if err != nil {
 			return err
 		}
 
-		fmt.Fprintf(os.Stdout, "checking: %s", info.Name())
 		for _, rule := range Rules {
 			if err := rule(contents); err != nil {
-				return err
+				return fmt.Errorf("%s failed: %+v", file, err)
 			}
 		}
 
@@ -51,7 +53,7 @@ func main() {
 	})
 
 	if walkErr != nil {
-		fmt.Fprintf(os.Stderr, "%+v", walkErr)
+		fmt.Fprintf(os.Stderr, "%+v\n", walkErr)
 		os.Exit(1)
 	}
 }
@@ -60,7 +62,7 @@ func main() {
 func Contains(value string) Rule {
 	return func(contents []byte) error {
 		if strings.Contains(string(contents), value) {
-			return fmt.Errorf("contains: %s", value)
+			return fmt.Errorf("contains: \"%s\"", value)
 		}
 		return nil
 	}
@@ -71,7 +73,7 @@ func Regex(expr string) Rule {
 	regex := regexp.MustCompile(expr)
 	return func(contents []byte) error {
 		if regex.Match(contents) {
-			return fmt.Errorf("regexp match: %s", expr)
+			return fmt.Errorf("regexp match: \"%s\"", expr)
 		}
 		return nil
 	}

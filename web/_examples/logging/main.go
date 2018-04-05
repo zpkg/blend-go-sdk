@@ -3,8 +3,8 @@ package main
 import (
 	"fmt"
 
-	"github.com/blendlabs/go-logger"
-	"github.com/blendlabs/go-web"
+	"github.com/blend/go-sdk/logger"
+	"github.com/blend/go-sdk/web"
 )
 
 func main() {

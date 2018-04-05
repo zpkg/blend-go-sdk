@@ -4,8 +4,8 @@ import (
 	"fmt"
 	"os"
 
-	request "github.com/blendlabs/go-request"
-	util "github.com/blendlabs/go-util"
+	"github.com/blend/go-sdk/request"
+	"github.com/blend/go-sdk/util"
 )
 
 func main() {

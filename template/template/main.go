@@ -146,7 +146,7 @@ func main() {
 			Version = "master"
 		}
 		fmt.Fprintf(os.Stderr, "%s version %s\n\n", os.Args[0], Version)
-		fmt.Fprintf(os.Stderr, "Find more information at https://github.com/blendlabs/template\n\n")
+		fmt.Fprintf(os.Stderr, "Find more information at https://github.com/blend/go-sdk/tree/master/template\n\n")
 		fmt.Fprintf(os.Stderr, "Usage:\n")
 		flag.PrintDefaults()
 		fmt.Fprintf(os.Stderr, "\nExample Usage:\n")

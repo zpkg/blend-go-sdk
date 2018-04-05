@@ -5,7 +5,7 @@ import (
 	"encoding/json"
 	"strings"
 
-	exception "github.com/blendlabs/go-exception"
+	"github.com/blend/go-sdk/exception"
 )
 
 // DeserializeJWT deserializes a jwt token.

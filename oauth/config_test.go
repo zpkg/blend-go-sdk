@@ -4,7 +4,7 @@ import (
 	"testing"
 
 	assert "github.com/blend/go-sdk/assert"
-	"github.com/blendlabs/go-util/env"
+	"github.com/blend/go-sdk/env"
 )
 
 func TestNewConfigFromEnv(t *testing.T) {

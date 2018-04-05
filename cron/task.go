@@ -5,7 +5,7 @@ import (
 	"fmt"
 	"time"
 
-	uuid "github.com/blendlabs/go-util/uuid"
+	"github.com/blend/go-sdk/uuid"
 )
 
 // --------------------------------------------------------------------------------

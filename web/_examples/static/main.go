@@ -4,7 +4,7 @@ import (
 	"net/http"
 
 	"github.com/blend/go-sdk/logger"
-	web "github.com/blendlabs/go-web"
+	"github.com/blend/go-sdk/web"
 )
 
 func main() {
@@ -12,8 +12,8 @@ func main() {
 
 	sf := web.NewCachedStaticFileServer(http.Dir("."))
 
-	app.Static("/static/*filepath", "_static")
-	app.StaticCached("/static_cached/*filepath", "_static")
+	app.ServeStatic("/static/*filepath", "_static")
+	app.ServeStaticCached("/static_cached/*filepath", "_static")
 	app.GET("/", func(r *web.Ctx) web.Result {
 		return r.Static("index.html")
 	})

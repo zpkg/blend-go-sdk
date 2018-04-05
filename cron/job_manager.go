@@ -8,9 +8,9 @@ import (
 	"sync"
 	"time"
 
-	logger "github.com/blend/go-sdk/logger"
-	"github.com/blendlabs/go-exception"
-	"github.com/blendlabs/go-util/collections"
+	"github.com/blend/go-sdk/collections"
+	"github.com/blend/go-sdk/exception"
+	"github.com/blend/go-sdk/logger"
 )
 
 // State is a job state.

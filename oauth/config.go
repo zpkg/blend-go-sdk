@@ -4,8 +4,8 @@ import (
 	"encoding/base64"
 	"time"
 
-	util "github.com/blendlabs/go-util"
-	"github.com/blendlabs/go-util/env"
+	"github.com/blend/go-sdk/env"
+	"github.com/blend/go-sdk/util"
 )
 
 const (

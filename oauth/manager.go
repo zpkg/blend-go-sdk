@@ -9,10 +9,10 @@ import (
 	"strings"
 	"time"
 
-	exception "github.com/blendlabs/go-exception"
-	request "github.com/blendlabs/go-request"
-	util "github.com/blendlabs/go-util"
-	"github.com/blendlabs/go-util/uuid"
+	"github.com/blend/go-sdk/exception"
+	"github.com/blend/go-sdk/request"
+	"github.com/blend/go-sdk/util"
+	"github.com/blend/go-sdk/uuid"
 )
 
 // New returns a new manager.

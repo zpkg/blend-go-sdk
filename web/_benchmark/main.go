@@ -7,7 +7,7 @@ import (
 	"time"
 
 	"github.com/blend/go-sdk/logger"
-	"github.com/blendlabs/go-web"
+	"github.com/blend/go-sdk/web"
 )
 
 const (

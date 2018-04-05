@@ -11,7 +11,7 @@ import (
 	"strings"
 	"time"
 
-	yaml "gopkg.in/yaml.v2"
+	"github.com/blend/go-sdk/yaml"
 
 	"encoding/base64"
 	"encoding/json"

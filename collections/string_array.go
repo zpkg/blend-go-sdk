@@ -3,7 +3,7 @@ package collections
 import (
 	"strings"
 
-	"github.com/blendlabs/go-util"
+	"github.com/blend/go-sdk/util"
 )
 
 // StringArray is a type alias for []string with some helper methods.

@@ -1,5 +1,5 @@
-go google oauth
-===============
+oauth
+=====
 
 This package provides a somewhat secure implementation of the oauth / openid connect spec for google identity providers.
 

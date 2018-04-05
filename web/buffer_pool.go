@@ -1,6 +1,6 @@
 package web
 
-import "github.com/blendlabs/go-logger"
+import "github.com/blend/go-sdk/logger"
 
 var (
 	// BufferPool is a shared sync.Pool of bytes.Buffer instances.

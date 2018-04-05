@@ -4,11 +4,11 @@ import (
 	"fmt"
 	"net/url"
 
-	google "github.com/blendlabs/go-google-oauth"
-	logger "github.com/blendlabs/go-logger"
-	util "github.com/blendlabs/go-util"
-	"github.com/blendlabs/go-util/configutil"
-	web "github.com/blendlabs/go-web"
+	"github.com/blend/go-sdk/configutil"
+	"github.com/blend/go-sdk/logger"
+	google "github.com/blend/go-sdk/oauth"
+	"github.com/blend/go-sdk/util"
+	"github.com/blend/go-sdk/web"
 )
 
 // Config is the app config.

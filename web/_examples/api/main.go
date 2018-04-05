@@ -4,7 +4,7 @@ import (
 	"sync"
 
 	"github.com/blend/go-sdk/logger"
-	web "github.com/blendlabs/go-web"
+	"github.com/blend/go-sdk/web"
 )
 
 // Any is a type alias for interface{}

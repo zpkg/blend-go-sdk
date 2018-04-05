@@ -13,11 +13,11 @@ all: format vet test build-commands
 
 format:
 	@echo "$(VERSION)/$(GIT_REF) >> formatting code"
-	@$(GO) fmt $(PKGS)
+	@go fmt $(PKGS)
 
 vet:
 	@echo "$(VERSION)/$(GIT_REF) >> vetting code"
-	@$(GO) vet $(PKGS)
+	@go vet $(PKGS)
 
 profanity:
 	@echo "$(VERSION)/$(GIT_REF) >> profanity"
