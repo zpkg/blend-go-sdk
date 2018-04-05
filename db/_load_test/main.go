@@ -3,14 +3,13 @@ package main
 import (
 	"database/sql"
 	"fmt"
-	"log"
 	"math/rand"
-	"os"
 	"sync"
 	"time"
 
 	"github.com/blend/go-sdk/db"
 	"github.com/blend/go-sdk/db/migration"
+	"github.com/blend/go-sdk/logger"
 	"github.com/blend/go-sdk/util"
 	"github.com/blend/go-sdk/uuid"
 	"github.com/jackc/pgx"
@@ -60,8 +59,7 @@ func (to testObject) TableName() string {
 }
 
 func createTable() error {
-	m := migration.New(
-
+	return migration.New(
 		migration.NewStep(
 			migration.TableExists("test_object"),
 			migration.Statements(
@@ -72,18 +70,24 @@ func createTable() error {
 			migration.TableNotExists("test_object"),
 			migration.Statements("CREATE TABLE test_object (id serial not null, uuid varchar(64) not null, created_utc timestamp not null, updated_utc timestamp, active boolean, name varchar(64), variance float)"),
 		),
-	).WithLabel("create `test_object` table")
-	return m.Apply(spiffy.Default())
+	).WithLabel("drop && create `test_object` table").WithLogger(migration.NewLogger(logger.All())).Apply(db.Default())
 }
 
 func dropTable() error {
-	return spiffy.Default().Exec("DROP TABLE IF EXISTS test_object")
+	return migration.New(
+		migration.NewStep(
+			migration.TableExists("test_object"),
+			migration.Statements(
+				`DROP TABLE IF EXISTS test_object`,
+			),
+		),
+	).WithLabel("drop `test_object` table").WithLogger(migration.NewLogger(logger.All())).Apply(db.Default())
 }
 
 func seedObjects(count int) error {
 	var err error
 	for x := 0; x < count; x++ {
-		err = spiffy.Default().Create(newTestObject())
+		err = db.Default().Create(newTestObject())
 		if err != nil {
 			return err
 		}
@@ -91,7 +95,7 @@ func seedObjects(count int) error {
 	return nil
 }
 
-func baselineAccess(db *spiffy.Connection, queryLimit int) ([]testObject, error) {
+func baselineAccess(db *db.Connection, queryLimit int) ([]testObject, error) {
 	var results []testObject
 	var err error
 
@@ -121,13 +125,13 @@ func baselineAccess(db *spiffy.Connection, queryLimit int) ([]testObject, error)
 	return results, nil
 }
 
-func spiffyAccess(db *spiffy.Connection, queryLimit int) ([]testObject, error) {
+func dbAccess(db *db.Connection, queryLimit int) ([]testObject, error) {
 	var results []testObject
 	err := db.GetAll(&results)
 	return results, err
 }
 
-func benchHarness(db *spiffy.Connection, parallelism int, queryLimit int, accessFunc func(*spiffy.Connection, int) ([]testObject, error)) ([]time.Duration, error) {
+func benchHarness(db *db.Connection, parallelism int, queryLimit int, accessFunc func(*db.Connection, int) ([]testObject, error)) ([]time.Duration, error) {
 	var durations []time.Duration
 	var waitHandle = sync.WaitGroup{}
 	var errors = make(chan error, parallelism)
@@ -266,10 +270,11 @@ func benchPGX(pool *pgx.ConnPool, parallelism int, queryLimit int) ([]time.Durat
 }
 
 func main() {
+	log := logger.All()
 
 	// default db is used by the migration framework to build the test database
 	// it is not used by the benchmarks.
-	err := spiffy.OpenDefault(spiffy.NewFromEnv())
+	err := db.OpenDefault(db.NewFromEnv())
 	if err != nil {
 		log.Fatal(err)
 	}
@@ -278,97 +283,94 @@ func main() {
 	if err != nil {
 		log.Fatal(err)
 	}
-
 	defer dropTable()
 
 	err = seedObjects(createCount)
 	if err != nil {
-		log.Fatal(err)
+		log.SyncFatalExit(err)
 	}
 
-	fmt.Println("Finished seeding objects, starting load test.")
+	log.SyncInfof("Finished seeding objects, starting load test.")
 
 	var pool *pgx.ConnPool
 	var config pgx.ConnPoolConfig
 	config.MaxConnections = threadCount
-	config.Host = "localhost"
-	config.Database = os.Getenv("DB_NAME")
 
 	pool, err = pgx.NewConnPool(config)
 	if err != nil {
-		log.Fatal(err)
+		log.SyncFatalExit(err)
 	}
 
 	pgxStart := time.Now()
 	pgxTimings, err := benchPGX(pool, threadCount, selectCount)
 	if err != nil {
-		log.Fatal(err)
+		log.SyncFatalExit(err)
 	}
-	fmt.Printf("PGX Elapsed: %v\n", time.Since(pgxStart))
+	log.SyncInfof("PGX Elapsed: %v", time.Since(pgxStart))
 
-	// do spiffy query
-	uncached := spiffy.NewFromEnv()
+	// do go-sdk/db query
+	uncached := db.NewFromEnv()
 	uncached.DisableStatementCache()
-	db, err := uncached.Open()
+	conn, err := uncached.Open()
+	if err != nil {
+		log.SyncFatalExit(err)
+	}
+	conn.Connection.SetMaxOpenConns(threadCount)
+	conn.Connection.SetMaxIdleConns(threadCount)
+
+	dbStart := time.Now()
+	dbTimings, err := benchHarness(uncached, threadCount, selectCount, dbAccess)
 	if err != nil {
 		log.Fatal(err)
 	}
-
-	db.Connection.SetMaxOpenConns(threadCount)
-	db.Connection.SetMaxIdleConns(threadCount)
-
-	spiffyStart := time.Now()
-	spiffyTimings, err := benchHarness(uncached, threadCount, selectCount, spiffyAccess)
-	if err != nil {
-		log.Fatal(err)
-	}
-	fmt.Printf("Spiffy Elapsed: %v\n", time.Since(spiffyStart))
+	log.SyncInfof("go-sdk/db Elapsed: %v", time.Since(dbStart))
 
 	// do spiffy query
-	cached := spiffy.NewFromEnv()
+	cached := db.NewFromEnv()
 	cached.EnableStatementCache()
-	db, err = cached.Open()
+	conn, err = cached.Open()
 	if err != nil {
-		log.Fatal(err)
+		log.SyncFatalExit(err)
 	}
-	db.Connection.SetMaxOpenConns(threadCount)
-	db.Connection.SetMaxIdleConns(threadCount)
+	conn.Connection.SetMaxOpenConns(threadCount)
+	conn.Connection.SetMaxIdleConns(threadCount)
 
-	spiffyCachedStart := time.Now()
-	spiffyCachedTimings, err := benchHarness(cached, threadCount, selectCount, spiffyAccess)
+	dbCachedStart := time.Now()
+	dbCachedTimings, err := benchHarness(cached, threadCount, selectCount, dbAccess)
 	if err != nil {
-		log.Fatal(err)
+		log.SyncFatalExit(err)
 	}
-	fmt.Printf("Spiffy (Statement Cache) Elapsed: %v\n", time.Since(spiffyCachedStart))
+	log.SyncInfof("go-sdk/db (Statement Cache) Elapsed: %v", time.Since(dbCachedStart))
 
 	// do baseline query
 	baselineStart := time.Now()
-	baseline := spiffy.NewFromEnv()
-	db, err = baseline.Open()
+	baseline := db.NewFromEnv()
+	conn, err = baseline.Open()
 	if err != nil {
-		log.Fatal(err)
+		log.SyncFatalExit(err)
 	}
-	db.Connection.SetMaxOpenConns(threadCount)
-	db.Connection.SetMaxIdleConns(threadCount)
+	conn.Connection.SetMaxOpenConns(threadCount)
+	conn.Connection.SetMaxIdleConns(threadCount)
 
 	baselineTimings, err := benchHarness(baseline, threadCount, selectCount, baselineAccess)
 	if err != nil {
-		log.Fatal(err)
+		log.SyncFatalExit(err)
 	}
-	fmt.Printf("Baseline Elapsed: %v\n", time.Since(baselineStart))
+	log.SyncInfof("Baseline Elapsed: %v", time.Since(baselineStart))
 
 	println()
+	println()
 
-	fmt.Println("Timings Aggregates:")
-	fmt.Printf("\tAvg Baseline                 : %v\n", util.Math.MeanOfDuration(baselineTimings))
-	fmt.Printf("\tAvg Spiffy                   : %v\n", util.Math.MeanOfDuration(spiffyTimings))
-	fmt.Printf("\tAvg Spiffy (Statement Cache) : %v\n", util.Math.MeanOfDuration(spiffyCachedTimings))
-	fmt.Printf("\tAvg PGX                      : %v\n", util.Math.MeanOfDuration(pgxTimings))
+	fmt.Println("Detailed Results:")
+	fmt.Printf("\tAvg Baseline                    : %v\n", util.Math.MeanOfDuration(baselineTimings))
+	fmt.Printf("\tAvg go-sdk/db                   : %v\n", util.Math.MeanOfDuration(dbTimings))
+	fmt.Printf("\tAvg go-sdk/db (Statement Cache) : %v\n", util.Math.MeanOfDuration(dbCachedTimings))
+	fmt.Printf("\tAvg PGX                         : %v\n", util.Math.MeanOfDuration(pgxTimings))
 
 	println()
 
 	fmt.Printf("\t99th Baseline                 : %v\n", util.Math.PercentileOfDuration(baselineTimings, 99.0))
-	fmt.Printf("\t99th Spiffy                   : %v\n", util.Math.PercentileOfDuration(spiffyTimings, 99.0))
-	fmt.Printf("\t99th Spiffy (Statement Cache) : %v\n", util.Math.PercentileOfDuration(spiffyCachedTimings, 99.0))
+	fmt.Printf("\t99th Spiffy                   : %v\n", util.Math.PercentileOfDuration(dbTimings, 99.0))
+	fmt.Printf("\t99th Spiffy (Statement Cache) : %v\n", util.Math.PercentileOfDuration(dbCachedTimings, 99.0))
 	fmt.Printf("\t99th PGX                      : %v\n", util.Math.PercentileOfDuration(pgxTimings, 99.0))
 }
