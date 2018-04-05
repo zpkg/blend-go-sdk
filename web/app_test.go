@@ -514,7 +514,7 @@ func TestAppViewErrorsRenderErrorView(t *testing.T) {
 func TestAppAddsDefaultHeaders(t *testing.T) {
 	assert := assert.New(t)
 
-	app := New().WithBindAddr("127.0.0.1:0")
+	app := NewFromConfig(&Config{}).WithBindAddr("127.0.0.1:0")
 	assert.NotEmpty(app.DefaultHeaders())
 	app.GET("/", func(r *Ctx) Result {
 		return r.Text().Result("OK!")

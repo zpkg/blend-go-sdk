@@ -55,7 +55,7 @@ func NewFromConfig(cfg *Config) *App {
 	app = app.WithHandleMethodNotAllowed(cfg.GetHandleMethodNotAllowed())
 	app = app.WithHandleOptions(cfg.GetHandleOptions())
 	app = app.WithRecoverPanics(cfg.GetRecoverPanics())
-	app = app.WithDefaultHeaders(cfg.GetDefaultHeaders())
+	app = app.WithDefaultHeaders(cfg.GetDefaultHeaders(DefaultHeaders))
 
 	app = app.WithHSTS(cfg.GetHSTS())
 	app = app.WithHSTSMaxAgeSeconds(cfg.GetHSTSMaxAgeSeconds())
