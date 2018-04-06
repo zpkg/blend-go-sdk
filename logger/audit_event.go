@@ -29,15 +29,17 @@ func NewAuditEventListener(listener func(me *AuditEvent)) Listener {
 
 // AuditEvent is a common type of event detailing a business action by a subject.
 type AuditEvent struct {
-	heading   string
-	ts        time.Time
-	flag      Flag
-	principal string
-	verb      string
-	noun      string
-	subject   string
-	property  string
-	extra     map[string]string
+	heading       string
+	ts            time.Time
+	flag          Flag
+	principal     string
+	verb          string
+	noun          string
+	subject       string
+	property      string
+	remoteAddress string
+	userAgent     string
+	extra         map[string]string
 
 	labels      map[string]string
 	annotations map[string]string
@@ -159,6 +161,28 @@ func (ae AuditEvent) Property() string {
 	return ae.property
 }
 
+// WithRemoteAddr sets the remote address.
+func (ae *AuditEvent) WithRemoteAddr(remoteAddr string) *AuditEvent {
+	ae.remoteAddress = remoteAddr
+	return ae
+}
+
+// RemoteAddress returns the remote address.
+func (ae AuditEvent) RemoteAddress() string {
+	return ae.remoteAddress
+}
+
+// WithUserAgent sets the user agent.
+func (ae *AuditEvent) WithUserAgent(userAgent string) *AuditEvent {
+	ae.userAgent = userAgent
+	return ae
+}
+
+// UserAgent returns the user agent.
+func (ae AuditEvent) UserAgent() string {
+	return ae.userAgent
+}
+
 // WithExtra sets the extra info.
 func (ae *AuditEvent) WithExtra(extra map[string]string) *AuditEvent {
 	ae.extra = extra
@@ -197,6 +221,16 @@ func (ae AuditEvent) WriteText(formatter TextFormatter, buf *bytes.Buffer) {
 		buf.WriteString(ae.property)
 		buf.WriteRune(RuneSpace)
 	}
+	if len(ae.remoteAddress) > 0 {
+		buf.WriteString(formatter.Colorize("Remote Addr:", ColorGray))
+		buf.WriteString(ae.remoteAddress)
+		buf.WriteRune(RuneSpace)
+	}
+	if len(ae.userAgent) > 0 {
+		buf.WriteString(formatter.Colorize("UA:", ColorGray))
+		buf.WriteString(ae.userAgent)
+		buf.WriteRune(RuneSpace)
+	}
 	if len(ae.extra) > 0 {
 		var values []string
 		for key, value := range ae.extra {
@@ -209,11 +243,13 @@ func (ae AuditEvent) WriteText(formatter TextFormatter, buf *bytes.Buffer) {
 // WriteJSON implements JSONWritable.
 func (ae AuditEvent) WriteJSON() JSONObj {
 	return JSONObj{
-		"principal": ae.principal,
-		"verb":      ae.verb,
-		"noun":      ae.noun,
-		"subject":   ae.subject,
-		"property":  ae.property,
-		"extra":     ae.extra,
+		"principal":  ae.principal,
+		"verb":       ae.verb,
+		"noun":       ae.noun,
+		"subject":    ae.subject,
+		"property":   ae.property,
+		"remoteAddr": ae.remoteAddress,
+		"ua":         ae.userAgent,
+		"extra":      ae.extra,
 	}
 }
