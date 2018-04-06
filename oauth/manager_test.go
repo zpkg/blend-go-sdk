@@ -7,6 +7,7 @@ import (
 
 	"github.com/blend/go-sdk/assert"
 	"github.com/blend/go-sdk/util"
+	"github.com/blend/go-sdk/uuid"
 )
 
 func TestNewFromConfig(t *testing.T) {
@@ -238,4 +239,20 @@ func TestManagerValidateNonce(t *testing.T) {
 	nonce, err = m.CreateNonce(time.Now().UTC().Add(-time.Minute))
 	assert.Nil(err)
 	assert.NotNil(m.ValidateNonce(nonce))
+}
+
+func TestManagerValidateJWT(t *testing.T) {
+	assert := assert.New(t)
+
+	testToken, err := SerializeJWT(util.Crypto.MustCreateKey(32), &JWTPayload{AUD: "client_id"})
+	assert.Nil(err)
+
+	jwt, err := DeserializeJWT(testToken)
+	assert.Nil(err)
+	m := New().WithHostedDomain("blend.com").WithClientID(jwt.Payload.AUD)
+
+	assert.Nil(m.ValidateJWT(jwt))
+
+	m.WithClientID(uuid.V4().String())
+	assert.NotNil(m.ValidateJWT(jwt))
 }
