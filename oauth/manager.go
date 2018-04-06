@@ -465,12 +465,16 @@ func (m *Manager) CreateNonce(t time.Time) (string, error) {
 	if err != nil {
 		return "", err
 	}
-	return Base64Encode([]byte(cipherText)), nil
+	return url.QueryEscape(Base64Encode([]byte(cipherText))), nil
 }
 
 // ValidateNonce validates a nonce.
 func (m *Manager) ValidateNonce(nonce string) error {
-	ciphertext, err := Base64Decode(nonce)
+	unescaped, err := url.QueryUnescape(nonce)
+	if err != nil {
+		return exception.Wrap(err)
+	}
+	ciphertext, err := Base64Decode(unescaped)
 	if err != nil {
 		return exception.Wrap(err)
 	}

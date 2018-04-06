@@ -49,6 +49,8 @@ func decodeJWTSegment(corpus string) ([]byte, error) {
 	if l := len(corpus) % 4; l > 0 {
 		corpus += strings.Repeat("=", 4-l)
 	}
+	// note this *has* to be url encoding because that's in the
+	// jwt spec.
 	contents, err := base64.URLEncoding.DecodeString(corpus)
 	if err != nil {
 		return nil, exception.Wrap(err)
