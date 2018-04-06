@@ -24,6 +24,9 @@ func NewConfigFromEnv() *Config {
 
 // Config is the config options.
 type Config struct {
+	// Secret is a base64 encoded secret
+	// It is used when hashing nonces and other cryptographic functions.
+	// If unset, a secret will be generated for the manager.
 	Secret string `json:"secret" yaml:"secret" env:"GOOGLE_SECRET"`
 
 	SkipDomainValidation bool     `json:"skipDomainValidation" yaml:"skipDomainValidation" env:"GOOGLE_SKIP_DOMAIN_VALIDATION"`
@@ -43,15 +46,18 @@ func (c Config) IsZero() bool {
 }
 
 // GetSecret gets the secret if set or a default.
-func (c Config) GetSecret(defaults ...[]byte) []byte {
+func (c Config) GetSecret(defaults ...[]byte) ([]byte, error) {
 	if len(c.Secret) > 0 {
-		decoded, _ := Base64Decode(c.Secret)
-		return decoded
+		decoded, err := Base64Decode(c.Secret)
+		if err != nil {
+			return nil, err
+		}
+		return decoded, nil
 	}
 	if len(defaults) > 0 {
-		return defaults[0]
+		return defaults[0], nil
 	}
-	return nil
+	return nil, nil
 }
 
 // GetSkipDomainValidation returns if we should skip domain validation.

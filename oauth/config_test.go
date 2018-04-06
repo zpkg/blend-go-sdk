@@ -5,6 +5,7 @@ import (
 
 	assert "github.com/blend/go-sdk/assert"
 	"github.com/blend/go-sdk/env"
+	"github.com/blend/go-sdk/util"
 )
 
 func TestNewConfigFromEnv(t *testing.T) {
@@ -33,4 +34,22 @@ func TestConfig(t *testing.T) {
 	assert.True(Config{}.IsZero())
 	assert.True(Config{ClientID: "foo"}.IsZero())
 	assert.False(Config{ClientID: "foo", ClientSecret: "bar"}.IsZero())
+}
+
+func TestConfigGetSecret(t *testing.T) {
+	assert := assert.New(t)
+
+	secret, err := Config{}.GetSecret()
+	assert.Nil(err)
+	assert.Empty(secret, "zero config should return no secret")
+
+	withSecret := &Config{Secret: Base64Encode(util.Crypto.MustCreateKey(32))}
+	secret, err = withSecret.GetSecret()
+	assert.Nil(err)
+	assert.NotEmpty(secret, "secret should be base64 enoded")
+
+	malformed := &Config{Secret: "|||||"}
+	secret, err = malformed.GetSecret()
+	assert.NotNil(err)
+	assert.Empty(secret)
 }

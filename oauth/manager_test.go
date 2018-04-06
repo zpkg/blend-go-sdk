@@ -12,7 +12,7 @@ import (
 func TestNewFromConfig(t *testing.T) {
 	assert := assert.New(t)
 
-	m := NewFromConfig(&Config{
+	m, err := NewFromConfig(&Config{
 		SkipDomainValidation: false,
 		RedirectURI:          "https://app.com/oauth/google",
 		ValidDomains:         []string{"foo.com", "bar.com"},
@@ -20,6 +20,7 @@ func TestNewFromConfig(t *testing.T) {
 		ClientSecret:         "bar_secret",
 	})
 
+	assert.Nil(err)
 	assert.NotEmpty(m.Secret())
 	assert.Equal("https://app.com/oauth/google", m.RedirectURI())
 	assert.Len(2, m.ValidDomains())
@@ -30,10 +31,11 @@ func TestNewFromConfig(t *testing.T) {
 func TestNewFromConfigWithSecret(t *testing.T) {
 	assert := assert.New(t)
 
-	m := NewFromConfig(&Config{
+	m, err := NewFromConfig(&Config{
 		Secret: Base64Encode([]byte("test string")),
 	})
 
+	assert.Nil(err)
 	assert.NotEmpty(m.Secret())
 	assert.Equal("test string", string(m.Secret()))
 }

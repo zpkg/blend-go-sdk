@@ -2,11 +2,11 @@ package oauth
 
 import (
 	"crypto/hmac"
-	"encoding/base64"
 	"fmt"
 	"net/http"
 	"net/url"
 	"strings"
+	"sync"
 	"time"
 
 	"github.com/blend/go-sdk/exception"
@@ -26,14 +26,21 @@ func New() *Manager {
 }
 
 // NewFromEnv returns a new manager from the environment.
-func NewFromEnv() *Manager {
+func NewFromEnv() (*Manager, error) {
 	return NewFromConfig(NewConfigFromEnv())
 }
 
 // NewFromConfig returns a new oauth manager from a config.
-func NewFromConfig(cfg *Config) *Manager {
+func NewFromConfig(cfg *Config) (*Manager, error) {
+	secret, err := cfg.GetSecret()
+	if err != nil {
+		return nil, err
+	}
+	if len(secret) == 0 {
+		secret = util.Crypto.MustCreateKey(32)
+	}
 	return &Manager{
-		secret:               cfg.GetSecret(util.Crypto.MustCreateKey(32)),
+		secret:               secret,
 		skipDomainValidation: cfg.GetSkipDomainValidation(),
 		redirectURI:          cfg.GetRedirectURI(),
 		validDomains:         cfg.GetValidDomains(),
@@ -41,11 +48,12 @@ func NewFromConfig(cfg *Config) *Manager {
 		clientSecret:         cfg.GetClientSecret(),
 		hostedDomain:         cfg.GetHostedDomain(),
 		nonceTimeout:         cfg.GetNonceTimeout(),
-	}
+	}, nil
 }
 
 // Manager is the oauth manager.
 type Manager struct {
+	secretLock           sync.Mutex
 	secret               []byte
 	redirectURI          string
 	skipDomainValidation bool
@@ -157,9 +165,21 @@ func (m *Manager) NonceTimeout() time.Duration {
 	return m.nonceTimeout
 }
 
+func (m *Manager) ensureSecret() {
+	if len(m.secret) == 0 {
+		m.secretLock.Lock()
+		defer m.secretLock.Unlock()
+		if len(m.secret) == 0 {
+			m.secret = util.Crypto.MustCreateKey(32)
+		}
+	}
+}
+
 // OAuthURL is the auth url for google with a given clientID.
 // This is typically the link that a user will click on to start the auth process.
 func (m *Manager) OAuthURL(redirect ...string) (string, error) {
+	m.ensureSecret()
+
 	u := &url.URL{
 		Scheme: "https",
 		Host:   "accounts.google.com",
@@ -445,12 +465,12 @@ func (m *Manager) CreateNonce(t time.Time) (string, error) {
 	if err != nil {
 		return "", err
 	}
-	return base64.StdEncoding.EncodeToString([]byte(cipherText)), nil
+	return Base64Encode([]byte(cipherText)), nil
 }
 
 // ValidateNonce validates a nonce.
 func (m *Manager) ValidateNonce(nonce string) error {
-	ciphertext, err := base64.StdEncoding.DecodeString(nonce)
+	ciphertext, err := Base64Decode(nonce)
 	if err != nil {
 		return exception.Wrap(err)
 	}
@@ -470,5 +490,5 @@ func (m *Manager) ValidateNonce(nonce string) error {
 }
 
 func (m *Manager) hash(plaintext string) string {
-	return base64.StdEncoding.EncodeToString(util.Crypto.Hash(m.secret, []byte(plaintext)))
+	return Base64Encode(util.Crypto.Hash(m.secret, []byte(plaintext)))
 }
