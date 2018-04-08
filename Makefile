@@ -15,7 +15,7 @@ export VERSION
 
 all: format vet profanity test
 
-ci: vet profanity test
+ci: vet profanity cover 
 
 new-install:
 	@go get -u github.com/lib/pq
@@ -38,8 +38,12 @@ test:
 
 cover:
 	@echo "$(VERSION)/$(GIT_REF) >> coverage"
-	@go run _bin/coverage/main.go -enforce
+	@go run _bin/coverage/main.go
 
+cover-enforce:
+	@echo "$(VERSION)/$(GIT_REF) >> coverage"
+	@go run _bin/coverage/main.go -enforce
+	
 cover-update:
 	@echo "$(VERSION)/$(GIT_REF) >> coverage"
 	@go run _bin/coverage/main.go -update
