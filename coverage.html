@@ -84,7 +84,7 @@
 				
 				<option value="file14">github.com/blend/go-sdk/cron/job.go (39.3%)</option>
 				
-				<option value="file15">github.com/blend/go-sdk/cron/job_manager.go (66.6%)</option>
+				<option value="file15">github.com/blend/go-sdk/cron/job_manager.go (66.3%)</option>
 				
 				<option value="file16">github.com/blend/go-sdk/cron/schedule.go (55.8%)</option>
 				
@@ -144,7 +144,7 @@
 				
 				<option value="file44">github.com/blend/go-sdk/logger/ansi_colors.go (100.0%)</option>
 				
-				<option value="file45">github.com/blend/go-sdk/logger/audit_event.go (23.9%)</option>
+				<option value="file45">github.com/blend/go-sdk/logger/audit_event.go (19.8%)</option>
 				
 				<option value="file46">github.com/blend/go-sdk/logger/buffer_pool.go (100.0%)</option>
 				
@@ -192,9 +192,9 @@
 				
 				<option value="file68">github.com/blend/go-sdk/oauth/error.go (0.0%)</option>
 				
-				<option value="file69">github.com/blend/go-sdk/oauth/manager.go (50.5%)</option>
+				<option value="file69">github.com/blend/go-sdk/oauth/jwt.go (73.0%)</option>
 				
-				<option value="file70">github.com/blend/go-sdk/oauth/oauth_id_token.go (72.0%)</option>
+				<option value="file70">github.com/blend/go-sdk/oauth/manager.go (53.1%)</option>
 				
 				<option value="file71">github.com/blend/go-sdk/oauth/oauth_state.go (78.6%)</option>
 				
@@ -3805,7 +3805,7 @@ func (jm *JobManager) killHangingJobsInner() error <span class="cov8" title="1">
                 }
 
                 <span class="cov8" title="1">timeoutProvider, isTimeoutProvder := task.(TimeoutProvider)
-                if !isTimeoutProvder </span><span class="cov8" title="1">{
+                if !isTimeoutProvder </span><span class="cov0" title="0">{
                         continue</span>
                 }
                 <span class="cov8" title="1">timeout := timeoutProvider.Timeout()
@@ -10350,15 +10350,17 @@ func NewAuditEventListener(listener func(me *AuditEvent)) Listener <span class="
 
 // AuditEvent is a common type of event detailing a business action by a subject.
 type AuditEvent struct {
-        heading   string
-        ts        time.Time
-        flag      Flag
-        principal string
-        verb      string
-        noun      string
-        subject   string
-        property  string
-        extra     map[string]string
+        heading       string
+        ts            time.Time
+        flag          Flag
+        principal     string
+        verb          string
+        noun          string
+        subject       string
+        property      string
+        remoteAddress string
+        userAgent     string
+        extra         map[string]string
 
         labels      map[string]string
         annotations map[string]string
@@ -10480,6 +10482,28 @@ func (ae AuditEvent) Property() string <span class="cov0" title="0">{
         return ae.property
 }</span>
 
+// WithRemoteAddr sets the remote address.
+func (ae *AuditEvent) WithRemoteAddr(remoteAddr string) *AuditEvent <span class="cov0" title="0">{
+        ae.remoteAddress = remoteAddr
+        return ae
+}</span>
+
+// RemoteAddress returns the remote address.
+func (ae AuditEvent) RemoteAddress() string <span class="cov0" title="0">{
+        return ae.remoteAddress
+}</span>
+
+// WithUserAgent sets the user agent.
+func (ae *AuditEvent) WithUserAgent(userAgent string) *AuditEvent <span class="cov0" title="0">{
+        ae.userAgent = userAgent
+        return ae
+}</span>
+
+// UserAgent returns the user agent.
+func (ae AuditEvent) UserAgent() string <span class="cov0" title="0">{
+        return ae.userAgent
+}</span>
+
 // WithExtra sets the extra info.
 func (ae *AuditEvent) WithExtra(extra map[string]string) *AuditEvent <span class="cov0" title="0">{
         ae.extra = extra
@@ -10518,6 +10542,16 @@ func (ae AuditEvent) WriteText(formatter TextFormatter, buf *bytes.Buffer) <span
                 buf.WriteString(ae.property)
                 buf.WriteRune(RuneSpace)
         }</span>
+        <span class="cov0" title="0">if len(ae.remoteAddress) &gt; 0 </span><span class="cov0" title="0">{
+                buf.WriteString(formatter.Colorize("Remote Addr:", ColorGray))
+                buf.WriteString(ae.remoteAddress)
+                buf.WriteRune(RuneSpace)
+        }</span>
+        <span class="cov0" title="0">if len(ae.userAgent) &gt; 0 </span><span class="cov0" title="0">{
+                buf.WriteString(formatter.Colorize("UA:", ColorGray))
+                buf.WriteString(ae.userAgent)
+                buf.WriteRune(RuneSpace)
+        }</span>
         <span class="cov0" title="0">if len(ae.extra) &gt; 0 </span><span class="cov0" title="0">{
                 var values []string
                 for key, value := range ae.extra </span><span class="cov0" title="0">{
@@ -10530,12 +10564,14 @@ func (ae AuditEvent) WriteText(formatter TextFormatter, buf *bytes.Buffer) <span
 // WriteJSON implements JSONWritable.
 func (ae AuditEvent) WriteJSON() JSONObj <span class="cov0" title="0">{
         return JSONObj{
-                "principal": ae.principal,
-                "verb":      ae.verb,
-                "noun":      ae.noun,
-                "subject":   ae.subject,
-                "property":  ae.property,
-                "extra":     ae.extra,
+                "principal":  ae.principal,
+                "verb":       ae.verb,
+                "noun":       ae.noun,
+                "subject":    ae.subject,
+                "property":   ae.property,
+                "remoteAddr": ae.remoteAddress,
+                "ua":         ae.userAgent,
+                "extra":      ae.extra,
         }
 }</span>
 </pre>
@@ -13763,6 +13799,9 @@ const (
         ErrInvalidEmailDomain Error = "domain validation failed; doesn't match valid domain list"
         // ErrInvalidHostedDomain is an error returned if the JWT hosted zone doesn't match any of the whitelisted domains.
         ErrInvalidHostedDomain Error = "hosted domain validation failed"
+        // ErrInvalidAUD is an error returned during jwt validation.
+        ErrInvalidAUD Error = "invalid JWT AUD"
+
         // ErrInvalidAntiforgeryToken is an error that occurs during oauth finish if the forgery token is required
         // and missing or invalid.
         ErrInvalidAntiforgeryToken Error = "invalid anti-forgery token"
@@ -13797,12 +13836,142 @@ func (e Error) Error() string <span class="cov0" title="0">{
 		<pre class="file" id="file69" style="display: none">package oauth
 
 import (
+        "encoding/base64"
+        "encoding/json"
+        "fmt"
+        "strings"
+
+        "github.com/blend/go-sdk/exception"
+        "github.com/blend/go-sdk/util"
+)
+
+const (
+        // TypeJWT is a field value in the jwt header.
+        TypeJWT = "jwt"
+
+        // AlgorithmHS512 is a hashing algorithm.
+        AlgorithmHS512 = "HS512"
+)
+
+// DeserializeJWT deserializes a jwt token.
+func DeserializeJWT(corpus string) (*JWT, error) <span class="cov8" title="1">{
+        parts := strings.Split(corpus, ".")
+        if len(parts) &lt; 3 </span><span class="cov0" title="0">{
+                return nil, ErrInvalidJWT
+        }</span>
+
+        <span class="cov8" title="1">headerContents, err := decodeJWTSegment(parts[0])
+        if err != nil </span><span class="cov0" title="0">{
+                return nil, exception.Wrap(err)
+        }</span>
+        <span class="cov8" title="1">var header JWTHeader
+        if err = json.Unmarshal(headerContents, &amp;header); err != nil </span><span class="cov0" title="0">{
+                return nil, exception.Wrap(err)
+        }</span>
+
+        <span class="cov8" title="1">payloadContents, err := decodeJWTSegment(parts[1])
+        if err != nil </span><span class="cov0" title="0">{
+                return nil, exception.Wrap(err)
+        }</span>
+        <span class="cov8" title="1">var payload JWTPayload
+        if err = json.Unmarshal(payloadContents, &amp;payload); err != nil </span><span class="cov0" title="0">{
+                return nil, exception.Wrap(err)
+        }</span>
+
+        <span class="cov8" title="1">signature, err := decodeJWTSegment(parts[2])
+        if err != nil </span><span class="cov0" title="0">{
+                return nil, exception.Wrap(err)
+        }</span>
+
+        <span class="cov8" title="1">return &amp;JWT{
+                Header:    header,
+                Payload:   payload,
+                Signature: signature,
+        }, nil</span>
+}
+
+// SerializeJWT serializes a jwt.
+func SerializeJWT(key []byte, token *JWTPayload) (string, error) <span class="cov8" title="1">{
+        headerSerialized, err := json.Marshal(JWTHeader{
+                Algorithm: AlgorithmHS512,
+                Type:      TypeJWT,
+        })
+        if err != nil </span><span class="cov0" title="0">{
+                return "", err
+        }</span>
+
+        <span class="cov8" title="1">header := encodeJWTSegment(headerSerialized)
+
+        payloadSerialized, err := json.Marshal(token)
+        if err != nil </span><span class="cov0" title="0">{
+                return "", err
+        }</span>
+        <span class="cov8" title="1">payload := encodeJWTSegment(payloadSerialized)
+
+        signatureSerialized := util.Crypto.Hash(key, []byte(header+payload))
+        signature := encodeJWTSegment(signatureSerialized)
+
+        return fmt.Sprintf("%s.%s.%s",
+                header,
+                payload,
+                signature,
+        ), nil</span>
+}
+
+func encodeJWTSegment(corpus []byte) string <span class="cov8" title="1">{
+        return base64.URLEncoding.EncodeToString(corpus)
+}</span>
+
+func decodeJWTSegment(corpus string) ([]byte, error) <span class="cov8" title="1">{
+        if l := len(corpus) % 4; l &gt; 0 </span><span class="cov0" title="0">{
+                corpus += strings.Repeat("=", 4-l)
+        }</span>
+        // note this *has* to be url encoding because that's in the
+        // jwt spec.
+        <span class="cov8" title="1">contents, err := base64.URLEncoding.DecodeString(corpus)
+        if err != nil </span><span class="cov0" title="0">{
+                return nil, exception.Wrap(err)
+        }</span>
+        <span class="cov8" title="1">return contents, nil</span>
+}
+
+// JWT is a full jwt.
+type JWT struct {
+        Header    JWTHeader
+        Payload   JWTPayload
+        Signature []byte
+}
+
+// JWTHeader is the header of a jwt.
+type JWTHeader struct {
+        Algorithm string `json:"alg"`
+        Type      string `json:"typ"`
+}
+
+// JWTPayload is the oauth JWT token.
+type JWTPayload struct {
+        ISS           string  `json:"iss"`
+        ATHash        string  `json:"at_hash"`
+        EmailVerified bool    `json:"email_verified"`
+        Sub           string  `json:"sub"` //actual user identifier
+        AZP           string  `json:"azp"`
+        Email         string  `json:"email"`
+        AUD           string  `json:"aud"`
+        IAT           float64 `json:"iat"`
+        EXP           float64 `json:"exp"`
+        Nonce         string  `json:"nonce"`
+        HostedDomain  string  `json:"hd"`
+}
+</pre>
+		
+		<pre class="file" id="file70" style="display: none">package oauth
+
+import (
         "crypto/hmac"
         "fmt"
         "net/http"
         "net/url"
         "strings"
-        "sync"
         "time"
 
         "github.com/blend/go-sdk/exception"
@@ -13849,8 +14018,8 @@ func NewFromConfig(cfg *Config) (*Manager, error) <span class="cov8" title="1">{
 
 // Manager is the oauth manager.
 type Manager struct {
-        secretLock           sync.Mutex
         secret               []byte
+        audience             string
         redirectURI          string
         skipDomainValidation bool
         hostedDomain         string
@@ -13961,21 +14130,9 @@ func (m *Manager) NonceTimeout() time.Duration <span class="cov8" title="1">{
         return m.nonceTimeout
 }</span>
 
-func (m *Manager) ensureSecret() <span class="cov8" title="1">{
-        if len(m.secret) == 0 </span><span class="cov0" title="0">{
-                m.secretLock.Lock()
-                defer m.secretLock.Unlock()
-                if len(m.secret) == 0 </span><span class="cov0" title="0">{
-                        m.secret = util.Crypto.MustCreateKey(32)
-                }</span>
-        }
-}
-
 // OAuthURL is the auth url for google with a given clientID.
 // This is typically the link that a user will click on to start the auth process.
 func (m *Manager) OAuthURL(redirect ...string) (string, error) <span class="cov8" title="1">{
-        m.ensureSecret()
-
         u := &amp;url.URL{
                 Scheme: "https",
                 Host:   "accounts.google.com",
@@ -14179,12 +14336,16 @@ func (m *Manager) ValidateConfig() error <span class="cov0" title="0">{
 }
 
 // ValidateJWT validates a jwt.
-func (m *Manager) ValidateJWT(jwt *JWT) error <span class="cov0" title="0">{
-        if m.skipDomainValidation </span><span class="cov0" title="0">{
+func (m *Manager) ValidateJWT(jwt *JWT) error <span class="cov8" title="1">{
+        if len(m.clientID) &gt; 0 &amp;&amp; !hmac.Equal([]byte(jwt.Payload.AUD), []byte(m.clientID)) </span><span class="cov8" title="1">{
+                return ErrInvalidAUD
+        }</span>
+
+        <span class="cov8" title="1">if m.skipDomainValidation </span><span class="cov0" title="0">{
                 return nil
         }</span>
 
-        <span class="cov0" title="0">if len(jwt.Payload.HostedDomain) == 0 </span><span class="cov0" title="0">{
+        <span class="cov8" title="1">if len(jwt.Payload.HostedDomain) == 0 </span><span class="cov8" title="1">{
                 return nil
         }</span>
 
@@ -14292,95 +14453,6 @@ func (m *Manager) ValidateNonce(nonce string) error <span class="cov8" title="1"
 func (m *Manager) hash(plaintext string) string <span class="cov8" title="1">{
         return Base64Encode(util.Crypto.Hash(m.secret, []byte(plaintext)))
 }</span>
-</pre>
-		
-		<pre class="file" id="file70" style="display: none">package oauth
-
-import (
-        "encoding/base64"
-        "encoding/json"
-        "strings"
-
-        "github.com/blend/go-sdk/exception"
-)
-
-// DeserializeJWT deserializes a jwt token.
-func DeserializeJWT(corpus string) (*JWT, error) <span class="cov8" title="1">{
-        parts := strings.Split(corpus, ".")
-        if len(parts) &lt; 3 </span><span class="cov0" title="0">{
-                return nil, ErrInvalidJWT
-        }</span>
-
-        <span class="cov8" title="1">headerContents, err := decodeJWTSegment(parts[0])
-        if err != nil </span><span class="cov0" title="0">{
-                return nil, exception.Wrap(err)
-        }</span>
-        <span class="cov8" title="1">var header JWTHeader
-        if err = json.Unmarshal(headerContents, &amp;header); err != nil </span><span class="cov0" title="0">{
-                return nil, exception.Wrap(err)
-        }</span>
-
-        <span class="cov8" title="1">payloadContents, err := decodeJWTSegment(parts[1])
-        if err != nil </span><span class="cov0" title="0">{
-                return nil, exception.Wrap(err)
-        }</span>
-        <span class="cov8" title="1">var payload JWTPayload
-        if err = json.Unmarshal(payloadContents, &amp;payload); err != nil </span><span class="cov0" title="0">{
-                return nil, exception.Wrap(err)
-        }</span>
-
-        <span class="cov8" title="1">signature, err := decodeJWTSegment(parts[2])
-        if err != nil </span><span class="cov0" title="0">{
-                return nil, exception.Wrap(err)
-        }</span>
-
-        <span class="cov8" title="1">return &amp;JWT{
-                Header:    header,
-                Payload:   payload,
-                Signature: signature,
-        }, nil</span>
-}
-
-func decodeJWTSegment(corpus string) ([]byte, error) <span class="cov8" title="1">{
-        if l := len(corpus) % 4; l &gt; 0 </span><span class="cov8" title="1">{
-                corpus += strings.Repeat("=", 4-l)
-        }</span>
-        // note this *has* to be url encoding because that's in the
-        // jwt spec.
-        <span class="cov8" title="1">contents, err := base64.URLEncoding.DecodeString(corpus)
-        if err != nil </span><span class="cov0" title="0">{
-                return nil, exception.Wrap(err)
-        }</span>
-        <span class="cov8" title="1">return contents, nil</span>
-}
-
-// JWT is a full jwt.
-type JWT struct {
-        Header    JWTHeader
-        Payload   JWTPayload
-        Signature []byte
-}
-
-// JWTHeader is the header of a jwt.
-type JWTHeader struct {
-        Algorithm string `json:"alg"`
-        Type      string `json:"typ"`
-}
-
-// JWTPayload is the oauth JWT token.
-type JWTPayload struct {
-        ISS           string  `json:"iss"`
-        ATHash        string  `json:"at_hash"`
-        EmailVerified bool    `json:"email_verified"`
-        Sub           string  `json:"sub"` //actual user identifier
-        AZP           string  `json:"azp"`
-        Email         string  `json:"email"`
-        AUD           string  `json:"aud"`
-        IAT           float64 `json:"iat"`
-        EXP           float64 `json:"exp"`
-        Nonce         string  `json:"nonce"`
-        HostedDomain  string  `json:"hd"`
-}
 </pre>
 		
 		<pre class="file" id="file71" style="display: none">package oauth
