@@ -143,7 +143,13 @@ func extractCoverage(corpus string) string {
 }
 
 func writeCoverage(path, coverage string) error {
-	return ioutil.WriteFile(filepath.Join(path, "COVERAGE"), []byte(coverage), 0755)
+	parsed, err := strconv.ParseFloat(strings.TrimSpace(coverage), 64)
+	if err != nil {
+		return err
+	}
+
+	expected := strconv.Itoa(int(parsed))
+	return ioutil.WriteFile(filepath.Join(path, "COVERAGE"), []byte(expected), 0755)
 }
 
 func dirHasGlob(path, glob string) bool {
