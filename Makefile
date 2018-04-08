@@ -28,9 +28,10 @@ vet:
 	@echo "$(VERSION)/$(GIT_REF) >> vetting code"
 	@go vet $(PKGS)
 
+.PHONY: profanity
 profanity:
 	@echo "$(VERSION)/$(GIT_REF) >> profanity"
-	@go run _bin/profanity/main.go
+	@go run _bin/profanity/main.go -f PROFANITY
 
 test:
 	@echo "$(VERSION)/$(GIT_REF) >> tests"
