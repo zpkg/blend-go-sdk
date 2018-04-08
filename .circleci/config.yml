@@ -12,5 +12,8 @@ jobs:
     steps:
       - checkout
       - run: 
+          name: new-install
+          command: make new-install
+      - run: 
           name: ci
           command: make ci
