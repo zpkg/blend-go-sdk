@@ -12,8 +12,6 @@ import (
 	"regexp"
 	"strconv"
 	"strings"
-
-	"github.com/blend/go-sdk/exception"
 )
 
 var reportOutputPath = flag.String("output", "coverage.html", "the path to write the full html coverage report")
@@ -65,7 +63,7 @@ func main() {
 		output, err = execCoverage(currentPath)
 		if err != nil {
 			fmt.Fprintln(os.Stderr, string(output))
-			return exception.Wrap(err)
+			return err
 		}
 		coverage := extractCoverage(string(output))
 		fmt.Fprintf(os.Stdout, "%s: %v%%\n", currentPath, coverage)
