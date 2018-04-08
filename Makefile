@@ -6,6 +6,10 @@ GIT_REF 		:= $(shell git log --pretty=format:'%h' -n 1)
 CURRENT_USER 	:= $(shell whoami)
 VERSION 		:= $(shell cat ./.version)
 
+# coverage stuff
+CIRCLE_ARTIFACTS 	?= "."
+COVERAGE_OUT 		:= "${CIRCLE_ARTIFACTS}/coverage.html"
+
 export GIT_REF
 export VERSION
 
@@ -31,6 +35,10 @@ profanity:
 test:
 	@echo "$(VERSION)/$(GIT_REF) >> running all tests"
 	@go test $(PKGS)
+
+cover:
+	@echo "$(VERSION)/$(GIT_REF) >> running all tests"
+	@go run _bin/coverage/main.go
 
 increment-patch:
 	@echo "Current Version $(VERSION)"
