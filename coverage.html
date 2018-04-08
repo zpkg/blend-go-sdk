@@ -86,7 +86,7 @@
 				
 				<option value="file15">github.com/blend/go-sdk/cron/job_manager.go (66.3%)</option>
 				
-				<option value="file16">github.com/blend/go-sdk/cron/schedule.go (55.8%)</option>
+				<option value="file16">github.com/blend/go-sdk/cron/schedule.go (57.0%)</option>
 				
 				<option value="file17">github.com/blend/go-sdk/cron/task.go (81.8%)</option>
 				
@@ -1044,7 +1044,7 @@ func failNow(t *testing.T, message string, userMessageComponents ...interface{})
         fail(t, message, userMessageComponents...)
         if t != nil </span><span class="cov0" title="0">{
                 t.FailNow()
-        }</span><span class="cov0" title="0"> else {
+        }</span> else<span class="cov0" title="0"> {
                 os.Exit(1)
         }</span>
 }
@@ -1078,11 +1078,11 @@ func fail(t *testing.T, message string, userMessageComponents ...interface{}) <s
 `
                 if t != nil </span><span class="cov0" title="0">{
                         t.Errorf(errorFormat, erasure, assertionFailedLabel, locationLabel, errorTrace, assertionLabel, message, messageLabel, userMessage)
-                }</span><span class="cov8" title="1"> else {
+                }</span> else<span class="cov8" title="1"> {
                         fmt.Fprintf(os.Stderr, errorFormat, "", assertionFailedLabel, locationLabel, errorTrace, assertionLabel, message, messageLabel, userMessage)
                 }</span>
 
-        }<span class="cov0" title="0"> else {
+        } else<span class="cov0" title="0"> {
                 errorFormat := `%s
 %s
 %s: 
@@ -1093,7 +1093,7 @@ func fail(t *testing.T, message string, userMessageComponents ...interface{}) <s
 `
                 if t != nil </span><span class="cov0" title="0">{
                         t.Errorf(errorFormat, erasure, assertionFailedLabel, locationLabel, errorTrace, assertionLabel, message)
-                }</span><span class="cov0" title="0"> else {
+                }</span> else<span class="cov0" title="0"> {
                         fmt.Fprintf(os.Stderr, errorFormat, "", assertionFailedLabel, locationLabel, errorTrace, assertionLabel, message)
                 }</span>
         }
@@ -1206,7 +1206,7 @@ func shouldBeInTimeDelta(from, to time.Time, delta time.Duration) (bool, string)
         var diff time.Duration
         if from.After(to) </span><span class="cov8" title="1">{
                 diff = from.Sub(to)
-        }</span><span class="cov8" title="1"> else {
+        }</span> else<span class="cov8" title="1"> {
                 diff = to.Sub(from)
         }</span>
         <span class="cov8" title="1">if diff &gt; delta </span><span class="cov8" title="1">{
@@ -1438,7 +1438,7 @@ func equalMessage(actual, expected interface{}) string <span class="cov8" title=
 func getLength(object interface{}) int <span class="cov8" title="1">{
         if object == nil </span><span class="cov0" title="0">{
                 return 0
-        }</span><span class="cov8" title="1"> else if object == "" </span><span class="cov8" title="1">{
+        }</span> else<span class="cov8" title="1"> if object == "" </span><span class="cov8" title="1">{
                 return 0
         }</span>
 
@@ -1707,7 +1707,7 @@ func (ab *AutoflushBuffer) flushUnsafeAsync() <span class="cov8" title="1">{
                         contents := ab.contents.Drain()
                         go ab.handler(contents)
                 }</span>
-        }<span class="cov0" title="0"> else {
+        } else<span class="cov0" title="0"> {
                 ab.contents.Clear()
         }</span>
 }
@@ -1718,7 +1718,7 @@ func (ab *AutoflushBuffer) flushUnsafe() <span class="cov8" title="1">{
                 if ab.contents.Len() &gt; 0 </span><span class="cov0" title="0">{
                         ab.handler(ab.contents.Drain())
                 }</span>
-        }<span class="cov0" title="0"> else {
+        } else<span class="cov0" title="0"> {
                 ab.contents.Clear()
         }</span>
 }
@@ -1902,7 +1902,7 @@ func (q *LinkedList) Enqueue(value interface{}) <span class="cov8" title="1">{
         if q.head == nil </span><span class="cov8" title="1">{ //the queue is empty, that is to say head is nil
                 q.head = node
                 q.tail = node
-        }</span><span class="cov8" title="1"> else { //the queue is not empty, we have a (valid) tail pointer
+        }</span> else<span class="cov8" title="1"> { //the queue is not empty, we have a (valid) tail pointer
                 q.tail.Previous = node
                 node.Next = q.tail
                 q.tail = node
@@ -1922,7 +1922,7 @@ func (q *LinkedList) Dequeue() interface{} <span class="cov8" title="1">{
         if q.length == 1 &amp;&amp; q.head == q.tail </span><span class="cov8" title="1">{
                 q.head = nil
                 q.tail = nil
-        }</span><span class="cov8" title="1"> else {
+        }</span> else<span class="cov8" title="1"> {
                 q.head = q.head.Previous
                 if q.head != nil </span><span class="cov8" title="1">{
                         q.head.Next = nil
@@ -2165,7 +2165,7 @@ func (rb *RingBuffer) Capacity() int <span class="cov0" title="0">{
 func (rb *RingBuffer) Clear() <span class="cov8" title="1">{
         if rb.head &lt; rb.tail </span><span class="cov0" title="0">{
                 arrayClear(rb.array, rb.head, rb.size)
-        }</span><span class="cov8" title="1"> else {
+        }</span> else<span class="cov8" title="1"> {
                 arrayClear(rb.array, rb.head, len(rb.array)-rb.head)
                 arrayClear(rb.array, 0, rb.tail)
         }</span>
@@ -2227,7 +2227,7 @@ func (rb *RingBuffer) setCapacity(capacity int) <span class="cov8" title="1">{
         if rb.size &gt; 0 </span><span class="cov8" title="1">{
                 if rb.head &lt; rb.tail </span><span class="cov0" title="0">{
                         arrayCopy(rb.array, rb.head, newArray, 0, rb.size)
-                }</span><span class="cov8" title="1"> else {
+                }</span> else<span class="cov8" title="1"> {
                         arrayCopy(rb.array, rb.head, newArray, 0, len(rb.array)-rb.head)
                         arrayCopy(rb.array, 0, newArray, len(rb.array)-rb.head, rb.tail)
                 }</span>
@@ -2236,7 +2236,7 @@ func (rb *RingBuffer) setCapacity(capacity int) <span class="cov8" title="1">{
         rb.head = 0
         if rb.size == capacity </span><span class="cov0" title="0">{
                 rb.tail = 0
-        }</span><span class="cov8" title="1"> else {
+        }</span> else<span class="cov8" title="1"> {
                 rb.tail = rb.size
         }</span>
 }
@@ -2260,7 +2260,7 @@ func (rb *RingBuffer) Contents() []interface{} <span class="cov8" title="1">{
         <span class="cov8" title="1">if rb.head &lt; rb.tail </span><span class="cov8" title="1">{
                 arrayCopy(rb.array, rb.head, newArray, 0, rb.size)
                 arrayClear(rb.array, rb.head, rb.size)
-        }</span><span class="cov0" title="0"> else {
+        }</span> else<span class="cov0" title="0"> {
                 arrayCopy(rb.array, rb.head, newArray, 0, len(rb.array)-rb.head)
                 arrayClear(rb.array, rb.head, len(rb.array)-rb.head)
                 arrayCopy(rb.array, 0, newArray, len(rb.array)-rb.head, rb.tail)
@@ -2280,7 +2280,7 @@ func (rb *RingBuffer) Drain() []interface{} <span class="cov8" title="1">{
 
         <span class="cov8" title="1">if rb.head &lt; rb.tail </span><span class="cov8" title="1">{
                 arrayCopy(rb.array, rb.head, newArray, 0, rb.size)
-        }</span><span class="cov8" title="1"> else {
+        }</span> else<span class="cov8" title="1"> {
                 arrayCopy(rb.array, rb.head, newArray, 0, len(rb.array)-rb.head)
                 arrayCopy(rb.array, 0, newArray, len(rb.array)-rb.head, rb.tail)
         }</span>
@@ -2302,7 +2302,7 @@ func (rb *RingBuffer) Each(consumer func(value interface{})) <span class="cov8" 
                 for cursor := rb.head; cursor &lt; rb.tail; cursor++ </span><span class="cov0" title="0">{
                         consumer(rb.array[cursor])
                 }</span>
-        }<span class="cov8" title="1"> else {
+        } else<span class="cov8" title="1"> {
                 for cursor := rb.head; cursor &lt; len(rb.array); cursor++ </span><span class="cov8" title="1">{
                         consumer(rb.array[cursor])
                 }</span>
@@ -2336,7 +2336,7 @@ func (rb *RingBuffer) EachUntil(consumer func(value interface{}) bool) <span cla
                                 return
                         }</span>
                 }
-        }<span class="cov8" title="1"> else {
+        } else<span class="cov8" title="1"> {
                 for cursor := rb.head; cursor &lt; len(rb.array); cursor++ </span><span class="cov8" title="1">{
                         if !consumer(rb.array[cursor]) </span><span class="cov8" title="1">{
                                 return
@@ -2362,7 +2362,7 @@ func (rb *RingBuffer) ReverseEachUntil(consumer func(value interface{}) bool) <s
                                 return
                         }</span>
                 }
-        }<span class="cov8" title="1"> else {
+        } else<span class="cov8" title="1"> {
                 for cursor := rb.tail; cursor &gt; 0; cursor-- </span><span class="cov0" title="0">{
                         if !consumer(rb.array[cursor]) </span><span class="cov0" title="0">{
                                 return
@@ -2983,7 +2983,7 @@ type AtomicFlag struct {
 func (af *AtomicFlag) Set(value bool) <span class="cov8" title="1">{
         if value </span><span class="cov8" title="1">{
                 atomic.StoreInt32(&amp;af.value, 1)
-        }</span><span class="cov0" title="0"> else {
+        }</span> else<span class="cov0" title="0"> {
                 atomic.StoreInt32(&amp;af.value, 0)
         }</span>
 }
@@ -3145,7 +3145,7 @@ func (e EventComplete) Err() error <span class="cov8" title="1">{
 func (e EventComplete) WriteText(tf logger.TextFormatter, buf *bytes.Buffer) <span class="cov8" title="1">{
         if e.err != nil </span><span class="cov8" title="1">{
                 buf.WriteString(fmt.Sprintf("`%s` failed (%v)", e.taskName, e.elapsed))
-        }</span><span class="cov0" title="0"> else {
+        }</span> else<span class="cov0" title="0"> {
                 buf.WriteString(fmt.Sprintf("`%s` completed (%v)", e.taskName, e.elapsed))
         }</span>
 }
@@ -3829,7 +3829,7 @@ func (jm *JobManager) killHangingJobsInner() error <span class="cov8" title="1">
                                         jm.log.Error(err)
                                 }</span>
                         }
-                }<span class="cov0" title="0"> else if currentTime.Sub(startedTime) &gt;= timeout </span><span class="cov0" title="0">{
+                } else<span class="cov0" title="0"> if currentTime.Sub(startedTime) &gt;= timeout </span><span class="cov0" title="0">{
                         err = jm.killHangingJob(taskName)
                         if err != nil </span><span class="cov0" title="0">{
                                 jm.log.Error(err)
@@ -3902,9 +3902,9 @@ func (jm *JobManager) Status() []TaskStatus <span class="cov0" title="0">{
                 if runningSince, isRunning := jm.runningTaskStartTimes[jobName]; isRunning </span><span class="cov0" title="0">{
                         status.State = StateRunning
                         status.RunningFor = fmt.Sprintf("%v", now.Sub(runningSince))
-                }</span><span class="cov0" title="0"> else if jm.disabledJobs.Contains(jobName) </span><span class="cov0" title="0">{
+                }</span> else<span class="cov0" title="0"> if jm.disabledJobs.Contains(jobName) </span><span class="cov0" title="0">{
                         status.State = StateDisabled
-                }</span><span class="cov0" title="0"> else {
+                }</span> else<span class="cov0" title="0"> {
                         status.State = StateEnabled
                 }</span>
 
@@ -4385,21 +4385,21 @@ func (o OnTheQuarterHour) GetNextRunTime(after *time.Time) *time.Time <span clas
                 now := Now()
                 if now.Minute() &gt;= 45 </span><span class="cov0" title="0">{
                         returnValue = time.Date(now.Year(), now.Month(), now.Day(), now.Hour(), 45, 0, 0, time.UTC).Add(15 * time.Minute)
-                }</span><span class="cov0" title="0"> else if now.Minute() &gt;= 30 </span><span class="cov0" title="0">{
+                }</span> else<span class="cov0" title="0"> if now.Minute() &gt;= 30 </span><span class="cov0" title="0">{
                         returnValue = time.Date(now.Year(), now.Month(), now.Day(), now.Hour(), 30, 0, 0, time.UTC).Add(15 * time.Minute)
-                }</span><span class="cov0" title="0"> else if now.Minute() &gt;= 15 </span><span class="cov0" title="0">{
+                }</span> else<span class="cov0" title="0"> if now.Minute() &gt;= 15 </span><span class="cov0" title="0">{
                         returnValue = time.Date(now.Year(), now.Month(), now.Day(), now.Hour(), 15, 0, 0, time.UTC).Add(15 * time.Minute)
-                }</span><span class="cov0" title="0"> else {
+                }</span> else<span class="cov0" title="0"> {
                         returnValue = time.Date(now.Year(), now.Month(), now.Day(), now.Hour(), 0, 0, 0, time.UTC).Add(15 * time.Minute)
                 }</span>
-        }<span class="cov0" title="0"> else {
+        } else<span class="cov0" title="0"> {
                 if after.Minute() &gt;= 45 </span><span class="cov0" title="0">{
                         returnValue = time.Date(after.Year(), after.Month(), after.Day(), after.Hour(), 45, 0, 0, time.UTC).Add(15 * time.Minute)
-                }</span><span class="cov0" title="0"> else if after.Minute() &gt;= 30 </span><span class="cov0" title="0">{
+                }</span> else<span class="cov0" title="0"> if after.Minute() &gt;= 30 </span><span class="cov0" title="0">{
                         returnValue = time.Date(after.Year(), after.Month(), after.Day(), after.Hour(), 30, 0, 0, time.UTC).Add(15 * time.Minute)
-                }</span><span class="cov0" title="0"> else if after.Minute() &gt;= 15 </span><span class="cov0" title="0">{
+                }</span> else<span class="cov0" title="0"> if after.Minute() &gt;= 15 </span><span class="cov0" title="0">{
                         returnValue = time.Date(after.Year(), after.Month(), after.Day(), after.Hour(), 15, 0, 0, time.UTC).Add(15 * time.Minute)
-                }</span><span class="cov0" title="0"> else {
+                }</span> else<span class="cov0" title="0"> {
                         returnValue = time.Date(after.Year(), after.Month(), after.Day(), after.Hour(), 0, 0, 0, time.UTC).Add(15 * time.Minute)
                 }</span>
         }
@@ -4418,7 +4418,7 @@ func (o OnTheHour) GetNextRunTime(after *time.Time) *time.Time <span class="cov0
                 if returnValue.Before(now) </span><span class="cov0" title="0">{
                         returnValue = returnValue.Add(time.Hour)
                 }</span>
-        }<span class="cov0" title="0"> else {
+        } else<span class="cov0" title="0"> {
                 returnValue = time.Date(after.Year(), after.Month(), after.Day(), after.Hour(), 0, 0, 0, time.UTC).Add(1 * time.Hour)
         }</span>
         <span class="cov0" title="0">return &amp;returnValue</span>
@@ -4435,10 +4435,10 @@ func (o OnTheHourAt) GetNextRunTime(after *time.Time) *time.Time <span class="co
         now := Now()
         if after == nil </span><span class="cov8" title="1">{
                 returnValue = time.Date(now.Year(), now.Month(), now.Day(), now.Hour(), o.Minute, 0, 0, time.UTC)
-                if returnValue.Before(now) </span><span class="cov0" title="0">{
+                if returnValue.Before(now) </span><span class="cov8" title="1">{
                         returnValue = returnValue.Add(time.Hour)
                 }</span>
-        }<span class="cov8" title="1"> else {
+        } else<span class="cov8" title="1"> {
                 returnValue = time.Date(after.Year(), after.Month(), after.Day(), after.Hour(), o.Minute, 0, 0, time.UTC)
                 if returnValue.Before(*after) </span><span class="cov8" title="1">{
                         returnValue = returnValue.Add(time.Hour)
@@ -4834,7 +4834,7 @@ func (c Column) SetValue(object interface{}, value interface{}) error <span clas
         <span class="cov8" title="1">if valueReflected.Type().AssignableTo(fieldType) </span><span class="cov8" title="1">{
                 if field.Kind() == reflect.Ptr &amp;&amp; valueReflected.CanAddr() </span><span class="cov0" title="0">{
                         field.Set(valueReflected.Addr())
-                }</span><span class="cov8" title="1"> else {
+                }</span> else<span class="cov8" title="1"> {
                         field.Set(valueReflected)
                 }</span>
                 <span class="cov8" title="1">return nil</span>
@@ -4844,7 +4844,7 @@ func (c Column) SetValue(object interface{}, value interface{}) error <span clas
                 if valueReflected.CanAddr() </span><span class="cov8" title="1">{
                         if fieldType.Elem() == valueReflected.Type() </span><span class="cov8" title="1">{
                                 field.Set(valueReflected.Addr())
-                        }</span><span class="cov0" title="0"> else {
+                        }</span> else<span class="cov0" title="0"> {
                                 convertedValue := valueReflected.Convert(fieldType.Elem())
                                 if convertedValue.CanAddr() </span><span class="cov0" title="0">{
                                         field.Set(convertedValue.Addr())
@@ -5183,7 +5183,7 @@ func (cc ColumnCollection) ColumnNames() []string <span class="cov8" title="1">{
                 c := cc.columns[x]
                 if len(cc.columnPrefix) != 0 </span><span class="cov0" title="0">{
                         names[x] = fmt.Sprintf("%s%s", cc.columnPrefix, c.ColumnName)
-                }</span><span class="cov8" title="1"> else {
+                }</span> else<span class="cov8" title="1"> {
                         names[x] = c.ColumnName
                 }</span>
         }
@@ -5214,7 +5214,7 @@ func (cc ColumnCollection) ColumnNamesFromAlias(tableAlias string) []string <spa
                 c := cc.columns[x]
                 if len(cc.columnPrefix) != 0 </span><span class="cov0" title="0">{
                         names[x] = fmt.Sprintf("%s.%s as %s%s", tableAlias, c.ColumnName, cc.columnPrefix, c.ColumnName)
-                }</span><span class="cov0" title="0"> else {
+                }</span> else<span class="cov0" title="0"> {
                         names[x] = fmt.Sprintf("%s.%s", tableAlias, c.ColumnName)
                 }</span>
         }
@@ -5228,7 +5228,7 @@ func (cc ColumnCollection) ColumnNamesCSVFromAlias(tableAlias string) string <sp
                 c := cc.columns[x]
                 if len(cc.columnPrefix) != 0 </span><span class="cov0" title="0">{
                         names[x] = fmt.Sprintf("%s.%s as %s%s", tableAlias, c.ColumnName, cc.columnPrefix, c.ColumnName)
-                }</span><span class="cov0" title="0"> else {
+                }</span> else<span class="cov0" title="0"> {
                         names[x] = fmt.Sprintf("%s.%s", tableAlias, c.ColumnName)
                 }</span>
         }
@@ -5247,7 +5247,7 @@ func (cc ColumnCollection) ColumnValues(instance interface{}) []interface{} <spa
                         toSerialize := valueField.Interface()
                         jsonBytes, _ := json.Marshal(toSerialize)
                         values[x] = string(jsonBytes)
-                }</span><span class="cov8" title="1"> else {
+                }</span> else<span class="cov8" title="1"> {
                         values[x] = valueField.Interface()
                 }</span>
         }
@@ -5363,15 +5363,15 @@ func NewConfigFromDSN(dsn string) (*Config, error) <span class="cov8" title="1">
         for _, piece := range pieces </span><span class="cov8" title="1">{
                 if strings.HasPrefix(piece, "host=") </span><span class="cov8" title="1">{
                         config.Host = strings.TrimPrefix(piece, "host=")
-                }</span><span class="cov8" title="1"> else if strings.HasPrefix(piece, "port=") </span><span class="cov8" title="1">{
+                }</span> else<span class="cov8" title="1"> if strings.HasPrefix(piece, "port=") </span><span class="cov8" title="1">{
                         config.Port = strings.TrimPrefix(piece, "port=")
-                }</span><span class="cov8" title="1"> else if strings.HasPrefix(piece, "dbname=") </span><span class="cov8" title="1">{
+                }</span> else<span class="cov8" title="1"> if strings.HasPrefix(piece, "dbname=") </span><span class="cov8" title="1">{
                         config.Database = strings.TrimPrefix(piece, "dbname=")
-                }</span><span class="cov8" title="1"> else if strings.HasPrefix(piece, "user=") </span><span class="cov0" title="0">{
+                }</span> else<span class="cov8" title="1"> if strings.HasPrefix(piece, "user=") </span><span class="cov0" title="0">{
                         config.Username = strings.TrimPrefix(piece, "user=")
-                }</span><span class="cov8" title="1"> else if strings.HasPrefix(piece, "password=") </span><span class="cov0" title="0">{
+                }</span> else<span class="cov8" title="1"> if strings.HasPrefix(piece, "password=") </span><span class="cov0" title="0">{
                         config.Password = strings.TrimPrefix(piece, "password=")
-                }</span><span class="cov8" title="1"> else if strings.HasPrefix(piece, "sslmode=") </span><span class="cov8" title="1">{
+                }</span> else<span class="cov8" title="1"> if strings.HasPrefix(piece, "sslmode=") </span><span class="cov8" title="1">{
                         config.SSLMode = strings.TrimPrefix(piece, "sslmode=")
                 }</span>
         }
@@ -6341,7 +6341,7 @@ func (i *Invocation) Get(object DatabaseMapped, ids ...interface{}) (err error) 
         var queryErr error
         if i.ctx != nil </span><span class="cov0" title="0">{
                 rows, queryErr = stmt.QueryContext(i.ctx, ids...)
-        }</span><span class="cov8" title="1"> else {
+        }</span> else<span class="cov8" title="1"> {
                 rows, queryErr = stmt.Query(ids...)
         }</span>
 
@@ -6361,7 +6361,7 @@ func (i *Invocation) Get(object DatabaseMapped, ids ...interface{}) (err error) 
         if rows.Next() </span><span class="cov8" title="1">{
                 if isPopulatable(object) </span><span class="cov8" title="1">{
                         popErr = asPopulatable(object).Populate(rows)
-                }</span><span class="cov8" title="1"> else {
+                }</span> else<span class="cov8" title="1"> {
                         popErr = PopulateInOrder(object, rows, standardCols)
                 }</span>
 
@@ -6424,7 +6424,7 @@ func (i *Invocation) GetAll(collection interface{}) (err error) <span class="cov
         var queryErr error
         if i.ctx != nil </span><span class="cov0" title="0">{
                 rows, queryErr = stmt.QueryContext(i.ctx)
-        }</span><span class="cov8" title="1"> else {
+        }</span> else<span class="cov8" title="1"> {
                 rows, queryErr = stmt.Query()
         }</span>
         <span class="cov8" title="1">if queryErr != nil </span><span class="cov0" title="0">{
@@ -6450,7 +6450,7 @@ func (i *Invocation) GetAll(collection interface{}) (err error) <span class="cov
 
                 if isPopulatable </span><span class="cov8" title="1">{
                         popErr = asPopulatable(newObj).Populate(rows)
-                }</span><span class="cov0" title="0"> else {
+                }</span> else<span class="cov0" title="0"> {
                         popErr = PopulateInOrder(newObj, rows, meta)
                         if popErr != nil </span><span class="cov0" title="0">{
                                 err = exception.Wrap(popErr)
@@ -6529,7 +6529,7 @@ func (i *Invocation) Create(object DatabaseMapped) (err error) <span class="cov8
         if serials.Len() == 0 </span><span class="cov0" title="0">{
                 if i.ctx != nil </span><span class="cov0" title="0">{
                         _, execErr = stmt.ExecContext(i.ctx, colValues...)
-                }</span><span class="cov0" title="0"> else {
+                }</span> else<span class="cov0" title="0"> {
                         _, execErr = stmt.Exec(colValues...)
                 }</span>
 
@@ -6538,13 +6538,13 @@ func (i *Invocation) Create(object DatabaseMapped) (err error) <span class="cov8
                         i.invalidateCachedStatement()
                         return
                 }</span>
-        }<span class="cov8" title="1"> else {
+        } else<span class="cov8" title="1"> {
                 serial := serials.FirstOrDefault()
 
                 var id interface{}
                 if i.ctx != nil </span><span class="cov0" title="0">{
                         execErr = stmt.QueryRowContext(i.ctx, colValues...).Scan(&amp;id)
-                }</span><span class="cov8" title="1"> else {
+                }</span> else<span class="cov8" title="1"> {
                         execErr = stmt.QueryRow(colValues...).Scan(&amp;id)
                 }</span>
 
@@ -6639,7 +6639,7 @@ func (i *Invocation) CreateIfNotExists(object DatabaseMapped) (err error) <span 
         if serials.Len() == 0 </span><span class="cov8" title="1">{
                 if i.ctx != nil </span><span class="cov0" title="0">{
                         _, execErr = stmt.ExecContext(i.ctx, colValues...)
-                }</span><span class="cov8" title="1"> else {
+                }</span> else<span class="cov8" title="1"> {
                         _, execErr = stmt.Exec(colValues...)
                 }</span>
                 <span class="cov8" title="1">if execErr != nil </span><span class="cov0" title="0">{
@@ -6647,13 +6647,13 @@ func (i *Invocation) CreateIfNotExists(object DatabaseMapped) (err error) <span 
                         i.invalidateCachedStatement()
                         return
                 }</span>
-        }<span class="cov0" title="0"> else {
+        } else<span class="cov0" title="0"> {
                 serial := serials.FirstOrDefault()
 
                 var id interface{}
                 if i.ctx != nil </span><span class="cov0" title="0">{
                         execErr = stmt.QueryRowContext(i.ctx, colValues...).Scan(&amp;id)
-                }</span><span class="cov0" title="0"> else {
+                }</span> else<span class="cov0" title="0"> {
                         execErr = stmt.QueryRow(colValues...).Scan(&amp;id)
                 }</span>
 
@@ -6815,7 +6815,7 @@ func (i *Invocation) Update(object DatabaseMapped) (err error) <span class="cov8
         <span class="cov8" title="1">var execErr error
         if i.ctx != nil </span><span class="cov0" title="0">{
                 _, execErr = stmt.ExecContext(i.ctx, updateValues...)
-        }</span><span class="cov8" title="1"> else {
+        }</span> else<span class="cov8" title="1"> {
                 _, execErr = stmt.Exec(updateValues...)
         }</span>
         <span class="cov8" title="1">if execErr != nil </span><span class="cov0" title="0">{
@@ -6883,7 +6883,7 @@ func (i *Invocation) Exists(object DatabaseMapped) (exists bool, err error) <spa
         var queryErr error
         if i.ctx != nil </span><span class="cov0" title="0">{
                 rows, queryErr = stmt.QueryContext(i.ctx, pkValues...)
-        }</span><span class="cov8" title="1"> else {
+        }</span> else<span class="cov8" title="1"> {
                 rows, queryErr = stmt.Query(pkValues...)
         }</span>
         <span class="cov8" title="1">defer func() </span><span class="cov8" title="1">{
@@ -6959,7 +6959,7 @@ func (i *Invocation) Delete(object DatabaseMapped) (err error) <span class="cov8
         var execErr error
         if i.ctx != nil </span><span class="cov0" title="0">{
                 _, execErr = stmt.ExecContext(i.ctx, pkValues...)
-        }</span><span class="cov8" title="1"> else {
+        }</span> else<span class="cov8" title="1"> {
                 _, execErr = stmt.Exec(pkValues...)
         }</span>
         <span class="cov8" title="1">if execErr != nil </span><span class="cov0" title="0">{
@@ -7003,7 +7003,7 @@ func (i *Invocation) Truncate(object DatabaseMapped) (err error) <span class="co
         <span class="cov8" title="1">var execErr error
         if i.ctx != nil </span><span class="cov0" title="0">{
                 _, execErr = stmt.ExecContext(i.ctx)
-        }</span><span class="cov8" title="1"> else {
+        }</span> else<span class="cov8" title="1"> {
                 _, execErr = stmt.Exec()
         }</span>
 
@@ -7109,7 +7109,7 @@ func (i *Invocation) Upsert(object DatabaseMapped) (err error) <span class="cov8
                 var id interface{}
                 if i.ctx != nil </span><span class="cov0" title="0">{
                         execErr = stmt.QueryRowContext(i.ctx, colValues...).Scan(&amp;id)
-                }</span><span class="cov8" title="1"> else {
+                }</span> else<span class="cov8" title="1"> {
                         execErr = stmt.QueryRow(colValues...).Scan(&amp;id)
                 }</span>
                 <span class="cov8" title="1">if execErr != nil </span><span class="cov0" title="0">{
@@ -7122,10 +7122,10 @@ func (i *Invocation) Upsert(object DatabaseMapped) (err error) <span class="cov8
                         err = exception.Wrap(setErr)
                         return
                 }</span>
-        }<span class="cov8" title="1"> else {
+        } else<span class="cov8" title="1"> {
                 if i.ctx != nil </span><span class="cov0" title="0">{
                         _, execErr = stmt.ExecContext(i.ctx, colValues...)
-                }</span><span class="cov8" title="1"> else {
+                }</span> else<span class="cov8" title="1"> {
                         _, execErr = stmt.Exec(colValues...)
                 }</span>
                 <span class="cov8" title="1">if execErr != nil </span><span class="cov0" title="0">{
@@ -7323,7 +7323,7 @@ func (dfr *DataFileReader) Test(c *db.Connection, optionalTx ...*sql.Tx) (err er
                 }</span>
                 <span class="cov0" title="0">if err == nil </span><span class="cov0" title="0">{
                         dfr.logger.Applyf(dfr, "done")
-                }</span><span class="cov0" title="0"> else {
+                }</span> else<span class="cov0" title="0"> {
                         dfr.logger.Error(dfr, err)
                 }</span>
                 <span class="cov0" title="0">tx.Rollback()</span>
@@ -7345,7 +7345,7 @@ func (dfr *DataFileReader) Apply(c *db.Connection, optionalTx ...*sql.Tx) (err e
                 <span class="cov0" title="0">if err == nil </span><span class="cov0" title="0">{
                         tx.Commit()
                         dfr.logger.Applyf(dfr, "done")
-                }</span><span class="cov0" title="0"> else {
+                }</span> else<span class="cov0" title="0"> {
                         tx.Rollback()
                         dfr.logger.Error(dfr, err)
                 }</span>
@@ -7471,7 +7471,7 @@ func (dfr *DataFileReader) extractDataLine(line string) []interface{} <span clas
         appendValue := func() </span><span class="cov0" title="0">{
                 if value == `\N` </span><span class="cov0" title="0">{
                         values = append(values, nil)
-                }</span><span class="cov0" title="0"> else {
+                }</span> else<span class="cov0" title="0"> {
                         values = append(values, value)
                 }</span>
         }
@@ -7955,7 +7955,7 @@ func (g *Group) invoke(isTest bool, m Migration, c *db.Connection, optionalTx ..
         <span class="cov0" title="0">defer func() </span><span class="cov0" title="0">{
                 if err == nil </span><span class="cov0" title="0">{
                         err = exception.Wrap(tx.Commit())
-                }</span><span class="cov0" title="0"> else {
+                }</span> else<span class="cov0" title="0"> {
                         err = exception.Nest(err, exception.New(tx.Rollback()))
                 }</span>
         }()
@@ -8141,7 +8141,7 @@ func guardImpl1(s *Step, verb, noun string, guard guard1, subject string, c *db.
 
         if exists, err := guard(c, tx, subject); err != nil </span><span class="cov0" title="0">{
                 return s.logger.Error(s, err)
-        }</span><span class="cov8" title="1"> else if (verb == verbCreate &amp;&amp; !exists) ||
+        }</span> else<span class="cov8" title="1"> if (verb == verbCreate &amp;&amp; !exists) ||
                 (verb == verbAlter &amp;&amp; exists) ||
                 (verb == verbRun &amp;&amp; exists) </span><span class="cov8" title="1">{
                 err = s.body.Invoke(c, tx)
@@ -8158,7 +8158,7 @@ func guardImpl2(s *Step, verb, noun string, guard guard2, subject1, subject2 str
 
         if exists, err := guard(c, tx, subject1, subject2); err != nil </span><span class="cov0" title="0">{
                 return s.logger.Error(s, err)
-        }</span><span class="cov8" title="1"> else if (verb == verbCreate &amp;&amp; !exists) || (verb == verbAlter &amp;&amp; exists) || (verb == verbRun &amp;&amp; exists) </span><span class="cov8" title="1">{
+        }</span> else<span class="cov8" title="1"> if (verb == verbCreate &amp;&amp; !exists) || (verb == verbAlter &amp;&amp; exists) || (verb == verbRun &amp;&amp; exists) </span><span class="cov8" title="1">{
                 err = s.body.Invoke(c, tx)
                 if err != nil </span><span class="cov0" title="0">{
                         return s.logger.Error(s, err)
@@ -8482,10 +8482,10 @@ func PopulateByName(object interface{}, row *sql.Rows, cols *ColumnCollection) e
                         if col.IsJSON </span><span class="cov0" title="0">{
                                 str := ""
                                 values[i] = &amp;str
-                        }</span><span class="cov0" title="0"> else {
+                        }</span> else<span class="cov0" title="0"> {
                                 values[i] = reflect.New(reflect.PtrTo(col.FieldType)).Interface()
                         }</span>
-                }<span class="cov0" title="0"> else {
+                } else<span class="cov0" title="0"> {
                         var value interface{}
                         values[i] = &amp;value
                 }</span>
@@ -8522,19 +8522,19 @@ func PopulateInOrder(object DatabaseMapped, row *sql.Rows, cols *ColumnCollectio
                         if col.IsJSON </span><span class="cov0" title="0">{
                                 str := ""
                                 values[i] = &amp;str
-                        }</span><span class="cov0" title="0"> else {
+                        }</span> else<span class="cov0" title="0"> {
                                 blankPtr := reflect.New(reflect.PtrTo(col.FieldType))
                                 if blankPtr.CanAddr() </span><span class="cov0" title="0">{
                                         values[i] = blankPtr.Addr()
-                                }</span><span class="cov0" title="0"> else {
+                                }</span> else<span class="cov0" title="0"> {
                                         values[i] = blankPtr.Interface()
                                 }</span>
                         }
-                }<span class="cov8" title="1"> else {
+                } else<span class="cov8" title="1"> {
                         if col.IsJSON </span><span class="cov0" title="0">{
                                 str := ""
                                 values[i] = &amp;str
-                        }</span><span class="cov8" title="1"> else {
+                        }</span> else<span class="cov8" title="1"> {
                                 values[i] = reflect.New(reflect.PtrTo(col.FieldType)).Interface()
                         }</span>
                 }
@@ -8622,7 +8622,7 @@ func (q *Query) Execute() (stmt *sql.Stmt, rows *sql.Rows, err error) <span clas
         var stmtErr error
         if q.shouldCacheStatement() </span><span class="cov8" title="1">{
                 stmt, stmtErr = q.conn.PrepareCached(q.statementLabel, q.statement, q.tx)
-        }</span><span class="cov8" title="1"> else {
+        }</span> else<span class="cov8" title="1"> {
                 stmt, stmtErr = q.conn.Prepare(q.statement, q.tx)
         }</span>
 
@@ -8638,7 +8638,7 @@ func (q *Query) Execute() (stmt *sql.Stmt, rows *sql.Rows, err error) <span clas
                 if r := recover(); r != nil </span><span class="cov0" title="0">{
                         if q.conn.useStatementCache </span><span class="cov0" title="0">{
                                 err = exception.Nest(err, exception.New(r))
-                        }</span><span class="cov0" title="0"> else {
+                        }</span> else<span class="cov0" title="0"> {
                                 err = exception.Nest(err, exception.New(r), stmt.Close())
                         }</span>
                 }
@@ -8647,7 +8647,7 @@ func (q *Query) Execute() (stmt *sql.Stmt, rows *sql.Rows, err error) <span clas
         <span class="cov8" title="1">var queryErr error
         if q.ctx != nil </span><span class="cov0" title="0">{
                 rows, queryErr = stmt.QueryContext(q.ctx, q.args...)
-        }</span><span class="cov8" title="1"> else {
+        }</span> else<span class="cov8" title="1"> {
                 rows, queryErr = stmt.Query(q.args...)
         }</span>
 
@@ -8758,7 +8758,7 @@ func (q *Query) Out(object interface{}) (err error) <span class="cov0" title="0"
         if q.rows.Next() </span><span class="cov0" title="0">{
                 if populatable, isPopulatable := object.(Populatable); isPopulatable </span><span class="cov0" title="0">{
                         popErr = populatable.Populate(q.rows)
-                }</span><span class="cov0" title="0"> else {
+                }</span> else<span class="cov0" title="0"> {
                         popErr = PopulateByName(object, q.rows, columnMeta)
                 }</span>
                 <span class="cov0" title="0">if popErr != nil </span><span class="cov0" title="0">{
@@ -8807,7 +8807,7 @@ func (q *Query) OutMany(collection interface{}) (err error) <span class="cov8" t
 
                 if isPopulatable </span><span class="cov8" title="1">{
                         popErr = asPopulatable(newObj).Populate(q.rows)
-                }</span><span class="cov0" title="0"> else {
+                }</span> else<span class="cov0" title="0"> {
                         popErr = PopulateByName(newObj, q.rows, meta)
                 }</span>
 
@@ -9662,9 +9662,9 @@ func (ev Vars) ReadInto(obj interface{}) error <span class="cov8" title="1">{
                                 for y := 1; y &lt; len(pieces); y++ </span><span class="cov8" title="1">{
                                         if pieces[y] == FieldFlagCSV </span><span class="cov8" title="1">{
                                                 csv = true
-                                        }</span><span class="cov8" title="1"> else if pieces[y] == FieldFlagBase64 </span><span class="cov8" title="1">{
+                                        }</span> else<span class="cov8" title="1"> if pieces[y] == FieldFlagBase64 </span><span class="cov8" title="1">{
                                                 base64 = true
-                                        }</span><span class="cov8" title="1"> else if pieces[y] == FieldFlagBytes </span><span class="cov8" title="1">{
+                                        }</span> else<span class="cov8" title="1"> if pieces[y] == FieldFlagBytes </span><span class="cov8" title="1">{
                                                 bytes = true
                                         }</span>
                                 }
@@ -9676,21 +9676,21 @@ func (ev Vars) ReadInto(obj interface{}) error <span class="cov8" title="1">{
 
                         <span class="cov8" title="1">if csv </span><span class="cov8" title="1">{
                                 envValue = ev.CSV(envVar)
-                        }</span><span class="cov8" title="1"> else if base64 </span><span class="cov8" title="1">{
+                        }</span> else<span class="cov8" title="1"> if base64 </span><span class="cov8" title="1">{
                                 envValue, err = ev.Base64(envVar)
                                 if err != nil </span><span class="cov0" title="0">{
                                         return err
                                 }</span>
-                        }<span class="cov8" title="1"> else if bytes </span><span class="cov8" title="1">{
+                        } else<span class="cov8" title="1"> if bytes </span><span class="cov8" title="1">{
                                 envValue = ev.Bytes(envVar)
-                        }</span><span class="cov8" title="1"> else {
+                        }</span> else<span class="cov8" title="1"> {
                                 // infer the type.
                                 fieldType := util.Reflection.FollowType(field.Type)
                                 switch fieldType </span>{
                                 case typeBool:<span class="cov8" title="1">
                                         if ev.Has(envVar) </span><span class="cov8" title="1">{
                                                 envValue = ev.Bool(envVar)
-                                        }</span><span class="cov0" title="0"> else {
+                                        }</span> else<span class="cov0" title="0"> {
                                                 continue</span>
                                         }
                                 case typeFloat32, typeFloat64:<span class="cov8" title="1">
@@ -9790,7 +9790,7 @@ func Nest(err ...error) Exception <span class="cov8" title="1">{
                                         class: e.Error(),
                                         stack: callers(),
                                 }
-                        }</span><span class="cov8" title="1"> else {
+                        }</span> else<span class="cov8" title="1"> {
                                 wrappedEx = typedEx
                         }</span>
 
@@ -9798,7 +9798,7 @@ func Nest(err ...error) Exception <span class="cov8" title="1">{
                                 if ex == nil </span><span class="cov8" title="1">{
                                         ex = wrappedEx
                                         last = wrappedEx
-                                }</span><span class="cov0" title="0"> else {
+                                }</span> else<span class="cov0" title="0"> {
                                         last.inner = wrappedEx
                                         last = wrappedEx
                                 }</span>
@@ -9869,13 +9869,13 @@ func (e *Ex) Format(s fmt.State, verb rune) <span class="cov8" title="1">{
                                 if len(e.message) &gt; 0 </span><span class="cov0" title="0">{
                                         fmt.Fprintf(s, "\nmessage: %s", e.message)
                                 }</span>
-                        }<span class="cov0" title="0"> else if len(e.message) &gt; 0 </span><span class="cov0" title="0">{
+                        } else<span class="cov0" title="0"> if len(e.message) &gt; 0 </span><span class="cov0" title="0">{
                                 io.WriteString(s, e.message)
                         }</span>
 
                         <span class="cov0" title="0">e.stack.Format(s, verb)
                         return</span>
-                }<span class="cov8" title="1"> else if s.Flag('-') </span><span class="cov0" title="0">{
+                } else<span class="cov8" title="1"> if s.Flag('-') </span><span class="cov0" title="0">{
                         e.stack.Format(s, verb)
                         return
                 }</span>
@@ -9885,7 +9885,7 @@ func (e *Ex) Format(s fmt.State, verb rune) <span class="cov8" title="1">{
                         if len(e.message) &gt; 0 </span><span class="cov8" title="1">{
                                 fmt.Fprintf(s, "\nmessage: %s", e.message)
                         }</span>
-                }<span class="cov8" title="1"> else if len(e.message) &gt; 0 </span><span class="cov8" title="1">{
+                } else<span class="cov8" title="1"> if len(e.message) &gt; 0 </span><span class="cov8" title="1">{
                         io.WriteString(s, e.message)
                 }</span>
                 <span class="cov8" title="1">return</span>
@@ -9912,7 +9912,7 @@ func (e *Ex) Decompose() map[string]interface{} <span class="cov8" title="1">{
         <span class="cov8" title="1">if e.inner != nil </span><span class="cov0" title="0">{
                 if typed, isTyped := e.inner.(*Ex); isTyped </span><span class="cov0" title="0">{
                         values["Inner"] = typed.Decompose()
-                }</span><span class="cov0" title="0"> else {
+                }</span> else<span class="cov0" title="0"> {
                         values["Inner"] = e.inner.Error()
                 }</span>
         }
@@ -10131,7 +10131,7 @@ func (f Frame) Format(s fmt.State, verb rune) <span class="cov8" title="1">{
                         fn := runtime.FuncForPC(pc)
                         if fn == nil </span><span class="cov0" title="0">{
                                 io.WriteString(s, "unknown")
-                        }</span><span class="cov8" title="1"> else {
+                        }</span> else<span class="cov8" title="1"> {
                                 file, _ := fn.FileLine(pc)
                                 fname := fn.Name()
                                 fmt.Fprintf(s, "%s\n\t%s", fname, trimGOPATH(fname, file))
@@ -10988,7 +10988,7 @@ func (e *ErrorEvent) WriteJSON() JSONObj <span class="cov8" title="1">{
         var errorJSON Any
         if _, ok := e.err.(json.Marshaler); ok </span><span class="cov8" title="1">{
                 errorJSON = e.err
-        }</span><span class="cov8" title="1"> else {
+        }</span> else<span class="cov8" title="1"> {
                 errorJSON = e.err.Error()
         }</span>
         <span class="cov8" title="1">return JSONObj{
@@ -11190,7 +11190,7 @@ func NewFlagSetFromValues(flags ...string) *FlagSet <span class="cov8" title="1"
                 <span class="cov8" title="1">if strings.HasPrefix(string(parsedFlag), "-") </span><span class="cov8" title="1">{
                         flag := Flag(strings.TrimPrefix(string(parsedFlag), "-"))
                         flagSet.flags[flag] = false
-                }</span><span class="cov8" title="1"> else {
+                }</span> else<span class="cov8" title="1"> {
                         flagSet.flags[parsedFlag] = true
                 }</span>
         }
@@ -11274,7 +11274,7 @@ func (efs FlagSet) String() string <span class="cov0" title="0">{
                                 if !efs.all </span><span class="cov0" title="0">{
                                         flags = append(flags, string(key))
                                 }</span>
-                        }<span class="cov0" title="0"> else {
+                        } else<span class="cov0" title="0"> {
                                 flags = append(flags, "-"+string(key))
                         }</span>
                 }
@@ -11665,13 +11665,13 @@ func (l *Logger) WithFlagsFromEnv() *Logger <span class="cov0" title="0">{
 
         if l.flags != nil </span><span class="cov0" title="0">{
                 l.flags.CoalesceWith(NewFlagSetFromEnv())
-        }</span><span class="cov0" title="0"> else {
+        }</span> else<span class="cov0" title="0"> {
                 l.flags = NewFlagSetFromEnv()
         }</span>
 
         <span class="cov0" title="0">if l.hiddenFlags != nil </span><span class="cov0" title="0">{
                 l.hiddenFlags.CoalesceWith(NewHiddenFlagSetFromEnv())
-        }</span><span class="cov0" title="0"> else {
+        }</span> else<span class="cov0" title="0"> {
                 l.hiddenFlags = NewHiddenFlagSetFromEnv()
         }</span>
         <span class="cov0" title="0">return l</span>
@@ -11692,7 +11692,7 @@ func (l *Logger) Enable(flags ...Flag) <span class="cov8" title="1">{
                 for _, flag := range flags </span><span class="cov8" title="1">{
                         l.flags.Enable(flag)
                 }</span>
-        }<span class="cov0" title="0"> else {
+        } else<span class="cov0" title="0"> {
                 l.flags = NewFlagSet(flags...)
         }</span>
 }
@@ -11733,7 +11733,7 @@ func (l *Logger) Hide(flags ...Flag) <span class="cov0" title="0">{
                 for _, flag := range flags </span><span class="cov0" title="0">{
                         l.hiddenFlags.Enable(flag)
                 }</span>
-        }<span class="cov0" title="0"> else {
+        } else<span class="cov0" title="0"> {
                 l.hiddenFlags = NewFlagSet(flags...)
         }</span>
 }
@@ -11808,7 +11808,7 @@ func (l *Logger) Listen(flag Flag, listenerName string, listener Listener) <span
         <span class="cov8" title="1">w := NewWorker(l, listener).WithRecoverPanics(l.recoverPanics)
         if listeners, hasListeners := l.workers[flag]; hasListeners </span><span class="cov8" title="1">{
                 listeners[listenerName] = w
-        }</span><span class="cov8" title="1"> else {
+        }</span> else<span class="cov8" title="1"> {
                 l.workers[flag] = map[string]*Worker{
                         listenerName: w,
                 }
@@ -11903,7 +11903,7 @@ func (l *Logger) trigger(async bool, e Event) <span class="cov8" title="1">{
                                 for _, worker := range workers </span><span class="cov8" title="1">{
                                         if async </span><span class="cov8" title="1">{
                                                 worker.Work &lt;- e
-                                        }</span><span class="cov8" title="1"> else {
+                                        }</span> else<span class="cov8" title="1"> {
                                                 worker.Listener(e)
                                         }</span>
                                 }
@@ -11924,13 +11924,13 @@ func (l *Logger) trigger(async bool, e Event) <span class="cov8" title="1">{
                 <span class="cov8" title="1">if typed, isTyped := e.(EventError); isTyped &amp;&amp; typed.IsError() </span><span class="cov8" title="1">{
                         if async </span><span class="cov8" title="1">{
                                 l.writeErrorWorker.Work &lt;- e
-                        }</span><span class="cov8" title="1"> else {
+                        }</span> else<span class="cov8" title="1"> {
                                 l.WriteError(e)
                         }</span>
-                }<span class="cov8" title="1"> else {
+                } else<span class="cov8" title="1"> {
                         if async </span><span class="cov8" title="1">{
                                 l.writeWorker.Work &lt;- e
-                        }</span><span class="cov8" title="1"> else {
+                        }</span> else<span class="cov8" title="1"> {
                                 l.Write(e)
                         }</span>
                 }
@@ -12901,17 +12901,17 @@ func (wr *TextWriter) write(output io.Writer, e Event) error <span class="cov8" 
         <span class="cov8" title="1">if typed, isTyped := e.(FlagTextColorProvider); isTyped </span><span class="cov8" title="1">{
                 if flagColor := typed.FlagTextColor(); len(flagColor) &gt; 0 </span><span class="cov0" title="0">{
                         buf.WriteString(wr.FormatFlag(e.Flag(), flagColor))
-                }</span><span class="cov8" title="1"> else {
+                }</span> else<span class="cov8" title="1"> {
                         buf.WriteString(wr.FormatFlag(e.Flag(), GetFlagTextColor(e.Flag())))
                 }</span>
-        }<span class="cov8" title="1"> else {
+        } else<span class="cov8" title="1"> {
                 buf.WriteString(wr.FormatFlag(e.Flag(), GetFlagTextColor(e.Flag())))
         }</span>
         <span class="cov8" title="1">buf.WriteRune(RuneSpace)
 
         if typed, isTyped := e.(TextWritable); isTyped </span><span class="cov8" title="1">{
                 typed.WriteText(wr, buf)
-        }</span><span class="cov8" title="1"> else if typed, isTyped := e.(fmt.Stringer); isTyped </span><span class="cov8" title="1">{
+        }</span> else<span class="cov8" title="1"> if typed, isTyped := e.(fmt.Stringer); isTyped </span><span class="cov8" title="1">{
                 buf.WriteString(typed.String())
         }</span>
 
@@ -13192,7 +13192,7 @@ func UUIDv4() string <span class="cov0" title="0">{
 func ColorizeByStatusCode(statusCode int, value string) string <span class="cov0" title="0">{
         if statusCode &gt;= http.StatusOK &amp;&amp; statusCode &lt; 300 </span><span class="cov0" title="0">{ //the http 2xx range is ok
                 return ColorGreen.Apply(value)
-        }</span><span class="cov0" title="0"> else if statusCode == http.StatusInternalServerError </span><span class="cov0" title="0">{
+        }</span> else<span class="cov0" title="0"> if statusCode == http.StatusInternalServerError </span><span class="cov0" title="0">{
                 return ColorRed.Apply(value)
         }</span>
         <span class="cov0" title="0">return ColorYellow.Apply(value)</span>
@@ -13233,9 +13233,9 @@ func ParseFileSize(fileSizeValue string) (int64, error) <span class="cov0" title
 func FormatFileSize(sizeBytes int64) string <span class="cov0" title="0">{
         if sizeBytes &gt;= 1&lt;&lt;30 </span><span class="cov0" title="0">{
                 return strconv.FormatInt(sizeBytes/Gigabyte, 10) + "gb"
-        }</span><span class="cov0" title="0"> else if sizeBytes &gt;= 1&lt;&lt;20 </span><span class="cov0" title="0">{
+        }</span> else<span class="cov0" title="0"> if sizeBytes &gt;= 1&lt;&lt;20 </span><span class="cov0" title="0">{
                 return strconv.FormatInt(sizeBytes/Megabyte, 10) + "mb"
-        }</span><span class="cov0" title="0"> else if sizeBytes &gt;= 1&lt;&lt;10 </span><span class="cov0" title="0">{
+        }</span> else<span class="cov0" title="0"> if sizeBytes &gt;= 1&lt;&lt;10 </span><span class="cov0" title="0">{
                 return strconv.FormatInt(sizeBytes/Kilobyte, 10) + "kb"
         }</span>
         <span class="cov0" title="0">return strconv.FormatInt(sizeBytes, 10)</span>
@@ -13449,7 +13449,7 @@ func (e *WebRequestEvent) State() time.Duration <span class="cov0" title="0">{
 func (e *WebRequestEvent) WriteText(formatter TextFormatter, buf *bytes.Buffer) <span class="cov0" title="0">{
         if e.flag == WebRequestStart </span><span class="cov0" title="0">{
                 TextWriteRequestStart(formatter, buf, e.req)
-        }</span><span class="cov0" title="0"> else {
+        }</span> else<span class="cov0" title="0"> {
                 TextWriteRequest(formatter, buf, e.req, e.statusCode, e.contentLength, e.contentType, e.elapsed)
         }</span>
 }
@@ -14654,7 +14654,7 @@ func (p *Proxy) ServeHTTP(rw http.ResponseWriter, req *http.Request) <span class
                 if r := recover(); r != nil </span><span class="cov0" title="0">{
                         if p.log != nil </span><span class="cov0" title="0">{
                                 p.log.Fatalf("%v", r)
-                        }</span><span class="cov0" title="0"> else {
+                        }</span> else<span class="cov0" title="0"> {
                                 fmt.Fprintf(os.Stderr, "%v\n", r)
                         }</span>
                 }
@@ -14867,11 +14867,11 @@ func (u *Upstream) setDestination(req *http.Request) error <span class="cov8" ti
                 req.Host = u.URL.Host
                 req.URL.Path = u.URL.Path
                 req.URL.RawQuery = u.URL.RawQuery
-        }</span><span class="cov8" title="1"> else {
+        }</span> else<span class="cov8" title="1"> {
                 req.URL.Path = singleJoiningSlash(u.URL.Path, req.URL.Path)
                 if u.URL.RawQuery == "" || req.URL.RawQuery == "" </span><span class="cov8" title="1">{
                         req.URL.RawQuery = u.URL.RawQuery + req.URL.RawQuery
-                }</span><span class="cov0" title="0"> else {
+                }</span> else<span class="cov0" title="0"> {
                         req.URL.RawQuery = u.URL.RawQuery + "&amp;" + req.URL.RawQuery
                 }</span>
         }
@@ -15438,7 +15438,7 @@ func NewCertInfo(res *http.Response) *CertInfo <span class="cov8" title="1">{
                 var issuerCommonName string
                 if len(firstCert.Issuer.CommonName) &gt; 0 </span><span class="cov0" title="0">{
                         issuerCommonName = firstCert.Issuer.CommonName
-                }</span><span class="cov0" title="0"> else {
+                }</span> else<span class="cov0" title="0"> {
                         for _, name := range firstCert.Issuer.Names </span><span class="cov0" title="0">{
                                 if name.Type.String() == "2.5.4.3" </span><span class="cov0" title="0">{
                                         issuerCommonName = fmt.Sprintf("%v", name.Value)
@@ -16044,7 +16044,7 @@ func (hr Request) Meta() *Meta <span class="cov8" title="1">{
 func (hr Request) PostBody() []byte <span class="cov8" title="1">{
         if len(hr.Body) &gt; 0 </span><span class="cov8" title="1">{
                 return hr.Body
-        }</span><span class="cov8" title="1"> else if len(hr.PostData) &gt; 0 </span><span class="cov8" title="1">{
+        }</span> else<span class="cov8" title="1"> if len(hr.PostData) &gt; 0 </span><span class="cov8" title="1">{
                 return []byte(hr.PostData.Encode())
         }</span>
         <span class="cov8" title="1">return nil</span>
@@ -16169,7 +16169,7 @@ func (hr *Request) ExecuteWithMeta() (*ResponseMeta, error) <span class="cov0" t
                         if hr.incomingResponseHandler != nil </span><span class="cov0" title="0">{
                                 hr.logResponse(meta, hr.responseBuffer.Bytes(), hr.state)
                         }</span>
-                }<span class="cov0" title="0"> else {
+                } else<span class="cov0" title="0"> {
                         contents, err := ioutil.ReadAll(res.Body)
                         if err != nil </span><span class="cov0" title="0">{
                                 return nil, exception.Wrap(err)
@@ -16295,7 +16295,7 @@ func (hr *Request) Transport() (*http.Transport, error) <span class="cov0" title
         <span class="cov0" title="0">if hr.KeepAlive </span><span class="cov0" title="0">{
                 if hr.KeepAliveTimeout != time.Duration(0) </span><span class="cov0" title="0">{
                         dialer.KeepAlive = hr.KeepAliveTimeout
-                }</span><span class="cov0" title="0"> else {
+                }</span> else<span class="cov0" title="0"> {
                         dialer.KeepAlive = 30 * time.Second
                 }</span>
         }
@@ -16308,7 +16308,7 @@ func (hr *Request) Transport() (*http.Transport, error) <span class="cov0" title
 
                 if !isEmpty(hr.TLSClientCertPath) </span><span class="cov0" title="0">{
                         cert, err = tls.LoadX509KeyPair(hr.TLSClientCertPath, hr.TLSClientKeyPath)
-                }</span><span class="cov0" title="0"> else {
+                }</span> else<span class="cov0" title="0"> {
                         cert, err = tls.X509KeyPair(hr.TLSClientCert, hr.TLSClientKey)
                 }</span>
                 <span class="cov0" title="0">if err != nil </span><span class="cov0" title="0">{
@@ -16320,7 +16320,7 @@ func (hr *Request) Transport() (*http.Transport, error) <span class="cov0" title
                         Certificates:       []tls.Certificate{cert},
                 }
                 transport.TLSClientConfig = tlsConfig</span>
-        }<span class="cov0" title="0"> else {
+        } else<span class="cov0" title="0"> {
                 tlsConfig := &amp;tls.Config{
                         RootCAs:            hr.TLSCAPool,
                         InsecureSkipVerify: hr.TLSSkipVerify,
@@ -16378,7 +16378,7 @@ func (hr *Request) deserializeWithError(okHandler Deserializer, errorHandler Des
                         if okHandler != nil </span><span class="cov0" title="0">{
                                 err = okHandler(body)
                         }</span>
-                }<span class="cov8" title="1"> else if errorHandler != nil </span><span class="cov8" title="1">{
+                } else<span class="cov8" title="1"> if errorHandler != nil </span><span class="cov8" title="1">{
                         err = errorHandler(body)
                 }</span>
         }
@@ -16880,7 +16880,7 @@ func (p *Parser) Parse() (Selector, error) <span class="cov8" title="1">{
                                 break</span>
                         }
                         <span class="cov8" title="1">continue</span>
-                }<span class="cov8" title="1"> else {
+                } else<span class="cov8" title="1"> {
                         p.popMark()
                 }</span>
 
@@ -17949,7 +17949,7 @@ func (v *Version) Compare(other *Version) int <span class="cov8" title="1">{
                                 return -1
                         }</span>
                         <span class="cov8" title="1">break</span>
-                }<span class="cov8" title="1"> else if i &gt; lenOther-1 </span><span class="cov8" title="1">{
+                } else<span class="cov8" title="1"> if i &gt; lenOther-1 </span><span class="cov8" title="1">{
                         // this means Other had the lower specificity
                         // Check to see if the remaining segments in Self are all zeros -
                         if !allZero(segmentsSelf[i:]) </span><span class="cov8" title="1">{
@@ -17962,7 +17962,7 @@ func (v *Version) Compare(other *Version) int <span class="cov8" title="1">{
                 rhs := segmentsOther[i]
                 if lhs == rhs </span><span class="cov8" title="1">{
                         continue</span>
-                }<span class="cov8" title="1"> else if lhs &lt; rhs </span><span class="cov8" title="1">{
+                } else<span class="cov8" title="1"> if lhs &lt; rhs </span><span class="cov8" title="1">{
                         return -1
                 }</span>
                 // Otherwis, rhs was &gt; lhs, they're not equal
@@ -18018,11 +18018,11 @@ func comparePart(preSelf string, preOther string) int <span class="cov8" title="
 
         <span class="cov8" title="1">if selfNumeric &amp;&amp; !otherNumeric </span><span class="cov8" title="1">{
                 return -1
-        }</span><span class="cov8" title="1"> else if !selfNumeric &amp;&amp; otherNumeric </span><span class="cov8" title="1">{
+        }</span> else<span class="cov8" title="1"> if !selfNumeric &amp;&amp; otherNumeric </span><span class="cov8" title="1">{
                 return 1
-        }</span><span class="cov8" title="1"> else if !selfNumeric &amp;&amp; !otherNumeric &amp;&amp; preSelf &gt; preOther </span><span class="cov8" title="1">{
+        }</span> else<span class="cov8" title="1"> if !selfNumeric &amp;&amp; !otherNumeric &amp;&amp; preSelf &gt; preOther </span><span class="cov8" title="1">{
                 return 1
-        }</span><span class="cov8" title="1"> else if selfInt &gt; otherInt </span><span class="cov8" title="1">{
+        }</span> else<span class="cov8" title="1"> if selfInt &gt; otherInt </span><span class="cov8" title="1">{
                 return 1
         }</span>
 
@@ -18350,7 +18350,7 @@ func preReleaseCompare(versionA Semver, versionB Semver) int <span class="cov0" 
          * one without a PreRelease that is greater */
         if len(a) == 0 &amp;&amp; (len(b) &gt; 0) </span><span class="cov0" title="0">{
                 return 1
-        }</span><span class="cov0" title="0"> else if len(b) == 0 &amp;&amp; (len(a) &gt; 0) </span><span class="cov0" title="0">{
+        }</span> else<span class="cov0" title="0"> if len(b) == 0 &amp;&amp; (len(a) &gt; 0) </span><span class="cov0" title="0">{
                 return -1
         }</span>
 
@@ -18368,7 +18368,7 @@ func recursiveCompare(versionA []int64, versionB []int64) int <span class="cov0"
 
         if a &gt; b </span><span class="cov0" title="0">{
                 return 1
-        }</span><span class="cov0" title="0"> else if a &lt; b </span><span class="cov0" title="0">{
+        }</span> else<span class="cov0" title="0"> if a &lt; b </span><span class="cov0" title="0">{
                 return -1
         }</span>
 
@@ -18383,7 +18383,7 @@ func recursivePreReleaseCompare(versionA []string, versionB []string) int <span 
                         return -1
                 }</span>
                 <span class="cov0" title="0">return 0</span>
-        }<span class="cov0" title="0"> else if len(versionB) == 0 </span><span class="cov0" title="0">{
+        } else<span class="cov0" title="0"> if len(versionB) == 0 </span><span class="cov0" title="0">{
                 // We're longer than versionB so return 1.
                 return 1
         }</span>
@@ -18407,7 +18407,7 @@ func recursivePreReleaseCompare(versionA []string, versionB []string) int <span 
         // Numeric identifiers always have lower precedence than non-numeric identifiers.
         <span class="cov0" title="0">if aInt &amp;&amp; !bInt </span><span class="cov0" title="0">{
                 return -1
-        }</span><span class="cov0" title="0"> else if !aInt &amp;&amp; bInt </span><span class="cov0" title="0">{
+        }</span> else<span class="cov0" title="0"> if !aInt &amp;&amp; bInt </span><span class="cov0" title="0">{
                 return 1
         }</span>
 
@@ -18415,7 +18415,7 @@ func recursivePreReleaseCompare(versionA []string, versionB []string) int <span 
         <span class="cov0" title="0">if aInt &amp;&amp; bInt </span><span class="cov0" title="0">{
                 if aI &gt; bI </span><span class="cov0" title="0">{
                         return 1
-                }</span><span class="cov0" title="0"> else if aI &lt; bI </span><span class="cov0" title="0">{
+                }</span> else<span class="cov0" title="0"> if aI &lt; bI </span><span class="cov0" title="0">{
                         return -1
                 }</span>
         }
@@ -18423,7 +18423,7 @@ func recursivePreReleaseCompare(versionA []string, versionB []string) int <span 
         // Handle String Comparison
         <span class="cov0" title="0">if a &gt; b </span><span class="cov0" title="0">{
                 return 1
-        }</span><span class="cov0" title="0"> else if a &lt; b </span><span class="cov0" title="0">{
+        }</span> else<span class="cov0" title="0"> if a &lt; b </span><span class="cov0" title="0">{
                 return -1
         }</span>
 
@@ -19184,10 +19184,10 @@ func (bit *Boolean) UnmarshalJSON(data []byte) error <span class="cov8" title="1
         if asString == "1" || asString == "true" </span><span class="cov8" title="1">{
                 *bit = true
                 return nil
-        }</span><span class="cov8" title="1"> else if asString == "0" || asString == "false" </span><span class="cov8" title="1">{
+        }</span> else<span class="cov8" title="1"> if asString == "0" || asString == "false" </span><span class="cov8" title="1">{
                 *bit = false
                 return nil
-        }</span><span class="cov8" title="1"> else if len(asString) &gt; 0 &amp;&amp; (asString[0] == '"' || asString[0] == '\'') </span><span class="cov8" title="1">{
+        }</span> else<span class="cov8" title="1"> if len(asString) &gt; 0 &amp;&amp; (asString[0] == '"' || asString[0] == '\'') </span><span class="cov8" title="1">{
                 cleaned := String.StripQuotes(asString)
                 return bit.UnmarshalJSON([]byte(cleaned))
         }</span>
@@ -19924,7 +19924,7 @@ func (fu fileUtil) ReadByLines(filePath string, handler ReadLineHandler) error <
                                 return exception.Wrap(err)
                         }</span>
                 }
-        }<span class="cov0" title="0"> else {
+        } else<span class="cov0" title="0"> {
                 return exception.Wrap(err)
         }</span>
         <span class="cov8" title="1">return nil</span>
@@ -19947,7 +19947,7 @@ func (fu fileUtil) ReadByChunks(filePath string, chunkSize int, handler ReadChun
                                 return exception.Wrap(err)
                         }</span>
                 }
-        }<span class="cov0" title="0"> else {
+        } else<span class="cov0" title="0"> {
                 return exception.Wrap(err)
         }</span>
         <span class="cov8" title="1">return nil</span>
@@ -20000,9 +20000,9 @@ func (fu formatUtil) DateTimeUTC(t time.Time) string <span class="cov0" title="0
 func (fu formatUtil) FileSize(sizeBytes int) string <span class="cov0" title="0">{
         if sizeBytes &gt;= 1&lt;&lt;30 </span><span class="cov0" title="0">{
                 return fmt.Sprintf("%dgB", sizeBytes/(1&lt;&lt;30))
-        }</span><span class="cov0" title="0"> else if sizeBytes &gt;= 1&lt;&lt;20 </span><span class="cov0" title="0">{
+        }</span> else<span class="cov0" title="0"> if sizeBytes &gt;= 1&lt;&lt;20 </span><span class="cov0" title="0">{
                 return fmt.Sprintf("%dmB", sizeBytes/(1&lt;&lt;20))
-        }</span><span class="cov0" title="0"> else if sizeBytes &gt;= 1&lt;&lt;10 </span><span class="cov0" title="0">{
+        }</span> else<span class="cov0" title="0"> if sizeBytes &gt;= 1&lt;&lt;10 </span><span class="cov0" title="0">{
                 return fmt.Sprintf("%dkB", sizeBytes/(1&lt;&lt;10))
         }</span>
         <span class="cov0" title="0">return fmt.Sprintf("%dB", sizeBytes)</span>
@@ -20459,7 +20459,7 @@ func (mu mathUtil) Median(input []float64) float64 <span class="cov8" title="1">
 
         if l%2 == 0 </span><span class="cov8" title="1">{
                 median = mu.Mean(c[l/2-1 : l/2+1])
-        }</span><span class="cov8" title="1"> else {
+        }</span> else<span class="cov8" title="1"> {
                 median = float64(c[l/2])
         }</span>
 
@@ -20473,7 +20473,7 @@ func (mu mathUtil) Mode(input []float64) []float64 <span class="cov8" title="1">
         l := len(input)
         if l == 1 </span><span class="cov8" title="1">{
                 return input
-        }</span><span class="cov8" title="1"> else if l == 0 </span><span class="cov8" title="1">{
+        }</span> else<span class="cov8" title="1"> if l == 0 </span><span class="cov8" title="1">{
                 return []float64{}
         }</span>
 
@@ -20575,7 +20575,7 @@ func (mu mathUtil) Round(input float64, places int) float64 <span class="cov8" t
 
         if decimal &gt;= 0.5 </span><span class="cov8" title="1">{
                 rounded = math.Ceil(digit)
-        }</span><span class="cov8" title="1"> else {
+        }</span> else<span class="cov8" title="1"> {
                 rounded = math.Floor(digit)
         }</span>
 
@@ -20609,7 +20609,7 @@ func (mu mathUtil) Percentile(input []float64, percent float64) float64 <span cl
         if index == float64(int64(index)) </span><span class="cov8" title="1">{
                 i := float64ToInt(index)
                 percentile = mu.Mean([]float64{c[i-1], c[i]})
-        }</span><span class="cov8" title="1"> else {
+        }</span> else<span class="cov8" title="1"> {
                 i := float64ToInt(index)
                 percentile = c[i-1]
         }</span>
@@ -20709,7 +20709,7 @@ func (mu mathUtil) RadianAdd(base, delta float64) float64 <span class="cov0" tit
         value := base + delta
         if value &gt; _2pi </span><span class="cov0" title="0">{
                 return math.Mod(value, _2pi)
-        }</span><span class="cov0" title="0"> else if value &lt; 0 </span><span class="cov0" title="0">{
+        }</span> else<span class="cov0" title="0"> if value &lt; 0 </span><span class="cov0" title="0">{
                 return math.Mod(_2pi+value, _2pi)
         }</span>
         <span class="cov0" title="0">return value</span>
@@ -20720,7 +20720,7 @@ func (mu mathUtil) DegreesAdd(baseDegrees, deltaDegrees float64) float64 <span c
         value := baseDegrees + deltaDegrees
         if value &gt; _2pi </span><span class="cov0" title="0">{
                 return math.Mod(value, 360.0)
-        }</span><span class="cov0" title="0"> else if value &lt; 0 </span><span class="cov0" title="0">{
+        }</span> else<span class="cov0" title="0"> if value &lt; 0 </span><span class="cov0" title="0">{
                 return math.Mod(360.0+value, 360.0)
         }</span>
         <span class="cov0" title="0">return value</span>
@@ -21207,7 +21207,7 @@ func (ru reflectionUtil) tryAssignment(fieldType, valueType reflect.Type, field,
                         field.Set(elem)
                         assigned = true
                         return
-                }</span><span class="cov0" title="0"> else if valueType.ConvertibleTo(fieldType.Elem()) </span><span class="cov0" title="0">{
+                }</span> else<span class="cov0" title="0"> if valueType.ConvertibleTo(fieldType.Elem()) </span><span class="cov0" title="0">{
                         elem := reflect.New(fieldType.Elem())
                         elem.Elem().Set(value.Convert(fieldType.Elem()))
                         field.Set(elem)
@@ -21268,10 +21268,10 @@ func (ru reflectionUtil) DecomposeToPostData(object interface{}) []KeyValuePairO
                                 if strings.Contains(tag, ",") </span><span class="cov0" title="0">{
                                         parts := strings.Split(tag, ",")
                                         kvp.Key = parts[0]
-                                }</span><span class="cov8" title="1"> else {
+                                }</span> else<span class="cov8" title="1"> {
                                         kvp.Key = tag
                                 }</span>
-                        }<span class="cov8" title="1"> else {
+                        } else<span class="cov8" title="1"> {
                                 kvp.Key = field.Name
                         }</span>
 
@@ -21288,7 +21288,7 @@ func (ru reflectionUtil) DecomposeToPostData(object interface{}) []KeyValuePairO
                                                 }</span>
                                         }
                                 }
-                        }<span class="cov8" title="1"> else {
+                        } else<span class="cov8" title="1"> {
                                 value := ru.FollowValuePointer(valueField)
                                 if value != nil </span><span class="cov8" title="1">{
                                         kvp.Value = fmt.Sprintf("%v", value)
@@ -21323,10 +21323,10 @@ func (ru reflectionUtil) DecomposeToPostDataAsJSON(object interface{}) []KeyValu
                                 if strings.Contains(tag, ",") </span><span class="cov0" title="0">{
                                         parts := strings.Split(tag, ",")
                                         kvp.Key = parts[0]
-                                }</span><span class="cov8" title="1"> else {
+                                }</span> else<span class="cov8" title="1"> {
                                         kvp.Key = tag
                                 }</span>
-                        }<span class="cov8" title="1"> else {
+                        } else<span class="cov8" title="1"> {
                                 kvp.Key = field.Name
                         }</span>
 
@@ -21335,7 +21335,7 @@ func (ru reflectionUtil) DecomposeToPostDataAsJSON(object interface{}) []KeyValu
                         if value != nil </span><span class="cov8" title="1">{
                                 if valueDereferenced.Kind() == reflect.Slice || valueDereferenced.Kind() == reflect.Map </span><span class="cov8" title="1">{
                                         kvp.Value = JSON.Serialize(value)
-                                }</span><span class="cov8" title="1"> else {
+                                }</span> else<span class="cov8" title="1"> {
                                         kvp.Value = fmt.Sprintf("%v", value)
                                 }</span>
                         }
@@ -21416,7 +21416,7 @@ func (ru reflectionUtil) CoalesceFields(object interface{}) <span class="cov8" t
                                 ru.CoalesceFields(fieldValue.Addr().Interface())
                         }</span>
                 }
-        }<span class="cov8" title="1"> else if objectType.Kind() == reflect.Array || objectType.Kind() == reflect.Slice </span><span class="cov8" title="1">{
+        } else<span class="cov8" title="1"> if objectType.Kind() == reflect.Array || objectType.Kind() == reflect.Slice </span><span class="cov8" title="1">{
                 arrayLength := objectValue.Len()
                 for i := 0; i &lt; arrayLength; i++ </span><span class="cov8" title="1">{
                         ru.CoalesceFields(objectValue.Index(i).Addr().Interface())
@@ -21870,7 +21870,7 @@ func (su stringUtil) CombinePathComponents(components ...string) string <span cl
 
                 <span class="cov8" title="1">if index != len(components)-1 </span><span class="cov8" title="1">{
                         fullPath = fullPath + workingComponent + slash
-                }</span><span class="cov8" title="1"> else {
+                }</span> else<span class="cov8" title="1"> {
                         fullPath = fullPath + workingComponent
                 }</span>
         }
@@ -22053,10 +22053,10 @@ func (su stringUtil) ToTitleCase(corpus string) string <span class="cov8" title=
                         if !haveSeenLetter </span><span class="cov8" title="1">{
                                 output.WriteRune(unicode.ToUpper(r))
                                 haveSeenLetter = true
-                        }</span><span class="cov8" title="1"> else {
+                        }</span> else<span class="cov8" title="1"> {
                                 output.WriteRune(unicode.ToLower(r))
                         }</span>
-                }<span class="cov8" title="1"> else {
+                } else<span class="cov8" title="1"> {
                         output.WriteRune(r)
                         haveSeenLetter = false
                 }</span>
@@ -22095,7 +22095,7 @@ func (su stringUtil) SplitOnSpace(text string) (output []string) <span class="co
                                         word = ""
                                 }</span>
                                 <span class="cov8" title="1">state = 1</span>
-                        }<span class="cov8" title="1"> else {
+                        } else<span class="cov8" title="1"> {
                                 word = word + string(r)
                         }</span>
                 case 1:<span class="cov8" title="1">
@@ -22169,7 +22169,7 @@ func (su stringUtil) Tokenize(corpus string, tokens map[string]string) string <s
                                 key = workingKey.String()
                                 if value, hasValue := tokens[key]; hasValue </span><span class="cov8" title="1">{
                                         output.WriteString(value)
-                                }</span><span class="cov8" title="1"> else {
+                                }</span> else<span class="cov8" title="1"> {
                                         output.WriteString(workingToken.String())
                                 }</span>
                                 <span class="cov8" title="1">workingToken = nil
@@ -22453,11 +22453,11 @@ func (tu timeUtil) ParseDuration(duration string) time.Duration <span class="cov
                 case 0:<span class="cov0" title="0">
                         if unicode.IsDigit(c) </span><span class="cov0" title="0">{
                                 numberValue = numberValue + string(c)
-                        }</span><span class="cov0" title="0"> else {
+                        }</span> else<span class="cov0" title="0"> {
                                 labelValue = string(c)
                                 if index == lastIndex </span><span class="cov0" title="0">{
                                         consumeValues()
-                                }</span><span class="cov0" title="0"> else {
+                                }</span> else<span class="cov0" title="0"> {
                                         state = 1
                                 }</span>
                         }
@@ -22466,10 +22466,10 @@ func (tu timeUtil) ParseDuration(duration string) time.Duration <span class="cov
                                 consumeValues()
                                 numberValue = string(c)
                                 state = 0
-                        }</span><span class="cov0" title="0"> else if index == lastIndex </span><span class="cov0" title="0">{
+                        }</span> else<span class="cov0" title="0"> if index == lastIndex </span><span class="cov0" title="0">{
                                 labelValue = labelValue + string(c)
                                 consumeValues()
-                        }</span><span class="cov0" title="0"> else {
+                        }</span> else<span class="cov0" title="0"> {
                                 labelValue = labelValue + string(c)
                         }</span>
                 }
@@ -22779,7 +22779,7 @@ func Parse(corpus string) (UUID, error) <span class="cov8" title="1">{
                         uuid[uuidIndex] = hex[0]&lt;&lt;4 | hex[1]
                         uuidIndex++
                         hexIndex = 0
-                }</span><span class="cov8" title="1"> else {
+                }</span> else<span class="cov8" title="1"> {
                         hexIndex++
                 }</span>
                 <span class="cov8" title="1">di++</span>
@@ -22941,7 +22941,7 @@ func NewFromConfig(cfg *Config) *App <span class="cov8" title="1">{
         tlsConfig, err := cfg.TLS.GetConfig()
         if err != nil </span><span class="cov0" title="0">{
                 app = app.withPreStartError(err)
-        }</span><span class="cov8" title="1"> else {
+        }</span> else<span class="cov8" title="1"> {
                 app = app.WithTLSConfig(tlsConfig)
         }</span>
 
@@ -23265,7 +23265,7 @@ func (a *App) SetTLSCertPair(tlsCert, tlsKey []byte) error <span class="cov8" ti
                 a.tlsConfig = &amp;tls.Config{
                         Certificates: []tls.Certificate{cert},
                 }
-        }</span><span class="cov8" title="1"> else {
+        }</span> else<span class="cov8" title="1"> {
                 a.tlsConfig.Certificates = []tls.Certificate{cert}
         }</span>
         <span class="cov8" title="1">return nil</span>
@@ -23311,7 +23311,7 @@ func (a *App) SetTLSFromEnv() error <span class="cov0" title="0">{
 
         if len(tlsCert) &gt; 0 &amp;&amp; len(tlsKey) &gt; 0 </span><span class="cov0" title="0">{
                 return a.SetTLSCertPair(tlsCert, tlsKey)
-        }</span><span class="cov0" title="0"> else if len(tlsCertPath) &gt; 0 &amp;&amp; len(tlsKeyPath) &gt; 0 </span><span class="cov0" title="0">{
+        }</span> else<span class="cov0" title="0"> if len(tlsCertPath) &gt; 0 &amp;&amp; len(tlsKeyPath) &gt; 0 </span><span class="cov0" title="0">{
                 return a.SetTLSCertPairFromFiles(tlsCertPath, tlsKeyPath)
         }</span>
         <span class="cov0" title="0">return nil</span>
@@ -23538,7 +23538,7 @@ func (a *App) Start() (err error) <span class="cov8" title="1">{
         keepAlive := TCPKeepAliveListener{a.listener}
         if a.server.TLSConfig != nil </span><span class="cov0" title="0">{
                 err = exception.Wrap(a.server.ServeTLS(keepAlive, "", ""))
-        }</span><span class="cov8" title="1"> else {
+        }</span> else<span class="cov8" title="1"> {
                 err = exception.Wrap(a.server.Serve(keepAlive))
         }</span>
         <span class="cov8" title="1">a.setStopped()
@@ -23731,7 +23731,7 @@ func (a *App) createStaticMountRoute(route string) string <span class="cov8" tit
         if !strings.HasSuffix(mountedRoute, "*"+RouteTokenFilepath) </span><span class="cov8" title="1">{
                 if strings.HasSuffix(mountedRoute, "/") </span><span class="cov8" title="1">{
                         mountedRoute = mountedRoute + "*" + RouteTokenFilepath
-                }</span><span class="cov8" title="1"> else {
+                }</span> else<span class="cov8" title="1"> {
                         mountedRoute = mountedRoute + "/*" + RouteTokenFilepath
                 }</span>
         }
@@ -23848,7 +23848,7 @@ func (a *App) ServeHTTP(w http.ResponseWriter, req *http.Request) <span class="c
                 if route, params, tsr := root.getValue(path); route != nil </span><span class="cov8" title="1">{
                         route.Handler(w, req, route, params, nil)
                         return
-                }</span><span class="cov0" title="0"> else if req.Method != MethodConnect &amp;&amp; path != "/" </span><span class="cov0" title="0">{
+                }</span> else<span class="cov0" title="0"> if req.Method != MethodConnect &amp;&amp; path != "/" </span><span class="cov0" title="0">{
                         code := http.StatusMovedPermanently // 301 // Permanent redirect, request with GET method
                         if req.Method != MethodGet </span><span class="cov0" title="0">{
                                 code = http.StatusTemporaryRedirect // 307
@@ -23857,7 +23857,7 @@ func (a *App) ServeHTTP(w http.ResponseWriter, req *http.Request) <span class="c
                         <span class="cov0" title="0">if tsr &amp;&amp; a.redirectTrailingSlash </span><span class="cov0" title="0">{
                                 if len(path) &gt; 1 &amp;&amp; path[len(path)-1] == '/' </span><span class="cov0" title="0">{
                                         req.URL.Path = path[:len(path)-1]
-                                }</span><span class="cov0" title="0"> else {
+                                }</span> else<span class="cov0" title="0"> {
                                         req.URL.Path = path + "/"
                                 }</span>
                                 <span class="cov0" title="0">http.Redirect(w, req, req.URL.String(), code)
@@ -23874,14 +23874,14 @@ func (a *App) ServeHTTP(w http.ResponseWriter, req *http.Request) <span class="c
                                 return
                         }</span>
                 }
-        }<span class="cov0" title="0"> else {
+        } else<span class="cov0" title="0"> {
                 // Handle 405
                 if a.handleMethodNotAllowed </span><span class="cov0" title="0">{
                         if allow := a.allowed(path, req.Method); len(allow) &gt; 0 </span><span class="cov0" title="0">{
                                 w.Header().Set(HeaderAllow, allow)
                                 if a.methodNotAllowedHandler != nil </span><span class="cov0" title="0">{
                                         a.methodNotAllowedHandler(w, req, nil, nil, nil)
-                                }</span><span class="cov0" title="0"> else {
+                                }</span> else<span class="cov0" title="0"> {
                                         http.Error(w,
                                                 http.StatusText(http.StatusMethodNotAllowed),
                                                 http.StatusMethodNotAllowed,
@@ -23895,7 +23895,7 @@ func (a *App) ServeHTTP(w http.ResponseWriter, req *http.Request) <span class="c
         // Handle 404
         <span class="cov0" title="0">if a.notFoundHandler != nil </span><span class="cov0" title="0">{
                 a.notFoundHandler(w, req, nil, nil, nil)
-        }</span><span class="cov0" title="0"> else {
+        }</span> else<span class="cov0" title="0"> {
                 http.NotFound(w, req)
         }</span>
 }
@@ -23924,7 +23924,7 @@ func (a *App) renderAction(action Action) Handler <span class="cov8" title="1">{
                 if strings.Contains(r.Header.Get(HeaderAcceptEncoding), ContentEncodingGZIP) </span><span class="cov8" title="1">{
                         w.Header().Set(HeaderContentEncoding, ContentEncodingGZIP)
                         response = NewCompressedResponseWriter(w)
-                }</span><span class="cov8" title="1"> else {
+                }</span> else<span class="cov8" title="1"> {
                         w.Header().Set(HeaderContentEncoding, ContentEncodingIdentity)
                         response = NewRawResponseWriter(w)
                 }</span>
@@ -24090,7 +24090,7 @@ func (a *App) allowed(path, reqMethod string) (allow string) <span class="cov0" 
                         // add request method to list of allowed methods
                         <span class="cov0" title="0">if len(allow) == 0 </span><span class="cov0" title="0">{
                                 allow = method
-                        }</span><span class="cov0" title="0"> else {
+                        }</span> else<span class="cov0" title="0"> {
                                 allow += ", " + method
                         }</span>
                 }
@@ -24107,7 +24107,7 @@ func (a *App) allowed(path, reqMethod string) (allow string) <span class="cov0" 
                         // add request method to list of allowed methods
                         if len(allow) == 0 </span><span class="cov0" title="0">{
                                 allow = method
-                        }</span><span class="cov0" title="0"> else {
+                        }</span> else<span class="cov0" title="0"> {
                                 allow += ", " + method
                         }</span>
                 }
@@ -24310,7 +24310,7 @@ func (ae *AppEvent) WriteText(tf logger.TextFormatter, buf *bytes.Buffer) <span 
                         buf.WriteString(tf.Colorize("failed", logger.ColorRed))
                         buf.WriteRune(logger.RuneNewline)
                         buf.WriteString(fmt.Sprintf("%+v", ae.err))
-                }</span><span class="cov0" title="0"> else {
+                }</span> else<span class="cov0" title="0"> {
                         buf.WriteString(tf.Colorize("complete", logger.ColorBlue))
                 }</span>
 
@@ -24843,7 +24843,7 @@ func (am *AuthManager) Logger() *logger.Logger <span class="cov0" title="0">{
 func (am *AuthManager) GenerateSessionTimeout(context *Ctx) *time.Time <span class="cov8" title="1">{
         if am.sessionTimeout &gt; 0 </span><span class="cov8" title="1">{
                 return util.OptionalTime(time.Now().UTC().Add(am.sessionTimeout))
-        }</span><span class="cov8" title="1"> else if am.sessionTimeoutProvider != nil </span><span class="cov8" title="1">{
+        }</span> else<span class="cov8" title="1"> if am.sessionTimeoutProvider != nil </span><span class="cov8" title="1">{
                 return am.sessionTimeoutProvider(context)
         }</span>
         <span class="cov8" title="1">return nil</span>
@@ -26125,7 +26125,7 @@ func (rc *Ctx) PostedFiles() ([]PostedFile, error) <span class="cov8" title="1">
                         }</span>
                         <span class="cov8" title="1">files = append(files, PostedFile{Key: key, FileName: fileHeader.Filename, Contents: bytes})</span>
                 }
-        }<span class="cov8" title="1"> else {
+        } else<span class="cov8" title="1"> {
                 err = rc.request.ParseForm()
                 if err == nil </span><span class="cov8" title="1">{
                         for key := range rc.request.PostForm </span><span class="cov0" title="0">{
@@ -26964,11 +26964,11 @@ func (hz *Healthz) appWebRequestListener(wre *logger.WebRequestEvent) <span clas
         hz.incrementVarUnsafe(VarzRequests)
         if wre.StatusCode() &gt;= http.StatusInternalServerError </span><span class="cov0" title="0">{
                 hz.incrementVarUnsafe(VarzRequests5xx)
-        }</span><span class="cov0" title="0"> else if wre.StatusCode() &gt;= http.StatusBadRequest </span><span class="cov0" title="0">{
+        }</span> else<span class="cov0" title="0"> if wre.StatusCode() &gt;= http.StatusBadRequest </span><span class="cov0" title="0">{
                 hz.incrementVarUnsafe(VarzRequests4xx)
-        }</span><span class="cov0" title="0"> else if wre.StatusCode() &gt;= http.StatusMultipleChoices </span><span class="cov0" title="0">{
+        }</span> else<span class="cov0" title="0"> if wre.StatusCode() &gt;= http.StatusMultipleChoices </span><span class="cov0" title="0">{
                 hz.incrementVarUnsafe(VarzRequests3xx)
-        }</span><span class="cov0" title="0"> else {
+        }</span> else<span class="cov0" title="0"> {
                 hz.incrementVarUnsafe(VarzRequests2xx)
         }</span>
 }
@@ -26992,7 +26992,7 @@ func (hz *Healthz) incrementVarUnsafe(key string) <span class="cov0" title="0">{
                 if typed, isTyped := value.(int64); isTyped </span><span class="cov0" title="0">{
                         hz.vars[key] = typed + 1
                 }</span>
-        }<span class="cov0" title="0"> else {
+        } else<span class="cov0" title="0"> {
                 hz.vars[key] = int64(1)
         }</span>
 }
@@ -27773,7 +27773,7 @@ func (mrb *MockRequestBuilder) Request() (*http.Request, error) <span class="cov
                         return nil, err
                 }</span>
                 <span class="cov8" title="1">req.Body = ioutil.NopCloser(b)</span>
-        }<span class="cov8" title="1"> else if len(mrb.postBody) &gt; 0 </span><span class="cov8" title="1">{
+        } else<span class="cov8" title="1"> if len(mrb.postBody) &gt; 0 </span><span class="cov8" title="1">{
                 req.Body = ioutil.NopCloser(bytes.NewBuffer(mrb.postBody))
         }</span>
 
@@ -27809,7 +27809,7 @@ func (mrb *MockRequestBuilder) CreateCtx(p RouteParameters) (*Ctx, error) <span 
         route, _ := mrb.LookupRoute()
         if route != nil </span><span class="cov0" title="0">{
                 rc = mrb.app.createCtx(w, r, route, p, mrb.state)
-        }</span><span class="cov8" title="1"> else {
+        }</span> else<span class="cov8" title="1"> {
                 rc = mrb.app.createCtx(w, r, nil, nil, mrb.state)
         }</span>
 
@@ -27834,7 +27834,7 @@ func (mrb *MockRequestBuilder) Response() (res *http.Response, err error) <span 
         if route == nil &amp;&amp; mrb.app.notFoundHandler != nil </span><span class="cov8" title="1">{
                 res = mrb.runHandler(mrb.app.notFoundHandler, req, route, params)
                 return
-        }</span><span class="cov8" title="1"> else if route == nil </span><span class="cov0" title="0">{
+        }</span> else<span class="cov8" title="1"> if route == nil </span><span class="cov0" title="0">{
                 err = exception.Newf("No route registered for %s %s", mrb.verb, mrb.path)
                 return
         }</span>
@@ -28243,7 +28243,7 @@ func (rr *RawResult) Render(ctx *Ctx) error <span class="cov8" title="1">{
         }</span>
         <span class="cov8" title="1">if rr.StatusCode == 0 </span><span class="cov8" title="1">{
                 ctx.Response().WriteHeader(http.StatusOK)
-        }</span><span class="cov8" title="1"> else {
+        }</span> else<span class="cov8" title="1"> {
                 ctx.Response().WriteHeader(rr.StatusCode)
         }</span>
         <span class="cov8" title="1">_, err := ctx.Response().Write(rr.Body)
@@ -28266,7 +28266,7 @@ func (rr *RedirectResult) Render(ctx *Ctx) error <span class="cov0" title="0">{
         if len(rr.Method) &gt; 0 </span><span class="cov0" title="0">{
                 ctx.Request().Method = rr.Method
                 http.Redirect(ctx.Response(), ctx.Request(), rr.RedirectURI, http.StatusFound)
-        }</span><span class="cov0" title="0"> else {
+        }</span> else<span class="cov0" title="0"> {
                 http.Redirect(ctx.Response(), ctx.Request(), rr.RedirectURI, http.StatusTemporaryRedirect)
         }</span>
 
@@ -29012,7 +29012,7 @@ func (tc TLSConfig) GetConfig() (*tls.Config, error) <span class="cov8" title="1
                         tc.GetCertPath(),
                         tc.GetKeyPath(),
                 )
-        }</span><span class="cov0" title="0"> else {
+        }</span> else<span class="cov0" title="0"> {
                 cert, err = tls.X509KeyPair(tc.GetCert(), tc.GetKey())
         }</span>
 
@@ -29226,7 +29226,7 @@ func (n *node) addRoute(method, path string, handler Handler) <span class="cov8"
                                 <span class="cov8" title="1">n.insertChild(numParams, method, path, fullPath, handler)
                                 return</span>
 
-                        }<span class="cov8" title="1"> else if i == len(path) </span><span class="cov8" title="1">{ // Make node a (in-path) leaf
+                        } else<span class="cov8" title="1"> if i == len(path) </span><span class="cov8" title="1">{ // Make node a (in-path) leaf
                                 if n.route != nil </span><span class="cov8" title="1">{
                                         panic("a handle is already registered for path '" + fullPath + "'")</span>
                                 }
@@ -29238,7 +29238,7 @@ func (n *node) addRoute(method, path string, handler Handler) <span class="cov8"
                         }
                         <span class="cov8" title="1">return</span>
                 }
-        }<span class="cov8" title="1"> else { // Empty tree
+        } else<span class="cov8" title="1"> { // Empty tree
                 n.insertChild(numParams, method, path, fullPath, handler)
                 n.nodeType = root
         }</span>
@@ -29310,7 +29310,7 @@ func (n *node) insertChild(numParams uint8, method, path, fullPath string, handl
                                 n = child
                         }</span>
 
-                }<span class="cov8" title="1"> else { // catchAll
+                } else<span class="cov8" title="1"> { // catchAll
                         if end != max || numParams &gt; 1 </span><span class="cov8" title="1">{
                                 panic("catch-all routes are only allowed at the end of the path in path '" + fullPath + "'")</span>
                         }
@@ -29427,7 +29427,7 @@ walk: // outer loop for walking the tree
 
                                         <span class="cov8" title="1">if route = n.route; route != nil </span><span class="cov8" title="1">{
                                                 return
-                                        }</span><span class="cov8" title="1"> else if len(n.children) == 1 </span><span class="cov8" title="1">{
+                                        }</span> else<span class="cov8" title="1"> if len(n.children) == 1 </span><span class="cov8" title="1">{
                                                 // No handle found. Check if a handle for this path + a
                                                 // trailing slash exists for TSR recommendation
                                                 n = n.children[0]
@@ -29452,7 +29452,7 @@ walk: // outer loop for walking the tree
                                         panic("invalid node type")</span>
                                 }
                         }
-                }<span class="cov8" title="1"> else if path == n.path </span><span class="cov8" title="1">{
+                } else<span class="cov8" title="1"> if path == n.path </span><span class="cov8" title="1">{
                         // We should have reached the node containing the handle.
                         // Check if this node has a handle registered.
                         if route = n.route; route != nil </span><span class="cov8" title="1">{
@@ -29547,7 +29547,7 @@ walk: // outer loop for walking the tree
                                                         continue walk</span>
                                                 }
                                         }
-                                }<span class="cov8" title="1"> else {
+                                } else<span class="cov8" title="1"> {
                                         // process a new rune
                                         var rv rune
 
@@ -29637,7 +29637,7 @@ walk: // outer loop for walking the tree
 
                                 <span class="cov8" title="1">if n.route != nil </span><span class="cov8" title="1">{
                                         return ciPath, true
-                                }</span><span class="cov8" title="1"> else if fixTrailingSlash &amp;&amp; len(n.children) == 1 </span><span class="cov8" title="1">{
+                                }</span> else<span class="cov8" title="1"> if fixTrailingSlash &amp;&amp; len(n.children) == 1 </span><span class="cov8" title="1">{
                                         // No handle found. Check if a handle for this path + a
                                         // trailing slash exists
                                         n = n.children[0]
@@ -29653,7 +29653,7 @@ walk: // outer loop for walking the tree
                         default:<span class="cov8" title="1">
                                 panic("invalid node type")</span>
                         }
-                }<span class="cov8" title="1"> else {
+                } else<span class="cov8" title="1"> {
                         // We should have reached the node containing the handle.
                         // Check if this node has a handle registered.
                         if n.route != nil </span><span class="cov8" title="1">{
@@ -29760,7 +29760,7 @@ func CleanPath(p string) string <span class="cov0" title="0">{
                                         for w &gt; 1 &amp;&amp; p[w] != '/' </span><span class="cov0" title="0">{
                                                 w--
                                         }</span>
-                                }<span class="cov0" title="0"> else {
+                                } else<span class="cov0" title="0"> {
                                         for w &gt; 1 &amp;&amp; buf[w] != '/' </span><span class="cov0" title="0">{
                                                 w--
                                         }</span>
@@ -31137,7 +31137,7 @@ func (qw *QueueWorker) Start() <span class="cov8" title="1">{
         qw.latch.SignalStarting()
         if qw.maxWork &gt; 0 </span><span class="cov8" title="1">{
                 qw.work = make(chan interface{}, qw.maxWork)
-        }</span><span class="cov0" title="0"> else {
+        }</span> else<span class="cov0" title="0"> {
                 qw.work = make(chan interface{})
         }</span>
 
