@@ -13,6 +13,9 @@ const (
 	ErrInvalidEmailDomain Error = "domain validation failed; doesn't match valid domain list"
 	// ErrInvalidHostedDomain is an error returned if the JWT hosted zone doesn't match any of the whitelisted domains.
 	ErrInvalidHostedDomain Error = "hosted domain validation failed"
+	// ErrInvalidAUD is an error returned during jwt validation.
+	ErrInvalidAUD Error = "invalid JWT AUD"
+
 	// ErrInvalidAntiforgeryToken is an error that occurs during oauth finish if the forgery token is required
 	// and missing or invalid.
 	ErrInvalidAntiforgeryToken Error = "invalid anti-forgery token"

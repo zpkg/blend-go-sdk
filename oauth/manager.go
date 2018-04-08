@@ -6,7 +6,6 @@ import (
 	"net/http"
 	"net/url"
 	"strings"
-	"sync"
 	"time"
 
 	"github.com/blend/go-sdk/exception"
@@ -53,8 +52,8 @@ func NewFromConfig(cfg *Config) (*Manager, error) {
 
 // Manager is the oauth manager.
 type Manager struct {
-	secretLock           sync.Mutex
 	secret               []byte
+	audience             string
 	redirectURI          string
 	skipDomainValidation bool
 	hostedDomain         string
@@ -165,21 +164,9 @@ func (m *Manager) NonceTimeout() time.Duration {
 	return m.nonceTimeout
 }
 
-func (m *Manager) ensureSecret() {
-	if len(m.secret) == 0 {
-		m.secretLock.Lock()
-		defer m.secretLock.Unlock()
-		if len(m.secret) == 0 {
-			m.secret = util.Crypto.MustCreateKey(32)
-		}
-	}
-}
-
 // OAuthURL is the auth url for google with a given clientID.
 // This is typically the link that a user will click on to start the auth process.
 func (m *Manager) OAuthURL(redirect ...string) (string, error) {
-	m.ensureSecret()
-
 	u := &url.URL{
 		Scheme: "https",
 		Host:   "accounts.google.com",
@@ -384,6 +371,10 @@ func (m *Manager) ValidateConfig() error {
 
 // ValidateJWT validates a jwt.
 func (m *Manager) ValidateJWT(jwt *JWT) error {
+	if len(m.clientID) > 0 && !hmac.Equal([]byte(jwt.Payload.AUD), []byte(m.clientID)) {
+		return ErrInvalidAUD
+	}
+
 	if m.skipDomainValidation {
 		return nil
 	}

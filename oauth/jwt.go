@@ -3,9 +3,19 @@ package oauth
 import (
 	"encoding/base64"
 	"encoding/json"
+	"fmt"
 	"strings"
 
 	"github.com/blend/go-sdk/exception"
+	"github.com/blend/go-sdk/util"
+)
+
+const (
+	// TypeJWT is a field value in the jwt header.
+	TypeJWT = "jwt"
+
+	// AlgorithmHS512 is a hashing algorithm.
+	AlgorithmHS512 = "HS512"
 )
 
 // DeserializeJWT deserializes a jwt token.
@@ -43,6 +53,38 @@ func DeserializeJWT(corpus string) (*JWT, error) {
 		Payload:   payload,
 		Signature: signature,
 	}, nil
+}
+
+// SerializeJWT serializes a jwt.
+func SerializeJWT(key []byte, token *JWTPayload) (string, error) {
+	headerSerialized, err := json.Marshal(JWTHeader{
+		Algorithm: AlgorithmHS512,
+		Type:      TypeJWT,
+	})
+	if err != nil {
+		return "", err
+	}
+
+	header := encodeJWTSegment(headerSerialized)
+
+	payloadSerialized, err := json.Marshal(token)
+	if err != nil {
+		return "", err
+	}
+	payload := encodeJWTSegment(payloadSerialized)
+
+	signatureSerialized := util.Crypto.Hash(key, []byte(header+payload))
+	signature := encodeJWTSegment(signatureSerialized)
+
+	return fmt.Sprintf("%s.%s.%s",
+		header,
+		payload,
+		signature,
+	), nil
+}
+
+func encodeJWTSegment(corpus []byte) string {
+	return base64.URLEncoding.EncodeToString(corpus)
 }
 
 func decodeJWTSegment(corpus string) ([]byte, error) {
