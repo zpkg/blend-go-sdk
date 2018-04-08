@@ -17,3 +17,6 @@ jobs:
       - run: 
           name: ci
           command: make ci
+      - store_artifacts:
+          path: coverage.html
+          destination: coverage.html
