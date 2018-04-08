@@ -9,7 +9,9 @@ VERSION 		:= $(shell cat ./.version)
 export GIT_REF
 export VERSION
 
-all: format vet test profanity
+all: format vet profanity test
+
+ci: vet profanity test
 
 new-install:
 	@go get -u github.com/lib/lq
