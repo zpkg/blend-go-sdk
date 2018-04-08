@@ -2,6 +2,7 @@ package logger
 
 import (
 	"bytes"
+	"strings"
 	"testing"
 
 	"github.com/blend/go-sdk/assert"
@@ -78,5 +79,5 @@ func TestWriterLabels(t *testing.T) {
 	writer.showTime = false
 	writer.useColor = false
 	writer.WriteError(Messagef(Error, "test %s", "string").WithLabel("foo", "bar").WithLabel("moo", "boo"))
-	assert.Equal("[error] test string\nfoo=bar moo=boo \n", string(buffer.Bytes()))
+	assert.True(strings.HasPrefix(buffer.String(), "[error] test string"))
 }

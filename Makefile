@@ -8,7 +8,7 @@ VERSION 		:= $(shell cat ./.version)
 
 # coverage stuff
 CIRCLE_ARTIFACTS 	?= "."
-COVERAGE_OUT 		:= "${CIRCLE_ARTIFACTS}/coverage.html"
+COVERAGE_OUT 		:= "$(CIRCLE_ARTIFACTS)/coverage.html"
 
 export GIT_REF
 export VERSION
@@ -33,12 +33,16 @@ profanity:
 	@go run _bin/profanity/main.go
 
 test:
-	@echo "$(VERSION)/$(GIT_REF) >> running all tests"
+	@echo "$(VERSION)/$(GIT_REF) >> tests"
 	@go test $(PKGS)
 
 cover:
-	@echo "$(VERSION)/$(GIT_REF) >> running all tests"
-	@go run _bin/coverage/main.go
+	@echo "$(VERSION)/$(GIT_REF) >> coverage"
+	@go run _bin/coverage/main.go -enforce
+
+cover-update:
+	@echo "$(VERSION)/$(GIT_REF) >> coverage"
+	@go run _bin/coverage/main.go -update
 
 increment-patch:
 	@echo "Current Version $(VERSION)"

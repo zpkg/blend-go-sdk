@@ -9,6 +9,8 @@ import (
 	"os"
 	"os/exec"
 	"path/filepath"
+	"regexp"
+	"strconv"
 	"strings"
 
 	"github.com/blend/go-sdk/exception"
@@ -16,9 +18,13 @@ import (
 
 var reportOutputPath = flag.String("output", "coverage.html", "the path to write the full html coverage report")
 var temporaryOutputPath = flag.String("tmp", "coverage.cov", "the path to write the intermediate results")
+var update = flag.Bool("update", false, "if we should write the current coverage to `COVERAGE` files")
 var enforce = flag.Bool("enforce", false, "if we should enforce coverage minimums defined in `COVERAGE` files")
 
 func main() {
+	flag.Parse()
+
+	fmt.Fprintln(os.Stdout, "coverage starting")
 	tempOutput, err := removeAndOpen(*temporaryOutputPath)
 	if err != nil {
 		maybeFatal(err)
@@ -26,6 +32,9 @@ func main() {
 	fmt.Fprintln(tempOutput, "mode: set")
 
 	maybeFatal(filepath.Walk("./", func(currentPath string, info os.FileInfo, err error) error {
+		if os.IsNotExist(err) {
+			return nil
+		}
 		if err != nil {
 			return err
 		}
@@ -46,10 +55,7 @@ func main() {
 			return nil
 		}
 
-		fmt.Fprintf(os.Stdout, "running coverage for: %s\n", currentPath)
-
 		intermediateFile := filepath.Join(currentPath, "profile.cov")
-
 		err = removeIfExists(intermediateFile)
 		if err != nil {
 			return err
@@ -58,8 +64,25 @@ func main() {
 		var output []byte
 		output, err = execCoverage(currentPath)
 		if err != nil {
-			fmt.Fprintf(os.Stdout, string(output))
+			fmt.Fprintln(os.Stderr, string(output))
 			return exception.Wrap(err)
+		}
+		coverage := extractCoverage(string(output))
+		fmt.Fprintf(os.Stdout, "%s: %v%%\n", currentPath, coverage)
+
+		if enforce != nil && *enforce {
+			err = enforceCoverage(currentPath, coverage)
+			if err != nil {
+				return err
+			}
+		}
+
+		if update != nil && *update {
+			fmt.Fprintf(os.Stdout, "%s updating coverage\n", currentPath)
+			err = writeCoverage(currentPath, coverage)
+			if err != nil {
+				return err
+			}
 		}
 
 		err = mergeCoverageOutput(intermediateFile, tempOutput)
@@ -71,12 +94,56 @@ func main() {
 		if err != nil {
 			return err
 		}
-		fmt.Fprintf(os.Stdout, "running coverage for: %s complete\n", currentPath)
+
 		return nil
 	}))
 
 	maybeFatal(tempOutput.Close())
+
+	fmt.Fprintf(os.Stdout, "merging coverage output: %s\n", *reportOutputPath)
 	maybeFatal(execCoverageCompile())
+	maybeFatal(removeIfExists(*temporaryOutputPath))
+	fmt.Fprintln(os.Stdout, "coverage complete")
+}
+
+func enforceCoverage(path, actualCoverage string) error {
+	actual, err := strconv.ParseFloat(actualCoverage, 64)
+	if err != nil {
+		return err
+	}
+
+	contents, err := ioutil.ReadFile(filepath.Join(path, "COVERAGE"))
+	if err != nil {
+		return err
+	}
+	expected, err := strconv.ParseFloat(strings.TrimSpace(string(contents)), 64)
+	if err != nil {
+		return err
+	}
+
+	if expected == 0 {
+		return nil
+	}
+
+	if actual < expected {
+		return fmt.Errorf("%s fails coverage: %0.2f%% vs. %0.2f%%", path, expected, actual)
+	}
+	return nil
+}
+
+func extractCoverage(corpus string) string {
+	regex := `coverage: ([0-9,.]+)% of statements`
+	expr := regexp.MustCompile(regex)
+
+	results := expr.FindStringSubmatch(corpus)
+	if len(results) > 1 {
+		return results[1]
+	}
+	return "0"
+}
+
+func writeCoverage(path, coverage string) error {
+	return ioutil.WriteFile(filepath.Join(path, "COVERAGE"), []byte(coverage), 0755)
 }
 
 func dirHasGlob(path, glob string) bool {
@@ -98,13 +165,13 @@ func execCoverage(path string) ([]byte, error) {
 
 func execCoverageCompile() error {
 	cmd := exec.Command(gobin(), "tool", "cover", fmt.Sprintf("-html=%s", *temporaryOutputPath), fmt.Sprintf("-o=%s", *reportOutputPath))
-	return exception.Wrap(cmd.Run())
+	return cmd.Run()
 }
 
 func mergeCoverageOutput(temp string, outFile *os.File) error {
 	contents, err := ioutil.ReadFile(temp)
 	if err != nil {
-		return exception.Wrap(err)
+		return err
 	}
 
 	scanner := bufio.NewScanner(bytes.NewBuffer(contents))
@@ -117,7 +184,7 @@ func mergeCoverageOutput(temp string, outFile *os.File) error {
 		}
 		_, err = fmt.Fprintln(outFile, scanner.Text())
 		if err != nil {
-			return exception.Wrap(err)
+			return err
 		}
 	}
 	return nil
@@ -125,7 +192,7 @@ func mergeCoverageOutput(temp string, outFile *os.File) error {
 
 func removeIfExists(path string) error {
 	if _, err := os.Stat(path); err == nil {
-		return exception.Wrap(os.Remove(path))
+		return os.Remove(path)
 	}
 	return nil
 }
@@ -140,7 +207,7 @@ func maybeFatal(err error) {
 func removeAndOpen(path string) (*os.File, error) {
 	if _, err := os.Stat(path); err == nil {
 		if err = os.Remove(path); err != nil {
-			return nil, exception.Wrap(err)
+			return nil, err
 		}
 	}
 	return os.Create(path)
