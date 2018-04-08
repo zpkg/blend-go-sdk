@@ -1,7 +1,7 @@
 go-sdk
 ======
 
-[![Build Status](https://circleci.com/gh/blend/go-sdk.svg?style=shield&circle-token=:circle-token)]
+![Build Status](https://circleci.com/gh/blend/go-sdk.svg?style=shield&circle-token=:circle-token)
 
 # Packages
 
