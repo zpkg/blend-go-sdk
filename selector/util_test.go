@@ -55,7 +55,8 @@ func TestCheckKeyK8S(t *testing.T) {
 		"requests.storage-foo",
 		strings.Repeat("a", 63),
 		strings.Repeat("a", 253) + "/" + strings.Repeat("b", 63),
-
+	}
+	badValues := []string{
 		// the "bad" cases
 		"nospecialchars%^=@",
 		"cantendwithadash-",
@@ -70,6 +71,9 @@ func TestCheckKeyK8S(t *testing.T) {
 	}
 	for _, val := range values {
 		assert.Nil(CheckKey(val))
+	}
+	for _, val := range badValues {
+		assert.NotNil(CheckKey(val))
 	}
 }
 
