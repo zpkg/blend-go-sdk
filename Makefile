@@ -15,7 +15,7 @@ export VERSION
 
 all: format vet profanity test
 
-ci: vet profanity cover
+ci: vet profanity test
 
 new-install:
 	@go get -u github.com/lib/pq
