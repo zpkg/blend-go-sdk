@@ -18,7 +18,7 @@ all: format vet profanity test
 ci: vet profanity test
 
 new-install:
-	@go get -u github.com/lib/lq
+	@go get -u github.com/lib/pq
 
 format:
 	@echo "$(VERSION)/$(GIT_REF) >> formatting code"
