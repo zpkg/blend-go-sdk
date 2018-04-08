@@ -5,8 +5,7 @@ import (
 	"strings"
 	"testing"
 
-	assert "github.com/blend/go-sdk/assert"
-	validation "k8s.io/apimachinery/pkg/util/validation"
+	"github.com/blend/go-sdk/assert"
 )
 
 func TestCheckKey(t *testing.T) {
@@ -70,7 +69,7 @@ func TestCheckKeyK8S(t *testing.T) {
 		strings.Repeat("a", 254) + "/abc",
 	}
 	for _, val := range values {
-		assert.True((len(validation.IsQualifiedName(val)) == 0) == (CheckKey(val) == nil), val, validation.IsQualifiedName(val), CheckKey(val))
+		assert.Nil(CheckKey(val))
 	}
 }
 
