@@ -31,7 +31,7 @@ vet:
 .PHONY: profanity
 profanity:
 	@echo "$(VERSION)/$(GIT_REF) >> profanity"
-	@go run _bin/profanity/main.go -f PROFANITY
+	@go run _bin/profanity/main.go -rules PROFANITY -filter *.go
 
 test:
 	@echo "$(VERSION)/$(GIT_REF) >> tests"

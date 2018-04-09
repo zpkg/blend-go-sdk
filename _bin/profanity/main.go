@@ -12,7 +12,14 @@ import (
 	"github.com/blend/go-sdk/yaml"
 )
 
-var defaultRulesPath = flag.String("f", "./PROFANITY", "the default rules to include for any sub-package")
+const (
+	// DefaultProfanityFile is the default file to use for profanity rules
+	DefaultProfanityFile = "PROFANITY"
+)
+
+var rulesPath = flag.String("rules", filepath.Join(".", DefaultProfanityFile), "the default rules to include for any sub-package")
+var filter = flag.String("filter", "*.go", "the file filter in glob form")
+var verbose = flag.Bool("v", false, "verbose output")
 
 func main() {
 	// walk the filesystem
@@ -23,13 +30,19 @@ func main() {
 
 	var defaultRules []Rule
 	var err error
-	if defaultRulesPath != nil && len(*defaultRulesPath) > 0 {
-		fmt.Fprintf(os.Stdout, "using default profanity rules file: %s\n", *defaultRulesPath)
-		defaultRules, err = deserializeRules(*defaultRulesPath)
+	if rulesPath != nil && len(*rulesPath) > 0 {
+		defaultRules, err = deserializeRules(*rulesPath)
 		if err != nil {
 			fmt.Fprintf(os.Stderr, "%+v\n", err)
 			os.Exit(1)
 		}
+		if *verbose {
+			fmt.Fprintf(os.Stdout, "using rules path: %s\n", *rulesPath)
+		}
+	}
+
+	if *verbose {
+		fmt.Fprintf(os.Stdout, "using filter: %s\n", *filter)
 	}
 
 	packageRules := map[string][]Rule{}
@@ -57,9 +70,18 @@ func main() {
 		if info.IsDir() && strings.HasSuffix(file, "_bin") {
 			return filepath.SkipDir
 		}
-
-		if !strings.HasSuffix(file, ".go") {
+		if info.IsDir() {
 			return nil
+		}
+
+		if matches, err := filepath.Match(*filter, filepath.Base(file)); err != nil {
+			return err
+		} else if !matches {
+			return nil
+		}
+
+		if *verbose {
+			fmt.Fprintf(os.Stdout, "checking: %s\n", file)
 		}
 
 		contents, err := ioutil.ReadFile(file)
@@ -73,7 +95,13 @@ func main() {
 		}
 		for _, rule := range rules {
 			if err := rule.Apply(contents); err != nil {
-				return fmt.Errorf("%s failed: %+v", file, err)
+				fileMessage := ColorLightWhite.Apply(file)
+				failedMessage := ColorRed.Apply("failed")
+				errMessage := fmt.Sprintf("%+v", err)
+				if len(rule.Message) > 0 {
+					return fmt.Errorf("\n\t%s %s: %s\n\t%s: %s", fileMessage, failedMessage, errMessage, ColorLightWhite.Apply("message"), rule.Message)
+				}
+				return fmt.Errorf("\n\t%s %s: %s", fileMessage, failedMessage, errMessage)
 			}
 		}
 
@@ -81,16 +109,15 @@ func main() {
 	})
 
 	if walkErr != nil {
-		fmt.Fprintf(os.Stderr, "%+v\n", walkErr)
+		fmt.Fprintf(os.Stderr, "%+v\n\n", walkErr)
 		os.Exit(1)
 		return
 	}
-	fmt.Fprintf(os.Stdout, "profanity ok!\n")
 	os.Exit(0)
 }
 
 func discoverRules(path string) ([]Rule, error) {
-	profanityPath := filepath.Join(path, "PROFANITY")
+	profanityPath := filepath.Join(path, DefaultProfanityFile)
 	if _, err := os.Stat(profanityPath); err != nil {
 		return nil, nil
 	}
@@ -131,6 +158,7 @@ func Regex(expr string) RuleFunc {
 
 // Rule is a serialized rule.
 type Rule struct {
+	Message  string `yaml:"message,omitempty"`
 	Contains string `yaml:"contains,omitempty"`
 	Regex    string `yaml:"regex,omitempty"`
 }
@@ -148,3 +176,72 @@ func (r Rule) Apply(contents []byte) error {
 
 // RuleFunc is a function that evaluates a corpus.
 type RuleFunc func([]byte) error
+
+// AnsiColor represents an ansi color code fragment.
+type AnsiColor string
+
+// escaped escapes the color for use in the terminal.
+func (acc AnsiColor) escaped() string {
+	return "\033[" + string(acc)
+}
+
+// Apply returns a string with the color code applied.
+func (acc AnsiColor) Apply(text string) string {
+	return acc.escaped() + text + ColorReset.escaped()
+}
+
+const (
+	// ColorBlack is the posix escape code fragment for black.
+	ColorBlack AnsiColor = "30m"
+
+	// ColorRed is the posix escape code fragment for red.
+	ColorRed AnsiColor = "31m"
+
+	// ColorGreen is the posix escape code fragment for green.
+	ColorGreen AnsiColor = "32m"
+
+	// ColorYellow is the posix escape code fragment for yellow.
+	ColorYellow AnsiColor = "33m"
+
+	// ColorBlue is the posix escape code fragment for blue.
+	ColorBlue AnsiColor = "34m"
+
+	// ColorPurple is the posix escape code fragement for magenta (purple)
+	ColorPurple AnsiColor = "35m"
+
+	// ColorCyan is the posix escape code fragement for cyan.
+	ColorCyan AnsiColor = "36m"
+
+	// ColorWhite is the posix escape code fragment for white.
+	ColorWhite AnsiColor = "37m"
+
+	// ColorLightBlack is the posix escape code fragment for black.
+	ColorLightBlack AnsiColor = "90m"
+
+	// ColorLightRed is the posix escape code fragment for red.
+	ColorLightRed AnsiColor = "91m"
+
+	// ColorLightGreen is the posix escape code fragment for green.
+	ColorLightGreen AnsiColor = "92m"
+
+	// ColorLightYellow is the posix escape code fragment for yellow.
+	ColorLightYellow AnsiColor = "93m"
+
+	// ColorLightBlue is the posix escape code fragment for blue.
+	ColorLightBlue AnsiColor = "94m"
+
+	// ColorLightPurple is the posix escape code fragement for magenta (purple)
+	ColorLightPurple AnsiColor = "95m"
+
+	// ColorLightCyan is the posix escape code fragement for cyan.
+	ColorLightCyan AnsiColor = "96m"
+
+	// ColorLightWhite is the posix escape code fragment for white.
+	ColorLightWhite AnsiColor = "97m"
+
+	// ColorGray is an alias to ColorLightWhite to preserve backwards compatibility.
+	ColorGray AnsiColor = ColorLightBlack
+
+	// ColorReset is the posix escape code fragment to reset all formatting.
+	ColorReset AnsiColor = "0m"
+)

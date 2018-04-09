@@ -31,12 +31,12 @@ For your team's use; when in doubt, just use the canonical parser found in apima
 
 Fetch the package as normal:
 ```bash
-> go get -u github.com/blendlabs/go-selector
+> go get -u github.com/blend/go-sdk/selector
 ```
 
 Include in your project:
 ```golang
-import selector "github.com/blendlabs/go-selector"
+import selector "github.com/blend/go-sdk/selector"
 ```
 
 ## Example

@@ -1,2 +1,4 @@
 - contains: "github.com/blendlabs/"
-- contains: "gopkg.in/"
+  message: "please switch to using `github.com/blend/go-sdk`" 
+- contains: "gopkg.in/yaml.v2"
+  messge: "please use `github.com/blend/go-sdk/yaml`"
