@@ -1,7 +1,6 @@
 package logger
 
 import (
-	"crypto/rand"
 	"fmt"
 	"net"
 	"net/http"
@@ -48,15 +47,6 @@ func GetIP(r *http.Request) string {
 
 	ip, _, _ := net.SplitHostPort(r.RemoteAddr)
 	return ip
-}
-
-// UUIDv4 returns a v4 uuid short string.
-func UUIDv4() string {
-	uuid := make([]byte, 16)
-	rand.Read(uuid)
-	uuid[6] = (uuid[6] & 0x0f) | 0x40 // set version 4
-	uuid[8] = (uuid[8] & 0x3f) | 0x80 // set variant 10
-	return fmt.Sprintf("%x", uuid[:])
 }
 
 // ColorizeByStatusCode returns a value colored by an http status code.

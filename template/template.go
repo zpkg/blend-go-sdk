@@ -11,6 +11,7 @@ import (
 	"strings"
 	"time"
 
+	"github.com/blend/go-sdk/semver"
 	"github.com/blend/go-sdk/yaml"
 
 	"encoding/base64"
@@ -450,20 +451,17 @@ func (t *Template) baseFuncMap() texttemplate.FuncMap {
 			return fmt.Sprintf("%x", h.Sum(nil))
 		},
 
-		"semver": func(v string) (*Semver, error) {
-			return NewSemver(v)
+		"semver": func(v string) (*semver.Version, error) {
+			return semver.NewVersion(v)
 		},
-		"major": func(v *Semver) int {
-			return int(v.Major)
+		"major": func(v *semver.Version) int {
+			return int(v.Segments()[0])
 		},
-		"minor": func(v *Semver) int {
-			return int(v.Minor)
+		"minor": func(v *semver.Version) int {
+			return int(v.Segments()[1])
 		},
-		"patch": func(v *Semver) int {
-			return int(v.Patch)
-		},
-		"prerelease": func(v *Semver) string {
-			return string(v.PreRelease)
+		"patch": func(v *semver.Version) int {
+			return int(v.Segments()[2])
 		},
 
 		"yaml": func(v interface{}) (string, error) {

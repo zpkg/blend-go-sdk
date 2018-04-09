@@ -13,6 +13,7 @@ import (
 	"strings"
 
 	assert "github.com/blend/go-sdk/assert"
+	"github.com/blend/go-sdk/uuid"
 )
 
 func TestTemplateFromFile(t *testing.T) {
@@ -85,7 +86,7 @@ func TestTemplateVarMissing(t *testing.T) {
 func TestTemplateEnv(t *testing.T) {
 	assert := assert.New(t)
 
-	varName := UUIDv4().String()
+	varName := uuid.V4().String()
 	os.Setenv(varName, "bar")
 	defer os.Unsetenv(varName)
 
@@ -101,7 +102,7 @@ func TestTemplateEnv(t *testing.T) {
 func TestTemplateHasEnv(t *testing.T) {
 	assert := assert.New(t)
 
-	varName := UUIDv4().String()
+	varName := uuid.V4().String()
 	os.Setenv(varName, "bar")
 	defer os.Unsetenv(varName)
 
@@ -117,7 +118,7 @@ func TestTemplateHasEnv(t *testing.T) {
 func TestTemplateHasEnvFalsey(t *testing.T) {
 	assert := assert.New(t)
 
-	varName := UUIDv4().String()
+	varName := uuid.V4().String()
 
 	test := fmt.Sprintf(`{{ if .HasEnv "%s" }}yep{{else}}nope{{end}}`, varName)
 	temp := New().WithBody(test)
@@ -131,7 +132,7 @@ func TestTemplateHasEnvFalsey(t *testing.T) {
 func TestTemplateEnvMissing(t *testing.T) {
 	assert := assert.New(t)
 
-	varName := UUIDv4().String()
+	varName := uuid.V4().String()
 
 	test := fmt.Sprintf(`{{ .Env "%s" }}`, varName)
 	temp := New().WithBody(test)
@@ -168,7 +169,7 @@ func TestTemplateHasFile(t *testing.T) {
 func TestTemplateHasFileFalsey(t *testing.T) {
 	assert := assert.New(t)
 
-	fileName := UUIDv4().String()
+	fileName := uuid.V4().String()
 
 	test := fmt.Sprintf(`{{ if .HasFile "testdata/%s" }}yep{{else}}nope{{end}}`, fileName)
 	temp := New().WithBody(test)
@@ -534,17 +535,6 @@ func TestTemplateViewFuncSemverPatch(t *testing.T) {
 	err := temp.Process(buffer)
 	assert.Nil(err)
 	assert.Equal("3", buffer.String())
-}
-
-func TestTemplateViewFuncSemverPreRelease(t *testing.T) {
-	assert := assert.New(t)
-
-	test := `{{ .Var "foo" | semver | prerelease }}`
-	temp := New().WithBody(test).WithVar("foo", "1.2.3-beta1")
-	buffer := bytes.NewBuffer(nil)
-	err := temp.Process(buffer)
-	assert.Nil(err)
-	assert.Equal("beta1", buffer.String())
 }
 
 type label struct {

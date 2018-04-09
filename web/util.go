@@ -19,6 +19,15 @@ import (
 	"github.com/blend/go-sdk/util"
 )
 
+// MustParseURL parses a url and panics if there is an error.
+func MustParseURL(rawURL string) *url.URL {
+	u, err := url.Parse(rawURL)
+	if err != nil {
+		panic(err)
+	}
+	return u
+}
+
 // NestMiddleware reads the middleware variadic args and organizes the calls recursively in the order they appear.
 func NestMiddleware(action Action, middleware ...Middleware) Action {
 	if len(middleware) == 0 {

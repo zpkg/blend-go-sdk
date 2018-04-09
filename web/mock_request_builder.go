@@ -179,7 +179,6 @@ func (mrb *MockRequestBuilder) Request() (*http.Request, error) {
 	req := &http.Request{}
 
 	reqURL, err := url.Parse(fmt.Sprintf("http://localhost%s", mrb.path))
-
 	if err != nil {
 		return nil, err
 	}

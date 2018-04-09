@@ -5,6 +5,8 @@ import (
 	"encoding/base64"
 	"io"
 	"time"
+
+	"github.com/blend/go-sdk/uuid"
 )
 
 // Helpers is a namespace for helper functions.
@@ -24,5 +26,5 @@ func (h Helpers) CreateKey(keySize int) string {
 
 // UUID returns a uuidv4 as a string.
 func (h Helpers) UUID() string {
-	return UUIDv4().String()
+	return uuid.V4().String()
 }
