@@ -4,7 +4,7 @@ import (
 	"crypto/aes"
 	"crypto/cipher"
 	"crypto/hmac"
-	"crypto/rand"
+	cryptorand "crypto/rand"
 	"crypto/sha512"
 	"fmt"
 	"io"
@@ -26,7 +26,7 @@ type GCMEncryptionResult struct {
 // CreateKey creates a key of a given size by reading that much data off the crypto/rand reader.
 func (cu cryptoUtil) CreateKey(keySize int) ([]byte, error) {
 	key := make([]byte, keySize)
-	_, err := rand.Read(key)
+	_, err := cryptorand.Read(key)
 	if err != nil {
 		return nil, err
 	}
@@ -50,7 +50,7 @@ func (cu cryptoUtil) Encrypt(key, plainText []byte) ([]byte, error) {
 	}
 	ciphertext := make([]byte, aes.BlockSize+len(plainText))
 	iv := ciphertext[:aes.BlockSize]
-	if _, err := io.ReadFull(rand.Reader, iv); err != nil {
+	if _, err := io.ReadFull(cryptorand.Reader, iv); err != nil {
 		return nil, err
 	}
 	cfb := cipher.NewCFBEncrypter(block, iv)
@@ -74,7 +74,7 @@ func (cu cryptoUtil) GCMEncrypt(key, plainText, dst []byte) (*GCMEncryptionResul
 		return nil, exception.Wrap(err)
 	}
 	nonce := make([]byte, aead.NonceSize())
-	_, err = rand.Read(nonce)
+	_, err = cryptorand.Read(nonce)
 	if err != nil {
 		return nil, exception.Wrap(err)
 	}
@@ -130,7 +130,7 @@ func (cu cryptoUtil) Hash(key, plainText []byte) []byte {
 // SecureRandomBytes generates a fixed length of random bytes.
 func (cu cryptoUtil) SecureRandomBytes(length int) ([]byte, error) {
 	b := make([]byte, length)
-	_, err := rand.Read(b)
+	_, err := cryptorand.Read(b)
 	if err != nil {
 		return nil, exception.Wrap(err)
 	}

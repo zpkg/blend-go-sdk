@@ -27,23 +27,8 @@ func TestRegexMatch(t *testing.T) {
 	assert.Equal("", result)
 }
 
-func TestParse(t *testing.T) {
+func TestFromNumbers(t *testing.T) {
 	assert := assert.New(t)
-
-	good := Parse.Float64("3.14")
-	bad := Parse.Float64("I Am Dog")
-	assert.Equal(3.14, good)
-	assert.Equal(0.0, bad)
-
-	good32 := Parse.Float32("3.14")
-	bad32 := Parse.Float32("I Am Dog")
-	assert.Equal(3.14, good32)
-	assert.Equal(0.0, bad32)
-
-	goodInt := Parse.Int("3")
-	badInt := Parse.Int("I Am Dog")
-	assert.Equal(3, goodInt)
-	assert.Equal(0.0, badInt)
 
 	strGood := String.FromFloat64(3.14)
 	assert.Equal("3.14", strGood)
