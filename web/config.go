@@ -92,6 +92,9 @@ func (c Config) GetPort(defaults ...int32) int32 {
 	if c.Port > 0 {
 		return c.Port
 	}
+	if len(defaults) > 0 {
+		return defaults[0]
+	}
 	if len(c.BindAddr) > 0 {
 		return PortFromBindAddr(c.BindAddr)
 	}
