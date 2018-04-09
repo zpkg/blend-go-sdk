@@ -243,6 +243,18 @@ func (jm *JobManager) ReadAllJobs(action func(jobs map[string]Job)) {
 // Core Methods
 // --------------------------------------------------------------------------------
 
+// LoadJobs loads a variadic list of jobs.
+func (jm *JobManager) LoadJobs(jobs ...Job) error {
+	var err error
+	for _, job := range jobs {
+		err = jm.LoadJob(job)
+		if err != nil {
+			return err
+		}
+	}
+	return nil
+}
+
 // LoadJob adds a job to the manager.
 func (jm *JobManager) LoadJob(j Job) error {
 	jobName := j.Name()
@@ -259,6 +271,18 @@ func (jm *JobManager) LoadJob(j Job) error {
 	return nil
 }
 
+// DisableJobs disables a variadic list of job names.
+func (jm *JobManager) DisableJobs(jobNames ...string) error {
+	var err error
+	for _, jobName := range jobNames {
+		err = jm.DisableJob(jobName)
+		if err != nil {
+			return err
+		}
+	}
+	return nil
+}
+
 // DisableJob stops a job from running but does not unload it.
 func (jm *JobManager) DisableJob(jobName string) error {
 	if !jm.HasJob(jobName) {
@@ -267,6 +291,18 @@ func (jm *JobManager) DisableJob(jobName string) error {
 
 	jm.setDisabledJob(jobName)
 	jm.deleteNextRunTime(jobName)
+	return nil
+}
+
+// EnableJobs enables a variadic list of job names.
+func (jm *JobManager) EnableJobs(jobNames ...string) error {
+	var err error
+	for _, jobName := range jobNames {
+		err = jm.EnableJob(jobName)
+		if err != nil {
+			return err
+		}
+	}
 	return nil
 }
 
@@ -281,6 +317,26 @@ func (jm *JobManager) EnableJob(jobName string) error {
 	jobSchedule := job.Schedule()
 	jm.setNextRunTime(jobName, jobSchedule.GetNextRunTime(nil))
 
+	return nil
+}
+
+// RunJobs runs a variadic list of job names.
+func (jm *JobManager) RunJobs(jobNames ...string) error {
+	jm.loadedJobsLock.Lock()
+	defer jm.loadedJobsLock.Unlock()
+
+	for _, jobName := range jobNames {
+		if job, hasJob := jm.loadedJobs[jobName]; hasJob {
+			if !jm.IsDisabled(jobName) {
+				jobErr := jm.RunTask(job)
+				if jobErr != nil {
+					return jobErr
+				}
+			}
+		} else {
+			return exception.NewFromErr(ErrJobNotLoaded).WithMessagef("job: %s", jobName)
+		}
+	}
 	return nil
 }
 
@@ -315,19 +371,6 @@ func (jm *JobManager) RunAllJobs() error {
 		}
 	}
 	return nil
-}
-
-func (jm *JobManager) createContext() (context.Context, context.CancelFunc) {
-	return context.WithCancel(context.Background())
-}
-
-// shouldRunTask returns whether a task should be executed based on its status
-func (jm *JobManager) shouldRunTask(t Task) bool {
-	_, serial := t.(SerialProvider)
-	if serial {
-		return !jm.IsRunning(t.Name())
-	}
-	return true
 }
 
 // RunTask runs a task on demand.
@@ -370,31 +413,6 @@ func (jm *JobManager) RunTask(t Task) error {
 	return nil
 }
 
-func (jm *JobManager) onTaskStart(t Task) {
-	if receiver, isReceiver := t.(OnStartReceiver); isReceiver {
-		receiver.OnStart()
-	}
-}
-
-func (jm *JobManager) onTaskComplete(t Task, result error) {
-	if receiver, isReceiver := t.(OnCompleteReceiver); isReceiver {
-		receiver.OnComplete(result)
-	}
-}
-
-func (jm *JobManager) onTaskCancellation(t Task) {
-	if receiver, isReceiver := t.(OnCancellationReceiver); isReceiver {
-		receiver.OnCancellation()
-	}
-}
-
-func (jm *JobManager) cleanupTask(taskName string) {
-	jm.deleteRunningTaskStartTime(taskName)
-	jm.deleteRunningTask(taskName)
-	jm.deleteContext(taskName)
-	jm.deleteCancelFunc(taskName)
-}
-
 // CancelTask cancels (sends the cancellation signal) to a running task.
 func (jm *JobManager) CancelTask(taskName string) error {
 	jm.runningTasksLock.Lock()
@@ -432,6 +450,44 @@ func (jm *JobManager) Stop() {
 // --------------------------------------------------------------------------------
 // Utility Methods
 // --------------------------------------------------------------------------------
+
+func (jm *JobManager) createContext() (context.Context, context.CancelFunc) {
+	return context.WithCancel(context.Background())
+}
+
+// shouldRunTask returns whether a task should be executed based on its status
+func (jm *JobManager) shouldRunTask(t Task) bool {
+	_, serial := t.(SerialProvider)
+	if serial {
+		return !jm.IsRunning(t.Name())
+	}
+	return true
+}
+
+func (jm *JobManager) onTaskStart(t Task) {
+	if receiver, isReceiver := t.(OnStartReceiver); isReceiver {
+		receiver.OnStart()
+	}
+}
+
+func (jm *JobManager) onTaskComplete(t Task, result error) {
+	if receiver, isReceiver := t.(OnCompleteReceiver); isReceiver {
+		receiver.OnComplete(result)
+	}
+}
+
+func (jm *JobManager) onTaskCancellation(t Task) {
+	if receiver, isReceiver := t.(OnCancellationReceiver); isReceiver {
+		receiver.OnCancellation()
+	}
+}
+
+func (jm *JobManager) cleanupTask(taskName string) {
+	jm.deleteRunningTaskStartTime(taskName)
+	jm.deleteRunningTask(taskName)
+	jm.deleteContext(taskName)
+	jm.deleteCancelFunc(taskName)
+}
 
 func (jm *JobManager) runDueJobs(ctx context.Context) {
 	heartbeat := time.Tick(jm.heartbeatInterval)
