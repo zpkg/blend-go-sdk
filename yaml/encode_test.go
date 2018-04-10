@@ -449,10 +449,19 @@ func TestMarshalErrors(t *testing.T) {
 
 	for _, item := range marshalErrorTests {
 		if item.panic != "" {
-			assert.PanicEqual(item.panic, func() { yaml.Marshal(item.value) })
+			var didPanic bool
+			func() {
+				defer func() {
+					if r := recover(); r != nil {
+						didPanic = true
+					}
+				}()
+				yaml.Marshal(item.value)
+			}()
+			assert.True(didPanic)
 		} else {
 			_, err := yaml.Marshal(item.value)
-			assert.Equal(item.error, err)
+			assert.Equal(item.error, err.Error())
 		}
 	}
 }

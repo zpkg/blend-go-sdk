@@ -56,7 +56,6 @@ func Empty() *Assertions {
 func New(t *testing.T) *Assertions {
 	return &Assertions{
 		t:            t,
-		output:       os.Stderr,
 		timerAbort:   make(chan bool),
 		timerAborted: make(chan bool),
 	}
