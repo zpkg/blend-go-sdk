@@ -7,6 +7,7 @@ import (
 	"testing"
 	"time"
 
+	"github.com/blend/go-sdk/assert"
 	"github.com/blend/go-sdk/exception"
 )
 
@@ -21,7 +22,7 @@ func TestMain(m *testing.M) {
 		fmt.Fprintf(os.Stderr, "%+v", err)
 		os.Exit(1)
 	}
-	os.Exit(m.Run())
+	assert.Main(m)
 }
 
 // BenchmarkMain is the benchmarking entrypoint.

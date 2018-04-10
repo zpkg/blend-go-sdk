@@ -35,7 +35,7 @@ profanity:
 
 test:
 	@echo "$(VERSION)/$(GIT_REF) >> tests"
-	@go test $(PKGS)
+	@go test -v $(PKGS)
 
 cover:
 	@echo "$(VERSION)/$(GIT_REF) >> coverage"

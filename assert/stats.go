@@ -4,8 +4,16 @@ import (
 	"fmt"
 	"os"
 	"sync/atomic"
+	"syscall"
 	"testing"
 	"time"
+)
+
+var (
+	// Stdout is an file handle to stdout.
+	Stdout = os.NewFile(uintptr(syscall.Stdout), "/dev/stdout")
+	// Stderr is an file handle to stderr.
+	Stderr = os.NewFile(uintptr(syscall.Stderr), "/dev/stderr")
 )
 
 // assertcount is the total number of assetions run during the package lifetime.
@@ -42,7 +50,7 @@ func Rate() float64 {
 
 // ReportRate writes the rate summary to stdout.
 func ReportRate() {
-	fmt.Fprintf(os.Stdout, "assertions: %d rate: %0.2f assert/sec\n", Count(), Rate())
+	fmt.Fprintf(Stdout, "asserts: %d Δt: %v λ: %0.2f assert/sec\n", Count(), Elapsed(), Rate())
 }
 
 // Main wraps a testing.M.

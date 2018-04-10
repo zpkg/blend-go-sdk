@@ -13,7 +13,7 @@ func TestAuditEventListener(t *testing.T) {
 	wg := sync.WaitGroup{}
 	wg.Add(2)
 
-	all := New().WithFlags(AllFlags())
+	all := New().WithFlags(AllFlags()).WithRecoverPanics(false)
 	defer all.Close()
 
 	all.Listen(Audit, "default", NewAuditEventListener(func(e *AuditEvent) {
@@ -27,6 +27,7 @@ func TestAuditEventListener(t *testing.T) {
 	go func() { all.Trigger(NewAuditEvent("principal", "verb", "noun")) }()
 	go func() { all.Trigger(NewAuditEvent("principal", "verb", "noun")) }()
 	wg.Wait()
+
 }
 
 func TestAuditEventInterfaces(t *testing.T) {
