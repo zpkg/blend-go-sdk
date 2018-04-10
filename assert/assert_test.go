@@ -1,23 +1,32 @@
 package assert
 
 import (
+	"bytes"
 	"strings"
 	"testing"
 	"time"
 )
 
 func TestEmpty(t *testing.T) {
-	a := Empty()
+	buf := bytes.NewBuffer(nil)
+	a := Empty().WithOutput(buf)
+	if a.Output() == nil {
+		t.Error("The empty assertion helper should have an output set")
+		t.Fail()
+	}
 	if a.NonFatal().True(false, "this should fail") {
 		t.Error("NonFatal true(false) didn't fail.")
 	}
 	if !a.NonFatal().True(true, "this should pass") {
 		t.Error("NonFatal true(true) didn't pass.")
 	}
+
+	if len(buf.String()) == 0 {
+		t.Error("We should have produced output.")
+	}
 }
 
 func TestIsZero(t *testing.T) {
-
 	zeroShort := int16(0)
 	if !isZero(zeroShort) {
 		t.Error("isZero failed")
