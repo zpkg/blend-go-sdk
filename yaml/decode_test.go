@@ -254,7 +254,7 @@ var unmarshalTests = []struct {
 	}, {
 		"a: 1",
 		&struct {
-			B int "a"
+			B int `yaml:"a"`
 		}{1},
 	}, {
 		"a: y",
@@ -474,7 +474,7 @@ var unmarshalTests = []struct {
 		"a: 1\nb: 2\n",
 		&struct {
 			A int
-			B int "-"
+			B int `yaml:"-"`
 		}{1, 0},
 	},
 
@@ -570,7 +570,7 @@ var unmarshalTests = []struct {
 	// Ordered maps.
 	{
 		"{b: 2, a: 1, d: 4, c: 3, sub: {e: 5}}",
-		&yaml.MapSlice{{"b", 2}, {"a", 1}, {"d", 4}, {"c", 3}, {"sub", yaml.MapSlice{{"e", 5}}}},
+		&yaml.MapSlice{{Key: "b", Value: 2}, {Key: "a", Value: 1}, {Key: "d", Value: 4}, {Key: "c", Value: 3}, {Key: "sub", Value: yaml.MapSlice{{Key: "e", Value: 5}}}},
 	},
 
 	// Issue #39.
@@ -911,11 +911,11 @@ func (o *unmarshalerType) UnmarshalYAML(unmarshal func(v interface{}) error) err
 }
 
 type unmarshalerPointer struct {
-	Field *unmarshalerType "_"
+	Field *unmarshalerType `yaml:"_"`
 }
 
 type unmarshalerValue struct {
-	Field unmarshalerType "_"
+	Field unmarshalerType `yaml:"_"`
 }
 
 func TestUnmarshalerPointerField(t *testing.T) {
@@ -961,8 +961,8 @@ func TestUnmarshalerWholeDocument(t *testing.T) {
 func TestUnmarshalerTypeError(t *testing.T) {
 	assert := assert.New(t)
 
-	unmarshalerResult[2] = &yaml.TypeError{[]string{"foo"}}
-	unmarshalerResult[4] = &yaml.TypeError{[]string{"bar"}}
+	unmarshalerResult[2] = &yaml.TypeError{Errors: []string{"foo"}}
+	unmarshalerResult[4] = &yaml.TypeError{Errors: []string{"bar"}}
 	defer func() {
 		delete(unmarshalerResult, 2)
 		delete(unmarshalerResult, 4)

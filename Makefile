@@ -19,6 +19,7 @@ ci: vet profanity cover
 
 new-install:
 	@go get -u github.com/lib/pq
+	@go get -u golang.org/x/lint/golint
 
 format:
 	@echo "$(VERSION)/$(GIT_REF) >> formatting code"
@@ -27,6 +28,10 @@ format:
 vet:
 	@echo "$(VERSION)/$(GIT_REF) >> vetting code"
 	@go vet $(PKGS)
+
+lint:
+	@echo "$(VERSION)/$(GIT_REF) >> linting code"
+	@golint $(PKGS)
 
 .PHONY: profanity
 profanity:
