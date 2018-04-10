@@ -408,7 +408,9 @@ func (l *Logger) trigger(async bool, e Event) {
 					if async {
 						worker.Work <- e
 					} else {
-						worker.Listener(e)
+						l.safeExecute(func() {
+							worker.Listener(e)
+						})
 					}
 				}
 			}
@@ -429,16 +431,29 @@ func (l *Logger) trigger(async bool, e Event) {
 			if async {
 				l.writeErrorWorker.Work <- e
 			} else {
-				l.WriteError(e)
+				l.safeExecute(func() {
+					l.WriteError(e)
+				})
 			}
 		} else {
 			if async {
 				l.writeWorker.Work <- e
 			} else {
-				l.Write(e)
+				l.safeExecute(func() {
+					l.Write(e)
+				})
 			}
 		}
 	}
+}
+
+func (l *Logger) safeExecute(action func()) {
+	defer func() {
+		if r := recover(); r != nil {
+			fmt.Fprintf(os.Stderr, "logger panic: %v\n", r)
+		}
+	}()
+	action()
 }
 
 // --------------------------------------------------------------------------------
@@ -702,6 +717,7 @@ func (l *Logger) ensureInitialized() {
 	if l.writeWorker == nil {
 		l.writeWorkerLock.Lock()
 		defer l.writeWorkerLock.Unlock()
+
 		if l.writeWorker == nil {
 			l.writeWorker = NewWorker(l, l.Write)
 			l.writeWorker.Start()
@@ -710,6 +726,7 @@ func (l *Logger) ensureInitialized() {
 	if l.writeErrorWorker == nil {
 		l.writeErrorWorkerLock.Lock()
 		defer l.writeErrorWorkerLock.Unlock()
+
 		if l.writeErrorWorker == nil {
 			l.writeErrorWorker = NewWorker(l, l.WriteError)
 			l.writeErrorWorker.Start()

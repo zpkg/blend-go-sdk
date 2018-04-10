@@ -20,7 +20,7 @@ func New() *Proxy {
 
 // Proxy is a factory for a simple reverse proxy.
 type Proxy struct {
-	BaseServer
+	log       *logger.Logger
 	upstreams []*Upstream
 	resolver  Resolver
 }

@@ -51,9 +51,6 @@ func main() {
 	var logEvents string
 	flag.StringVar(&logEvents, "log-events", "", "Logger events to enable or disable. Coalesced with `LOG_EVENTS`")
 
-	var close bool
-	flag.BoolVar(&close, "close", false, "Should close connection after proxying them.")
-
 	flag.Parse()
 
 	if len(upstreams) == 0 {
@@ -76,9 +73,7 @@ func main() {
 		}
 
 		proxyUpstream := proxy.NewUpstream(target).
-			WithLogger(log).
-			WithClose(close).
-			WithBufferPool(proxy.NewBufferPool())
+			WithLogger(log)
 
 		reverseProxy.WithUpstream(proxyUpstream)
 	}
