@@ -161,8 +161,8 @@ func (ae AuditEvent) Property() string {
 	return ae.property
 }
 
-// WithRemoteAddr sets the remote address.
-func (ae *AuditEvent) WithRemoteAddr(remoteAddr string) *AuditEvent {
+// WithRemoteAddress sets the remote address.
+func (ae *AuditEvent) WithRemoteAddress(remoteAddr string) *AuditEvent {
 	ae.remoteAddress = remoteAddr
 	return ae
 }
