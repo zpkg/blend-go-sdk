@@ -72,4 +72,13 @@ func TestAuditEventProperties(t *testing.T) {
 
 	assert.Empty(ae.RemoteAddress())
 	assert.Equal("RemoteAddress", ae.WithRemoteAddress("RemoteAddress").RemoteAddress())
+
+	assert.Empty(ae.UserAgent())
+	assert.Equal("UserAgent", ae.WithUserAgent("UserAgent").UserAgent())
+
+	assert.Empty(ae.Labels())
+	assert.Equal("bar", ae.WithLabel("foo", "bar").Labels()["foo"])
+
+	assert.Empty(ae.Annotations())
+	assert.Equal("zar", ae.WithAnnotation("moo", "zar").Annotations()["moo"])
 }

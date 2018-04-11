@@ -40,6 +40,10 @@ profanity:
 
 test:
 	@echo "$(VERSION)/$(GIT_REF) >> tests"
+	@go test $(PKGS)
+
+test-verbose:
+	@echo "$(VERSION)/$(GIT_REF) >> tests"
 	@go test -v $(PKGS)
 
 cover:

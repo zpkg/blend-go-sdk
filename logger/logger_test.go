@@ -654,3 +654,43 @@ func TestLoggerCanConfigureMultipleWriters(t *testing.T) {
 	assert.NotEmpty(out.String())
 	assert.NotEmpty(out2.String())
 }
+
+type panics struct {
+	didRun bool
+}
+
+func (p panics) Flag() Flag {
+	return Flag("panics")
+}
+func (p panics) Timestamp() time.Time {
+	return time.Now().UTC()
+}
+
+func (p *panics) WriteText(tf TextFormatter, buf *bytes.Buffer) {
+	p.didRun = true
+	panic("this is only a test")
+}
+
+func TestLoggerPanicOnWrite(t *testing.T) {
+	assert := assert.New(t)
+
+	buffer := bytes.NewBuffer(nil)
+	all := New().WithFlags(AllFlags()).WithWriter(NewTextWriter(buffer))
+	event := &panics{}
+	all.Trigger(event)
+	all.Drain()
+	defer all.Close()
+
+	assert.True(event.didRun, "The event should have triggered.")
+	assert.NotEmpty(buffer.String())
+}
+func TestLoggerPanicOnSyncWrite(t *testing.T) {
+	assert := assert.New(t)
+
+	buffer := bytes.NewBuffer(nil)
+	all := New().WithFlags(AllFlags()).WithWriter(NewTextWriter(buffer))
+	event := &panics{}
+	all.SyncTrigger(event)
+	assert.True(event.didRun, "The event should have triggered.")
+	assert.NotEmpty(buffer.String())
+}

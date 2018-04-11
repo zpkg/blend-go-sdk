@@ -450,7 +450,7 @@ func (l *Logger) trigger(async bool, e Event) {
 func (l *Logger) safeExecute(action func()) {
 	defer func() {
 		if r := recover(); r != nil {
-			fmt.Fprintf(os.Stderr, "logger panic: %v\n", r)
+			l.SyncFatalf("%v", r)
 		}
 	}()
 	action()
