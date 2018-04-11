@@ -9,6 +9,9 @@ import (
 func TestProfileUsername(t *testing.T) {
 	assert := assert.New(t)
 
+	assert.Empty(Profile{}.Username())
+	assert.Equal("foo", Profile{Email: "foo"}.Username())
+
 	profile := Profile{
 		Email: "test@blend.com",
 	}

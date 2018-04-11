@@ -1,11 +1,13 @@
 package oauth
 
 import (
+	"net/http"
 	"net/url"
 	"testing"
 	"time"
 
 	"github.com/blend/go-sdk/assert"
+	"github.com/blend/go-sdk/request"
 	"github.com/blend/go-sdk/util"
 	"github.com/blend/go-sdk/uuid"
 )
@@ -255,4 +257,43 @@ func TestManagerValidateJWT(t *testing.T) {
 
 	m.WithClientID(uuid.V4().String())
 	assert.NotNil(m.ValidateJWT(jwt))
+}
+
+func TestManagerValidateConfig(t *testing.T) {
+	assert := assert.New(t)
+
+	assert.Equal(ErrSecretRequired, New().WithSecret(nil).ValidateConfig())
+	assert.Equal(ErrClientIDRequired, New().WithClientID("").ValidateConfig())
+	assert.Equal(ErrClientSecretRequired, New().WithClientID("foo").WithClientSecret("").ValidateConfig())
+	assert.Equal(ErrRedirectURIRequired, New().WithClientID("foo").WithClientSecret("bar").ValidateConfig())
+	assert.Equal(ErrInvalidRedirectURI, New().WithClientID("foo").WithClientSecret("bar").WithRedirectURI(uuid.V4().String()).ValidateConfig())
+	assert.Equal(ErrInvalidRedirectURI, New().WithClientID("foo").WithClientSecret("bar").WithRedirectURI("localhost").ValidateConfig())
+	assert.Equal(ErrInvalidRedirectURI, New().WithClientID("foo").WithClientSecret("bar").WithRedirectURI("http://").ValidateConfig())
+}
+
+func TestManagerFetchProfile(t *testing.T) {
+	assert := assert.New(t)
+	defer request.ClearMockedResponses()
+	request.MockResponseFromString("GET", "https://www.googleapis.com/oauth2/v1/userinfo?access_token=doesnt_matter&alt=json", http.StatusOK, `{"id":"foo", "email":"foo@bar.com"}`)
+
+	m := New().WithClientID("test").WithClientSecret("secret").WithRedirectURI("http://localhost/oauth/finish")
+
+	profile, err := m.FetchProfile("doesnt_matter")
+	assert.Nil(err)
+	assert.Equal("foo", profile.ID)
+	assert.Equal("foo@bar.com", profile.Email)
+}
+
+func TestManagerFinish(t *testing.T) {
+	assert := assert.New(t)
+
+	m := New().WithClientID("test").WithClientSecret("secret").WithRedirectURI("http://localhost/oauth/finish")
+
+	res, err := m.Finish(&http.Request{URL: &url.URL{}})
+	assert.Nil(res)
+	assert.Equal(ErrCodeMissing, err)
+
+	res, err = m.Finish(&http.Request{URL: &url.URL{RawQuery: `code=test`}})
+	assert.Nil(res)
+	assert.Equal(ErrStateMissing, err)
 }
