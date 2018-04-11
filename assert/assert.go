@@ -32,8 +32,11 @@ const (
 	EMPTY = ""
 )
 
+// Any is a loose type alias to interface{}
+type Any = interface{}
+
 // Predicate is a func that returns a bool.
-type Predicate func(item interface{}) bool
+type Predicate func(item Any) bool
 
 //PredicateOfInt is a func that takes an int and returns a bool.
 type PredicateOfInt func(item int) bool
@@ -89,6 +92,8 @@ func (a *Assertions) assertion() {
 
 // NonFatal transitions the assertion into a `NonFatal` assertion; that is, one that will not cause the test to abort if it fails.
 // NonFatal assertions are useful when you want to check many properties during a test, but only on an informational basis.
+// They will typically return a bool to indicate if the assertion succeeded, or if you should consider the overall
+// test to still be a success.
 func (a *Assertions) NonFatal() *Optional { //golint you can bite me.
 	return &Optional{t: a.t, output: a.output}
 }
@@ -190,9 +195,14 @@ func (a *Assertions) False(object bool, userMessageComponents ...interface{}) {
 }
 
 // InDelta asserts that two floats are within a delta.
-func (a *Assertions) InDelta(f1, f2, delta float64, userMessageComponents ...interface{}) {
+//
+// The delta is computed by the absolute of the difference betwee `f0` and `f1`
+// and testing if that absolute difference is strictly less than `delta`
+// if greater, it will fail the assertion, if delta is equal to or greater than difference
+// the assertion will pass.
+func (a *Assertions) InDelta(f0, f1, delta float64, userMessageComponents ...interface{}) {
 	a.assertion()
-	if didFail, message := shouldBeInDelta(f1, f2, delta); didFail {
+	if didFail, message := shouldBeInDelta(f0, f1, delta); didFail {
 		failNow(a.output, a.t, message, userMessageComponents...)
 	}
 }
@@ -214,9 +224,9 @@ func (a *Assertions) FileExists(filepath string, userMessageComponents ...interf
 }
 
 // Contains asserts that a substring is present in a corpus.
-func (a *Assertions) Contains(substring, corpus string, userMessageComponents ...interface{}) {
+func (a *Assertions) Contains(corpus, substring string, userMessageComponents ...interface{}) {
 	a.assertion()
-	if didFail, message := shouldContain(substring, corpus); didFail {
+	if didFail, message := shouldContain(corpus, substring); didFail {
 		failNow(a.output, a.t, message, userMessageComponents...)
 	}
 }
@@ -237,8 +247,8 @@ func (a *Assertions) AnyOfInt(target []int, predicate PredicateOfInt, userMessag
 	}
 }
 
-// AnyOfFloat applies a predicate.
-func (a *Assertions) AnyOfFloat(target []float64, predicate PredicateOfFloat, userMessageComponents ...interface{}) {
+// AnyOfFloat64 applies a predicate.
+func (a *Assertions) AnyOfFloat64(target []float64, predicate PredicateOfFloat, userMessageComponents ...interface{}) {
 	a.assertion()
 	if didFail, message := shouldAnyOfFloat(target, predicate); didFail {
 		failNow(a.output, a.t, message, userMessageComponents...)
@@ -269,8 +279,8 @@ func (a *Assertions) AllOfInt(target []int, predicate PredicateOfInt, userMessag
 	}
 }
 
-// AllOfFloat applies a predicate.
-func (a *Assertions) AllOfFloat(target []float64, predicate PredicateOfFloat, userMessageComponents ...interface{}) {
+// AllOfFloat64 applies a predicate.
+func (a *Assertions) AllOfFloat64(target []float64, predicate PredicateOfFloat, userMessageComponents ...interface{}) {
 	a.assertion()
 	if didFail, message := shouldAllOfFloat(target, predicate); didFail {
 		failNow(a.output, a.t, message, userMessageComponents...)
@@ -301,8 +311,8 @@ func (a *Assertions) NoneOfInt(target []int, predicate PredicateOfInt, userMessa
 	}
 }
 
-// NoneOfFloat applies a predicate.
-func (a *Assertions) NoneOfFloat(target []float64, predicate PredicateOfFloat, userMessageComponents ...interface{}) {
+// NoneOfFloat64 applies a predicate.
+func (a *Assertions) NoneOfFloat64(target []float64, predicate PredicateOfFloat, userMessageComponents ...interface{}) {
 	a.assertion()
 	if didFail, message := shouldNoneOfFloat(target, predicate); didFail {
 		failNow(a.output, a.t, message, userMessageComponents...)
@@ -514,9 +524,9 @@ func (o *Optional) FileExists(filepath string, userMessageComponents ...interfac
 }
 
 // Contains checks if a substring is present in a corpus.
-func (o *Optional) Contains(substring, corpus string, userMessageComponents ...interface{}) bool {
+func (o *Optional) Contains(corpus, substring string, userMessageComponents ...interface{}) bool {
 	o.assertion()
-	if didFail, message := shouldContain(substring, corpus); didFail {
+	if didFail, message := shouldContain(corpus, substring); didFail {
 		fail(o.output, o.t, prefixOptional(message), userMessageComponents...)
 		return false
 	}
@@ -657,7 +667,7 @@ func failNow(w io.Writer, t *testing.T, message string, userMessageComponents ..
 	if t != nil {
 		t.FailNow()
 	} else {
-		os.Exit(1)
+		panic(fmt.Errorf(message))
 	}
 }
 
@@ -826,7 +836,7 @@ func fileShouldExist(filePath string) (bool, string) {
 func shouldBeInDelta(from, to, delta float64) (bool, string) {
 	diff := math.Abs(from - to)
 	if diff > delta {
-		message := fmt.Sprintf("Difference of %0.5f and %0.5f should be less than %0.5f", from, to, delta)
+		message := fmt.Sprintf("Absolute difference of %0.5f and %0.5f should be less than %0.5f", from, to, delta)
 		return true, message
 	}
 	return false, EMPTY
@@ -846,7 +856,7 @@ func shouldBeInTimeDelta(from, to time.Time, delta time.Duration) (bool, string)
 	return false, EMPTY
 }
 
-func shouldContain(subString, corpus string) (bool, string) {
+func shouldContain(corpus, subString string) (bool, string) {
 	if !strings.Contains(corpus, subString) {
 		message := fmt.Sprintf("`%s` should contain `%s`", corpus, subString)
 		return true, message
@@ -1198,4 +1208,14 @@ func getClearString() string {
 	file = parts[len(parts)-1]
 
 	return strings.Repeat(" ", len(fmt.Sprintf("%s:%d:      ", file, line))+2)
+}
+
+func safeExec(action func()) (err error) {
+	defer func() {
+		if r := recover(); r != nil {
+			err = fmt.Errorf("%v", r)
+		}
+	}()
+	action()
+	return
 }

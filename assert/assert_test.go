@@ -271,13 +271,13 @@ func TestShouldNotBeNil(t *testing.T) {
 }
 
 func TestShouldContain(t *testing.T) {
-	shouldNotHaveFailed, _ := shouldContain("is a", "this is a test")
+	shouldNotHaveFailed, _ := shouldContain("this is a test", "is a")
 	if shouldNotHaveFailed {
 		t.Errorf("shouldConatain failed.")
 		t.FailNow()
 	}
 
-	shouldHaveFailed, _ := shouldContain("beer", "this is a test")
+	shouldHaveFailed, _ := shouldContain("this is a test", "beer")
 	if !shouldHaveFailed {
 		t.Errorf("shouldConatain failed.")
 		t.FailNow()
@@ -404,6 +404,946 @@ func TestInTimeDelta(t *testing.T) {
 	didFail, _ = shouldBeInTimeDelta(value1, value4, 1*time.Minute)
 	if !didFail {
 		t.Errorf("shouldBeInTimeDelta should have failed.")
+		t.FailNow()
+	}
+}
+
+func TestAssertNew(t *testing.T) {
+	a := New(t)
+
+	if a.t == nil {
+		t.Errorf("should pass t to the assertion helper")
+		t.Fail()
+	}
+}
+
+func TestAssertWithOutput(t *testing.T) {
+	buf := bytes.NewBuffer(nil)
+	a := New(t).WithOutput(buf)
+	if a.output == nil {
+		t.Errorf("should set output")
+		t.FailNow()
+	}
+	if a.Output() == nil {
+		t.Errorf("Output() is wrong")
+		t.FailNow()
+	}
+}
+
+func TestAssertNotFatal(t *testing.T) {
+	buf := bytes.NewBuffer(nil)
+	a := New(t).WithOutput(buf)
+	nf := a.NonFatal()
+	if nf.t == nil {
+		t.Errorf("should set t")
+		t.FailNow()
+	}
+	if nf.output == nil {
+		t.Errorf("should set output")
+		t.FailNow()
+	}
+	if nf.Output() == nil {
+		t.Errorf("Output() is wrong")
+		t.FailNow()
+	}
+}
+
+func TestAssertNil(t *testing.T) {
+	err := safeExec(func() {
+		New(nil).Nil(nil) // should be ok
+	})
+	if err != nil {
+		t.Errorf("should not have produced a panic")
+		t.FailNow()
+	}
+
+	output := bytes.NewBuffer(nil)
+	err = safeExec(func() {
+		New(nil).WithOutput(output).Nil("foo")
+	})
+	if err == nil {
+		t.Errorf("should have produced a panic")
+		t.FailNow()
+	}
+	if len(output.String()) == 0 {
+		t.Errorf("Should have written output on failure")
+		t.FailNow()
+	}
+}
+
+func TestAssertNotNil(t *testing.T) {
+	err := safeExec(func() {
+		New(nil).NotNil("foo") // should be ok
+	})
+	if err != nil {
+		t.Errorf("should not have produced a panic")
+		t.FailNow()
+	}
+
+	output := bytes.NewBuffer(nil)
+	err = safeExec(func() {
+		New(nil).WithOutput(output).NotNil(nil)
+	})
+	if err == nil {
+		t.Errorf("should have produced a panic")
+		t.FailNow()
+	}
+	if len(output.String()) == 0 {
+		t.Errorf("Should have written output on failure")
+		t.FailNow()
+	}
+}
+
+func TestAssertLen(t *testing.T) {
+	err := safeExec(func() {
+		New(nil).Len(3, "foo") // should be ok
+	})
+	if err != nil {
+		t.Errorf("should not have produced a panic")
+		t.FailNow()
+	}
+
+	output := bytes.NewBuffer(nil)
+	err = safeExec(func() {
+		New(nil).WithOutput(output).Len(3, []string{})
+	})
+	if err == nil {
+		t.Errorf("should have produced a panic")
+		t.FailNow()
+	}
+	if len(output.String()) == 0 {
+		t.Errorf("Should have written output on failure")
+		t.FailNow()
+	}
+}
+
+func TestAssertEmpty(t *testing.T) {
+	err := safeExec(func() {
+		New(nil).Empty("") // should be ok
+	})
+	if err != nil {
+		t.Errorf("should not have produced a panic")
+		t.FailNow()
+	}
+
+	output := bytes.NewBuffer(nil)
+	err = safeExec(func() {
+		New(nil).WithOutput(output).Empty("foo")
+	})
+	if err == nil {
+		t.Errorf("should have produced a panic")
+		t.FailNow()
+	}
+	if len(output.String()) == 0 {
+		t.Errorf("Should have written output on failure")
+		t.FailNow()
+	}
+}
+
+func TestAssertNotEmpty(t *testing.T) {
+	err := safeExec(func() {
+		New(nil).NotEmpty("foo") // should be ok
+	})
+	if err != nil {
+		t.Errorf("should not have produced a panic")
+		t.FailNow()
+	}
+
+	output := bytes.NewBuffer(nil)
+	err = safeExec(func() {
+		New(nil).WithOutput(output).NotEmpty("")
+	})
+	if err == nil {
+		t.Errorf("should have produced a panic")
+		t.FailNow()
+	}
+	if len(output.String()) == 0 {
+		t.Errorf("Should have written output on failure")
+		t.FailNow()
+	}
+}
+
+func TestAssertEqual(t *testing.T) {
+	err := safeExec(func() {
+		New(nil).Equal("foo", "foo") // should be ok
+	})
+	if err != nil {
+		t.Errorf("should not have produced a panic")
+		t.FailNow()
+	}
+
+	output := bytes.NewBuffer(nil)
+	err = safeExec(func() {
+		New(nil).WithOutput(output).Equal("foo", "bar")
+	})
+	if err == nil {
+		t.Errorf("should have produced a panic")
+		t.FailNow()
+	}
+	if len(output.String()) == 0 {
+		t.Errorf("Should have written output on failure")
+		t.FailNow()
+	}
+}
+
+func TestAssertNotEqual(t *testing.T) {
+	err := safeExec(func() {
+		New(nil).NotEqual("foo", "bar") // should be ok
+	})
+	if err != nil {
+		t.Errorf("should not have produced a panic")
+		t.FailNow()
+	}
+
+	output := bytes.NewBuffer(nil)
+	err = safeExec(func() {
+		New(nil).WithOutput(output).NotEqual("foo", "foo")
+	})
+	if err == nil {
+		t.Errorf("should have produced a panic")
+		t.FailNow()
+	}
+	if len(output.String()) == 0 {
+		t.Errorf("Should have written output on failure")
+		t.FailNow()
+	}
+}
+
+func TestAssertZero(t *testing.T) {
+	err := safeExec(func() {
+		New(nil).Zero(0) // should be ok
+	})
+	if err != nil {
+		t.Errorf("should not have produced a panic")
+		t.FailNow()
+	}
+
+	output := bytes.NewBuffer(nil)
+	err = safeExec(func() {
+		New(nil).WithOutput(output).Zero(1)
+	})
+	if err == nil {
+		t.Errorf("should have produced a panic")
+		t.FailNow()
+	}
+	if len(output.String()) == 0 {
+		t.Errorf("Should have written output on failure")
+		t.FailNow()
+	}
+}
+
+func TestAssertNotZero(t *testing.T) {
+	err := safeExec(func() {
+		New(nil).NotZero(1) // should be ok
+	})
+	if err != nil {
+		t.Errorf("should not have produced a panic")
+		t.FailNow()
+	}
+
+	output := bytes.NewBuffer(nil)
+	err = safeExec(func() {
+		New(nil).WithOutput(output).NotZero(0)
+	})
+	if err == nil {
+		t.Errorf("should have produced a panic")
+		t.FailNow()
+	}
+	if len(output.String()) == 0 {
+		t.Errorf("Should have written output on failure")
+		t.FailNow()
+	}
+}
+
+func TestAssertTrue(t *testing.T) {
+	err := safeExec(func() {
+		New(nil).True(1 == 1) // should be ok
+	})
+	if err != nil {
+		t.Errorf("should not have produced a panic")
+		t.FailNow()
+	}
+
+	output := bytes.NewBuffer(nil)
+	err = safeExec(func() {
+		New(nil).WithOutput(output).True(1 == 0)
+	})
+	if err == nil {
+		t.Errorf("should have produced a panic")
+		t.FailNow()
+	}
+	if len(output.String()) == 0 {
+		t.Errorf("Should have written output on failure")
+		t.FailNow()
+	}
+}
+
+func TestAssertFalse(t *testing.T) {
+	err := safeExec(func() {
+		New(nil).False(1 == 0) // should be ok
+	})
+	if err != nil {
+		t.Errorf("should not have produced a panic")
+		t.FailNow()
+	}
+
+	output := bytes.NewBuffer(nil)
+	err = safeExec(func() {
+		New(nil).WithOutput(output).False(1 == 1)
+	})
+	if err == nil {
+		t.Errorf("should have produced a panic")
+		t.FailNow()
+	}
+	if len(output.String()) == 0 {
+		t.Errorf("Should have written output on failure")
+		t.FailNow()
+	}
+}
+
+func TestAssertInDelta(t *testing.T) {
+	err := safeExec(func() {
+		New(nil).InDelta(1, 2, 1)   // should be ok
+		New(nil).InDelta(1, 1.5, 1) // should be ok
+	})
+	if err != nil {
+		t.Errorf("should not have produced a panic")
+		t.FailNow()
+	}
+
+	output := bytes.NewBuffer(nil)
+	err = safeExec(func() {
+		New(nil).WithOutput(output).InDelta(1, 3, 1)
+	})
+	if err == nil {
+		t.Errorf("should have produced a panic")
+		t.FailNow()
+	}
+	if len(output.String()) == 0 {
+		t.Errorf("Should have written output on failure")
+		t.FailNow()
+	}
+}
+
+func TestAssertInTimeDelta(t *testing.T) {
+	t1 := time.Date(2018, 04, 10, 12, 00, 00, 00, time.UTC)
+	t2 := time.Date(2018, 04, 10, 12, 00, 01, 00, time.UTC)
+	t3 := time.Date(2018, 04, 10, 12, 01, 00, 00, time.UTC)
+
+	err := safeExec(func() {
+		New(nil).InTimeDelta(t1, t2, time.Second) // should be ok
+	})
+	if err != nil {
+		t.Errorf("should not have produced a panic")
+		t.FailNow()
+	}
+
+	output := bytes.NewBuffer(nil)
+	err = safeExec(func() {
+		New(nil).WithOutput(output).InTimeDelta(t1, t3, time.Second)
+	})
+	if err == nil {
+		t.Errorf("should have produced a panic")
+		t.FailNow()
+	}
+	if len(output.String()) == 0 {
+		t.Errorf("Should have written output on failure")
+		t.FailNow()
+	}
+}
+
+func TestAssertContains(t *testing.T) {
+	err := safeExec(func() {
+		New(nil).Contains("foo bar", "foo") // should be ok
+	})
+	if err != nil {
+		t.Errorf("should not have produced a panic")
+		t.FailNow()
+	}
+
+	output := bytes.NewBuffer(nil)
+	err = safeExec(func() {
+		New(nil).WithOutput(output).Contains("foo bar", "baz")
+	})
+	if err == nil {
+		t.Errorf("should have produced a panic")
+		t.FailNow()
+	}
+	if len(output.String()) == 0 {
+		t.Errorf("Should have written output on failure")
+		t.FailNow()
+	}
+}
+
+func TestAssertAny(t *testing.T) {
+	err := safeExec(func() {
+		New(nil).Any([]int{1, 2, 3}, func(v Any) bool { return v.(int) == 1 }) // should be ok
+	})
+	if err != nil {
+		t.Errorf("should not have produced a panic")
+		t.FailNow()
+	}
+
+	output := bytes.NewBuffer(nil)
+	err = safeExec(func() {
+		New(nil).WithOutput(output).Any([]int{1, 2, 3}, func(v Any) bool { return v.(int) == 0 }) // should not be ok
+	})
+	if err == nil {
+		t.Errorf("should have produced a panic")
+		t.FailNow()
+	}
+	if len(output.String()) == 0 {
+		t.Errorf("Should have written output on failure")
+		t.FailNow()
+	}
+}
+
+func TestAssertAnyOfInt(t *testing.T) {
+	err := safeExec(func() {
+		New(nil).AnyOfInt([]int{1, 2, 3}, func(v int) bool { return v == 1 }) // should be ok
+	})
+	if err != nil {
+		t.Errorf("should not have produced a panic")
+		t.FailNow()
+	}
+
+	output := bytes.NewBuffer(nil)
+	err = safeExec(func() {
+		New(nil).WithOutput(output).AnyOfInt([]int{1, 2, 3}, func(v int) bool { return v == 0 }) // should not  be ok
+	})
+	if err == nil {
+		t.Errorf("should have produced a panic")
+		t.FailNow()
+	}
+	if len(output.String()) == 0 {
+		t.Errorf("Should have written output on failure")
+		t.FailNow()
+	}
+}
+
+func TestAssertAnyOfFloat64(t *testing.T) {
+	err := safeExec(func() {
+		New(nil).AnyOfFloat64([]float64{1, 2, 3}, func(v float64) bool { return v == 1 }) // should be ok
+	})
+	if err != nil {
+		t.Errorf("should not have produced a panic")
+		t.FailNow()
+	}
+
+	output := bytes.NewBuffer(nil)
+	err = safeExec(func() {
+		New(nil).WithOutput(output).AnyOfFloat64([]float64{1, 2, 3}, func(v float64) bool { return v == 0 }) // should not be ok
+	})
+	if err == nil {
+		t.Errorf("should have produced a panic")
+		t.FailNow()
+	}
+	if len(output.String()) == 0 {
+		t.Errorf("Should have written output on failure")
+		t.FailNow()
+	}
+}
+
+func TestAssertAnyOfString(t *testing.T) {
+	err := safeExec(func() {
+		New(nil).AnyOfString([]string{"foo", "bar", "baz"}, func(v string) bool { return v == "foo" }) // should be ok
+	})
+	if err != nil {
+		t.Errorf("should not have produced a panic")
+		t.FailNow()
+	}
+
+	output := bytes.NewBuffer(nil)
+	err = safeExec(func() {
+		New(nil).WithOutput(output).AnyOfString([]string{"foo", "bar", "baz"}, func(v string) bool { return v == "buzz" }) // should not be ok
+	})
+	if err == nil {
+		t.Errorf("should have produced a panic")
+		t.FailNow()
+	}
+	if len(output.String()) == 0 {
+		t.Errorf("Should have written output on failure")
+		t.FailNow()
+	}
+}
+
+func TestAssertAll(t *testing.T) {
+	err := safeExec(func() {
+		New(nil).All([]int{1, 2, 3}, func(v Any) bool { return v.(int) > 0 }) // should be ok
+	})
+	if err != nil {
+		t.Errorf("should not have produced a panic")
+		t.FailNow()
+	}
+
+	output := bytes.NewBuffer(nil)
+	err = safeExec(func() {
+		New(nil).WithOutput(output).All([]int{1, 2, 3}, func(v Any) bool { return v.(int) > 1 }) // should not be ok
+	})
+	if err == nil {
+		t.Errorf("should have produced a panic")
+		t.FailNow()
+	}
+	if len(output.String()) == 0 {
+		t.Errorf("Should have written output on failure")
+		t.FailNow()
+	}
+}
+
+func TestAssertAllOfInt(t *testing.T) {
+	err := safeExec(func() {
+		New(nil).AllOfInt([]int{1, 2, 3}, func(v int) bool { return v > 0 }) // should be ok
+	})
+	if err != nil {
+		t.Errorf("should not have produced a panic")
+		t.FailNow()
+	}
+
+	output := bytes.NewBuffer(nil)
+	err = safeExec(func() {
+		New(nil).WithOutput(output).AllOfInt([]int{1, 2, 3}, func(v int) bool { return v > 1 }) // should not  be ok
+	})
+	if err == nil {
+		t.Errorf("should have produced a panic")
+		t.FailNow()
+	}
+	if len(output.String()) == 0 {
+		t.Errorf("Should have written output on failure")
+		t.FailNow()
+	}
+}
+
+func TestAssertAllOfFloat64(t *testing.T) {
+	err := safeExec(func() {
+		New(nil).AllOfFloat64([]float64{1, 2, 3}, func(v float64) bool { return v > 0 }) // should be ok
+	})
+	if err != nil {
+		t.Errorf("should not have produced a panic")
+		t.FailNow()
+	}
+
+	output := bytes.NewBuffer(nil)
+	err = safeExec(func() {
+		New(nil).WithOutput(output).AllOfFloat64([]float64{1, 2, 3}, func(v float64) bool { return v > 1 }) // should not be ok
+	})
+	if err == nil {
+		t.Errorf("should have produced a panic")
+		t.FailNow()
+	}
+	if len(output.String()) == 0 {
+		t.Errorf("Should have written output on failure")
+		t.FailNow()
+	}
+}
+
+func TestAssertAllOfString(t *testing.T) {
+	err := safeExec(func() {
+		New(nil).AllOfString([]string{"foo", "bar", "baz"}, func(v string) bool { return len(v) == 3 }) // should be ok
+	})
+	if err != nil {
+		t.Errorf("should not have produced a panic")
+		t.FailNow()
+	}
+
+	output := bytes.NewBuffer(nil)
+	err = safeExec(func() {
+		New(nil).WithOutput(output).AllOfString([]string{"foo", "bar", "baz"}, func(v string) bool { return v == "foo" }) // should not be ok
+	})
+	if err == nil {
+		t.Errorf("should have produced a panic")
+		t.FailNow()
+	}
+	if len(output.String()) == 0 {
+		t.Errorf("Should have written output on failure")
+		t.FailNow()
+	}
+}
+
+func TestAssertNone(t *testing.T) {
+	err := safeExec(func() {
+		New(nil).None([]int{1, 2, 3}, func(v Any) bool { return v.(int) > 3 }) // should be ok
+	})
+	if err != nil {
+		t.Errorf("should not have produced a panic")
+		t.FailNow()
+	}
+
+	output := bytes.NewBuffer(nil)
+	err = safeExec(func() {
+		New(nil).WithOutput(output).None([]int{1, 2, 3}, func(v Any) bool { return v.(int) > 2 }) // should not be ok
+	})
+	if err == nil {
+		t.Errorf("should have produced a panic")
+		t.FailNow()
+	}
+	if len(output.String()) == 0 {
+		t.Errorf("Should have written output on failure")
+		t.FailNow()
+	}
+}
+
+func TestAssertNoneOfInt(t *testing.T) {
+	err := safeExec(func() {
+		New(nil).NoneOfInt([]int{1, 2, 3}, func(v int) bool { return v > 3 }) // should be ok
+	})
+	if err != nil {
+		t.Errorf("should not have produced a panic")
+		t.FailNow()
+	}
+
+	output := bytes.NewBuffer(nil)
+	err = safeExec(func() {
+		New(nil).WithOutput(output).NoneOfInt([]int{1, 2, 3}, func(v int) bool { return v > 2 }) // should not  be ok
+	})
+	if err == nil {
+		t.Errorf("should have produced a panic")
+		t.FailNow()
+	}
+	if len(output.String()) == 0 {
+		t.Errorf("Should have written output on failure")
+		t.FailNow()
+	}
+}
+
+func TestAssertNoneOfFloat64(t *testing.T) {
+	err := safeExec(func() {
+		New(nil).NoneOfFloat64([]float64{1, 2, 3}, func(v float64) bool { return v > 3 }) // should be ok
+	})
+	if err != nil {
+		t.Errorf("should not have produced a panic")
+		t.FailNow()
+	}
+
+	output := bytes.NewBuffer(nil)
+	err = safeExec(func() {
+		New(nil).WithOutput(output).NoneOfFloat64([]float64{1, 2, 3}, func(v float64) bool { return v > 2 }) // should not be ok
+	})
+	if err == nil {
+		t.Errorf("should have produced a panic")
+		t.FailNow()
+	}
+	if len(output.String()) == 0 {
+		t.Errorf("Should have written output on failure")
+		t.FailNow()
+	}
+}
+
+func TestAssertNoneOfString(t *testing.T) {
+	err := safeExec(func() {
+		New(nil).NoneOfString([]string{"foo", "bar", "baz"}, func(v string) bool { return len(v) == 0 }) // should be ok
+	})
+	if err != nil {
+		t.Errorf("should not have produced a panic")
+		t.FailNow()
+	}
+
+	output := bytes.NewBuffer(nil)
+	err = safeExec(func() {
+		New(nil).WithOutput(output).NoneOfString([]string{"foo", "bar", "baz"}, func(v string) bool { return v == "foo" }) // should not be ok
+	})
+	if err == nil {
+		t.Errorf("should have produced a panic")
+		t.FailNow()
+	}
+	if len(output.String()) == 0 {
+		t.Errorf("Should have written output on failure")
+		t.FailNow()
+	}
+}
+
+// -----
+// Optional / NotFatal
+// -----
+
+func TestAssertNonFatalNil(t *testing.T) {
+	if !New(nil).NonFatal().Nil(nil) { // should be ok {
+		t.Errorf("should not have failed")
+		t.FailNow()
+	}
+
+	output := bytes.NewBuffer(nil)
+	if New(nil).WithOutput(output).NonFatal().Nil("foo") {
+		t.Errorf("should have failed")
+		t.FailNow()
+	}
+	if len(output.String()) == 0 {
+		t.Errorf("should have produced output")
+		t.FailNow()
+	}
+}
+
+func TestAssertNonFatalNotNil(t *testing.T) {
+	if !New(nil).NonFatal().NotNil("foo") { // should be ok {
+		t.Errorf("should not have failed")
+		t.FailNow()
+	}
+
+	output := bytes.NewBuffer(nil)
+	if New(nil).WithOutput(output).NonFatal().NotNil(nil) {
+		t.Errorf("should have failed")
+		t.FailNow()
+	}
+	if len(output.String()) == 0 {
+		t.Errorf("should have produced output")
+		t.FailNow()
+	}
+}
+
+func TestAssertNonFatalLen(t *testing.T) {
+	if !New(nil).NonFatal().Len(3, "foo") { // should be ok {
+		t.Errorf("should not have failed")
+		t.FailNow()
+	}
+
+	output := bytes.NewBuffer(nil)
+	if New(nil).WithOutput(output).NonFatal().Len(4, "foo") {
+		t.Errorf("should have failed")
+		t.FailNow()
+	}
+	if len(output.String()) == 0 {
+		t.Errorf("should have produced output")
+		t.FailNow()
+	}
+}
+
+func TestAssertNonFatalEmpty(t *testing.T) {
+	if !New(nil).NonFatal().Empty("") { // should be ok {
+		t.Errorf("should not have failed")
+		t.FailNow()
+	}
+
+	output := bytes.NewBuffer(nil)
+	if New(nil).WithOutput(output).NonFatal().Empty("foo") {
+		t.Errorf("should have failed")
+		t.FailNow()
+	}
+	if len(output.String()) == 0 {
+		t.Errorf("should have produced output")
+		t.FailNow()
+	}
+}
+
+func TestAssertNonFatalNotEmpty(t *testing.T) {
+	if !New(nil).NonFatal().NotEmpty("foo") { // should be ok {
+		t.Errorf("should not have failed")
+		t.FailNow()
+	}
+
+	output := bytes.NewBuffer(nil)
+	if New(nil).WithOutput(output).NonFatal().NotEmpty("") {
+		t.Errorf("should have failed")
+		t.FailNow()
+	}
+	if len(output.String()) == 0 {
+		t.Errorf("should have produced output")
+		t.FailNow()
+	}
+}
+
+func TestAssertNonFatalEqual(t *testing.T) {
+	if !New(nil).NonFatal().Equal("foo", "foo") { // should be ok {
+		t.Errorf("should not have failed")
+		t.FailNow()
+	}
+
+	output := bytes.NewBuffer(nil)
+	if New(nil).WithOutput(output).NonFatal().Equal("foo", "bar") {
+		t.Errorf("should have failed")
+		t.FailNow()
+	}
+	if len(output.String()) == 0 {
+		t.Errorf("should have produced output")
+		t.FailNow()
+	}
+}
+
+func TestAssertNonFatalNotEqual(t *testing.T) {
+	if !New(nil).NonFatal().NotEqual("bar", "foo") { // should be ok {
+		t.Errorf("should not have failed")
+		t.FailNow()
+	}
+
+	output := bytes.NewBuffer(nil)
+	if New(nil).WithOutput(output).NonFatal().NotEqual("foo", "foo") {
+		t.Errorf("should have failed")
+		t.FailNow()
+	}
+	if len(output.String()) == 0 {
+		t.Errorf("should have produced output")
+		t.FailNow()
+	}
+}
+
+func TestAssertNonFatalZero(t *testing.T) {
+	if !New(nil).NonFatal().Zero(0) { // should be ok {
+		t.Errorf("should not have failed")
+		t.FailNow()
+	}
+
+	output := bytes.NewBuffer(nil)
+	if New(nil).WithOutput(output).NonFatal().Zero(1) {
+		t.Errorf("should have failed")
+		t.FailNow()
+	}
+	if len(output.String()) == 0 {
+		t.Errorf("should have produced output")
+		t.FailNow()
+	}
+}
+
+func TestAssertNonFatalNotZero(t *testing.T) {
+	if !New(nil).NonFatal().NotZero(1) { // should be ok {
+		t.Errorf("should not have failed")
+		t.FailNow()
+	}
+
+	output := bytes.NewBuffer(nil)
+	if New(nil).WithOutput(output).NonFatal().NotZero(0) {
+		t.Errorf("should have failed")
+		t.FailNow()
+	}
+	if len(output.String()) == 0 {
+		t.Errorf("should have produced output")
+		t.FailNow()
+	}
+}
+
+func TestAssertNonFatalTrue(t *testing.T) {
+	if !New(nil).NonFatal().True(1 == 1) { // should be ok {
+		t.Errorf("should not have failed")
+		t.FailNow()
+	}
+
+	output := bytes.NewBuffer(nil)
+	if New(nil).WithOutput(output).NonFatal().True(1 == 0) {
+		t.Errorf("should have failed")
+		t.FailNow()
+	}
+	if len(output.String()) == 0 {
+		t.Errorf("should have produced output")
+		t.FailNow()
+	}
+}
+
+func TestAssertNonFatalFalse(t *testing.T) {
+	if !New(nil).NonFatal().False(1 == 0) { // should be ok {
+		t.Errorf("should not have failed")
+		t.FailNow()
+	}
+
+	output := bytes.NewBuffer(nil)
+	if New(nil).WithOutput(output).NonFatal().False(1 == 1) {
+		t.Errorf("should have failed")
+		t.FailNow()
+	}
+	if len(output.String()) == 0 {
+		t.Errorf("should have produced output")
+		t.FailNow()
+	}
+}
+
+func TestAssertNonFatalInDelta(t *testing.T) {
+	if !New(nil).NonFatal().InDelta(1, 2, 1) { // should be ok {
+		t.Errorf("should not have failed")
+		t.FailNow()
+	}
+
+	output := bytes.NewBuffer(nil)
+	if New(nil).WithOutput(output).NonFatal().InDelta(1, 3, 1) {
+		t.Errorf("should have failed")
+		t.FailNow()
+	}
+	if len(output.String()) == 0 {
+		t.Errorf("should have produced output")
+		t.FailNow()
+	}
+}
+
+func TestAssertNonFatalInTimeDelta(t *testing.T) {
+	t1 := time.Date(2018, 04, 10, 12, 00, 00, 00, time.UTC)
+	t2 := time.Date(2018, 04, 10, 12, 00, 01, 00, time.UTC)
+	t3 := time.Date(2018, 04, 10, 12, 01, 00, 00, time.UTC)
+
+	if !New(nil).NonFatal().InTimeDelta(t1, t2, time.Second) { // should be ok {
+		t.Errorf("should not have failed")
+		t.FailNow()
+	}
+
+	output := bytes.NewBuffer(nil)
+	if New(nil).WithOutput(output).NonFatal().InTimeDelta(t1, t3, time.Second) {
+		t.Errorf("should have failed")
+		t.FailNow()
+	}
+	if len(output.String()) == 0 {
+		t.Errorf("should have produced output")
+		t.FailNow()
+	}
+}
+
+func TestAssertNonFatalContains(t *testing.T) {
+	if !New(nil).NonFatal().Contains("foo bar", "bar") { // should be ok {
+		t.Errorf("should not have failed")
+		t.FailNow()
+	}
+
+	output := bytes.NewBuffer(nil)
+	if New(nil).WithOutput(output).NonFatal().Contains("foo bar", "something") {
+		t.Errorf("should have failed")
+		t.FailNow()
+	}
+	if len(output.String()) == 0 {
+		t.Errorf("should have produced output")
+		t.FailNow()
+	}
+}
+
+func TestAssertNonFatalAny(t *testing.T) {
+	if !New(nil).NonFatal().Any([]int{1, 2, 3}, func(v Any) bool { return v.(int) == 2 }) { // should be ok {
+		t.Errorf("should not have failed")
+		t.FailNow()
+	}
+
+	output := bytes.NewBuffer(nil)
+	if New(nil).WithOutput(output).NonFatal().Any([]int{1, 2, 3}, func(v Any) bool { return v.(int) == 0 }) {
+		t.Errorf("should have failed")
+		t.FailNow()
+	}
+	if len(output.String()) == 0 {
+		t.Errorf("should have produced output")
+		t.FailNow()
+	}
+}
+
+func TestAssertNonFatalAll(t *testing.T) {
+	if !New(nil).NonFatal().All([]int{1, 2, 3}, func(v Any) bool { return v.(int) > 0 }) { // should be ok {
+		t.Errorf("should not have failed")
+		t.FailNow()
+	}
+
+	output := bytes.NewBuffer(nil)
+	if New(nil).WithOutput(output).NonFatal().All([]int{1, 2, 3}, func(v Any) bool { return v.(int) > 1 }) {
+		t.Errorf("should have failed")
+		t.FailNow()
+	}
+	if len(output.String()) == 0 {
+		t.Errorf("should have produced output")
+		t.FailNow()
+	}
+}
+
+func TestAssertNonFatalNone(t *testing.T) {
+	if !New(nil).NonFatal().None([]int{1, 2, 3}, func(v Any) bool { return v.(int) > 3 }) { // should be ok {
+		t.Errorf("should not have failed")
+		t.FailNow()
+	}
+
+	output := bytes.NewBuffer(nil)
+	if New(nil).WithOutput(output).NonFatal().None([]int{1, 2, 3}, func(v Any) bool { return v.(int) > 2 }) {
+		t.Errorf("should have failed")
+		t.FailNow()
+	}
+	if len(output.String()) == 0 {
+		t.Errorf("should have produced output")
 		t.FailNow()
 	}
 }
