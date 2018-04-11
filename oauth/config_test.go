@@ -23,7 +23,7 @@ func TestNewConfigFromEnv(t *testing.T) {
 	assert.Equal("foo", cfg.GetClientID())
 	assert.Equal("bar", cfg.GetClientSecret())
 	assert.Equal("https://app.com/oauth/google", cfg.GetRedirectURI())
-	assert.Len(2, cfg.GetValidDomains())
+	assert.Len(cfg.GetValidDomains(), 2)
 	assert.Equal("foo.com", cfg.GetValidDomains()[0])
 	assert.Equal("bar.com", cfg.GetValidDomains()[1])
 }

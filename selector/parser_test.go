@@ -153,7 +153,7 @@ func TestParserReadCSV(t *testing.T) {
 	l := &Parser{s: "(bar, baz, biz)"}
 	words, err := l.readCSV()
 	assert.Nil(err)
-	assert.Len(3, words, strings.Join(words, ","))
+	assert.Len(words, 3, strings.Join(words, ","))
 	assert.Equal("bar", words[0])
 	assert.Equal("baz", words[1])
 	assert.Equal("biz", words[2])
@@ -162,7 +162,7 @@ func TestParserReadCSV(t *testing.T) {
 	l = &Parser{s: "(bar,baz,biz)"}
 	words, err = l.readCSV()
 	assert.Nil(err)
-	assert.Len(3, words, strings.Join(words, ","))
+	assert.Len(words, 3, strings.Join(words, ","))
 	assert.Equal("bar", words[0])
 	assert.Equal("baz", words[1])
 	assert.Equal("biz", words[2])
@@ -187,7 +187,7 @@ func TestParserReadCSV(t *testing.T) {
 	l = &Parser{s: "(foo, bar), buzz=light"}
 	words, err = l.readCSV()
 	assert.Nil(err)
-	assert.Len(2, words)
+	assert.Len(words, 2)
 	assert.Equal("foo", words[0])
 	assert.Equal("bar", words[1])
 	assert.Equal(",", string(l.current()))
@@ -274,7 +274,7 @@ func TestParserIn(t *testing.T) {
 	typed, isTyped := valid.(In)
 	assert.True(isTyped)
 	assert.Equal("foo", typed.Key)
-	assert.Len(2, typed.Values)
+	assert.Len(typed.Values, 2)
 	assert.Equal("bar", typed.Values[0])
 	assert.Equal("baz", typed.Values[1])
 }

@@ -85,18 +85,18 @@ func TestGetWritersWithOutputFormat(t *testing.T) {
 
 	config := &Config{OutputFormat: string(OutputFormatJSON)}
 	writers := config.GetWriters()
-	assert.Len(1, writers)
+	assert.Len(writers, 1)
 	assert.Equal(OutputFormatJSON, writers[0].OutputFormat())
 	config.OutputFormat = string(OutputFormatText)
 	writers = config.GetWriters()
-	assert.Len(1, writers)
+	assert.Len(writers, 1)
 	assert.Equal(OutputFormatText, writers[0].OutputFormat())
 	config.OutputFormat = "nope"
 	writers = config.GetWriters()
-	assert.Len(1, writers)
+	assert.Len(writers, 1)
 	assert.Equal(OutputFormatText, writers[0].OutputFormat())
 	config.OutputFormat = strings.ToUpper(string(OutputFormatJSON))
 	writers = config.GetWriters()
-	assert.Len(1, writers)
+	assert.Len(writers, 1)
 	assert.Equal(OutputFormatJSON, writers[0].OutputFormat())
 }

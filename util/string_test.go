@@ -191,7 +191,7 @@ func TestRegexExtractSubMatches(t *testing.T) {
 	regex := `/accounts/\d+/connections/(\d+)/.*`
 
 	matches := String.RegexExtractSubMatches(corpus, regex)
-	assert.Len(2, matches)
+	assert.Len(matches, 2)
 	assert.Equal("4321", matches[1])
 }
 
@@ -274,39 +274,39 @@ func TestSplitOnSpace(t *testing.T) {
 	assert := assert.New(t)
 
 	values := String.SplitOnSpace("")
-	assert.Len(0, values)
+	assert.Len(values, 0)
 
 	values = String.SplitOnSpace("foo")
-	assert.Len(1, values)
+	assert.Len(values, 1)
 	assert.Equal("foo", values[0])
 
 	values = String.SplitOnSpace("foo bar")
-	assert.Len(2, values)
+	assert.Len(values, 2)
 	assert.Equal("foo", values[0])
 	assert.Equal("bar", values[1])
 
 	values = String.SplitOnSpace("foo  bar")
-	assert.Len(2, values)
+	assert.Len(values, 2)
 	assert.Equal("foo", values[0])
 	assert.Equal("bar", values[1])
 
 	values = String.SplitOnSpace("foo\tbar")
-	assert.Len(2, values)
+	assert.Len(values, 2)
 	assert.Equal("foo", values[0])
 	assert.Equal("bar", values[1])
 
 	values = String.SplitOnSpace("foo \tbar")
-	assert.Len(2, values)
+	assert.Len(values, 2)
 	assert.Equal("foo", values[0])
 	assert.Equal("bar", values[1])
 
 	values = String.SplitOnSpace("foo bar  ")
-	assert.Len(2, values)
+	assert.Len(values, 2)
 	assert.Equal("foo", values[0])
 	assert.Equal("bar", values[1])
 
 	values = String.SplitOnSpace("foo bar baz")
-	assert.Len(3, values)
+	assert.Len(values, 3)
 	assert.Equal("foo", values[0])
 	assert.Equal("bar", values[1])
 	assert.Equal("baz", values[2])

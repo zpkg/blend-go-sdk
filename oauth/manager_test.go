@@ -26,7 +26,7 @@ func TestNewFromConfig(t *testing.T) {
 	assert.Nil(err)
 	assert.NotEmpty(m.Secret())
 	assert.Equal("https://app.com/oauth/google", m.RedirectURI())
-	assert.Len(2, m.ValidDomains())
+	assert.Len(m.ValidDomains(), 2)
 	assert.Equal("foo_client", m.ClientID())
 	assert.Equal("bar_secret", m.ClientSecret())
 }
@@ -50,25 +50,25 @@ func TestManagerValidDomains(t *testing.T) {
 
 	domains := New().WithHostedDomain("foo.com").ValidDomains()
 	assert.NotEmpty(domains)
-	assert.Len(1, domains)
+	assert.Len(domains, 1)
 	assert.Equal("foo.com", domains[0])
 
 	domains = New().WithValidDomains("foo.com", "bar.com").ValidDomains()
 	assert.NotEmpty(domains)
-	assert.Len(2, domains)
+	assert.Len(domains, 2)
 	assert.Any(domains, func(v interface{}) bool { return v.(string) == "foo.com" })
 	assert.Any(domains, func(v interface{}) bool { return v.(string) == "bar.com" })
 
 	domains = New().WithHostedDomain("buzz.com").WithValidDomains("foo.com", "bar.com").ValidDomains()
 	assert.NotEmpty(domains)
-	assert.Len(3, domains)
+	assert.Len(domains, 3)
 	assert.Any(domains, func(v interface{}) bool { return v.(string) == "foo.com" })
 	assert.Any(domains, func(v interface{}) bool { return v.(string) == "bar.com" })
 	assert.Any(domains, func(v interface{}) bool { return v.(string) == "buzz.com" })
 
 	domains = New().WithHostedDomain("bar.com").WithValidDomains("foo.com", "bar.com").ValidDomains()
 	assert.NotEmpty(domains)
-	assert.Len(2, domains)
+	assert.Len(domains, 2)
 	assert.Any(domains, func(v interface{}) bool { return v.(string) == "foo.com" })
 	assert.Any(domains, func(v interface{}) bool { return v.(string) == "bar.com" })
 }

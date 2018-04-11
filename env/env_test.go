@@ -175,7 +175,7 @@ func TestVarsKeys(t *testing.T) {
 	}
 
 	keys := vars.Vars()
-	assert.Len(4, keys)
+	assert.Len(keys, 4)
 	assert.Any(keys, func(v interface{}) bool { return v.(string) == "test1" })
 	assert.Any(keys, func(v interface{}) bool { return v.(string) == "test2" })
 	assert.Any(keys, func(v interface{}) bool { return v.(string) == "test3" })
@@ -197,7 +197,7 @@ func TestEnvUnion(t *testing.T) {
 
 	union := vars1.Union(vars2)
 
-	assert.Len(4, union)
+	assert.Len(union, 4)
 	assert.True(union.HasAll("test1", "test3"))
 }
 

@@ -170,5 +170,5 @@ func TestMarshalJSON(t *testing.T) {
 	ex2 := &ReadableStackTrace{}
 	err = json.Unmarshal(jsonErr, ex2)
 	a.Nil(err)
-	a.Len(stackDepth, ex2.Stack)
+	a.Len(ex2.Stack, stackDepth)
 }

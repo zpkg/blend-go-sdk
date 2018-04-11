@@ -20,7 +20,7 @@ func TestRewriteRuleApply(t *testing.T) {
 		Action: func(path string, pieces ...string) string {
 			assert.NotEmpty(path)
 			assert.NotEmpty(pieces)
-			assert.Len(3, pieces, fmt.Sprintf("%#v", pieces))
+			assert.Len(pieces, 3, fmt.Sprintf("%#v", pieces))
 			return path + "_ok!"
 		},
 	}

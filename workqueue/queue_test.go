@@ -53,7 +53,7 @@ func TestEnqueue(t *testing.T) {
 	}, "World")
 
 	wg.Wait()
-	assert.Len(3, outputs)
+	assert.Len(outputs, 3)
 	assert.Equal("Hello", outputs[0], fmt.Sprintf("%#v", outputs))
 	assert.Equal("Test", outputs[1], fmt.Sprintf("%#v", outputs))
 	assert.Equal("World", outputs[2], fmt.Sprintf("%#v", outputs))

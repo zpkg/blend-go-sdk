@@ -16,7 +16,7 @@ func TestAutoflushBuffer(t *testing.T) {
 	wg.Add(2)
 	buffer := NewAutoflushBuffer(10, time.Hour).WithFlushHandler(func(objects []Any) {
 		defer wg.Done()
-		assert.Len(10, objects)
+		assert.Len(objects, 10)
 	})
 
 	buffer.Start()

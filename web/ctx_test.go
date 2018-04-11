@@ -68,7 +68,7 @@ func TestCtxPostBodyAsString(t *testing.T) {
 	assert.Nil(err)
 	body, err = context.PostBodyAsString()
 	assert.Nil(err)
-	assert.Len(0, body)
+	assert.Empty(body)
 }
 
 func TestCtxPostBodyAsJSON(t *testing.T) {
@@ -96,7 +96,7 @@ func TestCtxPostBody(t *testing.T) {
 	assert.Nil(err)
 	body, err := context.PostBody()
 	assert.Nil(err)
-	assert.Len(0, body)
+	assert.Empty(body)
 
 	context, err = NewMockRequestBuilder(nil).WithPostBody([]byte(`testbytes`)).CreateCtx(nil)
 	assert.Nil(err)
@@ -111,7 +111,7 @@ func TestCtxPostedFiles(t *testing.T) {
 	assert.Nil(err)
 	postedFiles, err := context.PostedFiles()
 	assert.Nil(err)
-	assert.Len(0, postedFiles)
+	assert.Empty(postedFiles)
 
 	context, err = NewMockRequestBuilder(nil).WithPostedFile(PostedFile{
 		Key:      "file",

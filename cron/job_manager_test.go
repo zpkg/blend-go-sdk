@@ -118,9 +118,9 @@ func TestRunTask(t *testing.T) {
 			jm.cancelsLock.Lock()
 			defer jm.cancelsLock.Unlock()
 
-			a.Len(1, jm.runningTasks)
-			a.Len(1, jm.runningTaskStartTimes)
-			a.Len(1, jm.cancels)
+			a.Len(jm.runningTasks, 1)
+			a.Len(jm.runningTaskStartTimes, 1)
+			a.Len(jm.cancels, 1)
 		}()
 
 		elapsed = elapsed + 10*time.Millisecond

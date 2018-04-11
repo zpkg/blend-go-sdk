@@ -39,7 +39,7 @@ func TestCdata(t *testing.T) {
 
 	assert.Equal("<![CDATA[test]]>", string(XML.EncodeCDATA([]byte("test"))))
 	assert.Equal("<![CDATA[test", string(XML.DecodeCDATA([]byte("<![CDATA[test"))))
-	assert.Len(0, XML.DecodeCDATA([]byte("<![CDATA[]]>")))
+	assert.Empty(XML.DecodeCDATA([]byte("<![CDATA[]]>")))
 	assert.Equal("test", string(XML.DecodeCDATA([]byte("<![CDATA[test]]>"))))
 	assert.Equal("test", string(XML.DecodeCDATA([]byte(" <![CDATA[test]]>"))))
 	assert.Equal("<![CDATA[test", string(XML.DecodeCDATA([]byte("<![CDATA[<![CDATA[test]]>]]>"))))

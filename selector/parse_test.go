@@ -216,7 +216,7 @@ func TestParseMultiByte(t *testing.T) {
 
 	typed, isTyped := selector.(And)
 	assert.True(isTyped)
-	assert.Len(2, typed)
+	assert.Len(typed, 2)
 }
 
 func BenchmarkParse(b *testing.B) {

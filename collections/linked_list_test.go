@@ -65,7 +65,7 @@ func TestQueue(t *testing.T) {
 	a.Equal("fizz", q.PeekBack())
 
 	values := q.Contents()
-	a.Len(4, values)
+	a.Len(values, 4)
 	a.Equal("foo", values[0])
 	a.Equal("bar", values[1])
 	a.Equal("baz", values[2])
@@ -80,7 +80,7 @@ func TestQueue(t *testing.T) {
 	a.Equal(q.head.Previous.Previous, q.tail)
 	a.NotNil(q.tail)
 	a.NotEqual(q.head, q.tail)
-	a.Equal(3, q.Len())
+	a.Equal(q.Len(), 3)
 	a.Equal("bar", q.Peek())
 	a.Equal("fizz", q.PeekBack())
 
@@ -129,7 +129,7 @@ func TestQueue(t *testing.T) {
 	q.Each(func(v Any) {
 		items = append(items, v.(string))
 	})
-	a.Len(3, items)
+	a.Len(items, 3)
 	a.Equal("foo", items[0])
 	a.Equal("bar", items[1])
 	a.Equal("baz", items[2])
@@ -140,7 +140,7 @@ func TestQueue(t *testing.T) {
 		items = append(items, v.(string))
 	})
 	a.Equal(0, q.Len())
-	a.Len(3, items)
+	a.Len(items, 3)
 	a.Equal("foo", items[0])
 	a.Equal("bar", items[1])
 	a.Equal("baz", items[2])
@@ -151,6 +151,6 @@ func TestQueue(t *testing.T) {
 	a.Equal(3, q.Len())
 
 	contents := q.Drain()
-	a.Len(3, contents)
+	a.Len(contents, 3)
 	a.Equal(0, q.Len())
 }

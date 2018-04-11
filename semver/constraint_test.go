@@ -28,7 +28,7 @@ func TestNewConstraint(t *testing.T) {
 		v, err := NewConstraint(tc.input)
 		assert.False(!tc.err && err != nil, fmt.Sprintf("error for input %s: %s", tc.input, err))
 		assert.False(tc.err && err == nil, fmt.Sprintf("expected error for input: %s", tc.input))
-		assert.Len(tc.count, v, fmt.Sprintf("input: %s\nexpected len: %d\nactual: %d", tc.input, tc.count, len(v)))
+		assert.Len(v, tc.count, fmt.Sprintf("input: %s\nexpected len: %d\nactual: %d", tc.input, tc.count, len(v)))
 	}
 }
 

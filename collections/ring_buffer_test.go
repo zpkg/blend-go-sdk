@@ -132,7 +132,7 @@ func TestRingBufferContents(t *testing.T) {
 	buffer.Enqueue(5)
 
 	contents := buffer.Contents()
-	assert.Len(5, contents)
+	assert.Len(contents, 5)
 	assert.Equal(1, contents[0])
 	assert.Equal(2, contents[1])
 	assert.Equal(3, contents[2])
@@ -151,7 +151,7 @@ func TestRingBufferDrain(t *testing.T) {
 	buffer.Enqueue(5)
 
 	contents := buffer.Drain()
-	assert.Len(5, contents)
+	assert.Len(contents, 5)
 	assert.Equal(1, contents[0])
 	assert.Equal(2, contents[1])
 	assert.Equal(3, contents[2])
@@ -230,7 +230,7 @@ func TestRingBufferReverseEachUntil(t *testing.T) {
 		panic("value is not an integer")
 	})
 
-	assert.Len(7, values)
+	assert.Len(values, 7)
 	assert.Equal(16, values[0])
 	assert.Equal(10, values[6])
 }
@@ -256,7 +256,7 @@ func TestRingBufferReverseEachUntilUndersized(t *testing.T) {
 		panic("value is not an integer")
 	})
 
-	assert.Len(7, values)
+	assert.Len(values, 7)
 	assert.Equal(16, values[0])
 	assert.Equal(10, values[6])
 }

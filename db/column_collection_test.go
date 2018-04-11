@@ -41,7 +41,7 @@ func TestGetCachedColumnCollectionFromInstance(t *testing.T) {
 	a.Equal(7, meta.Len())
 
 	readOnlyColumns := meta.ReadOnly()
-	a.Len(1, readOnlyColumns.Columns())
+	a.Len(readOnlyColumns.Columns(), 1)
 
 	firstOrDefault := meta.FirstOrDefault()
 	a.NotNil(firstOrDefault)
