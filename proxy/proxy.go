@@ -69,7 +69,7 @@ func (p *Proxy) ServeHTTP(rw http.ResponseWriter, req *http.Request) {
 	}
 
 	if upstream == nil {
-		rw.WriteHeader(http.StatusNotFound)
+		rw.WriteHeader(http.StatusBadGateway)
 		return
 	}
 

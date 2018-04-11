@@ -34,7 +34,7 @@ func (u *Upstreams) Set(value string) error {
 }
 
 func main() {
-	log := logger.NewFromEnv()
+	log := logger.NewFromEnv().WithEnabled(logger.WebRequestStart)
 
 	var upstreams Upstreams
 	flag.Var(&upstreams, "upstream", "An upstream server to proxy traffic to")
@@ -97,5 +97,5 @@ func main() {
 	}
 
 	log.SyncInfof("proxy listening: %s", bindAddr)
-	log.Fatal(server.ListenAndServe())
+	log.SyncFatalExit(server.ListenAndServe())
 }
