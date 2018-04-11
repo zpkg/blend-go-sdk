@@ -11,7 +11,7 @@ func NewResponseWriter(w http.ResponseWriter) *ResponseWriter {
 	}
 }
 
-// RawResponseWriter  a better response writer
+// ResponseWriter a better response writer
 type ResponseWriter struct {
 	innerResponse http.ResponseWriter
 	contentLength int

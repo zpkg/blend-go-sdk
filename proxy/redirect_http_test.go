@@ -42,6 +42,6 @@ func TestRedirect(t *testing.T) {
 		assert.Equal(http.StatusMovedPermanently, res.StatusCode)
 
 		expectedURL := strings.Replace(url, "http", "https", -1)
-		assert.Contains(expectedURL, mockedContents)
+		assert.Contains(mockedContents, expectedURL)
 	}
 }

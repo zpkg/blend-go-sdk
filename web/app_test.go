@@ -371,7 +371,7 @@ func TestAppViewResult(t *testing.T) {
 	assert.Nil(err)
 	assert.Equal(http.StatusOK, meta.StatusCode, string(res))
 	assert.Equal(ContentTypeHTML, meta.Headers.Get(HeaderContentType))
-	assert.Contains("foobarbaz", string(res))
+	assert.Contains(string(res), "foobarbaz")
 }
 
 func TestAppWritesLogs(t *testing.T) {
