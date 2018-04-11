@@ -57,10 +57,10 @@ func (u *Upstream) ServeHTTP(rw http.ResponseWriter, req *http.Request) {
 			WithContentLength(int64(w.ContentLength())).
 			WithElapsed(time.Since(start))
 
-		if value := rw.Header().Get("Content-Type"); len(value) > 0 {
+		if value := w.Header().Get("Content-Type"); len(value) > 0 {
 			wre = wre.WithContentType(value)
 		}
-		if value := rw.Header().Get("Content-Encoding"); len(value) > 0 {
+		if value := w.Header().Get("Content-Encoding"); len(value) > 0 {
 			wre = wre.WithContentEncoding(value)
 		}
 
