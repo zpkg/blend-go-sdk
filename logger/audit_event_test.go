@@ -21,7 +21,6 @@ func TestAuditEventListener(t *testing.T) {
 		WithRecoverPanics(false).
 		WithWriter(NewTextWriter(textBuffer)).
 		WithWriter(NewJSONWriter(jsonBuffer))
-
 	defer all.Close()
 
 	all.Listen(Audit, "default", NewAuditEventListener(func(e *AuditEvent) {

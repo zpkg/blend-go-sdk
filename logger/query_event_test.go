@@ -1,6 +1,7 @@
 package logger
 
 import (
+	"bytes"
 	"sync"
 	"testing"
 	"time"
@@ -14,7 +15,11 @@ func TestQueryEventListener(t *testing.T) {
 	wg := sync.WaitGroup{}
 	wg.Add(2)
 
-	all := New().WithFlags(AllFlags())
+	textBuffer := bytes.NewBuffer(nil)
+	jsonBuffer := bytes.NewBuffer(nil)
+	all := New().WithFlags(AllFlags()).WithRecoverPanics(false).
+		WithWriter(NewTextWriter(textBuffer)).
+		WithWriter(NewJSONWriter(jsonBuffer))
 	defer all.Close()
 
 	all.Listen(Query, "default", NewQueryEventListener(func(e *QueryEvent) {
@@ -28,6 +33,10 @@ func TestQueryEventListener(t *testing.T) {
 	go func() { all.Trigger(NewQueryEvent("foo bar", time.Second).WithQueryLabel("moo")) }()
 	go func() { all.Trigger(NewQueryEvent("foo bar", time.Second).WithQueryLabel("moo")) }()
 	wg.Wait()
+	all.Drain()
+
+	assert.NotEmpty(textBuffer.String())
+	assert.NotEmpty(jsonBuffer.String())
 }
 
 func TestQueryEventInterfaces(t *testing.T) {
