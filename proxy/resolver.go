@@ -2,7 +2,7 @@ package proxy
 
 import (
 	"net/http"
-	"sync/atomic"
+	"sync"
 )
 
 // Resolver is a function that takes a request and produces a destination `url.URL`.
@@ -26,12 +26,15 @@ func RoundRobinResolver(upstreams []*Upstream) Resolver {
 }
 
 func manyRoundRobinResolver(upstreams []*Upstream) Resolver {
-	var current int32
-	var total = int32(len(upstreams))
+	l := sync.Mutex{}
+	index := 0
+	total := len(upstreams)
+
 	return func(req *http.Request, upstreams []*Upstream) (*Upstream, error) {
-		index := atomic.LoadInt32(&current)
+		l.Lock()
 		upstream := upstreams[index]
-		atomic.StoreInt32(&current, (index+1)%total)
+		index = (index + 1) % total
+		l.Unlock()
 		return upstream, nil
 	}
 }
