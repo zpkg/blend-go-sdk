@@ -684,6 +684,7 @@ func TestLoggerPanicOnWrite(t *testing.T) {
 	assert.True(event.didRun, "The event should have triggered.")
 	assert.NotEmpty(buffer.String())
 }
+
 func TestLoggerPanicOnSyncWrite(t *testing.T) {
 	assert := assert.New(t)
 
