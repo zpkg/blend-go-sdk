@@ -113,4 +113,44 @@ func TestQueue(t *testing.T) {
 	a.Nil(q.Peek())
 	a.Nil(q.PeekBack())
 	a.Equal(0, q.Len())
+
+	q.Enqueue("foo")
+	q.Enqueue("bar")
+	q.Enqueue("baz")
+	a.Equal(3, q.Len())
+	q.Clear()
+	a.Equal(0, q.Len())
+
+	q.Enqueue("foo")
+	q.Enqueue("bar")
+	q.Enqueue("baz")
+
+	var items []string
+	q.Each(func(v Any) {
+		items = append(items, v.(string))
+	})
+	a.Len(3, items)
+	a.Equal("foo", items[0])
+	a.Equal("bar", items[1])
+	a.Equal("baz", items[2])
+	a.Equal(3, q.Len())
+
+	items = []string{}
+	q.Consume(func(v Any) {
+		items = append(items, v.(string))
+	})
+	a.Equal(0, q.Len())
+	a.Len(3, items)
+	a.Equal("foo", items[0])
+	a.Equal("bar", items[1])
+	a.Equal("baz", items[2])
+
+	q.Enqueue("foo")
+	q.Enqueue("bar")
+	q.Enqueue("baz")
+	a.Equal(3, q.Len())
+
+	contents := q.Drain()
+	a.Len(3, contents)
+	a.Equal(0, q.Len())
 }

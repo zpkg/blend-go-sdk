@@ -16,6 +16,8 @@ func TestConcurrentQueue(t *testing.T) {
 
 	q.Enqueue("foo")
 	a.Equal(1, q.Len())
+	a.Equal("foo", q.Peek())
+	a.Equal("foo", q.PeekBack())
 
 	q.Enqueue("bar")
 	a.Equal(2, q.Len())
@@ -48,4 +50,40 @@ func TestConcurrentQueue(t *testing.T) {
 	shouldBeFizz := q.Dequeue()
 	a.Equal("fizz", shouldBeFizz)
 	a.Equal(0, q.Len())
+
+	q.Enqueue("foo")
+	a.Equal(1, q.Len())
+	q.Clear()
+	a.Equal(0, q.Len())
+
+	q.Enqueue("foo")
+	q.Enqueue("bar")
+	q.Enqueue("baz")
+
+	var items []string
+	q.Consume(func(v Any) {
+		items = append(items, v.(string))
+	})
+	a.Equal(0, q.Len())
+	a.Len(3, items)
+	a.Equal("foo", items[0])
+	a.Equal("bar", items[1])
+	a.Equal("baz", items[2])
+
+	q.Enqueue("foo")
+	q.Enqueue("bar")
+	q.Enqueue("baz")
+
+	items = []string{}
+	q.Each(func(v Any) {
+		items = append(items, v.(string))
+	})
+	a.Equal(3, q.Len())
+	a.Len(3, items)
+	a.Equal("foo", items[0])
+	a.Equal("bar", items[1])
+	a.Equal("baz", items[2])
+
+	contents := q.Drain()
+	a.Len(3, contents)
 }
