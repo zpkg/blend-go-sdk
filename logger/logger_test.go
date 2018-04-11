@@ -370,7 +370,7 @@ func TestLoggerJSONErrors(t *testing.T) {
 	assert := assert.New(t)
 
 	buffer := bytes.NewBuffer(nil)
-	writer := NewJSONWriterForOutput(buffer)
+	writer := NewJSONWriter(buffer)
 
 	log := New().WithFlags(AllFlags()).WithWriter(writer)
 	defer log.Close()

@@ -1,6 +1,7 @@
 package logger
 
 import (
+	"bytes"
 	"sync"
 	"testing"
 	"time"
@@ -14,7 +15,13 @@ func TestAuditEventListener(t *testing.T) {
 	wg := sync.WaitGroup{}
 	wg.Add(2)
 
-	all := New().WithFlags(AllFlags()).WithRecoverPanics(false)
+	textBuffer := bytes.NewBuffer(nil)
+	jsonBuffer := bytes.NewBuffer(nil)
+	all := New().WithFlags(AllFlags()).
+		WithRecoverPanics(false).
+		WithWriter(NewTextWriter(textBuffer)).
+		WithWriter(NewJSONWriter(jsonBuffer))
+
 	defer all.Close()
 
 	all.Listen(Audit, "default", NewAuditEventListener(func(e *AuditEvent) {
@@ -28,7 +35,10 @@ func TestAuditEventListener(t *testing.T) {
 	go func() { all.Trigger(NewAuditEvent("principal", "verb", "noun")) }()
 	go func() { all.Trigger(NewAuditEvent("principal", "verb", "noun")) }()
 	wg.Wait()
+	all.Drain()
 
+	assert.NotEmpty(textBuffer.String())
+	assert.NotEmpty(jsonBuffer.String())
 }
 
 func TestAuditEventInterfaces(t *testing.T) {
@@ -53,13 +63,18 @@ func TestAuditEventInterfaces(t *testing.T) {
 func TestAuditEventProperties(t *testing.T) {
 	assert := assert.New(t)
 
-	ae := NewAuditEvent("principal", "verb", "noun")
+	ae := NewAuditEvent("", "", "")
 	assert.False(ae.Timestamp().IsZero())
-	assert.Equal("principal", ae.Principal())
-	assert.Equal("verb", ae.Verb())
-	assert.Equal("noun", ae.Noun())
-
 	assert.True(ae.WithTimestamp(time.Time{}).Timestamp().IsZero())
+
+	assert.Empty(ae.Principal())
+	assert.Equal("Principal", ae.WithPrincipal("Principal").Principal())
+
+	assert.Empty(ae.Verb())
+	assert.Equal("Verb", ae.WithVerb("Verb").Verb())
+
+	assert.Empty(ae.Noun())
+	assert.Equal("Noun", ae.WithNoun("Noun").Noun())
 
 	assert.Empty(ae.Heading())
 	assert.Equal("Heading", ae.WithHeading("Heading").Heading())
@@ -81,4 +96,7 @@ func TestAuditEventProperties(t *testing.T) {
 
 	assert.Empty(ae.Annotations())
 	assert.Equal("zar", ae.WithAnnotation("moo", "zar").Annotations()["moo"])
+
+	assert.Empty(ae.Extra())
+	assert.Equal("buzz", ae.WithExtra(map[string]string{"wuzz": "buzz"}).Extra()["wuzz"])
 }

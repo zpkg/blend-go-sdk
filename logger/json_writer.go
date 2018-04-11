@@ -35,20 +35,16 @@ type JSONWritable interface {
 }
 
 // NewJSONWriter returns a json writer with defaults.
-func NewJSONWriter() *JSONWriter {
-	return &JSONWriter{
-		output:      NewInterlockedWriter(os.Stdout),
-		errorOutput: NewInterlockedWriter(os.Stderr),
-		pretty:      DefaultJSONWriterPretty,
-	}
-}
-
-// NewJSONWriterForOutput returns a new json writer for a given output.
-func NewJSONWriterForOutput(output io.Writer) *JSONWriter {
+func NewJSONWriter(output io.Writer) *JSONWriter {
 	return &JSONWriter{
 		output: NewInterlockedWriter(output),
 		pretty: DefaultJSONWriterPretty,
 	}
+}
+
+// NewJSONWriterStdout returns a new text writer to stdout/stderr.
+func NewJSONWriterStdout() *JSONWriter {
+	return NewJSONWriter(os.Stdout).WithErrorOutput(os.Stderr)
 }
 
 // NewJSONWriterFromEnv returns a new json writer from the environment.
