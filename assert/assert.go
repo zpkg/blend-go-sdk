@@ -115,7 +115,7 @@ func (a *Assertions) Nil(object interface{}, userMessageComponents ...interface{
 }
 
 // Len asserts that a collection has a given length.
-func (a *Assertions) Len(length int, collection interface{}, userMessageComponents ...interface{}) {
+func (a *Assertions) Len(collection interface{}, length int, userMessageComponents ...interface{}) {
 	a.assertion()
 	if didFail, message := shouldHaveLength(collection, length); didFail {
 		failNow(a.output, a.t, message, userMessageComponents...)
@@ -394,7 +394,7 @@ func (o *Optional) NotNil(object interface{}, userMessageComponents ...interface
 }
 
 // Len asserts that the collection has a specified length.
-func (o *Optional) Len(length int, collection interface{}, userMessageComponents ...interface{}) bool {
+func (o *Optional) Len(collection interface{}, length int, userMessageComponents ...interface{}) bool {
 	o.assertion()
 	if didFail, message := shouldHaveLength(collection, length); didFail {
 		fail(o.output, o.t, prefixOptional(message), userMessageComponents...)

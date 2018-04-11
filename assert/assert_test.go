@@ -496,7 +496,7 @@ func TestAssertNotNil(t *testing.T) {
 
 func TestAssertLen(t *testing.T) {
 	err := safeExec(func() {
-		New(nil).Len(3, "foo") // should be ok
+		New(nil).Len("foo", 3) // should be ok
 	})
 	if err != nil {
 		t.Errorf("should not have produced a panic")
@@ -505,7 +505,7 @@ func TestAssertLen(t *testing.T) {
 
 	output := bytes.NewBuffer(nil)
 	err = safeExec(func() {
-		New(nil).WithOutput(output).Len(3, []string{})
+		New(nil).WithOutput(output).Len([]string{}, 3)
 	})
 	if err == nil {
 		t.Errorf("should have produced a panic")
@@ -1090,13 +1090,13 @@ func TestAssertNonFatalNotNil(t *testing.T) {
 }
 
 func TestAssertNonFatalLen(t *testing.T) {
-	if !New(nil).NonFatal().Len(3, "foo") { // should be ok {
+	if !New(nil).NonFatal().Len("foo", 3) { // should be ok {
 		t.Errorf("should not have failed")
 		t.FailNow()
 	}
 
 	output := bytes.NewBuffer(nil)
-	if New(nil).WithOutput(output).NonFatal().Len(4, "foo") {
+	if New(nil).WithOutput(output).NonFatal().Len("foo", 4) {
 		t.Errorf("should have failed")
 		t.FailNow()
 	}
