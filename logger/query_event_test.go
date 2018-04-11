@@ -59,3 +59,38 @@ func TestQueryEventInterfaces(t *testing.T) {
 	assert.True(isMetaProvider)
 	assert.Equal("bar", metaProvider.Labels()["foo"])
 }
+
+func TestQueryEventProperties(t *testing.T) {
+	assert := assert.New(t)
+
+	e := NewQueryEvent("", 0)
+	assert.False(e.Timestamp().IsZero())
+	assert.True(e.WithTimestamp(time.Time{}).Timestamp().IsZero())
+
+	assert.Empty(e.Labels())
+	assert.Equal("bar", e.WithLabel("foo", "bar").Labels()["foo"])
+
+	assert.Empty(e.Annotations())
+	assert.Equal("zar", e.WithAnnotation("moo", "zar").Annotations()["moo"])
+
+	assert.Equal(Query, e.Flag())
+	assert.Equal(Error, e.WithFlag(Error).Flag())
+
+	assert.Empty(e.Heading())
+	assert.Equal("Heading", e.WithHeading("Heading").Heading())
+
+	assert.Empty(e.Body())
+	assert.Equal("Body", e.WithBody("Body").Body())
+
+	assert.Empty(e.QueryLabel())
+	assert.Equal("QueryLabel", e.WithQueryLabel("QueryLabel").QueryLabel())
+
+	assert.Empty(e.Engine())
+	assert.Equal("Engine", e.WithEngine("Engine").Engine())
+
+	assert.Empty(e.Database())
+	assert.Equal("Database", e.WithDatabase("Database").Database())
+
+	assert.Zero(e.Elapsed())
+	assert.Equal(time.Second, e.WithElapsed(time.Second).Elapsed())
+}

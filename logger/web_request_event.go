@@ -197,8 +197,8 @@ func (e *WebRequestEvent) WithState(state map[string]interface{}) *WebRequestEve
 }
 
 // State returns the state of the request.
-func (e *WebRequestEvent) State() time.Duration {
-	return e.elapsed
+func (e *WebRequestEvent) State() map[string]interface{} {
+	return e.state
 }
 
 // WriteText implements TextWritable.
