@@ -65,7 +65,7 @@ func TestAuditEventProperties(t *testing.T) {
 	assert.Equal("Heading", ae.WithHeading("Heading").Heading())
 
 	assert.Empty(ae.Subject())
-	assert.Equal("Subject", ae.WithProperty("Subject").Subject())
+	assert.Equal("Subject", ae.WithSubject("Subject").Subject())
 
 	assert.Empty(ae.Property())
 	assert.Equal("Property", ae.WithProperty("Property").Property())
