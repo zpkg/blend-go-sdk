@@ -71,5 +71,5 @@ func TestAuditEventProperties(t *testing.T) {
 	assert.Equal("Property", ae.WithProperty("Property").Property())
 
 	assert.Empty(ae.RemoteAddress())
-	assert.Equal("RemoteAddress", ae.WithRemoteAddress("RemoteAddress").Property())
+	assert.Equal("RemoteAddress", ae.WithRemoteAddress("RemoteAddress").RemoteAddress())
 }
