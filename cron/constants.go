@@ -15,6 +15,11 @@ const (
 )
 
 const (
+	// EnvVarHeartbeatInterval is an environment variable name.
+	EnvVarHeartbeatInterval = "CRON_HEARTBEAT_INTERVAL"
+)
+
+const (
 	// ErrJobNotLoaded is a common error.
 	ErrJobNotLoaded Error = "job not loaded"
 
