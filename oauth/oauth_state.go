@@ -2,7 +2,6 @@ package oauth
 
 import (
 	"bytes"
-	"encoding/base64"
 	"encoding/gob"
 
 	"github.com/blend/go-sdk/exception"
@@ -10,7 +9,7 @@ import (
 
 // DeserializeState deserializes the oauth state.
 func DeserializeState(raw string) (*State, error) {
-	corpus, err := base64.StdEncoding.DecodeString(raw)
+	corpus, err := Base64URLDecode(raw)
 	if err != nil {
 		return nil, exception.Wrap(err)
 	}
@@ -28,9 +27,10 @@ func SerializeOAuthState(state *State) (output string, err error) {
 	buffer := bytes.NewBuffer(nil)
 	err = gob.NewEncoder(buffer).Encode(state)
 	if err != nil {
+		err = exception.Wrap(err)
 		return
 	}
-	output = base64.StdEncoding.EncodeToString(buffer.Bytes())
+	output = Base64URLEncode(buffer.Bytes())
 	return
 }
 

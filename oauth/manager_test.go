@@ -1,6 +1,7 @@
 package oauth
 
 import (
+	"fmt"
 	"net/http"
 	"net/url"
 	"testing"
@@ -296,4 +297,47 @@ func TestManagerFinish(t *testing.T) {
 	res, err = m.Finish(&http.Request{URL: &url.URL{RawQuery: `code=test`}})
 	assert.Nil(res)
 	assert.Equal(ErrStateMissing, err)
+
+	// -----
+	// start the actual test for finish to completion.
+	// -----
+
+	m.WithHostedDomain("blend.com")
+	testUser := Profile{
+		Email:      "test_user@blend.com",
+		GivenName:  "test",
+		FamilyName: "user",
+	}
+
+	nonce, err := m.CreateNonce(time.Now().UTC())
+	jwt, err := SerializeJWT(m.Secret(), &JWTPayload{
+		Email:        "test_user@blend.com",
+		Nonce:        nonce,
+		HostedDomain: "blend.com",
+		AUD:          "test",
+	})
+	assert.Nil(err)
+
+	request.MockResponseFromString("POST", "https://accounts.google.com/o/oauth2/token", http.StatusOK, fmt.Sprintf(`{"access_token":"test","token_type":"grant","expires_in":9999,"id_token":"%s"}`, jwt))
+	request.MockResponseFromString(
+		"GET",
+		"https://www.googleapis.com/oauth2/v1/userinfo?access_token=test&alt=json",
+		http.StatusOK,
+		fmt.Sprintf(
+			`{"id":"test","email":"%s","name":"%s %s","given_name":"%s","family_name":"%s","link":"http://google.com","gender":"male","locale":"en-us","picture":"http://google.com"}`,
+			testUser.Email,
+			testUser.GivenName,
+			testUser.FamilyName,
+			testUser.GivenName,
+			testUser.FamilyName,
+		),
+	)
+	defer request.ClearMockedResponses()
+
+	state, err := m.State("/")
+	assert.Nil(err)
+
+	res, err = m.Finish(&http.Request{URL: &url.URL{RawQuery: `code=test&state=` + state}})
+	assert.Nil(err)
+	assert.NotNil(res)
 }

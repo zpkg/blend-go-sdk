@@ -775,6 +775,29 @@ func TestAssertContains(t *testing.T) {
 	}
 }
 
+func TestAssertNotContains(t *testing.T) {
+	err := safeExec(func() {
+		New(nil).NotContains("foo bar", "buzz") // should be ok
+	})
+	if err != nil {
+		t.Errorf("should not have produced a panic")
+		t.FailNow()
+	}
+
+	output := bytes.NewBuffer(nil)
+	err = safeExec(func() {
+		New(nil).WithOutput(output).NotContains("foo bar", "foo")
+	})
+	if err == nil {
+		t.Errorf("should have produced a panic")
+		t.FailNow()
+	}
+	if len(output.String()) == 0 {
+		t.Errorf("Should have written output on failure")
+		t.FailNow()
+	}
+}
+
 func TestAssertAny(t *testing.T) {
 	err := safeExec(func() {
 		New(nil).Any([]int{1, 2, 3}, func(v Any) bool { return v.(int) == 1 }) // should be ok
@@ -1288,6 +1311,23 @@ func TestAssertNonFatalContains(t *testing.T) {
 
 	output := bytes.NewBuffer(nil)
 	if New(nil).WithOutput(output).NonFatal().Contains("foo bar", "something") {
+		t.Errorf("should have failed")
+		t.FailNow()
+	}
+	if len(output.String()) == 0 {
+		t.Errorf("should have produced output")
+		t.FailNow()
+	}
+}
+
+func TestAssertNonFatalNotContains(t *testing.T) {
+	if !New(nil).NonFatal().NotContains("foo bar", "buzz") { // should be ok {
+		t.Errorf("should not have failed")
+		t.FailNow()
+	}
+
+	output := bytes.NewBuffer(nil)
+	if New(nil).WithOutput(output).NonFatal().NotContains("foo bar", "bar") {
 		t.Errorf("should have failed")
 		t.FailNow()
 	}

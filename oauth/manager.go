@@ -212,7 +212,7 @@ func (m *Manager) OAuthURL(redirect ...string) (string, error) {
 
 // Finish processes the returned code, exchanging for an access token, and fetches the user profile.
 func (m *Manager) Finish(r *http.Request) (*Result, error) {
-	result := Result{}
+	var result Result
 
 	// grab the code off the request.
 	code := r.URL.Query().Get("code")

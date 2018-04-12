@@ -231,6 +231,14 @@ func (a *Assertions) Contains(corpus, substring string, userMessageComponents ..
 	}
 }
 
+// NotContains asserts that a substring is present in a corpus.
+func (a *Assertions) NotContains(corpus, substring string, userMessageComponents ...interface{}) {
+	a.assertion()
+	if didFail, message := shouldNotContain(corpus, substring); didFail {
+		failNow(a.output, a.t, message, userMessageComponents...)
+	}
+}
+
 // Any applies a predicate.
 func (a *Assertions) Any(target interface{}, predicate Predicate, userMessageComponents ...interface{}) {
 	a.assertion()
@@ -527,6 +535,16 @@ func (o *Optional) FileExists(filepath string, userMessageComponents ...interfac
 func (o *Optional) Contains(corpus, substring string, userMessageComponents ...interface{}) bool {
 	o.assertion()
 	if didFail, message := shouldContain(corpus, substring); didFail {
+		fail(o.output, o.t, prefixOptional(message), userMessageComponents...)
+		return false
+	}
+	return true
+}
+
+// NotContains checks if a substring is not present in a corpus.
+func (o *Optional) NotContains(corpus, substring string, userMessageComponents ...interface{}) bool {
+	o.assertion()
+	if didFail, message := shouldNotContain(corpus, substring); didFail {
 		fail(o.output, o.t, prefixOptional(message), userMessageComponents...)
 		return false
 	}
@@ -859,6 +877,14 @@ func shouldBeInTimeDelta(from, to time.Time, delta time.Duration) (bool, string)
 func shouldContain(corpus, subString string) (bool, string) {
 	if !strings.Contains(corpus, subString) {
 		message := fmt.Sprintf("`%s` should contain `%s`", corpus, subString)
+		return true, message
+	}
+	return false, EMPTY
+}
+
+func shouldNotContain(corpus, subString string) (bool, string) {
+	if strings.Contains(corpus, subString) {
+		message := fmt.Sprintf("`%s` should not contain `%s`", corpus, subString)
 		return true, message
 	}
 	return false, EMPTY
