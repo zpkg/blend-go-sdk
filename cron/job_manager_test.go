@@ -376,13 +376,18 @@ func TestJobManagerStartedListener(t *testing.T) {
 
 	wg := sync.WaitGroup{}
 	wg.Add(2)
-	agent := logger.None()
+
+	output := bytes.NewBuffer(nil)
+	agent := logger.New(FlagStarted, logger.Error).WithWriter(
+		logger.NewTextWriter(output).
+			WithUseColor(false).
+			WithShowTimestamp(false))
+
 	defer agent.Close()
 
-	jm.SetLogger(agent)
-	jm.Logger().Enable(FlagStarted)
+	jm.WithLogger(agent)
 
-	var didTriggerEvent bool
+	var didFireListener bool
 	jm.Logger().Listen(FlagStarted, "foo", func(e logger.Event) {
 		defer wg.Done()
 		if typed, isTyped := e.(*Event); isTyped {
@@ -392,7 +397,7 @@ func TestJobManagerStartedListener(t *testing.T) {
 			assert.Zero(typed.Elapsed())
 			assert.Nil(typed.Err())
 		}
-		didTriggerEvent = true
+		didFireListener = true
 	})
 
 	var didRun bool
@@ -404,7 +409,8 @@ func TestJobManagerStartedListener(t *testing.T) {
 	wg.Wait()
 
 	assert.True(didRun)
-	assert.True(didTriggerEvent)
+	assert.True(didFireListener)
+	assert.True(strings.Contains(output.String(), "[cron.started] `test_task`"), output.String())
 }
 
 func TestJobManagerCompleteListener(t *testing.T) {
@@ -423,7 +429,8 @@ func TestJobManagerCompleteListener(t *testing.T) {
 
 	defer agent.Close()
 
-	jm.SetLogger(agent)
+	jm.WithLogger(agent)
+
 	var didFireListener bool
 	jm.Logger().Listen(FlagComplete, "foo", func(e logger.Event) {
 		defer wg.Done()
@@ -448,7 +455,7 @@ func TestJobManagerCompleteListener(t *testing.T) {
 
 	assert.True(didRun)
 	assert.True(didFireListener)
-	assert.True(strings.Contains(output.String(), "[chronometer.task.complete] `test_task`"), output.String())
+	assert.Contains(output.String(), "[cron.complete] `test_task`")
 }
 
 func TestJobManagerCompleteListenerWithError(t *testing.T) {
@@ -491,7 +498,7 @@ func TestJobManagerCompleteListenerWithError(t *testing.T) {
 
 	assert.True(didRun)
 	assert.True(didFireListener)
-	assert.True(strings.Contains(output.String(), "[chronometer.task.complete] `test_task`"), output.String())
+	assert.Contains(output.String(), "[cron.complete] `test_task`")
 }
 
 // The goal with this test is to see if panics take down the test process or not.

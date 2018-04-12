@@ -55,22 +55,22 @@ func main() {
 		{"foo": "bar", "thing1": "", "moo": "buzz"},
 	}
 
-	println("starting bench")
+	fmt.Println("starting bench")
 
-	println("k8s starting")
+	fmt.Println("k8s starting")
 	k8s, err := benchSelector(sel, labels, kubeRunner)
 	if err != nil {
-		println("k8s failed: %v", err)
+		fmt.Printf("k8s failed: %v\n", err)
 	} else {
-		println("k8s complete")
+		fmt.Println("k8s complete")
 		fmt.Printf("%v\n", k8s)
 	}
-	println("blend starting")
+	fmt.Println("blend starting")
 	blend, err := benchSelector(sel, labels, blendRunner)
 	if err != nil {
-		println("blend failed: %v", err)
+		fmt.Printf("blend failed: %v\n", err)
 	} else {
-		println("blend complete")
+		fmt.Println("blend complete")
 		fmt.Printf("%v\n", blend)
 	}
 }
