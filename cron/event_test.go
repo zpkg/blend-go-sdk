@@ -2,8 +2,10 @@ package cron
 
 import (
 	"bytes"
+	"fmt"
 	"sync"
 	"testing"
+	"time"
 
 	"github.com/blend/go-sdk/assert"
 	"github.com/blend/go-sdk/logger"
@@ -68,4 +70,53 @@ func TestEventInterfaces(t *testing.T) {
 	metaProvider, isMetaProvider := logger.MarshalEventMeta(e)
 	assert.True(isMetaProvider)
 	assert.Equal("bar", metaProvider.Labels()["foo"])
+}
+
+func TestNewEvent(t *testing.T) {
+	assert := assert.New(t)
+
+	e := NewEvent(FlagComplete, "test_task")
+	assert.Equal(FlagComplete, e.Flag())
+	assert.Equal("test_task", e.TaskName())
+	assert.False(e.Timestamp().IsZero())
+	assert.True(e.IsEnabled())
+	assert.True(e.IsWritable())
+}
+
+func TestEventProperties(t *testing.T) {
+	assert := assert.New(t)
+
+	e := NewEvent("", "")
+	assert.False(e.Timestamp().IsZero())
+	assert.True(e.WithTimestamp(time.Time{}).Timestamp().IsZero())
+
+	assert.Empty(e.Labels())
+	assert.Equal("bar", e.WithLabel("foo", "bar").Labels()["foo"])
+
+	assert.Empty(e.Annotations())
+	assert.Equal("zar", e.WithAnnotation("moo", "zar").Annotations()["moo"])
+
+	assert.Empty(e.Flag())
+	assert.Equal(FlagComplete, e.WithFlag(FlagComplete).Flag())
+
+	assert.True(e.Complete())
+	assert.False(e.WithFlag(FlagStarted).Complete())
+
+	assert.Empty(e.Heading())
+	assert.Equal("Heading", e.WithHeading("Heading").Heading())
+
+	assert.Empty(e.TaskName())
+	assert.Equal("test_task", e.WithTaskName("test_task").TaskName())
+
+	assert.Zero(e.Elapsed())
+	assert.Equal(time.Second, e.WithElapsed(time.Second).Elapsed())
+
+	assert.True(e.IsEnabled())
+	assert.False(e.WithIsEnabled(false).IsEnabled())
+
+	assert.True(e.IsWritable())
+	assert.False(e.WithIsWritable(false).IsEnabled())
+
+	assert.Nil(e.Err())
+	assert.Equal(fmt.Errorf("test"), e.WithErr(fmt.Errorf("test")).Err())
 }

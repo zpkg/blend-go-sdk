@@ -2,6 +2,7 @@ package logger
 
 import (
 	"bytes"
+	"fmt"
 	"sync"
 	"testing"
 	"time"
@@ -93,4 +94,7 @@ func TestQueryEventProperties(t *testing.T) {
 
 	assert.Zero(e.Elapsed())
 	assert.Equal(time.Second, e.WithElapsed(time.Second).Elapsed())
+
+	assert.Nil(e.Err())
+	assert.Equal(fmt.Errorf("test"), e.WithErr(fmt.Errorf("test")).Err())
 }
