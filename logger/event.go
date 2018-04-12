@@ -40,27 +40,32 @@ type EventError interface {
 // testing helpers
 // --------------------------------------------------------------------------------
 
-func marshalEvent(obj interface{}) (Event, bool) {
+// MarshalEvent marshals an object as a logger event.
+func MarshalEvent(obj interface{}) (Event, bool) {
 	typed, isTyped := obj.(Event)
 	return typed, isTyped
 }
 
-func marshalEventHeading(obj interface{}) (EventHeading, bool) {
+// MarshalEventHeading marshals an object as an event heading provider.
+func MarshalEventHeading(obj interface{}) (EventHeading, bool) {
 	typed, isTyped := obj.(EventHeading)
 	return typed, isTyped
 }
 
-func marshalEventEnabled(obj interface{}) (EventEnabled, bool) {
+// MarshalEventEnabled marshals an object as an event enabled provider.
+func MarshalEventEnabled(obj interface{}) (EventEnabled, bool) {
 	typed, isTyped := obj.(EventEnabled)
 	return typed, isTyped
 }
 
-func marshalEventWritable(obj interface{}) (EventWritable, bool) {
+// MarshalEventWritable marshals an object as an event writable provider.
+func MarshalEventWritable(obj interface{}) (EventWritable, bool) {
 	typed, isTyped := obj.(EventWritable)
 	return typed, isTyped
 }
 
-func marshalEventMeta(obj interface{}) (EventMeta, bool) {
+// MarshalEventMeta marshals an object as an event meta provider.
+func MarshalEventMeta(obj interface{}) (EventMeta, bool) {
 	typed, isTyped := obj.(EventMeta)
 	return typed, isTyped
 }

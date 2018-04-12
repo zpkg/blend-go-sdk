@@ -369,7 +369,7 @@ func TestRunJobByScheduleRapid(t *testing.T) {
 	a.True(runCount.Get()-expected < 2, fmt.Sprintf("%d vs. %d\n", runCount.Get(), expected))
 }
 
-func TestJobManagerTaskListener(t *testing.T) {
+func TestJobManagerStartedListener(t *testing.T) {
 	assert := assert.New(t)
 
 	jm := New()
@@ -380,14 +380,16 @@ func TestJobManagerTaskListener(t *testing.T) {
 	defer agent.Close()
 
 	jm.SetLogger(agent)
-	jm.Logger().Enable(FlagComplete)
+	jm.Logger().Enable(FlagStarted)
 
 	var didTriggerEvent bool
-	jm.Logger().Listen(FlagComplete, "foo", func(e logger.Event) {
+	jm.Logger().Listen(FlagStarted, "foo", func(e logger.Event) {
 		defer wg.Done()
-		if typed, isTyped := e.(EventComplete); isTyped {
+		if typed, isTyped := e.(*Event); isTyped {
+			assert.Equal(FlagStarted, e.Flag())
+			assert.False(e.Timestamp().IsZero())
 			assert.Equal("test_task", typed.TaskName())
-			assert.NotZero(typed.Elapsed())
+			assert.Zero(typed.Elapsed())
 			assert.Nil(typed.Err())
 		}
 		didTriggerEvent = true
@@ -405,7 +407,7 @@ func TestJobManagerTaskListener(t *testing.T) {
 	assert.True(didTriggerEvent)
 }
 
-func TestJobManagerTaskListenerWithError(t *testing.T) {
+func TestJobManagerCompleteListener(t *testing.T) {
 	assert := assert.New(t)
 
 	jm := New()
@@ -425,7 +427,52 @@ func TestJobManagerTaskListenerWithError(t *testing.T) {
 	var didFireListener bool
 	jm.Logger().Listen(FlagComplete, "foo", func(e logger.Event) {
 		defer wg.Done()
-		if typed, isTyped := e.(EventComplete); isTyped {
+		if typed, isTyped := e.(*Event); isTyped {
+			assert.Equal(FlagComplete, e.Flag())
+			assert.False(e.Timestamp().IsZero())
+			assert.Equal("test_task", typed.TaskName())
+			assert.NotZero(typed.Elapsed())
+			assert.Nil(typed.Err())
+		}
+		didFireListener = true
+	})
+
+	var didRun bool
+	jm.RunTask(NewTaskWithName("test_task", func(ctx context.Context) error {
+		defer wg.Done()
+		didRun = true
+		return nil
+	}))
+	wg.Wait()
+	agent.Drain()
+
+	assert.True(didRun)
+	assert.True(didFireListener)
+	assert.True(strings.Contains(output.String(), "[chronometer.task.complete] `test_task`"), output.String())
+}
+
+func TestJobManagerCompleteListenerWithError(t *testing.T) {
+	assert := assert.New(t)
+
+	jm := New()
+
+	wg := sync.WaitGroup{}
+	wg.Add(2)
+
+	output := bytes.NewBuffer(nil)
+	agent := logger.New(FlagComplete, logger.Error).WithWriter(
+		logger.NewTextWriter(output).
+			WithUseColor(false).
+			WithShowTimestamp(false))
+	defer agent.Close()
+
+	jm.SetLogger(agent)
+	var didFireListener bool
+	jm.Logger().Listen(FlagComplete, "foo", func(e logger.Event) {
+		defer wg.Done()
+		if typed, isTyped := e.(*Event); isTyped {
+			assert.Equal(FlagComplete, e.Flag())
+			assert.False(e.Timestamp().IsZero())
 			assert.Equal("test_task", typed.TaskName())
 			assert.NotZero(typed.Elapsed())
 			assert.NotNil(typed.Err())

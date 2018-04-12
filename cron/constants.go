@@ -4,6 +4,7 @@ import (
 	"time"
 
 	"github.com/blend/go-sdk/exception"
+	"github.com/blend/go-sdk/logger"
 )
 
 const (
@@ -12,6 +13,13 @@ const (
 
 	// DefaultHighPrecisionHeartbeatInterval is the high precision interval between schedule next run checks.
 	DefaultHighPrecisionHeartbeatInterval = 5 * time.Millisecond
+)
+
+const (
+	// FlagStarted is an event flag.
+	FlagStarted logger.Flag = "cron.started"
+	// FlagComplete is an event flag.
+	FlagComplete logger.Flag = "cron.complete"
 )
 
 const (

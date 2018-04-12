@@ -42,6 +42,7 @@ type QueryEvent struct {
 	body       string
 	database   string
 	elapsed    time.Duration
+	err        error
 
 	labels      map[string]string
 	annotations map[string]string
@@ -163,9 +164,26 @@ func (e QueryEvent) Elapsed() time.Duration {
 	return e.elapsed
 }
 
+// WithErr sets the error on the event.
+func (e *QueryEvent) WithErr(err error) *QueryEvent {
+	e.err = err
+	return e
+}
+
+// Err returns the event err (if any).
+func (e QueryEvent) Err() error {
+	return e.err
+}
+
 // WriteText writes the event text to the output.
 func (e QueryEvent) WriteText(tf TextFormatter, buf *bytes.Buffer) {
-	buf.WriteString(fmt.Sprintf("[%s] (%v)", tf.Colorize(e.database, ColorBlue), e.elapsed))
+	var format string
+	if e.err == nil {
+		format = "[%s] (%v)"
+	} else {
+		format = "[%s] (%v) " + tf.Colorize("failed", ColorRed)
+	}
+	buf.WriteString(fmt.Sprintf(format, tf.Colorize(e.database, ColorBlue), e.elapsed))
 	if len(e.queryLabel) > 0 {
 		buf.WriteRune(RuneSpace)
 		buf.WriteString(e.queryLabel)
@@ -183,6 +201,7 @@ func (e QueryEvent) WriteJSON() JSONObj {
 		"database":       e.database,
 		"queryLabel":     e.queryLabel,
 		"body":           e.body,
+		JSONFieldErr:     e.err,
 		JSONFieldElapsed: Milliseconds(e.elapsed),
 	}
 }

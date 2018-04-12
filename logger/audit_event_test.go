@@ -45,16 +45,16 @@ func TestAuditEventInterfaces(t *testing.T) {
 
 	ae := NewAuditEvent("principal", "verb", "noun").WithHeading("heading").WithLabel("foo", "bar")
 
-	eventProvider, isEvent := marshalEvent(ae)
+	eventProvider, isEvent := MarshalEvent(ae)
 	assert.True(isEvent)
 	assert.Equal(Audit, eventProvider.Flag())
 	assert.False(eventProvider.Timestamp().IsZero())
 
-	headingProvider, isHeadingProvider := marshalEventHeading(ae)
+	headingProvider, isHeadingProvider := MarshalEventHeading(ae)
 	assert.True(isHeadingProvider)
 	assert.Equal("heading", headingProvider.Heading())
 
-	metaProvider, isMetaProvider := marshalEventMeta(ae)
+	metaProvider, isMetaProvider := MarshalEventMeta(ae)
 	assert.True(isMetaProvider)
 	assert.Equal("bar", metaProvider.Labels()["foo"])
 }

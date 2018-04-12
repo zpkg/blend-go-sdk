@@ -29,9 +29,10 @@ func NewAuditEventListener(listener func(me *AuditEvent)) Listener {
 
 // AuditEvent is a common type of event detailing a business action by a subject.
 type AuditEvent struct {
-	heading       string
-	ts            time.Time
-	flag          Flag
+	heading string
+	ts      time.Time
+	flag    Flag
+
 	principal     string
 	verb          string
 	noun          string
