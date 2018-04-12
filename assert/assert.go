@@ -146,6 +146,14 @@ func (a *Assertions) Equal(expected interface{}, actual interface{}, userMessage
 	}
 }
 
+// ReferenceEqual asserts that two objects are the same reference in memory.
+func (a *Assertions) ReferenceEqual(expected interface{}, actual interface{}, userMessageComponents ...interface{}) {
+	a.assertion()
+	if didFail, message := shouldBeReferenceEqual(expected, actual); didFail {
+		failNow(a.output, a.t, message, userMessageComponents...)
+	}
+}
+
 // NotEqual asserts that two objects are not deeply equal.
 func (a *Assertions) NotEqual(expected interface{}, actual interface{}, userMessageComponents ...interface{}) {
 	a.assertion()
@@ -435,6 +443,16 @@ func (o *Optional) NotEmpty(collection interface{}, userMessageComponents ...int
 func (o *Optional) Equal(expected interface{}, actual interface{}, userMessageComponents ...interface{}) bool {
 	o.assertion()
 	if didFail, message := shouldBeEqual(expected, actual); didFail {
+		fail(o.output, o.t, prefixOptional(message), userMessageComponents...)
+		return false
+	}
+	return true
+}
+
+// ReferenceEqual asserts that two objects are the same underlying reference in memory.
+func (o *Optional) ReferenceEqual(expected interface{}, actual interface{}, userMessageComponents ...interface{}) bool {
+	o.assertion()
+	if didFail, message := shouldBeReferenceEqual(expected, actual); didFail {
 		fail(o.output, o.t, prefixOptional(message), userMessageComponents...)
 		return false
 	}
@@ -777,6 +795,13 @@ func shouldBeEqual(expected, actual interface{}) (bool, string) {
 	return false, EMPTY
 }
 
+func shouldBeReferenceEqual(expected, actual interface{}) (bool, string) {
+	if !areReferenceEqual(expected, actual) {
+		return true, referenceEqualMessage(expected, actual)
+	}
+	return false, EMPTY
+}
+
 func shouldBePanicEqual(expected interface{}, action func()) (bool, string) {
 	var actual interface{}
 	var didPanic bool
@@ -1103,6 +1128,10 @@ func equalMessage(expected, actual interface{}) string {
 	return shouldBeMultipleMessage(expected, actual, "Objects should be equal")
 }
 
+func referenceEqualMessage(expected, actual interface{}) string {
+	return shouldBeMultipleMessage(expected, actual, "References should be equal")
+}
+
 func panicEqualMessage(didPanic bool, expected, actual interface{}) string {
 	if !didPanic {
 		return "Should have produced a panic"
@@ -1145,6 +1174,17 @@ func isNil(object interface{}) bool {
 
 func isZero(value interface{}) bool {
 	return areEqual(0, value)
+}
+
+func areReferenceEqual(expected, actual interface{}) bool {
+	if expected == nil && actual == nil {
+		return true
+	}
+	if (expected == nil && actual != nil) || (expected != nil && actual == nil) {
+		return false
+	}
+
+	return expected == actual
 }
 
 func areEqual(expected, actual interface{}) bool {
