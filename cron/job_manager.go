@@ -158,13 +158,7 @@ func (jm *JobManager) fireTaskStartedListeners(taskName string) {
 	if jm.log == nil {
 		return
 	}
-	jm.log.Trigger(&Event{
-		flag:     FlagStarted,
-		ts:       Now(),
-		enabled:  jm.ShouldTriggerListeners(taskName),
-		writable: jm.ShouldWriteOutput(taskName),
-		taskName: taskName,
-	})
+	jm.log.Trigger(NewEvent(FlagStarted, taskName).WithIsEnabled(jm.ShouldTriggerListeners(taskName)).WithIsWritable(jm.ShouldWriteOutput(taskName)))
 }
 
 // fireTaskListeners fires the currently configured task listeners.
@@ -172,15 +166,13 @@ func (jm *JobManager) fireTaskCompleteListeners(taskName string, elapsed time.Du
 	if jm.log == nil {
 		return
 	}
-	jm.log.Trigger(&Event{
-		flag:     FlagComplete,
-		ts:       Now(),
-		taskName: taskName,
-		enabled:  jm.ShouldTriggerListeners(taskName),
-		writable: jm.ShouldWriteOutput(taskName),
-		elapsed:  elapsed,
-		err:      err,
-	})
+
+	jm.log.Trigger(NewEvent(FlagComplete, taskName).
+		WithIsEnabled(jm.ShouldTriggerListeners(taskName)).
+		WithIsWritable(jm.ShouldWriteOutput(taskName)).
+		WithElapsed(elapsed).
+		WithErr(err))
+
 	if err != nil {
 		jm.log.Error(err)
 	}
