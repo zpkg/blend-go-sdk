@@ -473,9 +473,10 @@ func (a *App) SetTLSClientCertPool(certs ...[]byte) error {
 		}
 	}
 	a.tlsConfig.BuildNameToCertificate()
-	// This is a solution to enforce the server fetch the new config when a new
-	// request comes in. The server would use the old ClientCAs pool if this is
-	// not called.
+	
+	// this forces the server to reload the tls config for every request if there is a cert pool loaded
+	// normally this would introduce overhead but it allows us to hot patch the cert pool.
+	// with just server tls we won't incur this overhead.
 	a.tlsConfig.GetConfigForClient = func(_ *tls.ClientHelloInfo) (*tls.Config, error) {
 		return a.tlsConfig, nil
 	}
