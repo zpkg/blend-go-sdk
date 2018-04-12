@@ -20,8 +20,11 @@ func NewEventListener(listener func(e *Event)) logger.Listener {
 // NewEvent creates a new event.
 func NewEvent(flag logger.Flag, taskName string) *Event {
 	return &Event{
+		flag:     flag,
 		ts:       Now(),
 		taskName: taskName,
+		enabled:  true,
+		writable: true,
 	}
 }
 
@@ -32,11 +35,12 @@ type Event struct {
 	flag     logger.Flag
 	complete bool
 
-	isEnabled  bool
-	isWritable bool
-	taskName   string
-	err        error
-	elapsed    time.Duration
+	enabled  bool
+	writable bool
+
+	taskName string
+	err      error
+	elapsed  time.Duration
 
 	labels      map[string]string
 	annotations map[string]string
@@ -103,14 +107,26 @@ func (e Event) Heading() string {
 	return e.heading
 }
 
+// WithIsEnabled sets if the event is enabled
+func (e *Event) WithIsEnabled(isEnabled bool) *Event {
+	e.enabled = isEnabled
+	return e
+}
+
 // IsEnabled determines if the event triggers listeners.
 func (e Event) IsEnabled() bool {
-	return e.isEnabled
+	return e.enabled
+}
+
+// WithIsWritable sets if the event is writable.
+func (e *Event) WithIsWritable(isWritable bool) *Event {
+	e.writable = isWritable
+	return e
 }
 
 // IsWritable determines if the event is written to the logger output.
 func (e Event) IsWritable() bool {
-	return e.isWritable
+	return e.writable
 }
 
 // WithTaskName sets the task name.

@@ -358,8 +358,8 @@ func main() {
 	}
 	log.SyncInfof("Baseline Elapsed: %v", time.Since(baselineStart))
 
-	println()
-	println()
+	fmt.Println()
+	fmt.Println()
 
 	fmt.Println("Detailed Results:")
 	fmt.Printf("\tAvg Baseline                    : %v\n", util.Math.MeanOfDuration(baselineTimings))
@@ -367,7 +367,7 @@ func main() {
 	fmt.Printf("\tAvg go-sdk/db (Statement Cache) : %v\n", util.Math.MeanOfDuration(dbCachedTimings))
 	fmt.Printf("\tAvg PGX                         : %v\n", util.Math.MeanOfDuration(pgxTimings))
 
-	println()
+	fmt.Println()
 
 	fmt.Printf("\t99th Baseline                 : %v\n", util.Math.PercentileOfDuration(baselineTimings, 99.0))
 	fmt.Printf("\t99th Spiffy                   : %v\n", util.Math.PercentileOfDuration(dbTimings, 99.0))

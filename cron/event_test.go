@@ -6,7 +6,7 @@ import (
 	"testing"
 
 	"github.com/blend/go-sdk/assert"
-	logger "github.com/blend/go-sdk/logger"
+	"github.com/blend/go-sdk/logger"
 )
 
 func TestEventStartedListener(t *testing.T) {
@@ -17,6 +17,7 @@ func TestEventStartedListener(t *testing.T) {
 
 	textBuffer := bytes.NewBuffer(nil)
 	jsonBuffer := bytes.NewBuffer(nil)
+
 	all := logger.New().WithFlags(logger.AllFlags()).
 		WithRecoverPanics(false).
 		WithWriter(logger.NewTextWriter(textBuffer)).
@@ -30,13 +31,15 @@ func TestEventStartedListener(t *testing.T) {
 		assert.Equal(FlagStarted, e.Flag())
 		assert.False(e.Timestamp().IsZero())
 		assert.Equal("test_task", e.TaskName())
+
 		assert.False(e.Complete())
 		assert.Nil(e.Err())
 		assert.Zero(e.Elapsed())
 	}))
 
-	go func() { all.Trigger(&Event{flag: FlagStarted, taskName: "test_task"}) }()
-	go func() { all.Trigger(&Event{flag: FlagStarted, taskName: "test_task"}) }()
+	go func() { all.Trigger(NewEvent(FlagStarted, "test_task")) }()
+	go func() { all.Trigger(NewEvent(FlagStarted, "test_task")) }()
+
 	wg.Wait()
 	all.Drain()
 
@@ -57,6 +60,10 @@ func TestEventInterfaces(t *testing.T) {
 	headingProvider, isHeadingProvider := logger.MarshalEventHeading(e)
 	assert.True(isHeadingProvider)
 	assert.Equal("heading", headingProvider.Heading())
+
+	enabledProvider, isEnabledProvider := logger.MarshalEventEnabled(e)
+	assert.True(isEnabledProvider)
+	assert.True(enabledProvider.IsEnabled())
 
 	metaProvider, isMetaProvider := logger.MarshalEventMeta(e)
 	assert.True(isMetaProvider)
