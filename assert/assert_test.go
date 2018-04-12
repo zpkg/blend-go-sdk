@@ -1387,3 +1387,24 @@ func TestAssertNonFatalNone(t *testing.T) {
 		t.FailNow()
 	}
 }
+
+func TestAssertNonFatalPanicEqual(t *testing.T) {
+	if !New(nil).NonFatal().PanicEqual("this is only a test", func() {
+		panic("this is only a test")
+	}) {
+		t.Errorf("should not have failed")
+		t.FailNow()
+	}
+
+	if New(nil).NonFatal().PanicEqual("this is only a test", func() {}) {
+		t.Errorf("should have failed without a panic triggered")
+		t.FailNow()
+	}
+
+	if New(nil).NonFatal().PanicEqual("this is only a test", func() {
+		panic("not what we want")
+	}) {
+		t.Errorf("should have failed on a wrong panic result")
+		t.FailNow()
+	}
+}

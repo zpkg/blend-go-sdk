@@ -8,135 +8,172 @@ import (
 	logger "github.com/blend/go-sdk/logger"
 )
 
-const (
-	// FlagStarted is a logger flag for task start.
-	FlagStarted logger.Flag = "chronometer.task"
-	// FlagComplete is a logger flag for task completions.
-	FlagComplete logger.Flag = "chronometer.task.complete"
-)
-
-// NewEventStartedListener returns a new event started listener.
-func NewEventStartedListener(listener func(e EventStarted)) logger.Listener {
+// NewEventListener returns a new event listener.
+func NewEventListener(listener func(e *Event)) logger.Listener {
 	return func(e logger.Event) {
-		if typed, isTyped := e.(EventStarted); isTyped {
+		if typed, isTyped := e.(*Event); isTyped {
 			listener(typed)
 		}
 	}
 }
 
-// EventStarted is a started event.
-type EventStarted struct {
-	ts         time.Time
-	isEnabled  bool
-	isWritable bool
-	taskName   string
-}
-
-// Flag returns the event flag.
-func (e EventStarted) Flag() logger.Flag {
-	return FlagStarted
-}
-
-// Timestamp returns an event timestamp.
-func (e EventStarted) Timestamp() time.Time {
-	return e.ts
-}
-
-// IsEnabled determines if the event triggers listeners.
-func (e EventStarted) IsEnabled() bool {
-	return e.isEnabled
-}
-
-// IsWritable determines if the event is written to the logger output.
-func (e EventStarted) IsWritable() bool {
-	return e.isWritable
-}
-
-// TaskName returns the event task name.
-func (e EventStarted) TaskName() string {
-	return e.taskName
-}
-
-// WriteText implements logger.TextWritable.
-func (e EventStarted) WriteText(tf logger.TextFormatter, buf *bytes.Buffer) {
-	buf.WriteString(fmt.Sprintf("`%s` starting", e.taskName))
-}
-
-// WriteJSON implements logger.JSONWritable.
-func (e EventStarted) WriteJSON() logger.JSONObj {
-	return logger.JSONObj{
-		"taskName": e.taskName,
+// NewEvent creates a new event.
+func NewEvent(flag logger.Flag, taskName string) *Event {
+	return &Event{
+		ts:       Now(),
+		taskName: taskName,
 	}
 }
 
-// NewEventCompleteListener returns a new event complete listener.
-func NewEventCompleteListener(listener func(e EventComplete)) logger.Listener {
-	return func(e logger.Event) {
-		if typed, isTyped := e.(EventComplete); isTyped {
-			listener(typed)
-		}
-	}
-}
+// Event is an event.
+type Event struct {
+	heading  string
+	ts       time.Time
+	flag     logger.Flag
+	complete bool
 
-// EventComplete is an event emitted to the logger.
-type EventComplete struct {
-	ts         time.Time
 	isEnabled  bool
 	isWritable bool
 	taskName   string
 	err        error
 	elapsed    time.Duration
+
+	labels      map[string]string
+	annotations map[string]string
+}
+
+// WithLabel sets a label on the event for later filtering.
+func (e *Event) WithLabel(key, value string) *Event {
+	if e.labels == nil {
+		e.labels = map[string]string{}
+	}
+	e.labels[key] = value
+	return e
+}
+
+// Labels returns a labels collection.
+func (e *Event) Labels() map[string]string {
+	return e.labels
+}
+
+// WithAnnotation adds an annotation to the event.
+func (e *Event) WithAnnotation(key, value string) *Event {
+	if e.annotations == nil {
+		e.annotations = map[string]string{}
+	}
+	e.annotations[key] = value
+	return e
+}
+
+// Annotations returns the annotations set.
+func (e *Event) Annotations() map[string]string {
+	return e.annotations
+}
+
+// WithFlag sets the event flag.
+func (e *Event) WithFlag(f logger.Flag) *Event {
+	e.flag = f
+	return e
 }
 
 // Flag returns the event flag.
-func (e EventComplete) Flag() logger.Flag {
-	return FlagComplete
+func (e *Event) Flag() logger.Flag {
+	return e.flag
 }
 
-// Timestamp returns an event timestamp.
-func (e EventComplete) Timestamp() time.Time {
+// WithTimestamp sets the message timestamp.
+func (e *Event) WithTimestamp(ts time.Time) *Event {
+	e.ts = ts
+	return e
+}
+
+// Timestamp returns the timed message timestamp.
+func (e Event) Timestamp() time.Time {
 	return e.ts
 }
 
+// WithHeading sets the heading.
+func (e *Event) WithHeading(heading string) *Event {
+	e.heading = heading
+	return e
+}
+
+// Heading returns the heading.
+func (e Event) Heading() string {
+	return e.heading
+}
+
 // IsEnabled determines if the event triggers listeners.
-func (e EventComplete) IsEnabled() bool {
+func (e Event) IsEnabled() bool {
 	return e.isEnabled
 }
 
 // IsWritable determines if the event is written to the logger output.
-func (e EventComplete) IsWritable() bool {
+func (e Event) IsWritable() bool {
 	return e.isWritable
 }
 
+// WithTaskName sets the task name.
+func (e *Event) WithTaskName(taskName string) *Event {
+	e.taskName = taskName
+	return e
+}
+
 // TaskName returns the event task name.
-func (e EventComplete) TaskName() string {
+func (e Event) TaskName() string {
 	return e.taskName
 }
 
-// Elapsed returns the elapsed time for the task.
-func (e EventComplete) Elapsed() time.Duration {
-	return e.elapsed
+// WithErr sets the error on the event.
+func (e *Event) WithErr(err error) *Event {
+	e.err = err
+	return e
 }
 
 // Err returns the event err (if any).
-func (e EventComplete) Err() error {
+func (e Event) Err() error {
 	return e.err
 }
 
+// Complete returns if the event completed.
+func (e Event) Complete() bool {
+	return e.flag == FlagComplete
+}
+
+// WithElapsed sets the elapsed time.
+func (e *Event) WithElapsed(d time.Duration) *Event {
+	e.elapsed = d
+	return e
+}
+
+// Elapsed returns the elapsed time for the task.
+func (e Event) Elapsed() time.Duration {
+	return e.elapsed
+}
+
 // WriteText implements logger.TextWritable.
-func (e EventComplete) WriteText(tf logger.TextFormatter, buf *bytes.Buffer) {
-	if e.err != nil {
-		buf.WriteString(fmt.Sprintf("`%s` failed (%v)", e.taskName, e.elapsed))
+func (e Event) WriteText(tf logger.TextFormatter, buf *bytes.Buffer) {
+	if e.Complete() {
+		if e.err != nil {
+			buf.WriteString(fmt.Sprintf("`%s` failed (%v)", e.taskName, e.elapsed))
+		} else {
+			buf.WriteString(fmt.Sprintf("`%s` completed (%v)", e.taskName, e.elapsed))
+		}
 	} else {
-		buf.WriteString(fmt.Sprintf("`%s` completed (%v)", e.taskName, e.elapsed))
+		buf.WriteString(fmt.Sprintf("`%s` started", e.taskName))
 	}
 }
 
 // WriteJSON implements logger.JSONWritable.
-func (e EventComplete) WriteJSON() logger.JSONObj {
-	return logger.JSONObj{
-		"taskName":              e.taskName,
-		logger.JSONFieldElapsed: logger.Milliseconds(e.elapsed),
-		logger.JSONFieldErr:     e.err,
+func (e Event) WriteJSON() logger.JSONObj {
+	obj := logger.JSONObj{
+		"taskName": e.taskName,
 	}
+	if e.err != nil {
+		obj[logger.JSONFieldErr] = e.err
+	}
+	if e.elapsed > 0 {
+		obj[logger.JSONFieldElapsed] = logger.Milliseconds(e.elapsed)
+	}
+	return obj
 }

@@ -780,13 +780,16 @@ func shouldBeEqual(expected, actual interface{}) (bool, string) {
 
 func shouldBePanicEqual(expected interface{}, action func()) (bool, string) {
 	var actual interface{}
+	var didPanic bool
 	func() {
 		defer func() {
 			actual = recover()
+			didPanic = actual != nil
 		}()
 		action()
 	}()
-	if !areEqual(expected, actual) {
+
+	if !didPanic || (didPanic && !areEqual(expected, actual)) {
 		return true, panicEqualMessage(expected, actual)
 	}
 	return false, EMPTY

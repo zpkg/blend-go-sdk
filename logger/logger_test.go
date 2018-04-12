@@ -695,3 +695,19 @@ func TestLoggerPanicOnSyncWrite(t *testing.T) {
 	assert.True(event.didRun, "The event should have triggered.")
 	assert.NotEmpty(buffer.String())
 }
+
+func TestLoggerRecoverPanics(t *testing.T) {
+	assert := assert.New(t)
+
+	buffer := bytes.NewBuffer(nil)
+	all := New().WithFlags(AllFlags()).WithWriter(NewTextWriter(buffer)).WithRecoverPanics(false)
+
+	all.Listen(Info, "panics", func(e Event) {
+		panic("this is only a test")
+	})
+	defer all.Close()
+
+	assert.PanicEqual("this is only a test", func() {
+		all.SyncTrigger(Messagef(Info, "this is only a test"))
+	})
+}

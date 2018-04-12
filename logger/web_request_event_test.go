@@ -45,16 +45,16 @@ func TestWebRequestEventInterfaces(t *testing.T) {
 
 	ee := NewWebRequestEvent(&http.Request{Host: "test.com"}).WithElapsed(time.Millisecond).WithHeading("heading").WithLabel("foo", "bar")
 
-	eventProvider, isEvent := marshalEvent(ee)
+	eventProvider, isEvent := MarshalEvent(ee)
 	assert.True(isEvent)
 	assert.Equal(WebRequest, eventProvider.Flag())
 	assert.False(eventProvider.Timestamp().IsZero())
 
-	headingProvider, isHeadingProvider := marshalEventHeading(ee)
+	headingProvider, isHeadingProvider := MarshalEventHeading(ee)
 	assert.True(isHeadingProvider)
 	assert.Equal("heading", headingProvider.Heading())
 
-	metaProvider, isMetaProvider := marshalEventMeta(ee)
+	metaProvider, isMetaProvider := MarshalEventMeta(ee)
 	assert.True(isMetaProvider)
 	assert.Equal("bar", metaProvider.Labels()["foo"])
 }
