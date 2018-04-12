@@ -586,6 +586,35 @@ func TestAssertEqual(t *testing.T) {
 	}
 }
 
+func TestAssertReferenceEqual(t *testing.T) {
+	obj1 := "foo"
+	obj2 := "foo"
+	ref1 := &obj1
+	ref2 := &obj1
+	ref3 := &obj2
+
+	err := safeExec(func() {
+		New(nil).ReferenceEqual(ref1, ref2) // should be ok
+	})
+	if err != nil {
+		t.Errorf("should not have produced a panic")
+		t.FailNow()
+	}
+
+	output := bytes.NewBuffer(nil)
+	err = safeExec(func() {
+		New(nil).WithOutput(output).ReferenceEqual(ref1, ref3)
+	})
+	if err == nil {
+		t.Errorf("should have produced a panic")
+		t.FailNow()
+	}
+	if len(output.String()) == 0 {
+		t.Errorf("Should have written output on failure")
+		t.FailNow()
+	}
+}
+
 func TestAssertNotEqual(t *testing.T) {
 	err := safeExec(func() {
 		New(nil).NotEqual("foo", "bar") // should be ok
@@ -1171,6 +1200,29 @@ func TestAssertNonFatalEqual(t *testing.T) {
 
 	output := bytes.NewBuffer(nil)
 	if New(nil).WithOutput(output).NonFatal().Equal("foo", "bar") {
+		t.Errorf("should have failed")
+		t.FailNow()
+	}
+	if len(output.String()) == 0 {
+		t.Errorf("should have produced output")
+		t.FailNow()
+	}
+}
+
+func TestAssertNonFatalReferenceEqual(t *testing.T) {
+	obj1 := "foo"
+	obj2 := "foo"
+	ref1 := &obj1
+	ref2 := &obj1
+	ref3 := &obj2
+
+	if !New(nil).NonFatal().ReferenceEqual(ref1, ref2) { // should be ok {
+		t.Errorf("should not have failed")
+		t.FailNow()
+	}
+
+	output := bytes.NewBuffer(nil)
+	if New(nil).WithOutput(output).NonFatal().ReferenceEqual(ref1, ref3) {
 		t.Errorf("should have failed")
 		t.FailNow()
 	}

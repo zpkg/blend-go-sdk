@@ -407,6 +407,7 @@ func TestJobManagerStartedListener(t *testing.T) {
 		return nil
 	}))
 	wg.Wait()
+	agent.Drain()
 
 	assert.True(didRun)
 	assert.True(didFireListener)
