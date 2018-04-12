@@ -158,7 +158,7 @@ func (a *Assertions) NotEqual(expected interface{}, actual interface{}, userMess
 func (a *Assertions) PanicEqual(expected interface{}, action func(), userMessageComponents ...interface{}) {
 	a.assertion()
 	if didFail, message := shouldBePanicEqual(expected, action); didFail {
-		failNow(a.output, a.t, message, userMessageComponents)
+		failNow(a.output, a.t, message, userMessageComponents...)
 	}
 }
 
@@ -455,7 +455,7 @@ func (o *Optional) NotEqual(expected interface{}, actual interface{}, userMessag
 func (o *Optional) PanicEqual(expected interface{}, action func(), userMessageComponents ...interface{}) bool {
 	o.assertion()
 	if didFail, message := shouldBePanicEqual(expected, action); didFail {
-		fail(o.output, o.t, prefixOptional(message), userMessageComponents)
+		fail(o.output, o.t, prefixOptional(message), userMessageComponents...)
 		return false
 	}
 	return true
@@ -790,7 +790,7 @@ func shouldBePanicEqual(expected interface{}, action func()) (bool, string) {
 	}()
 
 	if !didPanic || (didPanic && !areEqual(expected, actual)) {
-		return true, panicEqualMessage(expected, actual)
+		return true, panicEqualMessage(didPanic, expected, actual)
 	}
 	return false, EMPTY
 }
@@ -1104,7 +1104,10 @@ func equalMessage(expected, actual interface{}) string {
 	return shouldBeMultipleMessage(expected, actual, "Objects should be equal")
 }
 
-func panicEqualMessage(expected, actual interface{}) string {
+func panicEqualMessage(didPanic bool, expected, actual interface{}) string {
+	if !didPanic {
+		return "Should have produced a panic"
+	}
 	return shouldBeMultipleMessage(expected, actual, "Panic from action should equal")
 }
 
