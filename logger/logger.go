@@ -448,11 +448,13 @@ func (l *Logger) trigger(async bool, e Event) {
 }
 
 func (l *Logger) safeExecute(action func()) {
-	defer func() {
-		if r := recover(); r != nil {
-			l.SyncFatalf("%v", r)
-		}
-	}()
+	if l.recoverPanics {
+		defer func() {
+			if r := recover(); r != nil {
+				l.SyncFatalf("%v", r)
+			}
+		}()
+	}
 	action()
 }
 
