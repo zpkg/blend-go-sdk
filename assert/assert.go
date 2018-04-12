@@ -702,10 +702,9 @@ func fail(w io.Writer, t *testing.T, message string, userMessageComponents ...in
 	messageLabel := color("Message", GRAY)
 
 	erasure := fmt.Sprintf("\r%s", getClearString())
+	userMessage := fmt.Sprint(userMessageComponents...)
 
-	if len(userMessageComponents) != 0 {
-		userMessage := fmt.Sprint(userMessageComponents...)
-
+	if len(userMessage) > 0 {
 		errorFormat := `%s
 %s
 %s:

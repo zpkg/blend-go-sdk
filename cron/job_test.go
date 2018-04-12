@@ -2,6 +2,7 @@ package cron
 
 import (
 	"context"
+	"sync"
 	"testing"
 
 	"github.com/blend/go-sdk/assert"
@@ -12,6 +13,13 @@ func TestIsJobCanceled(t *testing.T) {
 
 	ctx, cancel := context.WithCancel(context.Background())
 	assert.False(IsJobCancelled(ctx))
+
+	wg := sync.WaitGroup{}
+	wg.Add(1)
+	go func() {
+		defer wg.Done()
+		assert.True(IsJobCancelled(ctx))
+	}()
 	cancel()
-	assert.True(IsJobCancelled(ctx))
+	wg.Wait()
 }
