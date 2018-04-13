@@ -134,7 +134,7 @@ func (sc *SubContext) SyncWarningf(format string, args ...Any) {
 
 // Errorf writes an error  message.
 func (sc *SubContext) Errorf(format string, args ...Any) {
-	msg := Errorf(Warning, format, args...).WithHeadings(sc.headings...)
+	msg := Errorf(Error, format, args...).WithHeadings(sc.headings...)
 	sc.injectLabels(msg)
 	sc.injectAnnotations(msg)
 	sc.log.Trigger(msg)
@@ -142,7 +142,23 @@ func (sc *SubContext) Errorf(format string, args ...Any) {
 
 // SyncErrorf synchronously writes an error message.
 func (sc *SubContext) SyncErrorf(format string, args ...Any) {
-	msg := Errorf(Warning, format, args...).WithHeadings(sc.headings...)
+	msg := Errorf(Error, format, args...).WithHeadings(sc.headings...)
+	sc.injectLabels(msg)
+	sc.injectAnnotations(msg)
+	sc.log.SyncTrigger(msg)
+}
+
+// Fatalf writes an error  message.
+func (sc *SubContext) Fatalf(format string, args ...Any) {
+	msg := Errorf(Fatal, format, args...).WithHeadings(sc.headings...)
+	sc.injectLabels(msg)
+	sc.injectAnnotations(msg)
+	sc.log.Trigger(msg)
+}
+
+// SyncFatalf synchronously writes an error message.
+func (sc *SubContext) SyncFatalf(format string, args ...Any) {
+	msg := Errorf(Fatal, format, args...).WithHeadings(sc.headings...)
 	sc.injectLabels(msg)
 	sc.injectAnnotations(msg)
 	sc.log.SyncTrigger(msg)
