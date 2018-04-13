@@ -2,6 +2,7 @@ package logger
 
 import (
 	"bytes"
+	"fmt"
 	"testing"
 
 	"github.com/blend/go-sdk/assert"
@@ -117,6 +118,18 @@ func TestSubContextWarningf(t *testing.T) {
 	assert.Equal("[sub-context] [warning] this is only a test\n", output.String())
 }
 
+func TestSubContextWarning(t *testing.T) {
+	assert := assert.New(t)
+
+	output := bytes.NewBuffer(nil)
+	l := New().WithFlags(AllFlags()).WithWriter(NewTextWriter(output).WithShowTimestamp(false).WithUseColor(false))
+	defer l.Close()
+	sc := l.SubContext("sub-context")
+	sc.Warning(fmt.Errorf("this is only a test"))
+	l.Drain()
+	assert.Equal("[sub-context] [warning] this is only a test\n", output.String())
+}
+
 func TestSubContextSyncWarningf(t *testing.T) {
 	assert := assert.New(t)
 
@@ -125,6 +138,17 @@ func TestSubContextSyncWarningf(t *testing.T) {
 	defer l.Close()
 	sc := l.SubContext("sub-context")
 	sc.SyncWarningf("this is only a test")
+	assert.Equal("[sub-context] [warning] this is only a test\n", output.String())
+}
+
+func TestSubContextSyncWarning(t *testing.T) {
+	assert := assert.New(t)
+
+	output := bytes.NewBuffer(nil)
+	l := New().WithFlags(AllFlags()).WithWriter(NewTextWriter(output).WithShowTimestamp(false).WithUseColor(false))
+	defer l.Close()
+	sc := l.SubContext("sub-context")
+	sc.SyncWarning(fmt.Errorf("this is only a test"))
 	assert.Equal("[sub-context] [warning] this is only a test\n", output.String())
 }
 
@@ -140,6 +164,18 @@ func TestSubContextErrorf(t *testing.T) {
 	assert.Equal("[sub-context] [error] this is only a test\n", output.String())
 }
 
+func TestSubContextError(t *testing.T) {
+	assert := assert.New(t)
+
+	output := bytes.NewBuffer(nil)
+	l := New().WithFlags(AllFlags()).WithWriter(NewTextWriter(output).WithShowTimestamp(false).WithUseColor(false))
+	defer l.Close()
+	sc := l.SubContext("sub-context")
+	sc.Error(fmt.Errorf("this is only a test"))
+	l.Drain()
+	assert.Equal("[sub-context] [error] this is only a test\n", output.String())
+}
+
 func TestSubContextSyncErrorf(t *testing.T) {
 	assert := assert.New(t)
 
@@ -148,6 +184,17 @@ func TestSubContextSyncErrorf(t *testing.T) {
 	defer l.Close()
 	sc := l.SubContext("sub-context")
 	sc.SyncErrorf("this is only a test")
+	assert.Equal("[sub-context] [error] this is only a test\n", output.String())
+}
+
+func TestSubContextSyncError(t *testing.T) {
+	assert := assert.New(t)
+
+	output := bytes.NewBuffer(nil)
+	l := New().WithFlags(AllFlags()).WithWriter(NewTextWriter(output).WithShowTimestamp(false).WithUseColor(false))
+	defer l.Close()
+	sc := l.SubContext("sub-context")
+	sc.SyncError(fmt.Errorf("this is only a test"))
 	assert.Equal("[sub-context] [error] this is only a test\n", output.String())
 }
 
@@ -163,6 +210,18 @@ func TestSubContextFatalf(t *testing.T) {
 	assert.Equal("[sub-context] [fatal] this is only a test\n", output.String())
 }
 
+func TestSubContextFatal(t *testing.T) {
+	assert := assert.New(t)
+
+	output := bytes.NewBuffer(nil)
+	l := New().WithFlags(AllFlags()).WithWriter(NewTextWriter(output).WithShowTimestamp(false).WithUseColor(false))
+	defer l.Close()
+	sc := l.SubContext("sub-context")
+	sc.Fatal(fmt.Errorf("this is only a test"))
+	l.Drain()
+	assert.Equal("[sub-context] [fatal] this is only a test\n", output.String())
+}
+
 func TestSubContextSyncFatalf(t *testing.T) {
 	assert := assert.New(t)
 
@@ -171,5 +230,16 @@ func TestSubContextSyncFatalf(t *testing.T) {
 	defer l.Close()
 	sc := l.SubContext("sub-context")
 	sc.SyncFatalf("this is only a test")
+	assert.Equal("[sub-context] [fatal] this is only a test\n", output.String())
+}
+
+func TestSubContextSyncFatal(t *testing.T) {
+	assert := assert.New(t)
+
+	output := bytes.NewBuffer(nil)
+	l := New().WithFlags(AllFlags()).WithWriter(NewTextWriter(output).WithShowTimestamp(false).WithUseColor(false))
+	defer l.Close()
+	sc := l.SubContext("sub-context")
+	sc.SyncFatal(fmt.Errorf("this is only a test"))
 	assert.Equal("[sub-context] [fatal] this is only a test\n", output.String())
 }
