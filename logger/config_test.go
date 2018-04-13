@@ -100,3 +100,12 @@ func TestGetWritersWithOutputFormat(t *testing.T) {
 	assert.Len(writers, 1)
 	assert.Equal(OutputFormatJSON, writers[0].OutputFormat())
 }
+
+func TestNewJSONWriterConfigFromEnv(t *testing.T) {
+	assert := assert.New(t)
+	defer env.Restore()
+
+	env.Env().Set("LOG_JSON_PRETTY", "false")
+	cfg := NewJSONWriterConfigFromEnv()
+	assert.False(cfg.GetPretty())
+}
