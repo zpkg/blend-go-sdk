@@ -35,10 +35,10 @@ func NewWebRequestEventListener(listener func(*WebRequestEvent)) Listener {
 
 // WebRequestEvent is an event type for http responses.
 type WebRequestEvent struct {
-	heading string
-	flag    Flag
-	ts      time.Time
-	req     *http.Request
+	headings []string
+	flag     Flag
+	ts       time.Time
+	req      *http.Request
 
 	route           string
 	statusCode      int
@@ -50,6 +50,17 @@ type WebRequestEvent struct {
 
 	labels      map[string]string
 	annotations map[string]string
+}
+
+// WithHeadings sets the headings.
+func (e *WebRequestEvent) WithHeadings(headings ...string) *WebRequestEvent {
+	e.headings = headings
+	return e
+}
+
+// Headings returns the headings.
+func (e *WebRequestEvent) Headings() []string {
+	return e.headings
 }
 
 // WithLabel sets a label on the event for later filtering.
@@ -100,17 +111,6 @@ func (e *WebRequestEvent) WithTimestamp(ts time.Time) *WebRequestEvent {
 // Timestamp returns the event timestamp.
 func (e *WebRequestEvent) Timestamp() time.Time {
 	return e.ts
-}
-
-// WithHeading sets the event heading.
-func (e *WebRequestEvent) WithHeading(heading string) *WebRequestEvent {
-	e.heading = heading
-	return e
-}
-
-// Heading returns the event heading.
-func (e *WebRequestEvent) Heading() string {
-	return e.heading
 }
 
 // WithRequest sets the request metadata.

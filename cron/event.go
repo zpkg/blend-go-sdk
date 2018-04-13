@@ -30,7 +30,7 @@ func NewEvent(flag logger.Flag, taskName string) *Event {
 
 // Event is an event.
 type Event struct {
-	heading  string
+	headings []string
 	ts       time.Time
 	flag     logger.Flag
 	complete bool
@@ -44,6 +44,17 @@ type Event struct {
 
 	labels      map[string]string
 	annotations map[string]string
+}
+
+// WithHeadings sets the headings.
+func (e *Event) WithHeadings(headings ...string) *Event {
+	e.headings = headings
+	return e
+}
+
+// Headings returns the headings.
+func (e Event) Headings() []string {
+	return e.headings
 }
 
 // WithLabel sets a label on the event for later filtering.
@@ -94,17 +105,6 @@ func (e *Event) WithTimestamp(ts time.Time) *Event {
 // Timestamp returns the timed message timestamp.
 func (e Event) Timestamp() time.Time {
 	return e.ts
-}
-
-// WithHeading sets the heading.
-func (e *Event) WithHeading(heading string) *Event {
-	e.heading = heading
-	return e
-}
-
-// Heading returns the heading.
-func (e Event) Heading() string {
-	return e.heading
 }
 
 // WithIsEnabled sets if the event is enabled

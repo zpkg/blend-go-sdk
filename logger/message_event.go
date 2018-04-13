@@ -36,7 +36,7 @@ func NewMessageEventListener(listener func(*MessageEvent)) Listener {
 
 // MessageEvent is a common type of message.
 type MessageEvent struct {
-	heading   string
+	headings  []string
 	flag      Flag
 	flagColor AnsiColor
 	ts        time.Time
@@ -44,6 +44,17 @@ type MessageEvent struct {
 
 	labels      map[string]string
 	annotations map[string]string
+}
+
+// WithHeadings sets the headings.
+func (e *MessageEvent) WithHeadings(headings ...string) *MessageEvent {
+	e.headings = headings
+	return e
+}
+
+// Headings returns the headings.
+func (e *MessageEvent) Headings() []string {
+	return e.headings
 }
 
 // WithLabel sets a label on the event for later filtering.
@@ -105,17 +116,6 @@ func (e *MessageEvent) WithMessage(message string) *MessageEvent {
 // Message returns the message.
 func (e *MessageEvent) Message() string {
 	return e.message
-}
-
-// WithHeading sets the heading.
-func (e *MessageEvent) WithHeading(heading string) *MessageEvent {
-	e.heading = heading
-	return e
-}
-
-// Heading returns the heading.
-func (e *MessageEvent) Heading() string {
-	return e.heading
 }
 
 // WithFlagTextColor sets the message flag text color.

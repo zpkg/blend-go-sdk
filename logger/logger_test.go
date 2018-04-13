@@ -36,14 +36,14 @@ func TestNewLoggerFromEnvironment(t *testing.T) {
 	env.Env().Set(EnvVarEventFlags, "all")
 	defer env.Env().Restore(EnvVarEventFlags)
 
-	env.Env().Set(EnvVarLabel, "Testing Harness")
-	defer env.Env().Restore(EnvVarLabel)
+	env.Env().Set(EnvVarHeading, "Testing Harness")
+	defer env.Env().Restore(EnvVarHeading)
 
 	log := NewFromEnv()
 	defer log.Close()
 
 	assert.NotNil(log.Flags())
-	assert.Equal("Testing Harness", log.Writers()[0].Label())
+	assert.Equal("Testing Harness", log.Heading())
 }
 
 func TestNewLoggerFromEnvCustomFlags(t *testing.T) {
@@ -52,8 +52,8 @@ func TestNewLoggerFromEnvCustomFlags(t *testing.T) {
 	env.Env().Set(EnvVarEventFlags, "error,info,web.request")
 	defer env.Env().Restore(EnvVarEventFlags)
 
-	env.Env().Set(EnvVarLabel, "Testing Harness")
-	defer env.Env().Restore(EnvVarLabel)
+	env.Env().Set(EnvVarHeading, "Testing Harness")
+	defer env.Env().Restore(EnvVarHeading)
 
 	log := NewFromEnv()
 	defer log.Close()
@@ -63,7 +63,7 @@ func TestNewLoggerFromEnvCustomFlags(t *testing.T) {
 	assert.False(log.IsEnabled(Warning))
 	assert.True(log.IsEnabled(Error))
 	assert.False(log.IsEnabled(Fatal))
-	assert.Equal("Testing Harness", log.Writers()[0].Label())
+	assert.Equal("Testing Harness", log.Heading())
 }
 
 func TestLoggerEnableDisableEvent(t *testing.T) {

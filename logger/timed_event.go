@@ -27,14 +27,25 @@ func NewTimedEventListener(listener func(e *TimedEvent)) Listener {
 
 // TimedEvent is a message event with an elapsed time.
 type TimedEvent struct {
-	heading string
-	flag    Flag
-	ts      time.Time
-	message string
-	elapsed time.Duration
+	headings []string
+	flag     Flag
+	ts       time.Time
+	message  string
+	elapsed  time.Duration
 
 	labels      map[string]string
 	annotations map[string]string
+}
+
+// WithHeadings sets the headings.
+func (e *TimedEvent) WithHeadings(headings ...string) *TimedEvent {
+	e.headings = headings
+	return e
+}
+
+// Headings returns the headings.
+func (e *TimedEvent) Headings() []string {
+	return e.headings
 }
 
 // WithLabel sets a label on the event for later filtering.
@@ -96,17 +107,6 @@ func (e *TimedEvent) WithMessage(message string) *TimedEvent {
 // Message returns the string message.
 func (e TimedEvent) Message() string {
 	return e.message
-}
-
-// WithHeading sets the event heading.
-func (e *TimedEvent) WithHeading(heading string) *TimedEvent {
-	e.heading = heading
-	return e
-}
-
-// Heading returns the event heading.
-func (e *TimedEvent) Heading() string {
-	return e.heading
 }
 
 // WithElapsed sets the elapsed time.

@@ -409,7 +409,7 @@ func TestAppNotFound(t *testing.T) {
 	assert := assert.New(t)
 
 	buffer := bytes.NewBuffer(nil)
-	agent := logger.New().WithFlags(logger.AllFlags()).WithWriter(logger.NewTextWriter(buffer).WithShowLabel(true).WithUseColor(false).WithShowTimestamp(false))
+	agent := logger.New().WithFlags(logger.AllFlags()).WithWriter(logger.NewTextWriter(buffer).WithShowHeadings(true).WithUseColor(false).WithShowTimestamp(false))
 	app := New().WithLogger(agent)
 	app.GET("/", func(r *Ctx) Result {
 		return r.Raw([]byte("ok!"))

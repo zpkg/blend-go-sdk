@@ -21,8 +21,6 @@ const (
 
 // Writer is a type that can consume events.
 type Writer interface {
-	Label() string
-	WithLabel(string) Writer
 	Write(Event) error
 	WriteError(Event) error
 	Output() io.Writer

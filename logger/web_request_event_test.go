@@ -43,16 +43,16 @@ func TestWebRequestEventListener(t *testing.T) {
 func TestWebRequestEventInterfaces(t *testing.T) {
 	assert := assert.New(t)
 
-	ee := NewWebRequestEvent(&http.Request{Host: "test.com"}).WithElapsed(time.Millisecond).WithHeading("heading").WithLabel("foo", "bar")
+	ee := NewWebRequestEvent(&http.Request{Host: "test.com"}).WithElapsed(time.Millisecond).WithHeadings("heading").WithLabel("foo", "bar")
 
 	eventProvider, isEvent := MarshalEvent(ee)
 	assert.True(isEvent)
 	assert.Equal(WebRequest, eventProvider.Flag())
 	assert.False(eventProvider.Timestamp().IsZero())
 
-	headingProvider, isHeadingProvider := MarshalEventHeading(ee)
+	headingProvider, isHeadingProvider := MarshalEventHeadings(ee)
 	assert.True(isHeadingProvider)
-	assert.Equal("heading", headingProvider.Heading())
+	assert.Equal([]string{"heading"}, headingProvider.Headings())
 
 	metaProvider, isMetaProvider := MarshalEventMeta(ee)
 	assert.True(isMetaProvider)
@@ -76,8 +76,8 @@ func TestWebRequestEventProperties(t *testing.T) {
 	assert.Equal(WebRequest, e.Flag())
 	assert.Equal(Error, e.WithFlag(Error).Flag())
 
-	assert.Empty(e.Heading())
-	assert.Equal("Heading", e.WithHeading("Heading").Heading())
+	assert.Empty(e.Headings())
+	assert.Equal([]string{"Heading"}, e.WithHeadings("Heading").Headings())
 
 	assert.Nil(e.Request())
 	assert.NotNil(e.WithRequest(&http.Request{}).Request())

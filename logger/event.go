@@ -10,15 +10,25 @@ type Event interface {
 	Timestamp() time.Time
 }
 
-// EventHeading determines if we should add another output field, `event-heading` to output.
-type EventHeading interface {
-	Heading() string
+// EventHeadings determines if we should add another output field, `event-headings` to output.
+type EventHeadings interface {
+	Headings() []string
+}
+
+// EventLabels is a type that provides labels.
+type EventLabels interface {
+	Labels() map[string]string
+}
+
+// EventAnnotations is a type that provides annotations.
+type EventAnnotations interface {
+	Annotations() map[string]string
 }
 
 // EventMeta determines if we should pull extra meta fields off the event.
 type EventMeta interface {
-	Labels() map[string]string
-	Annotations() map[string]string
+	EventLabels
+	EventAnnotations
 }
 
 // EventEnabled determines if we should allow an event to be triggered or not.
@@ -46,9 +56,9 @@ func MarshalEvent(obj interface{}) (Event, bool) {
 	return typed, isTyped
 }
 
-// MarshalEventHeading marshals an object as an event heading provider.
-func MarshalEventHeading(obj interface{}) (EventHeading, bool) {
-	typed, isTyped := obj.(EventHeading)
+// MarshalEventHeadings marshals an object as an event heading provider.
+func MarshalEventHeadings(obj interface{}) (EventHeadings, bool) {
+	typed, isTyped := obj.(EventHeadings)
 	return typed, isTyped
 }
 

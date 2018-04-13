@@ -13,8 +13,8 @@ func TestLogWriterWrite(t *testing.T) {
 
 	buffer := bytes.NewBuffer(nil)
 	writer := NewTextWriter(buffer)
-	writer.showTime = false
-	writer.showLabel = false
+	writer.showTimestamp = false
+	writer.showHeadings = false
 	writer.useColor = false
 	writer.Write(Messagef(Info, "test string"))
 	assert.Equal("[info] test string\n", string(buffer.Bytes()))
@@ -25,11 +25,10 @@ func TestLogWriterWriteWithLabel(t *testing.T) {
 
 	buffer := bytes.NewBuffer(nil)
 	writer := NewTextWriter(buffer)
-	writer.label = "unit-test"
-	writer.showTime = false
-	writer.showLabel = true
+	writer.showTimestamp = false
+	writer.showHeadings = true
 	writer.useColor = false
-	writer.Write(Messagef(Info, "test string"))
+	writer.Write(Messagef(Info, "test string").WithHeadings("unit-test"))
 	assert.Equal("[unit-test] [info] test string\n", string(buffer.Bytes()))
 }
 
@@ -38,11 +37,10 @@ func TestLogWriterWriteWithLabelColorized(t *testing.T) {
 
 	buffer := bytes.NewBuffer([]byte{})
 	writer := NewTextWriter(buffer)
-	writer.label = "unit-test"
-	writer.showTime = false
-	writer.showLabel = true
+	writer.showTimestamp = false
+	writer.showHeadings = true
 	writer.useColor = true
-	writer.Write(Messagef(Info, "test string"))
+	writer.Write(Messagef(Info, "test string").WithHeadings("unit-test"))
 	assert.Equal("["+ColorBlue.Apply("unit-test")+"] ["+ColorLightWhite.Apply("info")+"] test string\n", string(buffer.Bytes()))
 }
 
@@ -51,7 +49,7 @@ func TestWriterErrorOutputCoalesced(t *testing.T) {
 
 	buffer := bytes.NewBuffer(nil)
 	writer := NewTextWriter(buffer)
-	writer.showTime = false
+	writer.showTimestamp = false
 	writer.useColor = false
 	writer.WriteError(Messagef(Error, "test %s", "string"))
 	assert.Equal("[error] test string\n", string(buffer.Bytes()))
@@ -63,7 +61,7 @@ func TestWriterErrorOutput(t *testing.T) {
 	stdout := bytes.NewBuffer(nil)
 	stderr := bytes.NewBuffer(nil)
 	writer := NewTextWriter(stdout).WithErrorOutput(stderr)
-	writer.showTime = false
+	writer.showTimestamp = false
 	writer.useColor = false
 
 	writer.WriteError(Messagef(Error, "test %s", "string"))
@@ -76,7 +74,7 @@ func TestWriterLabels(t *testing.T) {
 
 	buffer := bytes.NewBuffer(nil)
 	writer := NewTextWriter(buffer)
-	writer.showTime = false
+	writer.showTimestamp = false
 	writer.useColor = false
 	writer.WriteError(Messagef(Error, "test %s", "string").WithLabel("foo", "bar").WithLabel("moo", "boo"))
 	assert.True(strings.HasPrefix(buffer.String(), "[error] test string"))

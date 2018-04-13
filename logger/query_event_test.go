@@ -44,7 +44,7 @@ func TestQueryEventInterfaces(t *testing.T) {
 	assert := assert.New(t)
 
 	ee := NewQueryEvent("this is a test", time.Second).
-		WithHeading("heading").
+		WithHeadings("heading").
 		WithLabel("foo", "bar")
 
 	eventProvider, isEvent := MarshalEvent(ee)
@@ -52,9 +52,9 @@ func TestQueryEventInterfaces(t *testing.T) {
 	assert.Equal(Query, eventProvider.Flag())
 	assert.False(eventProvider.Timestamp().IsZero())
 
-	headingProvider, isHeadingProvider := MarshalEventHeading(ee)
+	headingProvider, isHeadingProvider := MarshalEventHeadings(ee)
 	assert.True(isHeadingProvider)
-	assert.Equal("heading", headingProvider.Heading())
+	assert.Equal([]string{"heading"}, headingProvider.Headings())
 
 	metaProvider, isMetaProvider := MarshalEventMeta(ee)
 	assert.True(isMetaProvider)
@@ -77,8 +77,8 @@ func TestQueryEventProperties(t *testing.T) {
 	assert.Equal(Query, e.Flag())
 	assert.Equal(Error, e.WithFlag(Error).Flag())
 
-	assert.Empty(e.Heading())
-	assert.Equal("Heading", e.WithHeading("Heading").Heading())
+	assert.Empty(e.Headings())
+	assert.Equal([]string{"Heading"}, e.WithHeadings("Heading").Headings())
 
 	assert.Empty(e.Body())
 	assert.Equal("Body", e.WithBody("Body").Body())

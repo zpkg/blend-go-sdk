@@ -41,6 +41,7 @@ func New(flags ...Flag) *Logger {
 // NewFromConfig returns a new logger from a config.
 func NewFromConfig(cfg *Config) *Logger {
 	return &Logger{
+		heading:       cfg.GetHeading(),
 		recoverPanics: cfg.GetRecoverPanics(),
 		flags:         NewFlagSetFromValues(cfg.GetFlags()...),
 		hiddenFlags:   NewFlagSetFromValues(cfg.GetHiddenFlags()...),
@@ -82,6 +83,8 @@ func NewJSON() *Logger {
 type Logger struct {
 	writers []Writer
 
+	heading string
+
 	flagsLock sync.Mutex
 	flags     *FlagSet
 
@@ -99,14 +102,15 @@ type Logger struct {
 	writeErrorWorker     *Worker
 }
 
-// WithLabel sets the writer label for any configured writers.
-func (l *Logger) WithLabel(label string) *Logger {
-	if len(l.writers) > 0 {
-		for _, w := range l.writers {
-			w.WithLabel(label)
-		}
-	}
+// WithHeading returns the logger heading.
+func (l *Logger) WithHeading(heading string) *Logger {
+	l.heading = heading
 	return l
+}
+
+// Heading returns the logger heading.
+func (l *Logger) Heading() string {
+	return l.heading
 }
 
 // Writers returns the output writers for events.
@@ -298,6 +302,22 @@ func (l *Logger) HasListener(flag Flag, listenerName string) bool {
 	}
 	_, hasWorker := workers[listenerName]
 	return hasWorker
+}
+
+// SubContext returns a sub context for the logger.
+// It provides a more limited api surface area but lets you
+// decoarate events with context specific headings, labels and annotations.
+func (l *Logger) SubContext(heading string) *SubContext {
+	if len(l.heading) > 0 {
+		return &SubContext{
+			log:      l,
+			headings: []string{l.heading, heading},
+		}
+	}
+	return &SubContext{
+		log:      l,
+		headings: []string{heading},
+	}
 }
 
 // Listen adds a listener for a given flag.
