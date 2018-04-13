@@ -7,8 +7,6 @@ import (
 )
 
 const (
-	// JSONFieldLabel is a common json field.
-	JSONFieldLabel = "label"
 	// JSONFieldFlag is a common json field.
 	JSONFieldFlag = "flag"
 	// JSONFieldTimestamp is a common json field.
@@ -24,6 +22,9 @@ const (
 
 	// DefaultJSONWriterPretty is a default.
 	DefaultJSONWriterPretty = false
+
+	// DefaultJSONIncludeTimestamp is a default.
+	DefaultJSONIncludeTimestamp = false
 )
 
 // Asserts text writer is a writer.
@@ -42,8 +43,9 @@ type JSONWritable interface {
 // NewJSONWriter returns a json writer with defaults.
 func NewJSONWriter(output io.Writer) *JSONWriter {
 	return &JSONWriter{
-		output: NewInterlockedWriter(output),
-		pretty: DefaultJSONWriterPretty,
+		output:           NewInterlockedWriter(output),
+		pretty:           DefaultJSONWriterPretty,
+		includeTimestamp: DefaultJSONIncludeTimestamp,
 	}
 }
 
@@ -68,10 +70,10 @@ func NewJSONWriterFromConfig(cfg *JSONWriterConfig) *JSONWriter {
 
 // JSONWriter is a json output format.
 type JSONWriter struct {
-	output      io.Writer
-	errorOutput io.Writer
-	label       string
-	pretty      bool
+	output           io.Writer
+	errorOutput      io.Writer
+	pretty           bool
+	includeTimestamp bool
 }
 
 // OutputFormat returns the output format.
@@ -91,17 +93,6 @@ func (jw *JSONWriter) WithErrorOutput(errorOutput io.Writer) *JSONWriter {
 	return jw
 }
 
-// Label returns a descriptive label for the writer.
-func (jw *JSONWriter) Label() string {
-	return jw.label
-}
-
-// WithLabel sets the writer label.
-func (jw *JSONWriter) WithLabel(label string) Writer {
-	jw.label = label
-	return jw
-}
-
 // Output returns an io.Writer for the ouptut stream.
 func (jw *JSONWriter) Output() io.Writer {
 	return jw.output
@@ -113,6 +104,28 @@ func (jw *JSONWriter) ErrorOutput() io.Writer {
 		return jw.errorOutput
 	}
 	return jw.output
+}
+
+// Pretty returns if we should ident output.
+func (jw *JSONWriter) Pretty() bool {
+	return jw.pretty
+}
+
+// WithPretty sets if we should indent output.
+func (jw *JSONWriter) WithPretty(pretty bool) *JSONWriter {
+	jw.pretty = pretty
+	return jw
+}
+
+// IncludeTimestamp returns if we should include the timestamp in output.
+func (jw *JSONWriter) IncludeTimestamp() bool {
+	return jw.includeTimestamp
+}
+
+// WithIncludeTimestamp sets if we should indent output.
+func (jw *JSONWriter) WithIncludeTimestamp(includeTimestamp bool) *JSONWriter {
+	jw.includeTimestamp = includeTimestamp
+	return jw
 }
 
 // Write writes to stdout.
@@ -133,14 +146,13 @@ func (jw *JSONWriter) write(output io.Writer, e Event) error {
 
 	if typed, isTyped := e.(JSONWritable); isTyped {
 		fields := typed.WriteJSON()
-		if len(jw.label) > 0 {
-			fields[JSONFieldLabel] = jw.label
-		}
 		if typed, isTyped := e.(EventHeadings); isTyped && len(typed.Headings()) > 0 {
 			fields[JSONFieldEventHeadings] = typed.Headings()
 		}
 		fields[JSONFieldFlag] = e.Flag()
-		fields[JSONFieldTimestamp] = e.Timestamp()
+		if jw.includeTimestamp {
+			fields[JSONFieldTimestamp] = e.Timestamp()
+		}
 		return encoder.Encode(fields)
 	}
 

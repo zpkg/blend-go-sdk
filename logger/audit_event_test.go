@@ -31,8 +31,22 @@ func TestAuditEventListener(t *testing.T) {
 		assert.Equal("verb", e.Verb())
 	}))
 
-	go func() { all.Trigger(NewAuditEvent("principal", "verb", "noun")) }()
-	go func() { all.Trigger(NewAuditEvent("principal", "verb", "noun")) }()
+	go func() {
+		all.Trigger(NewAuditEvent("principal", "verb", "noun").
+			WithSubject("subject").
+			WithProperty("property").
+			WithUserAgent("user-agent").
+			WithRemoteAddress("remote-address").
+			WithExtra(Labels{"foo": "bar"}))
+	}()
+	go func() {
+		all.Trigger(NewAuditEvent("principal", "verb", "noun").
+			WithSubject("subject").
+			WithProperty("property").
+			WithUserAgent("user-agent").
+			WithRemoteAddress("remote-address").
+			WithExtra(Labels{"foo": "bar"}))
+	}()
 	wg.Wait()
 	all.Drain()
 
@@ -65,6 +79,9 @@ func TestAuditEventProperties(t *testing.T) {
 	ae := NewAuditEvent("", "", "")
 	assert.False(ae.Timestamp().IsZero())
 	assert.True(ae.WithTimestamp(time.Time{}).Timestamp().IsZero())
+
+	assert.Equal(Audit, ae.Flag())
+	assert.Equal(Fatal, ae.WithFlag(Fatal).Flag())
 
 	assert.Empty(ae.Principal())
 	assert.Equal("Principal", ae.WithPrincipal("Principal").Principal())

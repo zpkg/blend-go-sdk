@@ -67,6 +67,9 @@ func TestErrorEventInterfaces(t *testing.T) {
 func TestErrorEventProperties(t *testing.T) {
 	assert := assert.New(t)
 
+	se := NewErrorEventWithState(Fatal, nil, "foo")
+	assert.Equal("foo", se.State())
+
 	ee := NewErrorEvent(Fatal, nil)
 	assert.False(ee.Timestamp().IsZero())
 	assert.True(ee.WithTimestamp(time.Time{}).Timestamp().IsZero())
