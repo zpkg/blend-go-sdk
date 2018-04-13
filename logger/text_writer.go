@@ -277,7 +277,7 @@ func (wr *TextWriter) write(output io.Writer, e Event) error {
 		buf.WriteString(typed.String())
 	}
 
-	if typed, isTyped := e.(EventMeta); isTyped {
+	if typed, isTyped := e.(EventLabels); isTyped {
 		if len(typed.Labels()) > 0 {
 			buf.WriteRune(RuneNewline)
 			for key, value := range typed.Labels() {

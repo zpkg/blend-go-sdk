@@ -26,12 +26,6 @@ type EventAnnotations interface {
 	Annotations() map[string]string
 }
 
-// EventMeta determines if we should pull extra meta fields off the event.
-type EventMeta interface {
-	EventLabels
-	EventAnnotations
-}
-
 // EventEnabled determines if we should allow an event to be triggered or not.
 type EventEnabled interface {
 	IsEnabled() bool

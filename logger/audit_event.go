@@ -10,8 +10,7 @@ import (
 // NewAuditEvent returns a new audit event.
 func NewAuditEvent(principal, verb, noun string) *AuditEvent {
 	return &AuditEvent{
-		ts:        time.Now().UTC(),
-		flag:      Audit,
+		EventMeta: NewEventMeta(Audit),
 		principal: principal,
 		verb:      verb,
 		noun:      noun,
@@ -29,9 +28,7 @@ func NewAuditEventListener(listener func(me *AuditEvent)) Listener {
 
 // AuditEvent is a common type of event detailing a business action by a subject.
 type AuditEvent struct {
-	headings []string
-	flag     Flag
-	ts       time.Time
+	*EventMeta
 
 	principal     string
 	verb          string
@@ -41,9 +38,6 @@ type AuditEvent struct {
 	remoteAddress string
 	userAgent     string
 	extra         map[string]string
-
-	labels      map[string]string
-	annotations map[string]string
 }
 
 // WithHeadings sets the headings.
