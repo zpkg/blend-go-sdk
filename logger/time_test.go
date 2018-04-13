@@ -44,3 +44,14 @@ func TestUnixNano(t *testing.T) {
 	checkedDate := time.Unix(unix, nano)
 	assert.Equal(2010, checkedDate.Year())
 }
+
+func TestSumOfDuration(t *testing.T) {
+	assert := assert.New(t)
+
+	assert.Equal(3*time.Second, SumOfDuration([]time.Duration{time.Second, time.Second, time.Second}))
+}
+func TestMeanOfDuration(t *testing.T) {
+	assert := assert.New(t)
+
+	assert.Equal(2*time.Second, MeanOfDuration([]time.Duration{time.Second, 2 * time.Second, 3 * time.Second}))
+}
