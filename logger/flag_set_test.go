@@ -10,9 +10,10 @@ import (
 func TestEventFlagSetEnable(t *testing.T) {
 	assert := assert.New(t)
 
-	set := NewFlagSet()
+	set := NewFlagSet().WithEnabled("FOO")
 	set.Enable("TEST")
 	assert.True(set.IsEnabled("TEST"))
+	assert.True(set.IsEnabled("FOO"))
 	assert.False(set.IsEnabled("NOT_TEST"))
 }
 
@@ -127,4 +128,19 @@ func TestNewHiddenFlagSetFromEnv(t *testing.T) {
 	assert.False(set.IsEnabled(Info))
 	assert.True(set.IsEnabled(Debug))
 	assert.True(set.IsEnabled(Silly))
+}
+
+func TestFlagSetString(t *testing.T) {
+	assert := assert.New(t)
+
+	assert.Equal("none", NoneFlags().String())
+	assert.Equal("all", AllFlags().String())
+
+	fs := NewFlagSet(Info, Debug, Error)
+	assert.Contains(fs.String(), "info")
+	assert.Contains(fs.String(), "debug")
+	assert.Contains(fs.String(), "error")
+
+	nfs := AllFlags().WithDisabled(Fatal)
+	assert.Equal("all, -fatal", nfs.String())
 }
