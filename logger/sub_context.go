@@ -116,9 +116,17 @@ func (sc *SubContext) SyncDebugf(format string, args ...Any) {
 	sc.log.SyncTrigger(msg)
 }
 
-// Warningf writes a message.
+// Warningf writes an error message.
 func (sc *SubContext) Warningf(format string, args ...Any) {
 	msg := Errorf(Warning, format, args...).WithHeadings(sc.headings...)
+	sc.injectLabels(msg)
+	sc.injectAnnotations(msg)
+	sc.log.Trigger(msg)
+}
+
+// Warning writes an error message.
+func (sc *SubContext) Warning(err error) {
+	msg := NewErrorEvent(Warning, err).WithHeadings(sc.headings...)
 	sc.injectLabels(msg)
 	sc.injectAnnotations(msg)
 	sc.log.Trigger(msg)
@@ -132,9 +140,25 @@ func (sc *SubContext) SyncWarningf(format string, args ...Any) {
 	sc.log.SyncTrigger(msg)
 }
 
+// SyncWarning writes a message.
+func (sc *SubContext) SyncWarning(err error) {
+	msg := NewErrorEvent(Warning, err).WithHeadings(sc.headings...)
+	sc.injectLabels(msg)
+	sc.injectAnnotations(msg)
+	sc.log.SyncTrigger(msg)
+}
+
 // Errorf writes an error  message.
 func (sc *SubContext) Errorf(format string, args ...Any) {
 	msg := Errorf(Error, format, args...).WithHeadings(sc.headings...)
+	sc.injectLabels(msg)
+	sc.injectAnnotations(msg)
+	sc.log.Trigger(msg)
+}
+
+// Error writes an error message.
+func (sc *SubContext) Error(err error) {
+	msg := NewErrorEvent(Error, err).WithHeadings(sc.headings...)
 	sc.injectLabels(msg)
 	sc.injectAnnotations(msg)
 	sc.log.Trigger(msg)
@@ -148,6 +172,14 @@ func (sc *SubContext) SyncErrorf(format string, args ...Any) {
 	sc.log.SyncTrigger(msg)
 }
 
+// SyncError writes an error message.
+func (sc *SubContext) SyncError(err error) {
+	msg := NewErrorEvent(Error, err).WithHeadings(sc.headings...)
+	sc.injectLabels(msg)
+	sc.injectAnnotations(msg)
+	sc.log.SyncTrigger(msg)
+}
+
 // Fatalf writes an error  message.
 func (sc *SubContext) Fatalf(format string, args ...Any) {
 	msg := Errorf(Fatal, format, args...).WithHeadings(sc.headings...)
@@ -156,9 +188,25 @@ func (sc *SubContext) Fatalf(format string, args ...Any) {
 	sc.log.Trigger(msg)
 }
 
+// Fatal writes an error message.
+func (sc *SubContext) Fatal(err error) {
+	msg := NewErrorEvent(Fatal, err).WithHeadings(sc.headings...)
+	sc.injectLabels(msg)
+	sc.injectAnnotations(msg)
+	sc.log.Trigger(msg)
+}
+
 // SyncFatalf synchronously writes an error message.
 func (sc *SubContext) SyncFatalf(format string, args ...Any) {
 	msg := Errorf(Fatal, format, args...).WithHeadings(sc.headings...)
+	sc.injectLabels(msg)
+	sc.injectAnnotations(msg)
+	sc.log.SyncTrigger(msg)
+}
+
+// SyncFatal writes an error message.
+func (sc *SubContext) SyncFatal(err error) {
+	msg := NewErrorEvent(Fatal, err).WithHeadings(sc.headings...)
 	sc.injectLabels(msg)
 	sc.injectAnnotations(msg)
 	sc.log.SyncTrigger(msg)
