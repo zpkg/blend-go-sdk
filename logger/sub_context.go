@@ -1,5 +1,10 @@
 package logger
 
+var (
+	// This is a compile time assertion `SubContext` implements `FullReceiver`.
+	_ FullReceiver = &SubContext{}
+)
+
 // SubContext is a sub-reference to a logger with a specific heading and set of default labels for messages.
 // It implements the full logger suite but forwards them up to the parent logger.
 type SubContext struct {
@@ -211,6 +216,20 @@ func (sc *SubContext) SyncFatal(err error) {
 	sc.injectLabels(msg)
 	sc.injectAnnotations(msg)
 	sc.log.SyncTrigger(msg)
+}
+
+// Trigger triggers listeners asynchronously.
+func (sc *SubContext) Trigger(e Event) {
+	sc.injectLabels(e)
+	sc.injectAnnotations(e)
+	sc.log.trigger(true, e)
+}
+
+// SyncTrigger triggers event listeners synchronously.
+func (sc *SubContext) SyncTrigger(e Event) {
+	sc.injectLabels(e)
+	sc.injectAnnotations(e)
+	sc.log.trigger(false, e)
 }
 
 func (sc *SubContext) injectLabels(e Event) {
