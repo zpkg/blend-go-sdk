@@ -453,7 +453,15 @@ func TestLoggerEventEnabled(t *testing.T) {
 		output <- typed
 	})
 
-	log.Trigger(enabledEvent{message: "foo", isEnabled: true, isWritable: true, isError: false})
+	event := enabledEvent{message: "foo", isEnabled: true, isWritable: true, isError: false}
+
+	_, isEnabledProvider := MarshalEventEnabled(event)
+	assert.True(isEnabledProvider)
+
+	_, isWritableProvider := MarshalEventWritable(event)
+	assert.True(isWritableProvider)
+
+	log.Trigger(event)
 
 	received := <-output
 	log.Drain()

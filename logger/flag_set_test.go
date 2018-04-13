@@ -111,3 +111,20 @@ func TestEventSetCoalesceWith(t *testing.T) {
 	second.CoalesceWith(NewFlagSetFromValues("-info"))
 	assert.False(second.IsEnabled(Info))
 }
+
+func TestFlagSetNone(t *testing.T) {
+	assert := assert.New(t)
+
+	assert.True(NoneFlags().None())
+}
+
+func TestNewHiddenFlagSetFromEnv(t *testing.T) {
+	assert := assert.New(t)
+	defer env.Restore()
+	env.Env().Set(EnvVarHiddenEventFlags, "debug,silly")
+
+	set := NewHiddenFlagSetFromEnv()
+	assert.False(set.IsEnabled(Info))
+	assert.True(set.IsEnabled(Debug))
+	assert.True(set.IsEnabled(Silly))
+}

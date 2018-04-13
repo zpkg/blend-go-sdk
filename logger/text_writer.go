@@ -76,7 +76,7 @@ func NewTextWriterFromConfig(cfg *TextWriterConfig) *TextWriter {
 		errorOutput:   NewInterlockedWriter(os.Stderr),
 		bufferPool:    NewBufferPool(DefaultBufferPoolSize),
 		showTimestamp: cfg.GetShowTimestamp(),
-		showHeadings:  cfg.GetShowLabel(),
+		showHeadings:  cfg.GetShowHeadings(),
 		useColor:      cfg.GetUseColor(),
 		timeFormat:    cfg.GetTimeFormat(),
 	}

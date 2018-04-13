@@ -41,9 +41,7 @@ func (em *EventMeta) Flag() Flag { return em.flag }
 func (em *EventMeta) SetFlag(flag Flag) { em.flag = flag }
 
 // FlagTextColor returns a custom color for the flag.
-func (em *EventMeta) FlagTextColor() AnsiColor {
-	return em.flagTextColor
-}
+func (em *EventMeta) FlagTextColor() AnsiColor { return em.flagTextColor }
 
 // SetFlagTextColor sets the flag text color.
 func (em *EventMeta) SetFlagTextColor(color AnsiColor) { em.flagTextColor = color }
