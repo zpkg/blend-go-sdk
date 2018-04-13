@@ -20,6 +20,7 @@ func (sc *SubContext) SubContext(heading string) *SubContext {
 		headings:    append(sc.headings, heading),
 		labels:      sc.labels,
 		annotations: sc.annotations,
+		log:         sc.log,
 	}
 }
 

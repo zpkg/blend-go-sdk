@@ -62,6 +62,12 @@ func warningHandler(res http.ResponseWriter, req *http.Request) {
 	res.Write([]byte(`{"status":"not ok."}`))
 }
 
+func subContextHandler(res http.ResponseWriter, req *http.Request) {
+	logger.Default().SubContext("sub-context").SubContext("another one").Infof("called an endpoint we care about")
+	res.WriteHeader(http.StatusOK)
+	res.Write([]byte(`{"status":"did sub-context things"}`))
+}
+
 func auditHandler(res http.ResponseWriter, req *http.Request) {
 	logger.Default().Trigger(logger.NewAuditEvent(logger.GetIP(req), "viewed", "audit route").WithExtra(map[string]string{
 		"remoteAddr": req.RemoteAddr,
@@ -80,10 +86,11 @@ func port() string {
 }
 
 func main() {
-	logger.SetDefault(logger.NewFromEnv().WithEnabled(logger.Audit))
+	logger.SetDefault(logger.NewFromEnv().WithEnabled(logger.Info, logger.Audit))
 
 	http.HandleFunc("/", logged(indexHandler))
 
+	http.HandleFunc("/sub-context", logged(subContextHandler))
 	http.HandleFunc("/fatalerror", logged(fatalErrorHandler))
 	http.HandleFunc("/error", logged(errorHandler))
 	http.HandleFunc("/warning", logged(warningHandler))
