@@ -71,12 +71,12 @@ func None() *Logger {
 
 // NewText returns a new text logger.
 func NewText() *Logger {
-	return NewFromEnv().WithWriter(NewTextWriterFromEnv())
+	return New().WithFlagsFromEnv().WithWriter(NewTextWriterFromEnv())
 }
 
 // NewJSON returns a new json logger.
 func NewJSON() *Logger {
-	return NewFromEnv().WithWriter(NewJSONWriterFromEnv())
+	return New().WithFlagsFromEnv().WithWriter(NewJSONWriterFromEnv())
 }
 
 // Logger is a handler for various logging events with descendent handlers.

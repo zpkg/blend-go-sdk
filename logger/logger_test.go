@@ -66,6 +66,44 @@ func TestNewLoggerFromEnvCustomFlags(t *testing.T) {
 	assert.Equal("Testing Harness", log.Heading())
 }
 
+func TestNewAll(t *testing.T) {
+	assert := assert.New(t)
+
+	all := All()
+	defer all.Close()
+	assert.NotEmpty(all.Writers())
+
+	typed, isTyped := all.Writers()[0].(*TextWriter)
+	assert.True(isTyped)
+	assert.NotNil(typed)
+
+	assert.True(all.Flags().All())
+}
+
+func TestNewText(t *testing.T) {
+	assert := assert.New(t)
+
+	txt := NewText()
+	defer txt.Close()
+	assert.NotEmpty(txt.Writers())
+
+	typed, isTyped := txt.Writers()[0].(*TextWriter)
+	assert.True(isTyped)
+	assert.NotNil(typed)
+}
+
+func TestNewJSON(t *testing.T) {
+	assert := assert.New(t)
+
+	jw := NewJSON()
+	defer jw.Close()
+	assert.NotEmpty(jw.Writers())
+
+	typed, isTyped := jw.Writers()[0].(*JSONWriter)
+	assert.True(isTyped)
+	assert.NotNil(typed)
+}
+
 func TestLoggerEnableDisableEvent(t *testing.T) {
 	assert := assert.New(t)
 
