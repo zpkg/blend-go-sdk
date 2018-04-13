@@ -310,6 +310,16 @@ func TestLoggerSyncWarningf(t *testing.T) {
 	assert.Equal("[warning] foo bar\n", buffer.String())
 }
 
+func TestLoggerSyncWarning(t *testing.T) {
+	assert := assert.New(t)
+
+	buffer := bytes.NewBuffer(nil)
+	log := New().WithFlags(AllFlags()).WithWriter(NewTextWriter(buffer).WithShowTimestamp(false).WithUseColor(false))
+	defer log.Close()
+	log.SyncWarning(fmt.Errorf("foo %s", "bar"))
+	assert.Equal("[warning] foo bar\n", buffer.String())
+}
+
 func TestLoggerErrorf(t *testing.T) {
 	assert := assert.New(t)
 
@@ -338,6 +348,16 @@ func TestLoggerSyncErrorf(t *testing.T) {
 	assert.Equal("[error] foo bar\n", buffer.String())
 }
 
+func TestLoggerSyncError(t *testing.T) {
+	assert := assert.New(t)
+
+	buffer := bytes.NewBuffer(nil)
+	log := New().WithFlags(AllFlags()).WithWriter(NewTextWriter(buffer).WithShowTimestamp(false).WithUseColor(false))
+	defer log.Close()
+	log.SyncError(fmt.Errorf("foo %s", "bar"))
+	assert.Equal("[error] foo bar\n", buffer.String())
+}
+
 func TestLoggerFatalf(t *testing.T) {
 	assert := assert.New(t)
 
@@ -356,6 +376,24 @@ func TestLoggerFatalf(t *testing.T) {
 	assert.Equal("[fatal] foo bar\n", stderr.String())
 }
 
+func TestLoggerFatal(t *testing.T) {
+	assert := assert.New(t)
+
+	stdout := bytes.NewBuffer(nil)
+	stderr := bytes.NewBuffer(nil)
+	writer := NewTextWriter(stdout).
+		WithErrorOutput(stderr).
+		WithShowTimestamp(false).
+		WithUseColor(false)
+
+	log := New().WithFlags(AllFlags()).WithWriter(writer)
+	defer log.Close()
+	log.Fatal(fmt.Errorf("foo %s", "bar"))
+	log.Drain()
+	assert.Empty(stdout.String())
+	assert.Equal("[fatal] foo bar\n", stderr.String())
+}
+
 func TestLoggerSyncFatalf(t *testing.T) {
 	assert := assert.New(t)
 
@@ -363,6 +401,16 @@ func TestLoggerSyncFatalf(t *testing.T) {
 	log := New().WithFlags(AllFlags()).WithWriter(NewTextWriter(buffer).WithShowTimestamp(false).WithUseColor(false))
 	defer log.Close()
 	log.SyncFatalf("foo %s", "bar")
+	assert.Equal("[fatal] foo bar\n", buffer.String())
+}
+
+func TestLoggerSyncFatal(t *testing.T) {
+	assert := assert.New(t)
+
+	buffer := bytes.NewBuffer(nil)
+	log := New().WithFlags(AllFlags()).WithWriter(NewTextWriter(buffer).WithShowTimestamp(false).WithUseColor(false))
+	defer log.Close()
+	log.SyncFatal(fmt.Errorf("foo %s", "bar"))
 	assert.Equal("[fatal] foo bar\n", buffer.String())
 }
 
