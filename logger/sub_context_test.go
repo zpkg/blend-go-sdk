@@ -243,3 +243,26 @@ func TestSubContextSyncFatal(t *testing.T) {
 	sc.SyncFatal(fmt.Errorf("this is only a test"))
 	assert.Equal("[sub-context] [fatal] this is only a test\n", output.String())
 }
+
+func TestSubContextTrigger(t *testing.T) {
+	assert := assert.New(t)
+
+	output := bytes.NewBuffer(nil)
+	l := New().WithFlags(AllFlags()).WithWriter(NewTextWriter(output).WithShowTimestamp(false).WithUseColor(false))
+	defer l.Close()
+	sc := l.SubContext("sub-context")
+	sc.Trigger(Messagef(Info, "this is only a test").WithHeadings("message"))
+	l.Drain()
+	assert.Equal("[sub-context > message] [info] this is only a test\n", output.String())
+}
+
+func TestSubContextSyncTrigger(t *testing.T) {
+	assert := assert.New(t)
+
+	output := bytes.NewBuffer(nil)
+	l := New().WithFlags(AllFlags()).WithWriter(NewTextWriter(output).WithShowTimestamp(false).WithUseColor(false))
+	defer l.Close()
+	sc := l.SubContext("sub-context")
+	sc.SyncTrigger(Messagef(Info, "this is only a test").WithHeadings("message"))
+	assert.Equal("[sub-context > message] [info] this is only a test\n", output.String())
+}
