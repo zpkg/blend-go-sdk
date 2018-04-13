@@ -67,7 +67,7 @@ func TestEventInterfaces(t *testing.T) {
 	assert.True(isEnabledProvider)
 	assert.True(enabledProvider.IsEnabled())
 
-	metaProvider, isMetaProvider := logger.MarshalEventMeta(e)
+	metaProvider, isMetaProvider := logger.MarshalEventMetaProvider(e)
 	assert.True(isMetaProvider)
 	assert.Equal("bar", metaProvider.Labels()["foo"])
 }

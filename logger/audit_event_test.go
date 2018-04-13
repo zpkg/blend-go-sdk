@@ -54,7 +54,7 @@ func TestAuditEventInterfaces(t *testing.T) {
 	assert.True(isHeadingProvider)
 	assert.Equal([]string{"heading"}, headingProvider.Headings())
 
-	metaProvider, isMetaProvider := MarshalEventMeta(ae)
+	metaProvider, isMetaProvider := MarshalEventMetaProvider(ae)
 	assert.True(isMetaProvider)
 	assert.Equal("bar", metaProvider.Labels()["foo"])
 }

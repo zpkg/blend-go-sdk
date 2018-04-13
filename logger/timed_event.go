@@ -6,13 +6,20 @@ import (
 	"time"
 )
 
+// these are compile time assertions
+var (
+	_ Event            = &TimedEvent{}
+	_ EventHeadings    = &TimedEvent{}
+	_ EventLabels      = &TimedEvent{}
+	_ EventAnnotations = &TimedEvent{}
+)
+
 // Timedf returns a timed message event.
 func Timedf(flag Flag, elapsed time.Duration, format string, args ...Any) *TimedEvent {
 	return &TimedEvent{
-		flag:    flag,
-		ts:      time.Now().UTC(),
-		message: fmt.Sprintf(format, args...),
-		elapsed: elapsed,
+		EventMeta: NewEventMeta(flag),
+		message:   fmt.Sprintf(format, args...),
+		elapsed:   elapsed,
 	}
 }
 
@@ -27,14 +34,10 @@ func NewTimedEventListener(listener func(e *TimedEvent)) Listener {
 
 // TimedEvent is a message event with an elapsed time.
 type TimedEvent struct {
-	headings []string
-	flag     Flag
-	ts       time.Time
-	message  string
-	elapsed  time.Duration
+	*EventMeta
 
-	labels      map[string]string
-	annotations map[string]string
+	message string
+	elapsed time.Duration
 }
 
 // WithHeadings sets the headings.
@@ -43,37 +46,16 @@ func (e *TimedEvent) WithHeadings(headings ...string) *TimedEvent {
 	return e
 }
 
-// Headings returns the headings.
-func (e *TimedEvent) Headings() []string {
-	return e.headings
-}
-
 // WithLabel sets a label on the event for later filtering.
 func (e *TimedEvent) WithLabel(key, value string) *TimedEvent {
-	if e.labels == nil {
-		e.labels = map[string]string{}
-	}
-	e.labels[key] = value
+	e.AddLabelValue(key, value)
 	return e
-}
-
-// Labels returns a labels collection.
-func (e *TimedEvent) Labels() map[string]string {
-	return e.labels
 }
 
 // WithAnnotation adds an annotation to the event.
 func (e *TimedEvent) WithAnnotation(key, value string) *TimedEvent {
-	if e.annotations == nil {
-		e.annotations = map[string]string{}
-	}
-	e.annotations[key] = value
+	e.AddAnnotationValue(key, value)
 	return e
-}
-
-// Annotations returns the annotations set.
-func (e *TimedEvent) Annotations() map[string]string {
-	return e.annotations
 }
 
 // WithFlag sets the timed message flag.
@@ -82,20 +64,10 @@ func (e *TimedEvent) WithFlag(flag Flag) *TimedEvent {
 	return e
 }
 
-// Flag returns the timed message flag.
-func (e TimedEvent) Flag() Flag {
-	return e.flag
-}
-
 // WithTimestamp sets the message timestamp.
 func (e *TimedEvent) WithTimestamp(ts time.Time) *TimedEvent {
 	e.ts = ts
 	return e
-}
-
-// Timestamp returns the timed message timestamp.
-func (e TimedEvent) Timestamp() time.Time {
-	return e.ts
 }
 
 // WithMessage sets the message.

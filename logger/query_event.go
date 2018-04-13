@@ -7,18 +7,20 @@ import (
 	"time"
 )
 
-const (
-	// Query is a logging flag.
-	Query Flag = "db.query"
+// these are compile time assertions
+var (
+	_ Event            = &QueryEvent{}
+	_ EventHeadings    = &QueryEvent{}
+	_ EventLabels      = &QueryEvent{}
+	_ EventAnnotations = &QueryEvent{}
 )
 
 // NewQueryEvent creates a new query event.
 func NewQueryEvent(body string, elapsed time.Duration) *QueryEvent {
 	return &QueryEvent{
-		flag:    Query,
-		ts:      time.Now().UTC(),
-		body:    body,
-		elapsed: elapsed,
+		EventMeta: NewEventMeta(Query),
+		body:      body,
+		elapsed:   elapsed,
 	}
 }
 
@@ -33,19 +35,14 @@ func NewQueryEventListener(listener func(e *QueryEvent)) Listener {
 
 // QueryEvent represents a database query.
 type QueryEvent struct {
-	headings []string
+	*EventMeta
 
-	flag       Flag
-	ts         time.Time
 	engine     string
 	queryLabel string
 	body       string
 	database   string
 	elapsed    time.Duration
 	err        error
-
-	labels      map[string]string
-	annotations map[string]string
 }
 
 // WithHeadings sets the headings.
@@ -54,37 +51,16 @@ func (e *QueryEvent) WithHeadings(headings ...string) *QueryEvent {
 	return e
 }
 
-// Headings returns the headings.
-func (e *QueryEvent) Headings() []string {
-	return e.headings
-}
-
 // WithLabel sets a label on the event for later filtering.
 func (e *QueryEvent) WithLabel(key, value string) *QueryEvent {
-	if e.labels == nil {
-		e.labels = map[string]string{}
-	}
-	e.labels[key] = value
+	e.AddLabelValue(key, value)
 	return e
-}
-
-// Labels returns a labels collection.
-func (e *QueryEvent) Labels() map[string]string {
-	return e.labels
 }
 
 // WithAnnotation adds an annotation to the event.
 func (e *QueryEvent) WithAnnotation(key, value string) *QueryEvent {
-	if e.annotations == nil {
-		e.annotations = map[string]string{}
-	}
-	e.annotations[key] = value
+	e.AddAnnotationValue(key, value)
 	return e
-}
-
-// Annotations returns the annotations set.
-func (e *QueryEvent) Annotations() map[string]string {
-	return e.annotations
 }
 
 // WithFlag sets the flag.
@@ -93,20 +69,10 @@ func (e *QueryEvent) WithFlag(flag Flag) *QueryEvent {
 	return e
 }
 
-// Flag returns the event flag.
-func (e QueryEvent) Flag() Flag {
-	return e.flag
-}
-
 // WithTimestamp sets the timestamp.
 func (e *QueryEvent) WithTimestamp(ts time.Time) *QueryEvent {
 	e.ts = ts
 	return e
-}
-
-// Timestamp returns the event timestamp.
-func (e QueryEvent) Timestamp() time.Time {
-	return e.ts
 }
 
 // WithEngine sets the engine.

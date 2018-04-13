@@ -7,6 +7,14 @@ import (
 	"time"
 )
 
+// these are compile time assertions
+var (
+	_ Event            = &AuditEvent{}
+	_ EventHeadings    = &AuditEvent{}
+	_ EventLabels      = &AuditEvent{}
+	_ EventAnnotations = &AuditEvent{}
+)
+
 // NewAuditEvent returns a new audit event.
 func NewAuditEvent(principal, verb, noun string) *AuditEvent {
 	return &AuditEvent{
@@ -46,37 +54,16 @@ func (e *AuditEvent) WithHeadings(headings ...string) *AuditEvent {
 	return e
 }
 
-// Headings returns the headings.
-func (e *AuditEvent) Headings() []string {
-	return e.headings
-}
-
 // WithLabel sets a label on the event for later filtering.
 func (e *AuditEvent) WithLabel(key, value string) *AuditEvent {
-	if e.labels == nil {
-		e.labels = map[string]string{}
-	}
-	e.labels[key] = value
+	e.AddLabelValue(key, value)
 	return e
-}
-
-// Labels returns a labels collection.
-func (e *AuditEvent) Labels() map[string]string {
-	return e.labels
 }
 
 // WithAnnotation adds an annotation to the event.
 func (e *AuditEvent) WithAnnotation(key, value string) *AuditEvent {
-	if e.annotations == nil {
-		e.annotations = map[string]string{}
-	}
-	e.annotations[key] = value
+	e.AddAnnotationValue(key, value)
 	return e
-}
-
-// Annotations returns the annotations set.
-func (e *AuditEvent) Annotations() map[string]string {
-	return e.annotations
 }
 
 // WithFlag sets the audit event flag
@@ -85,20 +72,10 @@ func (e *AuditEvent) WithFlag(f Flag) *AuditEvent {
 	return e
 }
 
-// Flag returns the audit event flag
-func (e AuditEvent) Flag() Flag {
-	return e.flag
-}
-
 // WithTimestamp sets the message timestamp.
 func (e *AuditEvent) WithTimestamp(ts time.Time) *AuditEvent {
 	e.ts = ts
 	return e
-}
-
-// Timestamp returns the timed message timestamp.
-func (e AuditEvent) Timestamp() time.Time {
-	return e.ts
 }
 
 // WithPrincipal sets the principal.

@@ -25,6 +25,11 @@ const (
 	DefaultTextWriterShowTimestamp = true
 )
 
+// Asserts text writer is a writer.
+var (
+	_ Writer = &TextWriter{}
+)
+
 // TextWritable is a type with a custom formater for text writing.
 type TextWritable interface {
 	WriteText(formatter TextFormatter, buf *bytes.Buffer)
