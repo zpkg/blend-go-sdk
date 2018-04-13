@@ -41,7 +41,7 @@ func TestMessageEventInterfaces(t *testing.T) {
 	assert := assert.New(t)
 
 	ee := Messagef(Info, "this is a test").
-		WithHeading("heading").
+		WithHeadings("heading").
 		WithLabel("foo", "bar")
 
 	eventProvider, isEvent := MarshalEvent(ee)
@@ -49,9 +49,9 @@ func TestMessageEventInterfaces(t *testing.T) {
 	assert.Equal(Info, eventProvider.Flag())
 	assert.False(eventProvider.Timestamp().IsZero())
 
-	headingProvider, isHeadingProvider := MarshalEventHeading(ee)
+	headingProvider, isHeadingProvider := MarshalEventHeadings(ee)
 	assert.True(isHeadingProvider)
-	assert.Equal("heading", headingProvider.Heading())
+	assert.Equal([]string{"heading"}, headingProvider.Headings())
 
 	metaProvider, isMetaProvider := MarshalEventMeta(ee)
 	assert.True(isMetaProvider)
@@ -75,8 +75,8 @@ func TestMessageEventProperties(t *testing.T) {
 	assert.Equal(Info, e.Flag())
 	assert.Equal(Error, e.WithFlag(Error).Flag())
 
-	assert.Empty(e.Heading())
-	assert.Equal("Heading", e.WithHeading("Heading").Heading())
+	assert.Empty(e.Headings())
+	assert.Equal([]string{"Heading"}, e.WithHeadings("Heading").Headings())
 
 	assert.Empty(e.Message())
 	assert.Equal("Message", e.WithMessage("Message").Message())

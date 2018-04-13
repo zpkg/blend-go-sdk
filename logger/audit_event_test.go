@@ -43,16 +43,16 @@ func TestAuditEventListener(t *testing.T) {
 func TestAuditEventInterfaces(t *testing.T) {
 	assert := assert.New(t)
 
-	ae := NewAuditEvent("principal", "verb", "noun").WithHeading("heading").WithLabel("foo", "bar")
+	ae := NewAuditEvent("principal", "verb", "noun").WithHeadings("heading").WithLabel("foo", "bar")
 
 	eventProvider, isEvent := MarshalEvent(ae)
 	assert.True(isEvent)
 	assert.Equal(Audit, eventProvider.Flag())
 	assert.False(eventProvider.Timestamp().IsZero())
 
-	headingProvider, isHeadingProvider := MarshalEventHeading(ae)
+	headingProvider, isHeadingProvider := MarshalEventHeadings(ae)
 	assert.True(isHeadingProvider)
-	assert.Equal("heading", headingProvider.Heading())
+	assert.Equal([]string{"heading"}, headingProvider.Headings())
 
 	metaProvider, isMetaProvider := MarshalEventMeta(ae)
 	assert.True(isMetaProvider)
@@ -75,8 +75,8 @@ func TestAuditEventProperties(t *testing.T) {
 	assert.Empty(ae.Noun())
 	assert.Equal("Noun", ae.WithNoun("Noun").Noun())
 
-	assert.Empty(ae.Heading())
-	assert.Equal("Heading", ae.WithHeading("Heading").Heading())
+	assert.Empty(ae.Headings())
+	assert.Equal([]string{"Heading"}, ae.WithHeadings("Heading").Headings())
 
 	assert.Empty(ae.Subject())
 	assert.Equal("Subject", ae.WithSubject("Subject").Subject())

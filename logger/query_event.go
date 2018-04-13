@@ -33,7 +33,7 @@ func NewQueryEventListener(listener func(e *QueryEvent)) Listener {
 
 // QueryEvent represents a database query.
 type QueryEvent struct {
-	heading string
+	headings []string
 
 	flag       Flag
 	ts         time.Time
@@ -48,15 +48,15 @@ type QueryEvent struct {
 	annotations map[string]string
 }
 
-// WithHeading sets the event heading.
-func (e *QueryEvent) WithHeading(heading string) *QueryEvent {
-	e.heading = heading
+// WithHeadings sets the headings.
+func (e *QueryEvent) WithHeadings(headings ...string) *QueryEvent {
+	e.headings = headings
 	return e
 }
 
-// Heading returns the event heading.
-func (e *QueryEvent) Heading() string {
-	return e.heading
+// Headings returns the headings.
+func (e *QueryEvent) Headings() []string {
+	return e.headings
 }
 
 // WithLabel sets a label on the event for later filtering.

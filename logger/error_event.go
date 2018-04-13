@@ -46,7 +46,7 @@ func NewErrorEventListener(listener func(*ErrorEvent)) Listener {
 
 // ErrorEvent is an event that wraps an error.
 type ErrorEvent struct {
-	heading   string
+	headings  []string
 	flag      Flag
 	flagColor AnsiColor
 	ts        time.Time
@@ -55,6 +55,17 @@ type ErrorEvent struct {
 
 	labels      map[string]string
 	annotations map[string]string
+}
+
+// WithHeadings sets the headings.
+func (e *ErrorEvent) WithHeadings(headings ...string) *ErrorEvent {
+	e.headings = headings
+	return e
+}
+
+// Headings returns the headings.
+func (e *ErrorEvent) Headings() []string {
+	return e.headings
 }
 
 // IsError indicates if we should write to the error writer or not.
@@ -110,17 +121,6 @@ func (e *ErrorEvent) WithFlag(flag Flag) *ErrorEvent {
 // Flag returns the event flag.
 func (e *ErrorEvent) Flag() Flag {
 	return e.flag
-}
-
-// WithHeading sets the heading.
-func (e *ErrorEvent) WithHeading(heading string) *ErrorEvent {
-	e.heading = heading
-	return e
-}
-
-// Heading returns the heading.
-func (e *ErrorEvent) Heading() string {
-	return e.heading
 }
 
 // WithErr sets the error.

@@ -41,16 +41,16 @@ func TestTimedEventListener(t *testing.T) {
 func TestTimedEventInterfaces(t *testing.T) {
 	assert := assert.New(t)
 
-	ee := Timedf(Fatal, time.Millisecond, "foo %s", "bar").WithHeading("heading").WithLabel("foo", "bar")
+	ee := Timedf(Fatal, time.Millisecond, "foo %s", "bar").WithHeadings("heading").WithLabel("foo", "bar")
 
 	eventProvider, isEvent := MarshalEvent(ee)
 	assert.True(isEvent)
 	assert.Equal(Fatal, eventProvider.Flag())
 	assert.False(eventProvider.Timestamp().IsZero())
 
-	headingProvider, isHeadingProvider := MarshalEventHeading(ee)
+	headingProvider, isHeadingProvider := MarshalEventHeadings(ee)
 	assert.True(isHeadingProvider)
-	assert.Equal("heading", headingProvider.Heading())
+	assert.Equal([]string{"heading"}, headingProvider.Headings())
 
 	metaProvider, isMetaProvider := MarshalEventMeta(ee)
 	assert.True(isMetaProvider)
@@ -73,8 +73,8 @@ func TestTimedEventProperties(t *testing.T) {
 	assert.Equal(Info, e.Flag())
 	assert.Equal(Error, e.WithFlag(Error).Flag())
 
-	assert.Empty(e.Heading())
-	assert.Equal("Heading", e.WithHeading("Heading").Heading())
+	assert.Empty(e.Headings())
+	assert.Equal([]string{"Heading"}, e.WithHeadings("Heading").Headings())
 
 	assert.Empty(e.Message())
 	assert.Equal("Message", e.WithMessage("Message").Message())

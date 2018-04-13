@@ -52,16 +52,16 @@ func TestEventStartedListener(t *testing.T) {
 func TestEventInterfaces(t *testing.T) {
 	assert := assert.New(t)
 
-	e := NewEvent(FlagComplete, "test_task").WithHeading("heading").WithLabel("foo", "bar")
+	e := NewEvent(FlagComplete, "test_task").WithHeadings("heading").WithLabel("foo", "bar")
 
 	eventProvider, isEvent := logger.MarshalEvent(e)
 	assert.True(isEvent)
 	assert.Equal(FlagComplete, eventProvider.Flag())
 	assert.False(eventProvider.Timestamp().IsZero())
 
-	headingProvider, isHeadingProvider := logger.MarshalEventHeading(e)
+	headingProvider, isHeadingProvider := logger.MarshalEventHeadings(e)
 	assert.True(isHeadingProvider)
-	assert.Equal("heading", headingProvider.Heading())
+	assert.Equal([]string{"heading"}, headingProvider.Headings())
 
 	enabledProvider, isEnabledProvider := logger.MarshalEventEnabled(e)
 	assert.True(isEnabledProvider)
@@ -102,8 +102,8 @@ func TestEventProperties(t *testing.T) {
 	assert.True(e.Complete())
 	assert.False(e.WithFlag(FlagStarted).Complete())
 
-	assert.Empty(e.Heading())
-	assert.Equal("Heading", e.WithHeading("Heading").Heading())
+	assert.Empty(e.Headings())
+	assert.Equal([]string{"Heading"}, e.WithHeadings("Heading").Headings())
 
 	assert.Empty(e.TaskName())
 	assert.Equal("test_task", e.WithTaskName("test_task").TaskName())

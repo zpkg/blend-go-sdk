@@ -19,8 +19,8 @@ const (
 	JSONFieldElapsed = "elapsed"
 	// JSONFieldErr is a common json field.
 	JSONFieldErr = "err"
-	// JSONFieldEventHeading is a common json field.
-	JSONFieldEventHeading = "event-heading"
+	// JSONFieldEventHeadings is a common json field.
+	JSONFieldEventHeadings = "event-headings"
 
 	// DefaultJSONWriterPretty is a default.
 	DefaultJSONWriterPretty = false
@@ -131,8 +131,8 @@ func (jw *JSONWriter) write(output io.Writer, e Event) error {
 		if len(jw.label) > 0 {
 			fields[JSONFieldLabel] = jw.label
 		}
-		if typed, isTyped := e.(EventHeading); isTyped && len(typed.Heading()) > 0 {
-			fields[JSONFieldEventHeading] = typed.Heading()
+		if typed, isTyped := e.(EventHeadings); isTyped && len(typed.Headings()) > 0 {
+			fields[JSONFieldEventHeadings] = typed.Headings()
 		}
 		fields[JSONFieldFlag] = e.Flag()
 		fields[JSONFieldTimestamp] = e.Timestamp()

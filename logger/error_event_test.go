@@ -47,7 +47,7 @@ func TestErrorEventInterfaces(t *testing.T) {
 		exception.New("this is a test").
 			WithMessagef("this is a message").
 			WithStack(exception.StackStrings([]string{"foo", "bar"}))).
-		WithHeading("heading").
+		WithHeadings("heading").
 		WithLabel("foo", "bar")
 
 	eventProvider, isEvent := MarshalEvent(ee)
@@ -55,9 +55,9 @@ func TestErrorEventInterfaces(t *testing.T) {
 	assert.Equal(Fatal, eventProvider.Flag())
 	assert.False(eventProvider.Timestamp().IsZero())
 
-	headingProvider, isHeadingProvider := MarshalEventHeading(ee)
+	headingProvider, isHeadingProvider := MarshalEventHeadings(ee)
 	assert.True(isHeadingProvider)
-	assert.Equal("heading", headingProvider.Heading())
+	assert.Equal([]string{"heading"}, headingProvider.Headings())
 
 	metaProvider, isMetaProvider := MarshalEventMeta(ee)
 	assert.True(isMetaProvider)
@@ -80,8 +80,8 @@ func TestErrorEventProperties(t *testing.T) {
 	assert.Equal(Fatal, ee.Flag())
 	assert.Equal(Error, ee.WithFlag(Error).Flag())
 
-	assert.Empty(ee.Heading())
-	assert.Equal("Heading", ee.WithHeading("Heading").Heading())
+	assert.Empty(ee.Headings())
+	assert.Equal([]string{"Heading"}, ee.WithHeadings("Heading").Headings())
 
 	assert.Nil(ee.Err())
 	assert.Equal(fmt.Errorf("foo"), ee.WithErr(fmt.Errorf("foo")).Err())
