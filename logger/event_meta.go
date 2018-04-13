@@ -60,6 +60,9 @@ func (em *EventMeta) AddLabelValue(key, value string) {
 	em.labels[key] = value
 }
 
+// SetLabels sets the labels collection.
+func (em *EventMeta) SetLabels(labels Labels) { em.labels = labels }
+
 // Labels returns the event labels.
 func (em *EventMeta) Labels() Labels { return em.labels }
 
@@ -70,6 +73,9 @@ func (em *EventMeta) AddAnnotationValue(key, value string) {
 	}
 	em.annotations[key] = value
 }
+
+// SetAnnotations sets the annotations collection.
+func (em *EventMeta) SetAnnotations(annotations Annotations) { em.annotations = annotations }
 
 // Annotations returns the event annotations.
 func (em *EventMeta) Annotations() Annotations { return em.annotations }

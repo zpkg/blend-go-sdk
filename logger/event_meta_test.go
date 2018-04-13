@@ -40,7 +40,13 @@ func TestEventMetaProperties(t *testing.T) {
 	em.AddLabelValue("foo", "bar")
 	assert.Equal("bar", em.Labels()["foo"])
 
+	em.SetLabels(nil)
+	assert.Empty(em.Labels())
+
 	assert.Empty(em.Annotations())
-	em.AddLabelValue("buzz", "fuzz")
-	assert.Equal("fuzz", em.Labels()["buzz"])
+	em.AddAnnotationValue("buzz", "fuzz")
+	assert.Equal("fuzz", em.Annotations()["buzz"])
+
+	em.SetAnnotations(nil)
+	assert.Empty(em.Annotations())
 }
