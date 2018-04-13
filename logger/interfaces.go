@@ -1,6 +1,9 @@
 package logger
 
-import "time"
+import (
+	"io"
+	"time"
+)
 
 // Event is an interface representing methods necessary to trigger listeners.
 type Event interface {
@@ -8,11 +11,20 @@ type Event interface {
 	Timestamp() time.Time
 }
 
+// EventMetaProvider provides the full suite of event meta.
+type EventMetaProvider interface {
+	Event
+	EventHeadings
+	EventLabels
+	EventAnnotations
+}
+
 // Listener is a function that can be triggered by events.
 type Listener func(e Event)
 
 // EventHeadings determines if we should add another output field, `event-headings` to output.
 type EventHeadings interface {
+	SetHeadings(...string)
 	Headings() []string
 }
 
@@ -141,6 +153,15 @@ type FullLogger interface {
 	ErrorReceiver
 }
 
+// Writer is a type that can consume events.
+type Writer interface {
+	Write(Event) error
+	WriteError(Event) error
+	Output() io.Writer
+	ErrorOutput() io.Writer
+	OutputFormat() OutputFormat
+}
+
 // --------------------------------------------------------------------------------
 // testing helpers
 // --------------------------------------------------------------------------------
@@ -169,8 +190,8 @@ func MarshalEventWritable(obj interface{}) (EventWritable, bool) {
 	return typed, isTyped
 }
 
-// MarshalEventMeta marshals an object as an event meta provider.
-func MarshalEventMeta(obj interface{}) (EventMeta, bool) {
-	typed, isTyped := obj.(EventMeta)
+// MarshalEventMetaProvider marshals an object as an event meta provider.
+func MarshalEventMetaProvider(obj interface{}) (EventMetaProvider, bool) {
+	typed, isTyped := obj.(EventMetaProvider)
 	return typed, isTyped
 }

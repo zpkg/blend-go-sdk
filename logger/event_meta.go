@@ -2,9 +2,10 @@ package logger
 
 import "time"
 
-// these are compiletime assertions.
+// these are compile time assertions
 var (
 	_ Event            = &EventMeta{}
+	_ EventHeadings    = &EventMeta{}
 	_ EventLabels      = &EventMeta{}
 	_ EventAnnotations = &EventMeta{}
 )
@@ -19,11 +20,12 @@ func NewEventMeta(flag Flag) *EventMeta {
 
 // EventMeta is the metadata common to events.
 type EventMeta struct {
-	flag        Flag
-	ts          time.Time
-	headings    []string
-	labels      Labels
-	annotations Annotations
+	flag          Flag
+	flagTextColor AnsiColor
+	ts            time.Time
+	headings      []string
+	labels        Labels
+	annotations   Annotations
 }
 
 // Headings returns the event meta headings.
@@ -37,6 +39,14 @@ func (em *EventMeta) Flag() Flag { return em.flag }
 
 // SetFlag sets the flag.
 func (em *EventMeta) SetFlag(flag Flag) { em.flag = flag }
+
+// FlagTextColor returns a custom color for the flag.
+func (em *EventMeta) FlagTextColor() AnsiColor {
+	return em.flagTextColor
+}
+
+// SetFlagTextColor sets the flag text color.
+func (em *EventMeta) SetFlagTextColor(color AnsiColor) { em.flagTextColor = color }
 
 // Timestamp returnst the event meta timestamp.
 func (em *EventMeta) Timestamp() time.Time { return em.ts }

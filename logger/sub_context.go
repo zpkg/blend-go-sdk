@@ -76,7 +76,8 @@ func (sc *SubContext) Annotations() map[string]string {
 
 // Sillyf writes a message.
 func (sc *SubContext) Sillyf(format string, args ...Any) {
-	msg := Messagef(Silly, format, args...).WithHeadings(sc.headings...)
+	msg := Messagef(Silly, format, args...)
+	sc.injectHeadings(msg)
 	sc.injectLabels(msg)
 	sc.injectAnnotations(msg)
 	sc.log.Trigger(msg)
@@ -84,7 +85,8 @@ func (sc *SubContext) Sillyf(format string, args ...Any) {
 
 // SyncSillyf synchronously writes a message.
 func (sc *SubContext) SyncSillyf(format string, args ...Any) {
-	msg := Messagef(Silly, format, args...).WithHeadings(sc.headings...)
+	msg := Messagef(Silly, format, args...)
+	sc.injectHeadings(msg)
 	sc.injectLabels(msg)
 	sc.injectAnnotations(msg)
 	sc.log.SyncTrigger(msg)
@@ -92,7 +94,8 @@ func (sc *SubContext) SyncSillyf(format string, args ...Any) {
 
 // Infof writes a message.
 func (sc *SubContext) Infof(format string, args ...Any) {
-	msg := Messagef(Info, format, args...).WithHeadings(sc.headings...)
+	msg := Messagef(Info, format, args...)
+	sc.injectHeadings(msg)
 	sc.injectLabels(msg)
 	sc.injectAnnotations(msg)
 	sc.log.Trigger(msg)
@@ -100,7 +103,8 @@ func (sc *SubContext) Infof(format string, args ...Any) {
 
 // SyncInfof synchronously writes a message.
 func (sc *SubContext) SyncInfof(format string, args ...Any) {
-	msg := Messagef(Info, format, args...).WithHeadings(sc.headings...)
+	msg := Messagef(Info, format, args...)
+	sc.injectHeadings(msg)
 	sc.injectLabels(msg)
 	sc.injectAnnotations(msg)
 	sc.log.SyncTrigger(msg)
@@ -108,7 +112,8 @@ func (sc *SubContext) SyncInfof(format string, args ...Any) {
 
 // Debugf writes a message.
 func (sc *SubContext) Debugf(format string, args ...Any) {
-	msg := Messagef(Debug, format, args...).WithHeadings(sc.headings...)
+	msg := Messagef(Debug, format, args...)
+	sc.injectHeadings(msg)
 	sc.injectLabels(msg)
 	sc.injectAnnotations(msg)
 	sc.log.Trigger(msg)
@@ -116,7 +121,8 @@ func (sc *SubContext) Debugf(format string, args ...Any) {
 
 // SyncDebugf synchronously writes a message.
 func (sc *SubContext) SyncDebugf(format string, args ...Any) {
-	msg := Messagef(Debug, format, args...).WithHeadings(sc.headings...)
+	msg := Messagef(Debug, format, args...)
+	sc.injectHeadings(msg)
 	sc.injectLabels(msg)
 	sc.injectAnnotations(msg)
 	sc.log.SyncTrigger(msg)
@@ -124,7 +130,8 @@ func (sc *SubContext) SyncDebugf(format string, args ...Any) {
 
 // Warningf writes an error message.
 func (sc *SubContext) Warningf(format string, args ...Any) {
-	msg := Errorf(Warning, format, args...).WithHeadings(sc.headings...)
+	msg := Errorf(Warning, format, args...)
+	sc.injectHeadings(msg)
 	sc.injectLabels(msg)
 	sc.injectAnnotations(msg)
 	sc.log.Trigger(msg)
@@ -132,7 +139,8 @@ func (sc *SubContext) Warningf(format string, args ...Any) {
 
 // Warning writes an error message.
 func (sc *SubContext) Warning(err error) {
-	msg := NewErrorEvent(Warning, err).WithHeadings(sc.headings...)
+	msg := NewErrorEvent(Warning, err)
+	sc.injectHeadings(msg)
 	sc.injectLabels(msg)
 	sc.injectAnnotations(msg)
 	sc.log.Trigger(msg)
@@ -140,7 +148,8 @@ func (sc *SubContext) Warning(err error) {
 
 // SyncWarningf synchronously writes an error message.
 func (sc *SubContext) SyncWarningf(format string, args ...Any) {
-	msg := Errorf(Warning, format, args...).WithHeadings(sc.headings...)
+	msg := Errorf(Warning, format, args...)
+	sc.injectHeadings(msg)
 	sc.injectLabels(msg)
 	sc.injectAnnotations(msg)
 	sc.log.SyncTrigger(msg)
@@ -148,7 +157,8 @@ func (sc *SubContext) SyncWarningf(format string, args ...Any) {
 
 // SyncWarning writes a message.
 func (sc *SubContext) SyncWarning(err error) {
-	msg := NewErrorEvent(Warning, err).WithHeadings(sc.headings...)
+	msg := NewErrorEvent(Warning, err)
+	sc.injectHeadings(msg)
 	sc.injectLabels(msg)
 	sc.injectAnnotations(msg)
 	sc.log.SyncTrigger(msg)
@@ -156,7 +166,8 @@ func (sc *SubContext) SyncWarning(err error) {
 
 // Errorf writes an error  message.
 func (sc *SubContext) Errorf(format string, args ...Any) {
-	msg := Errorf(Error, format, args...).WithHeadings(sc.headings...)
+	msg := Errorf(Error, format, args...)
+	sc.injectHeadings(msg)
 	sc.injectLabels(msg)
 	sc.injectAnnotations(msg)
 	sc.log.Trigger(msg)
@@ -164,7 +175,8 @@ func (sc *SubContext) Errorf(format string, args ...Any) {
 
 // Error writes an error message.
 func (sc *SubContext) Error(err error) {
-	msg := NewErrorEvent(Error, err).WithHeadings(sc.headings...)
+	msg := NewErrorEvent(Error, err)
+	sc.injectHeadings(msg)
 	sc.injectLabels(msg)
 	sc.injectAnnotations(msg)
 	sc.log.Trigger(msg)
@@ -172,7 +184,8 @@ func (sc *SubContext) Error(err error) {
 
 // SyncErrorf synchronously writes an error message.
 func (sc *SubContext) SyncErrorf(format string, args ...Any) {
-	msg := Errorf(Error, format, args...).WithHeadings(sc.headings...)
+	msg := Errorf(Error, format, args...)
+	sc.injectHeadings(msg)
 	sc.injectLabels(msg)
 	sc.injectAnnotations(msg)
 	sc.log.SyncTrigger(msg)
@@ -180,7 +193,8 @@ func (sc *SubContext) SyncErrorf(format string, args ...Any) {
 
 // SyncError writes an error message.
 func (sc *SubContext) SyncError(err error) {
-	msg := NewErrorEvent(Error, err).WithHeadings(sc.headings...)
+	msg := NewErrorEvent(Error, err)
+	sc.injectHeadings(msg)
 	sc.injectLabels(msg)
 	sc.injectAnnotations(msg)
 	sc.log.SyncTrigger(msg)
@@ -188,7 +202,8 @@ func (sc *SubContext) SyncError(err error) {
 
 // Fatalf writes an error  message.
 func (sc *SubContext) Fatalf(format string, args ...Any) {
-	msg := Errorf(Fatal, format, args...).WithHeadings(sc.headings...)
+	msg := Errorf(Fatal, format, args...)
+	sc.injectHeadings(msg)
 	sc.injectLabels(msg)
 	sc.injectAnnotations(msg)
 	sc.log.Trigger(msg)
@@ -196,7 +211,8 @@ func (sc *SubContext) Fatalf(format string, args ...Any) {
 
 // Fatal writes an error message.
 func (sc *SubContext) Fatal(err error) {
-	msg := NewErrorEvent(Fatal, err).WithHeadings(sc.headings...)
+	msg := NewErrorEvent(Fatal, err)
+	sc.injectHeadings(msg)
 	sc.injectLabels(msg)
 	sc.injectAnnotations(msg)
 	sc.log.Trigger(msg)
@@ -204,7 +220,8 @@ func (sc *SubContext) Fatal(err error) {
 
 // SyncFatalf synchronously writes an error message.
 func (sc *SubContext) SyncFatalf(format string, args ...Any) {
-	msg := Errorf(Fatal, format, args...).WithHeadings(sc.headings...)
+	msg := Errorf(Fatal, format, args...)
+	sc.injectHeadings(msg)
 	sc.injectLabels(msg)
 	sc.injectAnnotations(msg)
 	sc.log.SyncTrigger(msg)
@@ -212,7 +229,8 @@ func (sc *SubContext) SyncFatalf(format string, args ...Any) {
 
 // SyncFatal writes an error message.
 func (sc *SubContext) SyncFatal(err error) {
-	msg := NewErrorEvent(Fatal, err).WithHeadings(sc.headings...)
+	msg := NewErrorEvent(Fatal, err)
+	sc.injectHeadings(msg)
 	sc.injectLabels(msg)
 	sc.injectAnnotations(msg)
 	sc.log.SyncTrigger(msg)
@@ -220,6 +238,7 @@ func (sc *SubContext) SyncFatal(err error) {
 
 // Trigger triggers listeners asynchronously.
 func (sc *SubContext) Trigger(e Event) {
+	sc.injectHeadings(e)
 	sc.injectLabels(e)
 	sc.injectAnnotations(e)
 	sc.log.trigger(true, e)
@@ -227,11 +246,23 @@ func (sc *SubContext) Trigger(e Event) {
 
 // SyncTrigger triggers event listeners synchronously.
 func (sc *SubContext) SyncTrigger(e Event) {
+	sc.injectHeadings(e)
 	sc.injectLabels(e)
 	sc.injectAnnotations(e)
 	sc.log.trigger(false, e)
 }
 
+// injectHeadings injects the sub-context's headings into an event if it supports headings.
+func (sc *SubContext) injectHeadings(e Event) {
+	if len(sc.headings) == 0 {
+		return
+	}
+	if typed, isTyped := e.(EventHeadings); isTyped {
+		typed.SetHeadings(append(sc.headings, typed.Headings()...)...)
+	}
+}
+
+// injectHeadings injects the sub-context's labels into an event if it supports labels.
 func (sc *SubContext) injectLabels(e Event) {
 	if sc.labels == nil {
 		return
@@ -243,6 +274,7 @@ func (sc *SubContext) injectLabels(e Event) {
 	}
 }
 
+// injectHeadings injects the sub-context's annotations into an event if it supports annotations.
 func (sc *SubContext) injectAnnotations(e Event) {
 	if sc.annotations == nil {
 		return

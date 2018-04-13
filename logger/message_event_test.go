@@ -53,7 +53,7 @@ func TestMessageEventInterfaces(t *testing.T) {
 	assert.True(isHeadingProvider)
 	assert.Equal([]string{"heading"}, headingProvider.Headings())
 
-	metaProvider, isMetaProvider := MarshalEventMeta(ee)
+	metaProvider, isMetaProvider := MarshalEventMetaProvider(ee)
 	assert.True(isMetaProvider)
 	assert.Equal("bar", metaProvider.Labels()["foo"])
 }

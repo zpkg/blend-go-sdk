@@ -26,8 +26,13 @@ const (
 	DefaultJSONWriterPretty = false
 )
 
+// Asserts text writer is a writer.
+var (
+	_ Writer = &TextWriter{}
+)
+
 // JSONObj is a type alias for map[string]Any
-type JSONObj = map[string]Any
+type JSONObj = Values
 
 // JSONWritable is a type with a custom formater for json writing.
 type JSONWritable interface {

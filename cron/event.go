@@ -8,6 +8,14 @@ import (
 	logger "github.com/blend/go-sdk/logger"
 )
 
+// these are compile time assertions
+var (
+	_ logger.Event            = &Event{}
+	_ logger.EventHeadings    = &Event{}
+	_ logger.EventLabels      = &Event{}
+	_ logger.EventAnnotations = &Event{}
+)
+
 // NewEventListener returns a new event listener.
 func NewEventListener(listener func(e *Event)) logger.Listener {
 	return func(e logger.Event) {
@@ -20,19 +28,17 @@ func NewEventListener(listener func(e *Event)) logger.Listener {
 // NewEvent creates a new event.
 func NewEvent(flag logger.Flag, taskName string) *Event {
 	return &Event{
-		flag:     flag,
-		ts:       Now(),
-		taskName: taskName,
-		enabled:  true,
-		writable: true,
+		EventMeta: logger.NewEventMeta(flag),
+		taskName:  taskName,
+		enabled:   true,
+		writable:  true,
 	}
 }
 
 // Event is an event.
 type Event struct {
-	headings []string
-	ts       time.Time
-	flag     logger.Flag
+	*logger.EventMeta
+
 	complete bool
 
 	enabled  bool
@@ -41,70 +47,36 @@ type Event struct {
 	taskName string
 	err      error
 	elapsed  time.Duration
-
-	labels      map[string]string
-	annotations map[string]string
 }
 
 // WithHeadings sets the headings.
 func (e *Event) WithHeadings(headings ...string) *Event {
-	e.headings = headings
+	e.SetHeadings(headings...)
 	return e
-}
-
-// Headings returns the headings.
-func (e Event) Headings() []string {
-	return e.headings
 }
 
 // WithLabel sets a label on the event for later filtering.
 func (e *Event) WithLabel(key, value string) *Event {
-	if e.labels == nil {
-		e.labels = map[string]string{}
-	}
-	e.labels[key] = value
+	e.AddLabelValue(key, value)
 	return e
-}
-
-// Labels returns a labels collection.
-func (e *Event) Labels() map[string]string {
-	return e.labels
 }
 
 // WithAnnotation adds an annotation to the event.
 func (e *Event) WithAnnotation(key, value string) *Event {
-	if e.annotations == nil {
-		e.annotations = map[string]string{}
-	}
-	e.annotations[key] = value
+	e.AddAnnotationValue(key, value)
 	return e
-}
-
-// Annotations returns the annotations set.
-func (e *Event) Annotations() map[string]string {
-	return e.annotations
 }
 
 // WithFlag sets the event flag.
 func (e *Event) WithFlag(f logger.Flag) *Event {
-	e.flag = f
+	e.SetFlag(f)
 	return e
-}
-
-// Flag returns the event flag.
-func (e *Event) Flag() logger.Flag {
-	return e.flag
 }
 
 // WithTimestamp sets the message timestamp.
 func (e *Event) WithTimestamp(ts time.Time) *Event {
-	e.ts = ts
+	e.SetTimestamp(ts)
 	return e
-}
-
-// Timestamp returns the timed message timestamp.
-func (e Event) Timestamp() time.Time {
-	return e.ts
 }
 
 // WithIsEnabled sets if the event is enabled
@@ -153,7 +125,7 @@ func (e Event) Err() error {
 
 // Complete returns if the event completed.
 func (e Event) Complete() bool {
-	return e.flag == FlagComplete
+	return e.Flag() == FlagComplete
 }
 
 // WithElapsed sets the elapsed time.
