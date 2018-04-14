@@ -64,12 +64,29 @@ func New(t *testing.T) *Assertions {
 	}
 }
 
+// Filtered returns a new instance of `Assertions`.
+func Filtered(t *testing.T, filter Filter) *Assertions {
+	CheckFilter(t, filter)
+	return &Assertions{
+		t:            t,
+		timerAbort:   make(chan bool),
+		timerAborted: make(chan bool),
+	}
+}
+
 // Assertions is the main entry point for using the assertions library.
 type Assertions struct {
 	output       io.Writer
+	filter       Filter
 	t            *testing.T
 	timerAbort   chan bool
 	timerAborted chan bool
+}
+
+// WithFilter sets the filter.
+func (a *Assertions) WithFilter(filter Filter) *Assertions {
+	a.filter = filter
+	return a
 }
 
 // WithOutput sets the assertions output.
