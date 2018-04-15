@@ -58,7 +58,13 @@ HCsYkCmGXiwJN2guZo6l/5+GqRo3SN19dZptrH/rC/wAai0+Ctqw
 func main() {
 	log := logger.All()
 	upgrade := web.NewHTTPSUpgrader().WithPort(80).WithLogger(log)
-	app := web.New().WithPort(443).WithLogger(log).WithTLSCertPair([]byte(cert), []byte(key))
+	app := web.New().WithPort(443).WithLogger(log)
+
+	err := app.SetTLSCertPair([]byte(cert), []byte(key))
+	if err != nil {
+		log.SyncFatalExit(err)
+	}
+
 	app.GET("/", func(r *web.Ctx) web.Result {
 		return r.Text().Result("OK!")
 	})

@@ -18,8 +18,8 @@ const (
 )
 
 var rulesPath = flag.String("rules", filepath.Join(".", DefaultProfanityFile), "the default rules to include for any sub-package")
-var include = flag.String("include", "*.go", "the include file filter in glob form")
-var exclude = flag.String("exclude", "PROFANITY", "the exclude file filter in glob form")
+var include = flag.String("include", "", "the include file filter in glob form")
+var exclude = flag.String("exclude", "", "the exclude file filter in glob form")
 var verbose = flag.Bool("v", false, "verbose output")
 
 func main() {
@@ -81,7 +81,7 @@ func main() {
 		}
 
 		if len(*include) > 0 {
-			if matches, err := filepath.Match(*include, filepath.Base(file)); err != nil {
+			if matches, err := globAnyMatch(*include, filepath.Base(file)); err != nil {
 				return err
 			} else if !matches {
 				return nil
@@ -97,10 +97,6 @@ func main() {
 
 		}
 
-		if *verbose {
-			fmt.Fprintf(os.Stdout, "checking: %s\n", file)
-		}
-
 		rules, err := getRules(filepath.Dir(file))
 		if err != nil {
 			return err
@@ -111,17 +107,29 @@ func main() {
 			return err
 		}
 
+		fmt.Fprintf(os.Stdout, "checking: %s\n", file)
+
 		for _, rule := range rules {
 			if matches, err := rule.ShouldInclude(file); err != nil {
 				return err
 			} else if !matches {
-				return nil
+				if *verbose {
+					fmt.Fprintf(os.Stdout, "\tskipping included non-match: %s\n", rule.Message)
+				}
+				continue
 			}
 
 			if matches, err := rule.ShouldExclude(file); err != nil {
 				return err
 			} else if matches {
-				return nil
+				if *verbose {
+					fmt.Fprintf(os.Stdout, "\tskipping excluded match: %s\n", rule.Message)
+				}
+				continue
+			}
+
+			if *verbose {
+				fmt.Fprintf(os.Stdout, "\tapplying: %s\n", rule.Message)
 			}
 
 			if err := rule.Apply(contents); err != nil {
@@ -144,6 +152,19 @@ func main() {
 		return
 	}
 	os.Exit(0)
+}
+
+// globAnyMatch tests if a file matches a (potentially) csv of glob filters.
+func globAnyMatch(filter, file string) (bool, error) {
+	parts := strings.Split(filter, ",")
+	for _, part := range parts {
+		if matches, err := filepath.Match(strings.TrimSpace(part), file); err != nil {
+			return false, err
+		} else if matches {
+			return true, nil
+		}
+	}
+	return false, nil
 }
 
 func discoverRules(path string) ([]Rule, error) {
@@ -217,16 +238,16 @@ func (r Rule) ShouldInclude(file string) (bool, error) {
 	if len(r.Include) == 0 {
 		return true, nil
 	}
-	return filepath.Match(r.Include, file)
+	return globAnyMatch(r.Include, file)
 }
 
 // ShouldExclude returns if we should include a file for a given rule.
 // If the `.Include` field is unset, this will alway return true.
 func (r Rule) ShouldExclude(file string) (bool, error) {
-	if len(r.Include) == 0 {
-		return true, nil
+	if len(r.Exclude) == 0 {
+		return false, nil
 	}
-	return filepath.Match(r.Include, file)
+	return globAnyMatch(r.Include, file)
 }
 
 // Apply applies the rule.
