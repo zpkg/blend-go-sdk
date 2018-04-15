@@ -111,6 +111,11 @@ func (vr *ViewResultProvider) BadRequest(err error) Result {
 		vr.log.Warning(err)
 	}
 
+	initErr := vr.views.Initialize()
+	if initErr != nil {
+		return vr.InternalError(exception.NewFromErr(initErr).WithMessagef("viewname: %s", vr.BadRequestTemplateName()))
+	}
+
 	temp := vr.views.Templates().Lookup(vr.BadRequestTemplateName())
 	if temp == nil {
 		temp, _ = template.New("").Parse(DefaultTemplateBadRequest)
@@ -129,6 +134,16 @@ func (vr *ViewResultProvider) InternalError(err error) Result {
 		vr.log.Fatal(err)
 	}
 
+	initErr := vr.views.Initialize()
+	if initErr != nil {
+		temp, _ := template.New("").Parse(DefaultTemplateInternalError)
+		return &ViewResult{
+			StatusCode: http.StatusInternalServerError,
+			ViewModel:  initErr,
+			Template:   temp,
+		}
+	}
+
 	temp := vr.views.Templates().Lookup(vr.InternalErrorTemplateName())
 	if temp == nil {
 		temp, _ = template.New("").Parse(DefaultTemplateInternalError)
@@ -143,6 +158,11 @@ func (vr *ViewResultProvider) InternalError(err error) Result {
 
 // NotFound returns a view result.
 func (vr *ViewResultProvider) NotFound() Result {
+	err := vr.views.Initialize()
+	if err != nil {
+		return vr.InternalError(exception.NewFromErr(err).WithMessagef("viewname: %s", vr.NotFoundTemplateName()))
+	}
+
 	temp := vr.views.Templates().Lookup(vr.NotFoundTemplateName())
 	if temp == nil {
 		temp, _ = template.New("").Parse(DefaultTemplateNotFound)
@@ -156,6 +176,11 @@ func (vr *ViewResultProvider) NotFound() Result {
 
 // NotAuthorized returns a view result.
 func (vr *ViewResultProvider) NotAuthorized() Result {
+	err := vr.views.Initialize()
+	if err != nil {
+		return vr.InternalError(exception.NewFromErr(err).WithMessagef("viewname: %s", vr.NotAuthorizedTemplateName()))
+	}
+
 	temp := vr.views.Templates().Lookup(vr.NotAuthorizedTemplateName())
 	if temp == nil {
 		temp, _ = template.New("").Parse(DefaultTemplateNotAuthorized)
@@ -169,9 +194,14 @@ func (vr *ViewResultProvider) NotAuthorized() Result {
 
 // View returns a view result.
 func (vr *ViewResultProvider) View(viewName string, viewModel interface{}) Result {
+	err := vr.views.Initialize()
+	if err != nil {
+		return vr.InternalError(exception.NewFromErr(err).WithMessagef("viewname: %s", viewName))
+	}
+
 	temp := vr.views.Templates().Lookup(viewName)
 	if temp == nil {
-		return vr.InternalError(exception.NewFromErr(ErrUnsetViewTemplate).WithMessagef("template: %s", viewName))
+		return vr.InternalError(exception.NewFromErr(ErrUnsetViewTemplate).WithMessagef("viewname: %s", viewName))
 	}
 	return &ViewResult{
 		StatusCode: http.StatusOK,

@@ -42,7 +42,6 @@ func TestAppNewFromEnv(t *testing.T) {
 	var route *Route
 	app := NewFromEnv()
 	assert.NotNil(app.state)
-	assert.Nil(app.err)
 	assert.NotNil(app.Views())
 	app.GET("/", func(c *Ctx) Result {
 		route = c.Route()
@@ -191,11 +190,10 @@ func TestAppStaticRewrite(t *testing.T) {
 	app.ServeStatic("/testPath", "_static")
 	assert.NotEmpty(app.statics)
 	assert.NotNil(app.statics["/testPath/*filepath"])
-	app.WithStaticRewriteRule("/testPath", "(.*)", func(path string, pieces ...string) string {
+	assert.Nil(app.SetStaticRewriteRule("/testPath", "(.*)", func(path string, pieces ...string) string {
 		return path
-	})
+	}))
 
-	assert.Nil(app.Err())
 	assert.NotEmpty(app.statics["/testPath/*filepath"].RewriteRules())
 }
 
@@ -206,7 +204,7 @@ func TestAppStaticRewriteBadExp(t *testing.T) {
 	assert.NotEmpty(app.statics)
 	assert.NotNil(app.statics["/testPath/*filepath"])
 
-	err := app.WithStaticRewriteRule("/testPath", "((((", func(path string, pieces ...string) string {
+	err := app.SetStaticRewriteRule("/testPath", "((((", func(path string, pieces ...string) string {
 		return path
 	})
 
@@ -220,7 +218,7 @@ func TestAppStaticHeader(t *testing.T) {
 	app.ServeStatic("/testPath", "_static")
 	assert.NotEmpty(app.statics)
 	assert.NotNil(app.statics["/testPath/*filepath"])
-	app.WithStaticHeader("/testPath/*filepath", "cache-control", "haha what is caching.")
+	assert.Nil(app.SetStaticHeader("/testPath/*filepath", "cache-control", "haha what is caching."))
 	assert.NotEmpty(app.statics["/testPath/*filepath"].Headers())
 }
 
@@ -514,7 +512,8 @@ func TestAppViewErrorsRenderErrorView(t *testing.T) {
 func TestAppAddsDefaultHeaders(t *testing.T) {
 	assert := assert.New(t)
 
-	app := NewFromConfig(&Config{}).WithBindAddr("127.0.0.1:0")
+	app := NewFromConfig(&Config{})
+	app.WithBindAddr("127.0.0.1:0")
 	assert.NotEmpty(app.DefaultHeaders())
 	app.GET("/", func(r *Ctx) Result {
 		return r.Text().Result("OK!")
