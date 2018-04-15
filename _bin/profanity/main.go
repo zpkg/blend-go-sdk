@@ -94,7 +94,12 @@ func main() {
 			} else if matches {
 				return nil
 			}
+		}
 
+		if matches, err := filepath.Match(DefaultProfanityFile, filepath.Base(file)); err != nil {
+			return err
+		} else if matches {
+			return nil
 		}
 
 		rules, err := getRules(filepath.Dir(file))
