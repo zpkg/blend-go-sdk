@@ -110,7 +110,9 @@ func main() {
 		}
 
 		for _, rule := range rules {
-			fmt.Fprintf(os.Stdout, "\trule: %s\n", rule.Message)
+			if *verbose {
+				fmt.Fprintf(os.Stdout, "\trule: %s\n", rule.Message)
+			}
 			if matches, err := rule.ShouldInclude(filepath.Base(file)); err != nil {
 				return err
 			} else if !matches {
