@@ -68,6 +68,7 @@ func New(t *testing.T) *Assertions {
 func Filtered(t *testing.T, filter Filter) *Assertions {
 	CheckFilter(t, filter)
 	return &Assertions{
+		filter:       filter,
 		t:            t,
 		timerAbort:   make(chan bool),
 		timerAborted: make(chan bool),
@@ -371,7 +372,8 @@ func (a *Assertions) StartTimeout(timeout time.Duration, userMessageComponents .
 	go func() {
 		select {
 		case <-ticker.C:
-			panic("Timeout Reached")
+			a.t.Errorf("Timeout Reached")
+			a.t.FailNow()
 		case <-a.timerAbort:
 			a.timerAborted <- true
 			return
