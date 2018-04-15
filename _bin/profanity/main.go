@@ -89,7 +89,7 @@ func main() {
 		}
 
 		if len(*exclude) > 0 {
-			if matches, err := filepath.Match(*exclude, filepath.Base(file)); err != nil {
+			if matches, err := globAnyMatch(*exclude, filepath.Base(file)); err != nil {
 				return err
 			} else if matches {
 				return nil
