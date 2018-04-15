@@ -17,7 +17,7 @@ const (
 	DefaultProfanityFile = "PROFANITY"
 )
 
-var rulesPath = flag.String("rules", filepath.Join(".", DefaultProfanityFile), "the default rules to include for any sub-package")
+var rulesFile = flag.String("rules", DefaultProfanityFile, "the default rules to include for any sub-package")
 var include = flag.String("include", "", "the include file filter in glob form")
 var exclude = flag.String("exclude", "", "the exclude file filter in glob form")
 var verbose = flag.Bool("v", false, "verbose output")
@@ -29,16 +29,9 @@ func main() {
 
 	flag.Parse()
 
-	var defaultRules []Rule
-	var err error
-	if rulesPath != nil && len(*rulesPath) > 0 {
-		defaultRules, err = deserializeRules(*rulesPath)
-		if err != nil {
-			fmt.Fprintf(os.Stderr, "%+v\n", err)
-			os.Exit(1)
-		}
+	if rulesFile != nil && len(*rulesFile) > 0 {
 		if *verbose {
-			fmt.Fprintf(os.Stdout, "using rules path: %s\n", *rulesPath)
+			fmt.Fprintf(os.Stdout, "using rules path: %s\n", *rulesFile)
 		}
 	}
 
@@ -55,14 +48,14 @@ func main() {
 
 	var getRules = func(path string) ([]Rule, error) {
 		if rules, hasRules := packageRules[path]; hasRules {
-			return append(defaultRules, rules...), nil
+			return rules, nil
 		}
 		rules, err := discoverRules(path)
 		if err != nil {
 			return nil, err
 		}
 		packageRules[path] = rules
-		return append(defaultRules, rules...), nil
+		return rules, nil
 	}
 
 	walkErr := filepath.Walk("./", func(file string, info os.FileInfo, err error) error {
@@ -117,26 +110,27 @@ func main() {
 		}
 
 		for _, rule := range rules {
-			if matches, err := rule.ShouldInclude(file); err != nil {
+			fmt.Fprintf(os.Stdout, "\trule: %s\n", rule.Message)
+			if matches, err := rule.ShouldInclude(filepath.Base(file)); err != nil {
 				return err
 			} else if !matches {
 				if *verbose {
-					fmt.Fprintf(os.Stdout, "\tskipping included non-match: %s\n", rule.Message)
+					fmt.Fprintf(os.Stdout, "\tskipping included non-match\n")
 				}
 				continue
 			}
 
-			if matches, err := rule.ShouldExclude(file); err != nil {
+			if matches, err := rule.ShouldExclude(filepath.Base(file)); err != nil {
 				return err
 			} else if matches {
 				if *verbose {
-					fmt.Fprintf(os.Stdout, "\tskipping excluded match: %s\n", rule.Message)
+					fmt.Fprintf(os.Stdout, "\tskipping excluded match\n")
 				}
 				continue
 			}
 
 			if *verbose {
-				fmt.Fprintf(os.Stdout, "\tapplying: %s\n", rule.Message)
+				fmt.Fprintf(os.Stdout, "\tapplying\n")
 			}
 
 			if err := rule.Apply(contents); err != nil {
