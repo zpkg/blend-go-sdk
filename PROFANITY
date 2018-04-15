@@ -5,6 +5,6 @@
 - notContains: "github.com/blend/go-sdk/assert"
   message: "tests must use `github.com/blend/go-sdk/assert`"
   include: "*_test.go"
-  exclude: "assert/*"
+  exclude: "./assert/*"
 - contains: "println("
   message: "please remove debugging `println` statements"
