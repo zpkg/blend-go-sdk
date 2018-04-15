@@ -18,7 +18,8 @@ const (
 )
 
 var rulesPath = flag.String("rules", filepath.Join(".", DefaultProfanityFile), "the default rules to include for any sub-package")
-var filter = flag.String("filter", "*.go", "the file filter in glob form")
+var include = flag.String("include", "*.go", "the include file filter in glob form")
+var exclude = flag.String("exclude", "PROFANITY", "the exclude file filter in glob form")
 var verbose = flag.Bool("v", false, "verbose output")
 
 func main() {
@@ -42,7 +43,12 @@ func main() {
 	}
 
 	if *verbose {
-		fmt.Fprintf(os.Stdout, "using filter: %s\n", *filter)
+		if len(*include) > 0 {
+			fmt.Fprintf(os.Stdout, "using include filter: %s\n", *include)
+		}
+		if len(*exclude) > 0 {
+			fmt.Fprintf(os.Stdout, "using exclude filter: %s\n", *exclude)
+		}
 	}
 
 	packageRules := map[string][]Rule{}
@@ -74,14 +80,30 @@ func main() {
 			return nil
 		}
 
-		if matches, err := filepath.Match(*filter, filepath.Base(file)); err != nil {
-			return err
-		} else if !matches {
-			return nil
+		if len(*include) > 0 {
+			if matches, err := filepath.Match(*include, filepath.Base(file)); err != nil {
+				return err
+			} else if !matches {
+				return nil
+			}
+		}
+
+		if len(*exclude) > 0 {
+			if matches, err := filepath.Match(*exclude, filepath.Base(file)); err != nil {
+				return err
+			} else if matches {
+				return nil
+			}
+
 		}
 
 		if *verbose {
 			fmt.Fprintf(os.Stdout, "checking: %s\n", file)
+		}
+
+		rules, err := getRules(filepath.Dir(file))
+		if err != nil {
+			return err
 		}
 
 		contents, err := ioutil.ReadFile(file)
@@ -89,11 +111,19 @@ func main() {
 			return err
 		}
 
-		rules, err := getRules(filepath.Dir(file))
-		if err != nil {
-			return err
-		}
 		for _, rule := range rules {
+			if matches, err := rule.ShouldInclude(file); err != nil {
+				return err
+			} else if !matches {
+				return nil
+			}
+
+			if matches, err := rule.ShouldExclude(file); err != nil {
+				return err
+			} else if matches {
+				return nil
+			}
+
 			if err := rule.Apply(contents); err != nil {
 				fileMessage := ColorLightWhite.Apply(file)
 				failedMessage := ColorRed.Apply("failed")
@@ -145,6 +175,16 @@ func Contains(value string) RuleFunc {
 	}
 }
 
+// NotContains creates a simple contains rule.
+func NotContains(value string) RuleFunc {
+	return func(contents []byte) error {
+		if !strings.Contains(string(contents), value) {
+			return fmt.Errorf("not contains: \"%s\"", value)
+		}
+		return nil
+	}
+}
+
 // Regex creates a new regex filter rule.
 func Regex(expr string) RuleFunc {
 	regex := regexp.MustCompile(expr)
@@ -158,15 +198,44 @@ func Regex(expr string) RuleFunc {
 
 // Rule is a serialized rule.
 type Rule struct {
-	Message  string `yaml:"message,omitempty"`
+	Message string `yaml:"message,omitempty"`
+	// Contains implies we should fail if a file contains a given string.
 	Contains string `yaml:"contains,omitempty"`
-	Regex    string `yaml:"regex,omitempty"`
+	// Contains implies we should fail if a file doesn't contains a given string.
+	NotContains string `yaml:"notContains,omitempty"`
+	// Regex implies we should fail if a file matches a given regex.
+	Regex string `yaml:"regex,omitempty"`
+	// Include sets a glob filter for file inclusion by filename.
+	Include string `yaml:"include,omitempty"`
+	// Exclude sets a glob filter for file exclusion by filename.
+	Exclude string `yaml:"exclude,omitempty"`
+}
+
+// ShouldInclude returns if we should include a file for a given rule.
+// If the `.Include` field is unset, this will alway return true.
+func (r Rule) ShouldInclude(file string) (bool, error) {
+	if len(r.Include) == 0 {
+		return true, nil
+	}
+	return filepath.Match(r.Include, file)
+}
+
+// ShouldExclude returns if we should include a file for a given rule.
+// If the `.Include` field is unset, this will alway return true.
+func (r Rule) ShouldExclude(file string) (bool, error) {
+	if len(r.Include) == 0 {
+		return true, nil
+	}
+	return filepath.Match(r.Include, file)
 }
 
 // Apply applies the rule.
 func (r Rule) Apply(contents []byte) error {
 	if len(r.Contains) > 0 {
 		return Contains(r.Contains)(contents)
+	}
+	if len(r.NotContains) > 0 {
+		return NotContains(r.NotContains)(contents)
 	}
 	if len(r.Regex) > 0 {
 		return Regex(r.Regex)(contents)
