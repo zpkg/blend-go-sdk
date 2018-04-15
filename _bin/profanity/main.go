@@ -58,6 +58,7 @@ func main() {
 		return rules, nil
 	}
 
+	var fileBase string
 	walkErr := filepath.Walk("./", func(file string, info os.FileInfo, err error) error {
 		if err != nil {
 			return err
@@ -73,23 +74,34 @@ func main() {
 			return nil
 		}
 
+		fileBase = filepath.Base(file)
+		if *verbose {
+			fmt.Fprintf(os.Stdout, "%s\n", file)
+		}
+
 		if len(*include) > 0 {
-			if matches, err := globAnyMatch(*include, filepath.Base(file)); err != nil {
+			if matches, err := globAnyMatch(*include, fileBase); err != nil {
 				return err
 			} else if !matches {
+				if *verbose {
+					fmt.Fprintf(os.Stdout, "%s > skipping (include: doesn't match `%s`)\n", fileBase, *include)
+				}
 				return nil
 			}
 		}
 
 		if len(*exclude) > 0 {
-			if matches, err := globAnyMatch(*exclude, filepath.Base(file)); err != nil {
+			if matches, err := globAnyMatch(*exclude, fileBase); err != nil {
 				return err
 			} else if matches {
+				if *verbose {
+					fmt.Fprintf(os.Stdout, "%s > skipping (exclude: matches `%s`)\n", fileBase, *exclude)
+				}
 				return nil
 			}
 		}
 
-		if matches, err := filepath.Match(DefaultProfanityFile, filepath.Base(file)); err != nil {
+		if matches, err := filepath.Match(DefaultProfanityFile, fileBase); err != nil {
 			return err
 		} else if matches {
 			return nil
@@ -105,34 +117,30 @@ func main() {
 			return err
 		}
 
-		if *verbose {
-			fmt.Fprintf(os.Stdout, "checking: %s\n", file)
-		}
-
 		for _, rule := range rules {
 			if *verbose {
-				fmt.Fprintf(os.Stdout, "\trule: %s\n", rule.Message)
+				fmt.Fprintf(os.Stdout, "%s > rule: %s\n", fileBase, rule.Message)
 			}
-			if matches, err := rule.ShouldInclude(filepath.Base(file)); err != nil {
+			if matches, err := rule.ShouldInclude(fileBase); err != nil {
 				return err
 			} else if !matches {
 				if *verbose {
-					fmt.Fprintf(os.Stdout, "\tskipping included non-match\n")
+					fmt.Fprintf(os.Stdout, "%s > skipping (include: doesn't match `%s`)\n", fileBase, rule.Include)
 				}
 				continue
 			}
 
-			if matches, err := rule.ShouldExclude(filepath.Base(file)); err != nil {
+			if matches, err := rule.ShouldExclude(fileBase); err != nil {
 				return err
 			} else if matches {
 				if *verbose {
-					fmt.Fprintf(os.Stdout, "\tskipping excluded match\n")
+					fmt.Fprintf(os.Stdout, "%s > skipping (exclude: matches `%s`)\n", fileBase, rule.Exclude)
 				}
 				continue
 			}
 
 			if *verbose {
-				fmt.Fprintf(os.Stdout, "\tapplying\n")
+				fmt.Fprintf(os.Stdout, "%s > checking file contents\n", fileBase)
 			}
 
 			if err := rule.Apply(contents); err != nil {
@@ -143,6 +151,9 @@ func main() {
 					return fmt.Errorf("\n\t%s %s: %s\n\t%s: %s", fileMessage, failedMessage, errMessage, ColorLightWhite.Apply("message"), rule.Message)
 				}
 				return fmt.Errorf("\n\t%s %s: %s", fileMessage, failedMessage, errMessage)
+			}
+			if *verbose {
+				fmt.Fprintf(os.Stdout, "%s > file is ok\n", fileBase)
 			}
 		}
 
