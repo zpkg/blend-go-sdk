@@ -11,6 +11,10 @@ var (
 	integration = flag.Bool("integration", false, "If we should run integration tests")
 )
 
+func init() {
+	flag.Parse()
+}
+
 // Filter is a unit test filter.
 type Filter string
 
