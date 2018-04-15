@@ -31,7 +31,7 @@ func main() {
 
 	if rulesFile != nil && len(*rulesFile) > 0 {
 		if *verbose {
-			fmt.Fprintf(os.Stdout, "using rules path: %s\n", *rulesFile)
+			fmt.Fprintf(os.Stdout, "using rules file: %s\n", *rulesFile)
 		}
 	}
 
@@ -44,22 +44,11 @@ func main() {
 		}
 	}
 
+	realizedRules := map[string][]Rule{}
 	packageRules := map[string][]Rule{}
 
-	var getRules = func(path string) ([]Rule, error) {
-		if rules, hasRules := packageRules[path]; hasRules {
-			return rules, nil
-		}
-		rules, err := discoverRules(path)
-		if err != nil {
-			return nil, err
-		}
-		packageRules[path] = rules
-		return rules, nil
-	}
-
 	var fileBase string
-	walkErr := filepath.Walk("./", func(file string, info os.FileInfo, err error) error {
+	walkErr := filepath.Walk(".", func(file string, info os.FileInfo, err error) error {
 		if err != nil {
 			return err
 		}
@@ -76,27 +65,21 @@ func main() {
 
 		fileBase = filepath.Base(file)
 		if *verbose {
-			fmt.Fprintf(os.Stdout, "%s\n", file)
+			fmt.Fprintf(os.Stdout, "%s", ColorLightWhite.Apply(file))
 		}
 
 		if len(*include) > 0 {
-			if matches, err := globAnyMatch(*include, fileBase); err != nil {
+			if matches, err := globAnyMatch(*include, file); err != nil {
 				return err
 			} else if !matches {
-				if *verbose {
-					fmt.Fprintf(os.Stdout, "%s > skipping (include: doesn't match `%s`)\n", fileBase, *include)
-				}
 				return nil
 			}
 		}
 
 		if len(*exclude) > 0 {
-			if matches, err := globAnyMatch(*exclude, fileBase); err != nil {
+			if matches, err := globAnyMatch(*exclude, file); err != nil {
 				return err
 			} else if matches {
-				if *verbose {
-					fmt.Fprintf(os.Stdout, "%s > skipping (exclude: matches `%s`)\n", fileBase, *exclude)
-				}
 				return nil
 			}
 		}
@@ -107,7 +90,7 @@ func main() {
 			return nil
 		}
 
-		rules, err := getRules(filepath.Dir(file))
+		rules, err := getRules(realizedRules, packageRules, filepath.Dir(file))
 		if err != nil {
 			return err
 		}
@@ -118,43 +101,41 @@ func main() {
 		}
 
 		for _, rule := range rules {
-			if *verbose {
-				fmt.Fprintf(os.Stdout, "%s > rule: %s\n", fileBase, rule.Message)
-			}
-			if matches, err := rule.ShouldInclude(fileBase); err != nil {
+			if matches, err := rule.ShouldInclude(file); err != nil {
 				return err
 			} else if !matches {
-				if *verbose {
-					fmt.Fprintf(os.Stdout, "%s > skipping (include: doesn't match `%s`)\n", fileBase, rule.Include)
-				}
 				continue
 			}
 
-			if matches, err := rule.ShouldExclude(fileBase); err != nil {
+			if matches, err := rule.ShouldExclude(file); err != nil {
 				return err
 			} else if matches {
-				if *verbose {
-					fmt.Fprintf(os.Stdout, "%s > skipping (exclude: matches `%s`)\n", fileBase, rule.Exclude)
-				}
 				continue
-			}
-
-			if *verbose {
-				fmt.Fprintf(os.Stdout, "%s > checking file contents\n", fileBase)
 			}
 
 			if err := rule.Apply(contents); err != nil {
 				fileMessage := ColorLightWhite.Apply(file)
 				failedMessage := ColorRed.Apply("failed")
 				errMessage := fmt.Sprintf("%+v", err)
-				if len(rule.Message) > 0 {
-					return fmt.Errorf("\n\t%s %s: %s\n\t%s: %s", fileMessage, failedMessage, errMessage, ColorLightWhite.Apply("message"), rule.Message)
-				}
-				return fmt.Errorf("\n\t%s %s: %s", fileMessage, failedMessage, errMessage)
+
+				return fmt.Errorf("\n\t%s %s: %s\n\t%s: %s\n\t%s: %s\n\t%s: %s\n\t%s: %s",
+					fileMessage,
+					failedMessage,
+					errMessage,
+					ColorLightWhite.Apply("message"),
+					rule.Message,
+					ColorLightWhite.Apply("rules file"),
+					rule.File,
+					ColorLightWhite.Apply("include"),
+					rule.Include,
+					ColorLightWhite.Apply("exclude"),
+					rule.Exclude)
+
 			}
-			if *verbose {
-				fmt.Fprintf(os.Stdout, "%s > file is ok\n", fileBase)
-			}
+		}
+
+		if *verbose {
+			fmt.Fprintf(os.Stdout, " ... %s\n", ColorGreen.Apply("ok!"))
 		}
 
 		return nil
@@ -181,12 +162,51 @@ func globAnyMatch(filter, file string) (bool, error) {
 	return false, nil
 }
 
-func discoverRules(path string) ([]Rule, error) {
-	profanityPath := filepath.Join(path, DefaultProfanityFile)
+func getRules(realizedRules map[string][]Rule, packageRules map[string][]Rule, path string) ([]Rule, error) {
+	if rules, hasRules := realizedRules[path]; hasRules {
+		return rules, nil
+	}
+
+	rules, err := discoverRules(packageRules, path)
+	if err != nil {
+		return nil, err
+	}
+	realizedRules[path] = rules
+	return rules, nil
+}
+
+func discoverRules(packageRules map[string][]Rule, path string) ([]Rule, error) {
+	rules, err := localRules(packageRules, path)
+	if err != nil {
+		return nil, err
+	}
+
+	for key, inheritedRules := range packageRules {
+		if strings.HasPrefix(path, key) && key != path {
+			rules = append(inheritedRules, rules...)
+		}
+	}
+
+	// always include rules from "." if they were set
+	if rootRules, hasRootRules := packageRules["."]; hasRootRules && path != "." {
+		rules = append(rootRules, rules...)
+	}
+
+	return rules, nil
+}
+
+func localRules(packageRules map[string][]Rule, path string) ([]Rule, error) {
+	profanityPath := filepath.Join(path, *rulesFile)
 	if _, err := os.Stat(profanityPath); err != nil {
 		return nil, nil
 	}
-	return deserializeRules(profanityPath)
+
+	rules, err := deserializeRules(profanityPath)
+	if err != nil {
+		return nil, err
+	}
+	packageRules[path] = rules
+	return rules, nil
 }
 
 func deserializeRules(path string) (rules []Rule, err error) {
@@ -195,8 +215,17 @@ func deserializeRules(path string) (rules []Rule, err error) {
 	if err != nil {
 		return
 	}
-
-	err = yaml.Unmarshal(contents, &rules)
+	var fileRules []Rule
+	err = yaml.Unmarshal(contents, &fileRules)
+	if err != nil {
+		return
+	}
+	rules = make([]Rule, len(fileRules))
+	for index, fileRule := range fileRules {
+		rule := fileRule
+		rule.File = path
+		rules[index] = rule
+	}
 	return
 }
 
@@ -233,6 +262,9 @@ func Regex(expr string) RuleFunc {
 
 // Rule is a serialized rule.
 type Rule struct {
+	// File is the rules file path the rule came from.
+	File string `yaml:"-"`
+	// Message is a descriptive message for the rule.
 	Message string `yaml:"message,omitempty"`
 	// Contains implies we should fail if a file contains a given string.
 	Contains string `yaml:"contains,omitempty"`
@@ -261,7 +293,7 @@ func (r Rule) ShouldExclude(file string) (bool, error) {
 	if len(r.Exclude) == 0 {
 		return false, nil
 	}
-	return globAnyMatch(r.Include, file)
+	return globAnyMatch(r.Exclude, file)
 }
 
 // Apply applies the rule.
