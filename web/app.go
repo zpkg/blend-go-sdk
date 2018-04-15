@@ -860,7 +860,7 @@ func (a *App) WithPanicAction(action PanicAction) *App {
 
 // Mock returns a request bulider to facilitate mocking requests.
 func (a *App) Mock() *MockRequestBuilder {
-	return NewMockRequestBuilder(a)
+	return NewMockRequestBuilder(a).WithErr(a.StartupTasks())
 }
 
 // --------------------------------------------------------------------------------

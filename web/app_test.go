@@ -360,7 +360,6 @@ func TestAppViewResult(t *testing.T) {
 
 	app := New()
 	app.Views().AddPaths("testdata/test_file.html")
-	assert.Nil(app.StartupTasks())
 	app.GET("/", func(r *Ctx) Result {
 		return r.View().View("test", "foobarbaz")
 	})
@@ -503,10 +502,8 @@ func TestAppViewErrorsRenderErrorView(t *testing.T) {
 		return r.View().View("malformed", nil)
 	})
 
-	contents, meta, err := app.Mock().Get("/").BytesWithMeta()
-	assert.Nil(err)
-	assert.Equal(http.StatusInternalServerError, meta.StatusCode)
-	assert.NotEmpty(contents)
+	_, err := app.Mock().Get("/").Bytes()
+	assert.NotNil(err)
 }
 
 func TestAppAddsDefaultHeaders(t *testing.T) {
