@@ -69,17 +69,23 @@ func main() {
 		}
 
 		if len(*include) > 0 {
-			if matches, err := globAnyMatch(*include, file); err != nil {
+			if matches, err := globAnyMatch(*include, fileBase); err != nil {
 				return err
 			} else if !matches {
+				if *verbose {
+					fmt.Fprintf(os.Stdout, ".. skipping\n")
+				}
 				return nil
 			}
 		}
 
 		if len(*exclude) > 0 {
-			if matches, err := globAnyMatch(*exclude, file); err != nil {
+			if matches, err := globAnyMatch(*exclude, fileBase); err != nil {
 				return err
 			} else if matches {
+				if *verbose {
+					fmt.Fprintf(os.Stdout, ".. skipping\n")
+				}
 				return nil
 			}
 		}
@@ -87,6 +93,9 @@ func main() {
 		if matches, err := filepath.Match(DefaultProfanityFile, fileBase); err != nil {
 			return err
 		} else if matches {
+			if *verbose {
+				fmt.Fprintf(os.Stdout, ".. skipping\n")
+			}
 			return nil
 		}
 
