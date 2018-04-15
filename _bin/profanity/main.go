@@ -112,7 +112,9 @@ func main() {
 			return err
 		}
 
-		fmt.Fprintf(os.Stdout, "checking: %s\n", file)
+		if *verbose {
+			fmt.Fprintf(os.Stdout, "checking: %s\n", file)
+		}
 
 		for _, rule := range rules {
 			if matches, err := rule.ShouldInclude(file); err != nil {
