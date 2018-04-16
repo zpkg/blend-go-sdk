@@ -99,8 +99,9 @@ func (dbc *Connection) Close() error {
 }
 
 // WithLogger sets the connection's diagnostic agent.
-func (dbc *Connection) WithLogger(log *logger.Logger) {
+func (dbc *Connection) WithLogger(log *logger.Logger) *Connection {
 	dbc.log = log
+	return dbc
 }
 
 // Logger returns the diagnostics agent.
