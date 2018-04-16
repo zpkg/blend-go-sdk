@@ -8,8 +8,8 @@ import (
 )
 
 func main() {
-	app := web.New()
-	app.WithLogger(logger.NewFromEnv())
+	log := logger.NewFromEnv()
+	app := web.NewFromEnv().WithLogger(log)
 	app.Views().AddPaths(
 		"_views/header.html",
 		"_views/footer.html",
@@ -23,5 +23,8 @@ func main() {
 	app.GET("/", func(r *web.Ctx) web.Result {
 		return r.View().View("index", nil)
 	})
-	app.Start()
+	err := app.Start()
+	if err != nil {
+		log.SyncFatalExit(err)
+	}
 }

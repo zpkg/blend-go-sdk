@@ -26,6 +26,7 @@ func New() *App {
 
 	return &App{
 		auth:                  NewAuthManager(),
+		bindAddr:              DefaultBindAddr,
 		state:                 map[string]interface{}{},
 		statics:               map[string]Fileserver{},
 		readTimeout:           DefaultReadTimeout,
