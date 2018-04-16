@@ -42,7 +42,7 @@ func TestConfigCreateDSN(t *testing.T) {
 		Schema:   "mortgages",
 	}
 
-	assert.Equal("postgres://bailey:dog@bar:1234/blend?sslmode=disable", cfg.CreateDSN())
+	assert.Equal("postgres://bailey:dog@bar:1234/blend", cfg.CreateDSN())
 
 	cfg = &Config{
 		Host:     "bar",
@@ -52,7 +52,7 @@ func TestConfigCreateDSN(t *testing.T) {
 		Database: "blend",
 	}
 
-	assert.Equal("postgres://bailey:dog@bar:1234/blend?sslmode=disable", cfg.CreateDSN())
+	assert.Equal("postgres://bailey:dog@bar:1234/blend", cfg.CreateDSN())
 
 	cfg = &Config{
 		Host:     "bar",
@@ -61,7 +61,7 @@ func TestConfigCreateDSN(t *testing.T) {
 		Password: "dog",
 	}
 
-	assert.Equal("postgres://bailey:dog@bar:1234/postgres?sslmode=disable", cfg.CreateDSN())
+	assert.Equal("postgres://bailey:dog@bar:1234/postgres", cfg.CreateDSN())
 
 	cfg = &Config{
 		Host:     "bar",
@@ -69,21 +69,21 @@ func TestConfigCreateDSN(t *testing.T) {
 		Username: "bailey",
 	}
 
-	assert.Equal("postgres://bailey@bar:1234/postgres?sslmode=disable", cfg.CreateDSN())
+	assert.Equal("postgres://bailey@bar:1234/postgres", cfg.CreateDSN())
 
 	cfg = &Config{
 		Host: "bar",
 		Port: "1234",
 	}
 
-	assert.Equal("postgres://bar:1234/postgres?sslmode=disable", cfg.CreateDSN())
+	assert.Equal("postgres://bar:1234/postgres", cfg.CreateDSN())
 
 	cfg = &Config{
 		Host: "bar",
 	}
 
-	assert.Equal("postgres://bar:5432/postgres?sslmode=disable", cfg.CreateDSN())
+	assert.Equal("postgres://bar:5432/postgres", cfg.CreateDSN())
 
 	cfg = &Config{}
-	assert.Equal("postgres://localhost:5432/postgres?sslmode=disable", cfg.CreateDSN())
+	assert.Equal("postgres://localhost:5432/postgres", cfg.CreateDSN())
 }

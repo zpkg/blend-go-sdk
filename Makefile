@@ -6,12 +6,16 @@ GIT_REF 		:= $(shell git log --pretty=format:'%h' -n 1)
 CURRENT_USER 	:= $(shell whoami)
 VERSION 		:= $(shell cat ./.version)
 
+# this is to allow local go-sdk/db tests to pass
+DB_SSLMODE		?= disable
+
 # coverage stuff
 CIRCLE_ARTIFACTS 	?= "."
 COVERAGE_OUT 		:= "$(CIRCLE_ARTIFACTS)/coverage.html"
 
 export GIT_REF
 export VERSION
+export DB_SSLMODE
 
 all: format vet profanity test
 
