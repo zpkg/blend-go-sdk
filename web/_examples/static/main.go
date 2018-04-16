@@ -8,8 +8,8 @@ import (
 )
 
 func main() {
-	app := web.New().WithLogger(logger.NewFromEnv())
-
+	log := logger.NewFromEnv()
+	app := web.New().WithLogger(log)
 	sf := web.NewCachedStaticFileServer(http.Dir("."))
 
 	app.ServeStatic("/static/*filepath", "_static")
@@ -24,5 +24,5 @@ func main() {
 		}
 		return cf
 	})
-	app.Start()
+	log.SyncFatalExit(app.Start())
 }
