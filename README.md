@@ -30,7 +30,19 @@ The main packages are as follows:
 - `workqueue` : a background work queue when you need to have a fixed number of workers.
 - `yaml` : a yaml marshaller / unmarshaller. based on `go-yaml`.
 
-# Design Guidelines
+# Code Style Notes
+
+- Where possible, follow the [golang proverbs](https://go-proverbs.github.io/).
+- The primary type a package exports should be creatable with a bare constructor `New()` unless there are non-trivial defaults to set.
+- "Fluent APIs"
+    - Mutators that return a reference to the receiver, and don't produce an error, should start with `With...()`.
+    - This allows you to chain calls, ex. `New().WithFoo(...).WithBar(...)`.
+    - Mutators that can return an error should start with `Set...()`
+- Field accessors should be the uppercase name of the field, i.e. `foo` would have an accessor `Foo()`.
+- Minimize dependencies between packages as much as possible; add external dependencies with *extreme* care.
+    - our only current external dependencies are the golang stdlib and `github.com/lib/pq` for the `go-sdk/db`.
+
+# Dependency Guidelines
 
 - `assert` should depend only on the stdlib.
 - `exception` should depend only on `assert` and the stdlib.
