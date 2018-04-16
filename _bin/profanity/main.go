@@ -157,7 +157,7 @@ func main() {
 	os.Exit(0)
 }
 
-// globAnyMatch tests if a file matches a (potentially) csv of glob filters.
+// globIncludeMatch tests if a file matches a (potentially) csv of glob filters.
 func globAnyMatch(filter, file string) (bool, error) {
 	parts := strings.Split(filter, ",")
 	for _, part := range parts {
