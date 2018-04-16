@@ -3,6 +3,10 @@ go-sdk
 
 ![Build Status](https://circleci.com/gh/blend/go-sdk.svg?style=shield&circle-token=:circle-token)
 
+`go-sdk` is our core library of packages. These packages can be composed to create anything from CLIs to fully featured web apps.
+
+The general philosophy is to provide loosely coupled libraries that can be composed as a suite of tools, vs. a `do it all` framework.
+
 # Packages
 
 The main packages are as follows:
@@ -39,6 +43,8 @@ The main packages are as follows:
     - This allows you to chain calls, ex. `New().WithFoo(...).WithBar(...)`.
     - Mutators that can return an error should start with `Set...()`
 - Field accessors should be the uppercase name of the field, i.e. `foo` would have an accessor `Foo()`.
+- Where possible, types should have a config object that fully represent the options you can set with `With` or `Set` mutators. 
+- Said types should also have a constructor in the form `NewFromEnv` that uses the `go-sdk/env` package to read options set in the environment.
 - Minimize dependencies between packages as much as possible; add external dependencies with *extreme* care.
     - our only current external dependencies are the golang stdlib and `github.com/lib/pq` for the `go-sdk/db`.
 
@@ -64,6 +70,13 @@ We increment minor versions if we add new things that don't cause breaking chang
 
 We increment patch versions if we fix issues with the current set of objects.
 
-## To increment the patch version
+## To increment the local version
 
+Patch:
 > make increment-patch
+
+Minor:
+> make increment-minor
+
+Major:
+> make increment-major
