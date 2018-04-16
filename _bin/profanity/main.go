@@ -69,7 +69,7 @@ func main() {
 		}
 
 		if len(*include) > 0 {
-			if matches, err := globAnyMatch(*include, fileBase); err != nil {
+			if matches, err := globAnyMatch(*include, file); err != nil {
 				return err
 			} else if !matches {
 				if *verbose {
@@ -80,7 +80,7 @@ func main() {
 		}
 
 		if len(*exclude) > 0 {
-			if matches, err := globAnyMatch(*exclude, fileBase); err != nil {
+			if matches, err := globAnyMatch(*exclude, file); err != nil {
 				return err
 			} else if matches {
 				if *verbose {
@@ -163,6 +163,12 @@ func globAnyMatch(filter, file string) (bool, error) {
 	parts := strings.Split(filter, ",")
 	for _, part := range parts {
 		if matches, err := filepath.Match(strings.TrimSpace(part), file); err != nil {
+			return false, err
+		} else if matches {
+			return true, nil
+		}
+
+		if matches, err := filepath.Match(strings.TrimSpace(part), filepath.Base(file)); err != nil {
 			return false, err
 		} else if matches {
 			return true, nil
