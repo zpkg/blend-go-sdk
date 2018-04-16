@@ -52,10 +52,7 @@ func main() {
 			return err
 		}
 
-		if info.IsDir() && strings.HasSuffix(file, ".git") {
-			return filepath.SkipDir
-		}
-		if info.IsDir() && strings.HasSuffix(file, "_bin") {
+		if info.IsDir() && strings.HasSuffix(file, ".git") { // don't ever process git directories
 			return filepath.SkipDir
 		}
 		if info.IsDir() {
@@ -68,9 +65,7 @@ func main() {
 		}
 
 		if len(*include) > 0 {
-			if matches, err := globAnyMatch(*include, file); err != nil {
-				return err
-			} else if !matches {
+			if matches := globAnyMatch(*include, file); !matches {
 				if *verbose {
 					fmt.Fprintf(os.Stdout, ".. skipping\n")
 				}
@@ -79,9 +74,7 @@ func main() {
 		}
 
 		if len(*exclude) > 0 {
-			if matches, err := globAnyMatch(*exclude, file); err != nil {
-				return err
-			} else if matches {
+			if matches := globAnyMatch(*exclude, file); matches {
 				if *verbose {
 					fmt.Fprintf(os.Stdout, ".. skipping\n")
 				}
@@ -109,15 +102,11 @@ func main() {
 		}
 
 		for _, rule := range rules {
-			if matches, err := rule.ShouldInclude(file); err != nil {
-				return err
-			} else if !matches {
+			if matches := rule.ShouldInclude(file); !matches {
 				continue
 			}
 
-			if matches, err := rule.ShouldExclude(file); err != nil {
-				return err
-			} else if matches {
+			if matches := rule.ShouldExclude(file); matches {
 				continue
 			}
 
@@ -155,25 +144,6 @@ func main() {
 		return
 	}
 	os.Exit(0)
-}
-
-// globIncludeMatch tests if a file matches a (potentially) csv of glob filters.
-func globAnyMatch(filter, file string) (bool, error) {
-	parts := strings.Split(filter, ",")
-	for _, part := range parts {
-		if matches, err := filepath.Match(strings.TrimSpace(part), file); err != nil {
-			return false, err
-		} else if matches {
-			return true, nil
-		}
-
-		if matches, err := filepath.Match(strings.TrimSpace(part), filepath.Base(file)); err != nil {
-			return false, err
-		} else if matches {
-			return true, nil
-		}
-	}
-	return false, nil
 }
 
 func getRules(realizedRules map[string][]Rule, packageRules map[string][]Rule, path string) ([]Rule, error) {
@@ -294,18 +264,18 @@ type Rule struct {
 
 // ShouldInclude returns if we should include a file for a given rule.
 // If the `.Include` field is unset, this will alway return true.
-func (r Rule) ShouldInclude(file string) (bool, error) {
+func (r Rule) ShouldInclude(file string) bool {
 	if len(r.Include) == 0 {
-		return true, nil
+		return true
 	}
 	return globAnyMatch(r.Include, file)
 }
 
 // ShouldExclude returns if we should include a file for a given rule.
 // If the `.Include` field is unset, this will alway return true.
-func (r Rule) ShouldExclude(file string) (bool, error) {
+func (r Rule) ShouldExclude(file string) bool {
 	if len(r.Exclude) == 0 {
-		return false, nil
+		return false
 	}
 	return globAnyMatch(r.Exclude, file)
 }
@@ -395,3 +365,65 @@ const (
 	// ColorReset is the posix escape code fragment to reset all formatting.
 	ColorReset AnsiColor = "0m"
 )
+
+const (
+	star = "*"
+)
+
+// globIncludeMatch tests if a file matches a (potentially) csv of glob filters.
+func globAnyMatch(filter, file string) bool {
+	parts := strings.Split(filter, ",")
+	for _, part := range parts {
+		if matches := glob(strings.TrimSpace(part), file); matches {
+			return true
+		}
+	}
+	return false
+}
+
+func glob(pattern, subj string) bool {
+	// Empty pattern can only match empty subject
+	if pattern == "" {
+		return subj == pattern
+	}
+
+	// If the pattern _is_ a glob, it matches everything
+	if pattern == star {
+		return true
+	}
+
+	parts := strings.Split(pattern, star)
+
+	if len(parts) == 1 {
+		// No globs in pattern, so test for equality
+		return subj == pattern
+	}
+
+	leadingGlob := strings.HasPrefix(pattern, star)
+	trailingGlob := strings.HasSuffix(pattern, star)
+	end := len(parts) - 1
+
+	// Go over the leading parts and ensure they match.
+	for i := 0; i < end; i++ {
+		idx := strings.Index(subj, parts[i])
+
+		switch i {
+		case 0:
+			// Check the first section. Requires special handling.
+			if !leadingGlob && idx != 0 {
+				return false
+			}
+		default:
+			// Check that the middle parts match.
+			if idx < 0 {
+				return false
+			}
+		}
+
+		// Trim evaluated text from subj as we loop over the pattern.
+		subj = subj[idx+len(parts[i]):]
+	}
+
+	// Reached the last section. Requires special handling.
+	return trailingGlob || strings.HasSuffix(subj, parts[end])
+}
