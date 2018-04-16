@@ -17,16 +17,15 @@ const (
 	DefaultProfanityFile = "PROFANITY"
 )
 
-var rulesFile = flag.String("rules", DefaultProfanityFile, "the default rules to include for any sub-package")
-var include = flag.String("include", "", "the include file filter in glob form")
-var exclude = flag.String("exclude", "", "the exclude file filter in glob form")
+var rulesFile = flag.String("rules", DefaultProfanityFile, "the default rules to include for any sub-package.")
+var include = flag.String("include", "", "the include file filter in glob form, can be a csv.")
+var exclude = flag.String("exclude", "", "the exclude file filter in glob form, can be a csv.")
 var verbose = flag.Bool("v", false, "verbose output")
 
 func main() {
 	// walk the filesystem
 	// for each file named by the gob filter
 	// run the rules on it
-
 	flag.Parse()
 
 	if rulesFile != nil && len(*rulesFile) > 0 {
