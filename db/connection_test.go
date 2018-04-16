@@ -16,7 +16,7 @@ import (
 func TestConnectionSanityCheck(t *testing.T) {
 	assert := assert.New(t)
 	conn := NewFromEnv()
-	str := conn.Config.CreateDSN()
+	str := conn.Config().CreateDSN()
 	_, err := sql.Open("postgres", str)
 	assert.Nil(err)
 }
@@ -500,5 +500,5 @@ func TestConnectionConfigSetsDatabase(t *testing.T) {
 	assert := assert.New(t)
 	conn, err := NewFromEnv().Open()
 	assert.Nil(err)
-	assert.NotEmpty(conn.Database())
+	assert.NotEmpty(conn.Config().GetDatabase())
 }
