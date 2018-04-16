@@ -126,7 +126,7 @@ func TestMultipleQueriesPerTransaction(t *testing.T) {
 	wg := sync.WaitGroup{}
 	wg.Add(3)
 
-	a.NotNil(Default().Connection)
+	a.NotNil(Default().Connection())
 
 	err = seedObjects(10, tx)
 	a.Nil(err)

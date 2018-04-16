@@ -273,3 +273,21 @@ func (c Config) CreateDSN() string {
 	}
 	return fmt.Sprintf("postgres://%s%s/%s%s", c.GetHost(), port, c.GetDatabase(), sslMode)
 }
+
+// ValidateProduction validates production configuration for the config.
+func (c Config) ValidateProduction() error {
+	if !(len(c.GetSSLMode()) == 0 ||
+		util.String.CaseInsensitiveEquals(c.GetSSLMode(), SSLModeRequire) ||
+		util.String.CaseInsensitiveEquals(c.GetSSLMode(), SSLModeVerifyCA) ||
+		util.String.CaseInsensitiveEquals(c.GetSSLMode(), SSLModeVerifyFull)) {
+		return exception.NewFromErr(ErrUnsafeSSLMode).WithMessagef("sslmode: %s", c.GetSSLMode())
+	}
+
+	if len(c.GetUsername()) == 0 {
+		return exception.NewFromErr(ErrUsernameUnset)
+	}
+	if len(c.GetPassword()) == 0 {
+		return exception.NewFromErr(ErrPasswordUnset)
+	}
+	return nil
+}
