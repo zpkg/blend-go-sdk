@@ -40,7 +40,7 @@ lint:
 .PHONY: profanity
 profanity:
 	@echo "$(VERSION)/$(GIT_REF) >> profanity"
-	@go run _bin/profanity/main.go -rules PROFANITY
+	@go run _bin/profanity/main.go -rules PROFANITY --exclude="_bin/*"
 
 test:
 	@echo "$(VERSION)/$(GIT_REF) >> tests"
