@@ -60,7 +60,7 @@ func (qw *QueueWorker) Enqueue(obj interface{}) {
 
 // Start starts the worker.
 func (qw *QueueWorker) Start() {
-	qw.latch.SignalStarting()
+	qw.latch.Starting()
 	if qw.maxWork > 0 {
 		qw.work = make(chan interface{}, qw.maxWork)
 	} else {
@@ -68,7 +68,7 @@ func (qw *QueueWorker) Start() {
 	}
 
 	go func() {
-		qw.latch.SignalStarted()
+		qw.latch.Started()
 		var err error
 		var workItem interface{}
 		for {
@@ -78,17 +78,17 @@ func (qw *QueueWorker) Start() {
 				if err != nil && qw.errors != nil {
 					qw.errors <- err
 				}
-			case <-qw.latch.ShouldStop():
-				qw.latch.SignalStopped()
+			case <-qw.latch.NotifyStop():
+				qw.latch.Stopped()
 				return
 			}
 		}
 	}()
-	<-qw.latch.Started()
+	<-qw.latch.NotifyStarted()
 }
 
 // Stop stops the worker.
 func (qw *QueueWorker) Stop() {
 	qw.latch.Stop()
-	<-qw.latch.Stopped()
+	<-qw.latch.NotifyStopped()
 }

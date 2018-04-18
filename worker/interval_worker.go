@@ -53,9 +53,9 @@ func (i *Interval) Errors() chan error {
 
 // Start starts the worker.
 func (i *Interval) Start() {
-	i.latch.SignalStarting()
+	i.latch.Starting()
 	go func() {
-		i.latch.SignalStarted()
+		i.latch.Started()
 		tick := time.Tick(i.interval)
 		var err error
 		for {
@@ -65,17 +65,17 @@ func (i *Interval) Start() {
 				if err != nil && i.errors != nil {
 					i.errors <- err
 				}
-			case <-i.latch.ShouldStop():
-				i.latch.SignalStopped()
+			case <-i.latch.NotifyStop():
+				i.latch.Stopped()
 				return
 			}
 		}
 	}()
-	<-i.latch.Started()
+	<-i.latch.NotifyStarted()
 }
 
 // Stop stops the worker.
 func (i *Interval) Stop() {
 	i.latch.Stop()
-	<-i.latch.Stopped()
+	<-i.latch.NotifyStopped()
 }

@@ -46,27 +46,27 @@ func (l *Latch) IsStopping() bool {
 	return atomic.LoadInt32(&l.stopping) == 1
 }
 
-// Started returns the started signal.
+// NotifyStarted returns the started signal.
 // It is used to coordinate the transition from starting -> started.
-func (l *Latch) Started() <-chan struct{} {
+func (l *Latch) NotifyStarted() <-chan struct{} {
 	return l.started
 }
 
-// ShouldStop returns the should stop signal.
+// NotifyStop returns the should stop signal.
 // It is used to trigger the transition from running -> stopping -> stopped.
-func (l *Latch) ShouldStop() <-chan struct{} {
+func (l *Latch) NotifyStop() <-chan struct{} {
 	return l.shouldStop
 }
 
-// Stopped returns the stopped signal.
+// NotifyStopped returns the stopped signal.
 // It is used to coordinate the transition from stopping -> stopped.
-func (l *Latch) Stopped() <-chan struct{} {
+func (l *Latch) NotifyStopped() <-chan struct{} {
 	return l.stopped
 }
 
-// SignalStarting signals the latch is starting.
+// Starting signals the latch is starting.
 // This is typically done before you kick off a goroutine.
-func (l *Latch) SignalStarting() {
+func (l *Latch) Starting() {
 	l.signalLock.Lock()
 	defer l.signalLock.Unlock()
 	if !l.IsStopped() {
@@ -78,9 +78,9 @@ func (l *Latch) SignalStarting() {
 	l.started = make(chan struct{})
 }
 
-// SignalStarted signals that the latch is started and has entered
+// Started signals that the latch is started and has entered
 // the `IsRunning` state.
-func (l *Latch) SignalStarted() {
+func (l *Latch) Started() {
 	l.signalLock.Lock()
 	defer l.signalLock.Unlock()
 
@@ -113,8 +113,8 @@ func (l *Latch) Stop() {
 	close(l.shouldStop)
 }
 
-// SignalStopped signals the latch has stopped.
-func (l *Latch) SignalStopped() {
+// Stopped signals the latch has stopped.
+func (l *Latch) Stopped() {
 	l.signalLock.Lock()
 	defer l.signalLock.Unlock()
 
