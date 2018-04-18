@@ -7,6 +7,9 @@ type Transport interface {
 	// RemoteAddr is the remote address of the transport.
 	RemoteAddr() string
 
+	// Open establishes a connection (ideally).
+	Open() error
+
 	// RequestVote kicks off an election (a request for votes).
 	// `id` is the candidate id, usually the node applying to be leader.
 	RequestVote(args *Vote) (*VoteResponse, error)

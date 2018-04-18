@@ -15,8 +15,8 @@ func TestIntervalWorker(t *testing.T) {
 	wg := sync.WaitGroup{}
 	wg.Add(1)
 	w := NewInterval(func() error {
+		defer wg.Done()
 		didWork = true
-		wg.Done()
 		return nil
 	}, time.Millisecond)
 

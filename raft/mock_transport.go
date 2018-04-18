@@ -26,6 +26,11 @@ func (mt *MockTransport) RemoteAddr() string {
 	return mt.remoteAddr
 }
 
+// Open is a no-op for a mock transport.
+func (mt *MockTransport) Open() error {
+	return nil
+}
+
 // SetRequestVoteHandler sets the request vote handler.
 func (mt *MockTransport) SetRequestVoteHandler(handler func(*Vote) (*VoteResponse, error)) {
 	mt.requestVoteHandler = handler

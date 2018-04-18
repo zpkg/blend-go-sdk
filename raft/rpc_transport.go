@@ -3,7 +3,10 @@ package raft
 import (
 	"net/rpc"
 
+	"github.com/blend/go-sdk/logger"
+
 	"github.com/blend/go-sdk/exception"
+	"github.com/blend/go-sdk/worker"
 )
 
 var (
@@ -18,24 +21,51 @@ const (
 	RPCMethodHeatbeat = "Heartbeat"
 )
 
+// NewRPCTransport creates a new rpc transport.
+func NewRPCTransport(remoteAddr string) *RPCTransport {
+	return &RPCTransport{
+		remoteAddr: remoteAddr,
+		latch:      &worker.Latch{},
+	}
+}
+
 // RPCTransport is an rpc transport over the network.
 type RPCTransport struct {
 	remoteAddr string
 	client     *rpc.Client
+	latch      *worker.Latch
+	log        *logger.Logger
+}
+
+// WithLogger sets the logger.
+func (rt *RPCTransport) WithLogger(log *logger.Logger) *RPCTransport {
+	rt.log = log
+	return rt
+}
+
+// Logger returns the logger.
+func (rt *RPCTransport) Logger() logger.Logger {
+	return rt.log
 }
 
 // RemoteAddr returns the remote address.
 func (rt *RPCTransport) RemoteAddr() string { return rt.remoteAddr }
 
 // Open opens the connection and starts the receive server.
-func (rt *RPCTransport) Open() (err error) {
-	rt.client, err = rpc.Dial("TCP", rt.remoteAddr)
-	if err != nil {
-		err = exception.Wrap(err)
-		return
-	}
+func (rt *RPCTransport) Open() error {
+	rt.latch.Starting()
 
-	return
+	go func() {
+		rt.latch.Started()
+
+		rt.client, err = rpc.Dial("TCP", rt.remoteAddr)
+		if err != nil {
+			rt.log.SyncError(err)
+		}
+	}()
+
+	<-rt.latch.NotifyStarted()
+	return nil
 }
 
 // RequestVote implements the request vote handler.
