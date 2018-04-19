@@ -18,22 +18,22 @@ func TestLatch(t *testing.T) {
 	work := make(chan bool)
 	workComplete := make(chan bool)
 
-	l.SignalStarting()
+	l.Starting()
 	assert.True(l.IsStarting())
 	assert.False(l.IsRunning())
 	assert.False(l.IsStopping())
 	assert.False(l.IsStopped())
 	go func() {
-		l.SignalStarted()
+		l.Started()
 		didStart = true
 		for {
 			select {
 			case <-work:
 				didGetWork = true
 				workComplete <- true
-			case <-l.ShouldStop():
+			case <-l.NotifyStop():
 				didAbort = true
-				l.SignalStopped()
+				l.Stopped()
 				return
 			}
 		}
@@ -47,7 +47,7 @@ func TestLatch(t *testing.T) {
 
 	// signal stop
 	l.Stop()
-	<-l.Stopped()
+	<-l.NotifyStopped()
 
 	assert.True(didStart)
 	assert.True(didAbort)

@@ -13,10 +13,22 @@ func NewInterval(action func() error, interval time.Duration) *Interval {
 
 // Interval is a managed goroutine that does things.
 type Interval struct {
+	delay    time.Duration
 	interval time.Duration
 	action   func() error
 	latch    *Latch
 	errors   chan error
+}
+
+// WithDelay sets a start delay time.
+func (i *Interval) WithDelay(d time.Duration) *Interval {
+	i.delay = d
+	return i
+}
+
+// Delay returns the start delay.
+func (i *Interval) Delay() time.Duration {
+	return i.delay
 }
 
 // Interval returns the interval for the ticker.
@@ -56,6 +68,11 @@ func (i *Interval) Start() {
 	i.latch.Starting()
 	go func() {
 		i.latch.Started()
+
+		if i.delay > 0 {
+			time.Sleep(i.delay)
+		}
+
 		tick := time.Tick(i.interval)
 		var err error
 		for {
