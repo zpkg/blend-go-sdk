@@ -111,23 +111,7 @@ func main() {
 			}
 
 			if err := rule.Apply(contents); err != nil {
-				fileMessage := ColorLightWhite.Apply(file)
-				failedMessage := ColorRed.Apply("failed")
-				errMessage := fmt.Sprintf("%+v", err)
-
-				return fmt.Errorf("\n\t%s %s: %s\n\t%s: %s\n\t%s: %s\n\t%s: %s\n\t%s: %s",
-					fileMessage,
-					failedMessage,
-					errMessage,
-					ColorLightWhite.Apply("message"),
-					rule.Message,
-					ColorLightWhite.Apply("rules file"),
-					rule.File,
-					ColorLightWhite.Apply("include"),
-					rule.Include,
-					ColorLightWhite.Apply("exclude"),
-					rule.Exclude)
-
+				return rule.Failure(file, err)
 			}
 		}
 
@@ -246,6 +230,8 @@ func Regex(expr string) RuleFunc {
 
 // Rule is a serialized rule.
 type Rule struct {
+	// ID is a unique identifier for the rule.
+	ID string `yaml:"id"`
 	// File is the rules file path the rule came from.
 	File string `yaml:"-"`
 	// Message is a descriptive message for the rule.
@@ -292,6 +278,31 @@ func (r Rule) Apply(contents []byte) error {
 		return Regex(r.Regex)(contents)
 	}
 	return fmt.Errorf("no rule set")
+}
+
+// Failure returns a failure error message for a given file and error.
+func (r Rule) Failure(file string, err error) error {
+	var tokens []string
+	if len(r.ID) > 0 {
+		tokens = append(tokens, fmt.Sprintf("%s: %s", ColorLightWhite.Apply("rule"), r.ID))
+	}
+
+	tokens = append(tokens, fmt.Sprintf("%s %s: %+v", ColorLightWhite.Apply(file), ColorRed.Apply("failed"), err))
+
+	if len(r.Message) > 0 {
+		tokens = append(tokens, fmt.Sprintf("%s: %s", ColorLightWhite.Apply("message"), r.Message))
+	}
+	if len(r.File) > 0 {
+		tokens = append(tokens, fmt.Sprintf("%s: %s", ColorLightWhite.Apply("rules file"), r.File))
+	}
+	if len(r.Include) > 0 {
+		tokens = append(tokens, fmt.Sprintf("%s: %s", ColorLightWhite.Apply("include"), r.Include))
+	}
+	if len(r.Exclude) > 0 {
+		tokens = append(tokens, fmt.Sprintf("%s: %s", ColorLightWhite.Apply("exclude"), r.Exclude))
+	}
+
+	return fmt.Errorf(strings.Join(tokens, "\n\t"))
 }
 
 // RuleFunc is a function that evaluates a corpus.
