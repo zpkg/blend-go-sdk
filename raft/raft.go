@@ -407,7 +407,7 @@ func (r *Raft) handleAppendEntries(args *AppendEntries, res *AppendEntriesResult
 
 func (r *Raft) handleRequestVote(args *RequestVote, res *RequestVoteResults) error {
 	if args.Term < r.currentTerm {
-		r.infof("node is failing handle requestVote from %s because args.Term(%d) < currentTerm(%d)", args.Candidate, args.Term, r.currentTerm)
+		r.infof("node is failing handle requestVote from %s because args.Term (%d) < currentTerm (%d)", args.Candidate, args.Term, r.currentTerm)
 		*res = RequestVoteResults{
 			Term:    r.currentTerm,
 			Granted: false,
@@ -446,12 +446,12 @@ func (r *Raft) dialPeers() error {
 
 func (r *Raft) infof(format string, args ...interface{}) {
 	if r.log != nil {
-		r.log.SubContext("raft").SubContext(r.id).SubContext(fmt.Sprintf("%v", r.State())).SyncInfof(format, args...)
+		r.log.SubContext("raft").SubContext(r.id).SubContext(fmt.Sprintf("%v", r.State())).Infof(format, args...)
 	}
 }
 
 func (r *Raft) err(err error) {
 	if r.log != nil {
-		r.log.SubContext("raft").SubContext(r.id).SubContext(fmt.Sprintf("%v", r.State())).SyncTrigger(logger.Errorf(logger.Error, "%v", err))
+		r.log.SubContext("raft").SubContext(r.id).SubContext(fmt.Sprintf("%v", r.State())).Trigger(logger.Errorf(logger.Error, "%v", err))
 	}
 }
