@@ -318,10 +318,9 @@ func (i *Invocation) Create(object DatabaseMapped) (err error) {
 	defer func() { err = i.finalizer(recover(), err, logger.Query, queryBody, start) }()
 
 	cols := getCachedColumnCollectionFromInstance(object)
-	writeCols := cols.NotReadOnly().NotSerials()
+	writeCols := cols.NotReadOnly().NotAutos()
 
-	//NOTE: we're only using one.
-	serials := cols.Serials()
+	autos := cols.Autos()
 	tableName := TableName(object)
 
 	if len(i.statementLabel) == 0 {
@@ -352,10 +351,9 @@ func (i *Invocation) Create(object DatabaseMapped) (err error) {
 	}
 	queryBodyBuffer.WriteString(")")
 
-	if serials.Len() > 0 {
-		serial := serials.FirstOrDefault()
+	if autos.Len() > 0 {
 		queryBodyBuffer.WriteString(" RETURNING ")
-		queryBodyBuffer.WriteString(serial.ColumnName)
+		queryBodyBuffer.WriteString(autos.ColumnNamesCSV())
 	}
 
 	queryBody = queryBodyBuffer.String()
@@ -367,7 +365,7 @@ func (i *Invocation) Create(object DatabaseMapped) (err error) {
 	defer func() { err = i.closeStatement(err, stmt) }()
 
 	var execErr error
-	if serials.Len() == 0 {
+	if autos.Len() == 0 {
 		if i.ctx != nil {
 			_, execErr = stmt.ExecContext(i.ctx, colValues...)
 		} else {
@@ -380,23 +378,28 @@ func (i *Invocation) Create(object DatabaseMapped) (err error) {
 			return
 		}
 	} else {
-		serial := serials.FirstOrDefault()
+		autoValues := make([]interface{}, autos.Len())
+		for i, autoCol := range autos.Columns() {
+			autoValues[i] = reflect.New(reflect.PtrTo(autoCol.FieldType)).Interface()
+		}
 
-		var id interface{}
 		if i.ctx != nil {
-			execErr = stmt.QueryRowContext(i.ctx, colValues...).Scan(&id)
+			execErr = stmt.QueryRowContext(i.ctx, colValues...).Scan(autoValues...)
 		} else {
-			execErr = stmt.QueryRow(colValues...).Scan(&id)
+			execErr = stmt.QueryRow(colValues...).Scan(autoValues...)
 		}
 
 		if execErr != nil {
 			err = exception.Wrap(execErr)
 			return
 		}
-		setErr := serial.SetValue(object, id)
-		if setErr != nil {
-			err = exception.Wrap(setErr)
-			return
+
+		for index := 0; index < len(autoValues); index++ {
+			setErr := autos.Columns()[index].SetValue(object, autoValues[index])
+			if setErr != nil {
+				err = exception.Wrap(setErr)
+				return
+			}
 		}
 	}
 
@@ -415,10 +418,10 @@ func (i *Invocation) CreateIfNotExists(object DatabaseMapped) (err error) {
 	defer func() { err = i.finalizer(recover(), err, logger.Query, queryBody, start) }()
 
 	cols := getCachedColumnCollectionFromInstance(object)
-	writeCols := cols.NotReadOnly().NotSerials()
+	writeCols := cols.NotReadOnly().NotAutos()
 
 	//NOTE: we're only using one.
-	serials := cols.Serials()
+	autos := cols.Autos()
 	pks := cols.PrimaryKeys()
 	tableName := TableName(object)
 
@@ -462,10 +465,9 @@ func (i *Invocation) CreateIfNotExists(object DatabaseMapped) (err error) {
 		queryBodyBuffer.WriteString(") DO NOTHING")
 	}
 
-	if serials.Len() > 0 {
-		serial := serials.FirstOrDefault()
+	if autos.Len() > 0 {
 		queryBodyBuffer.WriteString(" RETURNING ")
-		queryBodyBuffer.WriteString(serial.ColumnName)
+		queryBodyBuffer.WriteString(autos.ColumnNamesCSV())
 	}
 
 	queryBody = queryBodyBuffer.String()
@@ -477,7 +479,7 @@ func (i *Invocation) CreateIfNotExists(object DatabaseMapped) (err error) {
 	defer func() { err = i.closeStatement(err, stmt) }()
 
 	var execErr error
-	if serials.Len() == 0 {
+	if autos.Len() == 0 {
 		if i.ctx != nil {
 			_, execErr = stmt.ExecContext(i.ctx, colValues...)
 		} else {
@@ -489,23 +491,28 @@ func (i *Invocation) CreateIfNotExists(object DatabaseMapped) (err error) {
 			return
 		}
 	} else {
-		serial := serials.FirstOrDefault()
+		autoValues := make([]interface{}, autos.Len())
+		for i, autoCol := range autos.Columns() {
+			autoValues[i] = reflect.New(reflect.PtrTo(autoCol.FieldType)).Interface()
+		}
 
-		var id interface{}
 		if i.ctx != nil {
-			execErr = stmt.QueryRowContext(i.ctx, colValues...).Scan(&id)
+			execErr = stmt.QueryRowContext(i.ctx, colValues...).Scan(autoValues...)
 		} else {
-			execErr = stmt.QueryRow(colValues...).Scan(&id)
+			execErr = stmt.QueryRow(colValues...).Scan(autoValues...)
 		}
 
 		if execErr != nil {
 			err = exception.Wrap(execErr)
 			return
 		}
-		setErr := serial.SetValue(object, id)
-		if setErr != nil {
-			err = exception.Wrap(setErr)
-			return
+
+		for index := 0; index < len(autoValues); index++ {
+			setErr := autos.Columns()[index].SetValue(object, autoValues[index])
+			if setErr != nil {
+				err = exception.Wrap(setErr)
+				return
+			}
 		}
 	}
 
@@ -532,7 +539,7 @@ func (i *Invocation) CreateMany(objects interface{}) (err error) {
 	tableName := TableNameByType(sliceType)
 
 	cols := getCachedColumnCollectionFromType(tableName, sliceType)
-	writeCols := cols.NotReadOnly().NotSerials()
+	writeCols := cols.NotReadOnly().NotAutos()
 
 	//NOTE: we're only using one.
 	//serials := cols.Serials()
@@ -867,11 +874,11 @@ func (i *Invocation) Upsert(object DatabaseMapped) (err error) {
 	defer func() { err = i.finalizer(recover(), err, logger.Query, queryBody, start) }()
 
 	cols := getCachedColumnCollectionFromInstance(object)
-	writeCols := cols.NotReadOnly().NotSerials()
+	writeCols := cols.NotReadOnly().NotAutos()
 
-	conflictUpdateCols := cols.NotReadOnly().NotSerials().NotPrimaryKeys()
+	conflictUpdateCols := cols.NotReadOnly().NotAutos().NotPrimaryKeys()
 
-	serials := cols.Serials()
+	serials := cols.Autos()
 	pks := cols.PrimaryKeys()
 	tableName := TableName(object)
 

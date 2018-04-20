@@ -28,12 +28,12 @@ func NewColumnFromFieldTag(field reflect.StructField) *Column {
 			}
 
 			if len(pieces) >= 1 {
-				args := strings.Join(pieces[1:], ",")
-				col.IsPrimaryKey = strings.Contains(strings.ToLower(args), "pk")
-				col.IsSerial = strings.Contains(strings.ToLower(args), "serial")
-				col.IsNullable = strings.Contains(strings.ToLower(args), "nullable")
-				col.IsReadOnly = strings.Contains(strings.ToLower(args), "readonly")
-				col.IsJSON = strings.Contains(strings.ToLower(args), "json")
+				args := strings.ToLower(strings.Join(pieces[1:], ","))
+
+				col.IsPrimaryKey = strings.Contains(args, "pk")
+				col.IsAuto = strings.Contains(args, "serial") || strings.Contains(args, "auto")
+				col.IsReadOnly = strings.Contains(args, "readonly")
+				col.IsJSON = strings.Contains(args, "json")
 			}
 		}
 		return &col
@@ -50,8 +50,7 @@ type Column struct {
 	ColumnName   string
 	Index        int
 	IsPrimaryKey bool
-	IsSerial     bool
-	IsNullable   bool
+	IsAuto       bool
 	IsReadOnly   bool
 	IsJSON       bool
 }

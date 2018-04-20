@@ -12,6 +12,7 @@ type subStruct struct {
 
 type myStruct struct {
 	PrimaryKeyCol     int       `json:"pk" db:"primary_key_column,pk,serial"`
+	AutoCol           string    `json:"auto" db:"auto_column,auto"`
 	InferredName      string    `json:"normal"`
 	Excluded          string    `json:"-" db:"-"`
 	NullableCol       string    `json:"not_nullable" db:"nullable,nullable"`
@@ -38,7 +39,7 @@ func TestGetCachedColumnCollectionFromInstance(t *testing.T) {
 	a.NotNil(meta.Columns())
 	a.NotEmpty(meta.Columns())
 
-	a.Equal(7, meta.Len())
+	a.Equal(8, meta.Len())
 
 	readOnlyColumns := meta.ReadOnly()
 	a.Len(readOnlyColumns.Columns(), 1)
@@ -51,30 +52,32 @@ func TestGetCachedColumnCollectionFromInstance(t *testing.T) {
 	a.Equal("PrimaryKeyCol", firstCol.FieldName)
 	a.Equal("primary_key_column", firstCol.ColumnName)
 	a.True(firstCol.IsPrimaryKey)
-	a.True(firstCol.IsSerial)
-	a.False(firstCol.IsNullable)
+	a.True(firstCol.IsAuto)
 	a.False(firstCol.IsReadOnly)
 
 	secondCol := meta.Columns()[1]
-	a.Equal("inferredname", secondCol.ColumnName)
+	a.Equal("auto_column", secondCol.ColumnName)
 	a.False(secondCol.IsPrimaryKey)
-	a.False(secondCol.IsSerial)
-	a.False(secondCol.IsNullable)
+	a.True(secondCol.IsAuto)
 	a.False(secondCol.IsReadOnly)
 
 	thirdCol := meta.Columns()[2]
-	a.Equal("nullable", thirdCol.ColumnName)
+	a.Equal("inferredname", thirdCol.ColumnName)
 	a.False(thirdCol.IsPrimaryKey)
-	a.False(thirdCol.IsSerial)
-	a.True(thirdCol.IsNullable)
+	a.False(thirdCol.IsAuto)
 	a.False(thirdCol.IsReadOnly)
 
 	fourthCol := meta.Columns()[3]
-	a.Equal("inferredwithflags", fourthCol.ColumnName)
+	a.Equal("nullable", fourthCol.ColumnName)
 	a.False(fourthCol.IsPrimaryKey)
-	a.False(fourthCol.IsSerial)
-	a.False(fourthCol.IsNullable)
-	a.True(fourthCol.IsReadOnly)
+	a.False(fourthCol.IsAuto)
+	a.False(fourthCol.IsReadOnly)
+
+	fifthCol := meta.Columns()[4]
+	a.Equal("inferredwithflags", fifthCol.ColumnName)
+	a.False(fifthCol.IsPrimaryKey)
+	a.False(fifthCol.IsAuto)
+	a.True(fifthCol.IsReadOnly)
 }
 
 func TestColumnCollectionCopy(t *testing.T) {
