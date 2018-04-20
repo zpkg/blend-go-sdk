@@ -121,6 +121,11 @@ func dropTable(tx *sql.Tx) error {
 	return Default().ExecInTx(dropSQL, tx)
 }
 
+func ensureUUID() error {
+	uuidCreate := `CREATE EXTENSION IF NOT EXISTS "uuid-ossp";`
+	return Default().Exec(uuidCreate)
+}
+
 func createObject(index int, tx *sql.Tx) error {
 	obj := benchObj{
 		Name:      fmt.Sprintf("test_object_%d", index),
@@ -133,6 +138,9 @@ func createObject(index int, tx *sql.Tx) error {
 }
 
 func seedObjects(count int, tx *sql.Tx) error {
+	if err := ensureUUID(); err != nil {
+		return err
+	}
 	if err := dropTable(tx); err != nil {
 		return err
 	}
