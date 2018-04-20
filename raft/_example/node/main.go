@@ -8,9 +8,9 @@ import (
 func main() {
 	log := logger.All()
 
-	r := raft.NewFromConfig(raft.NewConfigFromEnv()).WithLogger(log)
-
-	for _, remoteAddr := range r.Config().GetPeers() {
+	cfg := raft.NewConfigFromEnv()
+	r := raft.NewFromConfig(cfg).WithLogger(log)
+	for _, remoteAddr := range cfg.GetPeers() {
 		r = r.WithPeer(raft.NewClient(remoteAddr).WithLogger(log))
 	}
 
