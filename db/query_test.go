@@ -14,6 +14,9 @@ func TestQueryExecute(t *testing.T) {
 	a.Nil(err)
 	defer tx.Rollback()
 
+	seedErr := seedObjects(10, tx)
+	a.Nil(seedErr)
+
 	stmt, rows, err := Default().QueryInTx("select * from bench_object", tx).Execute()
 	a.Nil(err)
 	defer stmt.Close()
@@ -128,7 +131,7 @@ func TestMultipleQueriesPerTransaction(t *testing.T) {
 
 	a.NotNil(Default().Connection())
 
-	err = seedObjects(10, tx)
+	err = seedObjects(10, nil)
 	a.Nil(err)
 
 	go func() {
@@ -213,11 +216,9 @@ func TestQueryFirst(t *testing.T) {
 	a.Nil(seedErr)
 
 	var first benchObj
-	var popErr error
 	err = Default().QueryInTx("select * from bench_object", tx).First(func(r *sql.Rows) error {
-		popErr = first.Populate(r)
-		if popErr != nil {
-			return popErr
+		if err := first.Populate(r); err != nil {
+			return err
 		}
 		return nil
 	})
