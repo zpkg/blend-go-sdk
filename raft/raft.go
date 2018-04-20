@@ -47,17 +47,11 @@ type Raft struct {
 	// state is the current fsm state
 	state int32
 
-	// these are unused
-	commitIndex uint64            // the highest log entry known to be committed
-	lastApplied uint64            // index of highest log entry applied to state machine
-	nextIndex   map[string]uint64 // for each peer, the index of the next log entry to send to that peer
-	matchIndex  map[string]uint64 // for each peer, index of highest log entry known to be replicated on each peer
-
 	server *Server
 	peers  []*Client
 
-	leaderCheckTick *worker.Interval
-	heartbeatTick   *worker.Interval
+	leaderCheckTick   *worker.Interval
+	sendHeartbeatTick *worker.Interval
 
 	leaderHandler    func()
 	candidateHandler func()
@@ -89,6 +83,21 @@ func (r *Raft) BindAddr() string {
 // State returns the current raft state.
 func (r *Raft) State() FSMState {
 	return FSMState(atomic.LoadInt32(&r.state))
+}
+
+// Leader returns the current known leader.
+func (r *Raft) Leader() string {
+	return r.votedFor
+}
+
+// Term returns the current raft term.
+func (r *Raft) Term() uint64 {
+	return r.currentTerm
+}
+
+// LastLeaderContact is the last time we heard from the leader.
+func (r *Raft) LastLeaderContact() time.Time {
+	return r.lastLeaderContact
 }
 
 // SetLeaderHandler sets the leader handler.
@@ -169,11 +178,11 @@ func (r *Raft) Start() error {
 
 	r.infof("node beginning internal tickers")
 	r.leaderCheckTick = worker.NewInterval(r.leaderCheck, DefaultLeaderCheckTick).WithDelay(r.RandomLeaderLeaseTimeout())
-	r.heartbeatTick = worker.NewInterval(r.heartbeat, DefaultHeartbeatTick).WithDelay(r.RandomLeaderLeaseTimeout())
+	r.sendHeartbeatTick = worker.NewInterval(r.sendHeartbeat, DefaultHeartbeatTick).WithDelay(r.RandomLeaderLeaseTimeout())
 	r.leaderCheckTick.Start()
-	r.heartbeatTick.Start()
+	r.sendHeartbeatTick.Start()
 	r.infof("leaderCheck start delay %v", r.leaderCheckTick.Delay())
-	r.infof("heartbeatTick start delay %v", r.heartbeatTick.Delay())
+	r.infof("sendHeartbeatTick start delay %v", r.sendHeartbeatTick.Delay())
 	return nil
 }
 
@@ -181,9 +190,11 @@ func (r *Raft) Start() error {
 func (r *Raft) Stop() error {
 	if r.leaderCheckTick != nil {
 		r.leaderCheckTick.Stop()
+		r.leaderCheckTick = nil
 	}
-	if r.heartbeatTick != nil {
-		r.heartbeatTick.Stop()
+	if r.sendHeartbeatTick != nil {
+		r.sendHeartbeatTick.Stop()
+		r.sendHeartbeatTick = nil
 	}
 
 	return r.server.Close()
@@ -349,7 +360,7 @@ func (r *Raft) countVotes(results chan *RequestVoteResults) int {
 	return -1
 }
 
-func (r *Raft) heartbeat() error {
+func (r *Raft) sendHeartbeat() error {
 	if r.State() != FSMStateLeader {
 		return nil
 	}
