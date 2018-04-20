@@ -38,7 +38,6 @@ type Config struct {
 	Peers              []string      `yaml:"peers" env:"RAFT_PEERS,csv"`
 	ElectionTimeout    time.Duration `yaml:"electionTimeout" env:"RAFT_ELECTION_TIMEOUT"`
 	LeaderLeaseTimeout time.Duration `yaml:"leaderLeaseTimeout" env:"RAFT_LEADER_LEASE_TIMEOUT"`
-	StartAsLeader      *bool         `yaml:"startAsLeader" env:"RAFT_START_LEADER"`
 }
 
 // GetIdentifier gets a field or a default.
@@ -64,9 +63,4 @@ func (c Config) GetElectionTimeout(inherited ...time.Duration) time.Duration {
 // GetLeaderLeaseTimeout gets a field or a default.
 func (c Config) GetLeaderLeaseTimeout(inherited ...time.Duration) time.Duration {
 	return util.Coalesce.Duration(c.LeaderLeaseTimeout, DefaultLeaderLeaseTimeout, inherited...)
-}
-
-// GetStartAsLeader gets a field or a default.
-func (c Config) GetStartAsLeader(inherited ...bool) bool {
-	return util.Coalesce.Bool(c.StartAsLeader, false, inherited...)
 }
