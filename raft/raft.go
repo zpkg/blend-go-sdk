@@ -407,7 +407,6 @@ func (r *Raft) handleAppendEntries(args *AppendEntries, res *AppendEntriesResult
 
 func (r *Raft) handleRequestVote(args *RequestVote, res *RequestVoteResults) error {
 	if args.Term < r.currentTerm {
-		r.infof("node is failing handle requestVote from %s because args.Term (%d) < currentTerm (%d)", args.Candidate, args.Term, r.currentTerm)
 		*res = RequestVoteResults{
 			Term:    r.currentTerm,
 			Granted: false,
