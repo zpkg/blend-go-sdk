@@ -202,3 +202,25 @@ func TestMultipleQueriesPerTransactionWithFailure(t *testing.T) {
 	a.NotNil(err)
 	a.False(hasRows)
 }
+
+func TestQueryFirst(t *testing.T) {
+	a := assert.New(t)
+	tx, err := Default().Begin()
+	a.Nil(err)
+	defer tx.Rollback()
+
+	seedErr := seedObjects(10, tx)
+	a.Nil(seedErr)
+
+	var first benchObj
+	var popErr error
+	err = Default().QueryInTx("select * from bench_object", tx).First(func(r *sql.Rows) error {
+		popErr = first.Populate(r)
+		if popErr != nil {
+			return popErr
+		}
+		return nil
+	})
+	a.Nil(err)
+	a.Equal(1, first.ID)
+}
