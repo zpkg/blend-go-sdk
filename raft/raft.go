@@ -283,8 +283,8 @@ func (r *Raft) requestVote() (retry bool, err error) {
 	}
 	wg.Wait()
 
-	if len(errs) > 0 {
-		for index := 0; index < len(errs); index++ {
+	if totalErrs := len(errs); totalErrs > 0 {
+		for index := 0; index < totalErrs; index++ {
 			r.err(<-errs)
 		}
 	}
@@ -333,16 +333,17 @@ func (r *Raft) countVotes(results chan *RequestVoteResults) int {
 		}
 	}
 
+	majority := total >> 1
 	if total%2 == 0 {
-		if votesFor > total>>1 {
+		if votesFor > majority {
 			return 1
-		} else if votesFor == total>>1 {
+		} else if votesFor == majority {
 			return 0
 		}
 		return -1
 	}
 
-	if votesFor > total>>1 {
+	if votesFor > majority {
 		return 1
 	}
 	return -1
@@ -389,6 +390,10 @@ func (r *Raft) handleAppendEntries(args *AppendEntries, res *AppendEntriesResult
 		return nil
 	}
 
+	if r.lastLeaderContact.IsZero() {
+		r.infof("first leader contact")
+	}
+
 	// advance the term ...
 	r.currentTerm = args.Term
 	r.lastLeaderContact = time.Now().UTC()
@@ -418,7 +423,7 @@ func (r *Raft) handleRequestVote(args *RequestVote, res *RequestVoteResults) err
 		return nil
 	}
 
-	// re-empt election attempts.
+	// kill open election attempts.
 	r.transitionTo(FSMStateFollower)
 
 	r.lastVoteGranted = time.Now().UTC()
