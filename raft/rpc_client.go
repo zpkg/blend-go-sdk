@@ -16,6 +16,8 @@ const (
 	// RPCMethodAppendEntries is an rpc method.
 	RPCMethodAppendEntries = "ServerMethods.AppendEntries"
 
+	// DefaultClientDialTimeout is a default.
+	DefaultClientDialTimeout = 500 * time.Millisecond
 	// DefaultClientRedialWait is the default time to wait between rpc redial attempts.
 	DefaultClientRedialWait = 5 * time.Second
 	// DefaultClientConnectTimeout is the total time allowed to reach the remote.
@@ -25,9 +27,10 @@ const (
 // NewClient creates a new rpc client.
 func NewClient(remoteAddr string) *Client {
 	return &Client{
-		remoteAddr: remoteAddr,
-		latch:      &worker.Latch{},
-		redialWait: DefaultClientRedialWait,
+		remoteAddr:  remoteAddr,
+		latch:       &worker.Latch{},
+		dialTimeout: DefaultClientDialTimeout,
+		redialWait:  DefaultClientRedialWait,
 	}
 }
 
@@ -39,7 +42,8 @@ type Client struct {
 	latch      *worker.Latch
 	log        *logger.Logger
 
-	redialWait time.Duration
+	dialTimeout time.Duration
+	redialWait  time.Duration
 }
 
 // WithLogger sets the logger.
@@ -77,13 +81,14 @@ func (c *Client) Open() error {
 	}
 }
 
-// Dial dials the remote, it will only try once.
+// Dial dials the remote, it will only try once, and won't
+// dial if the connection is already up.
 func (c *Client) Dial() error {
 	if c.client != nil {
 		return nil
 	}
 	var err error
-	c.conn, err = net.DialTimeout("tcp", c.remoteAddr, c.redialWait)
+	c.conn, err = net.DialTimeout("tcp", c.remoteAddr, c.dialTimeout)
 	if err != nil {
 		return exception.Wrap(err)
 	}
@@ -124,8 +129,12 @@ func (c *Client) disconnect() error {
 	if c.client == nil {
 		return nil
 	}
+	if err := c.client.Close(); err != nil {
+		return exception.Wrap(err)
+	}
 
-	return c.client.Close()
+	c.client = nil
+	return nil
 }
 
 // Close closes the transport.

@@ -302,7 +302,7 @@ func (r Rule) Failure(file string, err error) error {
 		tokens = append(tokens, fmt.Sprintf("%s: %s", ColorLightWhite.Apply("exclude"), r.Exclude))
 	}
 
-	return fmt.Errorf(strings.Join(tokens, "\n\t"))
+	return fmt.Errorf(strings.Join(tokens, "\n"))
 }
 
 // RuleFunc is a function that evaluates a corpus.

@@ -9,6 +9,10 @@ import (
 	"time"
 )
 
+var (
+	_randSource = rand.NewSource(time.Now().Unix())
+)
+
 // backoff is used to compute an exponential backoff
 // duration. Base time is scaled by the current round,
 // up to some maximum scale factor.
@@ -22,12 +26,12 @@ func backoff(base time.Duration, round, limit uint64) time.Duration {
 }
 
 // randomTimeout returns a value that is between the minVal and 2x minVal.
-func randomTimeout(minVal time.Duration) <-chan time.Time {
+func randomTimeout(minVal time.Duration) time.Duration {
 	if minVal == 0 {
-		return nil
+		return minVal
 	}
-	extra := (time.Duration(rand.Int63()) % minVal)
-	return time.After(minVal + extra)
+
+	return minVal + (time.Duration(_randSource.Int63()) % minVal)
 }
 
 // min returns the minimum.

@@ -17,11 +17,6 @@ func NewServer() *Server {
 	}
 }
 
-// NewServerFromConfig creates a new raft node from a config.
-func NewServerFromConfig(cfg *Config) *Server {
-	return NewServer().WithBindAddr(cfg.GetBindAddr())
-}
-
 // Server is the base entity / fsm manager for the raft election process.
 type Server struct {
 	bindAddr string
