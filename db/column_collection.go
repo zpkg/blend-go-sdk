@@ -372,8 +372,7 @@ func (cc ColumnCollection) ColumnValues(instance interface{}) []interface{} {
 		c := cc.columns[x]
 		valueField := value.FieldByName(c.FieldName)
 		if c.IsJSON {
-			toSerialize := valueField.Interface()
-			jsonBytes, _ := json.Marshal(toSerialize)
+			jsonBytes, _ := json.Marshal(valueField.Interface())
 			values[x] = string(jsonBytes)
 		} else {
 			values[x] = valueField.Interface()
