@@ -373,7 +373,11 @@ func (cc ColumnCollection) ColumnValues(instance interface{}) []interface{} {
 		valueField := value.FieldByName(c.FieldName)
 		if c.IsJSON {
 			jsonBytes, _ := json.Marshal(valueField.Interface())
-			values[x] = string(jsonBytes)
+			if result := string(jsonBytes); result != "null" { // explicitly bad.
+				values[x] = result
+			} else {
+				values[x] = nil
+			}
 		} else {
 			values[x] = valueField.Interface()
 		}

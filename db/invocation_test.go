@@ -79,6 +79,13 @@ func TestInvocationJSONNulls(t *testing.T) {
 
 	// try creating partially set object and reading it out
 	obj1 := jsonTest{Name: uuid.V4().String(), NotNull: jsonTestChild{Label: uuid.V4().String()}} //note `Nullable` isn't set
+
+	columns := Columns(obj1)
+	values := columns.ColumnValues(obj1)
+	assert.Len(values, 4)
+	assert.Nil(values[3], "we shouldn't emit a literal 'null' here")
+	assert.NotEqual("null", values[3], "we shouldn't emit a literal 'null' here")
+
 	assert.Nil(Default().InTx(tx).Create(&obj1))
 
 	var verify1 jsonTest
@@ -88,4 +95,8 @@ func TestInvocationJSONNulls(t *testing.T) {
 	assert.Equal(obj1.Name, verify1.Name)
 	assert.Nil(verify1.Nullable)
 	assert.Equal(obj1.NotNull.Label, verify1.NotNull.Label)
+
+	any, err := Default().InTx(tx).Query("select 1 from json_test where id = $1 and nullable is null", obj1.ID).Any()
+	assert.Nil(err)
+	assert.True(any, "we should have written a sql null, not a literal string 'null'")
 }
