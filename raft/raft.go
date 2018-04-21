@@ -40,6 +40,7 @@ type Raft struct {
 	electionTimeout    time.Duration
 
 	currentTerm       uint64
+	currentLeader     string
 	votedFor          string
 	lastLeaderContact time.Time
 	lastVoteGranted   time.Time
@@ -87,7 +88,10 @@ func (r *Raft) State() FSMState {
 
 // Leader returns the current known leader.
 func (r *Raft) Leader() string {
-	return r.votedFor
+	if r.State() == FSMStateLeader {
+		return r.id
+	}
+	return r.currentLeader
 }
 
 // Term returns the current raft term.
@@ -166,6 +170,12 @@ func (r *Raft) Start() error {
 		r.infof("node started")
 	}()
 
+	if len(r.peers) == 0 {
+		r.infof("operating as single node configuration")
+		r.transitionTo(FSMStateLeader)
+		return nil
+	}
+
 	r.server = NewServer().WithBindAddr(r.BindAddr()).WithLogger(r.log)
 	r.server.SetAppendEntriesHandler(r.handleAppendEntries)
 	r.server.SetRequestvoteHandler(r.handleRequestVote)
@@ -197,7 +207,10 @@ func (r *Raft) Stop() error {
 		r.sendHeartbeatTick = nil
 	}
 
-	return r.server.Close()
+	if r.server != nil {
+		return r.server.Close()
+	}
+	return nil
 }
 
 // --------------------------------------------------------------------------------
@@ -367,7 +380,7 @@ func (r *Raft) sendHeartbeat() error {
 
 	args := AppendEntries{
 		Term:     r.currentTerm,
-		LeaderID: r.votedFor,
+		LeaderID: r.id,
 	}
 
 	results := make(chan *AppendEntriesResults, len(r.peers))
@@ -405,8 +418,9 @@ func (r *Raft) handleAppendEntries(args *AppendEntries, res *AppendEntriesResult
 		r.infof("first leader contact")
 	}
 
-	// advance the term ...
+	// update internal metadata ...
 	r.currentTerm = args.Term
+	r.currentLeader = args.LeaderID
 	r.lastLeaderContact = time.Now().UTC()
 	*res = AppendEntriesResults{
 		Success: true,
@@ -456,12 +470,12 @@ func (r *Raft) dialPeers() error {
 
 func (r *Raft) infof(format string, args ...interface{}) {
 	if r.log != nil {
-		r.log.SubContext("raft").SubContext(r.id).SubContext(fmt.Sprintf("%v", r.State())).Infof(format, args...)
+		r.log.SubContext("raft").SubContext(fmt.Sprintf("%v", r.State())).Infof(format, args...)
 	}
 }
 
 func (r *Raft) err(err error) {
 	if r.log != nil {
-		r.log.SubContext("raft").SubContext(r.id).SubContext(fmt.Sprintf("%v", r.State())).Trigger(logger.Errorf(logger.Error, "%v", err))
+		r.log.SubContext("raft").SubContext(fmt.Sprintf("%v", r.State())).Trigger(logger.Errorf(logger.Error, "%v", err))
 	}
 }
