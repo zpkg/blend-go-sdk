@@ -99,4 +99,14 @@ func TestInvocationJSONNulls(t *testing.T) {
 	any, err := Default().InTx(tx).Query("select 1 from json_test where id = $1 and nullable is null", obj1.ID).Any()
 	assert.Nil(err)
 	assert.True(any, "we should have written a sql null, not a literal string 'null'")
+
+	// set it to literal 'null' to test this is backward compatible
+	assert.Nil(Default().InTx(tx).Exec("update json_test set nullable = 'null' where id = $1", obj1.ID))
+
+	var verify2 jsonTest
+	assert.Nil(Default().InTx(tx).Get(&verify2, obj1.ID))
+	assert.Equal(obj1.ID, verify2.ID)
+	assert.Equal(obj1.Name, verify2.Name)
+	assert.Nil(verify2.Nullable, "even if we set it to literal 'null' it should come out golang nil")
+	assert.Equal(obj1.NotNull.Label, verify2.NotNull.Label)
 }
