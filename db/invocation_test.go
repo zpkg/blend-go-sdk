@@ -65,15 +65,27 @@ func TestInvocationJSONNulls(t *testing.T) {
 
 	assert.Nil(createJSONTestTable(tx))
 
-	// try creating fully set objects and reading them out
+	// try creating fully set object and reading it out
 	obj0 := jsonTest{Name: uuid.V4().String(), NotNull: jsonTestChild{Label: uuid.V4().String()}, Nullable: []string{uuid.V4().String()}}
 	assert.Nil(Default().InTx(tx).Create(&obj0))
 
-	var verify jsonTest
-	assert.Nil(Default().InTx(tx).Get(&verify, obj0.ID))
+	var verify0 jsonTest
+	assert.Nil(Default().InTx(tx).Get(&verify0, obj0.ID))
 
-	assert.Equal(obj0.ID, verify.ID)
-	assert.Equal(obj0.Name, verify.Name)
-	assert.Equal(obj0.Nullable, verify.Nullable)
-	assert.Equal(obj0.NotNull.Label, verify.NotNull.Label)
+	assert.Equal(obj0.ID, verify0.ID)
+	assert.Equal(obj0.Name, verify0.Name)
+	assert.Equal(obj0.Nullable, verify0.Nullable)
+	assert.Equal(obj0.NotNull.Label, verify0.NotNull.Label)
+
+	// try creating partially set object and reading it out
+	obj1 := jsonTest{Name: uuid.V4().String(), NotNull: jsonTestChild{Label: uuid.V4().String()}} //note `Nullable` isn't set
+	assert.Nil(Default().InTx(tx).Create(&obj1))
+
+	var verify1 jsonTest
+	assert.Nil(Default().InTx(tx).Get(&verify1, obj1.ID))
+
+	assert.Equal(obj1.ID, verify1.ID)
+	assert.Equal(obj1.Name, verify1.Name)
+	assert.Nil(verify1.Nullable)
+	assert.Equal(obj1.NotNull.Label, verify1.NotNull.Label)
 }
