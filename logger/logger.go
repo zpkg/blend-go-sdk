@@ -308,12 +308,6 @@ func (l *Logger) HasListener(flag Flag, listenerName string) bool {
 // It provides a more limited api surface area but lets you
 // decoarate events with context specific headings, labels and annotations.
 func (l *Logger) SubContext(heading string) *SubContext {
-	if len(l.heading) > 0 {
-		return &SubContext{
-			log:      l,
-			headings: []string{l.heading, heading},
-		}
-	}
 	return &SubContext{
 		log:      l,
 		headings: []string{heading},
@@ -422,6 +416,9 @@ func (l *Logger) trigger(async bool, e Event) {
 
 	flag := e.Flag()
 	if l.IsEnabled(flag) {
+
+		l.injectHeading(e)
+
 		if l.workers != nil {
 			if workers, hasWorkers := l.workers[flag]; hasWorkers {
 				for _, worker := range workers {
@@ -734,6 +731,19 @@ func (l *Logger) Drain() error {
 // --------------------------------------------------------------------------------
 // write helpers
 // --------------------------------------------------------------------------------
+
+// injectHeading injects the sub-context's headings into an event if it supports headings.
+func (l *Logger) injectHeading(e Event) {
+	if len(l.heading) > 0 {
+		if typed, isTyped := e.(EventHeadings); isTyped {
+			if len(typed.Headings()) > 0 {
+				typed.SetHeadings(append([]string{l.heading}, typed.Headings()...)...)
+			} else {
+				typed.SetHeadings(l.heading)
+			}
+		}
+	}
+}
 
 func (l *Logger) ensureInitialized() {
 	if l.writeWorker == nil {
