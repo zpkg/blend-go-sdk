@@ -217,10 +217,7 @@ func TestQueryFirst(t *testing.T) {
 
 	var first benchObj
 	err = Default().QueryInTx("select * from bench_object", tx).First(func(r *sql.Rows) error {
-		if err := first.Populate(r); err != nil {
-			return err
-		}
-		return nil
+		return first.Populate(r)
 	})
 	a.Nil(err)
 	a.Equal(1, first.ID)

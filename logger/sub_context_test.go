@@ -14,7 +14,7 @@ func TestLoggerSubContext(t *testing.T) {
 	l := New().WithHeading("test-logger")
 	sc := l.SubContext("sub-context")
 	assert.NotNil(sc.Logger())
-	assert.Equal([]string{"test-logger", "sub-context"}, sc.Headings())
+	assert.Equal([]string{"sub-context"}, sc.Headings())
 }
 
 func TestSubContextOutput(t *testing.T) {

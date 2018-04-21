@@ -1,6 +1,7 @@
 package db
 
 import (
+	"database/sql"
 	"encoding/json"
 	"reflect"
 	"strings"
@@ -33,6 +34,7 @@ func NewColumnFromFieldTag(field reflect.StructField) *Column {
 				col.IsPrimaryKey = strings.Contains(args, "pk")
 				col.IsAuto = strings.Contains(args, "serial") || strings.Contains(args, "auto")
 				col.IsReadOnly = strings.Contains(args, "readonly")
+				col.IsNullable = strings.Contains(args, "nullable")
 				col.IsJSON = strings.Contains(args, "json")
 			}
 		}
@@ -51,6 +53,7 @@ type Column struct {
 	Index        int
 	IsPrimaryKey bool
 	IsAuto       bool
+	IsNullable   bool
 	IsReadOnly   bool
 	IsJSON       bool
 }
@@ -69,11 +72,11 @@ func (c Column) SetValue(object interface{}, value interface{}) error {
 		return nil
 	}
 
-	if c.IsJSON {
-		valueAsString, ok := valueReflected.Interface().(string)
-		if ok && len(valueAsString) != 0 {
+	if c.IsJSON { // very special dispensation for json columns
+		valueContents, ok := valueReflected.Interface().(sql.NullString)
+		if ok && valueContents.Valid && len(valueContents.String) > 0 {
 			fieldAddr := field.Addr().Interface()
-			jsonErr := json.Unmarshal([]byte(valueAsString), fieldAddr)
+			jsonErr := json.Unmarshal([]byte(valueContents.String), fieldAddr)
 			if jsonErr != nil {
 				return exception.Wrap(jsonErr)
 			}
@@ -109,7 +112,6 @@ func (c Column) SetValue(object interface{}, value interface{}) error {
 
 	convertedValue := valueReflected.Convert(fieldType)
 	field.Set(convertedValue)
-
 	return nil
 }
 
