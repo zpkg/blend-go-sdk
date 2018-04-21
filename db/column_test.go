@@ -1,6 +1,7 @@
 package db
 
 import (
+	"database/sql"
 	"testing"
 
 	"github.com/blend/go-sdk/assert"
@@ -37,7 +38,7 @@ func TestSetValueJSON(t *testing.T) {
 
 	col := meta.Lookup()["json_col"]
 	a.NotNil(col)
-	err := col.SetValue(&obj, `{"foo":"bar"}`)
+	err := col.SetValue(&obj, sql.NullString{String: `{"foo":"bar"}`, Valid: true})
 	a.Nil(err)
 	a.Equal("bar", obj.JSONColumn.Foo)
 }

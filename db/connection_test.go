@@ -32,8 +32,6 @@ func TestPrepare(t *testing.T) {
 }
 
 func TestQuery(t *testing.T) {
-	t.Skip()
-
 	a := assert.New(t)
 	tx, err := Default().Begin()
 	a.Nil(err)
@@ -249,6 +247,7 @@ func TestConnectionCreate(t *testing.T) {
 
 	obj := &benchObj{
 		Name:      fmt.Sprintf("test_object_0"),
+		UUID:      uuid.V4().String(),
 		Timestamp: time.Now().UTC(),
 		Amount:    1000.0 + (5.0 * float32(0)),
 		Pending:   true,
@@ -263,7 +262,7 @@ func TestConnectionCreateParallel(t *testing.T) {
 
 	err := createTable(nil)
 	assert.Nil(err)
-	defer dropTable(nil)
+	defer dropTableIfExists(nil)
 
 	wg := sync.WaitGroup{}
 	wg.Add(5)
@@ -272,6 +271,7 @@ func TestConnectionCreateParallel(t *testing.T) {
 			defer wg.Done()
 			obj := &benchObj{
 				Name:      fmt.Sprintf("test_object_0"),
+				UUID:      uuid.V4().String(),
 				Timestamp: time.Now().UTC(),
 				Amount:    1000.0 + (5.0 * float32(0)),
 				Pending:   true,
@@ -327,6 +327,7 @@ func TestConnectionUpsertWithSerial(t *testing.T) {
 
 	obj := &benchObj{
 		Name:      "test_object_0",
+		UUID:      uuid.V4().String(),
 		Timestamp: time.Now().UTC(),
 		Amount:    1005.0,
 		Pending:   true,
@@ -365,6 +366,7 @@ func TestConnectionCreateMany(t *testing.T) {
 	for x := 0; x < 10; x++ {
 		objects = append(objects, benchObj{
 			Name:      fmt.Sprintf("test_object_%d", x),
+			UUID:      uuid.V4().String(),
 			Timestamp: time.Now().UTC(),
 			Amount:    1005.0,
 			Pending:   true,
@@ -394,6 +396,7 @@ func TestConnectionTruncate(t *testing.T) {
 	for x := 0; x < 10; x++ {
 		objects = append(objects, benchObj{
 			Name:      fmt.Sprintf("test_object_%d", x),
+			UUID:      uuid.V4().String(),
 			Timestamp: time.Now().UTC(),
 			Amount:    1005.0,
 			Pending:   true,

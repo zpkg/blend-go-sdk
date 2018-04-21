@@ -8,6 +8,7 @@ import (
 	"time"
 
 	"github.com/blend/go-sdk/assert"
+	"github.com/blend/go-sdk/uuid"
 )
 
 //------------------------------------------------------------------------------------------------
@@ -94,8 +95,8 @@ func createUpserObjectTable(tx *sql.Tx) error {
 //------------------------------------------------------------------------------------------------
 
 type benchObj struct {
-	ID        int       `db:"id,pk,serial"`
-	UUID      string    `db:"uuid,auto"`
+	ID        int       `db:"id,pk,auto"`
+	UUID      string    `db:"uuid,nullable"`
 	Name      string    `db:"name"`
 	Timestamp time.Time `db:"timestamp_utc"`
 	Amount    float32   `db:"amount"`
@@ -112,16 +113,16 @@ func (b benchObj) TableName() string {
 }
 
 func createTable(tx *sql.Tx) error {
-	createSQL := `CREATE TABLE IF NOT EXISTS bench_object (id serial not null primary key, uuid uuid default uuid_generate_v4(), name varchar(255), timestamp_utc timestamp, amount real, pending boolean, category varchar(255));`
+	createSQL := `CREATE TABLE IF NOT EXISTS bench_object (id serial not null primary key, uuid uuid, name varchar(255), timestamp_utc timestamp, amount real, pending boolean, category varchar(255));`
 	return Default().ExecInTx(createSQL, tx)
 }
 
-func dropTable(tx *sql.Tx) error {
+func dropTableIfExists(tx *sql.Tx) error {
 	dropSQL := `DROP TABLE IF EXISTS bench_object;`
 	return Default().ExecInTx(dropSQL, tx)
 }
 
-func ensureUUID() error {
+func ensureUUIDExtension() error {
 	uuidCreate := `CREATE EXTENSION IF NOT EXISTS "uuid-ossp";`
 	return Default().Exec(uuidCreate)
 }
@@ -129,6 +130,7 @@ func ensureUUID() error {
 func createObject(index int, tx *sql.Tx) error {
 	obj := benchObj{
 		Name:      fmt.Sprintf("test_object_%d", index),
+		UUID:      uuid.V4().String(),
 		Timestamp: time.Now().UTC(),
 		Amount:    1000.0 + (5.0 * float32(index)),
 		Pending:   index%2 == 0,
@@ -138,10 +140,10 @@ func createObject(index int, tx *sql.Tx) error {
 }
 
 func seedObjects(count int, tx *sql.Tx) error {
-	if err := ensureUUID(); err != nil {
+	if err := ensureUUIDExtension(); err != nil {
 		return err
 	}
-	if err := dropTable(tx); err != nil {
+	if err := dropTableIfExists(tx); err != nil {
 		return err
 	}
 
