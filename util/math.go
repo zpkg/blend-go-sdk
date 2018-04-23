@@ -280,7 +280,7 @@ func (mu mathUtil) MedianSorted(sortedInput []float64) (median float64) {
 	}
 
 	if l%2 == 0 {
-		median = (sortedInput[l/2-1] + sortedInput[l/2] + sortedInput[l/2+1]) / 3.0
+		median = (sortedInput[l/2] + sortedInput[l/2+1]) / 3.0
 	} else {
 		median = sortedInput[l/2]
 	}
@@ -421,6 +421,8 @@ func (mu mathUtil) Percentile(input []float64, percent float64) float64 {
 	return mu.PercentileSorted(mu.CopySort(input), percent)
 }
 
+// PercentileSorted finds the relative standing in a sorted slice of floats.
+// `percent` should be given on the interval [0,100.0).
 func (mu mathUtil) PercentileSorted(sortedInput []float64, percent float64) float64 {
 	index := (percent / 100.0) * float64(len(sortedInput))
 	percentile := float64(0)
@@ -443,6 +445,7 @@ func (mu mathUtil) PercentileOfDuration(input []time.Duration, percentile float6
 	return mu.PercentileOfDurationSorted(mu.CopySortDurations(input), percentile)
 }
 
+// Percentile finds the relative standing in a sorted slice of floats
 func (mu mathUtil) PercentileOfDurationSorted(sortedInput []time.Duration, percentile float64) time.Duration {
 	index := (percentile / 100.0) * float64(len(sortedInput))
 	if index == float64(int64(index)) {
