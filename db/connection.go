@@ -33,6 +33,7 @@ const (
 // --------------------------------------------------------------------------------
 
 // New returns a new Connection.
+// It will use very bare bones defaults for the config.
 func New() *Connection {
 	return &Connection{
 		config:             &Config{},
@@ -269,9 +270,9 @@ func (dbc *Connection) PrepareCached(id, statement string, tx *sql.Tx) (*sql.Stm
 // Invocation context
 // --------------------------------------------------------------------------------
 
-// DB returns a new db context.
-func (dbc *Connection) DB(txs ...*sql.Tx) *DB {
-	return &DB{
+// InvokeContext returns a new db context.
+func (dbc *Connection) InvokeContext(txs ...*sql.Tx) *InvocationContext {
+	return &InvocationContext{
 		conn:       dbc,
 		tx:         OptionalTx(txs...),
 		fireEvents: dbc.log != nil,

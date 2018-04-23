@@ -23,7 +23,6 @@ type Invocation struct {
 	tx             *sql.Tx
 	fireEvents     bool
 	statementLabel string
-	err            error
 }
 
 // WithCtx sets the ctx and returns a reference to the invocation.
@@ -48,11 +47,6 @@ func (i *Invocation) WithFireEvents(flag bool) *Invocation {
 	return i
 }
 
-// Err returns the context's error.
-func (i *Invocation) Err() error {
-	return i.err
-}
-
 // WithLabel instructs the query generator to get or create a cached prepared statement.
 func (i *Invocation) WithLabel(label string) *Invocation {
 	i.statementLabel = label
@@ -71,9 +65,6 @@ func (i *Invocation) Tx() *sql.Tx {
 
 // Prepare returns a cached or newly prepared statment plan for a given sql statement.
 func (i *Invocation) Prepare(statement string) (*sql.Stmt, error) {
-	if i.err != nil {
-		return nil, i.err
-	}
 	if len(i.statementLabel) > 0 {
 		return i.conn.PrepareCached(i.statementLabel, statement, i.tx)
 	}
@@ -82,7 +73,7 @@ func (i *Invocation) Prepare(statement string) (*sql.Stmt, error) {
 
 // Exec executes a sql statement with a given set of arguments.
 func (i *Invocation) Exec(statement string, args ...interface{}) (err error) {
-	err = i.check()
+	err = i.Validate()
 	if err != nil {
 		return
 	}
@@ -111,12 +102,12 @@ func (i *Invocation) Exec(statement string, args ...interface{}) (err error) {
 
 // Query returns a new query object for a given sql query and arguments.
 func (i *Invocation) Query(query string, args ...interface{}) *Query {
-	return &Query{statement: query, args: args, start: time.Now(), conn: i.conn, ctx: i.ctx, tx: i.tx, fireEvents: i.fireEvents, err: i.check(), statementLabel: i.statementLabel}
+	return &Query{statement: query, args: args, start: time.Now(), conn: i.conn, ctx: i.ctx, tx: i.tx, fireEvents: i.fireEvents, statementLabel: i.statementLabel}
 }
 
 // Get returns a given object based on a group of primary key ids within a transaction.
 func (i *Invocation) Get(object DatabaseMapped, ids ...interface{}) (err error) {
-	err = i.check()
+	err = i.Validate()
 	if err != nil {
 		return
 	}
@@ -218,7 +209,7 @@ func (i *Invocation) Get(object DatabaseMapped, ids ...interface{}) (err error) 
 
 // GetAll returns all rows of an object mapped table wrapped in a transaction.
 func (i *Invocation) GetAll(collection interface{}) (err error) {
-	err = i.check()
+	err = i.Validate()
 	if err != nil {
 		return
 	}
@@ -308,7 +299,7 @@ func (i *Invocation) GetAll(collection interface{}) (err error) {
 
 // Create writes an object to the database within a transaction.
 func (i *Invocation) Create(object DatabaseMapped) (err error) {
-	err = i.check()
+	err = i.Validate()
 	if err != nil {
 		return
 	}
@@ -408,7 +399,7 @@ func (i *Invocation) Create(object DatabaseMapped) (err error) {
 
 // CreateIfNotExists writes an object to the database if it does not already exist within a transaction.
 func (i *Invocation) CreateIfNotExists(object DatabaseMapped) (err error) {
-	err = i.check()
+	err = i.Validate()
 	if err != nil {
 		return
 	}
@@ -521,7 +512,7 @@ func (i *Invocation) CreateIfNotExists(object DatabaseMapped) (err error) {
 
 // CreateMany writes many an objects to the database within a transaction.
 func (i *Invocation) CreateMany(objects interface{}) (err error) {
-	err = i.check()
+	err = i.Validate()
 	if err != nil {
 		return
 	}
@@ -601,7 +592,7 @@ func (i *Invocation) CreateMany(objects interface{}) (err error) {
 
 // Update updates an object wrapped in a transaction.
 func (i *Invocation) Update(object DatabaseMapped) (err error) {
-	err = i.check()
+	err = i.Validate()
 	if err != nil {
 		return
 	}
@@ -677,7 +668,7 @@ func (i *Invocation) Update(object DatabaseMapped) (err error) {
 
 // Exists returns a bool if a given object exists (utilizing the primary key columns if they exist) wrapped in a transaction.
 func (i *Invocation) Exists(object DatabaseMapped) (exists bool, err error) {
-	err = i.check()
+	err = i.Validate()
 	if err != nil {
 		return
 	}
@@ -754,7 +745,7 @@ func (i *Invocation) Exists(object DatabaseMapped) (exists bool, err error) {
 
 // Delete deletes an object from the database wrapped in a transaction.
 func (i *Invocation) Delete(object DatabaseMapped) (err error) {
-	err = i.check()
+	err = i.Validate()
 	if err != nil {
 		return
 	}
@@ -819,7 +810,7 @@ func (i *Invocation) Delete(object DatabaseMapped) (err error) {
 
 // Truncate completely empties a table in a single command.
 func (i *Invocation) Truncate(object DatabaseMapped) (err error) {
-	err = i.check()
+	err = i.Validate()
 	if err != nil {
 		return
 	}
@@ -864,7 +855,7 @@ func (i *Invocation) Truncate(object DatabaseMapped) (err error) {
 
 // Upsert inserts the object if it doesn't exist already (as defined by its primary keys) or updates it wrapped in a transaction.
 func (i *Invocation) Upsert(object DatabaseMapped) (err error) {
-	err = i.check()
+	err = i.Validate()
 	if err != nil {
 		return
 	}
@@ -989,12 +980,10 @@ func (i *Invocation) Upsert(object DatabaseMapped) (err error) {
 // helpers
 // --------------------------------------------------------------------------------
 
-func (i *Invocation) check() error {
+// Validate validates the invocation is ready
+func (i *Invocation) Validate() error {
 	if i.conn == nil {
 		return exception.Newf(connectionErrorMessage)
-	}
-	if i.err != nil {
-		return i.err
 	}
 	return nil
 }

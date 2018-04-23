@@ -2,19 +2,11 @@ package db
 
 import (
 	"database/sql"
-	"fmt"
 	"testing"
 
 	"github.com/blend/go-sdk/assert"
 	"github.com/blend/go-sdk/uuid"
 )
-
-func TestInvocationErr(t *testing.T) {
-	assert := assert.New(t)
-
-	inv := &Invocation{err: fmt.Errorf("this is only a test")}
-	assert.NotNil(inv.Err())
-}
 
 func TestInvocationLabels(t *testing.T) {
 	assert := assert.New(t)
@@ -22,14 +14,6 @@ func TestInvocationLabels(t *testing.T) {
 	inv := &Invocation{}
 	inv = inv.WithLabel("test")
 	assert.NotEmpty(inv.Label())
-}
-
-func TestInvocationPrepare(t *testing.T) {
-	assert := assert.New(t)
-
-	inv := &Invocation{err: fmt.Errorf("test")}
-	_, err := inv.Prepare("select 'ok!'")
-	assert.NotNil(err)
 }
 
 type jsonTestChild struct {
