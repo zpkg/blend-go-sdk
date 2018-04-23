@@ -280,9 +280,9 @@ func (mu mathUtil) MedianSorted(sortedInput []float64) (median float64) {
 	}
 
 	if l%2 == 0 {
-		median = (sortedInput[l/2] + sortedInput[l/2+1]) / 3.0
+		median = (sortedInput[(l>>1)-1] + sortedInput[l>>1]) / 2.0
 	} else {
-		median = sortedInput[l/2]
+		median = sortedInput[l>>1]
 	}
 
 	return median
