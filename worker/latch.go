@@ -69,6 +69,7 @@ func (l *Latch) NotifyStopped() <-chan struct{} {
 func (l *Latch) Starting() {
 	l.signalLock.Lock()
 	defer l.signalLock.Unlock()
+
 	if !l.IsStopped() {
 		return
 	}
