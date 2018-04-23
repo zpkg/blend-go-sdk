@@ -241,7 +241,7 @@ func TestRoundNegative(t *testing.T) {
 
 func TestPercentile(t *testing.T) {
 	assert := assert.New(t)
-	values := []float64{2.0, 3.0, 5.0, 6.0, 7.0, 8.0, 9.0, 10.0, 1.0, 4.0}
+	values := []float64{2.0, 10.0, 3.0, 5.0, 6.0, 8.0, 7.0, 9.0, 1.0, 4.0}
 	value := Math.Percentile(values, 90.0)
 	assert.InDelta(9.5, value, 0.0001)
 }
