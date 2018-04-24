@@ -44,11 +44,11 @@ func NewConfigFromEnv() *Config {
 
 // Config is a node config.
 type Config struct {
-	Identifier         string        `yaml:"identifier" env:"RAFT_ID"`
-	BindAddr           string        `yaml:"bindAddr" env:"RAFT_BIND_ADDR"`
-	Peers              []string      `yaml:"peers" env:"RAFT_PEERS,csv"`
-	ElectionTimeout    time.Duration `yaml:"electionTimeout" env:"RAFT_ELECTION_TIMEOUT"`
-	LeaderLeaseTimeout time.Duration `yaml:"leaderLeaseTimeout" env:"RAFT_LEADER_LEASE_TIMEOUT"`
+	Identifier         string        `json:"identifier,omitempty" yaml:"identifier,omitempty" env:"RAFT_ID"`
+	BindAddr           string        `json:"bindAddr,omitempty" yaml:"bindAddr,omitempty" env:"RAFT_BIND_ADDR"`
+	Peers              []string      `json:"peers,omitempty" yaml:"peers,omitempty" env:"RAFT_PEERS,csv"`
+	ElectionTimeout    time.Duration `json:"electionTimeout,omitempty" yaml:"electionTimeout,omitempty" env:"RAFT_ELECTION_TIMEOUT"`
+	LeaderLeaseTimeout time.Duration `json:"leaderLeaseTimeout,omitempty" yaml:"leaderLeaseTimeout,omitempty" env:"RAFT_LEADER_LEASE_TIMEOUT"`
 }
 
 // GetIdentifier gets a field or a default.
