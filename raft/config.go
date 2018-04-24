@@ -20,6 +20,17 @@ const (
 	DefaultElectionTimeout = 5 * time.Second
 	// DefaultLeaderLeaseTimeout is a default.
 	DefaultLeaderLeaseTimeout = time.Second
+
+	// EnvVarIdentifier is an environment variable.
+	EnvVarIdentifier = "RAFT_ID"
+	// EnvVarBindAddr is an environment variable.
+	EnvVarBindAddr = "RAFT_BIND_ADDR"
+	// EnvVarPeers is an environment variable.
+	EnvVarPeers = "RAFT_PEERS"
+	// EnvVarElectionTimeout is an environment variable.
+	EnvVarElectionTimeout = "RAFT_ELECTION_TIMEOUT"
+	// EnvVarLeaderLeaseTimeout is an environment variable.
+	EnvVarLeaderLeaseTimeout = "RAFT_LEADER_LEASE_TIMEOUT"
 )
 
 // NewConfigFromEnv creates a new config from environment variables.
