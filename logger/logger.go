@@ -658,6 +658,24 @@ func (l *Logger) SyncFatalExit(err error) {
 	os.Exit(1)
 }
 
+// Write writes an event synchronously to the writer.
+func (l *Logger) Write(e Event) {
+	if len(l.writers) > 0 {
+		for _, writer := range l.writers {
+			writer.Write(e)
+		}
+	}
+}
+
+// WriteError writes an event synchronously to the error writer.
+func (l *Logger) WriteError(e Event) {
+	if len(l.writers) > 0 {
+		for _, writer := range l.writers {
+			writer.WriteError(e)
+		}
+	}
+}
+
 // --------------------------------------------------------------------------------
 // finalizers
 // --------------------------------------------------------------------------------
@@ -751,7 +769,7 @@ func (l *Logger) ensureInitialized() {
 		defer l.writeWorkerLock.Unlock()
 
 		if l.writeWorker == nil {
-			l.writeWorker = NewWorker(l, l.Write)
+			l.writeWorker = NewWorker(l, l.Write).WithRecoverPanics(l.recoverPanics)
 			l.writeWorker.Start()
 		}
 	}
@@ -760,26 +778,8 @@ func (l *Logger) ensureInitialized() {
 		defer l.writeErrorWorkerLock.Unlock()
 
 		if l.writeErrorWorker == nil {
-			l.writeErrorWorker = NewWorker(l, l.WriteError)
+			l.writeErrorWorker = NewWorker(l, l.WriteError).WithRecoverPanics(l.recoverPanics)
 			l.writeErrorWorker.Start()
-		}
-	}
-}
-
-// Write writes to the writer.
-func (l *Logger) Write(e Event) {
-	if len(l.writers) > 0 {
-		for _, writer := range l.writers {
-			writer.Write(e)
-		}
-	}
-}
-
-// WriteError writes to the error writer.
-func (l *Logger) WriteError(e Event) {
-	if len(l.writers) > 0 {
-		for _, writer := range l.writers {
-			writer.WriteError(e)
 		}
 	}
 }

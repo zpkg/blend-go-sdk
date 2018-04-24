@@ -3,6 +3,7 @@ package logger
 import (
 	"bytes"
 	"net/http"
+	"net/url"
 	"sync"
 	"testing"
 	"time"
@@ -31,8 +32,12 @@ func TestWebRequestEventListener(t *testing.T) {
 		assert.Equal("test.com", wre.Request().Host)
 	}))
 
-	go func() { all.Trigger(NewWebRequestEvent(&http.Request{Host: "test.com"}).WithElapsed(time.Millisecond)) }()
-	go func() { all.Trigger(NewWebRequestEvent(&http.Request{Host: "test.com"}).WithElapsed(time.Millisecond)) }()
+	go func() {
+		all.Trigger(NewWebRequestEvent(&http.Request{Host: "test.com", URL: &url.URL{}}).WithElapsed(time.Millisecond))
+	}()
+	go func() {
+		all.Trigger(NewWebRequestEvent(&http.Request{Host: "test.com", URL: &url.URL{}}).WithElapsed(time.Millisecond))
+	}()
 	wg.Wait()
 	all.Drain()
 
@@ -43,7 +48,7 @@ func TestWebRequestEventListener(t *testing.T) {
 func TestWebRequestEventInterfaces(t *testing.T) {
 	assert := assert.New(t)
 
-	ee := NewWebRequestEvent(&http.Request{Host: "test.com"}).WithElapsed(time.Millisecond).WithHeadings("heading").WithLabel("foo", "bar")
+	ee := NewWebRequestEvent(&http.Request{Host: "test.com", URL: &url.URL{}}).WithElapsed(time.Millisecond).WithHeadings("heading").WithLabel("foo", "bar")
 
 	eventProvider, isEvent := MarshalEvent(ee)
 	assert.True(isEvent)
