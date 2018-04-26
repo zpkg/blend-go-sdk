@@ -52,7 +52,8 @@ type Raft struct {
 	lastVoteGranted   time.Time
 
 	// state is the current fsm state
-	state int32
+	state     int32
+	stateLock sync.Mutex
 
 	server Server
 	peers  []Client
@@ -297,6 +298,7 @@ func (r *Raft) leaderCheck() error {
 
 func (r *Raft) election() error {
 	r.transitionTo(FSMStateCandidate)
+
 	started := time.Now()
 	for {
 		// if we've been bumped out of candidate state,
@@ -306,9 +308,12 @@ func (r *Raft) election() error {
 		}
 
 		if time.Since(started) > r.electionTimeout {
-			r.votedFor = ""
-			r.lastLeaderContact = time.Time{}
-			r.transitionTo(FSMStateFollower)
+			r.infof("election timeout, demoting self")
+			r.interlocked(func() {
+				r.votedFor = ""
+				r.lastLeaderContact = time.Time{}
+				r.transitionTo(FSMStateFollower)
+			})
 		}
 
 		if retry, err := r.requestVote(); err != nil {
@@ -320,8 +325,10 @@ func (r *Raft) election() error {
 }
 
 func (r *Raft) requestVote() (retry bool, err error) {
-	r.votedFor = ""
-	r.currentTerm = r.currentTerm + 1
+	r.interlocked(func() {
+		r.votedFor = ""
+		r.currentTerm = r.currentTerm + 1
+	})
 
 	voteRequest := RequestVote{
 		Term:      r.currentTerm,
@@ -357,13 +364,18 @@ func (r *Raft) requestVote() (retry bool, err error) {
 	r.infof("election complete")
 	result := r.processRequestVoteResults(results)
 	if result == 1 { // we're now the leader.
-		r.votedFor = r.id
-		r.transitionTo(FSMStateLeader)
+		r.interlocked(func() {
+			r.votedFor = r.id
+			r.lastLeaderContact = time.Time{}
+			r.transitionTo(FSMStateLeader)
+		})
 		return
 	} else if result == -1 {
-		r.votedFor = ""
-		r.lastLeaderContact = time.Time{}
-		r.transitionTo(FSMStateFollower)
+		r.interlocked(func() {
+			r.votedFor = ""
+			r.lastLeaderContact = time.Time{}
+			r.transitionTo(FSMStateFollower)
+		})
 		return
 	}
 
@@ -473,10 +485,12 @@ func (r *Raft) sendHeartbeat() error {
 	}
 
 	if r.voteOutcome(successfulAnswers, totalAnswers) == -1 {
-		r.currentTerm = latestTerm
-		r.votedFor = ""
-		r.lastLeaderContact = time.Time{}
-		r.transitionTo(FSMStateFollower)
+		r.interlocked(func() {
+			r.currentTerm = latestTerm
+			r.votedFor = ""
+			r.lastLeaderContact = time.Time{}
+			r.transitionTo(FSMStateFollower)
+		})
 	}
 
 	return nil
@@ -495,9 +509,11 @@ func (r *Raft) handleAppendEntries(args *AppendEntries, res *AppendEntriesResult
 		r.infof("first leader contact")
 	}
 
-	r.currentTerm = args.Term
-	r.currentLeader = args.LeaderID
-	r.lastLeaderContact = time.Now().UTC()
+	r.interlocked(func() {
+		r.currentTerm = args.Term
+		r.currentLeader = args.LeaderID
+		r.lastLeaderContact = time.Now().UTC()
+	})
 	*res = AppendEntriesResults{
 		Success: true,
 		Term:    r.currentTerm,
@@ -523,9 +539,11 @@ func (r *Raft) handleRequestVote(args *RequestVote, res *RequestVoteResults) err
 		return nil
 	}
 
-	r.transitionTo(FSMStateFollower)
-	r.lastVoteGranted = time.Now().UTC()
-	r.votedFor = args.Candidate
+	r.interlocked(func() {
+		r.transitionTo(FSMStateFollower)
+		r.lastVoteGranted = time.Now().UTC()
+		r.votedFor = args.Candidate
+	})
 	*res = RequestVoteResults{
 		Term:    args.Term,
 		Granted: true,
@@ -552,4 +570,11 @@ func (r *Raft) err(err error) {
 	if r.log != nil {
 		r.log.SubContext("raft").SubContext(fmt.Sprintf("%v", r.State())).Trigger(logger.Errorf(logger.Error, "%v", err))
 	}
+}
+
+// interlocked runs the actuion while owning the state lock.
+func (r *Raft) interlocked(action func()) {
+	r.stateLock.Lock()
+	defer r.stateLock.Unlock()
+	action()
 }
