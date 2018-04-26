@@ -11,7 +11,7 @@ func main() {
 	cfg := raft.NewConfigFromEnv()
 	r := raft.NewFromConfig(cfg).WithLogger(log)
 	for _, remoteAddr := range cfg.GetPeers() {
-		r = r.WithPeer(raft.NewClient(remoteAddr).WithLogger(log))
+		r = r.WithPeer(raft.NewRPCClient(remoteAddr).WithLogger(log))
 	}
 
 	if err := r.Start(); err != nil {

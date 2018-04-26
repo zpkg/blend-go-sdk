@@ -28,10 +28,6 @@ type Migration interface {
 	WithCollector(*Collector) Migration
 	Collector() *Collector
 
-	// WithTransactionBound sets if the migration should be wrapped in a transaction or not.
-	// True, a transaction will be created and passed to this migration by a parent.
-	// False, this migration is responsible for managing it's own transactions.
-	WithTransactionBound(bool) Migration
 	// TransactionBound indicates if this migration manages its transaction context.
 	// If this returns true, a parent will not pass a transaction into Apply.
 	// If it is false, a transaction will be started for this
