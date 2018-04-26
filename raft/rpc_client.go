@@ -24,9 +24,9 @@ const (
 	DefaultClientConnectTimeout = 30 * time.Second
 )
 
-// NewClient creates a new rpc client.
-func NewClient(remoteAddr string) *Client {
-	return &Client{
+// NewRPCClient creates a new rpc client.
+func NewRPCClient(remoteAddr string) *RPCClient {
+	return &RPCClient{
 		remoteAddr:  remoteAddr,
 		latch:       &worker.Latch{},
 		dialTimeout: DefaultClientDialTimeout,
@@ -34,8 +34,8 @@ func NewClient(remoteAddr string) *Client {
 	}
 }
 
-// Client is an rpc peer transport over the network.
-type Client struct {
+// RPCClient is the net/rpc client to talk to other nodes.
+type RPCClient struct {
 	remoteAddr string
 	conn       net.Conn
 	client     *rpc.Client
@@ -47,23 +47,29 @@ type Client struct {
 }
 
 // WithLogger sets the logger.
-func (c *Client) WithLogger(log *logger.Logger) *Client {
+func (c *RPCClient) WithLogger(log *logger.Logger) *RPCClient {
 	c.log = log
 	return c
 }
 
 // Logger returns the logger.
-func (c *Client) Logger() *logger.Logger {
+func (c *RPCClient) Logger() *logger.Logger {
 	return c.log
 }
 
+// WithRemoteAddr sets the remote addr.
+func (c *RPCClient) WithRemoteAddr(addr string) *RPCClient {
+	c.remoteAddr = addr
+	return c
+}
+
 // RemoteAddr returns the remote address.
-func (c *Client) RemoteAddr() string { return c.remoteAddr }
+func (c *RPCClient) RemoteAddr() string { return c.remoteAddr }
 
 // Open opens the connection.
 // It waits `redialWait` time between attempts.
 // It will retry indefinitely (until told to stop with `Close()`).
-func (c *Client) Open() error {
+func (c *RPCClient) Open() error {
 	for {
 		select {
 		case <-c.latch.NotifyStop():
@@ -83,7 +89,7 @@ func (c *Client) Open() error {
 
 // Dial dials the remote, it will only try once, and won't
 // dial if the connection is already up.
-func (c *Client) Dial() error {
+func (c *RPCClient) Dial() error {
 	if c.client != nil {
 		return nil
 	}
@@ -97,7 +103,7 @@ func (c *Client) Dial() error {
 }
 
 // RequestVote implements the request vote handler.
-func (c *Client) RequestVote(args *RequestVote) (*RequestVoteResults, error) {
+func (c *RPCClient) RequestVote(args *RequestVote) (*RequestVoteResults, error) {
 	if err := c.Dial(); err != nil {
 		return nil, err
 	}
@@ -111,7 +117,7 @@ func (c *Client) RequestVote(args *RequestVote) (*RequestVoteResults, error) {
 }
 
 // AppendEntries implements the append entries request handler.
-func (c *Client) AppendEntries(args *AppendEntries) (*AppendEntriesResults, error) {
+func (c *RPCClient) AppendEntries(args *AppendEntries) (*AppendEntriesResults, error) {
 	if err := c.Dial(); err != nil {
 		return nil, err
 	}
@@ -125,7 +131,7 @@ func (c *Client) AppendEntries(args *AppendEntries) (*AppendEntriesResults, erro
 	return &res, nil
 }
 
-func (c *Client) disconnect() error {
+func (c *RPCClient) disconnect() error {
 	if c.client == nil {
 		return nil
 	}
@@ -138,7 +144,7 @@ func (c *Client) disconnect() error {
 }
 
 // Close closes the transport.
-func (c *Client) Close() error {
+func (c *RPCClient) Close() error {
 	if c.client == nil {
 		return nil
 	}
@@ -148,7 +154,7 @@ func (c *Client) Close() error {
 	return err
 }
 
-func (c *Client) err(err error) error {
+func (c *RPCClient) err(err error) error {
 	if c.log != nil && err != nil {
 		c.log.Error(err)
 	}

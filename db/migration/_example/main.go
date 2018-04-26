@@ -7,10 +7,11 @@ import (
 
 	"github.com/blend/go-sdk/db"
 	"github.com/blend/go-sdk/db/migration"
+	"github.com/blend/go-sdk/logger"
 )
 
 func main() {
-	db, err := db.NewFromEnv().Open()
+	conn, err := db.NewFromEnv().Open()
 	if err != nil {
 		log.Fatal(err)
 	}
@@ -44,7 +45,7 @@ func main() {
 				"DROP TABLE test_vocab",
 			),
 		),
-	).WithShouldAbortOnError(true).WithLogger(migration.NewLoggerFromEnv()).Apply(db)
+	).WithLogger(logger.All()).Apply(conn)
 	if err != nil {
 		log.Fatal(err)
 	}

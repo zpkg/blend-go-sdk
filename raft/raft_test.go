@@ -11,60 +11,39 @@ func TestRaftCountVotes(t *testing.T) {
 
 	r := New()
 
-	empty := make(chan *RequestVoteResults, 0)
-	assert.Equal(1, r.countVotes(empty))
+	assert.Equal(1, r.voteOutcome(0, 0))
+	assert.Equal(1, r.voteOutcome(1, 0))
 
-	loss := make(chan *RequestVoteResults, 1)
-	loss <- &RequestVoteResults{Granted: false}
-	assert.Equal(-1, r.countVotes(loss))
+	assert.Equal(-1, r.voteOutcome(0, 1))
+	assert.Equal(1, r.voteOutcome(1, 1))
 
-	win := make(chan *RequestVoteResults, 1)
-	win <- &RequestVoteResults{Granted: true}
-	assert.Equal(1, r.countVotes(win))
+	assert.Equal(-1, r.voteOutcome(0, 2))
+	assert.Equal(0, r.voteOutcome(1, 2))
+	assert.Equal(1, r.voteOutcome(2, 2))
 
-	tie := make(chan *RequestVoteResults, 2)
-	tie <- &RequestVoteResults{Granted: true}
-	tie <- &RequestVoteResults{Granted: false}
-	assert.Equal(0, r.countVotes(tie))
+	assert.Equal(-1, r.voteOutcome(0, 3))
+	assert.Equal(-1, r.voteOutcome(1, 3))
+	assert.Equal(1, r.voteOutcome(2, 3))
+	assert.Equal(1, r.voteOutcome(3, 3))
 
-	twoLoss := make(chan *RequestVoteResults, 2)
-	twoLoss <- &RequestVoteResults{Granted: false}
-	twoLoss <- &RequestVoteResults{Granted: false}
-	assert.Equal(-1, r.countVotes(twoLoss))
+	assert.Equal(-1, r.voteOutcome(0, 4))
+	assert.Equal(-1, r.voteOutcome(1, 4))
+	assert.Equal(0, r.voteOutcome(2, 4))
+	assert.Equal(1, r.voteOutcome(3, 4))
+	assert.Equal(1, r.voteOutcome(4, 4))
 
-	twoWin := make(chan *RequestVoteResults, 2)
-	twoWin <- &RequestVoteResults{Granted: true}
-	twoWin <- &RequestVoteResults{Granted: true}
-	assert.Equal(1, r.countVotes(twoWin))
+	assert.Equal(-1, r.voteOutcome(0, 4))
+	assert.Equal(-1, r.voteOutcome(1, 4))
+	assert.Equal(0, r.voteOutcome(2, 4))
+	assert.Equal(1, r.voteOutcome(3, 4))
+	assert.Equal(1, r.voteOutcome(4, 4))
+}
 
-	threeLoss := make(chan *RequestVoteResults, 3)
-	threeLoss <- &RequestVoteResults{Granted: false}
-	threeLoss <- &RequestVoteResults{Granted: false}
-	threeLoss <- &RequestVoteResults{Granted: false}
-	assert.Equal(-1, r.countVotes(threeLoss))
+func createSingleNode() *Raft {
+	return New().WithServer(NewMockTransport
+}
 
-	threeOneWin := make(chan *RequestVoteResults, 3)
-	threeOneWin <- &RequestVoteResults{Granted: true}
-	threeOneWin <- &RequestVoteResults{Granted: false}
-	threeOneWin <- &RequestVoteResults{Granted: false}
-	assert.Equal(-1, r.countVotes(threeOneWin))
+func TestRaftSingleNode(t *testing.T) {
+	assert := assert.New(t)
 
-	threeTwoWin := make(chan *RequestVoteResults, 3)
-	threeTwoWin <- &RequestVoteResults{Granted: true}
-	threeTwoWin <- &RequestVoteResults{Granted: true}
-	threeTwoWin <- &RequestVoteResults{Granted: false}
-	assert.Equal(1, r.countVotes(threeTwoWin))
-
-	threeThreeWin := make(chan *RequestVoteResults, 3)
-	threeThreeWin <- &RequestVoteResults{Granted: true}
-	threeThreeWin <- &RequestVoteResults{Granted: true}
-	threeThreeWin <- &RequestVoteResults{Granted: true}
-	assert.Equal(1, r.countVotes(threeTwoWin))
-
-	fourLoss := make(chan *RequestVoteResults, 4)
-	fourLoss <- &RequestVoteResults{Granted: false}
-	fourLoss <- &RequestVoteResults{Granted: false}
-	fourLoss <- &RequestVoteResults{Granted: false}
-	fourLoss <- &RequestVoteResults{Granted: false}
-	assert.Equal(1, r.countVotes(threeTwoWin))
 }
