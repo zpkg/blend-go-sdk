@@ -100,6 +100,12 @@ func (g *Group) Collector() *Collector {
 
 // WithLogger sets the collector output logger.
 func (g *Group) WithLogger(log *logger.Logger) *Group {
+	if g.collector == nil {
+		g.collector = &Collector{
+			output: log,
+		}
+		return g
+	}
 	g.collector.output = log
 	return g
 }

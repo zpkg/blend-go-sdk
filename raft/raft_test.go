@@ -98,6 +98,8 @@ func TestRaftSingleNode(t *testing.T) {
 }
 
 func TestRaftCluster(t *testing.T) {
+	t.SkipNow()
+
 	assert := assert.New(t)
 	assert.StartTimeout(time.Millisecond)
 	defer assert.EndTimeout()
