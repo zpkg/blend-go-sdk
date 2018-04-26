@@ -31,7 +31,7 @@ func randomTimeout(minVal time.Duration) time.Duration {
 		return minVal
 	}
 
-	return minVal + (time.Duration(_randSource.Int63()) % (2*minVal)
+	return minVal + (time.Duration(_randSource.Int63()) % (2 * minVal))
 }
 
 // min returns the minimum.
