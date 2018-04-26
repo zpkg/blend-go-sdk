@@ -48,8 +48,8 @@ type Raft struct {
 	// state is the current fsm state
 	state int32
 
-	server *Server
-	peers  []*Client
+	server Server
+	peers  []Client
 
 	leaderCheckTick   *worker.Interval
 	sendHeartbeatTick *worker.Interval
@@ -131,14 +131,25 @@ func (r *Raft) Logger() *logger.Logger {
 }
 
 // WithPeer adds a peer.
-func (r *Raft) WithPeer(peer *Client) *Raft {
+func (r *Raft) WithPeer(peer Client) *Raft {
 	r.peers = append(r.peers, peer)
 	return r
 }
 
 // Peers returns the raft peers.
-func (r *Raft) Peers() []*Client {
+func (r *Raft) Peers() []Client {
 	return r.peers
+}
+
+// WithServer sets the rpc server.
+func (r *Raft) WithServer(server Server) *Raft {
+	r.server = server
+	return r
+}
+
+// Server returns the rpc server.
+func (r *Raft) Server() Server {
+	return r.server
 }
 
 // WithLeaderLeaseTimeout sets the leader lease timeout.
@@ -175,10 +186,12 @@ func (r *Raft) Start() error {
 		r.transitionTo(FSMStateLeader)
 		return nil
 	}
+	if r.server == nil {
+		r.server = NewRPCServer().WithBindAddr(r.BindAddr()).WithLogger(r.log)
+	}
 
-	r.server = NewServer().WithBindAddr(r.BindAddr()).WithLogger(r.log)
 	r.server.SetAppendEntriesHandler(r.handleAppendEntries)
-	r.server.SetRequestvoteHandler(r.handleRequestVote)
+	r.server.SetRequestVoteHandler(r.handleRequestVote)
 
 	r.infof("node rpc server starting, listening on: %s", r.BindAddr())
 	err := r.server.Start()
@@ -208,7 +221,7 @@ func (r *Raft) Stop() error {
 	}
 
 	if r.server != nil {
-		return r.server.Close()
+		return r.server.Stop()
 	}
 	return nil
 }
@@ -292,7 +305,7 @@ func (r *Raft) requestVote() (retry bool, err error) {
 	wg := sync.WaitGroup{}
 	wg.Add(len(r.peers))
 	for _, peer := range r.peers {
-		go func(c *Client) {
+		go func(c Client) {
 			defer wg.Done()
 
 			res, err := c.RequestVote(&voteRequest)
@@ -314,7 +327,7 @@ func (r *Raft) requestVote() (retry bool, err error) {
 	}
 
 	r.infof("election complete")
-	result := r.countVotes(results)
+	result := r.processRequestVoteResults(results)
 	if result == 1 { // we're now the leader.
 		r.votedFor = r.id
 		r.transitionTo(FSMStateLeader)
@@ -331,12 +344,8 @@ func (r *Raft) requestVote() (retry bool, err error) {
 	return
 }
 
-// countVotes returns the aggregate votes for in an election from rpc responses.
-// it returns and integer, indicating victory, tie, or loss.
-//  1 == victory
-//  0 == tie
-// -1 == loss
-func (r *Raft) countVotes(results chan *RequestVoteResults) int {
+// processRequestVoteResults returns the aggregate votes for in an election from rpc responses.
+func (r *Raft) processRequestVoteResults(results chan *RequestVoteResults) int {
 	// tabulate results
 	total := len(results)
 	votesFor := 0
@@ -355,6 +364,19 @@ func (r *Raft) countVotes(results chan *RequestVoteResults) int {
 		if result.Granted {
 			votesFor = votesFor + 1
 		}
+	}
+
+	return r.voteOutcome(votesFor, total)
+}
+
+// voteOutcome compares votes for to total and  it returns and integer
+// indicating victory, tie, or loss.
+//  1 == victory
+//  0 == tie
+// -1 == loss
+func (r *Raft) voteOutcome(votesFor, total int) int {
+	if total == 0 {
+		return 1
 	}
 
 	majority := total >> 1
@@ -389,7 +411,7 @@ func (r *Raft) sendHeartbeat() error {
 	wg.Add(len(r.peers))
 
 	for _, peer := range r.peers {
-		go func(c *Client) {
+		go func(c Client) {
 			defer wg.Done()
 
 			res, err := c.AppendEntries(&args)
@@ -402,6 +424,33 @@ func (r *Raft) sendHeartbeat() error {
 		}(peer)
 	}
 	wg.Wait()
+
+	if errCount := len(errs); errCount > 0 {
+		for index := 0; index < errCount; index++ {
+			r.err(<-errs)
+		}
+	}
+
+	totalAnswers := len(results)
+	successfulAnswers := 0
+	latestTerm := r.currentTerm
+
+	for index := 0; index < totalAnswers; index++ {
+		answer := <-results
+		if answer.Success {
+			successfulAnswers = successfulAnswers + 1
+		} else if answer.Term > latestTerm {
+			latestTerm = answer.Term
+		}
+	}
+
+	if r.voteOutcome(successfulAnswers, totalAnswers) == -1 {
+		r.currentTerm = latestTerm
+		r.votedFor = ""
+		r.lastLeaderContact = time.Time{}
+		r.transitionTo(FSMStateFollower)
+	}
+
 	return nil
 }
 
@@ -418,7 +467,6 @@ func (r *Raft) handleAppendEntries(args *AppendEntries, res *AppendEntriesResult
 		r.infof("first leader contact")
 	}
 
-	// update internal metadata ...
 	r.currentTerm = args.Term
 	r.currentLeader = args.LeaderID
 	r.lastLeaderContact = time.Now().UTC()
@@ -447,9 +495,7 @@ func (r *Raft) handleRequestVote(args *RequestVote, res *RequestVoteResults) err
 		return nil
 	}
 
-	// kill open election attempts.
 	r.transitionTo(FSMStateFollower)
-
 	r.lastVoteGranted = time.Now().UTC()
 	r.votedFor = args.Candidate
 	*res = RequestVoteResults{

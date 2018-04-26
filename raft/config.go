@@ -11,15 +11,16 @@ import (
 const (
 	// DefaultLeaderCheckTick is the tick rate for the leader check.
 	DefaultLeaderCheckTick = 250 * time.Millisecond
+
 	// DefaultHeartbeatTick is the tick rate for leaders to send heartbeats.
 	DefaultHeartbeatTick = 250 * time.Millisecond
 
 	// DefaultBindAddr is the default bind address.
 	DefaultBindAddr = ":6060"
 	// DefaultElectionTimeout is a default.
-	DefaultElectionTimeout = 5 * time.Second
+	DefaultElectionTimeout = 10 * time.Second
 	// DefaultLeaderLeaseTimeout is a default.
-	DefaultLeaderLeaseTimeout = time.Second
+	DefaultLeaderLeaseTimeout = 5 * time.Second
 
 	// EnvVarIdentifier is an environment variable.
 	EnvVarIdentifier = "RAFT_ID"

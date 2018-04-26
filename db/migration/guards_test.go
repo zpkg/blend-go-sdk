@@ -182,7 +182,7 @@ func TestGuard(t *testing.T) {
 	assert.Nil(err)
 
 	var didRun bool
-	action := Body(func(c *db.Connection, itx *sql.Tx) error {
+	action := Actions(func(c *db.Connection, itx *sql.Tx) error {
 		didRun = true
 		return nil
 	})

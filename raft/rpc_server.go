@@ -9,60 +9,52 @@ import (
 	"github.com/blend/go-sdk/worker"
 )
 
-// NewServer returns a new server.
-func NewServer() *Server {
-	return &Server{
-		methods: &ServerMethods{},
-		latch:   &worker.Latch{},
+var (
+	_ Server = &RPCServer{}
+)
+
+// NewRPCServer returns a new roc server.
+func NewRPCServer() *RPCServer {
+	return &RPCServer{
+		latch: &worker.Latch{},
 	}
 }
 
-// Server is the base entity / fsm manager for the raft election process.
-type Server struct {
+// RPCServer is the net/rpc implementation of the raft server components.
+type RPCServer struct {
+	ServerMethods
 	bindAddr string
 	log      *logger.Logger
 	latch    *worker.Latch
 
 	server   *rpc.Server
 	listener *net.TCPListener
-
-	methods *ServerMethods
 }
 
 // WithLogger sets the logger.
-func (s *Server) WithLogger(log *logger.Logger) *Server {
+func (s *RPCServer) WithLogger(log *logger.Logger) *RPCServer {
 	s.log = log
 	return s
 }
 
 // Logger returns the logger.
-func (s *Server) Logger() *logger.Logger {
+func (s *RPCServer) Logger() *logger.Logger {
 	return s.log
 }
 
 // WithBindAddr sets the bind address.
-func (s *Server) WithBindAddr(bindAddr string) *Server {
+func (s *RPCServer) WithBindAddr(bindAddr string) *RPCServer {
 	s.bindAddr = bindAddr
 	return s
 }
 
 // BindAddr returns the bind address for the rpc server.
-func (s *Server) BindAddr() string {
+func (s *RPCServer) BindAddr() string {
 	return s.bindAddr
 }
 
-// SetAppendEntriesHandler sets the append entries handler.
-func (s *Server) SetAppendEntriesHandler(handler func(*AppendEntries, *AppendEntriesResults) error) {
-	s.methods.appendEntriesHandler = handler
-}
-
-// SetRequestvoteHandler sets the request vote handler.
-func (s *Server) SetRequestvoteHandler(handler func(*RequestVote, *RequestVoteResults) error) {
-	s.methods.requestVoteHandler = handler
-}
-
 // Start starts the server.
-func (s *Server) Start() (err error) {
+func (s *RPCServer) Start() (err error) {
 	s.latch.Starting()
 	var addr *net.TCPAddr
 	addr, err = net.ResolveTCPAddr("tcp", s.bindAddr)
@@ -78,7 +70,7 @@ func (s *Server) Start() (err error) {
 	}
 
 	s.server = rpc.NewServer()
-	err = s.server.Register(s.methods)
+	err = s.server.Register(s.ServerMethods)
 	if err != nil {
 		err = exception.Wrap(err)
 		return
@@ -93,30 +85,8 @@ func (s *Server) Start() (err error) {
 	return
 }
 
-// Close closes the server.
-func (s *Server) Close() error {
-	s.latch.Stopped()
+// Stop stops the server.
+func (s *RPCServer) Stop() error {
+	s.latch.Stop()
 	return exception.Wrap(s.listener.Close())
-}
-
-// ServerMethods are the methods we register with the rpc server.
-type ServerMethods struct {
-	appendEntriesHandler func(*AppendEntries, *AppendEntriesResults) error
-	requestVoteHandler   func(*RequestVote, *RequestVoteResults) error
-}
-
-// AppendEntries calls the append entries handler.
-func (sm *ServerMethods) AppendEntries(args *AppendEntries, res *AppendEntriesResults) error {
-	if sm.appendEntriesHandler == nil {
-		return nil
-	}
-	return sm.appendEntriesHandler(args, res)
-}
-
-// RequestVote calls the request vote handler.
-func (sm *ServerMethods) RequestVote(args *RequestVote, res *RequestVoteResults) error {
-	if sm.requestVoteHandler == nil {
-		return nil
-	}
-	return sm.requestVoteHandler(args, res)
 }

@@ -10,9 +10,7 @@ import (
 
 // TestMain is the testing entrypoint.
 func TestMain(m *testing.M) {
-	connection := db.NewFromEnv()
-
-	err := db.OpenDefault(connection)
+	err := db.OpenDefault(db.NewFromEnv())
 	if err != nil {
 		log.Fatal(err)
 	}
