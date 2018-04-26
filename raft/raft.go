@@ -2,33 +2,62 @@ package raft
 
 import (
 	"fmt"
+	"strings"
 	"sync"
 	"sync/atomic"
 	"time"
 
 	"github.com/blend/go-sdk/logger"
-	"github.com/blend/go-sdk/util"
 	"github.com/blend/go-sdk/uuid"
 	"github.com/blend/go-sdk/worker"
+)
+
+// ElectionOutcome is an election outcome.
+type ElectionOutcome int
+
+// String returns the string value for the outcome.
+func (eo ElectionOutcome) String() string {
+	switch eo {
+	case ElectionVictory:
+		return "victory"
+	case ElectionTie:
+		return "tie"
+	case ElectionLoss:
+		return "loss"
+	default:
+		return "unknown"
+	}
+}
+
+const (
+	// ElectionVictory is an election outcome.
+	ElectionVictory ElectionOutcome = 1
+	// ElectionTie is an election outcome.
+	ElectionTie ElectionOutcome = 0
+	// ElectionLoss is an election outcome.
+	ElectionLoss ElectionOutcome = -1
 )
 
 // New creates a new empty raft node.
 func New() *Raft {
 	return &Raft{
-		id:              uuid.V4().String(),
-		state:           int32(FSMStateFollower),
-		bindAddr:        DefaultBindAddr,
-		leaderCheckTick: DefaultLeaderCheckTick,
-		heartbeatTick:   DefaultHeartbeatTick,
+		id:                  uuid.V4().String(),
+		state:               Follower,
+		bindAddr:            DefaultBindAddr,
+		electionTimeout:     DefaultElectionTimeout,
+		leaderCheckInterval: DefaultLeaderCheckInterval,
+		heartbeatInterval:   DefaultHeartbeatInterval,
 	}
 }
 
 // NewFromConfig creates a new raft node from a config.
 func NewFromConfig(cfg *Config) *Raft {
 	return New().
-		WithID(cfg.GetIdentifier()).
+		WithID(cfg.GetID()).
 		WithBindAddr(cfg.GetBindAddr()).
-		WithLeaderLeaseTimeout(cfg.GetLeaderLeaseTimeout()).
+		WithSelfAddr(cfg.GetSelfAddr()).
+		WithHeartbeatInterval(cfg.GetHeartbeatInterval()).
+		WithLeaderCheckInterval(cfg.GetLeaderCheckInterval()).
 		WithElectionTimeout(cfg.GetElectionTimeout())
 }
 
@@ -37,34 +66,325 @@ func NewFromConfig(cfg *Config) *Raft {
 type Raft struct {
 	id       string
 	log      *logger.Logger
+	selfAddr string
 	bindAddr string
 
-	leaderLeaseTimeout time.Duration
-	electionTimeout    time.Duration
+	electionTimeout time.Duration
 
-	leaderCheckTick time.Duration
-	heartbeatTick   time.Duration
+	leaderCheckInterval time.Duration
+	heartbeatInterval   time.Duration
 
+	// raft state fields
+
+	// currentTerm is the current election term. starts at zero.
+	// incremented every election() and by append entries from new leaders.
 	currentTerm       uint64
-	currentLeader     string
 	votedFor          string
 	lastLeaderContact time.Time
 	lastVoteGranted   time.Time
 
 	// state is the current fsm state
-	state     int32
-	stateLock sync.Mutex
+	state        State
+	backoffIndex int32
+	stateLock    sync.Mutex
 
 	server Server
 	peers  []Client
 
-	leaderCheckTicker   *worker.Interval
-	sendHeartbeatTicker *worker.Interval
+	leaderCheckTicker *worker.Interval
+	heartbeatTicker   *worker.Interval
 
 	leaderHandler    func()
 	candidateHandler func()
 	followerHandler  func()
 }
+
+// Start starts the raft node.
+func (r *Raft) Start() error {
+	r.infof("node starting")
+	defer func() {
+		r.infof("node started")
+	}()
+
+	if len(r.peers) == 0 {
+		r.infof("node operating in solo node configuration")
+		r.transitionTo(Leader)
+		return nil
+	}
+
+	if r.server == nil {
+		r.server = NewRPCServer().WithBindAddr(r.BindAddr()).WithLogger(r.log)
+	}
+
+	// wire up the rpc server.
+	r.server.SetAppendEntriesHandler(r.AppendEntriesHandler)
+	r.server.SetRequestVoteHandler(r.RequestVoteHandler)
+
+	r.infof("node rpc server starting, listening on: %s", r.BindAddr())
+	err := r.server.Start()
+	if err != nil {
+		return err
+	}
+
+	r.leaderCheckTicker = worker.NewInterval(r.LeaderCheck, r.leaderCheckInterval)
+	r.leaderCheckTicker.Start()
+
+	r.heartbeatTicker = worker.NewInterval(r.Heartbeat, r.heartbeatInterval)
+	r.heartbeatTicker.Start()
+
+	return nil
+}
+
+// Stop stops the node.
+func (r *Raft) Stop() error {
+	if r.leaderCheckTicker != nil {
+		r.leaderCheckTicker.Stop()
+		r.leaderCheckTicker = nil
+	}
+	if r.heartbeatTicker != nil {
+		r.heartbeatTicker.Stop()
+		r.heartbeatTicker = nil
+	}
+
+	if r.server != nil {
+		return r.server.Stop()
+	}
+	return nil
+}
+
+// LeaderCheck is the action that fires on an interval to check if the leader lease has expired.
+func (r *Raft) LeaderCheck() error {
+	var currentState State
+	var lastLeaderContact time.Time
+	r.interlocked(func() {
+		lastLeaderContact = r.lastLeaderContact
+		currentState = r.State()
+	})
+
+	if currentState == Follower {
+		now := time.Now().UTC()
+		// if we've never elected a leader, or if the current leader hasn't sent a heartbeat in a while ...
+		if r.lastLeaderContact.IsZero() || now.Sub(lastLeaderContact) > randomTimeout(r.electionTimeout) {
+			// trigger an election.
+			r.err(r.Election())
+		}
+	}
+
+	return nil
+}
+
+// Election requests votes from all peers, totalling the results and potentially promoting self to leader.
+// It is time bound on the ElectionTimeout.
+func (r *Raft) Election() error {
+	r.debugf("election triggered")
+	r.interlocked(func() {
+		r.votedFor = r.ID()
+		r.currentTerm = r.currentTerm + 1
+	})
+	r.transitionTo(Candidate)
+
+	started := time.Now()
+	for {
+
+		// if we've been bumped out of candidate state,
+		// stop the election cycle.
+		if r.State() != Candidate {
+			return nil
+		}
+
+		if time.Since(started) > r.electionTimeout {
+			r.debugf("election timed out")
+			r.transitionTo(Follower)
+			r.interlocked(func() {
+				r.votedFor = ""
+			})
+			r.backoff(r.electionTimeout)
+			return nil
+		}
+
+		if result, err := r.RequestVotes(); err != nil {
+			return err
+		} else if result == ElectionVictory {
+			r.debugf("election successful, promoting self to leader")
+			r.transitionTo(Leader)
+			return r.Heartbeat() // send immediate heartbeat
+		} else {
+			r.debugf("election loss or tie, backing off")
+			r.interlocked(func() {
+				r.votedFor = ""
+			})
+			r.backoff(r.electionTimeout)
+		}
+	}
+}
+
+// RequestVotes sends `RequestVote` rpcs to all peers, and totals the results.
+func (r *Raft) RequestVotes() (result ElectionOutcome, err error) {
+	voteRequest := RequestVote{
+		ID:   r.id,
+		Term: r.currentTerm,
+	}
+
+	results := make(chan *RequestVoteResults, len(r.peers))
+	errs := make(chan error, len(r.peers))
+	wg := sync.WaitGroup{}
+	wg.Add(len(r.peers))
+
+	for _, peer := range r.peers {
+		go func(c Client) {
+			defer wg.Done()
+
+			res, err := c.RequestVote(&voteRequest)
+			if err != nil {
+				r.debugf("requesting vote from %s: error", c.RemoteAddr())
+				errs <- err
+			} else {
+				r.debugf("requesting vote from %s: %v", c.RemoteAddr(), res.Granted)
+				results <- res
+			}
+		}(peer)
+	}
+	wg.Wait()
+
+	if totalErrs := len(errs); totalErrs > 0 {
+		for index := 0; index < totalErrs; index++ {
+			r.err(<-errs)
+		}
+	}
+
+	result = r.processRequestVoteResults(results)
+	r.debugf("election result: %v", result)
+	return
+}
+
+// Heartbeat is the action triggered upon
+func (r *Raft) Heartbeat() error {
+	var currentState State
+	r.interlocked(func() {
+		currentState = r.State()
+	})
+	if currentState != Leader {
+		return nil
+	}
+
+	args := AppendEntries{
+		ID:   r.id,
+		Term: r.currentTerm,
+	}
+
+	results := make(chan *AppendEntriesResults, len(r.peers))
+	errs := make(chan error, len(r.peers))
+
+	wg := sync.WaitGroup{}
+	wg.Add(len(r.peers))
+	for _, peer := range r.peers {
+		go func(c Client) {
+			defer wg.Done()
+
+			res, err := c.AppendEntries(&args)
+			if err != nil {
+				errs <- err
+			} else {
+				results <- res
+			}
+
+		}(peer)
+	}
+	wg.Wait()
+
+	if errCount := len(errs); errCount > 0 {
+		for index := 0; index < errCount; index++ {
+			r.err(<-errs)
+		}
+	}
+
+	totalAnswers := len(results)
+	successfulAnswers := 0
+	latestTerm := r.currentTerm
+
+	for index := 0; index < totalAnswers; index++ {
+		answer := <-results
+		if answer.Success {
+			successfulAnswers = successfulAnswers + 1
+		} else if answer.Term > latestTerm {
+			latestTerm = answer.Term
+			r.debugf("%s replied our term is out of date", answer.ID)
+		}
+	}
+
+	if r.voteOutcome(successfulAnswers+1, totalAnswers+1) < ElectionVictory {
+		r.transitionTo(Follower)
+	}
+
+	return nil
+}
+
+// AppendEntriesHandler is the rpc server handler for AppendEntries rpc requests.
+func (r *Raft) AppendEntriesHandler(args *AppendEntries, res *AppendEntriesResults) error {
+	if args.Term < r.currentTerm {
+		r.debugf("received out of date leader heartbeat (%d vs. %d)", args.Term, r.currentTerm)
+		*res = AppendEntriesResults{
+			ID:      r.id,
+			Success: false,
+			Term:    r.currentTerm,
+		}
+		return nil
+	}
+
+	if len(r.votedFor) == 0 || r.lastLeaderContact.IsZero() {
+		r.debugf("received leader heartbeat from %s @ %d", args.ID, args.Term)
+	}
+
+	r.interlocked(func() {
+		r.votedFor = args.ID
+		r.currentTerm = args.Term
+		r.lastLeaderContact = time.Now().UTC()
+	})
+	r.transitionTo(Follower)
+	*res = AppendEntriesResults{
+		ID:      r.id,
+		Success: true,
+		Term:    r.currentTerm,
+	}
+	return nil
+}
+
+// RequestVoteHandler is the rpc server handler for RequestVote rpc requests.
+func (r *Raft) RequestVoteHandler(args *RequestVote, res *RequestVoteResults) error {
+	if args.Term < r.currentTerm {
+		*res = RequestVoteResults{
+			ID:      r.id,
+			Term:    r.currentTerm,
+			Granted: false,
+		}
+		return nil
+	}
+
+	if len(r.votedFor) > 0 && r.votedFor != args.ID {
+		*res = RequestVoteResults{
+			ID:      r.id,
+			Term:    r.currentTerm,
+			Granted: false,
+		}
+		return nil
+	}
+
+	r.interlocked(func() {
+		r.votedFor = args.ID
+		r.currentTerm = args.Term
+		r.lastVoteGranted = time.Now().UTC()
+	})
+	*res = RequestVoteResults{
+		ID:      r.id,
+		Term:    args.Term,
+		Granted: true,
+	}
+	return nil
+}
+
+// --------------------------------------------------------------------------------
+// properties
+// --------------------------------------------------------------------------------
 
 // WithID sets the identifier for the node.
 func (r *Raft) WithID(id string) *Raft {
@@ -85,28 +405,45 @@ func (r *Raft) WithBindAddr(bindAddr string) *Raft {
 
 // BindAddr returns the rpc server bind address.
 func (r *Raft) BindAddr() string {
-	return util.Coalesce.String(r.bindAddr, DefaultBindAddr)
+	return r.bindAddr
 }
 
-// State returns the current raft state.
-func (r *Raft) State() FSMState {
-	return FSMState(atomic.LoadInt32(&r.state))
+// WithSelfAddr sets the rpc server bind address.
+func (r *Raft) WithSelfAddr(selfAddr string) *Raft {
+	r.selfAddr = selfAddr
+	return r
 }
 
-// Leader returns the current known leader.
-func (r *Raft) Leader() string {
-	if r.State() == FSMStateLeader {
-		return r.id
+// SelfAddr returns the rpc server bind address.
+func (r *Raft) SelfAddr() string {
+	return r.selfAddr
+}
+
+// IsSelf returns if a remoteAddr match this node's address.
+// If SelfAddr() is unset, this will return false.
+func (r *Raft) IsSelf(remoteAddr string) bool {
+	if len(r.selfAddr) == 0 {
+		return false
 	}
-	return r.currentLeader
+	return r.selfAddr == strings.TrimSpace(remoteAddr)
 }
 
-// Term returns the current raft term.
-func (r *Raft) Term() uint64 {
+// State returns the current raft state. It is read only.
+func (r *Raft) State() State {
+	return r.state
+}
+
+// VotedFor returns the current known leader. It is read only.
+func (r *Raft) VotedFor() string {
+	return r.votedFor
+}
+
+// CurrentTerm returns the current raft term. It is read only.
+func (r *Raft) CurrentTerm() uint64 {
 	return r.currentTerm
 }
 
-// LastLeaderContact is the last time we heard from the leader.
+// LastLeaderContact is the last time we heard from the leader. It is read only.
 func (r *Raft) LastLeaderContact() time.Time {
 	return r.lastLeaderContact
 }
@@ -159,253 +496,51 @@ func (r *Raft) Server() Server {
 	return r.server
 }
 
-// WithLeaderLeaseTimeout sets the leader lease timeout.
-func (r *Raft) WithLeaderLeaseTimeout(d time.Duration) *Raft {
-	r.leaderLeaseTimeout = d
-	return r
-}
-
-// RandomLeaderLeaseTimeout returns a random leader lease timeout.
-func (r *Raft) RandomLeaderLeaseTimeout() time.Duration {
-	return randomTimeout(util.Coalesce.Duration(r.leaderLeaseTimeout, DefaultLeaderLeaseTimeout))
-}
-
 // WithElectionTimeout sets the election timeout.
 func (r *Raft) WithElectionTimeout(d time.Duration) *Raft {
 	r.electionTimeout = d
 	return r
 }
 
-// RandomElectionTimeout returns a random election timeout.
-func (r *Raft) RandomElectionTimeout() time.Duration {
-	return randomTimeout(util.Coalesce.Duration(r.electionTimeout, DefaultElectionTimeout))
+// ElectionTimeout returns the election timeout.
+func (r *Raft) ElectionTimeout() time.Duration {
+	return r.electionTimeout
 }
 
-// RandomBackoffTimeout returns a random leader lease timeout.
-func (r *Raft) RandomBackoffTimeout() time.Duration {
-	return randomTimeout(util.Coalesce.Duration(r.leaderCheckTick, DefaultLeaderCheckTick))
-}
-
-// WithLeaderCheckTick sets the leader check tick.
-func (r *Raft) WithLeaderCheckTick(d time.Duration) *Raft {
-	r.leaderCheckTick = d
+// WithLeaderCheckInterval sets the leader check tick.
+func (r *Raft) WithLeaderCheckInterval(d time.Duration) *Raft {
+	r.leaderCheckInterval = d
 	return r
 }
 
-// LeaderCheckTick returns the leader check tick time.
-func (r *Raft) LeaderCheckTick() time.Duration {
-	return r.leaderCheckTick
+// LeaderCheckInterval returns the leader check tick time.
+func (r *Raft) LeaderCheckInterval() time.Duration {
+	return r.leaderCheckInterval
 }
 
-// WithHeartbeatTick sets the heartbeat tick.
-func (r *Raft) WithHeartbeatTick(d time.Duration) *Raft {
-	r.heartbeatTick = d
+// WithHeartbeatInterval sets the heartbeat tick.
+func (r *Raft) WithHeartbeatInterval(d time.Duration) *Raft {
+	r.heartbeatInterval = d
 	return r
 }
 
-// HeartbeatTick returns the heartbeat tick rate.
-func (r *Raft) HeartbeatTick() time.Duration {
-	return r.heartbeatTick
-}
-
-// Start starts the raft node.
-func (r *Raft) Start() error {
-	r.infof("node starting")
-	defer func() {
-		r.infof("node started")
-	}()
-
-	if len(r.peers) == 0 {
-		r.infof("operating as single node configuration")
-		r.transitionTo(FSMStateLeader)
-		return nil
-	}
-	if r.server == nil {
-		r.server = NewRPCServer().WithBindAddr(r.BindAddr()).WithLogger(r.log)
-	}
-
-	r.server.SetAppendEntriesHandler(r.handleAppendEntries)
-	r.server.SetRequestVoteHandler(r.handleRequestVote)
-
-	r.infof("node rpc server starting, listening on: %s", r.BindAddr())
-	err := r.server.Start()
-	if err != nil {
-		return err
-	}
-
-	r.infof("node beginning internal tickers")
-	r.leaderCheckTicker = worker.NewInterval(r.leaderCheck, r.leaderCheckTick).WithDelay(r.RandomLeaderLeaseTimeout())
-	r.sendHeartbeatTicker = worker.NewInterval(r.sendHeartbeat, r.heartbeatTick).WithDelay(r.RandomLeaderLeaseTimeout())
-	r.leaderCheckTicker.Start()
-	r.sendHeartbeatTicker.Start()
-	r.infof("leaderCheck start delay %v", r.leaderCheckTicker.Delay())
-	r.infof("sendHeartbeatTick start delay %v", r.sendHeartbeatTicker.Delay())
-	return nil
-}
-
-// Stop stops the node.
-func (r *Raft) Stop() error {
-	if r.leaderCheckTicker != nil {
-		r.leaderCheckTicker.Stop()
-		r.leaderCheckTicker = nil
-	}
-	if r.sendHeartbeatTicker != nil {
-		r.sendHeartbeatTicker.Stop()
-		r.sendHeartbeatTicker = nil
-	}
-
-	if r.server != nil {
-		return r.server.Stop()
-	}
-	return nil
+// HeartbeatInterval returns the heartbeat tick rate.
+func (r *Raft) HeartbeatInterval() time.Duration {
+	return r.heartbeatInterval
 }
 
 // --------------------------------------------------------------------------------
 // utility methods.
 // --------------------------------------------------------------------------------
 
-func (r *Raft) transitionTo(state FSMState) {
-	defer func() { r.infof("transitioning to %s", state) }()
-
-	switch state {
-	case FSMStateFollower:
-		atomic.StoreInt32(&r.state, int32(FSMStateFollower))
-		if r.followerHandler != nil {
-			r.followerHandler()
-		}
-	case FSMStateCandidate:
-		atomic.StoreInt32(&r.state, int32(FSMStateCandidate))
-		if r.candidateHandler != nil {
-			r.candidateHandler()
-		}
-	case FSMStateLeader:
-		atomic.StoreInt32(&r.state, int32(FSMStateLeader))
-		if r.leaderHandler != nil {
-			r.leaderHandler()
-		}
-	}
-}
-
-// LeaderCheck is the action that fires on a heartbeat to check if the leader lease
-// has expired.
-func (r *Raft) leaderCheck() error {
-	if r.State() == FSMStateLeader {
-		return nil
-	}
-
-	now := time.Now().UTC()
-	if r.lastLeaderContact.IsZero() || now.Sub(r.lastLeaderContact) > r.RandomLeaderLeaseTimeout() {
-		return r.election()
-	}
-
-	return nil
-}
-
-func (r *Raft) election() error {
-	r.transitionTo(FSMStateCandidate)
-
-	started := time.Now()
-	for {
-		// if we've been bumped out of candidate state,
-		// stop the election cycle.
-		if r.State() != FSMStateCandidate {
-			return nil
-		}
-
-		if time.Since(started) > r.electionTimeout {
-			r.infof("election timeout, demoting self")
-			r.interlocked(func() {
-				r.votedFor = ""
-				r.lastLeaderContact = time.Now().UTC()
-				r.transitionTo(FSMStateFollower)
-			})
-			return nil
-		}
-
-		if retry, err := r.requestVote(); err != nil {
-			return err
-		} else if !retry {
-			return nil
-		}
-		time.Sleep(r.RandomBackoffTimeout())
-	}
-}
-
-func (r *Raft) requestVote() (retry bool, err error) {
-	r.interlocked(func() {
-		r.votedFor = ""
-		r.currentTerm = r.currentTerm + 1
-	})
-
-	voteRequest := RequestVote{
-		Term:      r.currentTerm,
-		Candidate: r.id,
-	}
-
-	results := make(chan *RequestVoteResults, len(r.peers))
-	errs := make(chan error, len(r.peers))
-	wg := sync.WaitGroup{}
-	wg.Add(len(r.peers))
-	for _, peer := range r.peers {
-		go func(c Client) {
-			defer wg.Done()
-
-			res, err := c.RequestVote(&voteRequest)
-			if err != nil {
-				r.infof("requesting vote from %s: failed", c.RemoteAddr())
-				errs <- err
-			} else {
-				r.infof("requesting vote from %s: %v", c.RemoteAddr(), res.Granted)
-				results <- res
-			}
-		}(peer)
-	}
-	wg.Wait()
-
-	if totalErrs := len(errs); totalErrs > 0 {
-		for index := 0; index < totalErrs; index++ {
-			r.err(<-errs)
-		}
-	}
-
-	r.infof("election complete")
-	result := r.processRequestVoteResults(results)
-	if result == 1 { // we're now the leader.
-		r.interlocked(func() {
-			r.votedFor = r.id
-			r.lastLeaderContact = time.Now().UTC()
-			r.transitionTo(FSMStateLeader)
-		})
-		return
-	} else if result == -1 {
-		r.interlocked(func() {
-			r.votedFor = ""
-			r.lastLeaderContact = time.Now().UTC()
-			r.transitionTo(FSMStateFollower)
-		})
-		return
-	}
-
-	// we tied, try again
-	retry = true
-	return
-}
-
 // processRequestVoteResults returns the aggregate votes for in an election from rpc responses.
-func (r *Raft) processRequestVoteResults(results chan *RequestVoteResults) int {
+func (r *Raft) processRequestVoteResults(results chan *RequestVoteResults) ElectionOutcome {
 	// tabulate results
-	total := len(results)
+	total := len(r.peers)
+	resultsCount := len(results)
 	votesFor := 0
 
-	defer func() {
-		r.infof("election results: %d votes for, %d total", votesFor, total)
-	}()
-
-	if total == 0 {
-		return 1
-	}
-
-	for index := 0; index < total; index++ {
+	for index := 0; index < resultsCount; index++ {
 		result := <-results
 
 		if result.Granted {
@@ -413,7 +548,8 @@ func (r *Raft) processRequestVoteResults(results chan *RequestVoteResults) int {
 		}
 	}
 
-	return r.voteOutcome(votesFor, total)
+	r.debugf("election tally: %d votes for, %d total", votesFor, total)
+	return r.voteOutcome(votesFor+1, total+1)
 }
 
 // voteOutcome compares votes for to total and  it returns and integer
@@ -421,141 +557,62 @@ func (r *Raft) processRequestVoteResults(results chan *RequestVoteResults) int {
 //  1 == victory
 //  0 == tie
 // -1 == loss
-func (r *Raft) voteOutcome(votesFor, total int) int {
+func (r *Raft) voteOutcome(votesFor, total int) ElectionOutcome {
 	if total == 0 {
-		return 1
+		return ElectionLoss
 	}
 
 	majority := total >> 1
 	if total%2 == 0 {
 		if votesFor > majority {
-			return 1
+			return ElectionVictory
 		} else if votesFor == majority {
-			return 0
+			return ElectionTie
 		}
-		return -1
+		return ElectionLoss
 	}
 
 	if votesFor > majority {
-		return 1
+		return ElectionVictory
 	}
-	return -1
+	return ElectionLoss
 }
 
-func (r *Raft) sendHeartbeat() error {
-	if r.State() != FSMStateLeader {
-		return nil
-	}
-
-	args := AppendEntries{
-		Term:     r.currentTerm,
-		LeaderID: r.id,
-	}
-
-	results := make(chan *AppendEntriesResults, len(r.peers))
-	errs := make(chan error, len(r.peers))
-	wg := sync.WaitGroup{}
-	wg.Add(len(r.peers))
-
-	for _, peer := range r.peers {
-		go func(c Client) {
-			defer wg.Done()
-
-			res, err := c.AppendEntries(&args)
-			if err != nil {
-				errs <- err
-			} else {
-				results <- res
-			}
-
-		}(peer)
-	}
-	wg.Wait()
-
-	if errCount := len(errs); errCount > 0 {
-		for index := 0; index < errCount; index++ {
-			r.err(<-errs)
-		}
-	}
-
-	totalAnswers := len(results)
-	successfulAnswers := 0
-	latestTerm := r.currentTerm
-
-	for index := 0; index < totalAnswers; index++ {
-		answer := <-results
-		if answer.Success {
-			successfulAnswers = successfulAnswers + 1
-		} else if answer.Term > latestTerm {
-			latestTerm = answer.Term
-		}
-	}
-
-	if r.voteOutcome(successfulAnswers, totalAnswers) == -1 {
-		r.interlocked(func() {
-			r.currentTerm = latestTerm
-			r.votedFor = ""
-			r.lastLeaderContact = time.Time{}
-			r.transitionTo(FSMStateFollower)
-		})
-	}
-
-	return nil
-}
-
-func (r *Raft) handleAppendEntries(args *AppendEntries, res *AppendEntriesResults) error {
-	if args.Term < r.currentTerm {
-		*res = AppendEntriesResults{
-			Success: false,
-			Term:    r.currentTerm,
-		}
-		return nil
-	}
-
-	if r.lastLeaderContact.IsZero() {
-		r.infof("first leader contact")
-	}
-
+func (r *Raft) transitionTo(newState State) {
+	var previousState State
 	r.interlocked(func() {
-		r.currentTerm = args.Term
-		r.currentLeader = args.LeaderID
-		r.lastLeaderContact = time.Now().UTC()
+		previousState = r.State()
+		if previousState != newState {
+			r.debugf("transitioning to %s", newState)
+		}
+		r.state = newState
 	})
-	*res = AppendEntriesResults{
-		Success: true,
-		Term:    r.currentTerm,
-	}
 
-	return nil
+	switch newState {
+	case Follower:
+		if r.followerHandler != nil && previousState != newState {
+			go r.safeExecute(r.followerHandler)
+		}
+	case Candidate:
+		if r.candidateHandler != nil && previousState != newState {
+			go r.safeExecute(r.candidateHandler)
+		}
+	case Leader:
+		if r.leaderHandler != nil && previousState != newState {
+			go r.safeExecute(r.leaderHandler)
+		}
+	}
 }
 
-func (r *Raft) handleRequestVote(args *RequestVote, res *RequestVoteResults) error {
-	if args.Term < r.currentTerm {
-		*res = RequestVoteResults{
-			Term:    r.currentTerm,
-			Granted: false,
-		}
-		return nil
-	}
+// --------------------------------------------------------------------------------
+// runtime methods
+// --------------------------------------------------------------------------------
 
-	if len(r.votedFor) > 0 && r.votedFor != args.Candidate {
-		*res = RequestVoteResults{
-			Term:    args.Term,
-			Granted: false,
-		}
-		return nil
-	}
-
-	r.interlocked(func() {
-		r.transitionTo(FSMStateFollower)
-		r.lastVoteGranted = time.Now().UTC()
-		r.votedFor = args.Candidate
-	})
-	*res = RequestVoteResults{
-		Term:    args.Term,
-		Granted: true,
-	}
-	return nil
+func (r *Raft) backoff(d time.Duration) {
+	backoffTimeout := randomTimeout(backoff(d, r.backoffIndex))
+	r.debugf("backing off for: %v", backoffTimeout)
+	time.Sleep(backoffTimeout)
+	atomic.AddInt32(&r.backoffIndex, 1)
 }
 
 func (r *Raft) dialPeers() error {
@@ -567,21 +624,42 @@ func (r *Raft) dialPeers() error {
 	return nil
 }
 
-func (r *Raft) infof(format string, args ...interface{}) {
-	if r.log != nil {
-		r.log.SubContext("raft").SubContext(fmt.Sprintf("%v", r.State())).Infof(format, args...)
-	}
-}
-
-func (r *Raft) err(err error) {
-	if r.log != nil {
-		r.log.SubContext("raft").SubContext(fmt.Sprintf("%v", r.State())).Trigger(logger.Errorf(logger.Error, "%v", err))
-	}
-}
+// reference: RP1804190008
 
 // interlocked runs the actuion while owning the state lock.
 func (r *Raft) interlocked(action func()) {
 	r.stateLock.Lock()
 	defer r.stateLock.Unlock()
 	action()
+}
+
+func (r *Raft) safeExecute(action func()) {
+	defer func() {
+		if p := recover(); p != nil {
+			r.err(fmt.Errorf("%+v", p))
+		}
+	}()
+	action()
+}
+
+// --------------------------------------------------------------------------------
+// logging methods
+// --------------------------------------------------------------------------------
+
+func (r *Raft) infof(format string, args ...interface{}) {
+	if r.log != nil {
+		r.log.SubContext("raft").SubContext(fmt.Sprintf("%v", r.State())).Infof(format, args...)
+	}
+}
+
+func (r *Raft) debugf(format string, args ...interface{}) {
+	if r.log != nil {
+		r.log.SubContext("raft").SubContext(fmt.Sprintf("%v", r.State())).Debugf(format, args...)
+	}
+}
+
+func (r *Raft) err(err error) {
+	if r.log != nil && err != nil {
+		r.log.SubContext("raft").SubContext(fmt.Sprintf("%v", r.State())).Trigger(logger.Errorf(logger.Error, "%v", err))
+	}
 }

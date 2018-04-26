@@ -1,0 +1,18 @@
+
+RAFT_PEERS=127.0.0.1:6060,127.0.0.1:6061,127.0.0.1:6062,127.0.0.1:6063,127.0.0.1:6064
+export RAFT_PEERS
+
+run-node0:
+	@RAFT_ID=worker-0 RAFT_SELF_ADDR=127.0.0.1:6060 RAFT_BIND_ADDR=:6060 go run main.go
+
+run-node1:
+	@RAFT_ID=worker-1 RAFT_SELF_ADDR=127.0.0.1:6061 RAFT_BIND_ADDR=:6061 go run main.go
+
+run-node2:
+	@RAFT_ID=worker-2 RAFT_SELF_ADDR=127.0.0.1:6062 RAFT_BIND_ADDR=:6062 go run main.go
+
+run-node3:
+	@RAFT_ID=worker-3 RAFT_SELF_ADDR=127.0.0.1:6063 RAFT_BIND_ADDR=:6063 go run main.go
+
+run-node4:
+	@RAFT_ID=worker-4 RAFT_SELF_ADDR=127.0.0.1:6064 RAFT_BIND_ADDR=:6064 go run main.go

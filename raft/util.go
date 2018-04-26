@@ -16,8 +16,8 @@ var (
 // backoff is used to compute an exponential backoff
 // duration. Base time is scaled by the current round,
 // up to some maximum scale factor.
-func backoff(base time.Duration, round, limit uint64) time.Duration {
-	power := min(round, limit)
+func backoff(base time.Duration, backoffIndex int32) time.Duration {
+	power := backoffIndex
 	for power > 2 {
 		base *= 2
 		power--
@@ -25,13 +25,15 @@ func backoff(base time.Duration, round, limit uint64) time.Duration {
 	return base
 }
 
-// randomTimeout returns a value that is between the minVal and 2x minVal.
+// randomTimeout returns a value that is between the minVal and 3x minVal.
+// i.e. it is minVal + ([0, 2 * minVal])
 func randomTimeout(minVal time.Duration) time.Duration {
 	if minVal == 0 {
 		return minVal
 	}
 
-	return minVal + (time.Duration(_randSource.Int63()) % (2 * minVal))
+	randomValue := time.Duration(_randSource.Int63())
+	return minVal + (randomValue % (2 * minVal))
 }
 
 // min returns the minimum.

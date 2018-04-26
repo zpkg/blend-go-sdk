@@ -14,8 +14,8 @@ func TestRaftCountVotes(t *testing.T) {
 
 	r := New()
 
-	assert.Equal(1, r.voteOutcome(0, 0))
-	assert.Equal(1, r.voteOutcome(1, 0))
+	assert.Equal(-1, r.voteOutcome(0, 0))
+	assert.Equal(-1, r.voteOutcome(1, 0))
 
 	assert.Equal(-1, r.voteOutcome(0, 1))
 	assert.Equal(1, r.voteOutcome(1, 1))
@@ -45,10 +45,9 @@ func TestRaftCountVotes(t *testing.T) {
 func createTestNode() *Raft {
 	return New().
 		WithID(uuid.V4().String()).
-		WithLeaderCheckTick(time.Microsecond).
-		WithHeartbeatTick(time.Microsecond).
+		WithLeaderCheckInterval(time.Microsecond).
+		WithHeartbeatInterval(time.Microsecond).
 		WithElectionTimeout(time.Microsecond).
-		WithLeaderLeaseTimeout(time.Microsecond).
 		WithServer(NewMockServer())
 }
 
@@ -109,6 +108,4 @@ func TestRaftCluster(t *testing.T) {
 		assert.Nil(node.Start())
 		defer node.Stop()
 	}
-
-	// assert that the cluster stabilizes on leader.
 }

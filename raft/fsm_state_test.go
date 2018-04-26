@@ -9,9 +9,9 @@ import (
 func TestFSMState(t *testing.T) {
 	assert := assert.New(t)
 
-	assert.Equal("unset", FSMStateUnset.String())
-	assert.Equal("follower", FSMStateFollower.String())
-	assert.Equal("candidate", FSMStateCandidate.String())
-	assert.Equal("leader", FSMStateLeader.String())
-	assert.Equal("unknown", FSMState(123).String())
+	assert.Equal("unset", Unset.String())
+	assert.Equal("follower", Follower.String())
+	assert.Equal("candidate", Candidate.String())
+	assert.Equal("leader", Leader.String())
+	assert.Equal("unknown", State(123).String())
 }
