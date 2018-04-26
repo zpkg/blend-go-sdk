@@ -14,4 +14,5 @@
 .DS_Store
 
 profile.cov
+coverage.cov
 coverage.html
