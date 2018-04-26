@@ -181,6 +181,11 @@ func (r *Raft) RandomElectionTimeout() time.Duration {
 	return randomTimeout(util.Coalesce.Duration(r.electionTimeout, DefaultElectionTimeout))
 }
 
+// RandomBackoffTimeout returns a random leader lease timeout.
+func (r *Raft) RandomBackoffTimeout() time.Duration {
+	return randomTimeout(util.Coalesce.Duration(r.leaderCheckTick, DefaultLeaderCheckTick))
+}
+
 // WithLeaderCheckTick sets the leader check tick.
 func (r *Raft) WithLeaderCheckTick(d time.Duration) *Raft {
 	r.leaderCheckTick = d
@@ -321,6 +326,8 @@ func (r *Raft) election() error {
 		} else if !retry {
 			return nil
 		}
+
+		time.Sleep(r.RandomBackoffTimeout())
 	}
 }
 
