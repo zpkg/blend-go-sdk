@@ -316,20 +316,18 @@ func (r *Raft) election() error {
 			r.infof("election timeout, demoting self")
 			r.interlocked(func() {
 				r.votedFor = ""
-				r.lastLeaderContact = time.Time{}
+				r.lastLeaderContact = time.Now().UTC()
 				r.transitionTo(FSMStateFollower)
 			})
-			time.Sleep(r.RandomBackoffTimeout())
 			return nil
 		}
 
 		if retry, err := r.requestVote(); err != nil {
-			time.Sleep(r.RandomBackoffTimeout())
 			return err
 		} else if !retry {
-			time.Sleep(r.RandomBackoffTimeout())
 			return nil
 		}
+		time.Sleep(r.RandomBackoffTimeout())
 	}
 }
 
@@ -375,14 +373,14 @@ func (r *Raft) requestVote() (retry bool, err error) {
 	if result == 1 { // we're now the leader.
 		r.interlocked(func() {
 			r.votedFor = r.id
-			r.lastLeaderContact = time.Time{}
+			r.lastLeaderContact = time.Now().UTC()
 			r.transitionTo(FSMStateLeader)
 		})
 		return
 	} else if result == -1 {
 		r.interlocked(func() {
 			r.votedFor = ""
-			r.lastLeaderContact = time.Time{}
+			r.lastLeaderContact = time.Now().UTC()
 			r.transitionTo(FSMStateFollower)
 		})
 		return
