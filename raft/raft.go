@@ -15,9 +15,11 @@ import (
 // New creates a new empty raft node.
 func New() *Raft {
 	return &Raft{
-		id:       uuid.V4().String(),
-		state:    int32(FSMStateFollower),
-		bindAddr: DefaultBindAddr,
+		id:              uuid.V4().String(),
+		state:           int32(FSMStateFollower),
+		bindAddr:        DefaultBindAddr,
+		leaderCheckTick: DefaultLeaderCheckTick,
+		heartbeatTick:   DefaultHeartbeatTick,
 	}
 }
 
@@ -33,11 +35,15 @@ func NewFromConfig(cfg *Config) *Raft {
 // Raft represents a raft node and all the state machine
 // componentry required.
 type Raft struct {
-	id                 string
-	log                *logger.Logger
-	bindAddr           string
+	id       string
+	log      *logger.Logger
+	bindAddr string
+
 	leaderLeaseTimeout time.Duration
 	electionTimeout    time.Duration
+
+	leaderCheckTick time.Duration
+	heartbeatTick   time.Duration
 
 	currentTerm       uint64
 	currentLeader     string
@@ -51,8 +57,8 @@ type Raft struct {
 	server Server
 	peers  []Client
 
-	leaderCheckTick   *worker.Interval
-	sendHeartbeatTick *worker.Interval
+	leaderCheckTicker   *worker.Interval
+	sendHeartbeatTicker *worker.Interval
 
 	leaderHandler    func()
 	candidateHandler func()
@@ -174,6 +180,28 @@ func (r *Raft) RandomElectionTimeout() time.Duration {
 	return randomTimeout(util.Coalesce.Duration(r.electionTimeout, DefaultElectionTimeout))
 }
 
+// WithLeaderCheckTick sets the leader check tick.
+func (r *Raft) WithLeaderCheckTick(d time.Duration) *Raft {
+	r.leaderCheckTick = d
+	return r
+}
+
+// LeaderCheckTick returns the leader check tick time.
+func (r *Raft) LeaderCheckTick() time.Duration {
+	return r.leaderCheckTick
+}
+
+// WithHeartbeatTick sets the heartbeat tick.
+func (r *Raft) WithHeartbeatTick(d time.Duration) *Raft {
+	r.heartbeatTick = d
+	return r
+}
+
+// HeartbeatTick returns the heartbeat tick rate.
+func (r *Raft) HeartbeatTick() time.Duration {
+	return r.heartbeatTick
+}
+
 // Start starts the raft node.
 func (r *Raft) Start() error {
 	r.infof("node starting")
@@ -200,24 +228,24 @@ func (r *Raft) Start() error {
 	}
 
 	r.infof("node beginning internal tickers")
-	r.leaderCheckTick = worker.NewInterval(r.leaderCheck, DefaultLeaderCheckTick).WithDelay(r.RandomLeaderLeaseTimeout())
-	r.sendHeartbeatTick = worker.NewInterval(r.sendHeartbeat, DefaultHeartbeatTick).WithDelay(r.RandomLeaderLeaseTimeout())
-	r.leaderCheckTick.Start()
-	r.sendHeartbeatTick.Start()
-	r.infof("leaderCheck start delay %v", r.leaderCheckTick.Delay())
-	r.infof("sendHeartbeatTick start delay %v", r.sendHeartbeatTick.Delay())
+	r.leaderCheckTicker = worker.NewInterval(r.leaderCheck, r.leaderCheckTick).WithDelay(r.RandomLeaderLeaseTimeout())
+	r.sendHeartbeatTicker = worker.NewInterval(r.sendHeartbeat, r.heartbeatTick).WithDelay(r.RandomLeaderLeaseTimeout())
+	r.leaderCheckTicker.Start()
+	r.sendHeartbeatTicker.Start()
+	r.infof("leaderCheck start delay %v", r.leaderCheckTicker.Delay())
+	r.infof("sendHeartbeatTick start delay %v", r.sendHeartbeatTicker.Delay())
 	return nil
 }
 
 // Stop stops the node.
 func (r *Raft) Stop() error {
-	if r.leaderCheckTick != nil {
-		r.leaderCheckTick.Stop()
-		r.leaderCheckTick = nil
+	if r.leaderCheckTicker != nil {
+		r.leaderCheckTicker.Stop()
+		r.leaderCheckTicker = nil
 	}
-	if r.sendHeartbeatTick != nil {
-		r.sendHeartbeatTick.Stop()
-		r.sendHeartbeatTick = nil
+	if r.sendHeartbeatTicker != nil {
+		r.sendHeartbeatTicker.Stop()
+		r.sendHeartbeatTicker = nil
 	}
 
 	if r.server != nil {

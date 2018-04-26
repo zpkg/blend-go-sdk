@@ -17,7 +17,7 @@ var (
 // NewGroup creates a new migration group.
 func NewGroup(migrations ...Migration) *Group {
 	r := &Group{
-		transactionBound:   true,
+		useTransaction:     true,
 		abortOnError:       true,
 		rollbackOnComplete: false,
 	}
@@ -30,7 +30,7 @@ type Group struct {
 	label              string
 	abortOnError       bool
 	rollbackOnComplete bool
-	transactionBound   bool
+	useTransaction     bool
 	parent             Migration
 	collector          *Collector
 	migrations         []Migration
@@ -104,16 +104,32 @@ func (g *Group) WithLogger(log *logger.Logger) *Group {
 	return g
 }
 
-// WithTransactionBound sets if the migration should inherit the transaction from the parent.
-// For the top level group, it also indicates if we should run migrations in a transaction.
-func (g *Group) WithTransactionBound(transactionBound bool) Migration {
-	g.transactionBound = transactionBound
+// WithUseTransaction sets if we should begin a transaction for the work within the group.
+func (g *Group) WithUseTransaction(useTransaction bool) Migration {
+	g.useTransaction = useTransaction
 	return g
 }
 
+// UseTransaction returns if the group should wrap child steps in a transaction.
+func (g *Group) UseTransaction() bool {
+	return g.useTransaction
+}
+
 // TransactionBound returns if the migration manages its own transactions.
+// This is a group, it is the one doing the managing.
 func (g *Group) TransactionBound() bool {
-	return g.transactionBound
+	return false
+}
+
+// WithRollbackOnComplete sets if we should roll the transaction back on complete.
+func (g *Group) WithRollbackOnComplete(rollbackOnComplete bool) *Group {
+	g.rollbackOnComplete = rollbackOnComplete
+	return g
+}
+
+// RollbackOnComplete returns if we should rollback the migration on complete.
+func (g *Group) RollbackOnComplete() bool {
+	return g.rollbackOnComplete
 }
 
 // Apply wraps the action in a transaction and commits it if there were no errors, rolling back if there were.
@@ -130,7 +146,7 @@ func (g *Group) Apply(c *db.Connection, txs ...*sql.Tx) (err error) {
 
 	// if the migration
 	var tx *sql.Tx
-	if g.transactionBound {
+	if g.useTransaction {
 		tx, err = c.Begin()
 		if err != nil {
 			return
