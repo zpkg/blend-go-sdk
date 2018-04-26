@@ -319,15 +319,17 @@ func (r *Raft) election() error {
 				r.lastLeaderContact = time.Time{}
 				r.transitionTo(FSMStateFollower)
 			})
-		}
-
-		if retry, err := r.requestVote(); err != nil {
-			return err
-		} else if !retry {
+			time.Sleep(r.RandomBackoffTimeout())
 			return nil
 		}
 
-		time.Sleep(r.RandomBackoffTimeout())
+		if retry, err := r.requestVote(); err != nil {
+			time.Sleep(r.RandomBackoffTimeout())
+			return err
+		} else if !retry {
+			time.Sleep(r.RandomBackoffTimeout())
+			return nil
+		}
 	}
 }
 
