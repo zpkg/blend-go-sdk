@@ -65,6 +65,13 @@ func (i *Interval) Errors() chan error {
 
 // Start starts the worker.
 func (i *Interval) Start() {
+	if i.latch.IsRunning() {
+		return
+	}
+	if i.latch.IsStarting() {
+		return
+	}
+
 	i.latch.Starting()
 	go func() {
 		i.latch.Started()
@@ -93,6 +100,9 @@ func (i *Interval) Start() {
 
 // Stop stops the worker.
 func (i *Interval) Stop() {
+	if !i.latch.IsRunning() {
+		return
+	}
 	i.latch.Stop()
 	<-i.latch.NotifyStopped()
 }

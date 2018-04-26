@@ -6,12 +6,17 @@ import (
 )
 
 func main() {
-	log := logger.All()
+	log := logger.All().WithDisabled(logger.Error)
 
 	cfg := raft.NewConfigFromEnv()
 	r := raft.NewFromConfig(cfg).WithLogger(log)
 	for _, remoteAddr := range cfg.GetPeers() {
-		r = r.WithPeer(raft.NewRPCClient(remoteAddr).WithLogger(log))
+		if !r.IsSelf(remoteAddr) {
+			log.SyncDebugf("adding peer %s", remoteAddr)
+			r = r.WithPeer(raft.NewRPCClient(remoteAddr).WithLogger(log))
+		} else {
+			log.SyncDebugf("skipping %s", remoteAddr)
+		}
 	}
 
 	if err := r.Start(); err != nil {
