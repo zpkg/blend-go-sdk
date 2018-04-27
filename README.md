@@ -20,9 +20,9 @@ The main packages are as follows:
 - `env` : helpers for reading / writing / testing environment variables.
 - `exception` : wraps error types with stack traces. 
 - `logger` : our performance oriented event bus; event triggering is supported in most major packages.
-- `oauth` : helpers for integrating with google oauth manager. 
 - `proxy` : an http/https reverse proxy.
 - `proxy/proxy` : a cli server the proxy.
+- `raft` : raft leader elections.
 - `request` : wrappers for `http.Client` with support for testing and a fluent api.
 - `selector` : a portable implementation of kubernetes selectors.
 - `semver` : semantic versioning helpers.
