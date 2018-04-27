@@ -17,9 +17,8 @@ var (
 // NewGroup creates a new migration group.
 func NewGroup(migrations ...Migration) *Group {
 	r := &Group{
-		useTransaction:     true,
-		abortOnError:       true,
-		rollbackOnComplete: false,
+		useTransaction: true,
+		abortOnError:   true,
 	}
 	return r.With(migrations...)
 }
