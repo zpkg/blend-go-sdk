@@ -164,7 +164,7 @@ func (r *Raft) LeaderCheck() error {
 	if currentState == Follower {
 		now := time.Now().UTC()
 		// if we've never elected a leader, or if the current leader hasn't sent a heartbeat in a while ...
-		if r.lastLeaderContact.IsZero() || now.Sub(lastLeaderContact) > randomTimeout(r.electionTimeout) {
+		if r.lastLeaderContact.IsZero() || now.Sub(lastLeaderContact) > RandomTimeout(r.electionTimeout) {
 			// trigger an election.
 			r.err(r.Election())
 		}
@@ -180,6 +180,7 @@ func (r *Raft) Election() error {
 	r.interlocked(func() {
 		r.votedFor = r.ID()
 		r.currentTerm = r.currentTerm + 1
+		r.backoffIndex = 0
 	})
 	r.transitionTo(Candidate)
 
@@ -210,9 +211,6 @@ func (r *Raft) Election() error {
 			return r.Heartbeat() // send immediate heartbeat
 		} else {
 			r.debugf("election loss or tie, backing off")
-			r.interlocked(func() {
-				r.votedFor = ""
-			})
 			r.backoff(r.electionTimeout)
 		}
 	}
@@ -314,6 +312,11 @@ func (r *Raft) Heartbeat() error {
 
 	if r.voteOutcome(successfulAnswers+1, totalAnswers+1) < ElectionVictory {
 		r.transitionTo(Follower)
+		r.interlocked(func() {
+			r.currentTerm = latestTerm
+			r.votedFor = ""
+		})
+		return nil
 	}
 
 	return nil
@@ -340,6 +343,7 @@ func (r *Raft) AppendEntriesHandler(args *AppendEntries, res *AppendEntriesResul
 		r.currentTerm = args.Term
 		r.lastLeaderContact = time.Now().UTC()
 	})
+
 	r.transitionTo(Follower)
 	*res = AppendEntriesResults{
 		ID:      r.id,
@@ -352,15 +356,6 @@ func (r *Raft) AppendEntriesHandler(args *AppendEntries, res *AppendEntriesResul
 // RequestVoteHandler is the rpc server handler for RequestVote rpc requests.
 func (r *Raft) RequestVoteHandler(args *RequestVote, res *RequestVoteResults) error {
 	if args.Term < r.currentTerm {
-		*res = RequestVoteResults{
-			ID:      r.id,
-			Term:    r.currentTerm,
-			Granted: false,
-		}
-		return nil
-	}
-
-	if len(r.votedFor) > 0 && r.votedFor != args.ID {
 		*res = RequestVoteResults{
 			ID:      r.id,
 			Term:    r.currentTerm,
@@ -609,7 +604,7 @@ func (r *Raft) transitionTo(newState State) {
 // --------------------------------------------------------------------------------
 
 func (r *Raft) backoff(d time.Duration) {
-	backoffTimeout := randomTimeout(backoff(d, r.backoffIndex))
+	backoffTimeout := RandomTimeout(Backoff(d, r.backoffIndex))
 	r.debugf("backing off for: %v", backoffTimeout)
 	time.Sleep(backoffTimeout)
 	atomic.AddInt32(&r.backoffIndex, 1)
@@ -648,18 +643,18 @@ func (r *Raft) safeExecute(action func()) {
 
 func (r *Raft) infof(format string, args ...interface{}) {
 	if r.log != nil {
-		r.log.SubContext("raft").SubContext(fmt.Sprintf("%v", r.State())).Infof(format, args...)
+		r.log.SubContext("raft").SubContext(fmt.Sprintf("%v @ %d", r.State(), r.CurrentTerm())).Infof(format, args...)
 	}
 }
 
 func (r *Raft) debugf(format string, args ...interface{}) {
 	if r.log != nil {
-		r.log.SubContext("raft").SubContext(fmt.Sprintf("%v", r.State())).Debugf(format, args...)
+		r.log.SubContext("raft").SubContext(fmt.Sprintf("%v @ %d", r.State(), r.CurrentTerm())).Debugf(format, args...)
 	}
 }
 
 func (r *Raft) err(err error) {
 	if r.log != nil && err != nil {
-		r.log.SubContext("raft").SubContext(fmt.Sprintf("%v", r.State())).Trigger(logger.Errorf(logger.Error, "%v", err))
+		r.log.SubContext("raft").SubContext(fmt.Sprintf("%v @ %d", r.State(), r.CurrentTerm())).Trigger(logger.Errorf(logger.Error, "%v", err))
 	}
 }

@@ -13,10 +13,10 @@ var (
 	_randSource = rand.NewSource(time.Now().Unix())
 )
 
-// backoff is used to compute an exponential backoff
+// Backoff is used to compute an exponential backoff
 // duration. Base time is scaled by the current round,
 // up to some maximum scale factor.
-func backoff(base time.Duration, backoffIndex int32) time.Duration {
+func Backoff(base time.Duration, backoffIndex int32) time.Duration {
 	power := backoffIndex
 	for power > 2 {
 		base *= 2
@@ -25,9 +25,9 @@ func backoff(base time.Duration, backoffIndex int32) time.Duration {
 	return base
 }
 
-// randomTimeout returns a value that is between the minVal and 3x minVal.
+// RandomTimeout returns a value that is between the minVal and 3x minVal.
 // i.e. it is minVal + ([0, 2 * minVal])
-func randomTimeout(minVal time.Duration) time.Duration {
+func RandomTimeout(minVal time.Duration) time.Duration {
 	if minVal == 0 {
 		return minVal
 	}
