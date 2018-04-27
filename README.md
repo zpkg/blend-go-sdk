@@ -20,6 +20,7 @@ The main packages are as follows:
 - `env` : helpers for reading / writing / testing environment variables.
 - `exception` : wraps error types with stack traces. 
 - `logger` : our performance oriented event bus; event triggering is supported in most major packages.
+- `oauth` : a wrapper on `golang.org/x/oauth2` that automates fetching profiles for google oauth.
 - `proxy` : an http/https reverse proxy.
 - `proxy/proxy` : a cli server the proxy.
 - `raft` : raft leader elections.
