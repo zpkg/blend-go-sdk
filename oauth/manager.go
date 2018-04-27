@@ -81,7 +81,11 @@ func (m *Manager) OAuthURL(redirect ...string) (string, error) {
 		return "", err
 	}
 
-	return m.conf().AuthCodeURL(state), nil
+	var opts []oauth2.AuthCodeOption
+	if len(m.hostedDomain) > 0 {
+		opts = append(opts, oauth2.SetAuthURLParam("hd", m.hostedDomain))
+	}
+	return m.conf().AuthCodeURL(state, opts...), nil
 }
 
 // Finish processes the returned code, exchanging for an access token, and fetches the user profile.
