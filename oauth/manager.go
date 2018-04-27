@@ -119,10 +119,10 @@ func (m *Manager) Finish(r *http.Request) (*Result, error) {
 	if err != nil {
 		log.Fatal(err)
 	}
-	result.AccessToken = tok.AccessToken
-	result.TokenType = tok.TokenType
-	result.RefreshToken = tok.RefreshToken
-	result.Expiry = tok.Expiry
+	result.Response.AccessToken = tok.AccessToken
+	result.Response.TokenType = tok.TokenType
+	result.Response.RefreshToken = tok.RefreshToken
+	result.Response.Expiry = tok.Expiry
 
 	prof, err := FetchProfile(tok.AccessToken)
 	if err != nil {
