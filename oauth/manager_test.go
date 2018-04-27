@@ -54,8 +54,9 @@ func TestManagerOAuthURL(t *testing.T) {
 	oauthURL, err := m.OAuthURL()
 	assert.Nil(err)
 
-	shouldBe := `https://accounts.google.com/o/oauth2/auth?client_id=test_client_id&redirect_uri=https%3A%2F%2Flocal.shortcut-service.centrio.com%2Foauth%2Fgoogle&response_type=code&scope=openid+email+profile&state=Pf%2BBAwEBBVN0YXRlAf%2BCAAEDAQVUb2tlbgEMAAELU2VjdXJlVG9rZW4BDAABC1JlZGlyZWN0VVJMAQwAAAAD%2F4IA`
-	assert.Equal(shouldBe, oauthURL)
+	parsed, err := url.Parse(oauthURL)
+	assert.Nil(err)
+	assert.Equal("test.blend.com", parsed.Query().Get("hd"), "we should set the hosted domain if it's configured")
 }
 
 func TestManagerOAuthURLRedirect(t *testing.T) {
