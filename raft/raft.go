@@ -12,32 +12,6 @@ import (
 	"github.com/blend/go-sdk/worker"
 )
 
-// ElectionOutcome is an election outcome.
-type ElectionOutcome int
-
-// String returns the string value for the outcome.
-func (eo ElectionOutcome) String() string {
-	switch eo {
-	case ElectionVictory:
-		return "victory"
-	case ElectionTie:
-		return "tie"
-	case ElectionLoss:
-		return "loss"
-	default:
-		return "unknown"
-	}
-}
-
-const (
-	// ElectionVictory is an election outcome.
-	ElectionVictory ElectionOutcome = 1
-	// ElectionTie is an election outcome.
-	ElectionTie ElectionOutcome = 0
-	// ElectionLoss is an election outcome.
-	ElectionLoss ElectionOutcome = -1
-)
-
 // New creates a new empty raft node.
 func New() *Raft {
 	return &Raft{
@@ -296,29 +270,6 @@ func (r *Raft) Heartbeat() error {
 		}
 	}
 
-	totalAnswers := len(results)
-	successfulAnswers := 0
-	latestTerm := r.currentTerm
-
-	for index := 0; index < totalAnswers; index++ {
-		answer := <-results
-		if answer.Success {
-			successfulAnswers = successfulAnswers + 1
-		} else if answer.Term > latestTerm {
-			latestTerm = answer.Term
-			r.debugf("%s replied our term is out of date", answer.ID)
-		}
-	}
-
-	if r.voteOutcome(successfulAnswers+1, totalAnswers+1) < ElectionVictory {
-		r.transitionTo(Follower)
-		r.interlocked(func() {
-			r.currentTerm = latestTerm
-			r.votedFor = ""
-		})
-		return nil
-	}
-
 	return nil
 }
 
@@ -343,8 +294,8 @@ func (r *Raft) AppendEntriesHandler(args *AppendEntries, res *AppendEntriesResul
 		r.currentTerm = args.Term
 		r.lastLeaderContact = time.Now().UTC()
 	})
-
 	r.transitionTo(Follower)
+
 	*res = AppendEntriesResults{
 		ID:      r.id,
 		Success: true,
@@ -531,9 +482,9 @@ func (r *Raft) HeartbeatInterval() time.Duration {
 // processRequestVoteResults returns the aggregate votes for in an election from rpc responses.
 func (r *Raft) processRequestVoteResults(results chan *RequestVoteResults) ElectionOutcome {
 	// tabulate results
-	total := len(r.peers)
+	total := len(r.peers) + 1 // assume cluster size is peers + 1
 	resultsCount := len(results)
-	votesFor := 0
+	votesFor := 1 // assume we voted for ourselves.
 
 	for index := 0; index < resultsCount; index++ {
 		result := <-results
@@ -544,19 +495,16 @@ func (r *Raft) processRequestVoteResults(results chan *RequestVoteResults) Elect
 	}
 
 	r.debugf("election tally: %d votes for, %d total", votesFor, total)
-	return r.voteOutcome(votesFor+1, total+1)
+	return r.voteOutcome(votesFor, total)
 }
 
 // voteOutcome compares votes for to total and  it returns and integer
-// indicating victory, tie, or loss.
+// indicating victory, tie, or loss. We assume both the votesFor and total
+// do not include the implied self votes (you should add them before this step).
 //  1 == victory
 //  0 == tie
 // -1 == loss
 func (r *Raft) voteOutcome(votesFor, total int) ElectionOutcome {
-	if total == 0 {
-		return ElectionLoss
-	}
-
 	majority := total >> 1
 	if total%2 == 0 {
 		if votesFor > majority {
