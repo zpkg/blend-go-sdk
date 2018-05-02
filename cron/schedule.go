@@ -1,65 +1,15 @@
 package cron
 
-import "time"
-
-// NOTE: time.Zero()? what's that?
-var (
-	// DaysOfWeek are all the time.Weekday in an array for utility purposes.
-	DaysOfWeek = []time.Weekday{
-		time.Sunday,
-		time.Monday,
-		time.Tuesday,
-		time.Wednesday,
-		time.Thursday,
-		time.Friday,
-		time.Saturday,
-	}
-
-	// WeekDays are the business time.Weekday in an array.
-	WeekDays = []time.Weekday{
-		time.Monday,
-		time.Tuesday,
-		time.Wednesday,
-		time.Thursday,
-		time.Friday,
-	}
-
-	// WeekWeekEndDaysDays are the weekend time.Weekday in an array.
-	WeekendDays = []time.Weekday{
-		time.Sunday,
-		time.Saturday,
-	}
-
-	// Epoch is unix epoch saved for utility purposes.
-	Epoch = time.Unix(0, 0)
+import (
+	"sync"
+	"time"
 )
-
-// NOTE: we have to use shifts here because in their infinite wisdom google didn't make these values powers of two for masking
-
-const (
-	// AllDaysMask is a bitmask of all the days of the week.
-	AllDaysMask = 1<<uint(time.Sunday) | 1<<uint(time.Monday) | 1<<uint(time.Tuesday) | 1<<uint(time.Wednesday) | 1<<uint(time.Thursday) | 1<<uint(time.Friday) | 1<<uint(time.Saturday)
-	// WeekDaysMask is a bitmask of all the weekdays of the week.
-	WeekDaysMask = 1<<uint(time.Monday) | 1<<uint(time.Tuesday) | 1<<uint(time.Wednesday) | 1<<uint(time.Thursday) | 1<<uint(time.Friday)
-	//WeekendDaysMask is a bitmask of the weekend days of the week.
-	WeekendDaysMask = 1<<uint(time.Sunday) | 1<<uint(time.Saturday)
-)
-
-// IsWeekDay returns if the day is a monday->friday.
-func IsWeekDay(day time.Weekday) bool {
-	return !IsWeekendDay(day)
-}
-
-// IsWeekendDay returns if the day is a monday->friday.
-func IsWeekendDay(day time.Weekday) bool {
-	return day == time.Saturday || day == time.Sunday
-}
 
 // Schedule is a type that provides a next runtime after a given previous runtime.
 type Schedule interface {
 	// GetNextRuntime should return the next runtime after a given previous runtime. If `after` is <nil> it should be assumed
 	// the job hasn't run yet. If <nil> is returned by the schedule it is inferred that the job should not run again.
-	GetNextRunTime(after *time.Time) *time.Time
+	GetNextRunTime(*time.Time) *time.Time
 }
 
 // EverySecond returns a schedule that fires every second.
@@ -148,6 +98,8 @@ func Immediately() *ImmediateSchedule {
 
 // ImmediateSchedule fires immediately with an optional subsequent schedule..
 type ImmediateSchedule struct {
+	sync.Mutex
+
 	didRun bool
 	then   Schedule
 }
@@ -160,14 +112,17 @@ func (i *ImmediateSchedule) Then(then Schedule) Schedule {
 
 // GetNextRunTime implements Schedule.
 func (i *ImmediateSchedule) GetNextRunTime(after *time.Time) *time.Time {
+	i.Lock()
+	defer i.Unlock()
+
 	if !i.didRun {
 		i.didRun = true
-		return optional(Now())
+		return Optional(Now())
 	}
 	if i.then != nil {
 		return i.then.GetNextRunTime(after)
 	}
-	return optional(Now())
+	return nil
 }
 
 // IntervalSchedule is as chedule that fires every given interval with an optional start delay.
@@ -206,7 +161,7 @@ func (ds DailySchedule) checkDayOfWeekMask(day time.Weekday) bool {
 // GetNextRunTime implements Schedule.
 func (ds DailySchedule) GetNextRunTime(after *time.Time) *time.Time {
 	if after == nil {
-		after = optional(Now())
+		after = Optional(Now())
 	}
 
 	todayInstance := time.Date(after.Year(), after.Month(), after.Day(), ds.TimeOfDayUTC.Hour(), ds.TimeOfDayUTC.Minute(), ds.TimeOfDayUTC.Second(), 0, time.UTC)
@@ -293,13 +248,23 @@ func (o OnTheHourAt) GetNextRunTime(after *time.Time) *time.Time {
 	return &returnValue
 }
 
-// --------------------------------------------------------------------------------
-// Helpers
-// --------------------------------------------------------------------------------
+// OnceAt returns a schedule.
+func OnceAt(t time.Time) Schedule {
+	return OnceAtSchedule{Time: t}
+}
 
-func optional(t time.Time) *time.Time {
-	if t.IsZero() {
-		return nil
+// OnceAtSchedule is a schedule.
+type OnceAtSchedule struct {
+	Time time.Time
+}
+
+// GetNextRunTime returns the next runtime.
+func (oa OnceAtSchedule) GetNextRunTime(after *time.Time) *time.Time {
+	if after == nil {
+		return &oa.Time
 	}
-	return &t
+	if oa.Time.After(*after) {
+		return &oa.Time
+	}
+	return nil
 }

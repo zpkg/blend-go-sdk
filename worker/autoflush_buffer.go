@@ -1,10 +1,10 @@
-package collections
+package worker
 
 import (
 	"sync"
 	"time"
 
-	"github.com/blend/go-sdk/worker"
+	"github.com/blend/go-sdk/collections"
 )
 
 // NewAutoflushBuffer creates a new autoflush buffer.
@@ -13,9 +13,8 @@ func NewAutoflushBuffer(maxLen int, interval time.Duration) *AutoflushBuffer {
 		maxLen:       maxLen,
 		interval:     interval,
 		flushOnAbort: true,
-		contents:     NewRingBufferWithCapacity(maxLen),
-		ticker:       time.Tick(interval),
-		latch:        &worker.Latch{},
+		contents:     collections.NewRingBufferWithCapacity(maxLen),
+		latch:        &Latch{},
 	}
 }
 
@@ -26,15 +25,13 @@ type AutoflushBuffer struct {
 	maxLen   int
 	interval time.Duration
 
-	contents     *RingBuffer
+	contents     *collections.RingBuffer
 	contentsLock sync.Mutex
-
-	ticker <-chan time.Time
 
 	flushOnAbort bool
 	handler      func(obj []Any)
 
-	latch *worker.Latch
+	latch *Latch
 }
 
 // WithFlushOnAbort sets if we should flush on aborts or not.
@@ -67,6 +64,9 @@ func (ab *AutoflushBuffer) WithFlushHandler(handler func(objs []Any)) *Autoflush
 
 // Start starts the buffer flusher.
 func (ab *AutoflushBuffer) Start() {
+	if !ab.latch.CanStart() {
+		return
+	}
 	ab.latch.Starting()
 	go func() {
 		ab.latch.Started()
@@ -77,6 +77,9 @@ func (ab *AutoflushBuffer) Start() {
 
 // Stop stops the buffer flusher.
 func (ab *AutoflushBuffer) Stop() {
+	if !ab.latch.CanStop() {
+		return
+	}
 	ab.latch.Stop()
 }
 
@@ -145,9 +148,10 @@ func (ab *AutoflushBuffer) flushUnsafe() {
 }
 
 func (ab *AutoflushBuffer) runLoop() {
+	ticker := time.Tick(ab.interval)
 	for {
 		select {
-		case <-ab.ticker:
+		case <-ticker:
 			ab.FlushAsync()
 		case <-ab.latch.NotifyStop():
 			if ab.flushOnAbort {
