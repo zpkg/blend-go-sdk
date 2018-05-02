@@ -46,7 +46,7 @@ profanity:
 
 test:
 	@echo "$(VERSION)/$(GIT_REF) >> tests"
-	@go test $(PKGS)
+	@go test $(PKGS) -race -timeout 15s
 
 test-verbose:
 	@echo "$(VERSION)/$(GIT_REF) >> tests"

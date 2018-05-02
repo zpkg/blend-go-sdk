@@ -158,7 +158,7 @@ func (r *Raft) Election() error {
 	})
 	r.transitionTo(Candidate)
 
-	started := time.Now()
+	started := time.Now().UTC()
 	for {
 
 		// if we've been bumped out of candidate state,
@@ -505,6 +505,10 @@ func (r *Raft) processRequestVoteResults(results chan *RequestVoteResults) Elect
 //  0 == tie
 // -1 == loss
 func (r *Raft) voteOutcome(votesFor, total int) ElectionOutcome {
+	if total < 2 {
+		return ElectionLoss
+	}
+
 	majority := total >> 1
 	if total%2 == 0 {
 		if votesFor > majority {
