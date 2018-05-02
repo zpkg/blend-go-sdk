@@ -482,7 +482,7 @@ func (r *Raft) HeartbeatInterval() time.Duration {
 // processRequestVoteResults returns the aggregate votes for in an election from rpc responses.
 func (r *Raft) processRequestVoteResults(results chan *RequestVoteResults) ElectionOutcome {
 	// tabulate results
-	total := len(r.peers) + 1 // assume cluster size is peers + 1
+	total := len(r.peers) + 1 // assume cluster size is peers + 1 (ourselves)
 	resultsCount := len(results)
 	votesFor := 1 // assume we voted for ourselves.
 
