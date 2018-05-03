@@ -147,6 +147,23 @@ func (jm *JobManager) ReadAllJobs(action func(jobs map[string]Job)) {
 	action(jm.jobs)
 }
 
+// Status returns a status object.
+func (jm *JobManager) Status() *Status {
+	jm.Lock()
+	defer jm.Unlock()
+
+	status := Status{
+		Tasks: map[string]TaskMeta{},
+	}
+	for _, meta := range jm.jobMetas {
+		status.Jobs = append(status.Jobs, *meta)
+	}
+	for name, task := range jm.tasks {
+		status.Tasks[name] = *task
+	}
+	return &status
+}
+
 // --------------------------------------------------------------------------------
 // Core Methods
 // --------------------------------------------------------------------------------
@@ -353,10 +370,11 @@ func (jm *JobManager) runTaskUnsafe(t Task) error {
 	ctx, cancel := jm.createContext()
 
 	tm := &TaskMeta{
-		Name:    taskName,
-		Task:    t,
-		Context: ctx,
-		Cancel:  cancel,
+		Name:      taskName,
+		StartTime: start,
+		Task:      t,
+		Context:   ctx,
+		Cancel:    cancel,
 	}
 
 	if typed, isTyped := t.(TimeoutProvider); isTyped {
