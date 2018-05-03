@@ -1,7 +1,6 @@
 package raft
 
 import (
-	"sync"
 	"testing"
 	"time"
 
@@ -9,9 +8,61 @@ import (
 	"github.com/blend/go-sdk/uuid"
 )
 
-type cluster struct {
-	Nodes      []*Raft
-	Transports map[string]map[string]Client
+func TestIntegrationBootstrap1(t *testing.T) {
+	//assert := assert.New(t)
+
+	//c := createCluster(1)
+	//c.start()
+	//c.waitElection(assert)
+}
+
+func TestIntegrationBootstrap3(t *testing.T) {
+	// assert := assert.New(t)
+
+	// createCluster(3)
+	// start
+	// assert transitions to leader
+}
+
+func TestIntegrationBootstrap5(t *testing.T) {
+	// assert := assert.New(t)
+
+	// createCluster(5)
+	// start
+	// assert transitions to leader
+}
+
+func TestIntegrationLeaderLoss(t *testing.T) {
+	// assert := assert.New(t)
+
+	// createCluster(5)
+	// start
+	// assert transitions to leader
+
+	// kill leader
+	// assert elects new leader
+}
+
+func TestIntegrationLeaderTransportFailure(t *testing.T) {
+	// assert := assert.New(t)
+
+	// createCluster(5)
+	// start
+	// assert transitions to leader
+
+	// kill xport between leader and random node
+	// assert election fails
+	// assert node resumes as follower
+	// assert leader stays the same
+}
+
+func integrationConfig() *Config {
+	return &Config{
+		ID:                  uuid.V4().String(),
+		ElectionTimeout:     100 * time.Microsecond,
+		HeartbeatInterval:   10 * time.Microsecond,
+		LeaderCheckInterval: 10 & time.Microsecond,
+	}
 }
 
 func createTestNode() *Raft {
@@ -23,61 +74,81 @@ func createTestNode() *Raft {
 		WithServer(NewMockServer())
 }
 
-func createCluster(nodeCount int) []*Raft {
+func createCluster(nodeCount int) *cluster {
 	if nodeCount <= 0 {
 		return nil
 	}
 	if nodeCount == 1 {
-		return []*Raft{createTestNode()}
+		return &cluster{Nodes: []*Raft{createTestNode()}}
+	}
+
+	cluster := cluster{
+		Election: make(chan *Raft),
 	}
 
 	// create all the nodes
 	peers := make([]*Raft, nodeCount)
 	for index := 0; index < nodeCount; index++ {
-		peers[index] = createTestNode()
+		node := createTestNode()
+		node.SetLeaderHandler(func() {
+			cluster.Election <- node
+		})
+		peers[index] = node
 	}
 
 	// cross wire all the nodes
 	for i := 0; i < nodeCount; i++ {
 		for j := 0; j < nodeCount; j++ {
 			if i != j {
-				peers[i].WithPeer(NewMockTransport(peers[j].ID(), peers[j].Server()))
+				xport := NewMockTransport(peers[j].ID(), peers[j].Server())
+				cluster.addTransport(peers[j].ID(), peers[j].ID(), xport)
+				peers[i].WithPeer(xport)
 			}
 		}
 	}
-	return peers
+
+	return &cluster
 }
 
-func TestIntegrationRaftSingleNode(t *testing.T) {
-	assert := assert.New(t)
-	assert.StartTimeout(time.Millisecond)
-	defer assert.EndTimeout()
-
-	cluster := createCluster(1)[0]
-
-	wg := sync.WaitGroup{}
-	wg.Add(1)
-	var didTransitionToLeader bool
-	cluster.SetLeaderHandler(func() {
-		defer wg.Done()
-		didTransitionToLeader = true
-	})
-	go func() { cluster.Start() }()
-	defer cluster.Stop()
-	wg.Wait()
-	assert.True(didTransitionToLeader)
+type cluster struct {
+	Config     Config
+	Nodes      []*Raft
+	Transports map[string]map[string]Client
+	Election   chan *Raft
 }
 
-func TestIntegrationRaftCluster(t *testing.T) {
-	t.Skip()
-
-	assert := assert.New(t)
-	assert.StartTimeout(time.Millisecond)
-	defer assert.EndTimeout()
-
-	cluster := createCluster(3)
-	for _, node := range cluster {
-		assert.Nil(node.Start())
-		defer node.Stop()
+func (c *cluster) start() {
+	for _, node := range c.Nodes {
+		node.Start()
 	}
+}
+
+func (c *cluster) stop() {
+	for _, node := range c.Nodes {
+		node.Stop()
+	}
+}
+
+func (c *cluster) addTransport(from, to string, xport Client) {
+	if c.Transports == nil {
+		c.Transports = map[string]map[string]Client{}
+	}
+	if xports, has := c.Transports[from]; has {
+		xports[to] = xport
+	} else {
+		c.Transports[from] = map[string]Client{
+			to: xport,
+		}
+	}
+}
+
+func (c *cluster) waitElection(assert *assert.Assertions) *Raft {
+	alarm := time.NewTimer(c.Config.GetElectionTimeout())
+	select {
+	case <-alarm.C:
+		assert.FailNow("election timeout")
+	case r := <-c.Election:
+		return r
+	}
+	return nil
 }

@@ -1,6 +1,8 @@
 package raft
 
-import "github.com/blend/go-sdk/logger"
+import (
+	"fmt"
+)
 
 var (
 	_ Client = &MockTransport{}
@@ -40,10 +42,10 @@ func NewMockTransport(remoteAddress string, peer Server) *MockTransport {
 
 // MockTransport implements both Client + Server.
 type MockTransport struct {
+	remoteAddr           string
+	disabled             bool
 	appendEntriesHandler AppendEntriesHandler
 	requestVoteHandler   RequestVoteHandler
-	remoteAddr           string
-	log                  *logger.Logger
 }
 
 // WithRemoteAddr sets the remote addr for the mock transport.
@@ -65,6 +67,9 @@ func (mt *MockTransport) Close() error { return nil }
 
 // RequestVote sends a mock request vote to the injected handlers.
 func (mt *MockTransport) RequestVote(args *RequestVote) (*RequestVoteResults, error) {
+	if mt.disabled {
+		return nil, fmt.Errorf("transport is disabled")
+	}
 	var results RequestVoteResults
 	if err := mt.requestVoteHandler(args, &results); err != nil {
 		return nil, err
@@ -74,6 +79,9 @@ func (mt *MockTransport) RequestVote(args *RequestVote) (*RequestVoteResults, er
 
 // AppendEntries sends a mock append entries to the injected handler.
 func (mt *MockTransport) AppendEntries(args *AppendEntries) (*AppendEntriesResults, error) {
+	if mt.disabled {
+		return nil, fmt.Errorf("transport is disabled")
+	}
 	var results AppendEntriesResults
 	if err := mt.appendEntriesHandler(args, &results); err != nil {
 		return nil, err
