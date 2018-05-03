@@ -70,3 +70,26 @@ func TestRaftStart(t *testing.T) {
 	assert.True(node.leaderCheckTicker.Running())
 	assert.True(node.heartbeatTicker.Running())
 }
+
+func TestRaftStop(t *testing.T) {
+	t.Skip()
+	assert := assert.New(t)
+
+	node := New()
+	node.WithServer(NewMockServer())
+	node.WithPeer(NoOpTransport("one"))
+	node.WithPeer(NoOpTransport("two"))
+	node.WithPeer(NoOpTransport("three"))
+
+	node.Start()
+	assert.NotNil(node.Server())
+	assert.Len(node.Peers(), 3)
+
+	assert.True(node.leaderCheckTicker.Running())
+	assert.True(node.heartbeatTicker.Running())
+
+	node.Stop()
+
+	assert.False(node.leaderCheckTicker.Running())
+	assert.False(node.heartbeatTicker.Running())
+}

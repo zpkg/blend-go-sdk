@@ -128,17 +128,10 @@ func (r *Raft) Stop() error {
 
 // LeaderCheck is the action that fires on an interval to check if the leader lease has expired.
 func (r *Raft) LeaderCheck() error {
-	var currentState State
-	var lastLeaderContact time.Time
-	r.interlocked(func() {
-		lastLeaderContact = r.lastLeaderContact
-		currentState = r.State()
-	})
-
-	if currentState == Follower {
+	if r.State() == Follower {
 		now := time.Now().UTC()
 		// if we've never elected a leader, or if the current leader hasn't sent a heartbeat in a while ...
-		if r.lastLeaderContact.IsZero() || now.Sub(lastLeaderContact) > RandomTimeout(r.electionTimeout) {
+		if r.LastLeaderContact().IsZero() || now.Sub(r.LastLeaderContact()) > RandomTimeout(r.electionTimeout) {
 			// trigger an election.
 			r.err(r.Election())
 		}
@@ -151,29 +144,15 @@ func (r *Raft) LeaderCheck() error {
 // It is time bound on the ElectionTimeout.
 func (r *Raft) Election() error {
 	r.debugf("election triggered")
-	r.interlocked(func() {
-		r.votedFor = r.ID()
-		r.currentTerm = r.currentTerm + 1
-		r.backoffIndex = 0
-	})
+	r.votedFor = r.ID()
+	r.currentTerm = r.currentTerm + 1
 	r.transitionTo(Candidate)
 
 	started := time.Now().UTC()
-	for {
-
+	for time.Since(started) < r.electionTimeout {
 		// if we've been bumped out of candidate state,
 		// stop the election cycle.
 		if r.State() != Candidate {
-			return nil
-		}
-
-		if time.Since(started) > r.electionTimeout {
-			r.debugf("election timed out")
-			r.transitionTo(Follower)
-			r.interlocked(func() {
-				r.votedFor = ""
-			})
-			r.backoff(r.electionTimeout)
 			return nil
 		}
 
@@ -182,12 +161,19 @@ func (r *Raft) Election() error {
 		} else if result == ElectionVictory {
 			r.debugf("election successful, promoting self to leader")
 			r.transitionTo(Leader)
+			r.backoffIndex = 0
 			return r.Heartbeat() // send immediate heartbeat
 		} else {
 			r.debugf("election loss or tie, backing off")
 			r.backoff(r.electionTimeout)
 		}
 	}
+
+	r.debugf("election timed out")
+	r.transitionTo(Follower)
+	r.votedFor = ""
+	r.backoff(r.electionTimeout)
+	return nil
 }
 
 // RequestVotes sends `RequestVote` rpcs to all peers, and totals the results.
@@ -229,13 +215,9 @@ func (r *Raft) RequestVotes() (result ElectionOutcome, err error) {
 	return
 }
 
-// Heartbeat is the action triggered upon
+// Heartbeat is the action triggered upon send heartbeat.
 func (r *Raft) Heartbeat() error {
-	var currentState State
-	r.interlocked(func() {
-		currentState = r.State()
-	})
-	if currentState != Leader {
+	if r.State() != Leader {
 		return nil
 	}
 
@@ -289,11 +271,10 @@ func (r *Raft) AppendEntriesHandler(args *AppendEntries, res *AppendEntriesResul
 		r.debugf("received leader heartbeat from %s @ %d", args.ID, args.Term)
 	}
 
-	r.interlocked(func() {
-		r.votedFor = args.ID
-		r.currentTerm = args.Term
-		r.lastLeaderContact = time.Now().UTC()
-	})
+	r.debugf("accepting append entries from %s @ %d", args.ID, args.Term)
+	r.votedFor = args.ID
+	r.currentTerm = args.Term
+	r.lastLeaderContact = time.Now().UTC()
 	r.transitionTo(Follower)
 
 	*res = AppendEntriesResults{
@@ -307,6 +288,7 @@ func (r *Raft) AppendEntriesHandler(args *AppendEntries, res *AppendEntriesResul
 // RequestVoteHandler is the rpc server handler for RequestVote rpc requests.
 func (r *Raft) RequestVoteHandler(args *RequestVote, res *RequestVoteResults) error {
 	if args.Term < r.currentTerm {
+		r.debugf("rejecting request vote from %s @ %d", args.ID, args.Term)
 		*res = RequestVoteResults{
 			ID:      r.id,
 			Term:    r.currentTerm,
@@ -315,11 +297,10 @@ func (r *Raft) RequestVoteHandler(args *RequestVote, res *RequestVoteResults) er
 		return nil
 	}
 
-	r.interlocked(func() {
-		r.votedFor = args.ID
-		r.currentTerm = args.Term
-		r.lastVoteGranted = time.Now().UTC()
-	})
+	r.debugf("accepting request vote from %s @ %d", args.ID, args.Term)
+	r.votedFor = args.ID
+	r.currentTerm = args.Term
+	r.lastVoteGranted = time.Now().UTC()
 	*res = RequestVoteResults{
 		ID:      r.id,
 		Term:    args.Term,
@@ -526,14 +507,11 @@ func (r *Raft) voteOutcome(votesFor, total int) ElectionOutcome {
 }
 
 func (r *Raft) transitionTo(newState State) {
-	var previousState State
-	r.interlocked(func() {
-		previousState = r.State()
-		if previousState != newState {
-			r.debugf("transitioning to %s", newState)
-		}
-		r.state = newState
-	})
+	previousState := r.State()
+	if previousState != newState {
+		r.debugf("transitioning to %s", newState)
+	}
+	r.state = newState
 
 	switch newState {
 	case Follower:
@@ -569,15 +547,6 @@ func (r *Raft) dialPeers() error {
 		}
 	}
 	return nil
-}
-
-// reference: RP1804190008
-
-// interlocked runs the actuion while owning the state lock.
-func (r *Raft) interlocked(action func()) {
-	r.stateLock.Lock()
-	defer r.stateLock.Unlock()
-	action()
 }
 
 func (r *Raft) safeExecute(action func()) {
