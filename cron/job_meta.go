@@ -4,6 +4,12 @@ import (
 	"time"
 )
 
+// Status is a status object
+type Status struct {
+	Jobs  []JobMeta
+	Tasks map[string]TaskMeta
+}
+
 // JobMeta is runtime metadata for a job.
 type JobMeta struct {
 	Name            string      `json:"name"`

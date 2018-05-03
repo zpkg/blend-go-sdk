@@ -2,11 +2,11 @@ package main
 
 import (
 	"context"
-	"fmt"
 	"math/rand"
 	"time"
 
 	"github.com/blend/go-sdk/cron"
+	"github.com/blend/go-sdk/logger"
 )
 
 type emptyJob struct {
@@ -25,12 +25,6 @@ func (j *emptyJob) Execute(ctx context.Context) error {
 	j.running = true
 	if rand.Int()%2 == 1 {
 		time.Sleep(2000 * time.Millisecond)
-
-		cron.Default().RunTask(cron.NewTask(func(ctx context.Context) error {
-			time.Sleep(2000 * time.Millisecond)
-			return nil
-		}))
-
 	} else {
 		time.Sleep(8000 * time.Millisecond)
 	}
@@ -50,19 +44,21 @@ func (j *emptyJob) Status() string {
 }
 
 func (j *emptyJob) Schedule() cron.Schedule {
-	return cron.Every(10 * time.Second)
+	return cron.Immediately().Then(cron.Every(10 * time.Second))
 }
 
 func main() {
-	cron := cron.New()
+	jm := cron.New().WithLogger(logger.All())
+	jm.LoadJob(&emptyJob{})
+	jm.Start()
 
 	for {
-		statuses := cron.Status()
-		for _, status := range statuses {
-			if len(status.Status) != 0 {
-				fmt.Printf("task: %s state: %s status: %s\n", status.Name, status.State, status.Status)
+		status := jm.Status()
+		for _, job := range status.Jobs {
+			if task, hasTask := status.Tasks[job.Name]; hasTask {
+				jm.Logger().Infof("job: %s state: running elapsed: %v", job.Name, cron.Since(task.StartTime))
 			} else {
-				fmt.Printf("task: %s state: %s\n", status.Name, status.State)
+				jm.Logger().Infof("job: %s state: stopped", job.Name)
 			}
 		}
 
