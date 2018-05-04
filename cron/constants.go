@@ -9,17 +9,21 @@ import (
 
 const (
 	// DefaultHeartbeatInterval is the interval between schedule next run checks.
-	DefaultHeartbeatInterval = 50 * time.Millisecond
+	DefaultHeartbeatInterval = 100 * time.Millisecond
 
 	// DefaultHighPrecisionHeartbeatInterval is the high precision interval between schedule next run checks.
-	DefaultHighPrecisionHeartbeatInterval = 5 * time.Millisecond
+	DefaultHighPrecisionHeartbeatInterval = 10 * time.Millisecond
 )
 
 const (
 	// FlagStarted is an event flag.
 	FlagStarted logger.Flag = "cron.started"
+	// FlagFailed is an event flag.
+	FlagFailed logger.Flag = "cron.failed"
 	// FlagComplete is an event flag.
 	FlagComplete logger.Flag = "cron.complete"
+	// FlagCancelled is an event flag.
+	FlagCancelled logger.Flag = "cron.cancelled"
 )
 
 const (

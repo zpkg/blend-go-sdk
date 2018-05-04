@@ -12,7 +12,7 @@ import (
 
 const (
 	// N is the number of jobs to load.
-	N = 1000
+	N = 2048
 
 	// Q is the total simulation time.
 	Q = 30 * time.Second
@@ -34,10 +34,6 @@ var startedCount = new(cron.AtomicCounter)
 var completeCount = new(cron.AtomicCounter)
 var timeoutCount = new(cron.AtomicCounter)
 
-func ts() string {
-	return time.Now().String()
-}
-
 type loadTestJob struct {
 	id      int
 	running bool
@@ -53,7 +49,6 @@ func (j *loadTestJob) Name() string {
 }
 
 func (j *loadTestJob) Execute(ctx context.Context) error {
-	started := time.Now()
 	startedCount.Increment()
 	j.running = true
 
@@ -65,12 +60,16 @@ func (j *loadTestJob) Execute(ctx context.Context) error {
 		runFor = JobLongRunTime
 	}
 
-	for time.Now().Sub(started) < runFor {
-		time.Sleep(10 * time.Millisecond)
+	alarm := time.After(runFor)
+	select {
+	case <-alarm:
+		j.running = false
+		completeCount.Increment()
+		return nil
+	case <-ctx.Done():
+		j.running = false
+		return nil
 	}
-	j.running = false
-	completeCount.Increment()
-	return nil
 }
 
 func (j *loadTestJob) OnCancellation() {
@@ -90,8 +89,9 @@ func (j *loadTestJob) Schedule() cron.Schedule {
 }
 
 func main() {
+	jm := cron.New()
 	defer func() {
-		cron.Default().Stop()
+		jm.Stop()
 	}()
 
 	if JobLongRunTime < JobTimeout {
@@ -101,14 +101,14 @@ func main() {
 	}
 
 	for x := 0; x < N; x++ {
-		cron.Default().LoadJob(&loadTestJob{id: x})
+		jm.LoadJob(&loadTestJob{id: x})
 	}
 	fmt.Printf("Loaded %d Job Instances.\n\n", N)
-	cron.Default().Start()
+	jm.Start()
 
 	time.Sleep(Q)
 
-	//given 30 seconds total
+	// given 30 seconds total
 	// and running every 5 seconds
 	// we expect each job to run 5 times (ish)
 

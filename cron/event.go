@@ -39,8 +39,6 @@ func NewEvent(flag logger.Flag, taskName string) *Event {
 type Event struct {
 	*logger.EventMeta
 
-	complete bool
-
 	enabled  bool
 	writable bool
 
@@ -141,14 +139,10 @@ func (e Event) Elapsed() time.Duration {
 
 // WriteText implements logger.TextWritable.
 func (e Event) WriteText(tf logger.TextFormatter, buf *bytes.Buffer) {
-	if e.Complete() {
-		if e.err != nil {
-			buf.WriteString(fmt.Sprintf("`%s` failed (%v)", e.taskName, e.elapsed))
-		} else {
-			buf.WriteString(fmt.Sprintf("`%s` completed (%v)", e.taskName, e.elapsed))
-		}
+	if e.elapsed > 0 {
+		buf.WriteString(fmt.Sprintf("[%s] (%v)", tf.Colorize(e.taskName, logger.ColorBlue), e.elapsed))
 	} else {
-		buf.WriteString(fmt.Sprintf("`%s` started", e.taskName))
+		buf.WriteString(fmt.Sprintf("[%s]", tf.Colorize(e.taskName, logger.ColorBlue)))
 	}
 }
 
