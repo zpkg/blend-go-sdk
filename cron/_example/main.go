@@ -23,13 +23,20 @@ func (j *emptyJob) Name() string {
 
 func (j *emptyJob) Execute(ctx context.Context) error {
 	j.running = true
+	var runFor = 8 * time.Second
 	if rand.Int()%2 == 1 {
-		time.Sleep(2000 * time.Millisecond)
-	} else {
-		time.Sleep(8000 * time.Millisecond)
+		runFor = time.Second
 	}
-	j.running = false
-	return nil
+
+	alarm := time.After(runFor)
+	select {
+	case <-alarm:
+		j.running = false
+		return nil
+	case <-ctx.Done():
+		j.running = false
+		return nil
+	}
 }
 
 func (j *emptyJob) OnCancellation() {

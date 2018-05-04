@@ -382,10 +382,9 @@ func (jm *JobManager) runTaskUnsafe(t Task) error {
 				err = exception.Newf("%v", r)
 			}
 
-			jm.onTaskComplete(t, Since(start), err)
-
 			jm.Lock()
 			if _, hasTask := jm.tasks[taskName]; hasTask {
+				jm.onTaskComplete(t, Since(start), err)
 				delete(jm.tasks, taskName)
 			}
 			jm.Unlock()
