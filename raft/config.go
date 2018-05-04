@@ -61,14 +61,38 @@ func (c Config) GetID(inherited ...string) string {
 	return util.Coalesce.String(c.ID, uuid.V4().String(), inherited...)
 }
 
+// WithID sets the a property if the value is set.
+func (c *Config) WithID(value string) *Config {
+	if len(value) > 0 {
+		c.ID = value
+	}
+	return c
+}
+
 // GetBindAddr gets a field or a default.
 func (c Config) GetBindAddr(inherited ...string) string {
 	return util.Coalesce.String(c.BindAddr, DefaultBindAddr, inherited...)
 }
 
+// WithBindAddr sets the a property if the value is set.
+func (c *Config) WithBindAddr(value string) *Config {
+	if len(value) > 0 {
+		c.BindAddr = value
+	}
+	return c
+}
+
 // GetSelfAddr gets a field or a default.
 func (c Config) GetSelfAddr(inherited ...string) string {
 	return util.Coalesce.String(c.SelfAddr, "", inherited...)
+}
+
+// WithSelfAddr sets the a property if the value is set.
+func (c *Config) WithSelfAddr(value string) *Config {
+	if len(value) > 0 {
+		c.SelfAddr = value
+	}
+	return c
 }
 
 // GetPeers gets a field or a default.

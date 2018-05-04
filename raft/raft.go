@@ -268,10 +268,9 @@ func (r *Raft) AppendEntriesHandler(args *AppendEntries, res *AppendEntriesResul
 	}
 
 	if len(r.votedFor) == 0 || r.lastLeaderContact.IsZero() {
-		r.debugf("received leader heartbeat from %s @ %d", args.ID, args.Term)
+		r.debugf("received initial leader heartbeat from %s @ %d", args.ID, args.Term)
 	}
 
-	r.debugf("accepting append entries from %s @ %d", args.ID, args.Term)
 	r.votedFor = args.ID
 	r.currentTerm = args.Term
 	r.lastLeaderContact = time.Now().UTC()
