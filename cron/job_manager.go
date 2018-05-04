@@ -533,7 +533,7 @@ func (jm *JobManager) onTaskComplete(t Task, elapsed time.Duration, err error) {
 			WithErr(err))
 	}
 
-	if err != nil {
+	if err != nil && jm.log != nil {
 		jm.log.Error(err)
 	}
 
