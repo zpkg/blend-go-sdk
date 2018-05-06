@@ -156,6 +156,7 @@ func (dbc *Connection) openNewSQLConnection() (*sql.DB, error) {
 	if err != nil {
 		return nil, exception.Wrap(err)
 	}
+	dbc.statementCache = newStatementCache(dbConn)
 
 	// action config points.
 	dbConn.SetConnMaxLifetime(dbc.config.GetMaxLifetime())
@@ -234,21 +235,6 @@ func (dbc *Connection) Prepare(statement string, tx *sql.Tx) (*sql.Stmt, error) 
 	return stmt, nil
 }
 
-func (dbc *Connection) ensureStatementCache() error {
-	if dbc.statementCache == nil {
-		dbc.statementCacheLock.Lock()
-		defer dbc.statementCacheLock.Unlock()
-		if dbc.statementCache == nil {
-			db, err := dbc.Open()
-			if err != nil {
-				return exception.Wrap(err)
-			}
-			dbc.statementCache = newStatementCache(db.connection)
-		}
-	}
-	return nil
-}
-
 // PrepareCached prepares a potentially cached statement.
 func (dbc *Connection) PrepareCached(id, statement string, tx *sql.Tx) (*sql.Stmt, error) {
 	if tx != nil {
@@ -260,7 +246,6 @@ func (dbc *Connection) PrepareCached(id, statement string, tx *sql.Tx) (*sql.Stm
 	}
 
 	if dbc.useStatementCache {
-		dbc.ensureStatementCache()
 		return dbc.statementCache.Prepare(id, statement)
 	}
 	return dbc.Prepare(statement, tx)
