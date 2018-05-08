@@ -22,6 +22,8 @@ func TestNames(t *testing.T) {
 	names["Mark P Williams"] = &Name{"", "Mark", "P", "Williams", ""}
 	names["Aaron bin Omar"] = &Name{"", "Aaron", "", "bin Omar", ""}
 	names["Aaron ibn Omar"] = &Name{"", "Aaron", "", "ibn Omar", ""}
+	names[""] = &Name{"", "", "", "", ""}
+	names["Dr"] = &Name{"Dr.", "", "", "", ""}
 
 	for rawName, expectedResult := range names {
 		result := Parse(rawName)
