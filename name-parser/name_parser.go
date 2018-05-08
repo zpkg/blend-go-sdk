@@ -121,7 +121,7 @@ func Parse(input string) *Name {
 		for j := i; j < end; j++ {
 			lastName = lastName + " " + fixCase(nameParts[j])
 		}
-	} else {
+	} else if i < len(nameParts) {
 		firstName = fixCase(nameParts[i])
 	}
 
