@@ -450,3 +450,22 @@ func TestClientTrace(t *testing.T) {
 	assert.Nil(err)
 	assert.True(receivedByte)
 }
+
+func TestRequestInsecureSkipVerify(t *testing.T) {
+	assert := assert.New(t)
+
+	ts := httptest.NewTLSServer(http.HandlerFunc(func(res http.ResponseWriter, req *http.Request) {
+		res.WriteHeader(http.StatusOK)
+		fmt.Fprintf(res, "OK!\n")
+	}))
+	defer ts.Close()
+
+	assert.True(strings.HasPrefix(ts.URL, "https"))
+
+	req := New().AsGet().WithVerifyTLS(false).WithURL(ts.URL)
+
+	contents, meta, err := req.BytesWithMeta()
+	assert.Nil(err)
+	assert.Equal(http.StatusOK, meta.StatusCode)
+	assert.NotEmpty(contents)
+}
