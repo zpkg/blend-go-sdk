@@ -23,6 +23,7 @@ ci: vet profanity cover
 
 new-install:
 	@go get -u github.com/lib/pq
+	@go get -u golang.org/x/net/http2
 	@go get -u golang.org/x/oauth2
 	@go get -u golang.org/x/oauth2/google
 	@go get -u golang.org/x/lint/golint
