@@ -1,7 +1,6 @@
 package secrets
 
 import (
-	"bytes"
 	"crypto/x509"
 	"encoding/json"
 	"fmt"
@@ -12,12 +11,16 @@ import (
 	"path/filepath"
 	"time"
 
+	"golang.org/x/net/http2"
+
 	"github.com/blend/go-sdk/logger"
 )
 
 const (
 	// MethodGet is a request method.
 	MethodGet = "GET"
+	// MethodPost is a request method.
+	MethodPost = "POST"
 	// MethodPut is a request method.
 	MethodPut = "PUT"
 	// MethodDelete is a request method.
@@ -29,45 +32,82 @@ const (
 	HeaderContentType = "Content-Type"
 	// ContentTypeApplicationJSON is a content type.
 	ContentTypeApplicationJSON = "application/json"
+
+	// DefaultBufferPoolSize is the default buffer pool size.
+	DefaultBufferPoolSize = 256
 )
 
 // New returns a new client.
-func New() *Client {
+func New() (*Client, error) {
+	xport := &http.Transport{}
+	err := http2.ConfigureTransport(xport)
+	if err != nil {
+		return nil, err
+	}
+	remote, err := url.ParseRequestURI(DefaultAddr)
+	if err != nil {
+		return nil, err
+	}
 	return &Client{
-		addr: DefaultAddr,
+		remote:     remote,
+		bufferPool: NewBufferPool(DefaultBufferPoolSize),
 		client: &http.Client{
 			Timeout:   DefaultTimeout,
-			Transport: &http.Transport{},
+			Transport: xport,
 		},
-	}
+	}, nil
 }
 
 // NewFromConfig returns a new client from a config.
-func NewFromConfig(cfg *Config) *Client {
-	return New().WithAddr(cfg.GetAddr()).
-		WithToken(cfg.GetToken()).
-		WithTimeout(cfg.GetTimeout())
+func NewFromConfig(cfg *Config) (*Client, error) {
+	xport := &http.Transport{}
+	err := http2.ConfigureTransport(xport)
+	if err != nil {
+		return nil, err
+	}
+	remote, err := url.ParseRequestURI(cfg.GetAddr())
+	if err != nil {
+		return nil, err
+	}
+	return &Client{
+		remote:     remote,
+		bufferPool: NewBufferPool(DefaultBufferPoolSize),
+		token:      cfg.GetToken(),
+		client: &http.Client{
+			Timeout:   cfg.GetTimeout(),
+			Transport: xport,
+		},
+	}, nil
+}
+
+// Must does things with the error such as panic.
+func Must(c *Client, err error) *Client {
+	if err != nil {
+		panic(err)
+	}
+	return c
 }
 
 // Client is a client to talk to the secrets store.
 type Client struct {
-	addr  string
-	token string
-	log   *logger.Logger
+	remote *url.URL
+	token  string
+	log    *logger.Logger
 
-	client   *http.Client
-	certPool *x509.CertPool
+	bufferPool *BufferPool
+	client     *http.Client
+	certPool   *x509.CertPool
 }
 
-// WithAddr set the client remote addr.
-func (c *Client) WithAddr(addr string) *Client {
-	c.addr = addr
+// WithRemote set the client remote url.
+func (c *Client) WithRemote(remote *url.URL) *Client {
+	c.remote = remote
 	return c
 }
 
-// Addr returns the client addr.
-func (c *Client) Addr() string {
-	return c.addr
+// Remote returns the client remote addr.
+func (c *Client) Remote() *url.URL {
+	return c.remote
 }
 
 // WithToken sets the token.
@@ -115,19 +155,13 @@ func (c *Client) Logger() *logger.Logger {
 }
 
 // Put puts a value.
-func (c *Client) Put(key string, value Values) error {
-	contents, err := json.Marshal(StorageData{Value: value})
+func (c *Client) Put(key string, data Values) error {
+	contents, err := c.jsonBody(data)
 	if err != nil {
 		return err
 	}
-
-	req, err := c.createRequest(MethodPut)
-	if err != nil {
-		return err
-	}
-	req.Header.Add(HeaderContentType, ContentTypeApplicationJSON)
-	req.URL.Path = filepath.Join("/v1/", key)
-	req.Body = ioutil.NopCloser(bytes.NewBuffer(contents))
+	req := c.createRequest(MethodPut, filepath.Join("/v1/", key))
+	req.Body = contents
 	res, err := c.send(req)
 	if err != nil {
 		return err
@@ -138,31 +172,32 @@ func (c *Client) Put(key string, value Values) error {
 
 // Get gets a value at a given key.
 func (c *Client) Get(key string) (Values, error) {
-	req, err := c.createRequest(MethodGet)
+	response, err := c.Meta(key)
 	if err != nil {
 		return nil, err
 	}
-	req.URL.Path = filepath.Join("/v1/", key)
+	return response.Data, nil
+}
+
+// Meta gets the metadata for a key.
+func (c *Client) Meta(key string) (*Secret, error) {
+	req := c.createRequest(MethodGet, filepath.Join("/v1/", key))
 	res, err := c.send(req)
 	if err != nil {
 		return nil, err
 	}
 	defer res.Close()
 
-	var response StorageResponse
+	var response Secret
 	if err := json.NewDecoder(res).Decode(&response); err != nil {
 		return nil, err
 	}
-	return response.Data.Value, nil
+	return &response, nil
 }
 
 // Delete puts a key.
 func (c *Client) Delete(key string) error {
-	req, err := c.createRequest(MethodDelete)
-	if err != nil {
-		return err
-	}
-	req.URL.Path = filepath.Join("/v1/", key)
+	req := c.createRequest(MethodDelete, filepath.Join("/v1/", key))
 	res, err := c.send(req)
 	if err != nil {
 		return err
@@ -171,18 +206,64 @@ func (c *Client) Delete(key string) error {
 	return nil
 }
 
-func (c *Client) createRequest(method string) (*http.Request, error) {
-	remote, err := url.ParseRequestURI(c.addr)
+// ListMounts lists mounts.
+func (c *Client) ListMounts() (map[string]Mount, error) {
+	req := c.createRequest(MethodGet, "/v1/sys/mounts")
+	res, err := c.send(req)
 	if err != nil {
 		return nil, err
 	}
+	defer res.Close()
+
+	var result map[string]Mount
+	err = c.readJSON(res, &result)
+	if err != nil {
+		return nil, err
+	}
+
+	return result, nil
+}
+
+// Mount creates a new mount.
+func (c *Client) Mount(path string, mountInfo *MountInput) error {
+	r := c.createRequest(MethodPost, fmt.Sprintf("/v1/sys/mounts/%s", path))
+	body, err := c.jsonBody(mountInfo)
+	if err != nil {
+		return err
+	}
+	r.Body = body
+	return c.discard(c.send(r))
+}
+
+func (c *Client) jsonBody(input interface{}) (io.ReadCloser, error) {
+	buf := c.bufferPool.Get()
+	err := json.NewEncoder(buf).Encode(input)
+	if err != nil {
+		return nil, err
+	}
+	return buf, nil
+}
+
+func (c *Client) readJSON(r io.Reader, output interface{}) error {
+	return json.NewDecoder(r).Decode(output)
+}
+
+// copyRemote returns a copy of our remote.
+func (c *Client) copyRemote() *url.URL {
+	remoteCopy := *c.remote
+	return &remoteCopy
+}
+
+func (c *Client) createRequest(method, pathFormat string, args ...interface{}) *http.Request {
+	remote := c.copyRemote()
+	remote.Path = fmt.Sprintf(pathFormat, args...)
 	return &http.Request{
 		Method: method,
 		URL:    remote,
 		Header: http.Header{
 			HeaderVaultToken: []string{c.Token()},
 		},
-	}, nil
+	}
 }
 
 func (c *Client) send(req *http.Request) (io.ReadCloser, error) {
@@ -194,8 +275,21 @@ func (c *Client) send(req *http.Request) (io.ReadCloser, error) {
 		return nil, err
 	}
 	if res.StatusCode > 299 {
-		contents, _ := ioutil.ReadAll(res.Body)
-		return nil, fmt.Errorf("non-2xx returned from remote: %d; %v", res.StatusCode, string(contents))
+		buf := c.bufferPool.Get()
+		defer buf.Close()
+		io.Copy(buf, res.Body)
+		return nil, fmt.Errorf("non-2xx returned from remote: %d; %v", res.StatusCode, buf.String())
 	}
 	return res.Body, nil
+}
+
+func (c *Client) discard(res io.ReadCloser, err error) error {
+	if err != nil {
+		return err
+	}
+	defer res.Close()
+	if _, err := io.Copy(ioutil.Discard, res); err != nil {
+		return err
+	}
+	return nil
 }
