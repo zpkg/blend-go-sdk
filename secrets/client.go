@@ -34,7 +34,7 @@ const (
 	ContentTypeApplicationJSON = "application/json"
 
 	// DefaultBufferPoolSize is the default buffer pool size.
-	DefaultBufferPoolSize = 256
+	DefaultBufferPoolSize = 1024
 )
 
 // New returns a new client.
