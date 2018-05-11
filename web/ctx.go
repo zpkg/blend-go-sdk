@@ -13,6 +13,7 @@ import (
 
 	"strings"
 
+	"github.com/blend/go-sdk/exception"
 	"github.com/blend/go-sdk/logger"
 )
 
@@ -338,7 +339,10 @@ func (rc *Ctx) PostBodyAsJSON(response interface{}) error {
 	if err != nil {
 		return err
 	}
-	return json.Unmarshal(body, response)
+	if err = json.Unmarshal(body, response); err != nil {
+		return exception.Wrap(err)
+	}
+	return nil
 }
 
 // PostBodyAsXML reads the incoming post body (closing it) and marshals it to the target object as xml.
@@ -347,7 +351,10 @@ func (rc *Ctx) PostBodyAsXML(response interface{}) error {
 	if err != nil {
 		return err
 	}
-	return xml.Unmarshal(body, response)
+	if err = xml.Unmarshal(body, response); err != nil {
+		return exception.Wrap(err)
+	}
+	return nil
 }
 
 // PostedFiles returns any files posted
@@ -359,11 +366,11 @@ func (rc *Ctx) PostedFiles() ([]PostedFile, error) {
 		for key := range rc.request.MultipartForm.File {
 			fileReader, fileHeader, err := rc.request.FormFile(key)
 			if err != nil {
-				return nil, err
+				return nil, exception.Wrap(err)
 			}
 			bytes, err := ioutil.ReadAll(fileReader)
 			if err != nil {
-				return nil, err
+				return nil, exception.Wrap(err)
 			}
 			files = append(files, PostedFile{Key: key, FileName: fileHeader.Filename, Contents: bytes})
 		}
@@ -374,7 +381,7 @@ func (rc *Ctx) PostedFiles() ([]PostedFile, error) {
 				if fileReader, fileHeader, err := rc.request.FormFile(key); err == nil && fileReader != nil {
 					bytes, err := ioutil.ReadAll(fileReader)
 					if err != nil {
-						return nil, err
+						return nil, exception.Wrap(err)
 					}
 					files = append(files, PostedFile{Key: key, FileName: fileHeader.Filename, Contents: bytes})
 				}
