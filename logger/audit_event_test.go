@@ -32,7 +32,8 @@ func TestAuditEventListener(t *testing.T) {
 	}))
 
 	go func() {
-		all.Trigger(NewAuditEvent("principal", "verb", "noun").
+		all.Trigger(NewAuditEvent("principal", "verb").
+			WithNoun("noun").
 			WithSubject("subject").
 			WithProperty("property").
 			WithUserAgent("user-agent").
@@ -40,7 +41,8 @@ func TestAuditEventListener(t *testing.T) {
 			WithExtra(Labels{"foo": "bar"}))
 	}()
 	go func() {
-		all.Trigger(NewAuditEvent("principal", "verb", "noun").
+		all.Trigger(NewAuditEvent("principal", "verb").
+			WithNoun("noun").
 			WithSubject("subject").
 			WithProperty("property").
 			WithUserAgent("user-agent").
@@ -57,7 +59,7 @@ func TestAuditEventListener(t *testing.T) {
 func TestAuditEventInterfaces(t *testing.T) {
 	assert := assert.New(t)
 
-	ae := NewAuditEvent("principal", "verb", "noun").WithHeadings("heading").WithLabel("foo", "bar")
+	ae := NewAuditEvent("principal", "verb").WithNoun("noun").WithHeadings("heading").WithLabel("foo", "bar")
 
 	eventProvider, isEvent := MarshalEvent(ae)
 	assert.True(isEvent)
@@ -76,7 +78,7 @@ func TestAuditEventInterfaces(t *testing.T) {
 func TestAuditEventProperties(t *testing.T) {
 	assert := assert.New(t)
 
-	ae := NewAuditEvent("", "", "")
+	ae := NewAuditEvent("", "")
 	assert.False(ae.Timestamp().IsZero())
 	assert.True(ae.WithTimestamp(time.Time{}).Timestamp().IsZero())
 
