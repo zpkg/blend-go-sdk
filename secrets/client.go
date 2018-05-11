@@ -155,12 +155,12 @@ func (c *Client) Logger() *logger.Logger {
 }
 
 // Put puts a value.
-func (c *Client) Put(key string, data Values) error {
+func (c *Client) Put(key string, data Values, options ...Option) error {
 	contents, err := c.jsonBody(data)
 	if err != nil {
 		return err
 	}
-	req := c.createRequest(MethodPut, filepath.Join("/v1/", key))
+	req := c.createRequest(MethodPut, filepath.Join("/v1/", key), options...)
 	req.Body = contents
 	res, err := c.send(req)
 	if err != nil {
@@ -171,7 +171,7 @@ func (c *Client) Put(key string, data Values) error {
 }
 
 // Get gets a value at a given key.
-func (c *Client) Get(key string) (Values, error) {
+func (c *Client) Get(key string, options ...Option) (Values, error) {
 	response, err := c.Meta(key)
 	if err != nil {
 		return nil, err
@@ -180,8 +180,8 @@ func (c *Client) Get(key string) (Values, error) {
 }
 
 // Meta gets the metadata for a key.
-func (c *Client) Meta(key string) (*Secret, error) {
-	req := c.createRequest(MethodGet, filepath.Join("/v1/", key))
+func (c *Client) Meta(key string, options ...Option) (*Secret, error) {
+	req := c.createRequest(MethodGet, filepath.Join("/v1/", key), options...)
 	res, err := c.send(req)
 	if err != nil {
 		return nil, err
@@ -196,8 +196,8 @@ func (c *Client) Meta(key string) (*Secret, error) {
 }
 
 // Delete puts a key.
-func (c *Client) Delete(key string) error {
-	req := c.createRequest(MethodDelete, filepath.Join("/v1/", key))
+func (c *Client) Delete(key string, options ...Option) error {
+	req := c.createRequest(MethodDelete, filepath.Join("/v1/", key), options...)
 	res, err := c.send(req)
 	if err != nil {
 		return err
@@ -208,7 +208,7 @@ func (c *Client) Delete(key string) error {
 
 // ListMounts lists mounts.
 func (c *Client) ListMounts() (map[string]Mount, error) {
-	req := c.createRequest(MethodGet, "/v1/sys/mounts")
+	req := c.createRequest(MethodGet, "/v1/sys/mounts", List())
 	res, err := c.send(req)
 	if err != nil {
 		return nil, err
@@ -226,7 +226,7 @@ func (c *Client) ListMounts() (map[string]Mount, error) {
 
 // Mount creates a new mount.
 func (c *Client) Mount(path string, mountInfo *MountInput) error {
-	r := c.createRequest(MethodPost, fmt.Sprintf("/v1/sys/mounts/%s", path))
+	r := c.createRequest(MethodPost, filepath.Join("/v1/sys/mounts/%s", path))
 	body, err := c.jsonBody(mountInfo)
 	if err != nil {
 		return err
@@ -254,16 +254,25 @@ func (c *Client) copyRemote() *url.URL {
 	return &remoteCopy
 }
 
-func (c *Client) createRequest(method, pathFormat string, args ...interface{}) *http.Request {
+// applyOptions applies options to a request.
+func (c *Client) applyOptions(req *http.Request, options ...Option) {
+	for _, opt := range options {
+		opt(req)
+	}
+}
+
+func (c *Client) createRequest(method, path string, options ...Option) *http.Request {
 	remote := c.copyRemote()
-	remote.Path = fmt.Sprintf(pathFormat, args...)
-	return &http.Request{
+	remote.Path = path
+	req := &http.Request{
 		Method: method,
 		URL:    remote,
 		Header: http.Header{
 			HeaderVaultToken: []string{c.Token()},
 		},
 	}
+	c.applyOptions(req, options...)
+	return req
 }
 
 func (c *Client) send(req *http.Request) (io.ReadCloser, error) {
