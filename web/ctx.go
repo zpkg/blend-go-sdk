@@ -318,7 +318,7 @@ func (rc *Ctx) PostBody() ([]byte, error) {
 			rc.postBody, err = ioutil.ReadAll(rc.request.Body)
 		}
 		if err != nil {
-			return nil, err
+			return nil, exception.Wrap(err)
 		}
 	}
 	return rc.postBody, nil
