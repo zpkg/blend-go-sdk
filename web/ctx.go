@@ -622,9 +622,15 @@ func (rc *Ctx) Redirectf(format string, args ...interface{}) *RedirectResult {
 
 // RedirectWithMethodf returns a redirect result with a given method.
 func (rc *Ctx) RedirectWithMethodf(method, format string, args ...interface{}) *RedirectResult {
+	if len(args) > 0 {
+		return &RedirectResult{
+			Method:      method,
+			RedirectURI: fmt.Sprintf(format, args...),
+		}
+	}
 	return &RedirectResult{
 		Method:      method,
-		RedirectURI: fmt.Sprintf(format, args...),
+		RedirectURI: format,
 	}
 }
 
