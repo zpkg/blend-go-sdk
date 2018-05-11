@@ -7,7 +7,7 @@ import (
 
 func main() {
 	log := logger.All()
-	client := secrets.NewFromConfig(secrets.NewConfigFromEnv()).WithLogger(log)
+	client := secrets.Must(secrets.NewFromConfig(secrets.NewConfigFromEnv())).WithLogger(log)
 
 	if err := client.Put("kv/foo/bar", secrets.Values{"value": "THE FOOOS"}); err != nil {
 		log.SyncFatalExit(err)

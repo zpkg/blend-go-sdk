@@ -10,7 +10,7 @@ import (
 
 const (
 	// Flag is the logger flag.
-	Flag = "secret"
+	Flag = "secrets"
 )
 
 // NewEvent returns a new event from a request.
@@ -68,6 +68,7 @@ func (e *Event) Key() string {
 // WriteJSON returns json values.
 func (e *Event) WriteJSON() map[string]interface{} {
 	return map[string]interface{}{
+		"remote": e.remote,
 		"method": e.method,
 		"key":    e.key,
 	}

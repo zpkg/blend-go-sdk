@@ -1,6 +1,7 @@
 package secrets
 
 import (
+	"net/url"
 	"time"
 
 	"github.com/blend/go-sdk/env"
@@ -34,6 +35,15 @@ type Config struct {
 // GetAddr returns the client addr.
 func (c Config) GetAddr(inherited ...string) string {
 	return util.Coalesce.String(c.Addr, DefaultAddr, inherited...)
+}
+
+// MustRemote returns the addr as a url.
+func (c Config) MustRemote(inherited ...string) *url.URL {
+	remote, err := url.ParseRequestURI(c.GetAddr(inherited...))
+	if err != nil {
+		panic(err)
+	}
+	return remote
 }
 
 // GetToken returns the client token.
