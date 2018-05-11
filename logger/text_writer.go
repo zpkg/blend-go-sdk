@@ -10,21 +10,6 @@ import (
 	"time"
 )
 
-const (
-	// DefaultBufferPoolSize is the default buffer pool size.
-	DefaultBufferPoolSize = 1 << 8 // 256
-
-	// DefaultTextTimeFormat is the default time format.
-	DefaultTextTimeFormat = time.RFC3339
-
-	// DefaultTextWriterUseColor is a default setting for writers.
-	DefaultTextWriterUseColor = true
-	// DefaultTextWriterShowHeadings is a default setting for writers.
-	DefaultTextWriterShowHeadings = true
-	// DefaultTextWriterShowTimestamp is a default setting for writers.
-	DefaultTextWriterShowTimestamp = true
-)
-
 // Asserts text writer is a writer.
 var (
 	_ Writer = &TextWriter{}
