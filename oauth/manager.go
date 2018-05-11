@@ -5,7 +5,6 @@ import (
 	"crypto/sha512"
 	"encoding/base64"
 	"fmt"
-	"log"
 	"net/http"
 	"strings"
 
@@ -117,7 +116,7 @@ func (m *Manager) Finish(r *http.Request) (*Result, error) {
 	// Handle the exchange code to initiate a transport.
 	tok, err := m.conf().Exchange(oauth2.NoContext, code)
 	if err != nil {
-		log.Fatal(err)
+		return nil, err
 	}
 	result.Response.AccessToken = tok.AccessToken
 	result.Response.TokenType = tok.TokenType
