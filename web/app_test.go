@@ -347,7 +347,7 @@ func TestAppDefaultResultProviderWithDefaultFromRoute(t *testing.T) {
 	assert := assert.New(t)
 
 	app := New().WithDefaultMiddleware(JSONProviderAsDefault)
-	app.Views().Templates().New(DefaultTemplateNameNotAuthorized).Parse(DefaultTemplateNotAuthorized)
+	app.Views().AddLiterals(DefaultTemplateNotAuthorized)
 	app.GET("/", controllerNoOp, SessionRequired, ViewProviderAsDefault)
 
 	//somehow assert that the content type is html
