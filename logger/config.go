@@ -6,16 +6,6 @@ import (
 	"github.com/blend/go-sdk/env"
 )
 
-var (
-	// DefaultFlags are the default flags.
-	DefaultFlags = []Flag{Fatal, Error, Warning, Info, WebRequest}
-	// DefaultFlagSet is the default verbosity for a diagnostics agent inited from the environment.
-	DefaultFlagSet = NewFlagSet(DefaultFlags...)
-
-	// DefaultHiddenFlags are the default hidden flags.
-	DefaultHiddenFlags []Flag
-)
-
 // NewConfigFromEnv returns a new config from the environment.
 func NewConfigFromEnv() *Config {
 	var config Config
