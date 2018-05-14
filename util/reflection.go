@@ -299,14 +299,16 @@ func (ru reflectionUtil) DecomposeStrings(tagName string, obj interface{}) map[s
 		field = objMeta.Field(x)
 		fieldValue = objValue.FieldByName(field.Name)
 
+		if field.Type.Kind() == reflect.Struct {
+			childFields := ru.DecomposeStrings(tagName, fieldValue.Interface())
+			for key, value := range childFields {
+				output[key] = value
+			}
+		}
+
 		tag = field.Tag.Get(tagName)
 		if len(tag) > 0 {
-			if field.Type.Kind() == reflect.Struct {
-				childFields := ru.DecomposeStrings(tagName, objValue.Field(x).Interface())
-				for key, value := range childFields {
-					output[key] = value
-				}
-			} else if field.Type.Kind() == reflect.Map {
+			if field.Type.Kind() == reflect.Map {
 				continue
 			} else {
 				isCSV = false
