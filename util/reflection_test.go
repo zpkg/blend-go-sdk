@@ -8,19 +8,6 @@ import (
 	"github.com/blend/go-sdk/assert"
 )
 
-type subType struct {
-	ID   int    `json:"id"`
-	Name string `json:"name"`
-}
-
-type testType struct {
-	ID        int    `json:"id"`
-	Name      string `json:"name"`
-	NotTagged string
-	Tagged    string    `json:"is_tagged"`
-	SubTypes  []subType `json:"children"`
-}
-
 func TestDecompose(t *testing.T) {
 	assert := assert.New(t)
 
@@ -36,20 +23,41 @@ func TestDecompose(t *testing.T) {
 
 	decomposed := Reflection.Decompose(myObj)
 
-	_, hasKey := decomposed["id"]
+	_, hasKey := decomposed["ID"]
 	assert.True(hasKey)
 
-	_, hasKey = decomposed["name"]
+	_, hasKey = decomposed["Name"]
 	assert.True(hasKey)
 
 	_, hasKey = decomposed["NotTagged"]
 	assert.True(hasKey)
 
-	_, hasKey = decomposed["is_tagged"]
+	_, hasKey = decomposed["Tagged"]
 	assert.True(hasKey)
 
-	_, hasKey = decomposed["children"]
+	children, hasKey := decomposed["SubTypes"]
 	assert.True(hasKey)
+	assert.Len(children, 4)
+}
+
+func TestDecomposeStrings(t *testing.T) {
+	assert := assert.New(t)
+
+	input := mapStringsTest{
+		String:   "foo",
+		Base64:   []byte("this is base64"),
+		Bytes:    []byte("this is bytes"),
+		CSV:      []string{"foo", "bar", "baz"},
+		Duration: 10 * time.Second,
+	}
+
+	output := Reflection.DecomposeStrings("secret", input)
+	assert.NotEmpty(output)
+
+	assert.Equal("foo", output["string"])
+	assert.NotEqual("this is base64", output["base64Field"])
+	assert.Equal("this is bytes", output["bytesField"])
+	assert.Equal("10s", output["duration"])
 }
 
 func TestPatchObject(t *testing.T) {
@@ -73,11 +81,6 @@ func TestPatchObject(t *testing.T) {
 	assert.Equal("Is Not Tagged", myObj.Tagged)
 }
 
-type TestObject struct {
-	ID   int
-	Name string
-}
-
 func testCachedObject(obj interface{}) func() interface{} {
 	return func() interface{} {
 		return obj
@@ -87,7 +90,7 @@ func testCachedObject(obj interface{}) func() interface{} {
 func TestReflectTypeInterface(t *testing.T) {
 	assert := assert.New(t)
 
-	proto := testCachedObject(TestObject{ID: 1, Name: "Test"})
+	proto := testCachedObject(testObject{ID: 1, Name: "Test"})
 
 	assert.NotNil(proto())
 
@@ -98,40 +101,13 @@ func TestReflectTypeInterface(t *testing.T) {
 func TestReflectValueInterface(t *testing.T) {
 	assert := assert.New(t)
 
-	proto := testCachedObject(&TestObject{ID: 1, Name: "Test"})
+	proto := testCachedObject(&testObject{ID: 1, Name: "Test"})
 
 	assert.NotNil(proto())
 
 	objValue := Reflection.Value(proto())
 	assert.NotNil(objValue)
 	assert.True(objValue.CanSet())
-}
-
-type mapStringsTest struct {
-	Bool     bool          `secret:"bool"`
-	Float32  float32       `secret:"float32"`
-	Float64  float64       `secret:"float64"`
-	Int8     int8          `secret:"int8"`
-	Int16    int16         `secret:"int16"`
-	Int32    int32         `secret:"int32"`
-	Int      int           `secret:"int"`
-	Int64    int64         `secret:"int64"`
-	Uint8    uint8         `secret:"uint8"`
-	Uint16   uint16        `secret:"uint16"`
-	Uint32   uint32        `secret:"uint32"`
-	Uint64   uint32        `secret:"uint64"`
-	String   string        `secret:"string"`
-	Duration time.Duration `secret:"duration"`
-
-	CSV    []string `secret:"csvField,csv"`
-	Base64 []byte   `secret:"base64Field,base64"`
-	Bytes  []byte   `secret:"bytesField,bytes"`
-
-	Sub mapStringsTestSubObject
-}
-
-type mapStringsTestSubObject struct {
-	Foo string `secret:"foo"`
 }
 
 func TestPatchStrings(t *testing.T) {
@@ -387,4 +363,49 @@ func TestPatchStrings(t *testing.T) {
 	}
 	assert.Nil(Reflection.PatchStrings("secret", childValid, &mule))
 	assert.Equal("this is foo", string(mule.Sub.Foo))
+}
+
+type subType struct {
+	ID   int
+	Name string
+}
+
+type testObject struct {
+	ID   int
+	Name string
+}
+
+type testType struct {
+	ID        int
+	Name      string
+	NotTagged string
+	Tagged    string
+	SubTypes  []subType
+}
+
+type mapStringsTest struct {
+	Bool     bool          `secret:"bool"`
+	Float32  float32       `secret:"float32"`
+	Float64  float64       `secret:"float64"`
+	Int8     int8          `secret:"int8"`
+	Int16    int16         `secret:"int16"`
+	Int32    int32         `secret:"int32"`
+	Int      int           `secret:"int"`
+	Int64    int64         `secret:"int64"`
+	Uint8    uint8         `secret:"uint8"`
+	Uint16   uint16        `secret:"uint16"`
+	Uint32   uint32        `secret:"uint32"`
+	Uint64   uint32        `secret:"uint64"`
+	String   string        `secret:"string"`
+	Duration time.Duration `secret:"duration"`
+
+	CSV    []string `secret:"csvField,csv"`
+	Base64 []byte   `secret:"base64Field,base64"`
+	Bytes  []byte   `secret:"bytesField,bytes"`
+
+	Sub mapStringsTestSubObject
+}
+
+type mapStringsTestSubObject struct {
+	Foo string `secret:"foo"`
 }

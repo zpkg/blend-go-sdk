@@ -2,6 +2,7 @@ package util
 
 import (
 	"encoding/base64"
+	"fmt"
 	"reflect"
 	"strconv"
 	"strings"
@@ -211,10 +212,142 @@ func (ru reflectionUtil) IsExported(fieldName string) bool {
 	return fieldName != "" && strings.ToUpper(fieldName)[0] == fieldName[0]
 }
 
-// Decompose is a *very* inefficient way to turn an object into a map string => interface.
-func (ru reflectionUtil) Decompose(object interface{}) map[string]interface{} {
-	var output map[string]interface{}
-	JSON.Deserialize(&output, JSON.Serialize(object))
+// Decompose fully decomposes an object into map data.
+func (ru reflectionUtil) Decompose(obj interface{}) map[string]interface{} {
+	output := map[string]interface{}{}
+
+	objMeta := ru.Type(obj)
+	objValue := ru.Value(obj)
+
+	var field reflect.StructField
+	var fieldValue reflect.Value
+
+	for x := 0; x < objMeta.NumField(); x++ {
+		field = objMeta.Field(x)
+		fieldValue = objValue.FieldByName(field.Name)
+
+		if field.Type.Kind() == reflect.Struct || field.Type.Kind() == reflect.Slice || field.Type.Kind() == reflect.Map {
+			output[field.Name] = ru.decomposeAny(objValue.Field(x).Interface())
+		} else {
+			output[field.Name] = fieldValue.Interface()
+		}
+	}
+
+	return output
+}
+
+func (ru reflectionUtil) decomposeAny(obj interface{}) interface{} {
+	objMeta := ru.Type(obj)
+	objValue := ru.Value(obj)
+
+	if objMeta.Kind() == reflect.Slice {
+		output := make([]interface{}, objValue.Len())
+		for index := 0; index < objValue.Len(); index++ {
+			output[index] = ru.decomposeAny(objValue.Index(index).Interface())
+		}
+		return output
+	}
+
+	if objMeta.Kind() == reflect.Map {
+		output := map[string]interface{}{}
+		keys := objValue.MapKeys()
+		for _, key := range keys {
+			output[fmt.Sprintf("%v", key.Interface())] = ru.decomposeAny(objValue.MapIndex(key).Interface())
+		}
+	}
+
+	if objMeta.Kind() == reflect.Struct {
+		output := map[string]interface{}{}
+
+		var field reflect.StructField
+		var fieldValue reflect.Value
+
+		for x := 0; x < objMeta.NumField(); x++ {
+			field = objMeta.Field(x)
+			fieldValue = objValue.FieldByName(field.Name)
+
+			// Treat structs as nested values.
+			if field.Type.Kind() == reflect.Struct || field.Type.Kind() == reflect.Slice || field.Type.Kind() == reflect.Map {
+				output[field.Name] = ru.decomposeAny(objValue.Field(x).Interface())
+			} else {
+				output[field.Name] = fieldValue.Interface()
+			}
+		}
+		return output
+	}
+
+	return obj
+}
+
+// DecomposeStrings decomposes an object into a string map.
+func (ru reflectionUtil) DecomposeStrings(tagName string, obj interface{}) map[string]string {
+	output := map[string]string{}
+
+	objMeta := ru.Type(obj)
+	objValue := ru.Value(obj)
+
+	var field reflect.StructField
+	var fieldValue reflect.Value
+	var tag string
+	var dataField string
+	var pieces []string
+	var isCSV bool
+	var isBytes bool
+	var isBase64 bool
+
+	for x := 0; x < objMeta.NumField(); x++ {
+		field = objMeta.Field(x)
+		fieldValue = objValue.FieldByName(field.Name)
+
+		tag = field.Tag.Get(tagName)
+		if len(tag) > 0 {
+			if field.Type.Kind() == reflect.Struct {
+				childFields := ru.DecomposeStrings(tagName, objValue.Field(x).Interface())
+				for key, value := range childFields {
+					output[key] = value
+				}
+			} else if field.Type.Kind() == reflect.Map {
+				continue
+			} else {
+				isCSV = false
+				isBytes = false
+				isBase64 = false
+
+				pieces = strings.Split(tag, ",")
+				dataField = pieces[0]
+
+				if len(pieces) > 1 {
+					for y := 1; y < len(pieces); y++ {
+						if pieces[y] == FieldFlagCSV {
+							isCSV = true
+						} else if pieces[y] == FieldFlagBase64 {
+							isBase64 = true
+						} else if pieces[y] == FieldFlagBytes {
+							isBytes = true
+						}
+					}
+				}
+
+				if isCSV {
+					if typed, isTyped := fieldValue.Interface().([]string); isTyped {
+						output[dataField] = strings.Join(typed, ",")
+					}
+				} else if isBytes {
+					// DOUBLE HALP
+					if typed, isTyped := fieldValue.Interface().([]byte); isTyped {
+						output[dataField] = string(typed)
+					}
+				} else if isBase64 {
+					if typed, isTyped := fieldValue.Interface().([]byte); isTyped {
+						output[dataField] = base64.StdEncoding.EncodeToString(typed)
+					}
+				} else {
+					output[dataField] = fmt.Sprintf("%v", fieldValue.Interface())
+				}
+			}
+		}
+	}
+
 	return output
 }
 
@@ -243,7 +376,13 @@ func (ru reflectionUtil) Patch(obj interface{}, patchValues map[string]interface
 }
 
 // PatchStrings sets an object from a set of strings mapping field names to string values (to be parsed).
-func (ru reflectionUtil) PatchStrings(tagName string, data map[string]string, obj interface{}) error {
+func (ru reflectionUtil) PatchStrings(tagName string, data map[string]string, obj interface{}) (err error) {
+	defer func() {
+		if r := recover(); r != nil {
+			err = exception.Newf("%v", r)
+		}
+	}()
+
 	// check if the type implements marshaler.
 	if typed, isTyped := obj.(PatchStringer); isTyped {
 		return typed.PatchStrings(data)
@@ -258,7 +397,6 @@ func (ru reflectionUtil) PatchStrings(tagName string, data map[string]string, ob
 	var fieldType reflect.Type
 	var fieldValue reflect.Value
 	var tag string
-	var err error
 	var pieces []string
 	var dataField string
 	var dataValue string
@@ -268,6 +406,7 @@ func (ru reflectionUtil) PatchStrings(tagName string, data map[string]string, ob
 	var isCSV bool
 	var isBytes bool
 	var isBase64 bool
+	var assigned bool
 
 	for x := 0; x < objMeta.NumField(); x++ {
 		isCSV = false
@@ -311,7 +450,7 @@ func (ru reflectionUtil) PatchStrings(tagName string, data map[string]string, ob
 			} else if isBase64 {
 				dataFieldValue, err = base64.StdEncoding.DecodeString(dataValue)
 				if err != nil {
-					return err
+					return
 				}
 			} else if isBytes {
 				dataFieldValue = []byte(dataValue)
@@ -322,7 +461,8 @@ func (ru reflectionUtil) PatchStrings(tagName string, data map[string]string, ob
 				case typeDuration:
 					dataFieldValue, err = time.ParseDuration(dataValue)
 					if err != nil {
-						return exception.Wrap(err)
+						err = exception.Wrap(err)
+						return
 					}
 				default:
 					switch fieldType.Kind() {
@@ -335,17 +475,20 @@ func (ru reflectionUtil) PatchStrings(tagName string, data map[string]string, ob
 					case reflect.Float32:
 						dataFieldValue, err = strconv.ParseFloat(dataValue, 32)
 						if err != nil {
-							return exception.Wrap(err)
+							err = exception.Wrap(err)
+							return
 						}
 					case reflect.Float64:
 						dataFieldValue, err = strconv.ParseFloat(dataValue, 64)
 						if err != nil {
-							return exception.Wrap(err)
+							err = exception.Wrap(err)
+							return
 						}
 					case reflect.Int8:
 						dataFieldValue, err = strconv.ParseInt(dataValue, 10, 8)
 						if err != nil {
-							return exception.Wrap(err)
+							err = exception.Wrap(err)
+							return
 						}
 					case reflect.Int16:
 						dataFieldValue, err = strconv.ParseInt(dataValue, 10, 16)
@@ -355,12 +498,14 @@ func (ru reflectionUtil) PatchStrings(tagName string, data map[string]string, ob
 					case reflect.Int32:
 						dataFieldValue, err = strconv.ParseInt(dataValue, 10, 32)
 						if err != nil {
-							return exception.Wrap(err)
+							err = exception.Wrap(err)
+							return
 						}
 					case reflect.Int:
 						dataFieldValue, err = strconv.ParseInt(dataValue, 10, 64)
 						if err != nil {
-							return exception.Wrap(err)
+							err = exception.Wrap(err)
+							return
 						}
 					case reflect.Int64:
 						dataFieldValue, err = strconv.ParseInt(dataValue, 10, 64)
@@ -370,47 +515,55 @@ func (ru reflectionUtil) PatchStrings(tagName string, data map[string]string, ob
 					case reflect.Uint8:
 						dataFieldValue, err = strconv.ParseUint(dataValue, 10, 8)
 						if err != nil {
-							return exception.Wrap(err)
+							err = exception.Wrap(err)
+							return
 						}
 					case reflect.Uint16:
 						dataFieldValue, err = strconv.ParseUint(dataValue, 10, 8)
 						if err != nil {
-							return exception.Wrap(err)
+							err = exception.Wrap(err)
+							return
 						}
 					case reflect.Uint32:
 						dataFieldValue, err = strconv.ParseUint(dataValue, 10, 32)
 						if err != nil {
-							return exception.Wrap(err)
+							err = exception.Wrap(err)
+							return
 						}
 					case reflect.Uint64:
 						dataFieldValue, err = strconv.ParseUint(dataValue, 10, 64)
 						if err != nil {
-							return exception.Wrap(err)
+							err = exception.Wrap(err)
+							return
 						}
 					case reflect.Uint, reflect.Uintptr:
 						dataFieldValue, err = strconv.ParseUint(dataValue, 10, 64)
 						if err != nil {
-							return exception.Wrap(err)
+							err = exception.Wrap(err)
+							return
 						}
 					case reflect.String:
 						dataFieldValue = dataValue
 					default:
-						return exception.New("map strings into; unhandled assignment").WithMessagef("type %s", fieldType.String())
+						err = exception.New("map strings into; unhandled assignment").WithMessagef("type %s", fieldType.String())
+						return
 					}
 				}
 			}
 
 			value := ru.Value(dataFieldValue)
 			if !value.IsValid() {
-				return exception.New("invalid value").WithMessagef("%s `%s`", objMeta.Name(), field.Name)
+				err = exception.New("invalid value").WithMessagef("%s `%s`", objMeta.Name(), field.Name)
+				return
 			}
 
-			assigned, err := ru.tryAssignment(fieldValue, value)
+			assigned, err = ru.tryAssignment(fieldValue, value)
 			if err != nil {
-				return err
+				return
 			}
 			if !assigned {
-				return exception.New("cannot set field").WithMessagef("%s `%s`", objMeta.Name(), field.Name)
+				err = exception.New("cannot set field").WithMessagef("%s `%s`", objMeta.Name(), field.Name)
+				return
 			}
 		}
 	}

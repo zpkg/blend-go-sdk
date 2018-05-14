@@ -3,7 +3,7 @@ package secrets
 import "time"
 
 // Values is a bag of values.
-type Values = map[string]interface{}
+type Values = map[string]string
 
 // Secret is the structure returned for every secret within Vault.
 type Secret struct {
@@ -14,7 +14,7 @@ type Secret struct {
 	Renewable     bool   `json:"renewable"`
 	// Data is the actual contents of the secret. The format of the data
 	// is arbitrary and up to the secret backend.
-	Data map[string]interface{} `json:"data"`
+	Data Values `json:"data"`
 	// Warnings contains any warnings related to the operation. These
 	// are not issues that caused the command to fail, but that the
 	// client should be aware of.

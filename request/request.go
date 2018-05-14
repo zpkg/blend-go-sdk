@@ -283,19 +283,6 @@ func (hr *Request) WithPostData(field string, value string) *Request {
 	return hr
 }
 
-// WithPostDataFromObject sets the post data for a request as json from a given object.
-// Remarks; this differs from `WithJSONBody` in that it sets individual post form fields
-// for each member of the object.
-func (hr *Request) WithPostDataFromObject(object interface{}) *Request {
-	postDatums := util.Reflection.DecomposeToPostDataAsJSON(object)
-
-	for _, item := range postDatums {
-		hr.WithPostData(item.Key, item.Value)
-	}
-
-	return hr
-}
-
 // WithPostedFile adds a posted file to the multipart form elements of the request.
 func (hr *Request) WithPostedFile(key, fileName string, fileContents io.Reader) *Request {
 	hr.postedFiles = append(hr.postedFiles, PostedFile{Key: key, FileName: fileName, FileContents: fileContents})
