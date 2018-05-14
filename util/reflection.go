@@ -1,9 +1,11 @@
 package util
 
 import (
-	"fmt"
+	"encoding/base64"
 	"reflect"
+	"strconv"
 	"strings"
+	"time"
 
 	"github.com/blend/go-sdk/exception"
 )
@@ -189,8 +191,8 @@ func (ru reflectionUtil) tryAssignment(fieldType, valueType reflect.Type, field,
 	return
 }
 
-// PatchObject updates an object based on a map of field names to values.
-func (ru reflectionUtil) PatchObject(obj interface{}, patchValues map[string]interface{}) (err error) {
+// Patch updates an object based on a map of field names to values.
+func (ru reflectionUtil) Patch(obj interface{}, patchValues map[string]interface{}) (err error) {
 	defer func() {
 		if r := recover(); r != nil {
 			err = exception.Newf("%v", r)
@@ -211,112 +213,6 @@ func (ru reflectionUtil) PatchObject(obj interface{}, patchValues map[string]int
 		}
 	}
 	return nil
-}
-
-// KeyValuePairOfString is a pair of string values.
-type KeyValuePairOfString struct {
-	Key, Value string
-}
-
-// DecomposeToPostData dumps an object to a slice of key value tuples representing field name as form value and string value of field.
-func (ru reflectionUtil) DecomposeToPostData(object interface{}) []KeyValuePairOfString {
-	kvps := []KeyValuePairOfString{}
-
-	objType := ru.ReflectType(object)
-	objValue := ru.ReflectValue(object)
-
-	numberOfFields := objType.NumField()
-	for index := 0; index < numberOfFields; index++ {
-		field := objType.Field(index)
-		valueField := objValue.Field(index)
-
-		kvp := KeyValuePairOfString{}
-
-		if !field.Anonymous {
-			tag := field.Tag.Get("json")
-			if len(tag) != 0 {
-				if strings.Contains(tag, ",") {
-					parts := strings.Split(tag, ",")
-					kvp.Key = parts[0]
-				} else {
-					kvp.Key = tag
-				}
-			} else {
-				kvp.Key = field.Name
-			}
-
-			if field.Type.Kind() == reflect.Slice {
-				//do something special
-				for subIndex := 0; subIndex < valueField.Len(); subIndex++ {
-					itemAtIndex := valueField.Index(subIndex).Interface()
-					for _, prop := range ru.DecomposeToPostData(itemAtIndex) {
-						if len(prop.Value) != 0 { //this is a gutcheck, it shouldn't be needed
-							ikvp := KeyValuePairOfString{}
-							ikvp.Key = fmt.Sprintf("%s[%d].%s", kvp.Key, subIndex, prop.Key)
-							ikvp.Value = prop.Value
-							kvps = append(kvps, ikvp)
-						}
-					}
-				}
-			} else {
-				value := ru.FollowValuePointer(valueField)
-				if value != nil {
-					kvp.Value = fmt.Sprintf("%v", value)
-					if len(kvp.Value) != 0 {
-						kvps = append(kvps, kvp)
-					}
-				}
-			}
-		}
-	}
-
-	return kvps
-}
-
-// DecomposeToPostDataAsJSON returns an array of KeyValuePairOfString for an object.
-func (ru reflectionUtil) DecomposeToPostDataAsJSON(object interface{}) []KeyValuePairOfString {
-	kvps := []KeyValuePairOfString{}
-
-	objType := ru.ReflectType(object)
-	objValue := ru.ReflectValue(object)
-
-	numberOfFields := objType.NumField()
-	for index := 0; index < numberOfFields; index++ {
-		field := objType.Field(index)
-		valueField := objValue.Field(index)
-
-		kvp := KeyValuePairOfString{}
-
-		if !field.Anonymous {
-			tag := field.Tag.Get("json")
-			if len(tag) != 0 {
-				if strings.Contains(tag, ",") {
-					parts := strings.Split(tag, ",")
-					kvp.Key = parts[0]
-				} else {
-					kvp.Key = tag
-				}
-			} else {
-				kvp.Key = field.Name
-			}
-
-			valueDereferenced := ru.FollowValue(valueField)
-			value := ru.FollowValuePointer(valueField)
-			if value != nil {
-				if valueDereferenced.Kind() == reflect.Slice || valueDereferenced.Kind() == reflect.Map {
-					kvp.Value = JSON.Serialize(value)
-				} else {
-					kvp.Value = fmt.Sprintf("%v", value)
-				}
-			}
-
-			if len(kvp.Value) != 0 {
-				kvps = append(kvps, kvp)
-			}
-		}
-	}
-
-	return kvps
 }
 
 // Decompose is a *very* inefficient way to turn an object into a map string => interface.
@@ -392,4 +288,197 @@ func (ru reflectionUtil) CoalesceFields(object interface{}) {
 			ru.CoalesceFields(objectValue.Index(i).Addr().Interface())
 		}
 	}
+}
+
+// PatchStrings options.
+const (
+	// FieldTagEnv is the struct tag for what environment variable to use to populate a field.
+	FieldTagEnv = "env"
+	// FieldFlagCSV is a field tag flag (say that 10 times fast).
+	FieldFlagCSV = "csv"
+	// FieldFlagBase64 is a field tag flag (say that 10 times fast).
+	FieldFlagBase64 = "base64"
+	// FieldFlagBytes is a field tag flag (say that 10 times fast).
+	FieldFlagBytes = "bytes"
+)
+
+// MapStringsUnmarshaler is a type that handles unmarshalling a map of strings into itself.
+type MapStringsUnmarshaler interface {
+	UnmarshalMapStrings(data map[string]string) error
+}
+
+// ReadInto reads the environment into tagged fields on the `obj`.
+func (ru reflectionUtil) MapStringsInto(tagName string, data map[string]string, obj interface{}) error {
+	// check if the type implements marshaler.
+	if typed, isTyped := obj.(MapStringsUnmarshaler); isTyped {
+		return typed.UnmarshalMapStrings(data)
+	}
+
+	objMeta := ru.ReflectType(obj)
+	objValue := ru.ReflectValue(obj)
+
+	typeDuration := reflect.TypeOf(time.Duration(time.Nanosecond))
+
+	var field reflect.StructField
+	var fieldType reflect.Type
+	var fieldValue reflect.Value
+	var tag string
+	var err error
+	var pieces []string
+	var dataField string
+	var dataValue string
+	var dataFieldValue interface{}
+	var hasDataValue bool
+
+	var isCSV bool
+	var isBytes bool
+	var isBase64 bool
+
+	for x := 0; x < objMeta.NumField(); x++ {
+		isCSV = false
+		isBytes = false
+		isBase64 = false
+
+		field = objMeta.Field(x)
+		fieldValue = objValue.FieldByName(field.Name)
+
+		// Treat structs as nested values.
+		if field.Type.Kind() == reflect.Struct {
+			if err = ru.MapStringsInto(tagName, data, objValue.Field(x).Addr().Interface()); err != nil {
+				return err
+			}
+			continue
+		}
+
+		tag = field.Tag.Get(tagName)
+		if len(tag) > 0 {
+			pieces = strings.Split(tag, ",")
+			dataField = pieces[0]
+			if len(pieces) > 1 {
+				for y := 1; y < len(pieces); y++ {
+					if pieces[y] == FieldFlagCSV {
+						isCSV = true
+					} else if pieces[y] == FieldFlagBase64 {
+						isBase64 = true
+					} else if pieces[y] == FieldFlagBytes {
+						isBytes = true
+					}
+				}
+			}
+
+			dataValue, hasDataValue = data[dataField]
+			if !hasDataValue {
+				continue
+			}
+
+			if isCSV {
+				dataFieldValue = strings.Split(dataValue, ",")
+			} else if isBase64 {
+				dataFieldValue, err = base64.StdEncoding.DecodeString(dataValue)
+				if err != nil {
+					return err
+				}
+			} else if isBytes {
+				dataFieldValue = []byte(dataValue)
+			} else {
+				// figure out the rootmost type (i.e. deref ****ptr etc.)
+				fieldType = ru.FollowType(field.Type)
+				switch fieldType {
+				case typeDuration:
+					dataFieldValue, err = time.ParseDuration(dataValue)
+					if err != nil {
+						return exception.Wrap(err)
+					}
+				default:
+					switch fieldType.Kind() {
+					case reflect.Bool:
+						if hasDataValue {
+							dataFieldValue = Parse.Bool(dataValue)
+						} else {
+							continue
+						}
+					case reflect.Float32:
+						dataFieldValue, err = strconv.ParseFloat(dataValue, 32)
+						if err != nil {
+							return exception.Wrap(err)
+						}
+					case reflect.Float64:
+						dataFieldValue, err = strconv.ParseFloat(dataValue, 64)
+						if err != nil {
+							return exception.Wrap(err)
+						}
+					case reflect.Int8:
+						dataFieldValue, err = strconv.ParseInt(dataValue, 10, 8)
+						if err != nil {
+							return exception.Wrap(err)
+						}
+					case reflect.Int16:
+						dataFieldValue, err = strconv.ParseInt(dataValue, 10, 16)
+						if err != nil {
+							return exception.Wrap(err)
+						}
+					case reflect.Int32:
+						dataFieldValue, err = strconv.ParseInt(dataValue, 10, 32)
+						if err != nil {
+							return exception.Wrap(err)
+						}
+					case reflect.Int:
+						dataFieldValue, err = strconv.ParseInt(dataValue, 10, 64)
+						if err != nil {
+							return exception.Wrap(err)
+						}
+					case reflect.Int64:
+						dataFieldValue, err = strconv.ParseInt(dataValue, 10, 64)
+						if err != nil {
+							return exception.Wrap(err)
+						}
+					case reflect.Uint8:
+						dataFieldValue, err = strconv.ParseUint(dataValue, 10, 8)
+						if err != nil {
+							return exception.Wrap(err)
+						}
+					case reflect.Uint16:
+						dataFieldValue, err = strconv.ParseUint(dataValue, 10, 8)
+						if err != nil {
+							return exception.Wrap(err)
+						}
+					case reflect.Uint32:
+						dataFieldValue, err = strconv.ParseUint(dataValue, 10, 32)
+						if err != nil {
+							return exception.Wrap(err)
+						}
+					case reflect.Uint64:
+						dataFieldValue, err = strconv.ParseUint(dataValue, 10, 64)
+						if err != nil {
+							return exception.Wrap(err)
+						}
+					case reflect.Uint, reflect.Uintptr:
+						dataFieldValue, err = strconv.ParseUint(dataValue, 10, 64)
+						if err != nil {
+							return exception.Wrap(err)
+						}
+					case reflect.String:
+						dataFieldValue = dataValue
+					default:
+						return exception.New("map strings into; unhandled assignment").WithMessagef("type %s", fieldType.String())
+					}
+				}
+			}
+
+			value := ru.ReflectValue(dataFieldValue)
+			valueType := value.Type()
+			if !value.IsValid() {
+				return exception.New("invalid value").WithMessagef("%s `%s`", objMeta.Name(), field.Name)
+			}
+
+			assigned, err := ru.tryAssignment(fieldType, valueType, fieldValue, value)
+			if err != nil {
+				return err
+			}
+			if !assigned {
+				return exception.New("cannot set field").WithMessagef("%s `%s`", objMeta.Name(), field.Name)
+			}
+		}
+	}
+	return nil
 }

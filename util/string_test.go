@@ -40,10 +40,14 @@ func TestFromNumbers(t *testing.T) {
 	assert.Equal("3", strGood)
 }
 
+type keyValuePairOfString struct {
+	Key, Value string
+}
+
 func TestTrimWhitespace(t *testing.T) {
 	assert := assert.New(t)
 
-	tests := []KeyValuePairOfString{
+	tests := []keyValuePairOfString{
 		{"test", "test"},
 		{" test", "test"},
 		{"test ", "test"},
