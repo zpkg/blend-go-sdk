@@ -21,10 +21,11 @@ func main() {
 
 	keyPath := "secret/data/configTest"
 
-	err := client.Put(keyPath, secrets.Values{
-		"environment": "test",
-		"secret":      base64.StdEncoding.EncodeToString([]byte("test value"))},
-	)
+	err := client.WriteInto(keyPath, myConfig{
+		Environment: "test",
+		Version:     "wont be in output",
+		Secret:      base64.StdEncoding.EncodeToString([]byte("a super secure one")),
+	})
 	if err != nil {
 		log.SyncFatalExit(err)
 	}
