@@ -1,6 +1,7 @@
 package util
 
 import (
+	"encoding/base64"
 	"testing"
 	"time"
 
@@ -51,101 +52,6 @@ func TestDecompose(t *testing.T) {
 	assert.True(hasKey)
 }
 
-type TestType2 struct {
-	SomeVal    string `coalesce:"SomeVal2"`
-	SomeVal2   string
-	OtherVal   string `coalesce:"OtherVal2,OtherVal3"`
-	OtherVal2  string
-	OtherVal3  string
-	StructVal  subType `coalesce:"StructVal2"`
-	StructVal2 subType
-}
-
-func TestCoalesceFieldsNoChange(t *testing.T) {
-	assert := assert.New(t)
-
-	testVal := TestType2{
-		SomeVal:    "Foo1",
-		SomeVal2:   "Foo2",
-		OtherVal:   "Foo3",
-		OtherVal2:  "Foo4",
-		OtherVal3:  "Foo5",
-		StructVal:  subType{1, "Name"},
-		StructVal2: subType{2, "Name2"},
-	}
-
-	Reflection.CoalesceFields(&testVal)
-	assert.Equal("Foo1", testVal.SomeVal)
-	assert.Equal("Foo3", testVal.OtherVal)
-	assert.Equal(subType{1, "Name"}, testVal.StructVal)
-	// omit values to check that values coalesce
-}
-
-func TestCoalesceFieldsSimple(t *testing.T) {
-	assert := assert.New(t)
-	testVal2 := TestType2{
-		SomeVal2:   "Foo2",
-		OtherVal2:  "Foo4",
-		OtherVal3:  "Foo5",
-		StructVal2: subType{2, "Name2"},
-	}
-	Reflection.CoalesceFields(&testVal2)
-	assert.Equal("Foo2", testVal2.SomeVal)
-	assert.Equal("Foo4", testVal2.OtherVal)
-	assert.Equal(subType{2, "Name2"}, testVal2.StructVal)
-}
-
-func TestCoalesceFieldsStructAndMultiples(t *testing.T) {
-	assert := assert.New(t)
-	// omit values to check that values coalesce
-	testVal3 := TestType2{
-		SomeVal:   "Foo1",
-		OtherVal3: "Foo5",
-		StructVal: subType{1, "Name"},
-	}
-	Reflection.CoalesceFields(&testVal3)
-	assert.Equal("Foo5", testVal3.OtherVal)
-}
-
-type testType3 struct {
-	Sub  subType2 `coalesce:"Sub2"`
-	Sub2 subType2
-}
-
-type subType2 struct {
-	Val1 string `coalesce:"Val2"`
-	Val2 string
-}
-
-func TestCoalesceFieldsNested(t *testing.T) {
-	assert := assert.New(t)
-	t1 := testType3{
-		Sub: subType2{"", "foo"},
-	}
-
-	Reflection.CoalesceFields(&t1)
-	assert.Equal("foo", t1.Sub.Val1)
-
-	t2 := testType3{
-		Sub2: subType2{"", "foo2"},
-	}
-
-	Reflection.CoalesceFields(&t2)
-	assert.Equal("foo2", t2.Sub.Val1)
-}
-
-type testType4 struct {
-	Subs []subType2
-}
-
-func TestCoalesceFieldsArray(t *testing.T) {
-	assert := assert.New(t)
-	t1 := testType4{[]subType2{{"", "foo"}, subType2{"foo2", ""}}}
-	Reflection.CoalesceFields(&t1)
-	assert.Equal("foo", t1.Subs[0].Val1)
-	assert.Equal("foo2", t1.Subs[1].Val1)
-}
-
 func TestPatchObject(t *testing.T) {
 	assert := assert.New(t)
 
@@ -160,7 +66,7 @@ func TestPatchObject(t *testing.T) {
 	myObj.SubTypes = append(myObj.SubTypes, subType{4, "Four"})
 
 	patchData := make(map[string]interface{})
-	patchData["is_tagged"] = "Is Not Tagged"
+	patchData["Tagged"] = "Is Not Tagged"
 
 	err := Reflection.Patch(&myObj, patchData)
 	assert.Nil(err)
@@ -185,7 +91,7 @@ func TestReflectTypeInterface(t *testing.T) {
 
 	assert.NotNil(proto())
 
-	objType := Reflection.ReflectType(proto())
+	objType := Reflection.Type(proto())
 	assert.NotNil(objType)
 }
 
@@ -196,7 +102,7 @@ func TestReflectValueInterface(t *testing.T) {
 
 	assert.NotNil(proto())
 
-	objValue := Reflection.ReflectValue(proto())
+	objValue := Reflection.Value(proto())
 	assert.NotNil(objValue)
 	assert.True(objValue.CanSet())
 }
@@ -218,8 +124,14 @@ type mapStringsTest struct {
 	Duration time.Duration `secret:"duration"`
 
 	CSV    []string `secret:"csvField,csv"`
-	Base64 []byte   `secret:"base64Field,bytes"`
+	Base64 []byte   `secret:"base64Field,base64"`
 	Bytes  []byte   `secret:"bytesField,bytes"`
+
+	Sub mapStringsTestSubObject
+}
+
+type mapStringsTestSubObject struct {
+	Foo string `secret:"foo"`
 }
 
 func TestPatchStrings(t *testing.T) {
@@ -440,4 +352,39 @@ func TestPatchStrings(t *testing.T) {
 	assert.Nil(Reflection.PatchStrings("secret", csvValid, &mule))
 	assert.Len(mule.CSV, 3)
 	assert.Equal([]string{"foo", "bar", "baz"}, mule.CSV)
+
+	// -------
+	// base64
+	// -------
+
+	base64Valid := map[string]string{
+		"base64Field": base64.StdEncoding.EncodeToString([]byte("this is only a test")),
+	}
+	base64Invalid := map[string]string{
+		"base64Field": "thisisnonsense",
+	}
+	assert.Nil(Reflection.PatchStrings("secret", base64Valid, &mule))
+	assert.Equal("this is only a test", string(mule.Base64))
+	assert.NotNil(Reflection.PatchStrings("secret", base64Invalid, &mule))
+	assert.Equal("this is only a test", string(mule.Base64))
+
+	// -------
+	// bytes
+	// -------
+
+	bytesValid := map[string]string{
+		"bytesField": "this is bytes",
+	}
+	assert.Nil(Reflection.PatchStrings("secret", bytesValid, &mule))
+	assert.Equal("this is bytes", string(mule.Bytes))
+
+	// -------
+	// child objects
+	// -------
+
+	childValid := map[string]string{
+		"foo": "this is foo",
+	}
+	assert.Nil(Reflection.PatchStrings("secret", childValid, &mule))
+	assert.Equal("this is foo", string(mule.Sub.Foo))
 }
