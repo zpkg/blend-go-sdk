@@ -343,6 +343,9 @@ func (ru reflectionUtil) DecomposeStrings(tagName string, obj interface{}) map[s
 					if typed, isTyped := fieldValue.Interface().([]byte); isTyped {
 						output[dataField] = base64.StdEncoding.EncodeToString(typed)
 					}
+					if typed, isTyped := fieldValue.Interface().(string); isTyped {
+						output[dataField] = typed
+					}
 				} else {
 					output[dataField] = fmt.Sprintf("%v", fieldValue.Interface())
 				}
