@@ -14,6 +14,7 @@ import (
 	"golang.org/x/net/http2"
 
 	"github.com/blend/go-sdk/logger"
+	"github.com/blend/go-sdk/util"
 )
 
 const (
@@ -35,6 +36,9 @@ const (
 
 	// DefaultBufferPoolSize is the default buffer pool size.
 	DefaultBufferPoolSize = 1024
+
+	// ReflectTagName is a reflect tag name.
+	ReflectTagName = "secret"
 )
 
 // New returns a new client.
@@ -78,6 +82,11 @@ func NewFromConfig(cfg *Config) (*Client, error) {
 			Transport: xport,
 		},
 	}, nil
+}
+
+// NewFromEnv is a helper to create a client from a config read from the environment.
+func NewFromEnv() (*Client, error) {
+	return NewFromConfig(NewConfigFromEnv())
 }
 
 // Must does things with the error such as panic.
@@ -204,6 +213,15 @@ func (c *Client) Delete(key string, options ...Option) error {
 	}
 	defer res.Close()
 	return nil
+}
+
+// ReadInto reads a secret into an object.
+func (c *Client) ReadInto(key string, obj interface{}, options ...Option) error {
+	response, err := c.Meta(key)
+	if err != nil {
+		return err
+	}
+	return util.Reflection.PatchStrings(ReflectTagName, response.Data, obj)
 }
 
 // ListMounts lists mounts.
