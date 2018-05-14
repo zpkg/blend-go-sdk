@@ -1,12 +1,43 @@
 package main
 
-type myConfig struct {
-	Environment string `json:"environment" yaml:"environment" env:"SERVICE_ENV"`
-	Version     string `json:"version" yaml:"version" env:"SERVICE_VERSION"`
+import (
+	"encoding/base64"
+	"fmt"
 
-	Secret []byte `secret:"secret,base64"`
+	"github.com/blend/go-sdk/logger"
+	"github.com/blend/go-sdk/secrets"
+	"github.com/blend/go-sdk/yaml"
+)
+
+type myConfig struct {
+	Environment string `yaml:"environment" env:"SERVICE_ENV" secret:"environment"`
+	Version     string `yaml:"version" env:"SERVICE_VERSION"`
+	Secret      string `yaml:"secret" secret:"secret,base64"`
 }
 
 func main() {
+	log := logger.All()
+	client := secrets.Must(secrets.NewFromEnv()).WithLogger(log)
 
+	keyPath := "secret/data/configTest"
+
+	err := client.Put(keyPath, secrets.Values{
+		"environment": "test",
+		"secret":      base64.StdEncoding.EncodeToString([]byte("test value"))},
+	)
+	if err != nil {
+		log.SyncFatalExit(err)
+	}
+
+	var cfg myConfig
+	err = client.ReadInto(keyPath, &cfg)
+	if err != nil {
+		log.SyncFatalExit(err)
+	}
+
+	contents, err := yaml.Marshal(cfg)
+	if err != nil {
+		log.SyncFatalExit(err)
+	}
+	fmt.Printf("%v\n", string(contents))
 }

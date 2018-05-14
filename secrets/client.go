@@ -165,7 +165,7 @@ func (c *Client) Logger() *logger.Logger {
 
 // Put puts a value.
 func (c *Client) Put(key string, data Values, options ...Option) error {
-	contents, err := c.jsonBody(data)
+	contents, err := c.jsonBody(SecretData{Data: data})
 	if err != nil {
 		return err
 	}
@@ -185,7 +185,7 @@ func (c *Client) Get(key string, options ...Option) (Values, error) {
 	if err != nil {
 		return nil, err
 	}
-	return response.Data, nil
+	return response.Data.Data, nil
 }
 
 // Meta gets the metadata for a key.
@@ -221,7 +221,23 @@ func (c *Client) ReadInto(key string, obj interface{}, options ...Option) error 
 	if err != nil {
 		return err
 	}
-	return util.Reflection.PatchStrings(ReflectTagName, response.Data, obj)
+	return util.Reflection.PatchStrings(ReflectTagName, response.Data.Data, obj)
+}
+
+// WriteInto writes an object into a secret at a given key.
+func (c *Client) WriteInto(key string, obj interface{}, options ...Option) error {
+	contents, err := c.jsonBody(SecretData{Data: util.Reflection.DecomposeStrings(ReflectTagName, obj)})
+	if err != nil {
+		return err
+	}
+	req := c.createRequest(MethodPut, filepath.Join("/v1/", key), options...)
+	req.Body = contents
+	res, err := c.send(req)
+	if err != nil {
+		return err
+	}
+	defer res.Close()
+	return nil
 }
 
 // ListMounts lists mounts.

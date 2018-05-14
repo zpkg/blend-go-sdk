@@ -14,7 +14,7 @@ type Secret struct {
 	Renewable     bool   `json:"renewable"`
 	// Data is the actual contents of the secret. The format of the data
 	// is arbitrary and up to the secret backend.
-	Data Values `json:"data"`
+	Data SecretData `json:"data"`
 	// Warnings contains any warnings related to the operation. These
 	// are not issues that caused the command to fail, but that the
 	// client should be aware of.
@@ -26,6 +26,11 @@ type Secret struct {
 	// cubbyhole of the given token (which has a TTL of the given number of
 	// seconds)
 	WrapInfo *SecretWrapInfo `json:"wrap_info,omitempty"`
+}
+
+// SecretData is used for puts.
+type SecretData struct {
+	Data Values `json:"data"`
 }
 
 // SecretAuth is the structure containing auth information if we have it.
