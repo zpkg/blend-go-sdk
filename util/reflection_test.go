@@ -429,4 +429,15 @@ func TestPatchStrings(t *testing.T) {
 	assert.Equal(10*time.Second, mule.Duration)
 	assert.NotNil(Reflection.PatchStrings("secret", durationInvalid, &mule))
 	assert.Equal(10*time.Second, mule.Duration)
+
+	// -------
+	// csv
+	// -------
+
+	csvValid := map[string]string{
+		"csvField": "foo,bar,baz",
+	}
+	assert.Nil(Reflection.PatchStrings("secret", csvValid, &mule))
+	assert.Len(mule.CSV, 3)
+	assert.Equal([]string{"foo", "bar", "baz"}, mule.CSV)
 }
