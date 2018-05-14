@@ -456,5 +456,5 @@ func (ev Vars) ReadInto(obj interface{}) error {
 	if typed, isTyped := obj.(Unmarshaler); isTyped {
 		return typed.UnmarshalEnv(ev)
 	}
-	return util.Reflection.MapStringsInto(TagName, ev, obj)
+	return util.Reflection.PatchStrings(TagName, ev, obj)
 }

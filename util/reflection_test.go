@@ -208,6 +208,7 @@ type mapStringsTest struct {
 	Int8     int8          `secret:"int8"`
 	Int16    int16         `secret:"int16"`
 	Int32    int32         `secret:"int32"`
+	Int      int           `secret:"int"`
 	Int64    int64         `secret:"int64"`
 	Uint8    uint8         `secret:"uint8"`
 	Uint16   uint16        `secret:"uint16"`
@@ -221,7 +222,7 @@ type mapStringsTest struct {
 	Bytes  []byte   `secret:"bytesField,bytes"`
 }
 
-func TestMapStringsInto(t *testing.T) {
+func TestPatchStrings(t *testing.T) {
 	assert := assert.New(t)
 
 	var mule mapStringsTest
@@ -236,9 +237,9 @@ func TestMapStringsInto(t *testing.T) {
 	boolInvalid := map[string]string{
 		"bool": "nottrue",
 	}
-	assert.Nil(Reflection.MapStringsInto("secret", boolValid, &mule))
+	assert.Nil(Reflection.PatchStrings("secret", boolValid, &mule))
 	assert.Equal(true, mule.Bool)
-	assert.Nil(Reflection.MapStringsInto("secret", boolInvalid, &mule))
+	assert.Nil(Reflection.PatchStrings("secret", boolInvalid, &mule))
 	assert.Equal(false, mule.Bool)
 
 	// -------
@@ -251,9 +252,9 @@ func TestMapStringsInto(t *testing.T) {
 	float32Invalid := map[string]string{
 		"float32": "random",
 	}
-	assert.Nil(Reflection.MapStringsInto("secret", float32Valid, &mule))
+	assert.Nil(Reflection.PatchStrings("secret", float32Valid, &mule))
 	assert.Equal(3.14, mule.Float32)
-	assert.NotNil(Reflection.MapStringsInto("secret", float32Invalid, &mule))
+	assert.NotNil(Reflection.PatchStrings("secret", float32Invalid, &mule))
 
 	// -------
 	// float64
@@ -265,9 +266,9 @@ func TestMapStringsInto(t *testing.T) {
 	float64Invalid := map[string]string{
 		"float64": "random",
 	}
-	assert.Nil(Reflection.MapStringsInto("secret", float64Valid, &mule))
+	assert.Nil(Reflection.PatchStrings("secret", float64Valid, &mule))
 	assert.Equal(6.28, mule.Float64)
-	assert.NotNil(Reflection.MapStringsInto("secret", float64Invalid, &mule))
+	assert.NotNil(Reflection.PatchStrings("secret", float64Invalid, &mule))
 
 	// -------
 	// int8
@@ -276,11 +277,156 @@ func TestMapStringsInto(t *testing.T) {
 	int8Valid := map[string]string{
 		"int8": "3",
 	}
-	int8Inalid := map[string]string{
+	int8Invalid := map[string]string{
 		"int8": "random",
 	}
-	assert.Nil(Reflection.MapStringsInto("secret", int8Valid, &mule))
+	assert.Nil(Reflection.PatchStrings("secret", int8Valid, &mule))
 	assert.Equal(3, mule.Int8)
-	assert.NotNil(Reflection.MapStringsInto("secret", int8Inalid, &mule))
+	assert.NotNil(Reflection.PatchStrings("secret", int8Invalid, &mule))
 	assert.Equal(3, mule.Int8)
+
+	// -------
+	// int16
+	// -------
+
+	int16Valid := map[string]string{
+		"int16": "4",
+	}
+	int16Invalid := map[string]string{
+		"int16": "random",
+	}
+	assert.Nil(Reflection.PatchStrings("secret", int16Valid, &mule))
+	assert.Equal(4, mule.Int16)
+	assert.NotNil(Reflection.PatchStrings("secret", int16Invalid, &mule))
+	assert.Equal(4, mule.Int16)
+
+	// -------
+	// int32
+	// -------
+
+	int32Valid := map[string]string{
+		"int32": "5",
+	}
+	int32Invalid := map[string]string{
+		"int32": "random",
+	}
+	assert.Nil(Reflection.PatchStrings("secret", int32Valid, &mule))
+	assert.Equal(5, mule.Int32)
+	assert.NotNil(Reflection.PatchStrings("secret", int32Invalid, &mule))
+	assert.Equal(5, mule.Int32)
+
+	// -------
+	// int
+	// -------
+
+	intValid := map[string]string{
+		"int": "6",
+	}
+	intInvalid := map[string]string{
+		"int": "random",
+	}
+	assert.Nil(Reflection.PatchStrings("secret", intValid, &mule))
+	assert.Equal(6, mule.Int)
+	assert.NotNil(Reflection.PatchStrings("secret", intInvalid, &mule))
+	assert.Equal(6, mule.Int)
+
+	// -------
+	// int64
+	// -------
+
+	int64Valid := map[string]string{
+		"int64": "7",
+	}
+	int64Invalid := map[string]string{
+		"int64": "random",
+	}
+	assert.Nil(Reflection.PatchStrings("secret", int64Valid, &mule))
+	assert.Equal(7, mule.Int64)
+	assert.NotNil(Reflection.PatchStrings("secret", int64Invalid, &mule))
+	assert.Equal(7, mule.Int64)
+
+	// -------
+	// uint8
+	// -------
+
+	uint8Valid := map[string]string{
+		"uint8": "8",
+	}
+	uint8Invalid := map[string]string{
+		"uint8": "random",
+	}
+	assert.Nil(Reflection.PatchStrings("secret", uint8Valid, &mule))
+	assert.Equal(8, mule.Uint8)
+	assert.NotNil(Reflection.PatchStrings("secret", uint8Invalid, &mule))
+	assert.Equal(8, mule.Uint8)
+
+	// -------
+	// uint16
+	// -------
+
+	uint16Valid := map[string]string{
+		"uint16": "9",
+	}
+	uint16Invalid := map[string]string{
+		"uint16": "random",
+	}
+	assert.Nil(Reflection.PatchStrings("secret", uint16Valid, &mule))
+	assert.Equal(9, mule.Uint16)
+	assert.NotNil(Reflection.PatchStrings("secret", uint16Invalid, &mule))
+	assert.Equal(9, mule.Uint16)
+
+	// -------
+	// uint32
+	// -------
+
+	uint32Valid := map[string]string{
+		"uint32": "10",
+	}
+	uint32Invalid := map[string]string{
+		"uint32": "random",
+	}
+	assert.Nil(Reflection.PatchStrings("secret", uint32Valid, &mule))
+	assert.Equal(10, mule.Uint32)
+	assert.NotNil(Reflection.PatchStrings("secret", uint32Invalid, &mule))
+	assert.Equal(10, mule.Uint32)
+
+	// -------
+	// uint64
+	// -------
+
+	uint64Valid := map[string]string{
+		"uint64": "11",
+	}
+	uint64Invalid := map[string]string{
+		"uint64": "random",
+	}
+	assert.Nil(Reflection.PatchStrings("secret", uint64Valid, &mule))
+	assert.Equal(11, mule.Uint64)
+	assert.NotNil(Reflection.PatchStrings("secret", uint64Invalid, &mule))
+	assert.Equal(11, mule.Uint64)
+
+	// -------
+	// string
+	// -------
+
+	stringValid := map[string]string{
+		"string": "foo",
+	}
+	assert.Nil(Reflection.PatchStrings("secret", stringValid, &mule))
+	assert.Equal("foo", mule.String)
+
+	// -------
+	// duration
+	// -------
+
+	durationValid := map[string]string{
+		"duration": "10s",
+	}
+	durationInvalid := map[string]string{
+		"duration": "random",
+	}
+	assert.Nil(Reflection.PatchStrings("secret", durationValid, &mule))
+	assert.Equal(10*time.Second, mule.Duration)
+	assert.NotNil(Reflection.PatchStrings("secret", durationInvalid, &mule))
+	assert.Equal(10*time.Second, mule.Duration)
 }
