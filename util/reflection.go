@@ -307,8 +307,8 @@ type MapStringsUnmarshaler interface {
 	UnmarshalMapStrings(data map[string]string) error
 }
 
-// ReadInto reads the environment into tagged fields on the `obj`.
-func (ru reflectionUtil) MapStringsInto(tagName string, data map[string]string, obj interface{}) error {
+// PatchStrings sets an object from a set of strings mapping field names to string values (to be parsed).
+func (ru reflectionUtil) PatchStrings(tagName string, data map[string]string, obj interface{}) error {
 	// check if the type implements marshaler.
 	if typed, isTyped := obj.(MapStringsUnmarshaler); isTyped {
 		return typed.UnmarshalMapStrings(data)
@@ -344,7 +344,7 @@ func (ru reflectionUtil) MapStringsInto(tagName string, data map[string]string, 
 
 		// Treat structs as nested values.
 		if field.Type.Kind() == reflect.Struct {
-			if err = ru.MapStringsInto(tagName, data, objValue.Field(x).Addr().Interface()); err != nil {
+			if err = ru.PatchStrings(tagName, data, objValue.Field(x).Addr().Interface()); err != nil {
 				return err
 			}
 			continue
