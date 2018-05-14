@@ -2,6 +2,7 @@ package util
 
 import (
 	"testing"
+	"time"
 
 	"github.com/blend/go-sdk/assert"
 )
@@ -17,82 +18,6 @@ type testType struct {
 	NotTagged string
 	Tagged    string    `json:"is_tagged"`
 	SubTypes  []subType `json:"children"`
-}
-
-func TestDecomposeToPostData(t *testing.T) {
-	assert := assert.New(t)
-
-	myObj := testType{}
-	myObj.ID = 123
-	myObj.Name = "Test Object"
-	myObj.NotTagged = "Not Tagged"
-	myObj.Tagged = "Is Tagged"
-	myObj.SubTypes = append([]subType{}, subType{1, "One"})
-	myObj.SubTypes = append(myObj.SubTypes, subType{2, "Two"})
-	myObj.SubTypes = append(myObj.SubTypes, subType{3, "Three"})
-	myObj.SubTypes = append(myObj.SubTypes, subType{4, "Four"})
-
-	postDatums := Reflection.DecomposeToPostData(myObj)
-
-	assert.NotEmpty(postDatums)
-
-	assert.Equal("id", postDatums[0].Key)
-	assert.Equal("123", postDatums[0].Value)
-
-	assert.Equal("name", postDatums[1].Key)
-	assert.Equal("Test Object", postDatums[1].Value)
-
-	assert.Equal("NotTagged", postDatums[2].Key)
-	assert.Equal("Not Tagged", postDatums[2].Value)
-
-	assert.Equal("is_tagged", postDatums[3].Key)
-	assert.Equal("Is Tagged", postDatums[3].Value)
-
-	assert.Equal("children[0].id", postDatums[4].Key)
-	assert.Equal("1", postDatums[4].Value)
-
-	assert.Equal("children[0].name", postDatums[5].Key)
-	assert.Equal("One", postDatums[5].Value)
-
-	assert.Equal("children[1].id", postDatums[6].Key)
-	assert.Equal("2", postDatums[6].Value)
-}
-
-func TestDecomposeToPostDataAsJSON(t *testing.T) {
-	assert := assert.New(t)
-
-	myObj := testType{}
-	myObj.ID = 123
-	myObj.Name = "Test Object"
-	myObj.NotTagged = "Not Tagged"
-	myObj.Tagged = "Is Tagged"
-	myObj.SubTypes = append([]subType{}, subType{1, "One"})
-	myObj.SubTypes = append(myObj.SubTypes, subType{2, "Two"})
-	myObj.SubTypes = append(myObj.SubTypes, subType{3, "Three"})
-	myObj.SubTypes = append(myObj.SubTypes, subType{4, "Four"})
-
-	postDatums := Reflection.DecomposeToPostDataAsJSON(myObj)
-
-	assert.NotEmpty(postDatums)
-	assert.Equal("id", postDatums[0].Key)
-	assert.Equal("123", postDatums[0].Value)
-
-	assert.Equal("name", postDatums[1].Key)
-	assert.Equal("Test Object", postDatums[1].Value)
-
-	assert.Equal("NotTagged", postDatums[2].Key)
-	assert.Equal("Not Tagged", postDatums[2].Value)
-
-	assert.Equal("is_tagged", postDatums[3].Key)
-	assert.Equal("Is Tagged", postDatums[3].Value)
-
-	assert.Equal("children", postDatums[4].Key)
-	assert.NotEmpty(postDatums[4].Value)
-
-	verify := []subType{}
-	verifyErr := JSON.Deserialize(&verify, postDatums[4].Value)
-	assert.Nil(verifyErr)
-	assert.Equal(1, verify[0].ID)
 }
 
 func TestDecompose(t *testing.T) {
@@ -237,7 +162,7 @@ func TestPatchObject(t *testing.T) {
 	patchData := make(map[string]interface{})
 	patchData["is_tagged"] = "Is Not Tagged"
 
-	err := Reflection.PatchObject(&myObj, patchData)
+	err := Reflection.Patch(&myObj, patchData)
 	assert.Nil(err)
 	assert.Equal("Is Not Tagged", myObj.Tagged)
 }
@@ -274,4 +199,73 @@ func TestReflectValueInterface(t *testing.T) {
 	objValue := Reflection.ReflectValue(proto())
 	assert.NotNil(objValue)
 	assert.True(objValue.CanSet())
+}
+
+type mapStringsTest struct {
+	Bool     bool          `secret:"bool"`
+	Float32  float32       `secret:"float32"`
+	Float64  float64       `secret:"float64"`
+	Int8     int8          `secret:"int8"`
+	Int16    int16         `secret:"int16"`
+	Int32    int32         `secret:"int32"`
+	Int64    int64         `secret:"int64"`
+	Uint8    uint8         `secret:"uint8"`
+	Uint16   uint16        `secret:"uint16"`
+	Uint32   uint32        `secret:"uint32"`
+	Uint64   uint32        `secret:"uint64"`
+	String   string        `secret:"string"`
+	Duration time.Duration `secret:"duration"`
+
+	CSV    []string `secret:"csvField,csv"`
+	Base64 []byte   `secret:"base64Field,bytes"`
+	Bytes  []byte   `secret:"bytesField,bytes"`
+}
+
+func TestMapStringsInto(t *testing.T) {
+	assert := assert.New(t)
+
+	var mule mapStringsTest
+
+	// ----
+	// bool
+	// ----
+
+	boolValid := map[string]string{
+		"bool": "true",
+	}
+	boolInvalid := map[string]string{
+		"bool": "nottrue",
+	}
+	assert.Nil(Reflection.MapStringsInto("secret", boolValid, &mule))
+	assert.Equal(true, mule.Bool)
+	assert.Nil(Reflection.MapStringsInto("secret", boolInvalid, &mule))
+	assert.Equal(false, mule.Bool)
+
+	// -------
+	// float32
+	// -------
+
+	float32Valid := map[string]string{
+		"float32": "3.14",
+	}
+	float32Invalid := map[string]string{
+		"float32": "random",
+	}
+	assert.Nil(Reflection.MapStringsInto("secret", float32Valid, &mule))
+	assert.Equal(3.14, mule.Float32)
+	assert.NotNil(Reflection.MapStringsInto("secret", float32Invalid, &mule))
+
+	// -------
+	// float64
+	// -------
+
+	float64Valid := map[string]string{
+		"float64": "6.28",
+	}
+	float64Invalid := map[string]string{
+		"float64": "random",
+	}
+	assert.Nil(Reflection.MapStringsInto("secret", float64Valid, &mule))
+	assert.Equal(6.28, mule.Float64)
+	assert.NotNil(Reflection.MapStringsInto("secret", float64Invalid, &mule))
 }
