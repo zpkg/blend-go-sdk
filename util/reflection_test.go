@@ -44,20 +44,27 @@ func TestDecomposeStrings(t *testing.T) {
 	assert := assert.New(t)
 
 	input := mapStringsTest{
+		Float64:  3.14,
 		String:   "foo",
 		Base64:   []byte("this is base64"),
 		Bytes:    []byte("this is bytes"),
 		CSV:      []string{"foo", "bar", "baz"},
 		Duration: 10 * time.Second,
+		Sub: mapStringsTestSubObject{
+			Foo: "yes this is foo",
+		},
 	}
 
 	output := Reflection.DecomposeStrings("secret", input)
 	assert.NotEmpty(output)
 
+	assert.Equal("3.14", output["float64"])
 	assert.Equal("foo", output["string"])
+	assert.NotEmpty(output["base64Field"])
 	assert.NotEqual("this is base64", output["base64Field"])
 	assert.Equal("this is bytes", output["bytesField"])
 	assert.Equal("10s", output["duration"])
+	assert.Equal("yes this is foo", output["foo"])
 }
 
 func TestPatchObject(t *testing.T) {
