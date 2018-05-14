@@ -268,4 +268,19 @@ func TestMapStringsInto(t *testing.T) {
 	assert.Nil(Reflection.MapStringsInto("secret", float64Valid, &mule))
 	assert.Equal(6.28, mule.Float64)
 	assert.NotNil(Reflection.MapStringsInto("secret", float64Invalid, &mule))
+
+	// -------
+	// int8
+	// -------
+
+	int8Valid := map[string]string{
+		"int8": "3",
+	}
+	int8Inalid := map[string]string{
+		"int8": "random",
+	}
+	assert.Nil(Reflection.MapStringsInto("secret", int8Valid, &mule))
+	assert.Equal(3, mule.Int8)
+	assert.NotNil(Reflection.MapStringsInto("secret", int8Inalid, &mule))
+	assert.Equal(3, mule.Int8)
 }
