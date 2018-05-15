@@ -5,8 +5,31 @@ import "time"
 // Values is a bag of values.
 type Values = map[string]string
 
-// Secret is the structure returned for every secret within Vault.
-type Secret struct {
+// SecretV1 is the structure returned for every secret within Vault.
+type SecretV1 struct {
+	// The request ID that generated this response
+	RequestID     string `json:"request_id"`
+	LeaseID       string `json:"lease_id"`
+	LeaseDuration int    `json:"lease_duration"`
+	Renewable     bool   `json:"renewable"`
+	// Data is the actual contents of the secret. The format of the data
+	// is arbitrary and up to the secret backend.
+	Data Values `json:"data"`
+	// Warnings contains any warnings related to the operation. These
+	// are not issues that caused the command to fail, but that the
+	// client should be aware of.
+	Warnings []string `json:"warnings"`
+	// Auth, if non-nil, means that there was authentication information
+	// attached to this response.
+	Auth *SecretAuth `json:"auth,omitempty"`
+	// WrapInfo, if non-nil, means that the initial response was wrapped in the
+	// cubbyhole of the given token (which has a TTL of the given number of
+	// seconds)
+	WrapInfo *SecretWrapInfo `json:"wrap_info,omitempty"`
+}
+
+// SecretV2 is the structure returned for every secret within Vault.
+type SecretV2 struct {
 	// The request ID that generated this response
 	RequestID     string `json:"request_id"`
 	LeaseID       string `json:"lease_id"`

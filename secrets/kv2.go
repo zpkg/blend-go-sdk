@@ -37,7 +37,7 @@ func (kv2 kv2) Get(key string, options ...Option) (Values, error) {
 	}
 	defer res.Close()
 
-	var response Secret
+	var response SecretV2
 	if err := json.NewDecoder(res).Decode(&response); err != nil {
 		return nil, err
 	}
