@@ -49,6 +49,10 @@ func main() {
 			return filepath.SkipDir
 		}
 
+		if info.Name() == "vendor" {
+			return filepath.SkipDir
+		}
+
 		if !dirHasGlob(currentPath, "*.go") {
 			return nil
 		}
