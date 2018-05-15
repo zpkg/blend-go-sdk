@@ -8,7 +8,6 @@ import (
 	"io/ioutil"
 	"net/http"
 	"net/url"
-	"time"
 
 	"github.com/blend/go-sdk/exception"
 
@@ -116,7 +115,7 @@ type Client struct {
 	kv2 *kv2
 
 	bufferPool *BufferPool
-	client     *http.Client
+	client     HTTPClient
 	certPool   *CertPool
 }
 
@@ -142,15 +141,15 @@ func (c *Client) Token() string {
 	return c.token
 }
 
-// WithTimeout sets the client timeout.
-func (c *Client) WithTimeout(timeout time.Duration) *Client {
-	c.client.Timeout = timeout
+// WithHTTPClient sets the http client.
+func (c *Client) WithHTTPClient(hc HTTPClient) *Client {
+	c.client = hc
 	return c
 }
 
-// Timeout returns the timeout.
-func (c *Client) Timeout() time.Duration {
-	return c.client.Timeout
+// HTTPClient sets the http client.
+func (c *Client) HTTPClient() HTTPClient {
+	return c.client
 }
 
 // CertPool returns the cert pool.
