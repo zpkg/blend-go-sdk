@@ -19,8 +19,7 @@ func main() {
 	log := logger.All()
 	client := secrets.Must(secrets.NewFromEnv()).WithLogger(log)
 
-	keyPath := "secret/data/configTest"
-
+	keyPath := "configTest"
 	err := client.WriteInto(keyPath, myConfig{
 		Environment: "test",
 		Version:     "wont be in output",
