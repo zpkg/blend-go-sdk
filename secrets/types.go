@@ -55,6 +55,12 @@ type SecretWrapInfo struct {
 	WrappedAccessor string    `json:"wrapped_accessor"`
 }
 
+// MountResponse is the result of a call to a mount.
+type MountResponse struct {
+	RequestID string `json:"request_id"`
+	Data      Mount  `json:"data"`
+}
+
 // Mount is a vault mount.
 type Mount struct {
 	Type        string            `json:"type"`

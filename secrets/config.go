@@ -27,19 +27,24 @@ func NewConfigFromEnv() *Config {
 
 // Config is the secrets config object.
 type Config struct {
-	Addr    string        `json:"addr" yaml:"addr" env:"VAULT_ADDR"`
-	Token   string        `json:"token" yaml:"token" env:"VAULT_TOKEN"`
+	// Addr is the remote address of the secret store.
+	Addr string `json:"addr" yaml:"addr" env:"VAULT_ADDR"`
+	// Token is the authentication token used to talk to the secret store.
+	Token string `json:"token" yaml:"token" env:"VAULT_TOKEN"`
+	// Timeout is the dial timeout for requests to the secrets store.
 	Timeout time.Duration `json:"timeout" yaml:"timeout"`
+	// RootCAs is a list of certificate authority paths.
+	RootCAs []string `json:"rootCAs" yaml:"rootCAs"`
 }
 
 // GetAddr returns the client addr.
 func (c Config) GetAddr(inherited ...string) string {
-	return util.Coalesce.String(c.Addr, DefaultAddr, inherited...)
+	return util.Coalesce.String(c.Addr, DefaultAddr)
 }
 
 // MustRemote returns the addr as a url.
-func (c Config) MustRemote(inherited ...string) *url.URL {
-	remote, err := url.ParseRequestURI(c.GetAddr(inherited...))
+func (c Config) MustRemote() *url.URL {
+	remote, err := url.ParseRequestURI(c.GetAddr())
 	if err != nil {
 		panic(err)
 	}
@@ -47,11 +52,16 @@ func (c Config) MustRemote(inherited ...string) *url.URL {
 }
 
 // GetToken returns the client token.
-func (c Config) GetToken(inherited ...string) string {
-	return util.Coalesce.String(c.Token, "", inherited...)
+func (c Config) GetToken() string {
+	return util.Coalesce.String(c.Token, "")
 }
 
 // GetTimeout returns the client timeout.
-func (c Config) GetTimeout(inherited ...time.Duration) time.Duration {
-	return util.Coalesce.Duration(c.Timeout, DefaultTimeout, inherited...)
+func (c Config) GetTimeout() time.Duration {
+	return util.Coalesce.Duration(c.Timeout, DefaultTimeout)
+}
+
+// GetRootCAs returns root ca paths.
+func (c Config) GetRootCAs() []string {
+	return util.Coalesce.Strings(c.RootCAs, nil)
 }
