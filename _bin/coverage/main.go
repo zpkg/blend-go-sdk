@@ -49,7 +49,7 @@ func main() {
 			return filepath.SkipDir
 		}
 
-		if strings.HasPrefix(info.Name(), "vendor") {
+		if info.Name() == "vendor" {
 			return filepath.SkipDir
 		}
 
