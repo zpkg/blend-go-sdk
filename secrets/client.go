@@ -1,15 +1,16 @@
 package secrets
 
 import (
-	"crypto/x509"
+	"crypto/tls"
 	"encoding/json"
 	"fmt"
 	"io"
 	"io/ioutil"
 	"net/http"
 	"net/url"
-	"path/filepath"
 	"time"
+
+	"github.com/blend/go-sdk/exception"
 
 	"golang.org/x/net/http2"
 
@@ -39,27 +40,16 @@ const (
 
 	// ReflectTagName is a reflect tag name.
 	ReflectTagName = "secret"
+
+	// Version1 is a constant.
+	Version1 = "1"
+	// Version2 is a constant.
+	Version2 = "2"
 )
 
 // New returns a new client.
 func New() (*Client, error) {
-	xport := &http.Transport{}
-	err := http2.ConfigureTransport(xport)
-	if err != nil {
-		return nil, err
-	}
-	remote, err := url.ParseRequestURI(DefaultAddr)
-	if err != nil {
-		return nil, err
-	}
-	return &Client{
-		remote:     remote,
-		bufferPool: NewBufferPool(DefaultBufferPoolSize),
-		client: &http.Client{
-			Timeout:   DefaultTimeout,
-			Transport: xport,
-		},
-	}, nil
+	return NewFromConfig(&Config{})
 }
 
 // NewFromConfig returns a new client from a config.
@@ -73,15 +63,34 @@ func NewFromConfig(cfg *Config) (*Client, error) {
 	if err != nil {
 		return nil, err
 	}
-	return &Client{
+	var certPool *CertPool
+	if caPaths := cfg.GetRootCAs(); len(caPaths) > 0 {
+		certPool, err = NewCertPool()
+		if err != nil {
+			return nil, err
+		}
+		err = certPool.AddPaths(caPaths...)
+		if err != nil {
+			return nil, err
+		}
+		xport.TLSClientConfig = &tls.Config{
+			RootCAs: certPool.Pool(),
+		}
+	}
+	client := &Client{
 		remote:     remote,
 		bufferPool: NewBufferPool(DefaultBufferPoolSize),
 		token:      cfg.GetToken(),
+		certPool:   certPool,
 		client: &http.Client{
 			Timeout:   cfg.GetTimeout(),
 			Transport: xport,
 		},
-	}, nil
+	}
+
+	client.kv1 = &kv1{client: client}
+	client.kv2 = &kv2{client: client}
+	return client, nil
 }
 
 // NewFromEnv is a helper to create a client from a config read from the environment.
@@ -103,9 +112,12 @@ type Client struct {
 	token  string
 	log    *logger.Logger
 
+	kv1 *kv1
+	kv2 *kv2
+
 	bufferPool *BufferPool
 	client     *http.Client
-	certPool   *x509.CertPool
+	certPool   *CertPool
 }
 
 // WithRemote set the client remote url.
@@ -141,14 +153,8 @@ func (c *Client) Timeout() time.Duration {
 	return c.client.Timeout
 }
 
-// WithCertPool returns the cert pool.
-func (c *Client) WithCertPool(certPool *x509.CertPool) *Client {
-	c.certPool = certPool
-	return c
-}
-
 // CertPool returns the cert pool.
-func (c *Client) CertPool() *x509.CertPool {
+func (c *Client) CertPool() *CertPool {
 	return c.certPool
 }
 
@@ -165,108 +171,87 @@ func (c *Client) Logger() *logger.Logger {
 
 // Put puts a value.
 func (c *Client) Put(key string, data Values, options ...Option) error {
-	contents, err := c.jsonBody(SecretData{Data: data})
+	backend, err := c.backend()
 	if err != nil {
 		return err
 	}
-	req := c.createRequest(MethodPut, filepath.Join("/v1/", key), options...)
-	req.Body = contents
-	res, err := c.send(req)
-	if err != nil {
-		return err
-	}
-	defer res.Close()
-	return nil
+
+	return backend.Put(key, data, options...)
 }
 
 // Get gets a value at a given key.
 func (c *Client) Get(key string, options ...Option) (Values, error) {
-	response, err := c.Meta(key)
+	backend, err := c.backend()
 	if err != nil {
 		return nil, err
 	}
-	return response.Data.Data, nil
-}
 
-// Meta gets the metadata for a key.
-func (c *Client) Meta(key string, options ...Option) (*Secret, error) {
-	req := c.createRequest(MethodGet, filepath.Join("/v1/", key), options...)
-	res, err := c.send(req)
-	if err != nil {
-		return nil, err
-	}
-	defer res.Close()
-
-	var response Secret
-	if err := json.NewDecoder(res).Decode(&response); err != nil {
-		return nil, err
-	}
-	return &response, nil
+	return backend.Get(key, options...)
 }
 
 // Delete puts a key.
 func (c *Client) Delete(key string, options ...Option) error {
-	req := c.createRequest(MethodDelete, filepath.Join("/v1/", key), options...)
-	res, err := c.send(req)
+	backend, err := c.backend()
 	if err != nil {
 		return err
 	}
-	defer res.Close()
-	return nil
+	return backend.Delete(key, options...)
 }
 
 // ReadInto reads a secret into an object.
 func (c *Client) ReadInto(key string, obj interface{}, options ...Option) error {
-	response, err := c.Meta(key)
+	response, err := c.Get(key, options...)
 	if err != nil {
 		return err
 	}
-	return util.Reflection.PatchStrings(ReflectTagName, response.Data.Data, obj)
+	return util.Reflection.PatchStrings(ReflectTagName, response, obj)
 }
 
 // WriteInto writes an object into a secret at a given key.
 func (c *Client) WriteInto(key string, obj interface{}, options ...Option) error {
-	contents, err := c.jsonBody(SecretData{Data: util.Reflection.DecomposeStrings(ReflectTagName, obj)})
-	if err != nil {
-		return err
-	}
-	req := c.createRequest(MethodPut, filepath.Join("/v1/", key), options...)
-	req.Body = contents
-	res, err := c.send(req)
-	if err != nil {
-		return err
-	}
-	defer res.Close()
-	return nil
+	return c.Put(key, util.Reflection.DecomposeStrings(ReflectTagName, obj), options...)
 }
 
-// ListMounts lists mounts.
-func (c *Client) ListMounts() (map[string]Mount, error) {
-	req := c.createRequest(MethodGet, "/v1/sys/mounts", List())
-	res, err := c.send(req)
+// --------------------------------------------------------------------------------
+// utility methods
+// --------------------------------------------------------------------------------
+
+func (c *Client) backend() (KV, error) {
+	version, err := c.getVersion()
 	if err != nil {
 		return nil, err
 	}
-	defer res.Close()
+	switch version {
+	case Version1:
+		return c.kv1, nil
+	case Version2:
+		return c.kv2, nil
+	}
+	return nil, exception.New("invalid kv version").WithMessagef("version: %s", version)
+}
 
-	var result map[string]Mount
-	err = c.readJSON(res, &result)
+func (c *Client) getVersion() (string, error) {
+	meta, err := c.getMountMeta()
+	if err != nil {
+		return "", err
+	}
+	return meta.Data.Options["version"], nil
+}
+
+func (c *Client) getMountMeta() (*MountResponse, error) {
+	req := c.createRequest(MethodGet, "/v1/sys/internal/ui/mounts/secret/")
+
+	res, err := c.client.Do(req)
 	if err != nil {
 		return nil, err
 	}
+	defer res.Body.Close()
 
-	return result, nil
-}
-
-// Mount creates a new mount.
-func (c *Client) Mount(path string, mountInfo *MountInput) error {
-	r := c.createRequest(MethodPost, filepath.Join("/v1/sys/mounts/%s", path))
-	body, err := c.jsonBody(mountInfo)
-	if err != nil {
-		return err
+	var response MountResponse
+	if err := json.NewDecoder(res.Body).Decode(&response); err != nil {
+		return nil, err
 	}
-	r.Body = body
-	return c.discard(c.send(r))
+	return &response, nil
 }
 
 func (c *Client) jsonBody(input interface{}) (io.ReadCloser, error) {

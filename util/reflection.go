@@ -28,14 +28,14 @@ const (
 	FieldFlagBytes = "bytes"
 )
 
-// PatchStringer is a type that handles unmarshalling a map of strings into itself.
-type PatchStringer interface {
-	PatchStrings(map[string]string) error
-}
-
 // Patcher describes an object that can be patched with raw values.
 type Patcher interface {
 	Patch(map[string]interface{}) error
+}
+
+// PatchStringer is a type that handles unmarshalling a map of strings into itself.
+type PatchStringer interface {
+	PatchStrings(map[string]string) error
 }
 
 type reflectionUtil struct{}
