@@ -37,11 +37,11 @@ func (kv1 kv1) Get(key string, options ...Option) (Values, error) {
 	}
 	defer res.Close()
 
-	var response Secret
+	var response SecretV1
 	if err := json.NewDecoder(res).Decode(&response); err != nil {
 		return nil, err
 	}
-	return response.Data.Data, nil
+	return response.Data, nil
 }
 
 // Delete puts a key.
