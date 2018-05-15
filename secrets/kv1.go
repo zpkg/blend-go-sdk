@@ -15,7 +15,7 @@ type kv1 struct {
 }
 
 func (kv1 kv1) Put(key string, data Values, options ...Option) error {
-	contents, err := kv1.client.jsonBody(SecretData{Data: data})
+	contents, err := kv1.client.jsonBody(data)
 	if err != nil {
 		return err
 	}
