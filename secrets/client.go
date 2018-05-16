@@ -8,42 +8,12 @@ import (
 	"io/ioutil"
 	"net/http"
 	"net/url"
-
-	"github.com/blend/go-sdk/exception"
+	"path/filepath"
 
 	"golang.org/x/net/http2"
 
 	"github.com/blend/go-sdk/logger"
 	"github.com/blend/go-sdk/util"
-)
-
-const (
-	// MethodGet is a request method.
-	MethodGet = "GET"
-	// MethodPost is a request method.
-	MethodPost = "POST"
-	// MethodPut is a request method.
-	MethodPut = "PUT"
-	// MethodDelete is a request method.
-	MethodDelete = "DELETE"
-
-	// HeaderVaultToken is the vault token header.
-	HeaderVaultToken = "X-Vault-Token"
-	// HeaderContentType is the content type header.
-	HeaderContentType = "Content-Type"
-	// ContentTypeApplicationJSON is a content type.
-	ContentTypeApplicationJSON = "application/json"
-
-	// DefaultBufferPoolSize is the default buffer pool size.
-	DefaultBufferPoolSize = 1024
-
-	// ReflectTagName is a reflect tag name.
-	ReflectTagName = "secret"
-
-	// Version1 is a constant.
-	Version1 = "1"
-	// Version2 is a constant.
-	Version2 = "2"
 )
 
 // New returns a new client.
@@ -78,6 +48,7 @@ func NewFromConfig(cfg *Config) (*Client, error) {
 	}
 	client := &Client{
 		remote:     remote,
+		mount:      cfg.GetMount(),
 		bufferPool: NewBufferPool(DefaultBufferPoolSize),
 		token:      cfg.GetToken(),
 		certPool:   certPool,
@@ -109,6 +80,7 @@ func Must(c *Client, err error) *Client {
 type Client struct {
 	remote *url.URL
 	token  string
+	mount  string
 	log    *logger.Logger
 
 	kv1 *kv1
@@ -141,6 +113,17 @@ func (c *Client) Token() string {
 	return c.token
 }
 
+// WithMount sets the token.
+func (c *Client) WithMount(mount string) *Client {
+	c.mount = mount
+	return c
+}
+
+// Mount returns the mount.
+func (c *Client) Mount() string {
+	return c.mount
+}
+
 // WithHTTPClient sets the http client.
 func (c *Client) WithHTTPClient(hc HTTPClient) *Client {
 	c.client = hc
@@ -170,7 +153,7 @@ func (c *Client) Logger() *logger.Logger {
 
 // Put puts a value.
 func (c *Client) Put(key string, data Values, options ...Option) error {
-	backend, err := c.backend()
+	backend, err := c.backend(key)
 	if err != nil {
 		return err
 	}
@@ -180,7 +163,7 @@ func (c *Client) Put(key string, data Values, options ...Option) error {
 
 // Get gets a value at a given key.
 func (c *Client) Get(key string, options ...Option) (Values, error) {
-	backend, err := c.backend()
+	backend, err := c.backend(key)
 	if err != nil {
 		return nil, err
 	}
@@ -190,7 +173,7 @@ func (c *Client) Get(key string, options ...Option) (Values, error) {
 
 // Delete puts a key.
 func (c *Client) Delete(key string, options ...Option) error {
-	backend, err := c.backend()
+	backend, err := c.backend(key)
 	if err != nil {
 		return err
 	}
@@ -215,8 +198,8 @@ func (c *Client) WriteInto(key string, obj interface{}, options ...Option) error
 // utility methods
 // --------------------------------------------------------------------------------
 
-func (c *Client) backend() (KV, error) {
-	version, err := c.getVersion()
+func (c *Client) backend(key string) (KV, error) {
+	version, err := c.getVersion(key)
 	if err != nil {
 		return nil, err
 	}
@@ -225,20 +208,21 @@ func (c *Client) backend() (KV, error) {
 		return c.kv1, nil
 	case Version2:
 		return c.kv2, nil
+	default:
+		return c.kv1, nil
 	}
-	return nil, exception.New("invalid kv version").WithMessagef("version: %s", version)
 }
 
-func (c *Client) getVersion() (string, error) {
-	meta, err := c.getMountMeta()
+func (c *Client) getVersion(key string) (string, error) {
+	meta, err := c.getMountMeta(filepath.Join(c.mount, key))
 	if err != nil {
 		return "", err
 	}
 	return meta.Data.Options["version"], nil
 }
 
-func (c *Client) getMountMeta() (*MountResponse, error) {
-	req := c.createRequest(MethodGet, "/v1/sys/internal/ui/mounts/secret/")
+func (c *Client) getMountMeta(key string) (*MountResponse, error) {
+	req := c.createRequest(MethodGet, filepath.Join("/v1/sys/internal/ui/mounts/", key))
 
 	res, err := c.client.Do(req)
 	if err != nil {

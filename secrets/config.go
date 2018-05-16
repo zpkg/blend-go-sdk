@@ -8,14 +8,6 @@ import (
 	"github.com/blend/go-sdk/util"
 )
 
-const (
-	// DefaultAddr is the default addr.
-	DefaultAddr = "http://127.0.0.1:8200"
-
-	// DefaultTimeout is the default timeout.
-	DefaultTimeout = time.Second
-)
-
 // NewConfigFromEnv returns a config populated by the env.
 func NewConfigFromEnv() *Config {
 	var cfg Config
@@ -31,6 +23,8 @@ type Config struct {
 	Addr string `json:"addr" yaml:"addr" env:"VAULT_ADDR"`
 	// Token is the authentication token used to talk to the secret store.
 	Token string `json:"token" yaml:"token" env:"VAULT_TOKEN"`
+	// Mount is the default mount path, it prefixes any keys.
+	Mount string `json:"mount" yaml:"mount"`
 	// Timeout is the dial timeout for requests to the secrets store.
 	Timeout time.Duration `json:"timeout" yaml:"timeout"`
 	// RootCAs is a list of certificate authority paths.
@@ -54,6 +48,11 @@ func (c Config) MustRemote() *url.URL {
 // GetToken returns the client token.
 func (c Config) GetToken() string {
 	return util.Coalesce.String(c.Token, "")
+}
+
+// GetMount returns the client token.
+func (c Config) GetMount() string {
+	return util.Coalesce.String(c.Mount, DefaultMount)
 }
 
 // GetTimeout returns the client timeout.
