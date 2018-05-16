@@ -10,6 +10,7 @@ var (
 	_ KV = &kv1{}
 )
 
+// kv1 defines key value version 1 interactions
 type kv1 struct {
 	client *Client
 }
@@ -19,7 +20,7 @@ func (kv1 kv1) Put(key string, data Values, options ...Option) error {
 	if err != nil {
 		return err
 	}
-	req := kv1.client.createRequest(MethodPut, filepath.Join("/v1/secret", key), options...)
+	req := kv1.client.createRequest(MethodPut, filepath.Join("/v1/", key), options...)
 	req.Body = contents
 	res, err := kv1.client.send(req)
 	if err != nil {
@@ -30,7 +31,7 @@ func (kv1 kv1) Put(key string, data Values, options ...Option) error {
 }
 
 func (kv1 kv1) Get(key string, options ...Option) (Values, error) {
-	req := kv1.client.createRequest(MethodGet, filepath.Join("/v1/secret", key), options...)
+	req := kv1.client.createRequest(MethodGet, filepath.Join("/v1/", key), options...)
 	res, err := kv1.client.send(req)
 	if err != nil {
 		return nil, err
@@ -46,7 +47,7 @@ func (kv1 kv1) Get(key string, options ...Option) (Values, error) {
 
 // Delete puts a key.
 func (kv1 kv1) Delete(key string, options ...Option) error {
-	req := kv1.client.createRequest(MethodDelete, filepath.Join("/v1/secret", key), options...)
+	req := kv1.client.createRequest(MethodDelete, filepath.Join("/v1/", key), options...)
 	res, err := kv1.client.send(req)
 	if err != nil {
 		return err
