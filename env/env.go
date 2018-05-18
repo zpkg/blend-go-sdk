@@ -45,7 +45,7 @@ const (
 	// ServiceEnvTest is a service environment.
 	ServiceEnvTest = "test"
 	// ServiceEnvSandbox is a service environment.
-	ServiceEnvDev = "sandbox"
+	ServiceEnvSandbox = "sandbox"
 	// ServiceEnvDev is a service environment.
 	ServiceEnvDev = "dev"
 	// ServiceEnvCI is a service environment.
