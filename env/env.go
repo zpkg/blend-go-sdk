@@ -42,6 +42,10 @@ const (
 	// VarPGMaxConns is a common env var name.
 	VarPGMaxConns = "PG_MAX_CONNS"
 
+	// ServiceEnvTest is a service environment.
+	ServiceEnvTest = "test"
+	// ServiceEnvSandbox is a service environment.
+	ServiceEnvSandbox = "sandbox"
 	// ServiceEnvDev is a service environment.
 	ServiceEnvDev = "dev"
 	// ServiceEnvCI is a service environment.
