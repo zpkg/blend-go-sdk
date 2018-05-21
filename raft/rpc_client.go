@@ -18,6 +18,8 @@ const (
 
 	// DefaultClientDialTimeout is a default.
 	DefaultClientDialTimeout = 500 * time.Millisecond
+	// DefaultClientCallTimeout is the default time to wait for a call result.
+	DefaultClientCallTimeout = 500 * time.Millisecond
 	// DefaultClientRedialWait is the default time to wait between rpc redial attempts.
 	DefaultClientRedialWait = 5 * time.Second
 	// DefaultClientConnectTimeout is the total time allowed to reach the remote.
@@ -30,6 +32,7 @@ func NewRPCClient(remoteAddr string) *RPCClient {
 		remoteAddr:  remoteAddr,
 		latch:       &worker.Latch{},
 		dialTimeout: DefaultClientDialTimeout,
+		callTimeout: DefaultClientCallTimeout,
 		redialWait:  DefaultClientRedialWait,
 	}
 }
@@ -43,7 +46,30 @@ type RPCClient struct {
 	log        *logger.Logger
 
 	dialTimeout time.Duration
+	callTimeout time.Duration
 	redialWait  time.Duration
+}
+
+// DialTimeout is the timeout for dialing new connections
+func (c *RPCClient) DialTimeout() time.Duration {
+	return c.dialTimeout
+}
+
+// WithDialTimeout sets the DialTimeout
+func (c *RPCClient) WithDialTimeout(d time.Duration) *RPCClient {
+	c.dialTimeout = d
+	return c
+}
+
+// CallTimeout is the timeout for individual rpc calls
+func (c *RPCClient) CallTimeout() time.Duration {
+	return c.callTimeout
+}
+
+// WithCallTimeout is the timeout for individual rpc calls
+func (c *RPCClient) WithCallTimeout(d time.Duration) *RPCClient {
+	c.callTimeout = d
+	return c
 }
 
 // WithLogger sets the logger.
@@ -108,7 +134,7 @@ func (c *RPCClient) RequestVote(args *RequestVote) (*RequestVoteResults, error) 
 		return nil, err
 	}
 	var res RequestVoteResults
-	err := c.client.Call(RPCMethodRequestVote, args, &res)
+	err := c.call(RPCMethodRequestVote, args, &res)
 	if err != nil {
 		c.err(c.disconnect())
 		return nil, exception.Wrap(err)
@@ -123,12 +149,28 @@ func (c *RPCClient) AppendEntries(args *AppendEntries) (*AppendEntriesResults, e
 	}
 
 	var res AppendEntriesResults
-	err := c.client.Call(RPCMethodAppendEntries, args, &res)
+	err := c.call(RPCMethodAppendEntries, args, &res)
 	if err != nil {
 		c.err(c.disconnect())
 		return nil, exception.Wrap(err)
 	}
 	return &res, nil
+}
+
+// call invokes a method with the default call timeout.
+func (c *RPCClient) call(method string, args interface{}, reply interface{}) error {
+	timeout := time.NewTimer(c.callTimeout)
+
+	result := c.client.Go(method, args, reply, nil)
+	select {
+	case <-timeout.C:
+		return exception.New("rpc call timeout").WithMessagef("method: %s", method)
+	case <-result.Done:
+		if result.Error != nil {
+			return exception.Wrap(result.Error)
+		}
+		return nil
+	}
 }
 
 func (c *RPCClient) disconnect() error {

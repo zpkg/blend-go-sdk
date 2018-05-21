@@ -38,6 +38,8 @@ func NewFromConfig(cfg *Config) *Raft {
 // Raft represents a raft node and all the state machine
 // componentry required.
 type Raft struct {
+	sync.Mutex
+
 	id       string
 	log      *logger.Logger
 	selfAddr string
@@ -60,7 +62,6 @@ type Raft struct {
 	// state is the current fsm state
 	state        State
 	backoffIndex int32
-	stateLock    sync.Mutex
 
 	server Server
 	peers  []Client
@@ -296,6 +297,15 @@ func (r *Raft) RequestVoteHandler(args *RequestVote, res *RequestVoteResults) er
 		return nil
 	}
 
+	if len(r.votedFor) > 0 && r.votedFor != args.ID {
+		r.debugf("rejecting request vote from %s @ %d", args.ID, args.Term)
+		*res = RequestVoteResults{
+			ID:      r.id,
+			Term:    r.currentTerm,
+			Granted: false,
+		}
+	}
+
 	r.debugf("accepting request vote from %s @ %d", args.ID, args.Term)
 	r.votedFor = args.ID
 	r.currentTerm = args.Term
@@ -474,7 +484,7 @@ func (r *Raft) processRequestVoteResults(results chan *RequestVoteResults) Elect
 		}
 	}
 
-	r.debugf("election tally: %d votes for, %d total", votesFor, total)
+	r.debugf("election tally: %d votes for, %d total (includes self)", votesFor, total)
 	return r.voteOutcome(votesFor, total)
 }
 
