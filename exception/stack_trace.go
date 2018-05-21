@@ -12,7 +12,7 @@ import (
 func callers() *StackPointers {
 	const depth = 32
 	var pcs [depth]uintptr
-	n := runtime.Callers(4, pcs[:])
+	n := runtime.Callers(3, pcs[:])
 	var st StackPointers = pcs[0:n]
 	return &st
 }
