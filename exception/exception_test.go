@@ -105,7 +105,7 @@ func TestCallers(t *testing.T) {
 
 	a.NotNil(callStack)
 	callstackStr := fmt.Sprintf("%+v", callStack)
-	a.True(strings.Contains(callstackStr, "testing.tRunner"), callstackStr)
+	a.True(strings.Contains(callstackStr, "TestCallers"), callstackStr)
 }
 
 func TestExceptionFormatters(t *testing.T) {

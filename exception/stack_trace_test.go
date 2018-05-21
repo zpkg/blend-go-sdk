@@ -2,7 +2,6 @@ package exception
 
 import (
 	"fmt"
-	"strings"
 	"testing"
 
 	"github.com/blend/go-sdk/assert"
@@ -46,9 +45,4 @@ func TestExceptionWithStackStrings(t *testing.T) {
 	assert.NotEmpty(values["Stack"])
 
 	assert.NotNil(ex.Stack())
-}
-
-func TestExceptionStackTraceCallersOffset(t *testing.T) {
-	assert := assert.New(t)
-	assert.True(strings.Contains(fmt.Sprintf("%v", New("foo").Stack()), "stack_trace_test.go"))
 }
