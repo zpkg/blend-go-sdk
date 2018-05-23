@@ -55,7 +55,34 @@ func TestDecomposeStrings(t *testing.T) {
 		},
 	}
 
-	output := Reflection.DecomposeStrings("secret", input)
+	output := Reflection.DecomposeStrings(input)
+	assert.NotEmpty(output)
+
+	assert.Equal("3.14", output["Float64"])
+	assert.Equal("foo", output["String"])
+	assert.NotEmpty(output["Base64"])
+	assert.NotEqual("this is base64", output["Base64"])
+	assert.Equal("[116 104 105 115 32 105 115 32 98 121 116 101 115]", output["Bytes"])
+	assert.Equal("10s", output["Duration"])
+	assert.Equal("yes this is foo", output["Foo"])
+}
+
+func TestDecomposeStringsWithTag(t *testing.T) {
+	assert := assert.New(t)
+
+	input := mapStringsTest{
+		Float64:  3.14,
+		String:   "foo",
+		Base64:   []byte("this is base64"),
+		Bytes:    []byte("this is bytes"),
+		CSV:      []string{"foo", "bar", "baz"},
+		Duration: 10 * time.Second,
+		Sub: mapStringsTestSubObject{
+			Foo: "yes this is foo",
+		},
+	}
+
+	output := Reflection.DecomposeStrings(input, "secret")
 	assert.NotEmpty(output)
 
 	assert.Equal("3.14", output["float64"])
