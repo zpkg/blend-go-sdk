@@ -280,7 +280,7 @@ func (ru reflectionUtil) decomposeAny(obj interface{}) interface{} {
 }
 
 // DecomposeStrings decomposes an object into a string map.
-func (ru reflectionUtil) DecomposeStrings(tagName string, obj interface{}) map[string]string {
+func (ru reflectionUtil) DecomposeStrings(obj interface{}, tagName ...string) map[string]string {
 	output := map[string]string{}
 
 	objMeta := ru.Type(obj)
@@ -288,68 +288,74 @@ func (ru reflectionUtil) DecomposeStrings(tagName string, obj interface{}) map[s
 
 	var field reflect.StructField
 	var fieldValue reflect.Value
-	var tag string
+	var tag, tagValue string
 	var dataField string
 	var pieces []string
 	var isCSV bool
 	var isBytes bool
 	var isBase64 bool
 
+	if len(tagName) > 0 {
+		tag = tagName[0]
+	}
+
 	for x := 0; x < objMeta.NumField(); x++ {
+		isCSV = false
+		isBytes = false
+		isBase64 = false
+
 		field = objMeta.Field(x)
 		fieldValue = objValue.FieldByName(field.Name)
+		dataField = field.Name
 
 		if field.Type.Kind() == reflect.Struct {
-			childFields := ru.DecomposeStrings(tagName, fieldValue.Interface())
+			childFields := ru.DecomposeStrings(fieldValue.Interface(), tagName...)
 			for key, value := range childFields {
 				output[key] = value
 			}
 		}
 
-		tag = field.Tag.Get(tagName)
 		if len(tag) > 0 {
-			if field.Type.Kind() == reflect.Map {
-				continue
-			} else {
-				isCSV = false
-				isBytes = false
-				isBase64 = false
+			tagValue = field.Tag.Get(tag)
+			if len(tagValue) > 0 {
+				if field.Type.Kind() == reflect.Map {
+					continue
+				} else {
+					pieces = strings.Split(tagValue, ",")
+					dataField = pieces[0]
 
-				pieces = strings.Split(tag, ",")
-				dataField = pieces[0]
-
-				if len(pieces) > 1 {
-					for y := 1; y < len(pieces); y++ {
-						if pieces[y] == FieldFlagCSV {
-							isCSV = true
-						} else if pieces[y] == FieldFlagBase64 {
-							isBase64 = true
-						} else if pieces[y] == FieldFlagBytes {
-							isBytes = true
+					if len(pieces) > 1 {
+						for y := 1; y < len(pieces); y++ {
+							if pieces[y] == FieldFlagCSV {
+								isCSV = true
+							} else if pieces[y] == FieldFlagBase64 {
+								isBase64 = true
+							} else if pieces[y] == FieldFlagBytes {
+								isBytes = true
+							}
 						}
 					}
 				}
-
-				if isCSV {
-					if typed, isTyped := fieldValue.Interface().([]string); isTyped {
-						output[dataField] = strings.Join(typed, ",")
-					}
-				} else if isBytes {
-					// DOUBLE HALP
-					if typed, isTyped := fieldValue.Interface().([]byte); isTyped {
-						output[dataField] = string(typed)
-					}
-				} else if isBase64 {
-					if typed, isTyped := fieldValue.Interface().([]byte); isTyped {
-						output[dataField] = base64.StdEncoding.EncodeToString(typed)
-					}
-					if typed, isTyped := fieldValue.Interface().(string); isTyped {
-						output[dataField] = typed
-					}
-				} else {
-					output[dataField] = fmt.Sprintf("%v", fieldValue.Interface())
-				}
 			}
+		}
+
+		if isCSV {
+			if typed, isTyped := fieldValue.Interface().([]string); isTyped {
+				output[dataField] = strings.Join(typed, ",")
+			}
+		} else if isBytes {
+			if typed, isTyped := fieldValue.Interface().([]byte); isTyped {
+				output[dataField] = string(typed)
+			}
+		} else if isBase64 {
+			if typed, isTyped := fieldValue.Interface().([]byte); isTyped {
+				output[dataField] = base64.StdEncoding.EncodeToString(typed)
+			}
+			if typed, isTyped := fieldValue.Interface().(string); isTyped {
+				output[dataField] = typed
+			}
+		} else {
+			output[dataField] = fmt.Sprintf("%v", fieldValue.Interface())
 		}
 	}
 

@@ -242,7 +242,6 @@ func (r *Raft) Heartbeat() error {
 			} else {
 				results <- res
 			}
-
 		}(peer)
 	}
 	wg.Wait()

@@ -191,7 +191,7 @@ func (c *Client) ReadInto(key string, obj interface{}, options ...Option) error 
 
 // WriteInto writes an object into a secret at a given key.
 func (c *Client) WriteInto(key string, obj interface{}, options ...Option) error {
-	return c.Put(key, util.Reflection.DecomposeStrings(ReflectTagName, obj), options...)
+	return c.Put(key, util.Reflection.DecomposeStrings(obj, ReflectTagName), options...)
 }
 
 // --------------------------------------------------------------------------------
