@@ -219,6 +219,26 @@ func TestParseMultiByte(t *testing.T) {
 	assert.Len(typed, 2)
 }
 
+func TestParseOptions(t *testing.T) {
+	assert := assert.New(t)
+
+	selQuery := "bar=foo@bar"
+	labels := Labels{
+		"foo": "bar",
+		"bar": "foo@bar",
+	}
+
+	sel, err := Parse(selQuery)
+	assert.NotNil(err)
+	assert.Nil(sel)
+
+	sel, err = Parse(selQuery, SkipValidation)
+	assert.Nil(err)
+	assert.NotNil(sel)
+
+	assert.True(sel.Matches(labels))
+}
+
 func BenchmarkParse(b *testing.B) {
 	valid := Labels{
 		"zoo":   "mar",

@@ -26,6 +26,8 @@ type Parser struct {
 	pos int
 	// m is an optional mark
 	m int
+
+	skipValidation bool
 }
 
 // Parse does the actual parsing.
@@ -126,9 +128,11 @@ func (p *Parser) Parse() (Selector, error) {
 		return nil, ErrInvalidSelector
 	}
 
-	err = selector.Validate()
-	if err != nil {
-		return nil, err
+	if !p.skipValidation {
+		err = selector.Validate()
+		if err != nil {
+			return nil, err
+		}
 	}
 
 	return selector, nil
