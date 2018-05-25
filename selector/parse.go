@@ -30,7 +30,10 @@ package selector
 //      the KEY exists and can be any VALUE.
 //  (5) A requirement with just !KEY requires that the KEY not exist.
 //
-func Parse(query string) (Selector, error) {
-	l := &Parser{s: query}
-	return l.Parse()
+func Parse(query string, opts ...Option) (Selector, error) {
+	p := &Parser{s: query}
+	for _, opt := range opts {
+		opt(p)
+	}
+	return p.Parse()
 }
