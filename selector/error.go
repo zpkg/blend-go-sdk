@@ -1,5 +1,7 @@
 package selector
 
+import "encoding/json"
+
 // Error is a hard alias to string.
 type Error string
 
@@ -10,5 +12,5 @@ func (e Error) Error() string {
 
 // MarshalJSON implements json.Marshaler.
 func (e Error) MarshalJSON() ([]byte, error) {
-	return []byte("\"" + e + "\""), nil
+	return json.Marshal(string(e))
 }
