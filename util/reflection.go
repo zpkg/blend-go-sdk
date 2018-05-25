@@ -305,6 +305,10 @@ func (ru reflectionUtil) DecomposeStrings(obj interface{}, tagName ...string) ma
 		isBase64 = false
 
 		field = objMeta.Field(x)
+		if !Reflection.IsExported(field.Name) {
+			continue
+		}
+
 		fieldValue = objValue.FieldByName(field.Name)
 		dataField = field.Name
 
