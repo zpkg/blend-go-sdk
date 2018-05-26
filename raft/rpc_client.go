@@ -119,6 +119,7 @@ func (c *RPCClient) Dial() error {
 	if c.client != nil {
 		return nil
 	}
+
 	var err error
 	c.conn, err = net.DialTimeout("tcp", c.remoteAddr, c.dialTimeout)
 	if err != nil {
@@ -134,7 +135,7 @@ func (c *RPCClient) RequestVote(args *RequestVote) (*RequestVoteResults, error) 
 		return nil, err
 	}
 	var res RequestVoteResults
-	err := c.call(RPCMethodRequestVote, args, &res)
+	err := c.callWithTimeout(RPCMethodRequestVote, args, &res)
 	if err != nil {
 		c.err(c.disconnect())
 		return nil, exception.Wrap(err)
@@ -149,7 +150,7 @@ func (c *RPCClient) AppendEntries(args *AppendEntries) (*AppendEntriesResults, e
 	}
 
 	var res AppendEntriesResults
-	err := c.call(RPCMethodAppendEntries, args, &res)
+	err := c.callWithTimeout(RPCMethodAppendEntries, args, &res)
 	if err != nil {
 		c.err(c.disconnect())
 		return nil, exception.Wrap(err)
@@ -158,7 +159,7 @@ func (c *RPCClient) AppendEntries(args *AppendEntries) (*AppendEntriesResults, e
 }
 
 // call invokes a method with the default call timeout.
-func (c *RPCClient) call(method string, args interface{}, reply interface{}) error {
+func (c *RPCClient) callWithTimeout(method string, args interface{}, reply interface{}) error {
 	timeout := time.NewTimer(c.callTimeout)
 
 	result := c.client.Go(method, args, reply, nil)

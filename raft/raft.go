@@ -193,6 +193,7 @@ func (r *Raft) AppendEntriesHandler(args *AppendEntries, res *AppendEntriesResul
 		return nil
 	}
 
+	//r.debugf("received leader heartbeat from %s", args.ID)
 	r.transitionTo(Follower)
 	r.currentTerm = args.Term
 	r.lastLeaderContact = time.Now().UTC()
