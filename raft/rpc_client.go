@@ -165,6 +165,7 @@ func (c *RPCClient) callWithTimeout(method string, args interface{}, reply inter
 	result := c.client.Go(method, args, reply, nil)
 	select {
 	case <-timeout.C:
+		c.client.Close()
 		return exception.New("rpc call timeout").WithMessagef("method: %s", method)
 	case <-result.Done:
 		if result.Error != nil {
