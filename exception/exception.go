@@ -76,7 +76,11 @@ func Wrap(err error) error {
 	if typed, isTyped := err.(*Ex); isTyped {
 		return typed
 	}
-	return NewFromErr(err)
+	return &Ex{
+		inner: err,
+		class: err.Error(),
+		stack: callers(),
+	}
 }
 
 // Exception is an exception.
