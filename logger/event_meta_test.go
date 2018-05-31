@@ -20,6 +20,9 @@ func TestEventMetaProperties(t *testing.T) {
 
 	em := NewEventMeta(Info)
 
+	assert.NotNil(em.Annotations())
+	assert.NotNil(em.Labels())
+
 	assert.Empty(em.Headings())
 	em.SetHeadings("Headings")
 	assert.Equal([]string{"Headings"}, em.Headings())
