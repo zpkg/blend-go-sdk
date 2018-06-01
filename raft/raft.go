@@ -183,8 +183,6 @@ func (r *Raft) AppendEntriesHandler(args *AppendEntries, res *AppendEntriesResul
 	r.Lock()
 	defer r.Unlock()
 
-	time.Sleep(time.Second)
-
 	if args.Term < r.currentTerm {
 		r.debugf("received out of date leader heartbeat (%d vs. %d)", args.Term, r.currentTerm)
 		*res = AppendEntriesResults{
