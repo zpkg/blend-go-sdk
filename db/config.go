@@ -274,6 +274,21 @@ func (c Config) CreateDSN() string {
 	return fmt.Sprintf("postgres://%s%s/%s%s", c.GetHost(), port, c.GetDatabase(), sslMode)
 }
 
+// Resolve creates a DSN and reparses it, in case some values need to be coalesced.
+func (c Config) Resolve() (*Config, error) {
+	return NewConfigFromDSN(c.CreateDSN())
+}
+
+// MustResolve creates a DSN and reparses it, in case some values need to be coalesced,
+// and panics if there is an error.
+func (c Config) MustResolve() *Config {
+	cfg, err := NewConfigFromDSN(c.CreateDSN())
+	if err != nil {
+		panic(err)
+	}
+	return cfg
+}
+
 // ValidateProduction validates production configuration for the config.
 func (c Config) ValidateProduction() error {
 	if !(len(c.GetSSLMode()) == 0 ||
