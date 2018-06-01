@@ -160,7 +160,7 @@ func gobin() string {
 }
 
 func execCoverage(path string) ([]byte, error) {
-	cmd := exec.Command(gobin(), "test", "-short", "-covermode=set", "-coverprofile=profile.cov")
+	cmd := exec.Command(gobin(), "test", "-timeout", "10s", "-short", "-covermode=set", "-coverprofile=profile.cov")
 	cmd.Dir = path
 	return cmd.CombinedOutput()
 }
