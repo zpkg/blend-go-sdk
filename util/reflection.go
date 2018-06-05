@@ -147,7 +147,7 @@ func (ru reflectionUtil) SetValueByName(target interface{}, fieldName string, fi
 func (ru reflectionUtil) SetValueByNameFromType(obj interface{}, objType reflect.Type, objValue reflect.Value, fieldName string, value interface{}) (err error) {
 	defer func() {
 		if r := recover(); r != nil {
-			err = exception.Newf("panic setting value by name").WithMessagef("field: %s panic: %v", fieldName, r)
+			err = exception.New("panic setting value by name").WithMessagef("field: %s panic: %v", fieldName, r)
 		}
 	}()
 
@@ -370,7 +370,7 @@ func (ru reflectionUtil) DecomposeStrings(obj interface{}, tagName ...string) ma
 func (ru reflectionUtil) Patch(obj interface{}, patchValues map[string]interface{}) (err error) {
 	defer func() {
 		if r := recover(); r != nil {
-			err = exception.Newf("%v", r)
+			err = exception.New(r)
 		}
 	}()
 
@@ -394,7 +394,7 @@ func (ru reflectionUtil) Patch(obj interface{}, patchValues map[string]interface
 func (ru reflectionUtil) PatchStrings(tagName string, data map[string]string, obj interface{}) (err error) {
 	defer func() {
 		if r := recover(); r != nil {
-			err = exception.Newf("%v", r)
+			err = exception.New(r)
 		}
 	}()
 
@@ -476,7 +476,7 @@ func (ru reflectionUtil) PatchStrings(tagName string, data map[string]string, ob
 				case typeDuration:
 					dataFieldValue, err = time.ParseDuration(dataValue)
 					if err != nil {
-						err = exception.Wrap(err)
+						err = exception.New(err)
 						return
 					}
 				default:
@@ -490,71 +490,71 @@ func (ru reflectionUtil) PatchStrings(tagName string, data map[string]string, ob
 					case reflect.Float32:
 						dataFieldValue, err = strconv.ParseFloat(dataValue, 32)
 						if err != nil {
-							err = exception.Wrap(err)
+							err = exception.New(err)
 							return
 						}
 					case reflect.Float64:
 						dataFieldValue, err = strconv.ParseFloat(dataValue, 64)
 						if err != nil {
-							err = exception.Wrap(err)
+							err = exception.New(err)
 							return
 						}
 					case reflect.Int8:
 						dataFieldValue, err = strconv.ParseInt(dataValue, 10, 8)
 						if err != nil {
-							err = exception.Wrap(err)
+							err = exception.New(err)
 							return
 						}
 					case reflect.Int16:
 						dataFieldValue, err = strconv.ParseInt(dataValue, 10, 16)
 						if err != nil {
-							return exception.Wrap(err)
+							return exception.New(err)
 						}
 					case reflect.Int32:
 						dataFieldValue, err = strconv.ParseInt(dataValue, 10, 32)
 						if err != nil {
-							err = exception.Wrap(err)
+							err = exception.New(err)
 							return
 						}
 					case reflect.Int:
 						dataFieldValue, err = strconv.ParseInt(dataValue, 10, 64)
 						if err != nil {
-							err = exception.Wrap(err)
+							err = exception.New(err)
 							return
 						}
 					case reflect.Int64:
 						dataFieldValue, err = strconv.ParseInt(dataValue, 10, 64)
 						if err != nil {
-							return exception.Wrap(err)
+							return exception.New(err)
 						}
 					case reflect.Uint8:
 						dataFieldValue, err = strconv.ParseUint(dataValue, 10, 8)
 						if err != nil {
-							err = exception.Wrap(err)
+							err = exception.New(err)
 							return
 						}
 					case reflect.Uint16:
 						dataFieldValue, err = strconv.ParseUint(dataValue, 10, 8)
 						if err != nil {
-							err = exception.Wrap(err)
+							err = exception.New(err)
 							return
 						}
 					case reflect.Uint32:
 						dataFieldValue, err = strconv.ParseUint(dataValue, 10, 32)
 						if err != nil {
-							err = exception.Wrap(err)
+							err = exception.New(err)
 							return
 						}
 					case reflect.Uint64:
 						dataFieldValue, err = strconv.ParseUint(dataValue, 10, 64)
 						if err != nil {
-							err = exception.Wrap(err)
+							err = exception.New(err)
 							return
 						}
 					case reflect.Uint, reflect.Uintptr:
 						dataFieldValue, err = strconv.ParseUint(dataValue, 10, 64)
 						if err != nil {
-							err = exception.Wrap(err)
+							err = exception.New(err)
 							return
 						}
 					case reflect.String:

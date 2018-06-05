@@ -83,14 +83,14 @@ func (i *Invocation) Exec(statement string, args ...interface{}) (err error) {
 
 	stmt, stmtErr := i.Prepare(statement)
 	if stmtErr != nil {
-		err = exception.Wrap(stmtErr)
+		err = exception.New(stmtErr)
 		return
 	}
 
 	defer i.closeStatement(err, stmt)
 
 	if _, execErr := stmt.Exec(args...); execErr != nil {
-		err = exception.Wrap(execErr)
+		err = exception.New(execErr)
 		if err != nil {
 			i.invalidateCachedStatement()
 		}
@@ -164,7 +164,7 @@ func (i *Invocation) Get(object DatabaseMapped, ids ...interface{}) (err error) 
 	queryBody = queryBodyBuffer.String()
 	stmt, stmtErr := i.Prepare(queryBody)
 	if stmtErr != nil {
-		err = exception.Wrap(stmtErr)
+		err = exception.New(stmtErr)
 		return
 	}
 	defer i.closeStatement(err, stmt)
@@ -178,14 +178,14 @@ func (i *Invocation) Get(object DatabaseMapped, ids ...interface{}) (err error) 
 	}
 
 	if queryErr != nil {
-		err = exception.Wrap(queryErr)
+		err = exception.New(queryErr)
 		i.invalidateCachedStatement()
 		return
 	}
 	defer func() {
 		closeErr := rows.Close()
 		if closeErr != nil {
-			err = exception.Nest(err, closeErr)
+			err = exception.New(err).WithInner(closeErr)
 		}
 	}()
 
@@ -198,12 +198,12 @@ func (i *Invocation) Get(object DatabaseMapped, ids ...interface{}) (err error) 
 		}
 
 		if popErr != nil {
-			err = exception.Wrap(popErr)
+			err = exception.New(popErr)
 			return
 		}
 	}
 
-	err = exception.Wrap(rows.Err())
+	err = exception.New(rows.Err())
 	return
 }
 
@@ -246,7 +246,7 @@ func (i *Invocation) GetAll(collection interface{}) (err error) {
 	queryBody = queryBodyBuffer.String()
 	stmt, stmtErr := i.Prepare(queryBody)
 	if stmtErr != nil {
-		err = exception.Wrap(stmtErr)
+		err = exception.New(stmtErr)
 		i.invalidateCachedStatement()
 		return
 	}
@@ -260,13 +260,13 @@ func (i *Invocation) GetAll(collection interface{}) (err error) {
 		rows, queryErr = stmt.Query()
 	}
 	if queryErr != nil {
-		err = exception.Wrap(queryErr)
+		err = exception.New(queryErr)
 		return
 	}
 	defer func() {
 		closeErr := rows.Close()
 		if closeErr != nil {
-			err = exception.Nest(err, closeErr)
+			err = exception.New(err).WithInner(closeErr)
 		}
 	}()
 
@@ -285,7 +285,7 @@ func (i *Invocation) GetAll(collection interface{}) (err error) {
 		} else {
 			popErr = PopulateInOrder(newObj, rows, meta)
 			if popErr != nil {
-				err = exception.Wrap(popErr)
+				err = exception.New(popErr)
 				return
 			}
 		}
@@ -293,7 +293,7 @@ func (i *Invocation) GetAll(collection interface{}) (err error) {
 		collectionValue.Set(reflect.Append(collectionValue, newObjValue))
 	}
 
-	err = exception.Wrap(rows.Err())
+	err = exception.New(rows.Err())
 	return
 }
 
@@ -350,7 +350,7 @@ func (i *Invocation) Create(object DatabaseMapped) (err error) {
 	queryBody = queryBodyBuffer.String()
 	stmt, stmtErr := i.Prepare(queryBody)
 	if stmtErr != nil {
-		err = exception.Wrap(stmtErr)
+		err = exception.New(stmtErr)
 		return
 	}
 	defer func() { err = i.closeStatement(err, stmt) }()
@@ -364,7 +364,7 @@ func (i *Invocation) Create(object DatabaseMapped) (err error) {
 		}
 
 		if execErr != nil {
-			err = exception.Wrap(execErr)
+			err = exception.New(execErr)
 			i.invalidateCachedStatement()
 			return
 		}
@@ -381,14 +381,14 @@ func (i *Invocation) Create(object DatabaseMapped) (err error) {
 		}
 
 		if execErr != nil {
-			err = exception.Wrap(execErr)
+			err = exception.New(execErr)
 			return
 		}
 
 		for index := 0; index < len(autoValues); index++ {
 			setErr := autos.Columns()[index].SetValue(object, autoValues[index])
 			if setErr != nil {
-				err = exception.Wrap(setErr)
+				err = exception.New(setErr)
 				return
 			}
 		}
@@ -464,7 +464,7 @@ func (i *Invocation) CreateIfNotExists(object DatabaseMapped) (err error) {
 	queryBody = queryBodyBuffer.String()
 	stmt, stmtErr := i.Prepare(queryBody)
 	if stmtErr != nil {
-		err = exception.Wrap(stmtErr)
+		err = exception.New(stmtErr)
 		return
 	}
 	defer func() { err = i.closeStatement(err, stmt) }()
@@ -477,7 +477,7 @@ func (i *Invocation) CreateIfNotExists(object DatabaseMapped) (err error) {
 			_, execErr = stmt.Exec(colValues...)
 		}
 		if execErr != nil {
-			err = exception.Wrap(execErr)
+			err = exception.New(execErr)
 			i.invalidateCachedStatement()
 			return
 		}
@@ -494,14 +494,14 @@ func (i *Invocation) CreateIfNotExists(object DatabaseMapped) (err error) {
 		}
 
 		if execErr != nil {
-			err = exception.Wrap(execErr)
+			err = exception.New(execErr)
 			return
 		}
 
 		for index := 0; index < len(autoValues); index++ {
 			setErr := autos.Columns()[index].SetValue(object, autoValues[index])
 			if setErr != nil {
-				err = exception.Wrap(setErr)
+				err = exception.New(setErr)
 				return
 			}
 		}
@@ -570,7 +570,7 @@ func (i *Invocation) CreateMany(objects interface{}) (err error) {
 	queryBody = queryBodyBuffer.String()
 	stmt, stmtErr := i.Prepare(queryBody)
 	if stmtErr != nil {
-		err = exception.Wrap(stmtErr)
+		err = exception.New(stmtErr)
 		return
 	}
 	defer func() { err = i.closeStatement(err, stmt) }()
@@ -582,7 +582,7 @@ func (i *Invocation) CreateMany(objects interface{}) (err error) {
 
 	_, execErr := stmt.Exec(colValues...)
 	if execErr != nil {
-		err = exception.Wrap(execErr)
+		err = exception.New(execErr)
 		i.invalidateCachedStatement()
 		return
 	}
@@ -645,7 +645,7 @@ func (i *Invocation) Update(object DatabaseMapped) (err error) {
 	queryBody = queryBodyBuffer.String()
 	stmt, stmtErr := i.Prepare(queryBody)
 	if stmtErr != nil {
-		err = exception.Wrap(stmtErr)
+		err = exception.New(stmtErr)
 		return
 	}
 
@@ -658,7 +658,7 @@ func (i *Invocation) Update(object DatabaseMapped) (err error) {
 		_, execErr = stmt.Exec(updateValues...)
 	}
 	if execErr != nil {
-		err = exception.Wrap(execErr)
+		err = exception.New(execErr)
 		i.invalidateCachedStatement()
 		return
 	}
@@ -711,7 +711,7 @@ func (i *Invocation) Exists(object DatabaseMapped) (exists bool, err error) {
 	stmt, stmtErr := i.Prepare(queryBody)
 	if stmtErr != nil {
 		exists = false
-		err = exception.Wrap(stmtErr)
+		err = exception.New(stmtErr)
 		return
 	}
 
@@ -728,13 +728,13 @@ func (i *Invocation) Exists(object DatabaseMapped) (exists bool, err error) {
 	defer func() {
 		closeErr := rows.Close()
 		if closeErr != nil {
-			err = exception.Nest(err, closeErr)
+			err = exception.New(err).WithInner(closeErr)
 		}
 	}()
 
 	if queryErr != nil {
 		exists = false
-		err = exception.Wrap(queryErr)
+		err = exception.New(queryErr)
 		i.invalidateCachedStatement()
 		return
 	}
@@ -788,7 +788,7 @@ func (i *Invocation) Delete(object DatabaseMapped) (err error) {
 	queryBody = queryBodyBuffer.String()
 	stmt, stmtErr := i.Prepare(queryBody)
 	if stmtErr != nil {
-		err = exception.Wrap(stmtErr)
+		err = exception.New(stmtErr)
 		return
 	}
 	defer func() { err = i.closeStatement(err, stmt) }()
@@ -802,7 +802,7 @@ func (i *Invocation) Delete(object DatabaseMapped) (err error) {
 		_, execErr = stmt.Exec(pkValues...)
 	}
 	if execErr != nil {
-		err = exception.Wrap(execErr)
+		err = exception.New(execErr)
 		i.invalidateCachedStatement()
 	}
 	return
@@ -834,7 +834,7 @@ func (i *Invocation) Truncate(object DatabaseMapped) (err error) {
 	queryBody = queryBodyBuffer.String()
 	stmt, stmtErr := i.Prepare(queryBody)
 	if stmtErr != nil {
-		err = exception.Wrap(stmtErr)
+		err = exception.New(stmtErr)
 		return
 	}
 	defer func() { err = i.closeStatement(err, stmt) }()
@@ -847,7 +847,7 @@ func (i *Invocation) Truncate(object DatabaseMapped) (err error) {
 	}
 
 	if execErr != nil {
-		err = exception.Wrap(execErr)
+		err = exception.New(execErr)
 		i.invalidateCachedStatement()
 	}
 	return
@@ -938,7 +938,7 @@ func (i *Invocation) Upsert(object DatabaseMapped) (err error) {
 
 	stmt, stmtErr := i.Prepare(queryBody)
 	if stmtErr != nil {
-		err = exception.Wrap(stmtErr)
+		err = exception.New(stmtErr)
 		return
 	}
 	defer func() { err = i.closeStatement(err, stmt) }()
@@ -952,13 +952,13 @@ func (i *Invocation) Upsert(object DatabaseMapped) (err error) {
 			execErr = stmt.QueryRow(colValues...).Scan(&id)
 		}
 		if execErr != nil {
-			err = exception.Wrap(execErr)
+			err = exception.New(execErr)
 			i.invalidateCachedStatement()
 			return
 		}
 		setErr := serial.SetValue(object, id)
 		if setErr != nil {
-			err = exception.Wrap(setErr)
+			err = exception.New(setErr)
 			return
 		}
 	} else {
@@ -968,7 +968,7 @@ func (i *Invocation) Upsert(object DatabaseMapped) (err error) {
 			_, execErr = stmt.Exec(colValues...)
 		}
 		if execErr != nil {
-			err = exception.Wrap(execErr)
+			err = exception.New(execErr)
 			return
 		}
 	}
@@ -983,7 +983,7 @@ func (i *Invocation) Upsert(object DatabaseMapped) (err error) {
 // Validate validates the invocation is ready
 func (i *Invocation) Validate() error {
 	if i.conn == nil {
-		return exception.Newf(connectionErrorMessage)
+		return exception.New(connectionErrorMessage)
 	}
 	return nil
 }
@@ -998,7 +998,7 @@ func (i *Invocation) closeStatement(err error, stmt *sql.Stmt) error {
 	if !i.conn.useStatementCache {
 		closeErr := stmt.Close()
 		if closeErr != nil {
-			return exception.Nest(err, closeErr)
+			return exception.New(err).WithInner(closeErr)
 		}
 	}
 	return err
@@ -1007,7 +1007,7 @@ func (i *Invocation) closeStatement(err error, stmt *sql.Stmt) error {
 func (i *Invocation) finalizer(r interface{}, err error, flag logger.Flag, statement string, start time.Time) error {
 	if r != nil {
 		recoveryException := exception.New(r)
-		err = exception.Nest(err, recoveryException)
+		err = exception.New(err).WithInner(recoveryException)
 	}
 	if i.fireEvents {
 		i.conn.fireEvent(flag, statement, time.Now().Sub(start), err, i.statementLabel)

@@ -78,7 +78,7 @@ func (c Column) SetValue(object interface{}, value interface{}) error {
 			fieldAddr := field.Addr().Interface()
 			jsonErr := json.Unmarshal([]byte(valueContents.String), fieldAddr)
 			if jsonErr != nil {
-				return exception.Wrap(jsonErr)
+				return exception.New(jsonErr)
 			}
 			field.Set(reflect.ValueOf(fieldAddr).Elem())
 		}
@@ -107,7 +107,7 @@ func (c Column) SetValue(object interface{}, value interface{}) error {
 			return nil
 		}
 
-		return exception.Newf("Cannot take address of value: %#v", value)
+		return exception.New("cannot take address of value")
 	}
 
 	convertedValue := valueReflected.Convert(fieldType)

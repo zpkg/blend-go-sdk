@@ -47,7 +47,7 @@ func (q *Query) Close() error {
 			q.stmt = nil
 		}
 	}
-	return exception.Nest(rowsErr, stmtErr)
+	return exception.New(rowsErr).WithInner(stmtErr)
 }
 
 // CachedAs sets the statement cache label for the query.
@@ -69,16 +69,16 @@ func (q *Query) Execute() (stmt *sql.Stmt, rows *sql.Rows, err error) {
 		if q.shouldCacheStatement() {
 			q.conn.statementCache.InvalidateStatement(q.statementLabel)
 		}
-		err = exception.Wrap(stmtErr)
+		err = exception.New(stmtErr)
 		return
 	}
 
 	defer func() {
 		if r := recover(); r != nil {
 			if q.conn.useStatementCache {
-				err = exception.Nest(err, exception.New(r))
+				err = exception.New(err).WithInner(exception.New(r))
 			} else {
-				err = exception.Nest(err, exception.New(r), stmt.Close())
+				err = exception.New(err).WithInner(exception.New(r).WithInner(stmt.Close()))
 			}
 		}
 	}()
@@ -94,7 +94,7 @@ func (q *Query) Execute() (stmt *sql.Stmt, rows *sql.Rows, err error) {
 		if q.shouldCacheStatement() {
 			q.conn.statementCache.InvalidateStatement(q.statementLabel)
 		}
-		err = exception.Wrap(queryErr)
+		err = exception.New(queryErr)
 	}
 	return
 }
@@ -106,14 +106,14 @@ func (q *Query) Any() (hasRows bool, err error) {
 	q.stmt, q.rows, q.err = q.Execute()
 	if q.err != nil {
 		hasRows = false
-		err = exception.Wrap(q.err)
+		err = exception.New(q.err)
 		return
 	}
 
 	rowsErr := q.rows.Err()
 	if rowsErr != nil {
 		hasRows = false
-		err = exception.Wrap(rowsErr)
+		err = exception.New(rowsErr)
 		return
 	}
 
@@ -129,14 +129,14 @@ func (q *Query) None() (hasRows bool, err error) {
 
 	if q.err != nil {
 		hasRows = false
-		err = exception.Wrap(q.err)
+		err = exception.New(q.err)
 		return
 	}
 
 	rowsErr := q.rows.Err()
 	if rowsErr != nil {
 		hasRows = false
-		err = exception.Wrap(rowsErr)
+		err = exception.New(rowsErr)
 		return
 	}
 
@@ -150,20 +150,20 @@ func (q *Query) Scan(args ...interface{}) (err error) {
 
 	q.stmt, q.rows, q.err = q.Execute()
 	if q.err != nil {
-		err = exception.Wrap(q.err)
+		err = exception.New(q.err)
 		return
 	}
 
 	rowsErr := q.rows.Err()
 	if rowsErr != nil {
-		err = exception.Wrap(rowsErr)
+		err = exception.New(rowsErr)
 		return
 	}
 
 	if q.rows.Next() {
 		scanErr := q.rows.Scan(args...)
 		if scanErr != nil {
-			err = exception.Wrap(scanErr)
+			err = exception.New(scanErr)
 		}
 	}
 
@@ -176,13 +176,13 @@ func (q *Query) Out(object interface{}) (err error) {
 
 	q.stmt, q.rows, q.err = q.Execute()
 	if q.err != nil {
-		err = exception.Wrap(q.err)
+		err = exception.New(q.err)
 		return
 	}
 
 	rowsErr := q.rows.Err()
 	if rowsErr != nil {
-		err = exception.Wrap(rowsErr)
+		err = exception.New(rowsErr)
 		return
 	}
 
@@ -215,13 +215,13 @@ func (q *Query) OutMany(collection interface{}) (err error) {
 
 	q.stmt, q.rows, q.err = q.Execute()
 	if q.err != nil {
-		err = exception.Wrap(q.err)
+		err = exception.New(q.err)
 		return err
 	}
 
 	rowsErr := q.rows.Err()
 	if rowsErr != nil {
-		err = exception.Wrap(rowsErr)
+		err = exception.New(rowsErr)
 		return
 	}
 
@@ -276,7 +276,7 @@ func (q *Query) Each(consumer RowsConsumer) (err error) {
 
 	rowsErr := q.rows.Err()
 	if rowsErr != nil {
-		err = exception.Wrap(rowsErr)
+		err = exception.New(rowsErr)
 		return
 	}
 
@@ -300,7 +300,7 @@ func (q *Query) First(consumer RowsConsumer) (err error) {
 
 	rowsErr := q.rows.Err()
 	if rowsErr != nil {
-		err = exception.Wrap(rowsErr)
+		err = exception.New(rowsErr)
 		return
 	}
 
@@ -320,11 +320,11 @@ func (q *Query) First(consumer RowsConsumer) (err error) {
 func (q *Query) finalizer(r interface{}, err error) error {
 	if r != nil {
 		recoveryException := exception.New(r)
-		err = exception.Nest(err, recoveryException)
+		err = exception.New(recoveryException).WithInner(err)
 	}
 
 	if closeErr := q.Close(); closeErr != nil {
-		err = exception.Nest(err, closeErr)
+		err = exception.New(closeErr).WithInner(err)
 	}
 
 	if q.fireEvents {

@@ -65,7 +65,7 @@ func NewConfig() *Config {
 func NewConfigFromDSN(dsn string) (*Config, error) {
 	parsed, err := pq.ParseURL(dsn)
 	if err != nil {
-		return nil, exception.Wrap(err)
+		return nil, exception.New(err)
 	}
 
 	var config Config
@@ -295,14 +295,14 @@ func (c Config) ValidateProduction() error {
 		util.String.CaseInsensitiveEquals(c.GetSSLMode(), SSLModeRequire) ||
 		util.String.CaseInsensitiveEquals(c.GetSSLMode(), SSLModeVerifyCA) ||
 		util.String.CaseInsensitiveEquals(c.GetSSLMode(), SSLModeVerifyFull)) {
-		return exception.NewFromErr(ErrUnsafeSSLMode).WithMessagef("sslmode: %s", c.GetSSLMode())
+		return exception.New(ErrUnsafeSSLMode).WithMessagef("sslmode: %s", c.GetSSLMode())
 	}
 
 	if len(c.GetUsername()) == 0 {
-		return exception.NewFromErr(ErrUsernameUnset)
+		return exception.New(ErrUsernameUnset)
 	}
 	if len(c.GetPassword()) == 0 {
-		return exception.NewFromErr(ErrPasswordUnset)
+		return exception.New(ErrPasswordUnset)
 	}
 	return nil
 }
