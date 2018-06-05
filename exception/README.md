@@ -3,7 +3,7 @@ exception
 
 This is a simple library for wrapping an `error` with a stack trace.
 
-##Key Concepts
+## Key Concepts
 
 An exception is an error with additional context; message and most importantly, the stack trace at creation.
 
@@ -13,9 +13,42 @@ Concepts:
 - `Inner`: A causing exception or error; if you have to chan multiple errors together as a larger grouped exception chain, use `WithInner(...)`.
 - `StackTrace`: A stack of function pointer / frames giving important context to where an exception was created.
 
-##Sample Output
+##Usage
 
-If we run `ex.Error()` on an Exception we will get a more detailed output than a normal `errorString`
+If we want to create a new exception we can use `New`
+
+```go
+return exception.New("this is a test exception")
+```
+
+`New` will create a stack trace at the given line. It ignores stack frames within the `exception` package itself. If you'd like to add variable context to an exception, you can use `WithMessagef(...)`:
+
+If we want to wrap an existing golang `error` all we have to do is call `New` on that error.
+
+```go
+file, err := os.ReadFile("my_file.txt")
+if err != nil {
+    return exception.New(err)
+}
+```
+
+If we want to add an inner exception, i.e. a causing exception, we can just add it with `.WithInner(...)`
+
+```go
+file, err := os.ReadFile("my_file.txt")
+if err != nil {
+    return exception.New("problems reading the config").WithInner(err)
+}
+```
+
+A couple properties of `New`:
+* It will return nil if the input `class` is nil.
+* It will not modify an error that is actually an exception, it will simply return it untouched.
+* It will create a stack trace for the class if it is not nil, and assign the class from the existing error.
+
+## Formatted Output
+
+If we run `fmt.Printf("%+v", exception.New("this is a sample error"))` we will get the following output (assuming we're running the statement in an http server somewhere):
 
 ```text
 Exception: this is a sample error
@@ -28,39 +61,3 @@ Exception: this is a sample error
            server.go:1361 serve()
            asm_amd64.s:1696 goexit()
 ```
-
-##Usage
-
-If we want to create a new exception we can use `New`
-
-```go
-	return exception.New("this is a test exception")
-```
-
-`New` will create a stack trace at the given line. It ignores stack frames within the `exception` package itself. 
-
-There is also a convenience method `Newf` that will mimic `Sprintf` like behavior.
-
-```go
-	return exception.Newf("zone exception: %s", "my zone")
-```
-
-Important usage note; to make exceptions more usable you should where possible keep the `Class` of the exception consistent so that you can compare it later.
-
-If you'd like to add variable context to an exception, you can use `WithMessagef(...)`:
-
-
-
-If we want to wrap an existing golang `error` all we have to do is call `Wrap`
-
-```go
-	file, fileErr := os.ReadFile("my_file.txt")
-	if fileErr != nil {
-		return exception.Wrap(fileErr)
-	}
-```
-
-A couple properties of wrap:
-* It will return nil if the input error is nil.
-* It will not modify an error that is actually an exception, it will simply return it untouched.
-* It will create a stack trace for the error if it is not nil, and assign the exception class from the existing error.
