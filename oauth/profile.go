@@ -52,7 +52,7 @@ func FetchProfile(accessToken string) (*Profile, error) {
 		return nil, err
 	}
 	if meta.StatusCode > 299 {
-		return nil, exception.NewFromErr(ErrGoogleResponseStatus).WithMessagef("status code: %d", meta.StatusCode)
+		return nil, exception.New(ErrGoogleResponseStatus).WithMessagef("status code: %d", meta.StatusCode)
 	}
 	return &profile, err
 }

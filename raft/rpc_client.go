@@ -108,7 +108,7 @@ func (c *RPCClient) Open() error {
 	var err error
 	c.conn, err = net.DialTimeout("tcp", c.remoteAddr, c.dialTimeout)
 	if err != nil {
-		return exception.Wrap(err)
+		return exception.New(err)
 	}
 	c.client = rpc.NewClient(c.conn)
 	return nil
@@ -122,7 +122,7 @@ func (c *RPCClient) RequestVote(args *RequestVote) (*RequestVoteResults, error) 
 	var res RequestVoteResults
 	err := c.callWithTimeout(RPCMethodRequestVote, args, &res)
 	if err != nil {
-		return nil, exception.Wrap(err)
+		return nil, exception.New(err)
 	}
 	return &res, nil
 }
@@ -136,7 +136,7 @@ func (c *RPCClient) AppendEntries(args *AppendEntries) (*AppendEntriesResults, e
 	var res AppendEntriesResults
 	err := c.callWithTimeout(RPCMethodAppendEntries, args, &res)
 	if err != nil {
-		return nil, exception.Wrap(err)
+		return nil, exception.New(err)
 	}
 	return &res, nil
 }
@@ -156,7 +156,7 @@ func (c *RPCClient) callWithTimeout(method string, args interface{}, reply inter
 		return exception.New("rpc call timeout").WithMessagef("method: %s", method)
 	case <-result.Done:
 		if result.Error != nil {
-			return exception.Wrap(result.Error)
+			return exception.New(result.Error)
 		}
 		return nil
 	}
@@ -171,7 +171,7 @@ func (c *RPCClient) Close() error {
 		return nil
 	}
 	c.latch.Stop()
-	err := exception.Wrap(c.client.Close())
+	err := exception.New(c.client.Close())
 	<-c.latch.NotifyStopped()
 	return err
 }

@@ -45,11 +45,11 @@ func Path(defaults ...string) string {
 func Deserialize(ext string, r io.Reader, ref Any) error {
 	switch strings.ToLower(ext) {
 	case ExtensionJSON:
-		return exception.Wrap(json.NewDecoder(r).Decode(ref))
+		return exception.New(json.NewDecoder(r).Decode(ref))
 	case ExtensionYAML, ExtensionYML:
-		return exception.Wrap(yaml.NewDecoder(r).Decode(ref))
+		return exception.New(yaml.NewDecoder(r).Decode(ref))
 	default:
-		return exception.NewFromErr(ErrInvalidConfigExtension).WithMessagef("extension: %s", ext)
+		return exception.New(ErrInvalidConfigExtension).WithMessagef("extension: %s", ext)
 	}
 }
 
@@ -63,12 +63,12 @@ func ReadFromPath(ref Any, path string) error {
 	defer env.Env().ReadInto(ref)
 
 	if len(path) == 0 {
-		return exception.NewFromErr(ErrConfigPathUnset)
+		return exception.New(ErrConfigPathUnset)
 	}
 
 	f, err := os.Open(path)
 	if err != nil {
-		return exception.Wrap(err)
+		return exception.New(err)
 	}
 	defer f.Close()
 
@@ -92,23 +92,17 @@ func IsIgnored(err error) bool {
 // IsNotExist returns if an error is an os.ErrNotExist.
 func IsNotExist(err error) bool {
 	if typed, isTyped := err.(exception.Exception); isTyped {
-		err = typed.Inner()
+		err = typed.Class()
 	}
 	return os.IsNotExist(err)
 }
 
 // IsConfigPathUnset returns if an error is an ErrConfigPathUnset.
 func IsConfigPathUnset(err error) bool {
-	if typed, isTyped := err.(*exception.Ex); isTyped {
-		err = typed.Inner()
-	}
-	return err == ErrConfigPathUnset
+	return exception.Is(err, ErrConfigPathUnset)
 }
 
 // IsInvalidConfigExtension returns if an error is an ErrInvalidConfigExtension.
 func IsInvalidConfigExtension(err error) bool {
-	if typed, isTyped := err.(*exception.Ex); isTyped {
-		err = typed.Inner()
-	}
-	return err == ErrInvalidConfigExtension
+	return exception.Is(err, ErrInvalidConfigExtension)
 }

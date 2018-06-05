@@ -47,7 +47,7 @@ func (q *Query) Close() error {
 			q.stmt = nil
 		}
 	}
-	return exception.New(rowsErr).WithInner(stmtErr)
+	return exception.Nest(rowsErr, stmtErr)
 }
 
 // CachedAs sets the statement cache label for the query.
@@ -76,9 +76,9 @@ func (q *Query) Execute() (stmt *sql.Stmt, rows *sql.Rows, err error) {
 	defer func() {
 		if r := recover(); r != nil {
 			if q.conn.useStatementCache {
-				err = exception.New(err).WithInner(exception.New(r))
+				err = exception.Nest(err, exception.New(r))
 			} else {
-				err = exception.New(err).WithInner(exception.New(r).WithInner(stmt.Close()))
+				err = exception.Nest(err, exception.New(r), stmt.Close())
 			}
 		}
 	}()
@@ -319,12 +319,11 @@ func (q *Query) First(consumer RowsConsumer) (err error) {
 
 func (q *Query) finalizer(r interface{}, err error) error {
 	if r != nil {
-		recoveryException := exception.New(r)
-		err = exception.New(recoveryException).WithInner(err)
+		err = exception.Nest(err, exception.New(r))
 	}
 
 	if closeErr := q.Close(); closeErr != nil {
-		err = exception.New(closeErr).WithInner(err)
+		err = exception.Nest(err, closeErr)
 	}
 
 	if q.fireEvents {

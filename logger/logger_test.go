@@ -473,7 +473,7 @@ func TestLoggerJSONErrors(t *testing.T) {
 	assert.Equal("warning", jsonErr.Flag)
 
 	buffer.Reset()
-	log.Error(exception.Newf("bar %s", "foo"))
+	log.Error(exception.New("bar foo"))
 	log.Drain()
 	var jsonEx struct {
 		Err  map[string]Any `json:"err"`

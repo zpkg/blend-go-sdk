@@ -391,12 +391,12 @@ func (a *App) SetTLSCertPair(tlsCert, tlsKey []byte) error {
 func (a *App) SetTLSCertPairFromFiles(tlsCertPath, tlsKeyPath string) error {
 	cert, err := ioutil.ReadFile(tlsCertPath)
 	if err != nil {
-		return exception.Wrap(err)
+		return exception.New(err)
 	}
 
 	key, err := ioutil.ReadFile(tlsKeyPath)
 	if err != nil {
-		return exception.Wrap(err)
+		return exception.New(err)
 	}
 
 	return a.SetTLSCertPair(cert, key)
@@ -620,7 +620,7 @@ func (a *App) Start() (err error) {
 	var listener net.Listener
 	listener, err = net.Listen("tcp", a.bindAddr)
 	if err != nil {
-		err = exception.Wrap(err)
+		err = exception.New(err)
 		return
 	}
 	a.listener = listener.(*net.TCPListener)
@@ -632,9 +632,9 @@ func (a *App) Start() (err error) {
 	a.setRunning()
 	keepAlive := TCPKeepAliveListener{a.listener}
 	if a.server.TLSConfig != nil {
-		err = exception.Wrap(a.server.ServeTLS(keepAlive, "", ""))
+		err = exception.New(a.server.ServeTLS(keepAlive, "", ""))
 	} else {
-		err = exception.Wrap(a.server.Serve(keepAlive))
+		err = exception.New(a.server.Serve(keepAlive))
 	}
 	a.setStopped()
 	return
@@ -656,7 +656,7 @@ func (a *App) Shutdown() error {
 
 	a.syncInfof("server shutting down")
 	a.server.SetKeepAlivesEnabled(false)
-	return exception.Wrap(a.server.Shutdown(ctx))
+	return exception.New(a.server.Shutdown(ctx))
 }
 
 // WithControllers registers given controllers and returns a reference to the app.
@@ -772,7 +772,7 @@ func (a *App) SetStaticRewriteRule(route, match string, action RewriteAction) er
 	if static, hasRoute := a.statics[mountedRoute]; hasRoute {
 		return static.AddRewriteRule(match, action)
 	}
-	return exception.Newf("no static fileserver mounted at route").WithMessagef("route: %s", route)
+	return exception.New("no static fileserver mounted at route").WithMessagef("route: %s", route)
 }
 
 // SetStaticHeader adds a header for the given static path.
@@ -783,7 +783,7 @@ func (a *App) SetStaticHeader(route, key, value string) error {
 		static.AddHeader(key, value)
 		return nil
 	}
-	return exception.Newf("no static fileserver mounted at route").WithMessagef("route: %s", mountedRoute)
+	return exception.New("no static fileserver mounted at route").WithMessagef("route: %s", mountedRoute)
 }
 
 // SetStaticMiddleware adds static middleware for a given route.
@@ -793,7 +793,7 @@ func (a *App) SetStaticMiddleware(route string, middlewares ...Middleware) error
 		static.SetMiddleware(middlewares...)
 		return nil
 	}
-	return exception.Newf("no static fileserver mounted at route").WithMessagef("route: %s", mountedRoute)
+	return exception.New("no static fileserver mounted at route").WithMessagef("route: %s", mountedRoute)
 }
 
 // ServeStatic serves files from the given file system root.

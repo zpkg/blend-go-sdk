@@ -160,7 +160,7 @@ func (vr *ViewResultProvider) InternalError(err error) Result {
 func (vr *ViewResultProvider) NotFound() Result {
 	err := vr.views.Initialize()
 	if err != nil {
-		return vr.InternalError(exception.NewFromErr(err).WithMessagef("viewname: %s", vr.NotFoundTemplateName()))
+		return vr.InternalError(exception.New(err).WithMessagef("viewname: %s", vr.NotFoundTemplateName()))
 	}
 
 	temp, viewErr := vr.views.Lookup(vr.NotFoundTemplateName())
@@ -200,7 +200,7 @@ func (vr *ViewResultProvider) View(viewName string, viewModel interface{}) Resul
 		return vr.viewError(viewErr)
 	}
 	if temp == nil {
-		return vr.InternalError(exception.NewFromErr(ErrUnsetViewTemplate).WithMessagef("viewname: %s", viewName))
+		return vr.InternalError(exception.New(ErrUnsetViewTemplate).WithMessagef("viewname: %s", viewName))
 	}
 
 	return &ViewResult{
