@@ -154,7 +154,7 @@ func (dbc *Connection) openNewSQLConnection() (*sql.DB, error) {
 	// open the connection
 	dbConn, err := sql.Open("postgres", dbc.config.CreateDSN())
 	if err != nil {
-		return nil, exception.Wrap(err)
+		return nil, exception.New(err)
 	}
 	dbc.statementCache = newStatementCache(dbConn)
 
@@ -167,14 +167,14 @@ func (dbc *Connection) openNewSQLConnection() (*sql.DB, error) {
 	if len(schema) > 0 {
 		_, err = dbConn.Exec(fmt.Sprintf("SET search_path TO %s,public;", schema))
 		if err != nil {
-			return nil, exception.Wrap(err)
+			return nil, exception.New(err)
 		}
 	}
 
 	// sanity check on the connection.
 	_, err = dbConn.Exec("select 'ok!'")
 	if err != nil {
-		return nil, exception.Wrap(err)
+		return nil, exception.New(err)
 	}
 
 	return dbConn, nil
@@ -201,15 +201,15 @@ func (dbc *Connection) Open() (*Connection, error) {
 func (dbc *Connection) Begin() (*sql.Tx, error) {
 	if dbc.connection != nil {
 		tx, txErr := dbc.connection.Begin()
-		return tx, exception.Wrap(txErr)
+		return tx, exception.New(txErr)
 	}
 
 	connection, err := dbc.Open()
 	if err != nil {
-		return nil, exception.Wrap(err)
+		return nil, exception.New(err)
 	}
 	tx, err := connection.Begin()
-	return tx, exception.Wrap(err)
+	return tx, exception.New(err)
 }
 
 // Prepare prepares a new statement for the connection.
@@ -217,7 +217,7 @@ func (dbc *Connection) Prepare(statement string, tx *sql.Tx) (*sql.Stmt, error) 
 	if tx != nil {
 		stmt, err := tx.Prepare(statement)
 		if err != nil {
-			return nil, exception.Wrap(err)
+			return nil, exception.New(err)
 		}
 		return stmt, nil
 	}
@@ -225,12 +225,12 @@ func (dbc *Connection) Prepare(statement string, tx *sql.Tx) (*sql.Stmt, error) 
 	// open shared connection
 	dbConn, err := dbc.Open()
 	if err != nil {
-		return nil, exception.Wrap(err)
+		return nil, exception.New(err)
 	}
 
 	stmt, err := dbConn.connection.Prepare(statement)
 	if err != nil {
-		return nil, exception.Wrap(err)
+		return nil, exception.New(err)
 	}
 	return stmt, nil
 }
@@ -240,7 +240,7 @@ func (dbc *Connection) PrepareCached(id, statement string, tx *sql.Tx) (*sql.Stm
 	if tx != nil {
 		stmt, err := tx.Prepare(statement)
 		if err != nil {
-			return nil, exception.Wrap(err)
+			return nil, exception.New(err)
 		}
 		return stmt, nil
 	}

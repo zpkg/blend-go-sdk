@@ -12,7 +12,7 @@ func PopulateByName(object interface{}, row *sql.Rows, cols *ColumnCollection) e
 	rowColumns, rowColumnsErr := row.Columns()
 
 	if rowColumnsErr != nil {
-		return exception.Wrap(rowColumnsErr)
+		return exception.New(rowColumnsErr)
 	}
 
 	var values = make([]interface{}, len(rowColumns))
@@ -32,7 +32,7 @@ func PopulateByName(object interface{}, row *sql.Rows, cols *ColumnCollection) e
 	scanErr := row.Scan(values...)
 
 	if scanErr != nil {
-		return exception.Wrap(scanErr)
+		return exception.New(scanErr)
 	}
 
 	for i, v := range values {
@@ -41,7 +41,7 @@ func PopulateByName(object interface{}, row *sql.Rows, cols *ColumnCollection) e
 		if field, ok := columnLookup[colName]; ok {
 			err := field.SetValue(object, v)
 			if err != nil {
-				return exception.Wrap(err)
+				return exception.New(err)
 			}
 		}
 	}
@@ -62,7 +62,7 @@ func PopulateInOrder(object DatabaseMapped, row *sql.Rows, cols *ColumnCollectio
 	scanErr := row.Scan(values...)
 
 	if scanErr != nil {
-		return exception.Wrap(scanErr)
+		return exception.New(scanErr)
 	}
 
 	columns := cols.Columns()
@@ -70,7 +70,7 @@ func PopulateInOrder(object DatabaseMapped, row *sql.Rows, cols *ColumnCollectio
 		field := columns[i]
 		err := field.SetValue(object, v)
 		if err != nil {
-			return exception.Wrap(err)
+			return exception.New(err)
 		}
 	}
 

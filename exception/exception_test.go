@@ -11,7 +11,7 @@ import (
 	"github.com/blend/go-sdk/assert"
 )
 
-func TestNew(t *testing.T) {
+func TestNewOfString(t *testing.T) {
 	a := assert.New(t)
 	ex := New("this is a test")
 	a.Equal("this is a test", fmt.Sprintf("%v", ex))
@@ -19,78 +19,60 @@ func TestNew(t *testing.T) {
 	a.Nil(ex.Inner())
 }
 
-func TestError(t *testing.T) {
-	a := assert.New(t)
-
-	ex := As(New("this is a test"))
-	message := ex.Error()
-	a.NotEmpty(message)
-}
-
-func TestNewf(t *testing.T) {
-	a := assert.New(t)
-	ex := Newf("default_class").WithMessagef("%s", "this is a test")
-	a.Equal("default_class\nmessage: this is a test", fmt.Sprintf("%v", ex))
-	a.Equal("this is a test", fmt.Sprintf("%m", ex))
-	a.NotEmpty(ex.Stack().Strings())
-	a.Nil(ex.Inner())
-}
-
-func TestWrapWithError(t *testing.T) {
+func TestNewOfError(t *testing.T) {
 	a := assert.New(t)
 
 	err := errors.New("This is an error")
-
-	wrappedErr := Wrap(err)
+	wrappedErr := New(err)
 	a.NotNil(wrappedErr)
 	typedWrapped := As(wrappedErr)
 	a.NotNil(typedWrapped)
 	a.Equal("This is an error", fmt.Sprintf("%v", typedWrapped))
 }
 
-func TestWrapWithException(t *testing.T) {
+func TestNewOfException(t *testing.T) {
 	a := assert.New(t)
-	ex := New("This is an exception")
-	wrappedEx := Wrap(ex)
+	ex := New(Error("This is an exception"))
+	wrappedEx := New(ex)
 	a.NotNil(wrappedEx)
 	typedWrappedEx := As(wrappedEx)
 	a.Equal("This is an exception", fmt.Sprintf("%v", typedWrappedEx))
 	a.Equal(ex, typedWrappedEx)
 }
 
-func TestWrapWithNil(t *testing.T) {
+func TestNewOfNil(t *testing.T) {
 	a := assert.New(t)
 
-	shouldBeNil := Wrap(nil)
+	shouldBeNil := New(nil)
 	a.Nil(shouldBeNil)
 	a.Equal(nil, shouldBeNil)
 }
 
-func TestWrapWithTypedNil(t *testing.T) {
+func TestNewOfTypedNil(t *testing.T) {
 	a := assert.New(t)
 
 	var nilError error
 	a.Nil(nilError)
 	a.Equal(nil, nilError)
 
-	shouldBeNil := Wrap(nilError)
+	shouldBeNil := New(nilError)
 	a.Nil(shouldBeNil)
 	a.True(shouldBeNil == nil)
 }
 
-func TestWrapWithReturnedNil(t *testing.T) {
+func TestNewOfReturnedNil(t *testing.T) {
 	a := assert.New(t)
 
 	returnsNil := func() error {
 		return nil
 	}
 
-	shouldBeNil := Wrap(returnsNil())
+	shouldBeNil := New(returnsNil())
 	a.Nil(shouldBeNil)
 	a.True(shouldBeNil == nil)
 
 	returnsTypedNil := func() error {
-		return Wrap(nil)
+		return New(nil)
 	}
 
 	shouldAlsoBeNil := returnsTypedNil()
@@ -98,13 +80,21 @@ func TestWrapWithReturnedNil(t *testing.T) {
 	a.True(shouldAlsoBeNil == nil)
 }
 
+func TestError(t *testing.T) {
+	a := assert.New(t)
+
+	ex := New(Error("this is a test"))
+	message := ex.Error()
+	a.NotEmpty(message)
+}
+
 func TestCallers(t *testing.T) {
 	a := assert.New(t)
 
-	callStack := func() StackTrace { return callers() }()
+	callStack := func() StackTrace { return callers(defaultStartDepth) }()
 
 	a.NotNil(callStack)
-	callstackStr := fmt.Sprintf("%+v", callStack)
+	callstackStr := callStack.String()
 	a.True(strings.Contains(callstackStr, "TestCallers"), callstackStr)
 }
 
@@ -112,39 +102,11 @@ func TestExceptionFormatters(t *testing.T) {
 	assert := assert.New(t)
 
 	// test the "%v" formatter with just the exception class.
-	class := &Ex{class: "this is a test"}
+	class := &Ex{class: Error("this is a test")}
 	assert.Equal("this is a test", fmt.Sprintf("%v", class))
 
-	classAndMessage := &Ex{class: "foo", message: "bar"}
+	classAndMessage := &Ex{class: Error("foo"), message: "bar"}
 	assert.Equal("foo\nmessage: bar", fmt.Sprintf("%v", classAndMessage))
-
-	message := &Ex{message: "bar"}
-	assert.Equal("bar", fmt.Sprintf("%v", message))
-}
-
-func TestNestWithCycle(t *testing.T) {
-	a := assert.New(t)
-
-	ex1 := New("This is an error")
-	err := Nest(ex1, ex1)
-
-	a.NotNil(err)
-	a.NotEmpty(err.Error())
-
-	typedException := As(err)
-	a.Equal(ex1, typedException)
-}
-
-func TestNestNil(t *testing.T) {
-	a := assert.New(t)
-
-	var ex1 error
-	var ex2 error
-	var ex3 error
-
-	err := Nest(ex1, ex2, ex3)
-	a.Nil(err)
-	a.Equal(nil, err)
 }
 
 func TestMarshalJSON(t *testing.T) {
@@ -171,4 +133,31 @@ func TestMarshalJSON(t *testing.T) {
 	err = json.Unmarshal(jsonErr, ex2)
 	a.Nil(err)
 	a.Len(ex2.Stack, stackDepth)
+}
+
+func TestNest(t *testing.T) {
+	a := assert.New(t)
+
+	ex1 := New("this is an error")
+	ex2 := New("this is another error")
+	err := Nest(ex1, ex2)
+
+	a.NotNil(err)
+	a.NotNil(err.Inner())
+	a.NotEmpty(err.Error())
+
+	a.True(Is(ex1, Error("this is an error")))
+	a.True(Is(ex1.Inner(), Error("this is another error")))
+}
+
+func TestNestNil(t *testing.T) {
+	a := assert.New(t)
+
+	var ex1 error
+	var ex2 error
+	var ex3 error
+
+	err := Nest(ex1, ex2, ex3)
+	a.Nil(err)
+	a.Equal(nil, err)
 }

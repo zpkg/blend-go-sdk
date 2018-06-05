@@ -1,7 +1,7 @@
 exception
 =========
 
-This is a simple library for wrapping errors.Error with a stack trace.
+This is a simple library for wrapping an `error` with a stack trace.
 
 ##Sample Output
 
@@ -28,7 +28,7 @@ If we want to create a new exception we can use `New`
 ```
 
 `New` will create a stack trace at the given line. It ignores stack frames within the `exception` package itself. 
-There is also a convenience method `Newf` that will mimic Printf like functions.
+There is also a convenience method `Newf` that will mimic `Sprintf` like behavior.
 
 If we want to wrap an existing golang `error` all we have to do is call `Wrap`
 
@@ -40,18 +40,6 @@ If we want to wrap an existing golang `error` all we have to do is call `Wrap`
 ```
 
 A couple properties of wrap:
-* It will return nil if the input error is nil
-* It will not modify an error that is actually an exception, it will simply return (propagate) it.
-* It will create a stack trace for the error if it is not nil, and assign the message from the existing error.
-
-If we want to merge a couple exceptions together, i.e. we can use `WrapMany`
-
-```go
-if q.Rows != nil {
-	if closeErr := q.Rows.Close(); closeErr != nil {
-		return exception.WrapMany(q.Error, closeErr)
-	}
-}
-```
-
-`WrapMany` will "nest" the exceptions, and this will be reflected in the output.
+* It will return nil if the input error is nil.
+* It will not modify an error that is actually an exception, it will simply return it untouched.
+* It will create a stack trace for the error if it is not nil, and assign the exception class from the existing error.
