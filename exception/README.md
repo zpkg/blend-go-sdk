@@ -13,7 +13,7 @@ Concepts:
 - `Inner`: A causing exception or error; if you have to chan multiple errors together as a larger grouped exception chain, use `WithInner(...)`.
 - `StackTrace`: A stack of function pointer / frames giving important context to where an exception was created.
 
-##Usage
+## Usage
 
 If we want to create a new exception we can use `New`
 
