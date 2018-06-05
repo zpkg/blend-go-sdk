@@ -128,7 +128,7 @@ func TestCreateIndex(t *testing.T) {
 
 	exists, err := indexExists(db.Default(), tx, tableName, indexName)
 	assert.Nil(err)
-	assert.True(exists, "constraint does not exist")
+	assert.True(exists, "constraint should exist")
 }
 
 func TestCreateRole(t *testing.T) {
@@ -143,7 +143,7 @@ func TestCreateRole(t *testing.T) {
 
 	exists, err := roleExists(db.Default(), tx, roleName)
 	assert.Nil(err)
-	assert.True(exists, "role does not exist")
+	assert.True(exists, "role does exist")
 }
 
 func TestNotExists(t *testing.T) {
