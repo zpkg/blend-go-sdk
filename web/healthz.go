@@ -80,7 +80,7 @@ func NewHealthzFromConfig(app *App, cfg *HealthzConfig) *Healthz {
 func HealthzHost(app *App, hz *Healthz) (err error) {
 	defer func() {
 		if r := recover(); r != nil {
-			err = exception.Newf("%v", r)
+			err = exception.New(r)
 			return
 		}
 	}()
@@ -339,7 +339,7 @@ func (hz *Healthz) WithLogger(log *logger.Logger) *Healthz {
 // Start starts the server.
 func (hz *Healthz) Start() (err error) {
 	if hz.app == nil {
-		err = exception.Wrap(ErrHealthzAppUnset)
+		err = exception.New(ErrHealthzAppUnset)
 		return
 	}
 	start := time.Now()
@@ -369,7 +369,7 @@ func (hz *Healthz) Start() (err error) {
 	var listener net.Listener
 	listener, err = net.Listen("tcp", hz.bindAddr)
 	if err != nil {
-		err = exception.Wrap(err)
+		err = exception.New(err)
 		return
 	}
 	hz.listener = listener.(*net.TCPListener)
@@ -393,7 +393,7 @@ func (hz *Healthz) Shutdown() error {
 		hz.log.SyncInfof("healthz server shutting down")
 	}
 	hz.server.SetKeepAlivesEnabled(false)
-	return exception.Wrap(hz.server.Shutdown(ctx))
+	return exception.New(hz.server.Shutdown(ctx))
 }
 
 // CreateServer returns the basic http.Server for the app.

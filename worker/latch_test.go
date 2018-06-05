@@ -1,7 +1,6 @@
 package worker
 
 import (
-	"sync"
 	"testing"
 
 	"github.com/blend/go-sdk/assert"
@@ -64,33 +63,4 @@ func TestLatch(t *testing.T) {
 	assert.False(l.IsStopping())
 	assert.False(l.IsRunning())
 	assert.True(l.IsStopped())
-}
-
-func TestLatchMultipleNotifications(t *testing.T) {
-	assert := assert.New(t)
-
-	l := &Latch{}
-
-	l.Starting()
-	l.Started()
-
-	wg := sync.WaitGroup{}
-	wg.Add(2)
-	var didNotifyFirst, didNotifySecond bool
-	go func() {
-		defer wg.Done()
-		<-l.NotifyStopped()
-		didNotifyFirst = true
-	}()
-	go func() {
-		defer wg.Done()
-		<-l.NotifyStopped()
-		didNotifySecond = true
-	}()
-
-	l.Stop()
-	l.Stopped()
-	wg.Wait()
-	assert.True(didNotifyFirst)
-	assert.True(didNotifySecond)
 }

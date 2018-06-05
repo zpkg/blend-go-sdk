@@ -185,7 +185,7 @@ func (i *Invocation) Get(object DatabaseMapped, ids ...interface{}) (err error) 
 	defer func() {
 		closeErr := rows.Close()
 		if closeErr != nil {
-			err = exception.New(err).WithInner(closeErr)
+			err = exception.Nest(err, closeErr)
 		}
 	}()
 
@@ -266,7 +266,7 @@ func (i *Invocation) GetAll(collection interface{}) (err error) {
 	defer func() {
 		closeErr := rows.Close()
 		if closeErr != nil {
-			err = exception.New(err).WithInner(closeErr)
+			err = exception.Nest(err, closeErr)
 		}
 	}()
 
@@ -728,7 +728,7 @@ func (i *Invocation) Exists(object DatabaseMapped) (exists bool, err error) {
 	defer func() {
 		closeErr := rows.Close()
 		if closeErr != nil {
-			err = exception.New(err).WithInner(closeErr)
+			err = exception.Nest(err, closeErr)
 		}
 	}()
 
@@ -998,7 +998,7 @@ func (i *Invocation) closeStatement(err error, stmt *sql.Stmt) error {
 	if !i.conn.useStatementCache {
 		closeErr := stmt.Close()
 		if closeErr != nil {
-			return exception.New(err).WithInner(closeErr)
+			return exception.Nest(err, closeErr)
 		}
 	}
 	return err
@@ -1007,7 +1007,7 @@ func (i *Invocation) closeStatement(err error, stmt *sql.Stmt) error {
 func (i *Invocation) finalizer(r interface{}, err error, flag logger.Flag, statement string, start time.Time) error {
 	if r != nil {
 		recoveryException := exception.New(r)
-		err = exception.New(err).WithInner(recoveryException)
+		err = exception.Nest(err, recoveryException)
 	}
 	if i.fireEvents {
 		i.conn.fireEvent(flag, statement, time.Now().Sub(start), err, i.statementLabel)

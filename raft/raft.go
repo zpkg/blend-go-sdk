@@ -91,7 +91,7 @@ func (r *Raft) Start() error {
 	defer r.Unlock()
 
 	if r.latch.IsStarting() || r.latch.IsRunning() {
-		return exception.NewFromErr(ErrAlreadyStarted)
+		return exception.New(ErrAlreadyStarted)
 	}
 	r.latch.Starting()
 
@@ -136,7 +136,7 @@ func (r *Raft) Stop() error {
 	defer r.Unlock()
 
 	if !r.latch.IsRunning() {
-		return exception.NewFromErr(ErrNotRunning)
+		return exception.New(ErrNotRunning)
 	}
 	if r.leaderCheckTicker != nil {
 		r.leaderCheckTicker.Stop()

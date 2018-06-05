@@ -318,7 +318,7 @@ func (rc *Ctx) PostBody() ([]byte, error) {
 			rc.postBody, err = ioutil.ReadAll(rc.request.Body)
 		}
 		if err != nil {
-			return nil, exception.Wrap(err)
+			return nil, exception.New(err)
 		}
 	}
 	return rc.postBody, nil
@@ -340,7 +340,7 @@ func (rc *Ctx) PostBodyAsJSON(response interface{}) error {
 		return err
 	}
 	if err = json.Unmarshal(body, response); err != nil {
-		return exception.Wrap(err)
+		return exception.New(err)
 	}
 	return nil
 }
@@ -352,7 +352,7 @@ func (rc *Ctx) PostBodyAsXML(response interface{}) error {
 		return err
 	}
 	if err = xml.Unmarshal(body, response); err != nil {
-		return exception.Wrap(err)
+		return exception.New(err)
 	}
 	return nil
 }
@@ -366,11 +366,11 @@ func (rc *Ctx) PostedFiles() ([]PostedFile, error) {
 		for key := range rc.request.MultipartForm.File {
 			fileReader, fileHeader, err := rc.request.FormFile(key)
 			if err != nil {
-				return nil, exception.Wrap(err)
+				return nil, exception.New(err)
 			}
 			bytes, err := ioutil.ReadAll(fileReader)
 			if err != nil {
-				return nil, exception.Wrap(err)
+				return nil, exception.New(err)
 			}
 			files = append(files, PostedFile{Key: key, FileName: fileHeader.Filename, Contents: bytes})
 		}
@@ -381,7 +381,7 @@ func (rc *Ctx) PostedFiles() ([]PostedFile, error) {
 				if fileReader, fileHeader, err := rc.request.FormFile(key); err == nil && fileReader != nil {
 					bytes, err := ioutil.ReadAll(fileReader)
 					if err != nil {
-						return nil, exception.Wrap(err)
+						return nil, exception.New(err)
 					}
 					files = append(files, PostedFile{Key: key, FileName: fileHeader.Filename, Contents: bytes})
 				}
