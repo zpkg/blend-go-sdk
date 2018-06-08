@@ -1104,7 +1104,7 @@ func (a *App) loggerRequestEvent(ctx *Ctx) *logger.WebRequestEvent {
 
 func (a *App) recover(w http.ResponseWriter, req *http.Request) {
 	if rcv := recover(); rcv != nil {
-		err := Error(fmt.Sprintf("%v", rcv))
+		err := exception.New(rcv)
 		if a.log != nil {
 			a.log.Fatal(err)
 		}
