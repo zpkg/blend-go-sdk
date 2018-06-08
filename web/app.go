@@ -1104,11 +1104,15 @@ func (a *App) loggerRequestEvent(ctx *Ctx) *logger.WebRequestEvent {
 
 func (a *App) recover(w http.ResponseWriter, req *http.Request) {
 	if rcv := recover(); rcv != nil {
+		err := Error(fmt.Sprintf("%v", rcv))
 		if a.log != nil {
-			a.log.Fatalf("%v", rcv)
+			a.log.Fatal(err)
 		}
+
 		if a.panicAction != nil {
 			a.handlePanic(w, req, rcv)
+		} else {
+			http.Error(w, "an internal server error occurred", http.StatusInternalServerError)
 		}
 	}
 }

@@ -525,3 +525,30 @@ func TestAppAddsDefaultHeaders(t *testing.T) {
 	assert.NotEmpty(res.Header)
 	assert.Equal(PackageName, res.Header.Get(HeaderServer))
 }
+
+func TestAppHandlesPanics(t *testing.T) {
+	assert := assert.New(t)
+
+	app := NewFromConfig(&Config{})
+	app.WithBindAddr(DefaultIntegrationBindAddr)
+	app.GET("/", func(r *Ctx) Result {
+		panic("this is only a test")
+	})
+
+	var didRecover bool
+	go func() {
+		defer func() {
+			if r := recover(); r != nil {
+				didRecover = true
+			}
+		}()
+		app.Start()
+	}()
+	defer app.Shutdown()
+	<-app.Started()
+
+	res, err := http.Get("http://" + app.Listener().Addr().String() + "/")
+	assert.Nil(err)
+	assert.Equal(http.StatusInternalServerError, res.StatusCode)
+	assert.False(didRecover)
+}
