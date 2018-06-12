@@ -247,7 +247,7 @@ func (jm *JobManager) RunJobs(jobNames ...string) error {
 				}
 			}
 		} else {
-			return exception.NewFromErr(ErrJobNotLoaded).WithMessagef("job: %s", jobName)
+			return exception.New(ErrJobNotLoaded).WithMessagef("job: %s", jobName)
 		}
 	}
 	return nil
@@ -266,7 +266,7 @@ func (jm *JobManager) RunJob(jobName string) error {
 		}
 		return nil
 	}
-	return exception.NewFromErr(ErrJobNotLoaded).WithMessagef("job: %s", jobName)
+	return exception.New(ErrJobNotLoaded).WithMessagef("job: %s", jobName)
 }
 
 // RunAllJobs runs every job that has been loaded in the JobManager at once.
@@ -303,7 +303,7 @@ func (jm *JobManager) CancelTask(taskName string) (err error) {
 		jm.onTaskCancellation(task.Task, Since(task.StartTime))
 		task.Cancel()
 	} else {
-		err = exception.NewFromErr(ErrTaskNotFound).WithMessagef("task: %s", taskName)
+		err = exception.New(ErrTaskNotFound).WithMessagef("task: %s", taskName)
 	}
 	return
 }
@@ -379,7 +379,7 @@ func (jm *JobManager) runTaskUnsafe(t Task) error {
 		var err error
 		defer func() {
 			if r := recover(); r != nil {
-				err = exception.Newf("%v", r)
+				err = exception.New(r)
 			}
 
 			jm.Lock()
@@ -459,7 +459,7 @@ func (jm *JobManager) loadJobUnsafe(j Job) error {
 	jobName := j.Name()
 
 	if _, hasJob := jm.jobs[jobName]; hasJob {
-		return exception.NewFromErr(ErrJobAlreadyLoaded).WithMessagef("job: %s", j.Name())
+		return exception.New(ErrJobAlreadyLoaded).WithMessagef("job: %s", j.Name())
 	}
 
 	schedule := j.Schedule()
@@ -480,7 +480,7 @@ func (jm *JobManager) loadJobUnsafe(j Job) error {
 
 func (jm *JobManager) setJobDisabledUnsafe(jobName string, disabled bool) error {
 	if _, hasJob := jm.jobs[jobName]; !hasJob {
-		return exception.NewFromErr(ErrJobNotLoaded).WithMessagef("job: %s", jobName)
+		return exception.New(ErrJobNotLoaded).WithMessagef("job: %s", jobName)
 	}
 
 	jm.jobs[jobName].Disabled = disabled

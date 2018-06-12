@@ -59,20 +59,20 @@ func (s *RPCServer) Start() (err error) {
 	var addr *net.TCPAddr
 	addr, err = net.ResolveTCPAddr("tcp", s.bindAddr)
 	if err != nil {
-		err = exception.Wrap(err)
+		err = exception.New(err)
 		return
 	}
 
 	s.listener, err = net.ListenTCP("tcp", addr)
 	if err != nil {
-		err = exception.Wrap(err)
+		err = exception.New(err)
 		return
 	}
 
 	s.server = rpc.NewServer()
 	err = s.server.Register(s.ServerMethods)
 	if err != nil {
-		err = exception.Wrap(err)
+		err = exception.New(err)
 		return
 	}
 
@@ -88,5 +88,5 @@ func (s *RPCServer) Start() (err error) {
 // Stop stops the server.
 func (s *RPCServer) Stop() error {
 	s.latch.Stop()
-	return exception.Wrap(s.listener.Close())
+	return exception.New(s.listener.Close())
 }

@@ -65,7 +65,7 @@ func NewConfig() *Config {
 func NewConfigFromDSN(dsn string) (*Config, error) {
 	parsed, err := pq.ParseURL(dsn)
 	if err != nil {
-		return nil, exception.Wrap(err)
+		return nil, exception.New(err)
 	}
 
 	var config Config
@@ -274,20 +274,35 @@ func (c Config) CreateDSN() string {
 	return fmt.Sprintf("postgres://%s%s/%s%s", c.GetHost(), port, c.GetDatabase(), sslMode)
 }
 
+// Resolve creates a DSN and reparses it, in case some values need to be coalesced.
+func (c Config) Resolve() (*Config, error) {
+	return NewConfigFromDSN(c.CreateDSN())
+}
+
+// MustResolve creates a DSN and reparses it, in case some values need to be coalesced,
+// and panics if there is an error.
+func (c Config) MustResolve() *Config {
+	cfg, err := NewConfigFromDSN(c.CreateDSN())
+	if err != nil {
+		panic(err)
+	}
+	return cfg
+}
+
 // ValidateProduction validates production configuration for the config.
 func (c Config) ValidateProduction() error {
 	if !(len(c.GetSSLMode()) == 0 ||
 		util.String.CaseInsensitiveEquals(c.GetSSLMode(), SSLModeRequire) ||
 		util.String.CaseInsensitiveEquals(c.GetSSLMode(), SSLModeVerifyCA) ||
 		util.String.CaseInsensitiveEquals(c.GetSSLMode(), SSLModeVerifyFull)) {
-		return exception.NewFromErr(ErrUnsafeSSLMode).WithMessagef("sslmode: %s", c.GetSSLMode())
+		return exception.New(ErrUnsafeSSLMode).WithMessagef("sslmode: %s", c.GetSSLMode())
 	}
 
 	if len(c.GetUsername()) == 0 {
-		return exception.NewFromErr(ErrUsernameUnset)
+		return exception.New(ErrUsernameUnset)
 	}
 	if len(c.GetPassword()) == 0 {
-		return exception.NewFromErr(ErrPasswordUnset)
+		return exception.New(ErrPasswordUnset)
 	}
 	return nil
 }

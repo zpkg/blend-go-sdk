@@ -98,3 +98,21 @@ func TestConfigValidateProduction(t *testing.T) {
 	assert.True(IsUnsafeSSLMode(Config{Username: "foo", Password: "bar", SSLMode: SSLModePrefer}.ValidateProduction()))
 	assert.True(IsUnsafeSSLMode(Config{Username: "foo", Password: "bar", SSLMode: "NOT A REAL MODE"}.ValidateProduction()))
 }
+
+func TestConfigResolve(t *testing.T) {
+	assert := assert.New(t)
+
+	cfg := &Config{
+		Host:     "bar",
+		Username: "bailey",
+		Password: "dog",
+		Database: "blend",
+		Schema:   "mortgages",
+		SSLMode:  SSLModeVerifyCA,
+	}
+
+	resolved, err := cfg.Resolve()
+	assert.Nil(err)
+	assert.NotNil(resolved)
+	assert.Equal("bar", resolved.Host)
+}

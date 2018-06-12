@@ -12,12 +12,12 @@ import (
 func DeserializeState(raw string) (*State, error) {
 	corpus, err := base64.StdEncoding.DecodeString(raw)
 	if err != nil {
-		return nil, exception.Wrap(err)
+		return nil, exception.New(err)
 	}
 	buffer := bytes.NewBuffer(corpus)
 	var state State
 	if err := gob.NewDecoder(buffer).Decode(&state); err != nil {
-		return nil, exception.Wrap(err)
+		return nil, exception.New(err)
 	}
 
 	return &state, nil

@@ -464,7 +464,7 @@ func (hr *Request) Request() (*http.Request, error) {
 
 	req, err := http.NewRequest(hr.Verb, workingURL.String(), bytes.NewBuffer(hr.PostBody()))
 	if err != nil {
-		return nil, exception.Wrap(err)
+		return nil, exception.New(err)
 	}
 
 	if hr.ctx != nil {
@@ -515,7 +515,7 @@ func (hr *Request) Response() (*http.Response, error) {
 	if hr.requiresCustomTransport() {
 		transport, transportErr := hr.getTransport()
 		if transportErr != nil {
-			return nil, exception.Wrap(transportErr)
+			return nil, exception.New(transportErr)
 		}
 		client.Transport = transport
 	}
@@ -525,20 +525,20 @@ func (hr *Request) Response() (*http.Response, error) {
 	}
 
 	res, resErr := client.Do(req)
-	return res, exception.Wrap(resErr)
+	return res, exception.New(resErr)
 }
 
 // Execute makes the request but does not read the response.
 func (hr *Request) Execute() error {
 	_, err := hr.ExecuteWithMeta()
-	return exception.Wrap(err)
+	return exception.New(err)
 }
 
 // ExecuteWithMeta makes the request and returns the meta of the response.
 func (hr *Request) ExecuteWithMeta() (*ResponseMeta, error) {
 	res, err := hr.Response()
 	if err != nil {
-		return nil, exception.Wrap(err)
+		return nil, exception.New(err)
 	}
 	meta := NewResponseMeta(res)
 	if res != nil && res.Body != nil {
@@ -546,7 +546,7 @@ func (hr *Request) ExecuteWithMeta() (*ResponseMeta, error) {
 		if hr.responseBuffer != nil {
 			contentLength, err := hr.responseBuffer.ReadFrom(res.Body)
 			if err != nil {
-				return nil, exception.Wrap(err)
+				return nil, exception.New(err)
 			}
 			meta.ContentLength = contentLength
 			if hr.incomingResponseHandler != nil {
@@ -555,7 +555,7 @@ func (hr *Request) ExecuteWithMeta() (*ResponseMeta, error) {
 		} else {
 			contents, err := ioutil.ReadAll(res.Body)
 			if err != nil {
-				return nil, exception.Wrap(err)
+				return nil, exception.New(err)
 			}
 			meta.ContentLength = int64(len(contents))
 			hr.logResponse(meta, contents, hr.state)
@@ -570,13 +570,13 @@ func (hr *Request) BytesWithMeta() ([]byte, *ResponseMeta, error) {
 	res, err := hr.Response()
 	resMeta := NewResponseMeta(res)
 	if err != nil {
-		return nil, resMeta, exception.Wrap(err)
+		return nil, resMeta, exception.New(err)
 	}
 	defer res.Body.Close()
 
 	bytes, readErr := ioutil.ReadAll(res.Body)
 	if readErr != nil {
-		return nil, resMeta, exception.Wrap(readErr)
+		return nil, resMeta, exception.New(readErr)
 	}
 
 	resMeta.ContentLength = int64(len(bytes))
@@ -695,7 +695,7 @@ func (hr *Request) Transport() (*http.Transport, error) {
 			cert, err = tls.X509KeyPair(hr.TLSClientCert, hr.TLSClientKey)
 		}
 		if err != nil {
-			return nil, exception.Wrap(err)
+			return nil, exception.New(err)
 		}
 		tlsConfig := &tls.Config{
 			RootCAs:            hr.TLSCAPool,
@@ -723,13 +723,13 @@ func (hr *Request) deserialize(handler Deserializer) (*ResponseMeta, error) {
 	meta := NewResponseMeta(res)
 
 	if err != nil {
-		return meta, exception.Wrap(err)
+		return meta, exception.New(err)
 	}
 	defer res.Body.Close()
 
 	body, err := ioutil.ReadAll(res.Body)
 	if err != nil {
-		return meta, exception.Wrap(err)
+		return meta, exception.New(err)
 	}
 
 	meta.ContentLength = int64(len(body))
@@ -737,7 +737,7 @@ func (hr *Request) deserialize(handler Deserializer) (*ResponseMeta, error) {
 	if meta.ContentLength > 0 && handler != nil {
 		err = handler(body)
 	}
-	return meta, exception.Wrap(err)
+	return meta, exception.New(err)
 }
 
 func (hr *Request) deserializeWithError(okHandler Deserializer, errorHandler Deserializer) (*ResponseMeta, error) {
@@ -745,13 +745,13 @@ func (hr *Request) deserializeWithError(okHandler Deserializer, errorHandler Des
 	meta := NewResponseMeta(res)
 
 	if err != nil {
-		return meta, exception.Wrap(err)
+		return meta, exception.New(err)
 	}
 	defer res.Body.Close()
 
 	body, err := ioutil.ReadAll(res.Body)
 	if err != nil {
-		return meta, exception.Wrap(err)
+		return meta, exception.New(err)
 	}
 
 	meta.ContentLength = int64(len(body))
@@ -765,7 +765,7 @@ func (hr *Request) deserializeWithError(okHandler Deserializer, errorHandler Des
 			err = errorHandler(body)
 		}
 	}
-	return meta, exception.Wrap(err)
+	return meta, exception.New(err)
 }
 
 func (hr *Request) logRequest() {
@@ -856,13 +856,13 @@ func newXMLDeserializer(object interface{}) Deserializer {
 func deserializeJSON(object interface{}, body []byte) error {
 	decoder := json.NewDecoder(bytes.NewBuffer(body))
 	decodeErr := decoder.Decode(object)
-	return exception.Wrap(decodeErr)
+	return exception.New(decodeErr)
 }
 
 func deserializeJSONFromReader(object interface{}, body io.Reader) error {
 	decoder := json.NewDecoder(body)
 	decodeErr := decoder.Decode(object)
-	return exception.Wrap(decodeErr)
+	return exception.New(decodeErr)
 }
 
 func serializeJSON(object interface{}) ([]byte, error) {

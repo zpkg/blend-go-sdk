@@ -114,7 +114,7 @@ func (vc *ViewCache) Parse() (views *template.Template, err error) {
 	if len(vc.viewPaths) > 0 {
 		views, err = views.ParseFiles(vc.viewPaths...)
 		if err != nil {
-			err = exception.Wrap(err)
+			err = exception.New(err)
 			return
 		}
 	}
@@ -123,7 +123,7 @@ func (vc *ViewCache) Parse() (views *template.Template, err error) {
 		for _, viewLiteral := range vc.viewLiterals {
 			views, err = views.Parse(viewLiteral)
 			if err != nil {
-				err = exception.Wrap(err)
+				err = exception.New(err)
 				return
 			}
 		}

@@ -7,9 +7,18 @@ import (
 	"sync/atomic"
 	"time"
 
+	"github.com/blend/go-sdk/exception"
+
 	"github.com/blend/go-sdk/logger"
 	"github.com/blend/go-sdk/uuid"
 	"github.com/blend/go-sdk/worker"
+)
+
+const (
+	// ErrAlreadyStarted is returned if you call start on a started node.
+	ErrAlreadyStarted = Error("raft is already started")
+	// ErrNotRunning is returned if you try and call stop on a stopped node.
+	ErrNotRunning = Error("raft is not running")
 )
 
 // New creates a new empty raft node.
@@ -18,6 +27,7 @@ func New() *Raft {
 		id:                  uuid.V4().String(),
 		state:               Follower,
 		bindAddr:            DefaultBindAddr,
+		latch:               &worker.Latch{},
 		electionTimeout:     DefaultElectionTimeout,
 		leaderCheckInterval: DefaultLeaderCheckInterval,
 		heartbeatInterval:   DefaultHeartbeatInterval,
@@ -66,6 +76,7 @@ type Raft struct {
 	server Server
 	peers  []Client
 
+	latch             *worker.Latch
 	leaderCheckTicker *worker.Interval
 	heartbeatTicker   *worker.Interval
 
@@ -76,6 +87,14 @@ type Raft struct {
 
 // Start starts the raft node.
 func (r *Raft) Start() error {
+	r.Lock()
+	defer r.Unlock()
+
+	if r.latch.IsStarting() || r.latch.IsRunning() {
+		return exception.New(ErrAlreadyStarted)
+	}
+	r.latch.Starting()
+
 	r.infof("node starting")
 	defer func() {
 		r.infof("node started")
@@ -107,11 +126,18 @@ func (r *Raft) Start() error {
 	r.heartbeatTicker = worker.NewInterval(r.Heartbeat, r.heartbeatInterval)
 	r.heartbeatTicker.Start()
 
+	r.latch.Started()
 	return nil
 }
 
 // Stop stops the node.
 func (r *Raft) Stop() error {
+	r.Lock()
+	defer r.Unlock()
+
+	if !r.latch.IsRunning() {
+		return exception.New(ErrNotRunning)
+	}
 	if r.leaderCheckTicker != nil {
 		r.leaderCheckTicker.Stop()
 		r.leaderCheckTicker = nil
@@ -128,41 +154,145 @@ func (r *Raft) Stop() error {
 }
 
 // LeaderCheck is the action that fires on an interval to check if the leader lease has expired.
+// If it fails, it triggers an election.
 func (r *Raft) LeaderCheck() error {
-	if r.State() == Follower {
-		now := time.Now().UTC()
+	if r.getStateSafe() == Follower {
 		// if we've never elected a leader, or if the current leader hasn't sent a heartbeat in a while ...
-		if r.LastLeaderContact().IsZero() || now.Sub(r.LastLeaderContact()) > RandomTimeout(r.electionTimeout) {
+		if r.isLeaderFailed() {
 			// trigger an election.
-			r.err(r.Election())
+			r.err(r.election())
+		}
+	}
+	return nil
+}
+
+// Heartbeat is the action triggered upon send heartbeat.
+// This method is fully interlocked.
+// This method launches a goroutine.
+func (r *Raft) Heartbeat() error {
+	if r.getStateSafe() != Leader {
+		return nil
+	}
+	r.sendHeartbeat()
+	return nil
+}
+
+// AppendEntriesHandler is the rpc server handler for AppendEntries rpc requests.
+// This method is fully interlocked.
+func (r *Raft) AppendEntriesHandler(args *AppendEntries, res *AppendEntriesResults) error {
+	r.Lock()
+	defer r.Unlock()
+
+	if args.Term < r.currentTerm {
+		r.debugf("received out of date leader heartbeat (%d vs. %d)", args.Term, r.currentTerm)
+		*res = AppendEntriesResults{
+			ID:      r.id,
+			Success: false,
+			Term:    r.currentTerm,
+		}
+		return nil
+	}
+
+	//r.debugf("received leader heartbeat from %s", args.ID)
+	r.transitionTo(Follower)
+	r.currentTerm = args.Term
+	r.lastLeaderContact = time.Now().UTC()
+
+	*res = AppendEntriesResults{
+		ID:      r.id,
+		Success: true,
+		Term:    r.currentTerm,
+	}
+	return nil
+}
+
+// RequestVoteHandler is the rpc server handler for RequestVote rpc requests.
+// This method is fully interlocked.
+func (r *Raft) RequestVoteHandler(args *RequestVote, res *RequestVoteResults) error {
+	r.Lock()
+	defer r.Unlock()
+
+	if !r.lastVoteGranted.IsZero() && r.now().Sub(r.lastVoteGranted) > r.electionTimeout {
+		r.debugf("resetting expired vote")
+		r.votedFor = ""
+	}
+
+	if args.Term < r.currentTerm {
+		r.debugf("rejecting request vote from %s @ %d", args.ID, args.Term)
+		*res = RequestVoteResults{
+			ID:      r.id,
+			Term:    r.currentTerm,
+			Granted: false,
+		}
+		return nil
+	}
+
+	if len(r.votedFor) > 0 && r.votedFor != args.ID {
+		r.debugf("rejecting request vote from %s @ %d", args.ID, args.Term)
+		*res = RequestVoteResults{
+			ID:      r.id,
+			Term:    r.currentTerm,
+			Granted: false,
 		}
 	}
 
+	r.debugf("accepting request vote from %s @ %d", args.ID, args.Term)
+	r.transitionTo(Follower)
+	r.votedFor = args.ID
+	r.currentTerm = args.Term
+	r.lastVoteGranted = time.Now().UTC()
+
+	*res = RequestVoteResults{
+		ID:      r.id,
+		Term:    args.Term,
+		Granted: true,
+	}
 	return nil
+}
+
+// --------------------------------------------------------------------------------
+// helper methods
+// --------------------------------------------------------------------------------
+
+func (r *Raft) getStateSafe() (state State) {
+	r.Lock()
+	state = r.state
+	r.Unlock()
+	return
+}
+
+func (r *Raft) isLeaderFailed() (output bool) {
+	r.Lock()
+	now := time.Now().UTC()
+	output = r.lastLeaderContact.IsZero() || now.Sub(r.lastLeaderContact) > RandomTimeout(r.electionTimeout)
+	r.Unlock()
+	return
 }
 
 // Election requests votes from all peers, totalling the results and potentially promoting self to leader.
 // It is time bound on the ElectionTimeout.
-func (r *Raft) Election() error {
+func (r *Raft) election() error {
 	r.debugf("election triggered")
-	r.votedFor = r.ID()
-	r.currentTerm = r.currentTerm + 1
-	r.transitionTo(Candidate)
+	r.interlocked(func() {
+		r.votedFor = r.ID()
+		r.currentTerm = r.currentTerm + 1
+		r.transitionTo(Candidate)
+	})
 
 	started := time.Now().UTC()
 	for time.Since(started) < r.electionTimeout {
-		// if we've been bumped out of candidate state,
-		// stop the election cycle.
-		if r.State() != Candidate {
+
+		if r.getStateSafe() != Candidate {
 			return nil
 		}
 
-		if result, err := r.RequestVotes(); err != nil {
+		if result, err := r.requestVotes(); err != nil {
 			return err
 		} else if result == ElectionVictory {
 			r.debugf("election successful, promoting self to leader")
-			r.transitionTo(Leader)
-			r.backoffIndex = 0
+			r.interlocked(func() {
+				r.transitionTo(Leader)
+			})
 			return r.Heartbeat() // send immediate heartbeat
 		} else {
 			r.debugf("election loss or tie, backing off")
@@ -171,14 +301,16 @@ func (r *Raft) Election() error {
 	}
 
 	r.debugf("election timed out")
-	r.transitionTo(Follower)
-	r.votedFor = ""
+	r.interlocked(func() {
+		r.transitionTo(Follower)
+		r.votedFor = ""
+	})
 	r.backoff(r.electionTimeout)
 	return nil
 }
 
-// RequestVotes sends `RequestVote` rpcs to all peers, and totals the results.
-func (r *Raft) RequestVotes() (result ElectionOutcome, err error) {
+// requestVotes sends `RequestVote` rpcs to all peers, and totals the results.
+func (r *Raft) requestVotes() (result ElectionOutcome, err error) {
 	voteRequest := RequestVote{
 		ID:   r.id,
 		Term: r.currentTerm,
@@ -204,24 +336,14 @@ func (r *Raft) RequestVotes() (result ElectionOutcome, err error) {
 		}(peer)
 	}
 	wg.Wait()
-
-	if totalErrs := len(errs); totalErrs > 0 {
-		for index := 0; index < totalErrs; index++ {
-			r.err(<-errs)
-		}
-	}
+	r.logErrors(errs)
 
 	result = r.processRequestVoteResults(results)
 	r.debugf("election result: %v", result)
 	return
 }
 
-// Heartbeat is the action triggered upon send heartbeat.
-func (r *Raft) Heartbeat() error {
-	if r.State() != Leader {
-		return nil
-	}
-
+func (r *Raft) sendHeartbeat() {
 	args := AppendEntries{
 		ID:   r.id,
 		Term: r.currentTerm,
@@ -235,7 +357,6 @@ func (r *Raft) Heartbeat() error {
 	for _, peer := range r.peers {
 		go func(c Client) {
 			defer wg.Done()
-
 			res, err := c.AppendEntries(&args)
 			if err != nil {
 				errs <- err
@@ -246,75 +367,7 @@ func (r *Raft) Heartbeat() error {
 	}
 	wg.Wait()
 
-	if errCount := len(errs); errCount > 0 {
-		for index := 0; index < errCount; index++ {
-			r.err(<-errs)
-		}
-	}
-
-	return nil
-}
-
-// AppendEntriesHandler is the rpc server handler for AppendEntries rpc requests.
-func (r *Raft) AppendEntriesHandler(args *AppendEntries, res *AppendEntriesResults) error {
-	if args.Term < r.currentTerm {
-		r.debugf("received out of date leader heartbeat (%d vs. %d)", args.Term, r.currentTerm)
-		*res = AppendEntriesResults{
-			ID:      r.id,
-			Success: false,
-			Term:    r.currentTerm,
-		}
-		return nil
-	}
-
-	if len(r.votedFor) == 0 || r.lastLeaderContact.IsZero() {
-		r.debugf("received initial leader heartbeat from %s @ %d", args.ID, args.Term)
-	}
-
-	r.votedFor = args.ID
-	r.currentTerm = args.Term
-	r.lastLeaderContact = time.Now().UTC()
-	r.transitionTo(Follower)
-
-	*res = AppendEntriesResults{
-		ID:      r.id,
-		Success: true,
-		Term:    r.currentTerm,
-	}
-	return nil
-}
-
-// RequestVoteHandler is the rpc server handler for RequestVote rpc requests.
-func (r *Raft) RequestVoteHandler(args *RequestVote, res *RequestVoteResults) error {
-	if args.Term < r.currentTerm {
-		r.debugf("rejecting request vote from %s @ %d", args.ID, args.Term)
-		*res = RequestVoteResults{
-			ID:      r.id,
-			Term:    r.currentTerm,
-			Granted: false,
-		}
-		return nil
-	}
-
-	if len(r.votedFor) > 0 && r.votedFor != args.ID {
-		r.debugf("rejecting request vote from %s @ %d", args.ID, args.Term)
-		*res = RequestVoteResults{
-			ID:      r.id,
-			Term:    r.currentTerm,
-			Granted: false,
-		}
-	}
-
-	r.debugf("accepting request vote from %s @ %d", args.ID, args.Term)
-	r.votedFor = args.ID
-	r.currentTerm = args.Term
-	r.lastVoteGranted = time.Now().UTC()
-	*res = RequestVoteResults{
-		ID:      r.id,
-		Term:    args.Term,
-		Granted: true,
-	}
-	return nil
+	r.logErrors(errs)
 }
 
 // --------------------------------------------------------------------------------
@@ -537,6 +590,11 @@ func (r *Raft) transitionTo(newState State) {
 	}
 }
 
+// now returns the current time in utc.
+func (r *Raft) now() time.Time {
+	return time.Now().UTC()
+}
+
 // --------------------------------------------------------------------------------
 // runtime methods
 // --------------------------------------------------------------------------------
@@ -548,13 +606,11 @@ func (r *Raft) backoff(d time.Duration) {
 	atomic.AddInt32(&r.backoffIndex, 1)
 }
 
-func (r *Raft) dialPeers() error {
-	for _, peer := range r.peers {
-		if err := peer.Open(); err != nil {
-			return err
-		}
-	}
-	return nil
+func (r *Raft) interlocked(action func()) {
+	r.Lock()
+	defer r.Unlock()
+
+	action()
 }
 
 func (r *Raft) safeExecute(action func()) {
@@ -569,6 +625,14 @@ func (r *Raft) safeExecute(action func()) {
 // --------------------------------------------------------------------------------
 // logging methods
 // --------------------------------------------------------------------------------
+
+func (r *Raft) logErrors(errs chan error) {
+	if errCount := len(errs); errCount > 0 {
+		for index := 0; index < errCount; index++ {
+			r.err(<-errs)
+		}
+	}
+}
 
 func (r *Raft) infof(format string, args ...interface{}) {
 	if r.log != nil {

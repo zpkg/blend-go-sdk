@@ -151,7 +151,7 @@ func makeNewDatabaseMapped(t reflect.Type) (DatabaseMapped, error) {
 	if typed, isTyped := newInterface.(DatabaseMapped); isTyped {
 		return typed.(DatabaseMapped), nil
 	}
-	return nil, exception.Newf("`%s` does not implement DatabaseMapped.", t.Name())
+	return nil, exception.New("type does not implement DatabaseMapped").WithMessagef("type: %s", t.Name())
 }
 
 // makeNew creates a new object.

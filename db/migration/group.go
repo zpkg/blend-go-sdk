@@ -161,7 +161,7 @@ func (g *Group) Apply(c *db.Connection, txs ...*sql.Tx) (err error) {
 			if err != nil || g.rollbackOnComplete {
 				err = exception.Nest(err, exception.New(tx.Rollback()))
 			} else if err == nil {
-				err = exception.Wrap(tx.Commit())
+				err = exception.New(tx.Commit())
 			}
 		}()
 	}

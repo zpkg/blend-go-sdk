@@ -3,6 +3,7 @@ package raft
 import (
 	"net"
 	"net/rpc"
+	"sync"
 	"time"
 
 	"github.com/blend/go-sdk/exception"
@@ -39,6 +40,8 @@ func NewRPCClient(remoteAddr string) *RPCClient {
 
 // RPCClient is the net/rpc client to talk to other nodes.
 type RPCClient struct {
+	sync.Mutex
+
 	remoteAddr string
 	conn       net.Conn
 	client     *rpc.Client
@@ -92,37 +95,20 @@ func (c *RPCClient) WithRemoteAddr(addr string) *RPCClient {
 // RemoteAddr returns the remote address.
 func (c *RPCClient) RemoteAddr() string { return c.remoteAddr }
 
-// Open opens the connection.
-// It waits `redialWait` time between attempts.
-// It will retry indefinitely (until told to stop with `Close()`).
-func (c *RPCClient) Open() error {
-	for {
-		select {
-		case <-c.latch.NotifyStop():
-			c.latch.Stopped()
-			return nil
-		default:
-			err := c.Dial()
-			if err != nil {
-				c.log.Warning(err)
-				time.Sleep(c.redialWait)
-				continue
-			}
-			return nil
-		}
-	}
-}
-
-// Dial dials the remote, it will only try once, and won't
+// Open dials the remote, it will only try once, and won't
 // dial if the connection is already up.
-func (c *RPCClient) Dial() error {
+func (c *RPCClient) Open() error {
+	c.Lock()
+	defer c.Unlock()
+
 	if c.client != nil {
 		return nil
 	}
+
 	var err error
 	c.conn, err = net.DialTimeout("tcp", c.remoteAddr, c.dialTimeout)
 	if err != nil {
-		return exception.Wrap(err)
+		return exception.New(err)
 	}
 	c.client = rpc.NewClient(c.conn)
 	return nil
@@ -130,68 +116,62 @@ func (c *RPCClient) Dial() error {
 
 // RequestVote implements the request vote handler.
 func (c *RPCClient) RequestVote(args *RequestVote) (*RequestVoteResults, error) {
-	if err := c.Dial(); err != nil {
+	if err := c.Open(); err != nil {
 		return nil, err
 	}
 	var res RequestVoteResults
-	err := c.call(RPCMethodRequestVote, args, &res)
+	err := c.callWithTimeout(RPCMethodRequestVote, args, &res)
 	if err != nil {
-		c.err(c.disconnect())
-		return nil, exception.Wrap(err)
+		return nil, exception.New(err)
 	}
 	return &res, nil
 }
 
 // AppendEntries implements the append entries request handler.
 func (c *RPCClient) AppendEntries(args *AppendEntries) (*AppendEntriesResults, error) {
-	if err := c.Dial(); err != nil {
+	if err := c.Open(); err != nil {
 		return nil, err
 	}
 
 	var res AppendEntriesResults
-	err := c.call(RPCMethodAppendEntries, args, &res)
+	err := c.callWithTimeout(RPCMethodAppendEntries, args, &res)
 	if err != nil {
-		c.err(c.disconnect())
-		return nil, exception.Wrap(err)
+		return nil, exception.New(err)
 	}
 	return &res, nil
 }
 
 // call invokes a method with the default call timeout.
-func (c *RPCClient) call(method string, args interface{}, reply interface{}) error {
+func (c *RPCClient) callWithTimeout(method string, args interface{}, reply interface{}) error {
 	timeout := time.NewTimer(c.callTimeout)
+
+	c.Lock()
+	defer c.Unlock()
 
 	result := c.client.Go(method, args, reply, nil)
 	select {
 	case <-timeout.C:
+		c.client.Close()
+		c.client = nil
 		return exception.New("rpc call timeout").WithMessagef("method: %s", method)
 	case <-result.Done:
 		if result.Error != nil {
-			return exception.Wrap(result.Error)
+			return exception.New(result.Error)
 		}
 		return nil
 	}
 }
 
-func (c *RPCClient) disconnect() error {
-	if c.client == nil {
-		return nil
-	}
-	if err := c.client.Close(); err != nil {
-		return exception.Wrap(err)
-	}
-
-	c.client = nil
-	return nil
-}
-
 // Close closes the transport.
 func (c *RPCClient) Close() error {
+	c.Lock()
+	defer c.Unlock()
+
 	if c.client == nil {
 		return nil
 	}
 	c.latch.Stop()
-	err := exception.Wrap(c.client.Close())
+	err := exception.New(c.client.Close())
 	<-c.latch.NotifyStopped()
 	return err
 }
