@@ -15,6 +15,8 @@ import (
 const (
 	// DefaultProfanityFile is the default file to use for profanity rules
 	DefaultProfanityFile = "PROFANITY"
+
+	star = "*"
 )
 
 var rulesFile = flag.String("rules", DefaultProfanityFile, "the default rules to include for any sub-package.")
@@ -375,10 +377,6 @@ const (
 
 	// ColorReset is the posix escape code fragment to reset all formatting.
 	ColorReset AnsiColor = "0m"
-)
-
-const (
-	star = "*"
 )
 
 // globIncludeMatch tests if a file matches a (potentially) csv of glob filters.
