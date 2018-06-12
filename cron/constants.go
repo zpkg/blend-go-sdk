@@ -44,26 +44,17 @@ const (
 
 // IsJobNotLoaded returns if the error is a job not loaded error.
 func IsJobNotLoaded(err error) bool {
-	if typed, isTyped := err.(*exception.Ex); isTyped {
-		err = typed.Inner()
-	}
-	return err == ErrJobNotLoaded
+	return exception.Is(err, ErrJobNotLoaded)
 }
 
 // IsJobAlreadyLoaded returns if the error is a job already loaded error.
 func IsJobAlreadyLoaded(err error) bool {
-	if typed, isTyped := err.(*exception.Ex); isTyped {
-		err = typed.Inner()
-	}
-	return err == ErrJobAlreadyLoaded
+	return exception.Is(err, ErrJobAlreadyLoaded)
 }
 
 // IsTaskNotFound returns if the error is a task not found error.
 func IsTaskNotFound(err error) bool {
-	if typed, isTyped := err.(*exception.Ex); isTyped {
-		err = typed.Inner()
-	}
-	return err == ErrTaskNotFound
+	return exception.Is(err, ErrTaskNotFound)
 }
 
 // State is a job state.

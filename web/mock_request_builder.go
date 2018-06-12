@@ -297,7 +297,7 @@ func (mrb *MockRequestBuilder) Response() (res *http.Response, err error) {
 		res = mrb.runHandler(mrb.app.notFoundHandler, req, route, params)
 		return
 	} else if route == nil {
-		err = exception.Newf("No route registered for %s %s", mrb.verb, mrb.path)
+		err = exception.New("No route registered").WithMessagef("verb: %s path: %s", mrb.verb, mrb.path)
 		return
 	}
 

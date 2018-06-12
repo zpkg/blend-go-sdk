@@ -61,20 +61,29 @@ func (l *Latch) IsStopping() bool {
 
 // NotifyStarted returns the started signal.
 // It is used to coordinate the transition from starting -> started.
-func (l *Latch) NotifyStarted() <-chan struct{} {
-	return l.started
+func (l *Latch) NotifyStarted() (notifyStarted <-chan struct{}) {
+	l.Lock()
+	notifyStarted = l.started
+	l.Unlock()
+	return
 }
 
 // NotifyStop returns the should stop signal.
 // It is used to trigger the transition from running -> stopping -> stopped.
-func (l *Latch) NotifyStop() <-chan struct{} {
-	return l.shouldStop
+func (l *Latch) NotifyStop() (notifyStop <-chan struct{}) {
+	l.Lock()
+	notifyStop = l.shouldStop
+	l.Unlock()
+	return
 }
 
 // NotifyStopped returns the stopped signal.
 // It is used to coordinate the transition from stopping -> stopped.
-func (l *Latch) NotifyStopped() <-chan struct{} {
-	return l.stopped
+func (l *Latch) NotifyStopped() (notifyStopped <-chan struct{}) {
+	l.Lock()
+	notifyStopped = l.stopped
+	l.Unlock()
+	return
 }
 
 // Starting signals the latch is starting.

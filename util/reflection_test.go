@@ -438,6 +438,8 @@ type mapStringsTest struct {
 	Bytes  []byte   `secret:"bytesField,bytes"`
 
 	Sub mapStringsTestSubObject
+
+	unexported string `secret:"unexported"`
 }
 
 type mapStringsTestSubObject struct {

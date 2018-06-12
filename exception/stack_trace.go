@@ -9,10 +9,21 @@ import (
 	"strings"
 )
 
-func callers() *StackPointers {
+// GetStackTrace is a utility method to get the current stack trace at call time.
+func GetStackTrace() string {
+	return fmt.Sprintf("%+v", callers(defaultStartDepth))
+}
+
+const (
+	defaultStartDepth = 3
+
+	defaultNewStartDepth = 4
+)
+
+func callers(startDepth int) *StackPointers {
 	const depth = 32
 	var pcs [depth]uintptr
-	n := runtime.Callers(3, pcs[:])
+	n := runtime.Callers(startDepth, pcs[:])
 	var st StackPointers = pcs[0:n]
 	return &st
 }
@@ -21,11 +32,7 @@ func callers() *StackPointers {
 type StackTrace interface {
 	fmt.Formatter
 	Strings() []string
-}
-
-// GetStackTrace is a utility method to get the current stack trace at call time.
-func GetStackTrace() string {
-	return fmt.Sprintf("%+v", callers())
+	String() string
 }
 
 // StackPointers is stack of uintptr stack frames from innermost (newest) to outermost (oldest).
@@ -65,6 +72,11 @@ func (st StackPointers) Strings() []string {
 	return res
 }
 
+// String returns a single string representation of the stack pointers.
+func (st StackPointers) String() string {
+	return fmt.Sprintf("%+v", st)
+}
+
 //MarshalJSON is a custom json marshaler.
 func (st StackPointers) MarshalJSON() ([]byte, error) {
 	return json.Marshal(st.Strings())
@@ -99,6 +111,11 @@ func (ss StackStrings) Format(s fmt.State, verb rune) {
 // Strings returns the stack strings as a string slice.
 func (ss StackStrings) Strings() []string {
 	return []string(ss)
+}
+
+// String returns a single string representation of the stack pointers.
+func (ss StackStrings) String() string {
+	return fmt.Sprintf("%+v", ss)
 }
 
 //MarshalJSON is a custom json marshaler.

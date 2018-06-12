@@ -63,7 +63,7 @@ func (tc TLSConfig) GetConfig() (*tls.Config, error) {
 	}
 
 	if err != nil {
-		return nil, exception.Wrap(err)
+		return nil, exception.New(err)
 	}
 
 	if len(tc.GetCAPaths()) == 0 {
@@ -74,12 +74,12 @@ func (tc TLSConfig) GetConfig() (*tls.Config, error) {
 
 	certPool, err := x509.SystemCertPool()
 	if err != nil {
-		return nil, exception.Wrap(err)
+		return nil, exception.New(err)
 	}
 	for _, caPath := range tc.GetCAPaths() {
 		caCert, err := ioutil.ReadFile(caPath)
 		if err != nil {
-			return nil, exception.Wrap(err)
+			return nil, exception.New(err)
 		}
 		certPool.AppendCertsFromPEM(caCert)
 	}

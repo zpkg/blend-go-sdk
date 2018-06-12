@@ -1,7 +1,6 @@
 package selector
 
 import (
-	"fmt"
 	"unicode"
 	"unicode/utf8"
 )
@@ -51,33 +50,33 @@ const (
 	NewLine = rune('\n')
 )
 
-var (
+const (
 	// ErrEmptySelector is returned if the selector to be compiled is empty.
-	ErrEmptySelector = fmt.Errorf("empty selector")
+	ErrEmptySelector = Error("empty selector")
 
 	// ErrInvalidOperator is returned if the operator is invalid.
-	ErrInvalidOperator = fmt.Errorf("invalid operator")
+	ErrInvalidOperator = Error("invalid operator")
 
 	// ErrInvalidSelector is returned if there is a structural issue with the selector.
-	ErrInvalidSelector = fmt.Errorf("invalid selector")
+	ErrInvalidSelector = Error("invalid selector")
 
 	// ErrKeyEmpty indicates a key is empty.
-	ErrKeyEmpty = fmt.Errorf("key empty")
+	ErrKeyEmpty = Error("key empty")
 
 	// ErrKeyTooLong indicates a key is too long.
-	ErrKeyTooLong = fmt.Errorf("key too long")
+	ErrKeyTooLong = Error("key too long")
 
 	// ErrKeyDNSPrefixEmpty indicates a key's "dns" prefix is empty.
-	ErrKeyDNSPrefixEmpty = fmt.Errorf("key dns prefix empty")
+	ErrKeyDNSPrefixEmpty = Error("key dns prefix empty")
 
 	// ErrKeyDNSPrefixTooLong indicates a key's "dns" prefix is empty.
-	ErrKeyDNSPrefixTooLong = fmt.Errorf("key dns prefix too long; must be less than 253 characters")
+	ErrKeyDNSPrefixTooLong = Error("key dns prefix too long; must be less than 253 characters")
 
 	// ErrValueTooLong indicates a value is too long.
-	ErrValueTooLong = fmt.Errorf("value too long; must be less than 63 characters")
+	ErrValueTooLong = Error("value too long; must be less than 63 characters")
 
 	// ErrKeyInvalidCharacter indicates a key contains characters
-	ErrKeyInvalidCharacter = fmt.Errorf(`key contains invalid characters, regex used: ([A-Za-z0-9_-\.])`)
+	ErrKeyInvalidCharacter = Error(`key contains invalid characters, regex used: ([A-Za-z0-9_-\.])`)
 
 	// MaxDNSPrefixLen is the maximum dns prefix length.
 	MaxDNSPrefixLen = 253
@@ -85,7 +84,9 @@ var (
 	MaxKeyLen = 63
 	// MaxValueLen is the maximum value length.
 	MaxValueLen = 63
+)
 
+var (
 	// MaxKeyTotalLen is the maximum total key length.
 	MaxKeyTotalLen = MaxDNSPrefixLen + MaxKeyLen + 1
 )
