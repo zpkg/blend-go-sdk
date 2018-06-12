@@ -14,10 +14,16 @@ import (
 	"strings"
 )
 
+const (
+	star = "*"
+)
+
 var reportOutputPath = flag.String("output", "coverage.html", "the path to write the full html coverage report")
 var temporaryOutputPath = flag.String("tmp", "coverage.cov", "the path to write the intermediate results")
 var update = flag.Bool("update", false, "if we should write the current coverage to `COVERAGE` files")
 var enforce = flag.Bool("enforce", false, "if we should enforce coverage minimums defined in `COVERAGE` files")
+var include = flag.String("include", "", "the include file filter in glob form, can be a csv.")
+var exclude = flag.String("exclude", "", "the exclude file filter in glob form, can be a csv.")
 
 func main() {
 	flag.Parse()
@@ -55,6 +61,18 @@ func main() {
 
 		if !dirHasGlob(currentPath, "*.go") {
 			return nil
+		}
+
+		if len(*include) > 0 {
+			if matches := globAnyMatch(*include, currentPath); !matches {
+				return nil
+			}
+		}
+
+		if len(*exclude) > 0 {
+			if matches := globAnyMatch(*exclude, currentPath); matches {
+				return nil
+			}
 		}
 
 		intermediateFile := filepath.Join(currentPath, "profile.cov")
@@ -106,6 +124,64 @@ func main() {
 	maybeFatal(execCoverageCompile())
 	maybeFatal(removeIfExists(*temporaryOutputPath))
 	fmt.Fprintln(os.Stdout, "coverage complete")
+}
+
+// globIncludeMatch tests if a file matches a (potentially) csv of glob filters.
+func globAnyMatch(filter, file string) bool {
+	parts := strings.Split(filter, ",")
+	for _, part := range parts {
+		if matches := glob(strings.TrimSpace(part), file); matches {
+			return true
+		}
+	}
+	return false
+}
+
+func glob(pattern, subj string) bool {
+	// Empty pattern can only match empty subject
+	if pattern == "" {
+		return subj == pattern
+	}
+
+	// If the pattern _is_ a glob, it matches everything
+	if pattern == star {
+		return true
+	}
+
+	parts := strings.Split(pattern, star)
+
+	if len(parts) == 1 {
+		// No globs in pattern, so test for equality
+		return subj == pattern
+	}
+
+	leadingGlob := strings.HasPrefix(pattern, star)
+	trailingGlob := strings.HasSuffix(pattern, star)
+	end := len(parts) - 1
+
+	// Go over the leading parts and ensure they match.
+	for i := 0; i < end; i++ {
+		idx := strings.Index(subj, parts[i])
+
+		switch i {
+		case 0:
+			// Check the first section. Requires special handling.
+			if !leadingGlob && idx != 0 {
+				return false
+			}
+		default:
+			// Check that the middle parts match.
+			if idx < 0 {
+				return false
+			}
+		}
+
+		// Trim evaluated text from subj as we loop over the pattern.
+		subj = subj[idx+len(parts[i]):]
+	}
+
+	// Reached the last section. Requires special handling.
+	return trailingGlob || strings.HasSuffix(subj, parts[end])
 }
 
 func enforceCoverage(path, actualCoverage string) error {
