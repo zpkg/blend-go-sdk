@@ -33,7 +33,7 @@ type Config struct {
 
 // IsZero returns if the config is set or not.
 func (c Config) IsZero() bool {
-	return len(c.Token) > 0
+	return len(c.Token) == 0
 }
 
 // GetAddr returns the client addr.

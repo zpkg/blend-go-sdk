@@ -33,4 +33,8 @@ func TestConfig(t *testing.T) {
 
 	cfg := Config{}
 	assert.Equal(DefaultAddr, cfg.GetAddr())
+	assert.Empty(cfg.GetToken())
+	assert.Equal(DefaultMount, cfg.GetMount())
+	assert.Equal(DefaultTimeout, cfg.GetTimeout())
+	assert.Empty(cfg.GetRootCAs())
 }
