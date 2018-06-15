@@ -31,6 +31,11 @@ type Config struct {
 	RootCAs []string `json:"rootCAs" yaml:"rootCAs"`
 }
 
+// IsZero returns if the config is set or not.
+func (c Config) IsZero() bool {
+	return len(c.Token) > 0
+}
+
 // GetAddr returns the client addr.
 func (c Config) GetAddr(inherited ...string) string {
 	return util.Coalesce.String(c.Addr, DefaultAddr)
