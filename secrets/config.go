@@ -38,11 +38,11 @@ func (c Config) IsZero() bool {
 
 // GetAddr returns the client addr.
 func (c Config) GetAddr(inherited ...string) string {
-	return util.Coalesce.String(c.Addr, DefaultAddr)
+	return util.Coalesce.String(c.Addr, DefaultAddr, inherited...)
 }
 
-// MustRemote returns the addr as a url.
-func (c Config) MustRemote() *url.URL {
+// MustAddr returns the addr as a url.
+func (c Config) MustAddr() *url.URL {
 	remote, err := url.ParseRequestURI(c.GetAddr())
 	if err != nil {
 		panic(err)

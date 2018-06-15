@@ -16,8 +16,8 @@ func URL(format string, args ...interface{}) *url.URL {
 
 // MetaProvider is a service path meta provider.
 type MetaProvider interface {
-	GetServiceName() string
-	GetServiceEnv() string
+	GetServiceName(...string) string
+	GetServiceEnv(...string) string
 }
 
 // ServicePath is the service key path.
