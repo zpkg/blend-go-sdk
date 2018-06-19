@@ -86,7 +86,10 @@ func IsIgnored(err error) bool {
 	if err == nil {
 		return true
 	}
-	return !IsNotExist(err) && !IsConfigPathUnset(err) && !IsInvalidConfigExtension(err)
+	if IsNotExist(err) || IsConfigPathUnset(err) || IsInvalidConfigExtension(err) {
+		return true
+	}
+	return false
 }
 
 // IsNotExist returns if an error is an os.ErrNotExist.
