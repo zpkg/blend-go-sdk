@@ -7,6 +7,7 @@ import (
 
 	"github.com/blend/go-sdk/assert"
 	"github.com/blend/go-sdk/env"
+	"github.com/blend/go-sdk/exception"
 	"github.com/blend/go-sdk/uuid"
 )
 
@@ -125,4 +126,18 @@ func TestReadPathNotFound(t *testing.T) {
 	var cfg config
 	err := ReadFromPath(&cfg, filepath.Join("testdata", uuid.V4().String()))
 	assert.True(IsNotExist(err))
+}
+
+func TestIsUnset(t *testing.T) {
+	assert := assert.New(t)
+
+	assert.True(IsConfigPathUnset(exception.New(ErrConfigPathUnset)))
+	assert.False(IsConfigPathUnset(exception.New(uuid.V4().String())))
+}
+
+func TestIsIgnored(t *testing.T) {
+	assert := assert.New(t)
+	assert.True(IsIgnored(nil))
+	assert.True(IsIgnored(exception.New(ErrConfigPathUnset)))
+	assert.True(IsIgnored(exception.New(ErrInvalidConfigExtension)))
 }
