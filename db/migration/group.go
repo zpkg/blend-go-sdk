@@ -14,6 +14,11 @@ var (
 	_ Migration = &Group{}
 )
 
+// New is the common entrypoint for the package.
+func New(migrations ...Migration) *Group {
+	return NewGroup(migrations...)
+}
+
 // NewGroup creates a new migration group.
 func NewGroup(migrations ...Migration) *Group {
 	r := &Group{
