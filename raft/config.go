@@ -10,9 +10,9 @@ import (
 
 const (
 	// DefaultLeaderCheckInterval is the tick rate for the leader check.
-	DefaultLeaderCheckInterval = 1000 * time.Millisecond
+	DefaultLeaderCheckInterval = 2000 * time.Millisecond
 	// DefaultHeartbeatInterval is the tick rate for leaders to send heartbeats.
-	DefaultHeartbeatInterval = 500 * time.Millisecond
+	DefaultHeartbeatInterval = 1000 * time.Millisecond
 	// DefaultElectionTimeout is a default.
 	DefaultElectionTimeout = 5 * DefaultHeartbeatInterval
 	// DefaultElectionBackoffTimeout is a default.
