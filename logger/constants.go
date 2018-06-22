@@ -26,3 +26,9 @@ var (
 	// DefaultHiddenFlags are the default hidden flags.
 	DefaultHiddenFlags []Flag
 )
+
+const (
+	// DefaultWorkerQueueDepth is the default depth per listener to queue work.
+	// It's currently set to 1 million entries.
+	DefaultWorkerQueueDepth = 1 << 20
+)
