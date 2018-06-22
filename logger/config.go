@@ -20,6 +20,7 @@ type Config struct {
 	Flags         []string `json:"flags,omitempty" yaml:"flags,omitempty" env:"LOG_EVENTS,csv"`
 	HiddenFlags   []string `json:"hidden,omitempty" yaml:"hidden,omitempty" env:"LOG_HIDDEN,csv"`
 	RecoverPanics *bool    `json:"recoverPanics,omitempty" yaml:"recoverPanics,omitempty" env:"LOG_RECOVER"`
+	QueueDepth    int      `json:"queueDepth,omitempty" yaml:"queueDepth,omitempty" env:"LOG_QUEUE_DEPTH"`
 
 	TextOutput TextWriterConfig `json:"textOutput,omitempty" yaml:"textOutput,omitempty"`
 	JSONOutput JSONWriterConfig `json:"jsonOutput,omitempty" yaml:"jsonOutput,omitempty"`
@@ -66,6 +67,17 @@ func (c Config) GetRecoverPanics(defaults ...bool) bool {
 		return defaults[0]
 	}
 	return DefaultRecoverPanics
+}
+
+// GetQueueDepth returns the config queue depth.
+func (c Config) GetQueueDepth(defaults ...int) int {
+	if c.QueueDepth > 0 {
+		return c.QueueDepth
+	}
+	if len(defaults) > 0 {
+		return defaults[0]
+	}
+	return DefaultWorkerQueueDepth
 }
 
 // GetWriters returns the configured writers
