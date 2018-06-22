@@ -4,11 +4,6 @@ import (
 	"sync"
 )
 
-const (
-	// DefaultWorkerQueueDepth is the default depth per listener to queue work.
-	DefaultWorkerQueueDepth = 1 << 20
-)
-
 // NewWorker returns a new worker.
 func NewWorker(parent *Logger, listener Listener, queueDepth int) *Worker {
 	return &Worker{
