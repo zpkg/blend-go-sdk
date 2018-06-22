@@ -1,6 +1,7 @@
 package logger
 
 import (
+	"encoding/json"
 	"strings"
 	"testing"
 
@@ -62,6 +63,29 @@ queueDepth: 256
 
 	var cfg Config
 	assert.Nil(yaml.Unmarshal([]byte(corpus), &cfg))
+	assert.Equal("test-heading", cfg.GetHeading())
+	assert.Equal("test-format", cfg.GetOutputFormat())
+	assert.Equal([]string{"foo", "bar"}, cfg.GetFlags())
+	assert.Equal([]string{"buzz", "wuzz"}, cfg.GetHiddenFlags())
+	assert.False(cfg.GetRecoverPanics())
+	assert.Equal(256, cfg.GetQueueDepth())
+}
+
+func TestConfigJSON(t *testing.T) {
+	assert := assert.New(t)
+
+	corpus := `{
+"heading": "test-heading",
+"outputFormat": "test-format",
+"flags": [ "foo", "bar" ],
+"hiddenFlags": [ "buzz", "wuzz" ],
+"recoverPanics": false,
+"queueDepth": 256
+}
+`
+
+	var cfg Config
+	assert.Nil(json.Unmarshal([]byte(corpus), &cfg))
 	assert.Equal("test-heading", cfg.GetHeading())
 	assert.Equal("test-format", cfg.GetOutputFormat())
 	assert.Equal([]string{"foo", "bar"}, cfg.GetFlags())
