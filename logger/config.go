@@ -16,9 +16,9 @@ func NewConfigFromEnv() *Config {
 // Config is the logger config.
 type Config struct {
 	Heading       string   `json:"heading,omitempty" yaml:"heading,omitempty" env:"LOG_HEADING"`
-	OutputFormat  string   `json:"format,omitempty" yaml:"format,omitempty" env:"LOG_FORMAT"`
+	OutputFormat  string   `json:"outputFormat,omitempty" yaml:"outputFormat,omitempty" env:"LOG_FORMAT"`
 	Flags         []string `json:"flags,omitempty" yaml:"flags,omitempty" env:"LOG_EVENTS,csv"`
-	HiddenFlags   []string `json:"hidden,omitempty" yaml:"hidden,omitempty" env:"LOG_HIDDEN,csv"`
+	HiddenFlags   []string `json:"hiddenFlags,omitempty" yaml:"hiddenFlags,omitempty" env:"LOG_HIDDEN,csv"`
 	RecoverPanics *bool    `json:"recoverPanics,omitempty" yaml:"recoverPanics,omitempty" env:"LOG_RECOVER"`
 	QueueDepth    int      `json:"queueDepth,omitempty" yaml:"queueDepth,omitempty" env:"LOG_QUEUE_DEPTH"`
 

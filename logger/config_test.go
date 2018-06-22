@@ -6,7 +6,30 @@ import (
 
 	"github.com/blend/go-sdk/assert"
 	"github.com/blend/go-sdk/env"
+	"github.com/blend/go-sdk/util"
+	"github.com/blend/go-sdk/yaml"
 )
+
+func TestConfigProperties(t *testing.T) {
+	assert := assert.New(t)
+
+	assert.Empty(Config{}.GetHeading())
+	assert.Equal("test", Config{Heading: "test"}.GetHeading())
+
+	assert.Equal(OutputFormatText, Config{}.GetOutputFormat())
+	assert.Equal(OutputFormatJSON, Config{OutputFormat: string(OutputFormatJSON)}.GetOutputFormat())
+
+	assert.Equal(AsStrings(DefaultFlags...), Config{}.GetFlags())
+	assert.Equal([]string{"foo", "bar"}, Config{Flags: []string{"foo", "bar"}}.GetFlags())
+
+	assert.Equal(DefaultRecoverPanics, Config{}.GetRecoverPanics())
+	assert.Equal(!DefaultRecoverPanics, Config{}.GetRecoverPanics(!DefaultRecoverPanics))
+	assert.Equal(!DefaultRecoverPanics, Config{RecoverPanics: util.OptionalBool(!DefaultRecoverPanics)}.GetRecoverPanics())
+
+	assert.Equal(DefaultWorkerQueueDepth, Config{}.GetQueueDepth())
+	assert.Equal(DefaultWorkerQueueDepth>>1, Config{}.GetQueueDepth(DefaultWorkerQueueDepth>>1))
+	assert.Equal(DefaultWorkerQueueDepth>>2, Config{QueueDepth: DefaultWorkerQueueDepth >> 2}.GetQueueDepth(DefaultWorkerQueueDepth>>1))
+}
 
 func TestNewConfigFlags(t *testing.T) {
 	assert := assert.New(t)
@@ -23,6 +46,28 @@ func TestNewConfigFlags(t *testing.T) {
 	assert.True(log.IsEnabled(Fatal))
 	assert.True(log.IsEnabled(Audit))
 	assert.True(log.IsEnabled(WebRequest))
+}
+
+func TestConfigYAML(t *testing.T) {
+	assert := assert.New(t)
+
+	corpus := `
+heading: test-heading
+outputFormat: test-format
+flags: [ "foo", "bar" ]
+hiddenFlags: [ "buzz", "wuzz" ]
+recoverPanics: false
+queueDepth: 256
+`
+
+	var cfg Config
+	assert.Nil(yaml.Unmarshal([]byte(corpus), &cfg))
+	assert.Equal("test-heading", cfg.GetHeading())
+	assert.Equal("test-format", cfg.GetOutputFormat())
+	assert.Equal([]string{"foo", "bar"}, cfg.GetFlags())
+	assert.Equal([]string{"buzz", "wuzz"}, cfg.GetHiddenFlags())
+	assert.False(cfg.GetRecoverPanics())
+	assert.Equal(256, cfg.GetQueueDepth())
 }
 
 func TestNewConfigFromEnv(t *testing.T) {
