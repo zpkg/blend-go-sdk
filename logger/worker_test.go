@@ -21,7 +21,7 @@ func TestWorker(t *testing.T) {
 		typed, isTyped := e.(*MessageEvent)
 		assert.True(isTyped)
 		assert.Equal("test", typed.Message())
-	})
+	}, DefaultWorkerQueueDepth)
 
 	w.Start()
 	defer w.Close()
@@ -41,7 +41,7 @@ func TestWorkerStop(t *testing.T) {
 	w := NewWorker(nil, func(e Event) {
 		defer wg.Done()
 		didFire = true
-	})
+	}, DefaultWorkerQueueDepth)
 
 	w.Start()
 	w.Work <- Messagef(Info, "test")
@@ -68,7 +68,7 @@ func TestWorkerPanics(t *testing.T) {
 		defer wg.Done()
 		didFire = true
 		panic("only a test")
-	})
+	}, DefaultWorkerQueueDepth)
 	w.Start()
 
 	w.Work <- Messagef(Info, "test")

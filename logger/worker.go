@@ -10,11 +10,11 @@ const (
 )
 
 // NewWorker returns a new worker.
-func NewWorker(parent *Logger, listener Listener) *Worker {
+func NewWorker(parent *Logger, listener Listener, queueDepth int) *Worker {
 	return &Worker{
 		Parent:   parent,
 		Listener: listener,
-		Work:     make(chan Event, DefaultWorkerQueueDepth),
+		Work:     make(chan Event, queueDepth),
 	}
 }
 
