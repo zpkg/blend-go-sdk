@@ -19,6 +19,7 @@ func NewWebRequestEvent(req *http.Request) *WebRequestEvent {
 	return &WebRequestEvent{
 		EventMeta: NewEventMeta(WebRequest),
 		req:       req,
+		complete:  true,
 	}
 }
 
@@ -43,6 +44,7 @@ func NewWebRequestEventListener(listener func(*WebRequestEvent)) Listener {
 type WebRequestEvent struct {
 	*EventMeta
 
+	complete        bool
 	req             *http.Request
 	route           string
 	statusCode      int
@@ -173,17 +175,17 @@ func (e *WebRequestEvent) State() map[string]interface{} {
 
 // WriteText implements TextWritable.
 func (e *WebRequestEvent) WriteText(formatter TextFormatter, buf *bytes.Buffer) {
-	if e.flag == WebRequestStart {
-		TextWriteRequestStart(formatter, buf, e.req)
-	} else {
+	if e.complete {
 		TextWriteRequest(formatter, buf, e.req, e.statusCode, e.contentLength, e.contentType, e.elapsed)
+	} else {
+		TextWriteRequestStart(formatter, buf, e.req)
 	}
 }
 
 // WriteJSON implements JSONWritable.
 func (e *WebRequestEvent) WriteJSON() JSONObj {
-	if e.flag == WebRequestStart {
-		return JSONWriteRequestStart(e.req)
+	if e.complete {
+		return JSONWriteRequest(e.req, e.statusCode, e.contentLength, e.contentType, e.contentEncoding, e.elapsed)
 	}
-	return JSONWriteRequest(e.req, e.statusCode, e.contentLength, e.contentType, e.contentEncoding, e.elapsed)
+	return JSONWriteRequestStart(e.req)
 }

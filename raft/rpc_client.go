@@ -1,40 +1,32 @@
 package raft
 
 import (
-	"net"
-	"net/rpc"
+	"bytes"
+	"encoding/json"
+	"fmt"
+	"io"
+	"io/ioutil"
+	"net/http"
+	"net/url"
 	"sync"
 	"time"
 
 	"github.com/blend/go-sdk/exception"
 	"github.com/blend/go-sdk/logger"
-	"github.com/blend/go-sdk/worker"
 )
 
-const (
-	// RPCMethodRequestVote is an rpc method.
-	RPCMethodRequestVote = "ServerMethods.RequestVote"
-	// RPCMethodAppendEntries is an rpc method.
-	RPCMethodAppendEntries = "ServerMethods.AppendEntries"
-
-	// DefaultClientDialTimeout is a default.
-	DefaultClientDialTimeout = 500 * time.Millisecond
-	// DefaultClientCallTimeout is the default time to wait for a call result.
-	DefaultClientCallTimeout = 500 * time.Millisecond
-	// DefaultClientRedialWait is the default time to wait between rpc redial attempts.
-	DefaultClientRedialWait = 5 * time.Second
-	// DefaultClientConnectTimeout is the total time allowed to reach the remote.
-	DefaultClientConnectTimeout = 30 * time.Second
+var (
+	// Assert RPCClient is a client.
+	_ Client = &RPCClient{}
 )
 
 // NewRPCClient creates a new rpc client.
 func NewRPCClient(remoteAddr string) *RPCClient {
 	return &RPCClient{
-		remoteAddr:  remoteAddr,
-		latch:       &worker.Latch{},
-		dialTimeout: DefaultClientDialTimeout,
-		callTimeout: DefaultClientCallTimeout,
-		redialWait:  DefaultClientRedialWait,
+		remoteAddr: remoteAddr,
+		transport:  &http.Transport{},
+		client:     &http.Client{},
+		timeout:    DefaultClientTimeout,
 	}
 }
 
@@ -43,35 +35,22 @@ type RPCClient struct {
 	sync.Mutex
 
 	remoteAddr string
-	conn       net.Conn
-	client     *rpc.Client
-	latch      *worker.Latch
 	log        *logger.Logger
 
-	dialTimeout time.Duration
-	callTimeout time.Duration
-	redialWait  time.Duration
+	transport *http.Transport
+	client    *http.Client
+
+	timeout time.Duration
 }
 
-// DialTimeout is the timeout for dialing new connections
-func (c *RPCClient) DialTimeout() time.Duration {
-	return c.dialTimeout
+// Timeout is the timeout for dialing new connections
+func (c *RPCClient) Timeout() time.Duration {
+	return c.timeout
 }
 
-// WithDialTimeout sets the DialTimeout
-func (c *RPCClient) WithDialTimeout(d time.Duration) *RPCClient {
-	c.dialTimeout = d
-	return c
-}
-
-// CallTimeout is the timeout for individual rpc calls
-func (c *RPCClient) CallTimeout() time.Duration {
-	return c.callTimeout
-}
-
-// WithCallTimeout is the timeout for individual rpc calls
-func (c *RPCClient) WithCallTimeout(d time.Duration) *RPCClient {
-	c.callTimeout = d
+// WithTimeout sets the DialTimeout
+func (c *RPCClient) WithTimeout(d time.Duration) *RPCClient {
+	c.timeout = d
 	return c
 }
 
@@ -93,32 +72,26 @@ func (c *RPCClient) WithRemoteAddr(addr string) *RPCClient {
 }
 
 // RemoteAddr returns the remote address.
-func (c *RPCClient) RemoteAddr() string { return c.remoteAddr }
+func (c *RPCClient) RemoteAddr() string {
+	return c.remoteAddr
+}
 
-// Open dials the remote, it will only try once, and won't
-// dial if the connection is already up.
+// Open opens the connection.
 func (c *RPCClient) Open() error {
-	c.Lock()
-	defer c.Unlock()
-
-	if c.client != nil {
-		return nil
+	c.client = &http.Client{
+		Timeout:   c.timeout,
+		Transport: c.transport,
 	}
+	return nil
+}
 
-	var err error
-	c.conn, err = net.DialTimeout("tcp", c.remoteAddr, c.dialTimeout)
-	if err != nil {
-		return exception.New(err)
-	}
-	c.client = rpc.NewClient(c.conn)
+// Close is a nop right now.
+func (c *RPCClient) Close() error {
 	return nil
 }
 
 // RequestVote implements the request vote handler.
 func (c *RPCClient) RequestVote(args *RequestVote) (*RequestVoteResults, error) {
-	if err := c.Open(); err != nil {
-		return nil, err
-	}
 	var res RequestVoteResults
 	err := c.callWithTimeout(RPCMethodRequestVote, args, &res)
 	if err != nil {
@@ -129,10 +102,6 @@ func (c *RPCClient) RequestVote(args *RequestVote) (*RequestVoteResults, error) 
 
 // AppendEntries implements the append entries request handler.
 func (c *RPCClient) AppendEntries(args *AppendEntries) (*AppendEntriesResults, error) {
-	if err := c.Open(); err != nil {
-		return nil, err
-	}
-
 	var res AppendEntriesResults
 	err := c.callWithTimeout(RPCMethodAppendEntries, args, &res)
 	if err != nil {
@@ -143,37 +112,51 @@ func (c *RPCClient) AppendEntries(args *AppendEntries) (*AppendEntriesResults, e
 
 // call invokes a method with the default call timeout.
 func (c *RPCClient) callWithTimeout(method string, args interface{}, reply interface{}) error {
-	timeout := time.NewTimer(c.callTimeout)
-
-	c.Lock()
-	defer c.Unlock()
-
-	result := c.client.Go(method, args, reply, nil)
-	select {
-	case <-timeout.C:
-		c.client.Close()
-		c.client = nil
-		return exception.New("rpc call timeout").WithMessagef("method: %s", method)
-	case <-result.Done:
-		if result.Error != nil {
-			return exception.New(result.Error)
-		}
-		return nil
+	reqURL, err := url.Parse(fmt.Sprintf("http://%s/%s", c.remoteAddr, method))
+	if err != nil {
+		return exception.Wrap(err)
 	}
+
+	body, err := c.encode(args)
+	if err != nil {
+		return exception.Wrap(err)
+	}
+
+	req := &http.Request{
+		Method: "POST",
+		URL:    reqURL,
+		Body:   body,
+	}
+
+	res, err := c.client.Do(req)
+	if err != nil {
+		return exception.Wrap(err)
+	}
+	if res.StatusCode > 299 {
+		return exception.New("non-2xx returned from rpc server").WithMessagef("status code returned: %d", res.StatusCode)
+	}
+
+	if err := c.decode(reply, res.Body); err != nil {
+		return err
+	}
+	return nil
 }
 
-// Close closes the transport.
-func (c *RPCClient) Close() error {
-	c.Lock()
-	defer c.Unlock()
+func (c *RPCClient) encode(obj interface{}) (io.ReadCloser, error) {
+	buffer := new(bytes.Buffer)
 
-	if c.client == nil {
-		return nil
+	if err := json.NewEncoder(buffer).Encode(obj); err != nil {
+		return nil, exception.New(err)
 	}
-	c.latch.Stop()
-	err := exception.New(c.client.Close())
-	<-c.latch.NotifyStopped()
-	return err
+	return ioutil.NopCloser(buffer), nil
+}
+
+func (c *RPCClient) decode(obj interface{}, contents io.ReadCloser) error {
+	if contents == nil {
+		return exception.New("response body unset; cannot continue")
+	}
+	defer contents.Close()
+	return exception.New(json.NewDecoder(contents).Decode(&obj))
 }
 
 func (c *RPCClient) err(err error) error {
