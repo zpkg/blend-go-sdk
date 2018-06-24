@@ -46,7 +46,7 @@ func TestNewConfigFlags(t *testing.T) {
 	assert.True(log.IsEnabled(Error))
 	assert.True(log.IsEnabled(Fatal))
 	assert.True(log.IsEnabled(Audit))
-	assert.True(log.IsEnabled(WebRequest))
+	assert.True(log.IsEnabled(HTTPRequest))
 }
 
 func TestConfigYAML(t *testing.T) {
@@ -100,7 +100,7 @@ func TestNewConfigFromEnv(t *testing.T) {
 	cfg := NewConfigFromEnv()
 
 	assert.Any(cfg.GetFlags(), func(v Any) bool {
-		return v.(string) == "web.request"
+		return v.(string) == "http.response"
 	})
 	assert.Any(cfg.GetFlags(), func(v Any) bool {
 		return v.(string) == "info"

@@ -222,7 +222,7 @@ func TestLoggerTriggerUnhandled(t *testing.T) {
 	assert.True(log.IsEnabled(Fatal))
 	assert.True(log.HasListeners(Fatal))
 
-	log.Trigger(Messagef(WebRequest, "Hello World"))
+	log.Trigger(Messagef(HTTPRequest, "Hello World"))
 	log.Trigger(Messagef(Fatal, "Hello World"))
 	wg.Wait()
 }

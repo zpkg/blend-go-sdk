@@ -82,14 +82,14 @@ func (s *RPCServer) handle(action http.HandlerFunc) http.HandlerFunc {
 			}
 		}()
 		if s.log != nil {
-			s.log.Trigger(logger.NewWebRequestStartEvent(req).WithFlag(logger.Flag("rpc.handler.start")))
+			s.log.Trigger(logger.NewHTTPRequestEvent(req).WithFlag(logger.Flag("rpc.handler.start")))
 			start := time.Now()
 			instrumented := logger.NewResponseWriter(w)
 			defer func() {
-				s.log.Trigger(logger.NewWebRequestEvent(req).WithFlag(logger.Flag("rpc.handler.complete")).
+				s.log.Trigger(logger.NewHTTPResponseEvent(req).WithFlag(logger.Flag("rpc.handler.complete")).
 					WithStatusCode(instrumented.StatusCode()).
 					WithElapsed(time.Since(start)).
-					WithContentLength(int64(instrumented.ContentLength())))
+					WithContentLength(instrumented.ContentLength()))
 			}()
 			action(instrumented, req)
 			return

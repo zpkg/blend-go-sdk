@@ -194,9 +194,9 @@ func (hu *HTTPSUpgrader) ServeHTTP(rw http.ResponseWriter, req *http.Request) {
 	start := time.Now()
 	response := []byte("Upgrade Required")
 	if hu.log != nil {
-		defer hu.log.Trigger(logger.NewWebRequestEvent(req).
+		defer hu.log.Trigger(logger.NewHTTPResponseEvent(req).
 			WithStatusCode(http.StatusMovedPermanently).
-			WithContentLength(int64(len(response))).
+			WithContentLength(len(response)).
 			WithContentType(ContentTypeText).
 			WithElapsed(time.Since(start)))
 	}

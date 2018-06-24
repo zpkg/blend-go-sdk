@@ -1022,7 +1022,7 @@ func (a *App) renderAction(action Action) Handler {
 		ctx := a.createCtx(response, r, route, p, state)
 		ctx.onRequestStart()
 		if a.log != nil {
-			a.log.Trigger(a.loggerRequestStartEvent(ctx))
+			a.log.Trigger(a.loggerHTTPResponseEvent(ctx))
 		}
 
 		result := action(ctx)
@@ -1049,7 +1049,7 @@ func (a *App) renderAction(action Action) Handler {
 
 		// effectively "request complete"
 		if a.log != nil {
-			a.log.Trigger(a.loggerRequestEvent(ctx))
+			a.log.Trigger(a.loggerHTTPResponseEvent(ctx))
 		}
 	}
 }
@@ -1074,8 +1074,8 @@ func (a *App) addHSTSHeader(w http.ResponseWriter) {
 	w.Header().Set(HeaderStrictTransportSecurity, strings.Join(parts, "; "))
 }
 
-func (a *App) loggerRequestStartEvent(ctx *Ctx) *logger.WebRequestEvent {
-	event := logger.NewWebRequestStartEvent(ctx.Request()).
+func (a *App) loggerHTTPRequestEvent(ctx *Ctx) *logger.HTTPRequestEvent {
+	event := logger.NewHTTPRequestEvent(ctx.Request()).
 		WithState(ctx.state)
 
 	if ctx.Route() != nil {
@@ -1084,11 +1084,11 @@ func (a *App) loggerRequestStartEvent(ctx *Ctx) *logger.WebRequestEvent {
 	return event
 }
 
-func (a *App) loggerRequestEvent(ctx *Ctx) *logger.WebRequestEvent {
-	event := logger.NewWebRequestEvent(ctx.Request()).
+func (a *App) loggerHTTPResponseEvent(ctx *Ctx) *logger.HTTPResponseEvent {
+	event := logger.NewHTTPResponseEvent(ctx.Request()).
 		WithStatusCode(ctx.statusCode).
 		WithElapsed(ctx.Elapsed()).
-		WithContentLength(int64(ctx.contentLength)).
+		WithContentLength(ctx.contentLength).
 		WithState(ctx.state)
 
 	if ctx.Route() != nil {

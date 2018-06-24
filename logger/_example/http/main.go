@@ -16,10 +16,10 @@ var pool = logger.NewBufferPool(16)
 func logged(handler http.HandlerFunc) http.HandlerFunc {
 	return func(res http.ResponseWriter, req *http.Request) {
 		start := time.Now()
-		logger.Default().Trigger(logger.NewWebRequestStartEvent(req))
+		logger.Default().Trigger(logger.NewHTTPRequestEvent(req))
 		rw := logger.NewResponseWriter(res)
 		handler(rw, req)
-		logger.Default().Trigger(logger.NewWebRequestEvent(req).WithStatusCode(rw.StatusCode()).WithContentLength(int64(rw.ContentLength())).WithElapsed(time.Now().Sub(start)))
+		logger.Default().Trigger(logger.NewHTTPResponseEvent(req).WithStatusCode(rw.StatusCode()).WithContentLength(rw.ContentLength()).WithElapsed(time.Now().Sub(start)))
 	}
 }
 
@@ -69,10 +69,10 @@ func subContextHandler(res http.ResponseWriter, req *http.Request) {
 }
 
 func auditHandler(res http.ResponseWriter, req *http.Request) {
-	logger.Default().Trigger(logger.NewAuditEvent(logger.GetIP(req), "viewed", "audit route").WithExtra(map[string]string{
+	logger.Default().Trigger(logger.NewAuditEvent(logger.GetIP(req), "viewed").WithExtra(map[string]string{
 		"remoteAddr": req.RemoteAddr,
 		"host":       req.Host,
-	}))
+	}).WithNoun("audit route"))
 	res.WriteHeader(http.StatusOK)
 	res.Write([]byte(`{"status":"audit logged!"}`))
 }

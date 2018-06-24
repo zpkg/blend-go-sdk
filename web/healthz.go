@@ -354,7 +354,7 @@ func (hz *Healthz) Start() (err error) {
 	hz.vars[VarzStarted] = time.Now().UTC()
 
 	if hz.app.log != nil {
-		hz.app.log.Listen(logger.WebRequest, ListenerHealthz, logger.NewWebRequestEventListener(hz.appWebRequestListener))
+		hz.app.log.Listen(logger.HTTPResponse, ListenerHealthz, logger.NewHTTPResponseEventListener(hz.appHTTPResponseListener))
 		hz.app.log.Listen(logger.Error, ListenerHealthz, logger.NewErrorEventListener(hz.appErrorListener))
 		hz.app.log.Listen(logger.Fatal, ListenerHealthz, logger.NewErrorEventListener(hz.appErrorListener))
 	}
@@ -422,13 +422,13 @@ func (hz *Healthz) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 
 	start := time.Now()
 	if hz.log != nil {
-		hz.log.Trigger(logger.NewWebRequestStartEvent(r).WithState(hz.state).WithRoute(route))
+		hz.log.Trigger(logger.NewHTTPResponseEvent(r).WithState(hz.state).WithRoute(route))
 
 		defer func() {
-			hz.log.Trigger(logger.NewWebRequestEvent(r).
+			hz.log.Trigger(logger.NewHTTPResponseEvent(r).
 				WithStatusCode(res.StatusCode()).
 				WithElapsed(time.Since(start)).
-				WithContentLength(int64(res.ContentLength())).
+				WithContentLength(res.ContentLength()).
 				WithState(hz.state))
 		}()
 	}
@@ -501,7 +501,7 @@ func (hz *Healthz) varzHandler(w ResponseWriter, r *http.Request) {
 	}
 }
 
-func (hz *Healthz) appWebRequestListener(wre *logger.WebRequestEvent) {
+func (hz *Healthz) appHTTPResponseListener(wre *logger.HTTPResponseEvent) {
 	hz.varsLock.Lock()
 	defer hz.varsLock.Unlock()
 
