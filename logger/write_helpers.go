@@ -21,8 +21,10 @@ func FormatFileSize(sizeBytes int) string {
 
 // TextWriteHTTPRequest is a helper method to write request start events to a writer.
 func TextWriteHTTPRequest(tf TextFormatter, buf *bytes.Buffer, req *http.Request) {
-	buf.WriteString(GetIP(req))
-	buf.WriteRune(RuneSpace)
+	if ip := GetIP(req); len(ip) > 0 {
+		buf.WriteString(ip)
+		buf.WriteRune(RuneSpace)
+	}
 	buf.WriteString(tf.Colorize(req.Method, ColorBlue))
 	buf.WriteRune(RuneSpace)
 	buf.WriteString(req.URL.Path)
