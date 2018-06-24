@@ -44,7 +44,7 @@ func (u *Upstream) WithLogger(log *logger.Logger) *Upstream {
 // ServeHTTP
 func (u *Upstream) ServeHTTP(rw http.ResponseWriter, req *http.Request) {
 	if u.Log != nil {
-		u.Log.Trigger(logger.NewWebRequestStartEvent(req))
+		u.Log.Trigger(logger.NewHTTPRequestEvent(req))
 	}
 	start := time.Now()
 
@@ -52,9 +52,9 @@ func (u *Upstream) ServeHTTP(rw http.ResponseWriter, req *http.Request) {
 	u.ReverseProxy.ServeHTTP(w, req)
 
 	if u.Log != nil {
-		wre := logger.NewWebRequestEvent(req).
+		wre := logger.NewHTTPResponseEvent(req).
 			WithStatusCode(w.StatusCode()).
-			WithContentLength(int64(w.ContentLength())).
+			WithContentLength(w.ContentLength()).
 			WithElapsed(time.Since(start))
 
 		if value := w.Header().Get("Content-Type"); len(value) > 0 {

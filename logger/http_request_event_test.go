@@ -24,19 +24,18 @@ func TestWebRequestEventListener(t *testing.T) {
 		WithWriter(NewJSONWriter(jsonBuffer))
 	defer all.Close()
 
-	all.Listen(WebRequest, "default", NewWebRequestEventListener(func(wre *WebRequestEvent) {
+	all.Listen(HTTPRequest, "default", NewHTTPRequestEventListener(func(hre *HTTPRequestEvent) {
 		defer wg.Done()
-		assert.Equal(WebRequest, wre.Flag())
-		assert.NotZero(wre.Elapsed())
-		assert.NotNil(wre.Request())
-		assert.Equal("test.com", wre.Request().Host)
+		assert.Equal(HTTPRequest, hre.Flag())
+		assert.NotNil(hre.Request())
+		assert.Equal("test.com", hre.Request().Host)
 	}))
 
 	go func() {
-		all.Trigger(NewWebRequestEvent(&http.Request{Host: "test.com", URL: &url.URL{}}).WithElapsed(time.Millisecond))
+		all.Trigger(NewHTTPRequestEvent(&http.Request{Host: "test.com", URL: &url.URL{}}))
 	}()
 	go func() {
-		all.Trigger(NewWebRequestEvent(&http.Request{Host: "test.com", URL: &url.URL{}}).WithElapsed(time.Millisecond))
+		all.Trigger(NewHTTPRequestEvent(&http.Request{Host: "test.com", URL: &url.URL{}}))
 	}()
 	wg.Wait()
 	all.Drain()
@@ -48,11 +47,11 @@ func TestWebRequestEventListener(t *testing.T) {
 func TestWebRequestEventInterfaces(t *testing.T) {
 	assert := assert.New(t)
 
-	ee := NewWebRequestEvent(&http.Request{Host: "test.com", URL: &url.URL{}}).WithElapsed(time.Millisecond).WithHeadings("heading").WithLabel("foo", "bar")
+	ee := NewHTTPRequestEvent(&http.Request{Host: "test.com", URL: &url.URL{}}).WithHeadings("heading").WithLabel("foo", "bar")
 
 	eventProvider, isEvent := MarshalEvent(ee)
 	assert.True(isEvent)
-	assert.Equal(WebRequest, eventProvider.Flag())
+	assert.Equal(HTTPRequest, eventProvider.Flag())
 	assert.False(eventProvider.Timestamp().IsZero())
 
 	headingProvider, isHeadingProvider := MarshalEventHeadings(ee)
@@ -67,7 +66,7 @@ func TestWebRequestEventInterfaces(t *testing.T) {
 func TestWebRequestEventProperties(t *testing.T) {
 	assert := assert.New(t)
 
-	e := NewWebRequestEvent(nil)
+	e := NewHTTPRequestEvent(nil)
 
 	assert.False(e.Timestamp().IsZero())
 	assert.True(e.WithTimestamp(time.Time{}).Timestamp().IsZero())
@@ -78,7 +77,7 @@ func TestWebRequestEventProperties(t *testing.T) {
 	assert.Empty(e.Annotations())
 	assert.Equal("zar", e.WithAnnotation("moo", "zar").Annotations()["moo"])
 
-	assert.Equal(WebRequest, e.Flag())
+	assert.Equal(HTTPRequest, e.Flag())
 	assert.Equal(Error, e.WithFlag(Error).Flag())
 
 	assert.Empty(e.Headings())
@@ -86,18 +85,6 @@ func TestWebRequestEventProperties(t *testing.T) {
 
 	assert.Nil(e.Request())
 	assert.NotNil(e.WithRequest(&http.Request{}).Request())
-
-	assert.Zero(e.Elapsed())
-	assert.Equal(time.Second, e.WithElapsed(time.Second).Elapsed())
-
-	assert.Zero(e.StatusCode())
-	assert.Equal(http.StatusOK, e.WithStatusCode(http.StatusOK).StatusCode())
-
-	assert.Zero(e.ContentLength())
-	assert.Equal(123, e.WithContentLength(123).ContentLength())
-
-	assert.Empty(e.ContentType())
-	assert.Equal("ContentType", e.WithContentType("ContentType").ContentType())
 
 	assert.Nil(e.State())
 	assert.Equal("foo", e.WithState(map[string]interface{}{"bar": "foo"}).State()["bar"])

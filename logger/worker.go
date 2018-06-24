@@ -67,9 +67,9 @@ func (w *Worker) Process(e Event) {
 // Stop stops the worker.
 func (w *Worker) Stop() {
 	w.Lock()
+	defer w.Unlock()
 	close(w.Abort)
 	<-w.Aborted
-	w.Unlock()
 }
 
 // Drain stops the worker and synchronously processes any remaining work.

@@ -6,15 +6,6 @@ import (
 	"strings"
 )
 
-const (
-	// Gigabyte is an SI unit.
-	Gigabyte = 1 << 30
-	// Megabyte is an SI unit.
-	Megabyte = 1 << 20
-	// Kilobyte is an SI unit.
-	Kilobyte = 1 << 10
-)
-
 // GetIP gets the origin/client ip for a request.
 // X-FORWARDED-FOR is checked. If multiple IPs are included the first one is returned
 // X-REAL-IP is checked. If multiple IPs are included the first one is returned

@@ -421,7 +421,7 @@ func TestAppNotFound(t *testing.T) {
 		return r.JSON().NotFound()
 	})
 
-	agent.Listen(logger.WebRequest, "foo", logger.NewWebRequestEventListener(func(wre *logger.WebRequestEvent) {
+	agent.Listen(logger.HTTPResponse, "foo", logger.NewHTTPResponseEventListener(func(wre *logger.HTTPResponseEvent) {
 		assert.NotNil(wre.Request())
 		assert.Empty(wre.Route())
 	}))

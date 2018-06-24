@@ -6,6 +6,7 @@ import (
 	"os"
 	"runtime"
 	"sync"
+	"sync/atomic"
 )
 
 const (
@@ -95,6 +96,8 @@ type Logger struct {
 	heading    string
 	queueDepth int
 
+	state int32
+
 	flagsLock sync.Mutex
 	flags     *FlagSet
 
@@ -108,6 +111,16 @@ type Logger struct {
 	writeWorker     *Worker
 
 	recoverPanics bool
+}
+
+// CanStart returns if the latch can start.
+func (l *Logger) CanStart() bool {
+	return atomic.LoadInt32(&l.state) == LoggerStopped
+}
+
+// CanStop returns if the latch can stop.
+func (l *Logger) CanStop() bool {
+	return atomic.LoadInt32(&l.state) == LoggerStarted
 }
 
 // WithHeading returns the logger heading.
@@ -421,6 +434,10 @@ func (l *Logger) trigger(async bool, e Event) {
 		}()
 	}
 
+	if async && !l.isStarted() {
+		return
+	}
+
 	if typed, isTyped := e.(EventEnabled); isTyped && !typed.IsEnabled() {
 		return
 	}
@@ -623,6 +640,8 @@ func (l *Logger) Close() (err error) {
 		l.flags.SetNone()
 	}
 
+	l.setStopping()
+
 	l.workersLock.Lock()
 	defer l.workersLock.Unlock()
 
@@ -643,6 +662,8 @@ func (l *Logger) Close() (err error) {
 	l.writeWorker.Close()
 	l.writeWorker = nil
 
+	l.setStopped()
+
 	return nil
 }
 
@@ -650,6 +671,8 @@ func (l *Logger) Close() (err error) {
 func (l *Logger) Drain() error {
 	l.workersLock.Lock()
 	defer l.workersLock.Unlock()
+
+	l.setStopping()
 
 	for _, workers := range l.workers {
 		for _, worker := range workers {
@@ -664,5 +687,31 @@ func (l *Logger) Drain() error {
 		l.writeWorker.Drain()
 	}
 
+	l.setStarted()
+
 	return nil
+}
+
+func (l *Logger) isStarted() bool {
+	return atomic.LoadInt32(&l.state) == LoggerStarted
+}
+
+func (l *Logger) isStopping() bool {
+	return atomic.LoadInt32(&l.state) == LoggerStopping
+}
+
+func (l *Logger) isStopped() bool {
+	return atomic.LoadInt32(&l.state) == LoggerStopped
+}
+
+func (l *Logger) setStarted() {
+	atomic.StoreInt32(&l.state, LoggerStarted)
+}
+
+func (l *Logger) setStopping() {
+	atomic.StoreInt32(&l.state, LoggerStopping)
+}
+
+func (l *Logger) setStopped() {
+	atomic.StoreInt32(&l.state, LoggerStopped)
 }
