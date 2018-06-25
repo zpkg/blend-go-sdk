@@ -178,18 +178,17 @@ func TestRunJobBySchedule(t *testing.T) {
 	a.StartTimeout(2000 * time.Millisecond)
 	defer a.EndTimeout()
 
-	didRun := make(chan bool)
+	didRun := make(chan struct{})
 	jm := New()
 	runAt := Now().Add(jm.HeartbeatInterval())
 	err := jm.LoadJob(&runAtJob{
 		RunAt: runAt,
 		RunDelegate: func(ctx context.Context) error {
-			didRun <- true
+			close(didRun)
 			return nil
 		},
 	})
 	a.Nil(err)
-
 	jm.Start()
 	defer jm.Stop()
 
