@@ -175,11 +175,10 @@ func TestRunTaskAndCancel(t *testing.T) {
 
 func TestRunJobBySchedule(t *testing.T) {
 	a := assert.New(t)
-	a.StartTimeout(2000 * time.Millisecond)
-	defer a.EndTimeout()
 
 	didRun := make(chan struct{})
-	jm := New()
+
+	jm := New().WithHighPrecisionHeartbeat()
 	runAt := Now().Add(jm.HeartbeatInterval())
 	err := jm.LoadJob(&runAtJob{
 		RunAt: runAt,
@@ -189,6 +188,7 @@ func TestRunJobBySchedule(t *testing.T) {
 		},
 	})
 	a.Nil(err)
+
 	jm.Start()
 	defer jm.Stop()
 
