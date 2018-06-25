@@ -193,7 +193,9 @@ func (r *Raft) AppendEntriesHandler(args *AppendEntries, res *AppendEntriesResul
 		return nil
 	}
 
-	//r.debugf("received leader heartbeat from %s", args.ID)
+	if r.state == Leader {
+		r.debugf("received leader heartbeat from %s as leader", args.ID)
+	}
 	r.transitionTo(Follower)
 	r.currentTerm = args.Term
 	r.lastLeaderContact = time.Now().UTC()
@@ -368,6 +370,15 @@ func (r *Raft) sendHeartbeat() {
 	wg.Wait()
 
 	r.logErrors(errs)
+
+	// figure out how many rejections we got ...
+	// if we didn't get a majority, demote self.
+	if r.processAppendEntriesResults(results) != ElectionVictory {
+		r.interlocked(func() {
+			r.transitionTo(Follower)
+			r.votedFor = ""
+		})
+	}
 }
 
 // --------------------------------------------------------------------------------
@@ -532,6 +543,25 @@ func (r *Raft) processRequestVoteResults(results chan *RequestVoteResults) Elect
 		result := <-results
 
 		if result.Granted {
+			votesFor = votesFor + 1
+		}
+	}
+
+	r.debugf("election tally: %d votes for, %d total (includes self)", votesFor, total)
+	return r.voteOutcome(votesFor, total)
+}
+
+// processRequestVoteResults returns the aggregate votes for in an election from rpc responses.
+func (r *Raft) processAppendEntriesResults(results chan *AppendEntriesResults) ElectionOutcome {
+	// tabulate results
+	total := len(r.peers) + 1 // assume cluster size is peers + 1 (ourselves)
+	resultsCount := len(results)
+	votesFor := 1 // assume we voted for ourselves.
+
+	for index := 0; index < resultsCount; index++ {
+		result := <-results
+
+		if result.Success {
 			votesFor = votesFor + 1
 		}
 	}

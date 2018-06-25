@@ -112,7 +112,6 @@ func (c *RPCClient) AppendEntries(args *AppendEntries) (*AppendEntriesResults, e
 
 // call invokes a method with the default call timeout.
 func (c *RPCClient) callWithTimeout(method string, args interface{}, reply interface{}) error {
-
 	reqURL, err := url.Parse(fmt.Sprintf("http://%s/%s", c.remoteAddr, method))
 	if err != nil {
 		return exception.Wrap(err)
@@ -131,7 +130,7 @@ func (c *RPCClient) callWithTimeout(method string, args interface{}, reply inter
 
 	if c.log != nil {
 		defer func() {
-			c.log.Trigger(logger.NewHTTPRequestEvent(req).WithFlag("rpc.call"))
+			c.log.Trigger(logger.NewHTTPRequestEvent(req).WithFlag("rpc.call").WithHeadings(c.remoteAddr))
 		}()
 	}
 
