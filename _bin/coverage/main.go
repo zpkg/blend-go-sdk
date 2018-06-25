@@ -243,6 +243,8 @@ func execCoverage(path string) ([]byte, error) {
 
 func execCoverageCompile() error {
 	cmd := exec.Command(gobin(), "tool", "cover", fmt.Sprintf("-html=%s", *temporaryOutputPath), fmt.Sprintf("-o=%s", *reportOutputPath))
+	cmd.Env = os.Environ()
+	cmd.Env = append(cmd.Env, "GOCACHE=off")
 	return cmd.Run()
 }
 
