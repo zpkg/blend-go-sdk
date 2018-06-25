@@ -7,9 +7,12 @@ import (
 
 	"github.com/blend/go-sdk/assert"
 	"github.com/blend/go-sdk/env"
-	"github.com/blend/go-sdk/util"
 	"github.com/blend/go-sdk/yaml"
 )
+
+func b(v bool) *bool {
+	return &v
+}
 
 func TestConfigProperties(t *testing.T) {
 	assert := assert.New(t)
@@ -25,7 +28,7 @@ func TestConfigProperties(t *testing.T) {
 
 	assert.Equal(DefaultRecoverPanics, Config{}.GetRecoverPanics())
 	assert.Equal(!DefaultRecoverPanics, Config{}.GetRecoverPanics(!DefaultRecoverPanics))
-	assert.Equal(!DefaultRecoverPanics, Config{RecoverPanics: util.OptionalBool(!DefaultRecoverPanics)}.GetRecoverPanics())
+	assert.Equal(!DefaultRecoverPanics, Config{RecoverPanics: b(!DefaultRecoverPanics)}.GetRecoverPanics())
 
 	assert.Equal(DefaultWorkerQueueDepth, Config{}.GetQueueDepth())
 	assert.Equal(DefaultWorkerQueueDepth>>1, Config{}.GetQueueDepth(DefaultWorkerQueueDepth>>1))

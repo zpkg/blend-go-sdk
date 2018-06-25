@@ -1,6 +1,7 @@
 package main
 
 import (
+	"fmt"
 	"math/rand"
 	"os"
 	"time"
@@ -13,9 +14,9 @@ func main() {
 
 	log.Listen(logger.Info, "randomly_slow", func(e logger.Event) {
 		if rand.Float64() < 0.1 {
-			println("randomly slow start")
+			fmt.Println("randomly slow start")
 			time.Sleep(500 * time.Millisecond)
-			println("randomly slow stop")
+			fmt.Println("randomly slow stop")
 		}
 	})
 
@@ -28,9 +29,9 @@ func main() {
 		case <-infoSignal:
 			log.Infof("this is an info event")
 		case <-done:
-			println("draining")
+			fmt.Println("draining")
 			log.Drain()
-			println("exiting")
+			fmt.Println("exiting")
 			os.Exit(0)
 		}
 	}
