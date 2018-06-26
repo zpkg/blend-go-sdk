@@ -159,8 +159,13 @@ func (r *Raft) LeaderCheck() error {
 	if r.getStateSafe() == Follower {
 		// if we've never elected a leader, or if the current leader hasn't sent a heartbeat in a while ...
 		if r.isLeaderFailed() {
-			// trigger an election.
-			r.err(r.election())
+			// if we haven't voted yet
+			if !r.hasVotedRecently() {
+				// trigger an election
+				r.err(r.election())
+			} else {
+				r.debugf("voted too recently, cannot trigger election")
+			}
 		}
 	}
 	return nil
@@ -196,6 +201,7 @@ func (r *Raft) AppendEntriesHandler(args *AppendEntries, res *AppendEntriesResul
 	if r.state == Leader {
 		r.debugf("received leader heartbeat from %s as leader", args.ID)
 	}
+
 	r.transitionTo(Follower)
 	r.currentTerm = args.Term
 	r.lastLeaderContact = time.Now().UTC()
@@ -267,6 +273,14 @@ func (r *Raft) isLeaderFailed() (output bool) {
 	r.Lock()
 	now := time.Now().UTC()
 	output = r.lastLeaderContact.IsZero() || now.Sub(r.lastLeaderContact) > RandomTimeout(r.electionTimeout)
+	r.Unlock()
+	return
+}
+
+func (r *Raft) hasVotedRecently() (output bool) {
+	r.Lock()
+	now := time.Now().UTC()
+	output = !r.lastVoteGranted.IsZero() && now.Sub(r.lastVoteGranted) < r.electionTimeout
 	r.Unlock()
 	return
 }
@@ -566,7 +580,7 @@ func (r *Raft) processAppendEntriesResults(results chan *AppendEntriesResults) E
 		}
 	}
 
-	r.debugf("election tally: %d votes for, %d total (includes self)", votesFor, total)
+	r.debugf("heartbeat tally: %d votes for, %d total (includes self)", votesFor, total)
 	return r.voteOutcome(votesFor, total)
 }
 
