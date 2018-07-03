@@ -205,6 +205,8 @@ func (r *Raft) AppendEntriesHandler(args *AppendEntries, res *AppendEntriesResul
 	r.transitionTo(Follower)
 	r.currentTerm = args.Term
 	r.lastLeaderContact = time.Now().UTC()
+	r.lastVoteGranted = time.Time{}
+	r.votedFor = ""
 
 	*res = AppendEntriesResults{
 		ID:      r.id,
@@ -220,11 +222,6 @@ func (r *Raft) RequestVoteHandler(args *RequestVote, res *RequestVoteResults) er
 	r.Lock()
 	defer r.Unlock()
 
-	if !r.lastVoteGranted.IsZero() && r.now().Sub(r.lastVoteGranted) > r.electionTimeout {
-		r.debugf("resetting expired vote")
-		r.votedFor = ""
-	}
-
 	if args.Term < r.currentTerm {
 		r.debugf("rejecting request vote from %s @ %d", args.ID, args.Term)
 		*res = RequestVoteResults{
@@ -235,12 +232,14 @@ func (r *Raft) RequestVoteHandler(args *RequestVote, res *RequestVoteResults) er
 		return nil
 	}
 
-	if len(r.votedFor) > 0 && r.votedFor != args.ID {
-		r.debugf("rejecting request vote from %s @ %d", args.ID, args.Term)
-		*res = RequestVoteResults{
-			ID:      r.id,
-			Term:    r.currentTerm,
-			Granted: false,
+	if !r.lastVoteGranted.IsZero() && r.now().Sub(r.lastVoteGranted) < r.electionTimeout {
+		if len(r.votedFor) > 0 && r.votedFor != args.ID {
+			r.debugf("rejecting request vote from %s @ %d", args.ID, args.Term)
+			*res = RequestVoteResults{
+				ID:      r.id,
+				Term:    r.currentTerm,
+				Granted: false,
+			}
 		}
 	}
 
