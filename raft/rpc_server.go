@@ -3,7 +3,6 @@ package raft
 import (
 	"context"
 	"encoding/json"
-	"fmt"
 	"net/http"
 	"time"
 
@@ -17,7 +16,10 @@ var (
 
 // NewRPCServer returns a new roc server.
 func NewRPCServer() *RPCServer {
-	return &RPCServer{}
+	return &RPCServer{
+		bindAddr: DefaultBindAddr,
+		timeout:  DefaultServerTimeout,
+	}
 }
 
 // RPCServer is the net/rpc implementation of the raft server components.
@@ -52,6 +54,17 @@ func (s *RPCServer) BindAddr() string {
 	return s.bindAddr
 }
 
+// WithTimeout sets the server timeout.
+func (s *RPCServer) WithTimeout(d time.Duration) *RPCServer {
+	s.timeout = d
+	return s
+}
+
+// Timeout returns the server timeout.
+func (s *RPCServer) Timeout() time.Duration {
+	return s.timeout
+}
+
 // SetAppendEntriesHandler should register the append entries handler.
 func (s *RPCServer) SetAppendEntriesHandler(handler AppendEntriesHandler) {
 	s.appendEntries = handler
@@ -74,27 +87,36 @@ func (s *RPCServer) RequestVoteHandler() RequestVoteHandler {
 
 func (s *RPCServer) handle(action http.HandlerFunc) http.HandlerFunc {
 	return func(w http.ResponseWriter, req *http.Request) {
-		defer func() {
-			if r := recover(); r != nil {
-				if s.log != nil {
-					s.log.Fatal(exception.New(r))
-				}
-			}
-		}()
-		if s.log != nil {
-			s.log.Trigger(logger.NewHTTPRequestEvent(req).WithFlag(logger.Flag("rpc.handler.start")))
-			start := time.Now()
-			instrumented := logger.NewResponseWriter(w)
-			defer func() {
-				s.log.Trigger(logger.NewHTTPResponseEvent(req).WithFlag(logger.Flag("rpc.handler.complete")).
-					WithStatusCode(instrumented.StatusCode()).
-					WithElapsed(time.Since(start)).
-					WithContentLength(instrumented.ContentLength()))
-			}()
-			action(instrumented, req)
+
+		// without a logger, just run the action and if panic's happen
+		// let them bubble up
+		if s.log == nil {
+			action(w, req)
 			return
 		}
-		action(w, req)
+
+		// set up panic handler to log to fatal
+		defer func() {
+			if r := recover(); r != nil {
+				s.log.Fatal(exception.New(r))
+			}
+		}()
+		// trigger handler start
+		s.log.Trigger(logger.NewHTTPRequestEvent(req).WithFlag(FlagRPCHandlerStart))
+
+		// set up triggering handler complete
+		start := time.Now()
+		instrumented := logger.NewResponseWriter(w)
+		defer func() {
+			s.log.Trigger(logger.NewHTTPResponseEvent(req).WithFlag(FlagRPCHandler).
+				WithStatusCode(instrumented.StatusCode()).
+				WithElapsed(time.Since(start)).
+				WithContentLength(instrumented.ContentLength()))
+		}()
+
+		// run the action with an instrumented response writer
+		action(instrumented, req)
+		return
 	}
 }
 
@@ -144,24 +166,28 @@ func (s *RPCServer) encode(obj interface{}, w http.ResponseWriter) error {
 	return exception.New(json.NewEncoder(w).Encode(obj))
 }
 
-// Start starts the server.
-func (s *RPCServer) Start() error {
+// createServer creates the http server that handles requests.
+func (s *RPCServer) createServer() *http.Server {
 	mux := http.NewServeMux()
-	mux.HandleFunc(fmt.Sprintf("/%s", RPCMethodRequestVote), s.handle(s.requestVoteHandler))
-	mux.HandleFunc(fmt.Sprintf("/%s", RPCMethodAppendEntries), s.handle(s.appendEntriesHandler))
-
-	s.server = &http.Server{
+	mux.HandleFunc("/"+RPCMethodRequestVote, s.handle(s.requestVoteHandler))
+	mux.HandleFunc("/"+RPCMethodAppendEntries, s.handle(s.appendEntriesHandler))
+	return &http.Server{
 		Addr:         s.bindAddr,
 		ReadTimeout:  s.timeout,
 		WriteTimeout: s.timeout,
 		Handler:      mux,
 	}
+}
 
+// Start starts the server.
+func (s *RPCServer) Start() error {
+	s.server = s.createServer()
 	go s.server.ListenAndServe()
 	return nil
 }
 
 // Stop stops the server.
+// It allows up to a second for the shutdown to process.
 func (s *RPCServer) Stop() error {
 	timeout, cancel := context.WithTimeout(context.TODO(), time.Second)
 	defer cancel()

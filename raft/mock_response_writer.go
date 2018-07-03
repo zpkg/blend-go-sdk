@@ -1,7 +1,6 @@
-package web
+package raft
 
 import (
-	"bytes"
 	"io"
 	"net/http"
 )
@@ -10,17 +9,15 @@ import (
 func NewMockResponseWriter(buffer io.Writer) *MockResponseWriter {
 	return &MockResponseWriter{
 		innerWriter: buffer,
-		contents:    new(bytes.Buffer),
 		headers:     http.Header{},
 	}
 }
 
 // MockResponseWriter is an object that satisfies response writer but uses an internal buffer.
 type MockResponseWriter struct {
-	innerWriter   io.Writer
-	contents      *bytes.Buffer
 	statusCode    int
 	contentLength int
+	innerWriter   io.Writer
 	headers       http.Header
 }
 
@@ -28,9 +25,6 @@ type MockResponseWriter struct {
 func (res *MockResponseWriter) Write(buffer []byte) (int, error) {
 	bytesWritten, err := res.innerWriter.Write(buffer)
 	res.contentLength += bytesWritten
-	defer func() {
-		res.contents.Write(buffer)
-	}()
 	return bytesWritten, err
 }
 
@@ -57,11 +51,6 @@ func (res *MockResponseWriter) StatusCode() int {
 // ContentLength returns the content length.
 func (res *MockResponseWriter) ContentLength() int {
 	return res.contentLength
-}
-
-// Bytes returns the raw response.
-func (res *MockResponseWriter) Bytes() []byte {
-	return res.contents.Bytes()
 }
 
 // Flush is a no-op.
