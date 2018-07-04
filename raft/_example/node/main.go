@@ -20,11 +20,12 @@ func main() {
 	cfg := raft.NewConfigFromEnv().WithID(*id).WithSelfAddr(*selfAddr).WithBindAddr(*bindAddr)
 
 	r := raft.NewFromConfig(cfg).WithLogger(log)
+	r.WithServer(raft.NewRPCServer().WithBindAddr(cfg.GetBindAddr()))
 	log.WithHeading(r.ID())
 	for _, remoteAddr := range cfg.GetPeers() {
 		if !r.IsSelf(remoteAddr) {
 			log.SyncDebugf("adding peer %s", remoteAddr)
-			r = r.WithPeer(raft.NewRPCClient(remoteAddr).WithLogger(log))
+			r = r.WithPeer(raft.NewRPCClient(remoteAddr))
 		} else {
 			log.SyncDebugf("skipping %s", remoteAddr)
 		}

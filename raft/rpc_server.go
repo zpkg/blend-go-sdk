@@ -87,7 +87,6 @@ func (s *RPCServer) RequestVoteHandler() RequestVoteHandler {
 
 func (s *RPCServer) handle(action http.HandlerFunc) http.HandlerFunc {
 	return func(w http.ResponseWriter, req *http.Request) {
-
 		// without a logger, just run the action and if panic's happen
 		// let them bubble up
 		if s.log == nil {
@@ -181,6 +180,9 @@ func (s *RPCServer) createServer() *http.Server {
 
 // Start starts the server.
 func (s *RPCServer) Start() error {
+	if s.log != nil {
+		s.log.Infof("rpc server starting, listening on %s", s.bindAddr)
+	}
 	s.server = s.createServer()
 	go s.server.ListenAndServe()
 	return nil

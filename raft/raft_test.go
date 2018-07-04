@@ -52,7 +52,6 @@ func TestRaftSoloStart(t *testing.T) {
 }
 
 func TestRaftStart(t *testing.T) {
-	t.Skip()
 	assert := assert.New(t)
 
 	node := New()
@@ -72,7 +71,6 @@ func TestRaftStart(t *testing.T) {
 }
 
 func TestRaftStop(t *testing.T) {
-	t.Skip()
 	assert := assert.New(t)
 
 	node := New()
@@ -82,6 +80,8 @@ func TestRaftStop(t *testing.T) {
 	node.WithPeer(NoOpTransport("three"))
 
 	node.Start()
+	<-node.latch.NotifyStarted()
+
 	assert.NotNil(node.Server())
 	assert.Len(node.Peers(), 3)
 
@@ -90,6 +90,10 @@ func TestRaftStop(t *testing.T) {
 
 	node.Stop()
 
-	assert.False(node.leaderCheckTicker.Running())
-	assert.False(node.heartbeatTicker.Running())
+	assert.Nil(node.leaderCheckTicker)
+	assert.Nil(node.heartbeatTicker)
+}
+
+func TestRaftAbortsElectionOnAppendEntries(t *testing.T) {
+
 }

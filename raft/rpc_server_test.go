@@ -30,6 +30,7 @@ func TestRPCServerDecode(t *testing.T) {
 	"foo":"bar",
 	"buzz":"jazz"
 }`))
+
 	req := &http.Request{Body: ioutil.NopCloser(output)}
 	verify := make(map[string]interface{})
 	assert.Nil(s.decode(&verify, req))

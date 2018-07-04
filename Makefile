@@ -89,3 +89,12 @@ tag-version:
 
 push-tags:
 	git push -f --tags
+
+install-profanity:
+	@go install github.com/blend/go-sdk/_bin/profanity
+
+install-coverage:
+	@go install github.com/blend/go-sdk/_bin/coverage
+
+install-recover:
+	@go install github.com/blend/go-sdk/_bin/recover
