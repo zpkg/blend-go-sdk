@@ -87,6 +87,7 @@ func (tc TLSConfig) GetConfig() (*tls.Config, error) {
 	return &tls.Config{
 		Certificates: []tls.Certificate{cert},
 		RootCAs:      certPool,
+		MinVersion: tls.VersionTLS11,
 	}, nil
 }
 
