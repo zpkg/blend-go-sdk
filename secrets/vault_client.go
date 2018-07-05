@@ -16,6 +16,7 @@ import (
 	"github.com/blend/go-sdk/util"
 )
 
+// assert VaultClient implements Client
 var _ Client = &VaultClient{}
 
 // NewVaultClient returns a new client.
