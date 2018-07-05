@@ -10,8 +10,8 @@ import (
 )
 
 var verbose = flag.Bool("verbose", false, "Print verbose output")
-var delay = flag.Int("delay", 0, "A time in milliseconds to wait before starting sub process")
-var wait = flag.Int("wait", 0, "A time in milliseconds to wait between restarts")
+var delay = flag.Int("delay", 0, "A time in milliseconds to wait before starting the sub process")
+var wait = flag.Int("wait", 0, "A time in milliseconds to wait between restarting the sub process on exit")
 
 func main() {
 	flag.Parse()
@@ -100,7 +100,7 @@ func runLoop(quit chan os.Signal, pwd string, subCommand ...string) error {
 			}
 		}()
 
-		// wait fro the process to exit
+		// wait for the sub process to exit
 		if err := sub.Wait(); err != nil {
 			verbosef("sub process exit: %v", err)
 		}

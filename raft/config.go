@@ -48,7 +48,6 @@ func NewConfigFromEnv() *Config {
 type Config struct {
 	ID                  string        `json:"identifier,omitempty" yaml:"identifier,omitempty" env:"RAFT_ID"`
 	BindAddr            string        `json:"bindAddr,omitempty" yaml:"bindAddr,omitempty" env:"RAFT_BIND_ADDR"`
-	SelfAddr            string        `json:"selfAddr,omitempty" yaml:"selfAddr,omitempty" env:"RAFT_SELF_ADDR"`
 	Peers               []string      `json:"peers,omitempty" yaml:"peers,omitempty" env:"RAFT_PEERS,csv"`
 	HeartbeatInterval   time.Duration `json:"heartbeatInterval,omitempty" yaml:"heartbeatInterval,omitempty" env:"RAFT_HEARTBEAT_INTERVAL"`
 	LeaderCheckInterval time.Duration `json:"leaderCheckInterval,omitempty" yaml:"leaderCheckInterval,omitempty" env:"RAFT_LEADER_CHECK_INTERVAL"`
@@ -78,19 +77,6 @@ func (c Config) GetBindAddr(inherited ...string) string {
 func (c *Config) WithBindAddr(value string) *Config {
 	if len(value) > 0 {
 		c.BindAddr = value
-	}
-	return c
-}
-
-// GetSelfAddr gets a field or a default.
-func (c Config) GetSelfAddr(inherited ...string) string {
-	return util.Coalesce.String(c.SelfAddr, "", inherited...)
-}
-
-// WithSelfAddr sets the a property if the value is set.
-func (c *Config) WithSelfAddr(value string) *Config {
-	if len(value) > 0 {
-		c.SelfAddr = value
 	}
 	return c
 }

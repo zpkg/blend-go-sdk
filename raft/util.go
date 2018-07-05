@@ -10,7 +10,7 @@ import (
 )
 
 var (
-	_randSource = rand.NewSource(time.Now().Unix())
+	_randSource = rand.NewSource(newSeed())
 )
 
 // Backoff is used to compute an exponential backoff

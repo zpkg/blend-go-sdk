@@ -2,7 +2,6 @@ package raft
 
 import (
 	"fmt"
-	"strings"
 	"sync"
 	"sync/atomic"
 	"time"
@@ -39,7 +38,6 @@ func New() *Raft {
 func NewFromConfig(cfg *Config) *Raft {
 	return New().
 		WithID(cfg.GetID()).
-		WithSelfAddr(cfg.GetSelfAddr()).
 		WithHeartbeatInterval(cfg.GetHeartbeatInterval()).
 		WithLeaderCheckInterval(cfg.GetLeaderCheckInterval()).
 		WithElectionTimeout(cfg.GetElectionTimeout())
@@ -50,9 +48,8 @@ func NewFromConfig(cfg *Config) *Raft {
 type Raft struct {
 	sync.Mutex
 
-	id       string
-	log      *logger.Logger
-	selfAddr string
+	id  string
+	log *logger.Logger
 
 	electionTimeout time.Duration
 
@@ -97,26 +94,6 @@ func (r *Raft) WithID(id string) *Raft {
 // ID is the raft node identifier.
 func (r *Raft) ID() string {
 	return r.id
-}
-
-// WithSelfAddr sets the rpc server bind address.
-func (r *Raft) WithSelfAddr(selfAddr string) *Raft {
-	r.selfAddr = selfAddr
-	return r
-}
-
-// SelfAddr returns the rpc server bind address.
-func (r *Raft) SelfAddr() string {
-	return r.selfAddr
-}
-
-// IsSelf returns if a remoteAddr match this node's address.
-// If SelfAddr() is unset, this will return false.
-func (r *Raft) IsSelf(remoteAddr string) bool {
-	if len(r.selfAddr) == 0 {
-		return false
-	}
-	return r.selfAddr == strings.TrimSpace(remoteAddr)
 }
 
 // State returns the current raft state. It is read only.
@@ -372,7 +349,7 @@ func (r *Raft) RequestVoteHandler(args *RequestVote, res *RequestVoteResults) er
 	defer r.Unlock()
 
 	if args.Term < r.currentTerm {
-		r.debugf("rejecting request vote from %s @ %d", args.ID, args.Term)
+		r.debugf("rejecting request vote from %s, term: %d", args.ID, args.Term)
 		*res = RequestVoteResults{
 			ID:      r.id,
 			Term:    r.currentTerm,
@@ -383,16 +360,17 @@ func (r *Raft) RequestVoteHandler(args *RequestVote, res *RequestVoteResults) er
 
 	if !r.lastVoteGranted.IsZero() && r.now().Sub(r.lastVoteGranted) < r.electionTimeout {
 		if len(r.votedFor) > 0 && r.votedFor != args.ID {
-			r.debugf("rejecting request vote from %s @ %d", args.ID, args.Term)
+			r.debugf("rejecting request vote from %s, term: %d", args.ID, args.Term)
 			*res = RequestVoteResults{
 				ID:      r.id,
 				Term:    r.currentTerm,
 				Granted: false,
 			}
+			return nil
 		}
 	}
 
-	r.debugf("accepting request vote from %s @ %d", args.ID, args.Term)
+	r.debugf("accepting request vote from %s, term: %d", args.ID, args.Term)
 	r.transitionTo(Follower)
 
 	r.votedFor = args.ID
@@ -662,6 +640,8 @@ func (r *Raft) setCandidateSafe() {
 
 func (r *Raft) setCandidate() {
 	r.currentTerm = r.currentTerm + 1
+	r.votedFor = r.id
+	r.lastVoteGranted = r.now()
 	r.transitionTo(Candidate)
 }
 
