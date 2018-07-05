@@ -12,7 +12,7 @@ import (
 func TestClientBackend(t *testing.T) {
 	assert := assert.New(t)
 
-	client, err := New()
+	client, err := NewVaultClient()
 	assert.Nil(err)
 
 	mountMetaJSON := `{"request_id":"e114c628-6493-28ed-0975-418a75c7976f","lease_id":"","renewable":false,"lease_duration":0,"data":{"accessor":"kv_45f6a162","config":{"default_lease_ttl":0,"force_no_cache":false,"max_lease_ttl":0,"plugin_name":""},"description":"key/value secret storage","local":false,"options":{"version":"2"},"path":"secret/","seal_wrap":false,"type":"kv"},"wrap_info":null,"warnings":null,"auth":null}`
@@ -28,7 +28,7 @@ func TestClientBackend(t *testing.T) {
 func TestClientGetVersion(t *testing.T) {
 	assert := assert.New(t)
 
-	client, err := New()
+	client, err := NewVaultClient()
 	assert.Nil(err)
 
 	mountMetaJSONV1 := `{"request_id":"e114c628-6493-28ed-0975-418a75c7976f","lease_id":"","renewable":false,"lease_duration":0,"data":{"accessor":"kv_45f6a162","config":{"default_lease_ttl":0,"force_no_cache":false,"max_lease_ttl":0,"plugin_name":""},"description":"key/value secret storage","local":false,"options":{"version":"1"},"path":"secret/","seal_wrap":false,"type":"kv"},"wrap_info":null,"warnings":null,"auth":null}`
@@ -53,7 +53,7 @@ func TestClientGetVersion(t *testing.T) {
 func TestClientGetMountMeta(t *testing.T) {
 	assert := assert.New(t)
 
-	client, err := New()
+	client, err := NewVaultClient()
 	assert.Nil(err)
 
 	mountMetaJSON := `{"request_id":"e114c628-6493-28ed-0975-418a75c7976f","lease_id":"","renewable":false,"lease_duration":0,"data":{"accessor":"kv_45f6a162","config":{"default_lease_ttl":0,"force_no_cache":false,"max_lease_ttl":0,"plugin_name":""},"description":"key/value secret storage","local":false,"options":{"version":"2"},"path":"secret/","seal_wrap":false,"type":"kv"},"wrap_info":null,"warnings":null,"auth":null}`
@@ -70,7 +70,7 @@ func TestClientGetMountMeta(t *testing.T) {
 func TestClientJSONBody(t *testing.T) {
 	assert := assert.New(t)
 
-	client, err := New()
+	client, err := NewVaultClient()
 	assert.Nil(err)
 
 	output, err := client.jsonBody(map[string]interface{}{
@@ -87,7 +87,7 @@ func TestClientJSONBody(t *testing.T) {
 func TestClientReadJSON(t *testing.T) {
 	assert := assert.New(t)
 
-	client, err := New()
+	client, err := NewVaultClient()
 	assert.Nil(err)
 
 	jsonBody := bytes.NewBuffer([]byte(`{"foo":"bar"}`))
@@ -100,7 +100,7 @@ func TestClientReadJSON(t *testing.T) {
 func TestClientCopyRemote(t *testing.T) {
 	assert := assert.New(t)
 
-	client, err := New()
+	client, err := NewVaultClient()
 	assert.Nil(err)
 
 	copy := client.copyRemote()
@@ -113,7 +113,7 @@ func TestClientCopyRemote(t *testing.T) {
 func TestClientDiscard(t *testing.T) {
 	assert := assert.New(t)
 
-	client, err := New()
+	client, err := NewVaultClient()
 	assert.Nil(err)
 
 	assert.NotNil(client.discard(nil, fmt.Errorf("this is only a test")))
