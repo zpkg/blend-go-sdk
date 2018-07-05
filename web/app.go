@@ -1022,7 +1022,7 @@ func (a *App) renderAction(action Action) Handler {
 		ctx := a.createCtx(response, r, route, p, state)
 		ctx.onRequestStart()
 		if a.log != nil {
-			a.log.Trigger(a.loggerHTTPResponseEvent(ctx))
+			a.log.Trigger(a.loggerHTTPRequestEvent(ctx))
 		}
 
 		result := action(ctx)
