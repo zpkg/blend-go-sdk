@@ -6,6 +6,17 @@ import (
 	"github.com/blend/go-sdk/assert"
 )
 
+func TestNew(t *testing.T) {
+	assert := assert.New(t)
+
+	r := New()
+	assert.NotEmpty(r.ID())
+	assert.Equal(Follower, r.State())
+	assert.Equal(DefaultElectionTimeout, r.ElectionTimeout())
+	assert.Equal(DefaultLeaderCheckInterval, r.LeaderCheckInterval())
+	assert.Equal(DefaultHeartbeatInterval, r.HeartbeatInterval())
+}
+
 func TestRaftCountVotes(t *testing.T) {
 	assert := assert.New(t)
 
