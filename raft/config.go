@@ -46,7 +46,7 @@ func NewConfigFromEnv() *Config {
 
 // Config is a node config.
 type Config struct {
-	ID                  string        `json:"identifier,omitempty" yaml:"identifier,omitempty" env:"RAFT_ID"`
+	ID                  string        `json:"id,omitempty" yaml:"id,omitempty" env:"RAFT_ID"`
 	BindAddr            string        `json:"bindAddr,omitempty" yaml:"bindAddr,omitempty" env:"RAFT_BIND_ADDR"`
 	Peers               []string      `json:"peers,omitempty" yaml:"peers,omitempty" env:"RAFT_PEERS,csv"`
 	HeartbeatInterval   time.Duration `json:"heartbeatInterval,omitempty" yaml:"heartbeatInterval,omitempty" env:"RAFT_HEARTBEAT_INTERVAL"`
