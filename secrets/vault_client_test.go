@@ -9,7 +9,7 @@ import (
 	"github.com/blend/go-sdk/assert"
 )
 
-func TestClientBackend(t *testing.T) {
+func TestVaultClientBackend(t *testing.T) {
 	assert := assert.New(t)
 
 	client, err := NewVaultClient()
@@ -25,7 +25,7 @@ func TestClientBackend(t *testing.T) {
 	assert.NotNil(backend)
 }
 
-func TestClientGetVersion(t *testing.T) {
+func TestVaultClientGetVersion(t *testing.T) {
 	assert := assert.New(t)
 
 	client, err := NewVaultClient()
@@ -50,7 +50,7 @@ func TestClientGetVersion(t *testing.T) {
 	assert.Equal(Version2, version)
 }
 
-func TestClientGetMountMeta(t *testing.T) {
+func TestVaultClientGetMountMeta(t *testing.T) {
 	assert := assert.New(t)
 
 	client, err := NewVaultClient()
@@ -67,7 +67,7 @@ func TestClientGetMountMeta(t *testing.T) {
 	assert.Equal(Version2, mountMeta.Data.Options["version"])
 }
 
-func TestClientJSONBody(t *testing.T) {
+func TestVaultClientJSONBody(t *testing.T) {
 	assert := assert.New(t)
 
 	client, err := NewVaultClient()
@@ -84,7 +84,7 @@ func TestClientJSONBody(t *testing.T) {
 	assert.Equal("{\"foo\":\"bar\"}\n", string(contents))
 }
 
-func TestClientReadJSON(t *testing.T) {
+func TestVaultClientReadJSON(t *testing.T) {
 	assert := assert.New(t)
 
 	client, err := NewVaultClient()
@@ -97,7 +97,7 @@ func TestClientReadJSON(t *testing.T) {
 	assert.Equal("bar", output["foo"])
 }
 
-func TestClientCopyRemote(t *testing.T) {
+func TestVaultClientCopyRemote(t *testing.T) {
 	assert := assert.New(t)
 
 	client, err := NewVaultClient()
@@ -110,7 +110,7 @@ func TestClientCopyRemote(t *testing.T) {
 	assert.NotEqual(anotherCopy.Host, copy.Host)
 }
 
-func TestClientDiscard(t *testing.T) {
+func TestVaultClientDiscard(t *testing.T) {
 	assert := assert.New(t)
 
 	client, err := NewVaultClient()
