@@ -9,10 +9,10 @@ import (
 	"github.com/blend/go-sdk/assert"
 )
 
-func TestClientBackend(t *testing.T) {
+func TestVaultClientBackend(t *testing.T) {
 	assert := assert.New(t)
 
-	client, err := New()
+	client, err := NewVaultClient()
 	assert.Nil(err)
 
 	mountMetaJSON := `{"request_id":"e114c628-6493-28ed-0975-418a75c7976f","lease_id":"","renewable":false,"lease_duration":0,"data":{"accessor":"kv_45f6a162","config":{"default_lease_ttl":0,"force_no_cache":false,"max_lease_ttl":0,"plugin_name":""},"description":"key/value secret storage","local":false,"options":{"version":"2"},"path":"secret/","seal_wrap":false,"type":"kv"},"wrap_info":null,"warnings":null,"auth":null}`
@@ -25,10 +25,10 @@ func TestClientBackend(t *testing.T) {
 	assert.NotNil(backend)
 }
 
-func TestClientGetVersion(t *testing.T) {
+func TestVaultClientGetVersion(t *testing.T) {
 	assert := assert.New(t)
 
-	client, err := New()
+	client, err := NewVaultClient()
 	assert.Nil(err)
 
 	mountMetaJSONV1 := `{"request_id":"e114c628-6493-28ed-0975-418a75c7976f","lease_id":"","renewable":false,"lease_duration":0,"data":{"accessor":"kv_45f6a162","config":{"default_lease_ttl":0,"force_no_cache":false,"max_lease_ttl":0,"plugin_name":""},"description":"key/value secret storage","local":false,"options":{"version":"1"},"path":"secret/","seal_wrap":false,"type":"kv"},"wrap_info":null,"warnings":null,"auth":null}`
@@ -50,10 +50,10 @@ func TestClientGetVersion(t *testing.T) {
 	assert.Equal(Version2, version)
 }
 
-func TestClientGetMountMeta(t *testing.T) {
+func TestVaultClientGetMountMeta(t *testing.T) {
 	assert := assert.New(t)
 
-	client, err := New()
+	client, err := NewVaultClient()
 	assert.Nil(err)
 
 	mountMetaJSON := `{"request_id":"e114c628-6493-28ed-0975-418a75c7976f","lease_id":"","renewable":false,"lease_duration":0,"data":{"accessor":"kv_45f6a162","config":{"default_lease_ttl":0,"force_no_cache":false,"max_lease_ttl":0,"plugin_name":""},"description":"key/value secret storage","local":false,"options":{"version":"2"},"path":"secret/","seal_wrap":false,"type":"kv"},"wrap_info":null,"warnings":null,"auth":null}`
@@ -67,10 +67,10 @@ func TestClientGetMountMeta(t *testing.T) {
 	assert.Equal(Version2, mountMeta.Data.Options["version"])
 }
 
-func TestClientJSONBody(t *testing.T) {
+func TestVaultClientJSONBody(t *testing.T) {
 	assert := assert.New(t)
 
-	client, err := New()
+	client, err := NewVaultClient()
 	assert.Nil(err)
 
 	output, err := client.jsonBody(map[string]interface{}{
@@ -84,10 +84,10 @@ func TestClientJSONBody(t *testing.T) {
 	assert.Equal("{\"foo\":\"bar\"}\n", string(contents))
 }
 
-func TestClientReadJSON(t *testing.T) {
+func TestVaultClientReadJSON(t *testing.T) {
 	assert := assert.New(t)
 
-	client, err := New()
+	client, err := NewVaultClient()
 	assert.Nil(err)
 
 	jsonBody := bytes.NewBuffer([]byte(`{"foo":"bar"}`))
@@ -97,10 +97,10 @@ func TestClientReadJSON(t *testing.T) {
 	assert.Equal("bar", output["foo"])
 }
 
-func TestClientCopyRemote(t *testing.T) {
+func TestVaultClientCopyRemote(t *testing.T) {
 	assert := assert.New(t)
 
-	client, err := New()
+	client, err := NewVaultClient()
 	assert.Nil(err)
 
 	copy := client.copyRemote()
@@ -110,10 +110,10 @@ func TestClientCopyRemote(t *testing.T) {
 	assert.NotEqual(anotherCopy.Host, copy.Host)
 }
 
-func TestClientDiscard(t *testing.T) {
+func TestVaultClientDiscard(t *testing.T) {
 	assert := assert.New(t)
 
-	client, err := New()
+	client, err := NewVaultClient()
 	assert.Nil(err)
 
 	assert.NotNil(client.discard(nil, fmt.Errorf("this is only a test")))

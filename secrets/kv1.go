@@ -12,7 +12,7 @@ var (
 
 // kv1 defines key value version 1 interactions
 type kv1 struct {
-	client *Client
+	client *VaultClient
 }
 
 func (kv1 kv1) Put(key string, data Values, options ...Option) error {
