@@ -12,7 +12,7 @@ var (
 
 // kv2 defines key value version 2 interactions
 type kv2 struct {
-	client *Client
+	client *VaultClient
 }
 
 func (kv2 kv2) Put(key string, data Values, options ...Option) error {
