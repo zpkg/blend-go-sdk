@@ -64,14 +64,6 @@ func (w *Worker) Process(e Event) {
 	w.Listener(e)
 }
 
-// Stop stops the worker.
-func (w *Worker) Stop() {
-	w.Lock()
-	defer w.Unlock()
-	close(w.Abort)
-	<-w.Aborted
-}
-
 // Drain stops the worker and synchronously processes any remaining work.
 // It then restarts the worker.
 func (w *Worker) Drain() {
