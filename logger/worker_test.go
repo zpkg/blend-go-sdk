@@ -32,26 +32,6 @@ func TestWorker(t *testing.T) {
 	assert.True(didFire)
 }
 
-func TestWorkerStop(t *testing.T) {
-	assert := assert.New(t)
-
-	wg := sync.WaitGroup{}
-	wg.Add(1)
-	var didFire bool
-	w := NewWorker(nil, func(e Event) {
-		defer wg.Done()
-		didFire = true
-	}, DefaultWorkerQueueDepth)
-
-	w.Start()
-	w.Work <- Messagef(Info, "test")
-	wg.Wait()
-
-	assert.True(didFire)
-
-	w.Stop()
-}
-
 func TestWorkerPanics(t *testing.T) {
 	assert := assert.New(t)
 

@@ -13,7 +13,7 @@ func TestTimedEventListener(t *testing.T) {
 	assert := assert.New(t)
 
 	wg := sync.WaitGroup{}
-	wg.Add(2)
+	wg.Add(4)
 
 	textBuffer := bytes.NewBuffer(nil)
 	jsonBuffer := bytes.NewBuffer(nil)
@@ -29,9 +29,10 @@ func TestTimedEventListener(t *testing.T) {
 		assert.Equal("foo bar", te.Message())
 	}))
 
-	go func() { all.Trigger(Timedf(Flag("test-flag"), time.Millisecond, "foo %s", "bar")) }()
-	go func() { all.Trigger(Timedf(Flag("test-flag"), time.Millisecond, "foo %s", "bar")) }()
+	go func() { defer wg.Done(); all.Trigger(Timedf(Flag("test-flag"), time.Millisecond, "foo %s", "bar")) }()
+	go func() { defer wg.Done(); all.Trigger(Timedf(Flag("test-flag"), time.Millisecond, "foo %s", "bar")) }()
 	wg.Wait()
+
 	all.Drain()
 
 	assert.NotEmpty(textBuffer.String())

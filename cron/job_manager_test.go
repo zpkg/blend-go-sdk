@@ -205,7 +205,7 @@ func TestRunJobByScheduleRapid(t *testing.T) {
 	jm.Start()
 	defer jm.Stop()
 
-	alarm := time.After(50 * time.Millisecond)
+	alarm := time.After(2 * DefaultHighPrecisionHeartbeatInterval)
 	select {
 	case <-didRun:
 		break

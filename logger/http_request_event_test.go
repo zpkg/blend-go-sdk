@@ -15,7 +15,7 @@ func TestWebRequestEventListener(t *testing.T) {
 	assert := assert.New(t)
 
 	wg := sync.WaitGroup{}
-	wg.Add(2)
+	wg.Add(4)
 
 	textBuffer := bytes.NewBuffer(nil)
 	jsonBuffer := bytes.NewBuffer(nil)
@@ -32,9 +32,11 @@ func TestWebRequestEventListener(t *testing.T) {
 	}))
 
 	go func() {
+		defer wg.Done()
 		all.Trigger(NewHTTPRequestEvent(&http.Request{Host: "test.com", URL: &url.URL{}}))
 	}()
 	go func() {
+		defer wg.Done()
 		all.Trigger(NewHTTPRequestEvent(&http.Request{Host: "test.com", URL: &url.URL{}}))
 	}()
 	wg.Wait()
