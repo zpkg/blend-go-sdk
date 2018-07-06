@@ -1,14 +1,11 @@
 package cron
 
 import (
-	"bytes"
 	"context"
 	"fmt"
 	"sync"
 	"testing"
 	"time"
-
-	"strings"
 
 	"github.com/blend/go-sdk/assert"
 	"github.com/blend/go-sdk/exception"
@@ -215,51 +212,6 @@ func TestRunJobByScheduleRapid(t *testing.T) {
 	case <-alarm:
 		a.FailNow("timed out")
 	}
-}
-
-func TestJobManagerStartedListener(t *testing.T) {
-	assert := assert.New(t)
-
-	jm := New()
-
-	wg := sync.WaitGroup{}
-	wg.Add(2)
-
-	output := bytes.NewBuffer(nil)
-	agent := logger.New(FlagStarted, logger.Error).WithWriter(
-		logger.NewTextWriter(output).
-			WithUseColor(false).
-			WithShowTimestamp(false))
-
-	defer agent.Close()
-
-	jm.WithLogger(agent)
-
-	var didFireListener bool
-	jm.Logger().Listen(FlagStarted, "foo", func(e logger.Event) {
-		defer wg.Done()
-		if typed, isTyped := e.(*Event); isTyped {
-			assert.Equal(FlagStarted, e.Flag())
-			assert.False(e.Timestamp().IsZero())
-			assert.Equal("test_task", typed.TaskName())
-			assert.Zero(typed.Elapsed())
-			assert.Nil(typed.Err())
-		}
-		didFireListener = true
-	})
-
-	var didRun bool
-	jm.RunTask(NewTaskWithName("test_task", func(ctx context.Context) error {
-		defer wg.Done()
-		didRun = true
-		return nil
-	}))
-	wg.Wait()
-	agent.Drain()
-
-	assert.True(didRun)
-	assert.True(didFireListener)
-	assert.True(strings.Contains(output.String(), "[cron.started] [test_task]"), output.String())
 }
 
 // The goal with this test is to see if panics take down the test process or not.
