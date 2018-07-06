@@ -594,23 +594,23 @@ func (r *Raft) voteOutcome(votesFor, total int) ElectionOutcome {
 }
 
 func (r *Raft) transitionTo(newState State) {
-	previousState := r.State()
-	if previousState != newState {
+	isTransition := newState != r.state
+	if isTransition {
 		r.debugf("transitioning to %s", newState)
 	}
 	r.state = newState
 
 	switch newState {
 	case Follower:
-		if r.followerHandler != nil && previousState != newState {
+		if r.followerHandler != nil && isTransition {
 			go r.safeExecute(r.followerHandler)
 		}
 	case Candidate:
-		if r.candidateHandler != nil && previousState != newState {
+		if r.candidateHandler != nil && isTransition {
 			go r.safeExecute(r.candidateHandler)
 		}
 	case Leader:
-		if r.leaderHandler != nil && previousState != newState {
+		if r.leaderHandler != nil && isTransition {
 			go r.safeExecute(r.leaderHandler)
 		}
 	}

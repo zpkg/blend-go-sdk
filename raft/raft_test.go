@@ -273,3 +273,84 @@ func TestRaftRequestVoteHandlerAlreadyVoted(t *testing.T) {
 	assert.Equal("test-node-2", r.VotedFor())
 	assert.False(r.lastVoteGranted.IsZero())
 }
+
+func TestRaftProcessRequestVoteResults(t *testing.T) {
+	assert := assert.New(t)
+
+	r := New().WithID("one").WithPeers(NoOpTransport("two"), NoOpTransport("three"))
+
+	results := make(chan *RequestVoteResults, 2)
+	results <- &RequestVoteResults{Granted: true}
+	results <- &RequestVoteResults{Granted: true}
+
+	assert.Equal(ElectionVictory, r.processRequestVoteResults(results))
+
+	results = make(chan *RequestVoteResults, 2)
+	results <- &RequestVoteResults{Granted: false}
+	results <- &RequestVoteResults{Granted: false}
+
+	assert.Equal(ElectionLoss, r.processRequestVoteResults(results))
+}
+
+func TestRaftProcessAppendEntriesResults(t *testing.T) {
+	assert := assert.New(t)
+
+	r := New().WithID("one").WithPeers(NoOpTransport("two"), NoOpTransport("three"))
+
+	results := make(chan *AppendEntriesResults, 2)
+	results <- &AppendEntriesResults{Success: true}
+	results <- &AppendEntriesResults{Success: true}
+
+	assert.Equal(ElectionVictory, r.processAppendEntriesResults(results))
+
+	results = make(chan *AppendEntriesResults, 2)
+	results <- &AppendEntriesResults{Success: false}
+	results <- &AppendEntriesResults{Success: false}
+
+	assert.Equal(ElectionLoss, r.processAppendEntriesResults(results))
+}
+
+func TestRaftTransitionTo(t *testing.T) {
+	assert := assert.New(t)
+
+	r := New()
+	r.state = Follower
+
+	didCallHandler := make(chan struct{})
+	r.followerHandler = func() {
+		close(didCallHandler)
+	}
+
+	r.transitionTo(Follower)
+	r.state = Leader
+
+	r.transitionTo(Follower)
+	<-didCallHandler
+	assert.Equal(Follower, r.state)
+
+	r.state = Leader
+	didCallHandler = make(chan struct{})
+	r.leaderHandler = func() {
+		close(didCallHandler)
+	}
+
+	r.transitionTo(Leader)
+	r.state = Candidate
+
+	r.transitionTo(Leader)
+	<-didCallHandler
+	assert.Equal(Leader, r.state)
+
+	r.state = Candidate
+	didCallHandler = make(chan struct{})
+	r.candidateHandler = func() {
+		close(didCallHandler)
+	}
+
+	r.transitionTo(Candidate)
+
+	r.state = Follower
+	r.transitionTo(Candidate)
+	<-didCallHandler
+	assert.Equal(Candidate, r.state)
+}
