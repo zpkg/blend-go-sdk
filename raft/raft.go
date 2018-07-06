@@ -121,14 +121,29 @@ func (r *Raft) SetLeaderHandler(handler func()) {
 	r.leaderHandler = handler
 }
 
+// LeaderHandler returns the leader handler.
+func (r *Raft) LeaderHandler() func() {
+	return r.leaderHandler
+}
+
 // SetCandidateHandler sets the leader handler.
 func (r *Raft) SetCandidateHandler(handler func()) {
 	r.candidateHandler = handler
 }
 
+// CandidateHandler returns the candidate handler.
+func (r *Raft) CandidateHandler() func() {
+	return r.candidateHandler
+}
+
 // SetFollowerHandler sets the leader handler.
 func (r *Raft) SetFollowerHandler(handler func()) {
 	r.followerHandler = handler
+}
+
+// FollowerHandler returns the follower handler.
+func (r *Raft) FollowerHandler() func() {
+	return r.followerHandler
 }
 
 // WithLogger sets the logger.
@@ -145,6 +160,12 @@ func (r *Raft) Logger() *logger.Logger {
 // WithPeer adds a peer.
 func (r *Raft) WithPeer(peer Client) *Raft {
 	r.peers = append(r.peers, peer)
+	return r
+}
+
+// WithPeers sets the peer list.
+func (r *Raft) WithPeers(peers ...Client) *Raft {
+	r.peers = peers
 	return r
 }
 
@@ -344,10 +365,12 @@ func (r *Raft) AppendEntriesHandler(args *AppendEntries, res *AppendEntriesResul
 
 // RequestVoteHandler is the rpc server handler for RequestVote rpc requests.
 // This method is fully interlocked.
+// It is called when a peer is calling for an election, and the result determines this node's vote.
 func (r *Raft) RequestVoteHandler(args *RequestVote, res *RequestVoteResults) error {
 	r.Lock()
 	defer r.Unlock()
 
+	// if the term is very out of date
 	if args.Term < r.currentTerm {
 		r.debugf("rejecting request vote from %s, term: %d", args.ID, args.Term)
 		*res = RequestVoteResults{
@@ -358,15 +381,17 @@ func (r *Raft) RequestVoteHandler(args *RequestVote, res *RequestVoteResults) er
 		return nil
 	}
 
-	if !r.lastVoteGranted.IsZero() && r.now().Sub(r.lastVoteGranted) < r.electionTimeout {
-		if len(r.votedFor) > 0 && r.votedFor != args.ID {
-			r.debugf("rejecting request vote from %s, term: %d", args.ID, args.Term)
-			*res = RequestVoteResults{
-				ID:      r.id,
-				Term:    r.currentTerm,
-				Granted: false,
+	if r.currentTerm == args.Term {
+		if !r.lastVoteGranted.IsZero() && r.now().Sub(r.lastVoteGranted) < r.electionTimeout {
+			if len(r.votedFor) > 0 && r.votedFor != args.ID {
+				r.debugf("rejecting request vote from %s, term: %d", args.ID, args.Term)
+				*res = RequestVoteResults{
+					ID:      r.votedFor,
+					Term:    r.currentTerm,
+					Granted: false,
+				}
+				return nil
 			}
-			return nil
 		}
 	}
 
@@ -391,6 +416,7 @@ func (r *Raft) RequestVoteHandler(args *RequestVote, res *RequestVoteResults) er
 
 // Election requests votes from all peers, totalling the results and potentially promoting self to leader.
 // It is time bound on the ElectionTimeout.
+// It does not interlock during the election as the election can last a while.
 func (r *Raft) election() error {
 	r.debugf("election triggered")
 	r.setCandidateSafe()
