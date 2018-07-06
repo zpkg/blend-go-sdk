@@ -5,7 +5,6 @@ import (
 
 	"github.com/blend/go-sdk/env"
 	"github.com/blend/go-sdk/util"
-	"github.com/blend/go-sdk/uuid"
 )
 
 const (
@@ -57,7 +56,7 @@ type Config struct {
 
 // GetID gets a field or a default.
 func (c Config) GetID(inherited ...string) string {
-	return util.Coalesce.String(c.ID, uuid.V4().String(), inherited...)
+	return util.Coalesce.String(c.ID, "", inherited...)
 }
 
 // WithID sets the a property if the value is set.

@@ -571,6 +571,7 @@ func TestFiresErrorOnTaskError(t *testing.T) {
 	var errorMatched bool
 	wg := sync.WaitGroup{}
 	wg.Add(2)
+
 	agent.Listen(logger.Error, "foo", func(e logger.Event) {
 		defer wg.Done()
 		errorDidFire = true
@@ -580,6 +581,7 @@ func TestFiresErrorOnTaskError(t *testing.T) {
 			}
 		}
 	})
+
 	manager.LoadJob(NewJob().WithAction(func(ctx context.Context) error {
 		defer wg.Done()
 		return fmt.Errorf("this is only a test")
