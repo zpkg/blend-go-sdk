@@ -5,13 +5,13 @@ import (
 	"context"
 	"fmt"
 	"sync"
-	"sync/atomic"
 	"testing"
 	"time"
 
 	"strings"
 
 	"github.com/blend/go-sdk/assert"
+	"github.com/blend/go-sdk/exception"
 	logger "github.com/blend/go-sdk/logger"
 )
 
@@ -92,85 +92,39 @@ func TestRunTask(t *testing.T) {
 	a.StartTimeout(2000 * time.Millisecond)
 	defer a.EndTimeout()
 
-	jm := New().WithHighPrecisionHeartbeat()
-
-	didRun := new(AtomicFlag)
-	var runCount int32
-	jm.RunTask(NewTask(func(ctx context.Context) error {
-		atomic.AddInt32(&runCount, 1)
-		didRun.Set(true)
+	didRun := make(chan struct{})
+	New().RunTask(NewTask(func(ctx context.Context) error {
+		close(didRun)
 		return nil
 	}))
 
-	elapsed := time.Duration(0)
-	for elapsed < 1*time.Second {
-		if didRun.Get() {
-			break
-		}
-
-		func() {
-			jm.Lock()
-			defer jm.Unlock()
-			a.Len(jm.tasks, 1)
-		}()
-
-		elapsed = elapsed + 10*time.Millisecond
-		time.Sleep(10 * time.Millisecond)
-	}
-	a.Equal(1, runCount)
-	a.True(didRun.Get())
+	<-didRun
 }
 
 func TestRunTaskAndCancel(t *testing.T) {
 	a := assert.New(t)
-	a.StartTimeout(2000 * time.Millisecond)
-	defer a.EndTimeout()
 
 	jm := New()
 
-	didRun := new(AtomicFlag)
-	didFinish := new(AtomicFlag)
+	didRun := make(chan struct{})
+	didFinish := make(chan struct{})
 	jm.RunTask(NewTaskWithName("taskToCancel", func(ctx context.Context) error {
 		defer func() {
-			didFinish.Set(true)
+			close(didFinish)
 		}()
-		didRun.Set(true)
-		taskElapsed := time.Duration(0)
-		for taskElapsed < 1*time.Second {
-			select {
-			case <-ctx.Done():
-				return nil
-			default:
-				taskElapsed = taskElapsed + 10*time.Millisecond
-				time.Sleep(10 * time.Millisecond)
-			}
+		close(didRun)
+		alarm := time.After(time.Second)
+		select {
+		case <-ctx.Done():
+			return nil
+		case <-alarm:
+			return exception.New("timed out")
 		}
-
-		return nil
 	}))
 
-	elapsed := time.Duration(0)
-	for elapsed < 1*time.Second {
-		if didRun.Get() {
-			break
-		}
-
-		elapsed = elapsed + 10*time.Millisecond
-		time.Sleep(10 * time.Millisecond)
-	}
-
-	jm.CancelTask("taskToCancel")
-	elapsed = time.Duration(0)
-	for elapsed < 1*time.Second {
-		if didFinish.Get() {
-			break
-		}
-
-		elapsed = elapsed + 10*time.Millisecond
-		time.Sleep(10 * time.Millisecond)
-	}
-	a.True(didFinish.Get())
-	a.True(didRun.Get())
+	<-didRun
+	a.Nil(jm.CancelTask("taskToCancel"))
+	<-didFinish
 }
 
 func TestRunJobBySchedule(t *testing.T) {
@@ -200,28 +154,17 @@ func TestRunJobBySchedule(t *testing.T) {
 
 func TestDisableJob(t *testing.T) {
 	a := assert.New(t)
-	a.StartTimeout(2000 * time.Millisecond)
-	defer a.EndTimeout()
 
-	didRun := new(AtomicFlag)
-	runCount := new(AtomicCounter)
 	jm := New()
-	err := jm.LoadJob(&runAtJob{RunAt: time.Now().UTC().Add(100 * time.Millisecond), RunDelegate: func(ctx context.Context) error {
-		runCount.Increment()
-		didRun.Set(true)
+	a.Nil(jm.LoadJob(&runAtJob{RunAt: time.Now().UTC().Add(100 * time.Millisecond), RunDelegate: func(ctx context.Context) error {
 		return nil
-	}})
-	a.Nil(err)
-
-	err = jm.DisableJob(runAtJobName)
-	a.Nil(err)
+	}}))
+	a.Nil(jm.DisableJob(runAtJobName))
 	a.True(jm.IsDisabled(runAtJobName))
 }
 
 func TestSerialTask(t *testing.T) {
 	assert := assert.New(t)
-	assert.StartTimeout(2 * time.Second)
-	defer assert.EndTimeout()
 
 	// test that serial execution actually blocks
 	runCount := new(AtomicCounter)
@@ -250,97 +193,14 @@ func TestSerialTask(t *testing.T) {
 	assert.Equal(2, runCount.Get())
 }
 
-func TestRunTaskAndCancelWithTimeout(t *testing.T) {
-	a := assert.New(t)
-
-	jm := New()
-
-	start := Now()
-	didRun := new(AtomicFlag)
-	didCancel := new(AtomicFlag)
-	cancelCount := new(AtomicCounter)
-
-	wg := &sync.WaitGroup{}
-	wg.Add(1)
-
-	jm.LoadJob(&testJobWithTimeout{
-		RunAt:           start,
-		TimeoutDuration: 250 * time.Millisecond,
-		RunDelegate: func(ctx context.Context) error {
-			defer wg.Done()
-			didRun.Set(true)
-			for {
-				select {
-				case <-ctx.Done():
-					didCancel.Set(true)
-					return nil
-				default:
-					time.Sleep(10 * time.Millisecond)
-					continue
-				}
-			}
-		},
-		CancellationDelegate: func() {
-			cancelCount.Increment()
-			didCancel.Set(true)
-		},
-	})
-	jm.Start()
-	defer jm.Stop()
-
-	wg.Wait()
-	elapsed := time.Now().UTC().Sub(start)
-
-	a.True(didRun.Get())
-	a.True(didCancel.Get())
-
-	// elapsed should be less than the timeout + (2 heartbeat intervals)
-	a.True(elapsed < (100+(DefaultHeartbeatInterval*2))*time.Millisecond, fmt.Sprintf("%v", elapsed))
-}
-
-func TestRunJobSimultaneously(t *testing.T) {
-	a := assert.New(t)
-	a.StartTimeout(2000 * time.Millisecond)
-	defer a.EndTimeout()
-
-	jm := New().WithHighPrecisionHeartbeat()
-
-	wg := sync.WaitGroup{}
-	wg.Add(2)
-
-	jm.LoadJob(&runAtJob{
-		RunAt: time.Now().UTC(),
-		RunDelegate: func(ctx context.Context) error {
-			defer wg.Done()
-			time.Sleep(50 * time.Millisecond)
-			return nil
-		},
-	})
-
-	go func() {
-		err := jm.RunJob(runAtJobName)
-		a.Nil(err)
-	}()
-	go func() {
-		err := jm.RunJob(runAtJobName)
-		a.Nil(err)
-	}()
-
-	wg.Wait()
-}
-
 func TestRunJobByScheduleRapid(t *testing.T) {
 	a := assert.New(t)
 
-	runEvery := DefaultHeartbeatInterval
-	runFor := 1000 * time.Millisecond
-
-	runCount := new(AtomicCounter)
-
+	didRun := make(chan struct{})
 	// high precision heartbeat is somewhere around 5ms
 	jm := New().WithHighPrecisionHeartbeat()
-	err := jm.LoadJob(&testJobInterval{RunEvery: runEvery, RunDelegate: func(ctx context.Context) error {
-		runCount.Increment()
+	err := jm.LoadJob(&testJobInterval{RunEvery: time.Millisecond, RunDelegate: func(ctx context.Context) error {
+		close(didRun)
 		return nil
 	}})
 	a.Nil(err)
@@ -348,15 +208,13 @@ func TestRunJobByScheduleRapid(t *testing.T) {
 	jm.Start()
 	defer jm.Stop()
 
-	elapsed := time.Duration(0)
-	waitFor := 10 * time.Millisecond
-	for elapsed < runFor {
-		elapsed = elapsed + waitFor
-		time.Sleep(waitFor)
+	alarm := time.After(50 * time.Millisecond)
+	select {
+	case <-didRun:
+		break
+	case <-alarm:
+		a.FailNow("timed out")
 	}
-
-	expected := int32(int64(runFor) / int64(DefaultHeartbeatInterval))
-	a.True(runCount.Get()-expected < 2, fmt.Sprintf("%d vs. %d\n", runCount.Get(), expected))
 }
 
 func TestJobManagerStartedListener(t *testing.T) {
@@ -404,110 +262,16 @@ func TestJobManagerStartedListener(t *testing.T) {
 	assert.True(strings.Contains(output.String(), "[cron.started] [test_task]"), output.String())
 }
 
-func TestJobManagerCompleteListener(t *testing.T) {
-	assert := assert.New(t)
-
-	jm := New()
-
-	wg := sync.WaitGroup{}
-	wg.Add(2)
-
-	output := bytes.NewBuffer(nil)
-	agent := logger.New(FlagComplete, logger.Error).WithWriter(
-		logger.NewTextWriter(output).
-			WithUseColor(false).
-			WithShowTimestamp(false))
-
-	defer agent.Close()
-
-	jm.WithLogger(agent)
-
-	var didFireListener bool
-	jm.Logger().Listen(FlagComplete, "foo", func(e logger.Event) {
-		defer wg.Done()
-		if typed, isTyped := e.(*Event); isTyped {
-			assert.Equal(FlagComplete, e.Flag())
-			assert.False(e.Timestamp().IsZero())
-			assert.Equal("test_task", typed.TaskName())
-			assert.NotZero(typed.Elapsed())
-			assert.Nil(typed.Err())
-		}
-		didFireListener = true
-	})
-
-	var didRun bool
-	jm.RunTask(NewTaskWithName("test_task", func(ctx context.Context) error {
-		defer wg.Done()
-		didRun = true
-		return nil
-	}))
-	wg.Wait()
-	agent.Drain()
-
-	assert.True(didRun)
-	assert.True(didFireListener)
-	assert.Contains(output.String(), "[cron.complete] [test_task]")
-}
-
-func TestJobManagerCompleteListenerWithError(t *testing.T) {
-	assert := assert.New(t)
-
-	jm := New()
-
-	wg := sync.WaitGroup{}
-	wg.Add(2)
-
-	output := bytes.NewBuffer(nil)
-	agent := logger.New(FlagFailed, logger.Error).WithWriter(
-		logger.NewTextWriter(output).
-			WithUseColor(false).
-			WithShowTimestamp(false))
-
-	defer agent.Close()
-
-	jm.SetLogger(agent)
-	var didFireListener bool
-	jm.Logger().Listen(FlagFailed, "foo", func(e logger.Event) {
-		defer wg.Done()
-		if typed, isTyped := e.(*Event); isTyped {
-			assert.Equal(FlagFailed, e.Flag())
-			assert.False(e.Timestamp().IsZero())
-			assert.Equal("test_task", typed.TaskName())
-			assert.NotZero(typed.Elapsed())
-			assert.NotNil(typed.Err())
-		}
-		didFireListener = true
-	})
-
-	var didRun bool
-	jm.RunTask(NewTaskWithName("test_task", func(ctx context.Context) error {
-		defer wg.Done()
-		didRun = true
-		return fmt.Errorf("testError")
-	}))
-	wg.Wait()
-	agent.Drain()
-
-	assert.True(didRun)
-	assert.True(didFireListener)
-	assert.Contains(output.String(), "[cron.failed] [test_task]")
-}
-
 // The goal with this test is to see if panics take down the test process or not.
 func TestJobManagerTaskPanicHandling(t *testing.T) {
 	a := assert.New(t)
-	a.StartTimeout(2000 * time.Millisecond)
-	defer a.EndTimeout()
 
 	manager := New()
 	waitGroup := sync.WaitGroup{}
 	waitGroup.Add(1)
 	err := manager.RunTask(NewTask(func(ctx context.Context) error {
 		defer waitGroup.Done()
-		array := []int{}
-		foo := array[1] //this should index out of bounds
-		a.NotZero(foo)
-		return nil
+		panic("this is only a test")
 	}))
 
 	waitGroup.Wait()
