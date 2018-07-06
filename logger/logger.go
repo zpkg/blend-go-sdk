@@ -462,6 +462,7 @@ func (l *Logger) trigger(async bool, e Event) {
 			}
 		}
 		l.workersLock.Unlock()
+
 		for _, worker := range workers {
 			if async {
 				worker.Work <- e
