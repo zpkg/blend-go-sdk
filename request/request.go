@@ -511,7 +511,9 @@ func (hr *Request) Response() (*http.Response, error) {
 		}
 	}
 
-	client := &http.Client{}
+	client := &http.Client{
+		Transport: &http.Transport{},
+	}
 	if hr.requiresCustomTransport() {
 		transport, transportErr := hr.getTransport()
 		if transportErr != nil {
