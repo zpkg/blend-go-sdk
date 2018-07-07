@@ -40,7 +40,7 @@ func New() *Request {
 	return &Request{
 		Scheme:    "http",
 		Verb:      "GET",
-		KeepAlive: false,
+		KeepAlive: true,
 	}
 }
 
