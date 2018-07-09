@@ -49,7 +49,7 @@ func MockedResponseInjector(req *Request) *MockedResponse {
 	if catchAll != nil {
 		return ref(catchAll(req))
 	}
-	panic(fmt.Sprintf("no mock registered for %s %s", req.Verb, req.URL().String()))
+	panic(fmt.Sprintf("no mock registered for %s %s", req.Method(), req.URL().String()))
 }
 
 // MockCatchAll sets a "catch all" mock generator.
@@ -81,12 +81,12 @@ func MockResponseFromBinary(req *Request, statusCode int, responseBody []byte) {
 
 // MockResponseFromString mocks a service request response from a string responseBody.
 func MockResponseFromString(verb string, url string, statusCode int, responseBody string) {
-	MockResponseFromBinary(New().WithVerb(verb).WithURL(url), statusCode, []byte(responseBody))
+	MockResponseFromBinary(New().WithMethod(verb).WithRawURL(url), statusCode, []byte(responseBody))
 }
 
 // MockResponseFromFile mocks a service request response from a set of file paths.
 func MockResponseFromFile(verb string, url string, statusCode int, responseFilePath string) {
-	MockResponse(New().WithVerb(verb).WithURL(url), readFile(statusCode, responseFilePath))
+	MockResponse(New().WithMethod(verb).WithRawURL(url), readFile(statusCode, responseFilePath))
 }
 
 // ClearMockedResponses clears any mocked responses that have been set up for the test.

@@ -47,7 +47,7 @@ func (re Event) Request() *Meta {
 
 // WriteText writes an outgoing request as text to a given buffer.
 func (re Event) WriteText(tf logger.TextFormatter, buf *bytes.Buffer) {
-	buf.WriteString(fmt.Sprintf("%s %s", re.req.Verb, re.req.URL.String()))
+	buf.WriteString(fmt.Sprintf("%s %s", re.req.Method, re.req.URL.String()))
 	if len(re.req.Body) > 0 {
 		buf.WriteRune(logger.RuneNewline)
 		buf.WriteString("request body")
@@ -98,7 +98,7 @@ func (re ResponseEvent) Body() []byte {
 
 // WriteText writes the event to a text writer.
 func (re ResponseEvent) WriteText(tf logger.TextFormatter, buf *bytes.Buffer) {
-	buf.WriteString(fmt.Sprintf("%s %s %s", re.req.Verb, re.req.URL.String(), tf.ColorizeStatusCode(re.res.StatusCode)))
+	buf.WriteString(fmt.Sprintf("%s %s %s", re.req.Method, re.req.URL.String(), tf.ColorizeStatusCode(re.res.StatusCode)))
 	if len(re.body) > 0 {
 		buf.WriteRune(logger.RuneNewline)
 		buf.Write(re.body)

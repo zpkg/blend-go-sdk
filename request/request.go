@@ -19,474 +19,586 @@ import (
 
 	"github.com/blend/go-sdk/exception"
 	"github.com/blend/go-sdk/logger"
-	"github.com/blend/go-sdk/util"
 )
 
 // Get returns a new get request.
 func Get(url string) *Request {
-	return New().AsGet().WithURL(url)
+	return New().AsGet().WithRawURL(url)
 }
 
 // Post returns a new post request with an optional body.
 func Post(url string, body []byte) *Request {
-	if len(body) > 0 {
-		return New().AsPost().WithURL(url).WithPostBody(body)
-	}
-	return New().AsPost().WithURL(url)
+	return New().AsPost().WithRawURL(url).WithPostBody(body)
 }
 
 // New returns a new HTTPRequest instance.
 func New() *Request {
 	return &Request{
-		Scheme:    "http",
-		Verb:      "GET",
-		KeepAlive: true,
+		method:   MethodGet,
+		header:   make(http.Header),
+		postData: make(url.Values),
+		url:      &url.URL{},
+		context:  context.TODO(),
 	}
 }
 
 // Request makes http requests.
 type Request struct {
-	Verb string
+	log *logger.Logger
 
-	Scheme string
-	Host   string
-	Path   string
+	method  string
+	url     *url.URL
+	cookies []*http.Cookie
+	header  http.Header
 
-	QueryString url.Values
+	basicAuthUsername string
+	basicAuthPassword string
 
-	Cookies []*http.Cookie
+	contentType string
 
-	Header            http.Header
-	BasicAuthUsername string
-	BasicAuthPassword string
+	postData    url.Values
+	postedFiles []PostedFile
+	body        []byte
 
-	ContentType string
-	PostData    url.Values
-	Body        []byte
+	dialTimeout           time.Duration
+	keepAliveTimeout      time.Duration
+	responseHeaderTimeout time.Duration
+	tlsHandshakeTimeout   time.Duration
+	timeout               time.Duration
 
-	Timeout time.Duration
+	tlsClientCert []byte
+	tlsClientKey  []byte
 
-	TLSClientCertPath string
-	TLSClientKeyPath  string
-	TLSClientCert     []byte
-	TLSClientKey      []byte
-	TLSSkipVerify     bool
+	tlsSkipVerify bool
+	tlsRootCAPool *x509.CertPool
 
-	TLSCAPool *x509.CertPool
+	keepAlive          *bool
+	disableCompression *bool
+	transport          *http.Transport
 
-	KeepAlive        bool
-	KeepAliveTimeout time.Duration
-	Label            string
+	context context.Context
+	trace   *httptrace.ClientTrace
 
-	log            *logger.Logger
-	state          interface{}
-	postedFiles    []PostedFile
-	responseBuffer Buffer
-	requestStart   time.Time
+	state interface{}
 
-	err error
+	requestHandler  Handler
+	responseHandler ResponseHandler
 
-	ctx                             context.Context
-	trace                           *httptrace.ClientTrace
-	transport                       *http.Transport
-	createTransportHandler          CreateTransportHandler
-	incomingResponseHandler         ResponseHandler
-	statefulIncomingResponseHandler StatefulResponseHandler
-	outgoingRequestHandler          OutgoingRequestHandler
-	mockProvider                    MockedResponseProvider
+	mockProvider MockedResponseProvider
 }
 
-// WithOnResponse configures an event receiver.
-func (hr *Request) WithOnResponse(hook ResponseHandler) *Request {
-	hr.incomingResponseHandler = hook
-	return hr
+// WithRequestHandler configures an event receiver.
+func (r *Request) WithRequestHandler(handler Handler) *Request {
+	r.requestHandler = handler
+	return r
 }
 
-// WithOnResponseStateful configures an event receiver that includes the request state.
-func (hr *Request) WithOnResponseStateful(hook StatefulResponseHandler) *Request {
-	hr.statefulIncomingResponseHandler = hook
-	return hr
+// RequestHandler returns the request handler.
+func (r *Request) RequestHandler() Handler {
+	return r.requestHandler
 }
 
-// WithOnCreateTransport configures an event receiver.
-func (hr *Request) WithOnCreateTransport(hook CreateTransportHandler) *Request {
-	hr.createTransportHandler = hook
-	return hr
+// WithResponseHandler configures an event receiver.
+func (r *Request) WithResponseHandler(listener ResponseHandler) *Request {
+	r.responseHandler = listener
+	return r
 }
 
-// WithOnRequest configures an event receiver.
-func (hr *Request) WithOnRequest(hook OutgoingRequestHandler) *Request {
-	hr.outgoingRequestHandler = hook
-	return hr
-}
-
-// WithContext sets a context for the request.
-func (hr *Request) WithContext(ctx context.Context) *Request {
-	hr.ctx = ctx
-	return hr
-}
-
-// WithClientTrace sets up a trace for the request.
-func (hr *Request) WithClientTrace(trace *httptrace.ClientTrace) *Request {
-	hr.trace = trace
-	return hr
-}
-
-// WithState adds a state object to the request for later usage.
-func (hr *Request) WithState(state interface{}) *Request {
-	hr.state = state
-	return hr
-}
-
-// WithLabel gives the request a logging label.
-func (hr *Request) WithLabel(label string) *Request {
-	hr.Label = label
-	return hr
-}
-
-// WithVerifyTLS skips the bad certificate checking on TLS requests.
-func (hr *Request) WithVerifyTLS(shouldVerify bool) *Request {
-	hr.TLSSkipVerify = !shouldVerify
-	return hr
+// ResponseHandler returns the request response handler.
+func (r *Request) ResponseHandler() ResponseHandler {
+	return r.responseHandler
 }
 
 // WithMockProvider mocks a request response.
-func (hr *Request) WithMockProvider(provider MockedResponseProvider) *Request {
-	hr.mockProvider = provider
-	return hr
+func (r *Request) WithMockProvider(provider MockedResponseProvider) *Request {
+	r.mockProvider = provider
+	return r
+}
+
+// MockProvider returns the request mock provider.
+func (r *Request) MockProvider() MockedResponseProvider {
+	return r.mockProvider
+}
+
+// WithContext sets a context for the request.
+func (r *Request) WithContext(ctx context.Context) *Request {
+	r.context = ctx
+	return r
+}
+
+// Context returns the request's context.
+func (r *Request) Context() context.Context {
+	return r.context
+}
+
+// WithClientTrace sets up a trace for the request.
+func (r *Request) WithClientTrace(trace *httptrace.ClientTrace) *Request {
+	r.trace = trace
+	return r
+}
+
+// ClientTrace returns the diagnostics trace object.
+func (r *Request) ClientTrace() *httptrace.ClientTrace {
+	return r.trace
+}
+
+// WithState adds a state object to the request for later usage.
+func (r *Request) WithState(state interface{}) *Request {
+	r.state = state
+	return r
+}
+
+// State returns the request state.
+func (r *Request) State() interface{} {
+	return r.state
 }
 
 // WithLogger enables logging with HTTPRequestLogLevelErrors.
-func (hr *Request) WithLogger(agent *logger.Logger) *Request {
-	hr.log = agent
-	return hr
+func (r *Request) WithLogger(log *logger.Logger) *Request {
+	r.log = log
+	return r
 }
 
 // Logger returns the request diagnostics agent.
-func (hr *Request) Logger() *logger.Logger {
-	return hr.log
+func (r *Request) Logger() *logger.Logger {
+	return r.log
 }
 
 // WithTransport sets a transport for the request.
-func (hr *Request) WithTransport(transport *http.Transport) *Request {
-	hr.transport = transport
-	return hr
+func (r *Request) WithTransport(transport *http.Transport) *Request {
+	r.transport = transport
+	return r
 }
 
-// WithKeepAlives sets if the request should use the `Connection=keep-alive` header or not.
-func (hr *Request) WithKeepAlives() *Request {
-	hr.KeepAlive = true
-	hr = hr.WithHeader("Connection", "keep-alive")
-	return hr
+// Transport returns a shared http transport.
+func (r *Request) Transport() *http.Transport {
+	return r.transport
+}
+
+// WithKeepAlive sets if the request should use the `Connection=keep-alive` header or not.
+func (r *Request) WithKeepAlive() *Request {
+	r.keepAlive = optBool(true)
+	r = r.WithHeader(HeaderConnection, ConnectionKeepAlive)
+	return r
+}
+
+// KeepAlive returns if the keep alive.
+func (r *Request) KeepAlive() bool {
+	if r.keepAlive != nil {
+		return *r.keepAlive
+	}
+	return DefaultKeepAlive
+}
+
+// WithDisableCompression sets the disable compression value.
+func (r *Request) WithDisableCompression(value bool) *Request {
+	r.disableCompression = optBool(value)
+	return r
+}
+
+// DisableCompression returns if the requests transport should disable compression.
+func (r *Request) DisableCompression() bool {
+	if r.disableCompression != nil {
+		return *r.disableCompression
+	}
+	return false
 }
 
 // WithKeepAliveTimeout sets a keep alive timeout for the requests transport.
-func (hr *Request) WithKeepAliveTimeout(timeout time.Duration) *Request {
-	hr.KeepAliveTimeout = timeout
-	return hr
+func (r *Request) WithKeepAliveTimeout(timeout time.Duration) *Request {
+	r.keepAliveTimeout = timeout
+	return r
+}
+
+// KeepAliveTimeout returns the keep alive timeout, ro the time before idle connections are closed.
+func (r *Request) KeepAliveTimeout() time.Duration {
+	return r.keepAliveTimeout
+}
+
+// WithResponseHeaderTimeout sets a timeout
+func (r *Request) WithResponseHeaderTimeout(timeout time.Duration) *Request {
+	r.responseHeaderTimeout = timeout
+	return r
+}
+
+// ResponseHeaderTimeout returns a timeout.
+func (r *Request) ResponseHeaderTimeout() time.Duration {
+	return r.responseHeaderTimeout
+}
+
+// WithTLSHandshakeTimeout sets a timeout
+func (r *Request) WithTLSHandshakeTimeout(timeout time.Duration) *Request {
+	r.tlsHandshakeTimeout = timeout
+	return r
+}
+
+// TLSHandshakeTimeout returns a timeout.
+func (r *Request) TLSHandshakeTimeout() time.Duration {
+	return r.tlsHandshakeTimeout
 }
 
 // WithContentType sets the `Content-Type` header for the request.
-func (hr *Request) WithContentType(contentType string) *Request {
-	hr.ContentType = contentType
-	return hr
+func (r *Request) WithContentType(contentType string) *Request {
+	r.contentType = contentType
+	return r
+}
+
+// ContentType returns the request content type.
+func (r *Request) ContentType() string {
+	return r.contentType
 }
 
 // WithScheme sets the scheme, or protocol, of the request.
-func (hr *Request) WithScheme(scheme string) *Request {
-	hr.Scheme = scheme
-	return hr
+func (r *Request) WithScheme(scheme string) *Request {
+	r.url.Scheme = scheme
+	return r
+}
+
+// Scheme returns the request url scheme.
+func (r *Request) Scheme() string {
+	return r.url.Scheme
 }
 
 // WithHost sets the target url host for the request.
-func (hr *Request) WithHost(host string) *Request {
-	hr.Host = host
-	return hr
+func (r *Request) WithHost(host string) *Request {
+	r.url.Host = host
+	return r
 }
 
 // WithPath sets the path component of the host url..
-func (hr *Request) WithPath(path string) *Request {
-	hr.Path = path
-	return hr
+func (r *Request) WithPath(path string) *Request {
+	r.url.Path = path
+	return r
 }
 
 // WithPathf sets the path component of the host url by the format and arguments.
-func (hr *Request) WithPathf(format string, args ...interface{}) *Request {
-	hr.Path = fmt.Sprintf(format, args...)
-	return hr
+func (r *Request) WithPathf(format string, args ...interface{}) *Request {
+	r.url.Path = fmt.Sprintf(format, args...)
+	return r
 }
 
-// WithCombinedPath sets the path component of the host url by combining the input path segments.
-func (hr *Request) WithCombinedPath(components ...string) *Request {
-	hr.Path = util.String.CombinePathComponents(components...)
-	return hr
+// WithRawURLf sets the url based on a format and args.
+func (r *Request) WithRawURLf(format string, args ...interface{}) *Request {
+	return r.WithRawURL(fmt.Sprintf(format, args...))
 }
 
-// WithURLf sets the url based on a format and args.
-func (hr *Request) WithURLf(format string, args ...interface{}) *Request {
-	return hr.WithURL(fmt.Sprintf(format, args...))
-}
-
-// WithURL sets the request target url whole hog.
-func (hr *Request) WithURL(urlString string) *Request {
-	workingURL, err := url.Parse(urlString)
-	if err != nil {
-		hr.err = err
-		return hr
+// WithRawURL sets the request target url whole hog.
+func (r *Request) WithRawURL(rawURL string) *Request {
+	if parsedURL, err := url.ParseRequestURI(rawURL); err != nil {
+		panic(err)
+	} else {
+		r.url = parsedURL
 	}
+	return r
+}
 
-	hr.Scheme = workingURL.Scheme
-	hr.Host = workingURL.Host
-	hr.Path = workingURL.Path
-	queryValues, err := url.ParseQuery(workingURL.RawQuery)
-	if err != nil {
-		hr.err = err
-		return hr
-	}
-	hr.QueryString = queryValues
-	return hr
+// WithURL sets the request url target.
+func (r *Request) WithURL(target *url.URL) *Request {
+	r.url = target
+	return r
+}
+
+// URL returns the request target url.
+func (r *Request) URL() *url.URL {
+	return r.url
 }
 
 // WithHeader sets a header on the request.
-func (hr *Request) WithHeader(field string, value string) *Request {
-	if hr.Header == nil {
-		hr.Header = http.Header{}
-	}
-	hr.Header.Set(field, value)
-	return hr
+func (r *Request) WithHeader(field string, value string) *Request {
+	r.header.Set(field, value)
+	return r
+}
+
+// Header returns the request headers.
+func (r *Request) Header() http.Header {
+	return r.header
 }
 
 // WithQueryString sets a query string value for the host url of the request.
-func (hr *Request) WithQueryString(field string, value string) *Request {
-	if hr.QueryString == nil {
-		hr.QueryString = url.Values{}
-	}
-	hr.QueryString.Add(field, value)
-	return hr
+func (r *Request) WithQueryString(field string, value string) *Request {
+	r.url.Query().Add(field, value)
+	return r
 }
 
 // WithCookie sets a cookie for the request.
-func (hr *Request) WithCookie(cookie *http.Cookie) *Request {
-	if hr.Cookies == nil {
-		hr.Cookies = []*http.Cookie{}
-	}
-	hr.Cookies = append(hr.Cookies, cookie)
-	return hr
+func (r *Request) WithCookie(cookie *http.Cookie) *Request {
+	r.cookies = append(r.cookies, cookie)
+	return r
 }
 
 // WithPostData sets a post data value for the request.
-func (hr *Request) WithPostData(field string, value string) *Request {
-	if hr.PostData == nil {
-		hr.PostData = url.Values{}
-	}
-	hr.PostData.Add(field, value)
-	return hr
+func (r *Request) WithPostData(field string, value string) *Request {
+	r.postData.Add(field, value)
+	return r
 }
 
 // WithPostedFile adds a posted file to the multipart form elements of the request.
-func (hr *Request) WithPostedFile(key, fileName string, fileContents io.Reader) *Request {
-	hr.postedFiles = append(hr.postedFiles, PostedFile{Key: key, FileName: fileName, FileContents: fileContents})
-	return hr
+func (r *Request) WithPostedFile(key, fileName string, fileContents io.Reader) *Request {
+	r.postedFiles = append(r.postedFiles, PostedFile{Key: key, FileName: fileName, FileContents: fileContents})
+	return r
 }
 
 // WithBasicAuth sets the basic auth headers for a request.
-func (hr *Request) WithBasicAuth(username, password string) *Request {
-	hr.BasicAuthUsername = username
-	hr.BasicAuthPassword = password
-	return hr
+func (r *Request) WithBasicAuth(username, password string) *Request {
+	r.basicAuthUsername = username
+	r.basicAuthPassword = password
+	return r
 }
 
 // WithTimeout sets a timeout for the request.
-// Remarks: This timeout is enforced on client connect, not on request read + response.
-func (hr *Request) WithTimeout(timeout time.Duration) *Request {
-	hr.Timeout = timeout
-	return hr
+// This timeout enforces the time between the start of the connection dial to the first response byte.
+func (r *Request) WithTimeout(timeout time.Duration) *Request {
+	r.timeout = timeout
+	return r
 }
 
-// WithClientTLSCertPath sets a tls cert on the transport for the request.
-func (hr *Request) WithClientTLSCertPath(certPath string) *Request {
-	hr.TLSClientCertPath = certPath
-	return hr
+// Timeout returns the request timeout.
+func (r *Request) Timeout() time.Duration {
+	return r.timeout
 }
 
-// WithClientTLSCert sets a tls cert on the transport for the request.
-func (hr *Request) WithClientTLSCert(cert []byte) *Request {
-	hr.TLSClientCert = cert
-	return hr
+// WithDialTimeout sets a dial timeout for the request.
+func (r *Request) WithDialTimeout(timeout time.Duration) *Request {
+	r.dialTimeout = timeout
+	return r
 }
 
-// WithClientTLSKeyPath sets a tls key on the transport for the request.
-func (hr *Request) WithClientTLSKeyPath(keyPath string) *Request {
-	hr.TLSClientKeyPath = keyPath
-	return hr
+// DialTimeout returns the request dial timeout.
+func (r *Request) DialTimeout() time.Duration {
+	return r.dialTimeout
 }
 
-// WithClientTLSKey sets a tls key on the transport for the request.
-func (hr *Request) WithClientTLSKey(key []byte) *Request {
-	hr.TLSClientKey = key
-	return hr
+// WithTLSSkipVerify skips the bad certificate checking on TLS requests.
+func (r *Request) WithTLSSkipVerify(skipVerify bool) *Request {
+	r.tlsSkipVerify = skipVerify
+	return r
+}
+
+// TLSSkipVerify returns if we should skip server tls verification.
+func (r *Request) TLSSkipVerify() bool {
+	return r.tlsSkipVerify
+}
+
+// WithTLSClientCert sets a tls cert on the transport for the request.
+func (r *Request) WithTLSClientCert(cert []byte) *Request {
+	r.tlsClientCert = cert
+	return r
+}
+
+// WithTLSClientKey sets a tls key on the transport for the request.
+func (r *Request) WithTLSClientKey(key []byte) *Request {
+	r.tlsClientKey = key
+	return r
 }
 
 // WithTLSRootCAPool sets the root TLS ca pool for the request.
-func (hr *Request) WithTLSRootCAPool(certPool *x509.CertPool) *Request {
-	hr.TLSCAPool = certPool
-	return hr
+func (r *Request) WithTLSRootCAPool(certPool *x509.CertPool) *Request {
+	r.tlsRootCAPool = certPool
+	return r
 }
 
-// WithVerb sets the http verb of the request.
-func (hr *Request) WithVerb(verb string) *Request {
-	hr.Verb = verb
-	return hr
+// WithMethod sets the http verb/method of the request.
+func (r *Request) WithMethod(verb string) *Request {
+	r.method = verb
+	return r
+}
+
+// Method returns the request method.
+func (r *Request) Method() string {
+	return r.method
 }
 
 // AsGet sets the http verb of the request to `GET`.
-func (hr *Request) AsGet() *Request {
-	hr.Verb = "GET"
-	return hr
+func (r *Request) AsGet() *Request {
+	r.method = MethodGet
+	return r
 }
 
 // AsPost sets the http verb of the request to `POST`.
-func (hr *Request) AsPost() *Request {
-	hr.Verb = "POST"
-	return hr
+func (r *Request) AsPost() *Request {
+	r.method = "POST"
+	return r
 }
 
 // AsPut sets the http verb of the request to `PUT`.
-func (hr *Request) AsPut() *Request {
-	hr.Verb = "PUT"
-	return hr
+func (r *Request) AsPut() *Request {
+	r.method = MethodPut
+	return r
 }
 
 // AsPatch sets the http verb of the request to `PATCH`.
-func (hr *Request) AsPatch() *Request {
-	hr.Verb = "PATCH"
-	return hr
+func (r *Request) AsPatch() *Request {
+	r.method = MethodPatch
+	return r
 }
 
 // AsDelete sets the http verb of the request to `DELETE`.
-func (hr *Request) AsDelete() *Request {
-	hr.Verb = "DELETE"
-	return hr
+func (r *Request) AsDelete() *Request {
+	r.method = MethodDelete
+	return r
 }
 
 // AsOptions sets the http verb of the request to `OPTIONS`.
-func (hr *Request) AsOptions() *Request {
-	hr.Verb = "OPTIONS"
-	return hr
-}
-
-// WithResponseBuffer sets the response buffer for the request (if you want to re-use one).
-// An example is if you're constantly pinging an endpoint with a similarly sized response,
-// You can just re-use a buffer for reading the response.
-func (hr *Request) WithResponseBuffer(buffer Buffer) *Request {
-	hr.responseBuffer = buffer
-	return hr
+func (r *Request) AsOptions() *Request {
+	r.method = MethodOptions
+	return r
 }
 
 // WithPostBodyAsJSON sets the post body raw to be the json representation of an object.
-func (hr *Request) WithPostBodyAsJSON(object interface{}) *Request {
-	return hr.WithPostBodySerialized(object, serializeJSON).WithContentType("application/json")
+func (r *Request) WithPostBodyAsJSON(object interface{}) *Request {
+	return r.WithPostBodySerialized(object, r.serializeJSON).WithContentType(ContentTypeApplicationJSON)
 }
 
 // WithPostBodyAsXML sets the post body raw to be the xml representation of an object.
-func (hr *Request) WithPostBodyAsXML(object interface{}) *Request {
-	return hr.WithPostBodySerialized(object, serializeXML).WithContentType("application/xml")
+func (r *Request) WithPostBodyAsXML(object interface{}) *Request {
+	return r.WithPostBodySerialized(object, r.serializeXML).WithContentType(ContentTypeApplicationXML)
 }
 
 // WithPostBodySerialized sets the post body with the results of the given serializer.
-func (hr *Request) WithPostBodySerialized(object interface{}, serialize Serializer) *Request {
+func (r *Request) WithPostBodySerialized(object interface{}, serialize Serializer) *Request {
 	body, _ := serialize(object)
-	return hr.WithPostBody(body)
+	return r.WithPostBody(body)
 }
 
 // WithPostBody sets the post body directly.
-func (hr *Request) WithPostBody(body []byte) *Request {
-	hr.Body = body
-	return hr
+func (r *Request) WithPostBody(body []byte) *Request {
+	r.body = body
+	return r
 }
 
-// URL returns the currently formatted request target url.
-func (hr *Request) URL() *url.URL {
-	workingURL := &url.URL{Scheme: hr.Scheme, Host: hr.Host, Path: hr.Path}
-	workingURL.RawQuery = hr.QueryString.Encode()
-	return workingURL
+// ApplyTransport applies the request settings to a transport.
+func (r *Request) ApplyTransport(transport *http.Transport) error {
+	if r.responseHeaderTimeout > 0 {
+		transport.ResponseHeaderTimeout = r.responseHeaderTimeout
+	}
+	if r.tlsHandshakeTimeout > 0 {
+		transport.TLSHandshakeTimeout = r.tlsHandshakeTimeout
+	}
+	if r.keepAlive != nil {
+		transport.DisableKeepAlives = !*r.keepAlive
+	}
+	if r.disableCompression != nil {
+		transport.DisableCompression = *r.disableCompression
+	}
+	if r.dialTimeout > 0 || r.keepAliveTimeout > 0 {
+		dialer := &net.Dialer{}
+		if r.dialTimeout > 0 {
+			dialer.Timeout = r.dialTimeout
+		}
+		if r.keepAliveTimeout > 0 {
+			dialer.KeepAlive = r.keepAliveTimeout
+		}
+		transport.Dial = dialer.Dial
+	}
+	if r.tlsRootCAPool != nil || r.tlsSkipVerify || (len(r.tlsClientCert) > 0 && len(r.tlsClientKey) > 0) {
+		transport.TLSClientConfig = &tls.Config{
+			RootCAs:            r.tlsRootCAPool,
+			InsecureSkipVerify: r.tlsSkipVerify,
+		}
+		if len(r.tlsClientCert) > 0 && len(r.tlsClientKey) > 0 {
+			cert, err := tls.X509KeyPair(r.tlsClientCert, r.tlsClientKey)
+			if err != nil {
+				return exception.New(err)
+			}
+			transport.TLSClientConfig.Certificates = []tls.Certificate{cert}
+		}
+	}
+	return nil
 }
 
 // Meta returns the request as a HTTPRequestMeta.
-func (hr Request) Meta() *Meta {
+func (r *Request) Meta() *Meta {
 	return &Meta{
-		StartTime: hr.requestStart,
-		Verb:      hr.Verb,
-		URL:       hr.URL(),
-		Body:      hr.PostBody(),
-		Headers:   hr.Headers(),
+		Method:  r.Method(),
+		URL:     r.URL(),
+		Body:    r.PostBody(),
+		Headers: r.Headers(),
 	}
 }
 
+// RequiresTransport returns if there are request settings that require a shared transport.
+func (r *Request) RequiresTransport() bool {
+	if len(r.tlsClientCert) > 0 && len(r.tlsClientKey) > 0 {
+		return true
+	}
+	if r.tlsSkipVerify {
+		return true
+	}
+	if r.tlsRootCAPool != nil {
+		return true
+	}
+	if r.keepAliveTimeout > 0 {
+		return true
+	}
+	if r.dialTimeout > 0 {
+		return true
+	}
+	if r.tlsHandshakeTimeout > 0 {
+		return true
+	}
+
+	return false
+}
+
 // PostBody returns the current post body.
-func (hr Request) PostBody() []byte {
-	if len(hr.Body) > 0 {
-		return hr.Body
-	} else if len(hr.PostData) > 0 {
-		return []byte(hr.PostData.Encode())
+func (r *Request) PostBody() []byte {
+	if len(r.body) > 0 {
+		return r.body
+	} else if len(r.postData) > 0 {
+		return []byte(r.postData.Encode())
 	}
 	return nil
 }
 
 // Headers returns the headers on the request.
-func (hr Request) Headers() http.Header {
+func (r *Request) Headers() http.Header {
 	headers := http.Header{}
-	for key, values := range hr.Header {
+	for key, values := range r.header {
 		for _, value := range values {
 			headers.Set(key, value)
 		}
 	}
-	if len(hr.PostData) > 0 {
-		headers.Set("Content-Type", "application/x-www-form-urlencoded")
+
+	if len(r.contentType) > 0 {
+		headers.Set(HeaderContentType, r.contentType)
+	} else if len(r.postData) > 0 {
+		headers.Set(HeaderContentType, ContentTypeApplicationFormEncoded)
 	}
-	if !isEmpty(hr.ContentType) {
-		headers.Set("Content-Type", hr.ContentType)
-	}
+
 	return headers
 }
 
 // Request returns a http.Request for the HTTPRequest.
-func (hr *Request) Request() (*http.Request, error) {
-	if hr.err != nil {
-		return nil, hr.err
+func (r *Request) Request() (*http.Request, error) {
+	if len(r.body) > 0 && len(r.postData) > 0 {
+		return nil, exception.New(ErrMultipleBodySources)
 	}
 
-	workingURL := hr.URL()
-
-	if len(hr.Body) > 0 && len(hr.PostData) > 0 {
-		return nil, exception.New("Cant set both a body and have post data.")
-	}
-
-	req, err := http.NewRequest(hr.Verb, workingURL.String(), bytes.NewBuffer(hr.PostBody()))
+	req, err := http.NewRequest(r.Method(), r.URL().String(), bytes.NewBuffer(r.PostBody()))
 	if err != nil {
 		return nil, exception.New(err)
 	}
 
-	if hr.ctx != nil {
-		req = req.WithContext(hr.ctx)
+	if r.context != nil {
+		req = req.WithContext(r.context)
 	}
 
-	if hr.trace != nil {
-		req = req.WithContext(httptrace.WithClientTrace(req.Context(), hr.trace))
+	if r.trace != nil {
+		req = req.WithContext(httptrace.WithClientTrace(req.Context(), r.trace))
 	}
 
-	if !isEmpty(hr.BasicAuthUsername) {
-		req.SetBasicAuth(hr.BasicAuthUsername, hr.BasicAuthPassword)
+	if len(r.basicAuthUsername) > 0 {
+		req.SetBasicAuth(r.basicAuthUsername, r.basicAuthPassword)
 	}
 
-	if hr.Cookies != nil {
-		for i := 0; i < len(hr.Cookies); i++ {
-			cookie := hr.Cookies[i]
+	if r.cookies != nil {
+		for i := 0; i < len(r.cookies); i++ {
+			cookie := r.cookies[i]
 			req.AddCookie(cookie)
 		}
 	}
 
-	for key, values := range hr.Headers() {
+	for key, values := range r.Headers() {
 		for _, value := range values {
 			req.Header.Set(key, value)
 		}
@@ -496,252 +608,179 @@ func (hr *Request) Request() (*http.Request, error) {
 }
 
 // Response makes the actual request but returns the underlying http.Response object.
-func (hr *Request) Response() (*http.Response, error) {
-	req, err := hr.Request()
+func (r *Request) Response() (*http.Response, error) {
+	req, err := r.Request()
 	if err != nil {
 		return nil, err
 	}
 
-	hr.logRequest()
-
-	if hr.mockProvider != nil {
-		mockedRes := hr.mockProvider(hr)
+	r.logRequest()
+	if r.mockProvider != nil {
+		mockedRes := r.mockProvider(r)
 		if mockedRes != nil {
 			return mockedRes.Response(), mockedRes.Err
 		}
 	}
 
 	client := &http.Client{}
-	if hr.requiresCustomTransport() {
-		transport, transportErr := hr.getTransport()
-		if transportErr != nil {
-			return nil, exception.New(transportErr)
+	if r.RequiresTransport() {
+		if r.transport == nil {
+			r.transport = &http.Transport{}
 		}
-		client.Transport = transport
+		err := r.ApplyTransport(r.transport)
+		if err != nil {
+			return nil, exception.New(err)
+		}
+		client.Transport = r.transport
+	}
+	if r.timeout > 0 {
+		client.Timeout = r.timeout
 	}
 
-	if hr.Timeout != time.Duration(0) {
-		client.Timeout = hr.Timeout
-	}
-
-	res, resErr := client.Do(req)
-	return res, exception.New(resErr)
+	res, err := client.Do(req)
+	return res, exception.New(err)
 }
 
 // Execute makes the request but does not read the response.
-func (hr *Request) Execute() error {
-	_, err := hr.ExecuteWithMeta()
-	return exception.New(err)
+func (r *Request) Execute() error {
+	res, err := r.Response()
+	if err != nil {
+		return exception.New(err)
+	}
+	if res.Body != nil {
+		defer res.Body.Close()
+		if _, err := io.Copy(ioutil.Discard, res.Body); err != nil {
+			return exception.New(err)
+		}
+	}
+	return nil
 }
 
 // ExecuteWithMeta makes the request and returns the meta of the response.
-func (hr *Request) ExecuteWithMeta() (*ResponseMeta, error) {
-	res, err := hr.Response()
+func (r *Request) ExecuteWithMeta() (*ResponseMeta, error) {
+	res, err := r.Response()
 	if err != nil {
 		return nil, exception.New(err)
 	}
 	meta := NewResponseMeta(res)
 	if res != nil && res.Body != nil {
 		defer res.Body.Close()
-		if hr.responseBuffer != nil {
-			contentLength, err := hr.responseBuffer.ReadFrom(res.Body)
-			if err != nil {
-				return nil, exception.New(err)
-			}
-			meta.ContentLength = contentLength
-			if hr.incomingResponseHandler != nil {
-				hr.logResponse(meta, hr.responseBuffer.Bytes(), hr.state)
-			}
-		} else {
-			contents, err := ioutil.ReadAll(res.Body)
-			if err != nil {
-				return nil, exception.New(err)
-			}
-			meta.ContentLength = int64(len(contents))
-			hr.logResponse(meta, contents, hr.state)
+		contents, err := ioutil.ReadAll(res.Body)
+		if err != nil {
+			return nil, exception.New(err)
 		}
+		meta.ContentLength = int64(len(contents))
+		r.logResponse(meta, contents, r.state)
 	}
 
 	return meta, nil
 }
 
 // BytesWithMeta fetches the response as bytes with meta.
-func (hr *Request) BytesWithMeta() ([]byte, *ResponseMeta, error) {
-	res, err := hr.Response()
-	resMeta := NewResponseMeta(res)
+func (r *Request) BytesWithMeta() ([]byte, *ResponseMeta, error) {
+	res, err := r.Response()
 	if err != nil {
-		return nil, resMeta, exception.New(err)
+		return nil, nil, exception.New(err)
 	}
 	defer res.Body.Close()
 
+	resMeta := NewResponseMeta(res)
 	bytes, readErr := ioutil.ReadAll(res.Body)
 	if readErr != nil {
 		return nil, resMeta, exception.New(readErr)
 	}
 
 	resMeta.ContentLength = int64(len(bytes))
-	hr.logResponse(resMeta, bytes, hr.state)
+	r.logResponse(resMeta, bytes, r.state)
 	return bytes, resMeta, nil
 }
 
 // Bytes fetches the response as bytes.
-func (hr *Request) Bytes() ([]byte, error) {
-	contents, _, err := hr.BytesWithMeta()
+func (r *Request) Bytes() ([]byte, error) {
+	contents, _, err := r.BytesWithMeta()
 	return contents, err
 }
 
 // String returns the body of the response as a string.
-func (hr *Request) String() (string, error) {
-	responseStr, _, err := hr.StringWithMeta()
+func (r *Request) String() (string, error) {
+	responseStr, _, err := r.StringWithMeta()
 	return responseStr, err
 }
 
 // StringWithMeta returns the body of the response as a string in addition to the response metadata.
-func (hr *Request) StringWithMeta() (string, *ResponseMeta, error) {
-	contents, meta, err := hr.BytesWithMeta()
+func (r *Request) StringWithMeta() (string, *ResponseMeta, error) {
+	contents, meta, err := r.BytesWithMeta()
 	return string(contents), meta, err
 }
 
 // JSON unmarshals the response as json to an object.
-func (hr *Request) JSON(destination interface{}) error {
-	_, err := hr.deserialize(newJSONDeserializer(destination))
+func (r *Request) JSON(destination interface{}) error {
+	_, err := r.deserialize(r.jsonDeserializer(destination))
 	return err
 }
 
 // JSONWithMeta unmarshals the response as json to an object with metadata.
-func (hr *Request) JSONWithMeta(destination interface{}) (*ResponseMeta, error) {
-	return hr.deserialize(newJSONDeserializer(destination))
+func (r *Request) JSONWithMeta(destination interface{}) (*ResponseMeta, error) {
+	return r.deserialize(r.jsonDeserializer(destination))
 }
 
 // JSONWithErrorHandler unmarshals the response as json to an object with metadata or an error object depending on the meta.
-func (hr *Request) JSONWithErrorHandler(successObject interface{}, errorObject interface{}) (*ResponseMeta, error) {
-	return hr.deserializeWithError(newJSONDeserializer(successObject), newJSONDeserializer(errorObject))
+func (r *Request) JSONWithErrorHandler(successObject interface{}, errorObject interface{}) (*ResponseMeta, error) {
+	return r.deserializeWithError(r.jsonDeserializer(successObject), r.jsonDeserializer(errorObject))
 }
 
 // JSONError unmarshals the response as json to an object if the meta indiciates an error.
-func (hr *Request) JSONError(errorObject interface{}) (*ResponseMeta, error) {
-	return hr.deserializeWithError(nil, newJSONDeserializer(errorObject))
+func (r *Request) JSONError(errorObject interface{}) (*ResponseMeta, error) {
+	return r.deserializeWithError(nil, r.jsonDeserializer(errorObject))
 }
 
 // XML unmarshals the response as xml to an object with metadata.
-func (hr *Request) XML(destination interface{}) error {
-	_, err := hr.deserialize(newXMLDeserializer(destination))
+func (r *Request) XML(destination interface{}) error {
+	_, err := r.deserialize(r.xmlDeserializer(destination))
 	return err
 }
 
 // XMLWithMeta unmarshals the response as xml to an object with metadata.
-func (hr *Request) XMLWithMeta(destination interface{}) (*ResponseMeta, error) {
-	return hr.deserialize(newXMLDeserializer(destination))
+func (r *Request) XMLWithMeta(destination interface{}) (*ResponseMeta, error) {
+	return r.deserialize(r.xmlDeserializer(destination))
 }
 
 // XMLWithErrorHandler unmarshals the response as xml to an object with metadata or an error object depending on the meta.
-func (hr *Request) XMLWithErrorHandler(successObject interface{}, errorObject interface{}) (*ResponseMeta, error) {
-	return hr.deserializeWithError(newXMLDeserializer(successObject), newXMLDeserializer(errorObject))
+func (r *Request) XMLWithErrorHandler(successObject interface{}, errorObject interface{}) (*ResponseMeta, error) {
+	return r.deserializeWithError(r.xmlDeserializer(successObject), r.xmlDeserializer(errorObject))
 }
 
 // Deserialized runs a deserializer with the response.
-func (hr *Request) Deserialized(deserialize Deserializer) (*ResponseMeta, error) {
-	meta, responseErr := hr.deserialize(func(body []byte) error {
+func (r *Request) Deserialized(deserialize Deserializer) (*ResponseMeta, error) {
+	meta, responseErr := r.deserialize(func(body []byte) error {
 		return deserialize(body)
 	})
 	return meta, responseErr
 }
 
-func (hr *Request) requiresCustomTransport() bool {
-	return (!isEmpty(hr.TLSClientCertPath) && !isEmpty(hr.TLSClientKeyPath)) ||
-		(!isEmpty(string(hr.TLSClientCert)) && !isEmpty(string(hr.TLSClientKey))) ||
-		hr.TLSCAPool != nil ||
-		hr.transport != nil ||
-		hr.createTransportHandler != nil ||
-		hr.TLSSkipVerify
-}
-
-func (hr *Request) getTransport() (*http.Transport, error) {
-	if hr.transport != nil {
-		return hr.transport, nil
-	}
-	return hr.Transport()
-}
-
-// Transport returns the the custom transport for the request.
-func (hr *Request) Transport() (*http.Transport, error) {
-	transport := &http.Transport{
-		DisableCompression: false,
-		DisableKeepAlives:  !hr.KeepAlive,
-	}
-
-	dialer := &net.Dialer{}
-	if hr.Timeout != time.Duration(0) {
-		dialer.Timeout = hr.Timeout
-	}
-
-	if hr.KeepAlive {
-		if hr.KeepAliveTimeout != time.Duration(0) {
-			dialer.KeepAlive = hr.KeepAliveTimeout
-		} else {
-			dialer.KeepAlive = 30 * time.Second
-		}
-	}
-
-	transport.Dial = dialer.Dial
-
-	if (!isEmpty(hr.TLSClientCertPath) && !isEmpty(hr.TLSClientKeyPath)) || !isEmpty(string(hr.TLSClientCert)) && !isEmpty(string(hr.TLSClientKey)) {
-		var cert tls.Certificate
-		var err error
-
-		if !isEmpty(hr.TLSClientCertPath) {
-			cert, err = tls.LoadX509KeyPair(hr.TLSClientCertPath, hr.TLSClientKeyPath)
-		} else {
-			cert, err = tls.X509KeyPair(hr.TLSClientCert, hr.TLSClientKey)
-		}
-		if err != nil {
-			return nil, exception.New(err)
-		}
-		tlsConfig := &tls.Config{
-			RootCAs:            hr.TLSCAPool,
-			InsecureSkipVerify: hr.TLSSkipVerify,
-			Certificates:       []tls.Certificate{cert},
-		}
-		transport.TLSClientConfig = tlsConfig
-	} else {
-		tlsConfig := &tls.Config{
-			RootCAs:            hr.TLSCAPool,
-			InsecureSkipVerify: hr.TLSSkipVerify,
-		}
-		transport.TLSClientConfig = tlsConfig
-	}
-
-	if hr.createTransportHandler != nil {
-		hr.createTransportHandler(hr.URL(), transport)
-	}
-
-	return transport, nil
-}
-
-func (hr *Request) deserialize(handler Deserializer) (*ResponseMeta, error) {
-	res, err := hr.Response()
-	meta := NewResponseMeta(res)
-
+func (r *Request) deserialize(handler Deserializer) (*ResponseMeta, error) {
+	res, err := r.Response()
 	if err != nil {
-		return meta, exception.New(err)
+		return nil, exception.New(err)
 	}
 	defer res.Body.Close()
 
+	meta := NewResponseMeta(res)
 	body, err := ioutil.ReadAll(res.Body)
 	if err != nil {
 		return meta, exception.New(err)
 	}
 
 	meta.ContentLength = int64(len(body))
-	hr.logResponse(meta, body, hr.state)
+	r.logResponse(meta, body, r.state)
 	if meta.ContentLength > 0 && handler != nil {
 		err = handler(body)
 	}
 	return meta, exception.New(err)
 }
 
-func (hr *Request) deserializeWithError(okHandler Deserializer, errorHandler Deserializer) (*ResponseMeta, error) {
-	res, err := hr.Response()
+func (r *Request) deserializeWithError(okHandler Deserializer, errorHandler Deserializer) (*ResponseMeta, error) {
+	res, err := r.Response()
 	meta := NewResponseMeta(res)
 
 	if err != nil {
@@ -755,7 +794,7 @@ func (hr *Request) deserializeWithError(okHandler Deserializer, errorHandler Des
 	}
 
 	meta.ContentLength = int64(len(body))
-	hr.logResponse(meta, body, hr.state)
+	r.logResponse(meta, body, r.state)
 	if meta.ContentLength > 0 {
 		if res.StatusCode == http.StatusOK {
 			if okHandler != nil {
@@ -768,34 +807,30 @@ func (hr *Request) deserializeWithError(okHandler Deserializer, errorHandler Des
 	return meta, exception.New(err)
 }
 
-func (hr *Request) logRequest() {
-	hr.requestStart = time.Now().UTC()
-
-	meta := hr.Meta()
-	if hr.outgoingRequestHandler != nil {
-		hr.outgoingRequestHandler(meta)
+func (r *Request) logRequest() {
+	meta := r.Meta()
+	if r.requestHandler != nil {
+		r.requestHandler(meta)
 	}
 
-	if hr.log != nil {
-		hr.log.Trigger(Event{
-			ts:  time.Now().UTC(),
+	if r.log != nil {
+		r.log.Trigger(Event{
+			ts:  now(),
 			req: meta,
 		})
 	}
 }
 
-func (hr *Request) logResponse(resMeta *ResponseMeta, responseBody []byte, state interface{}) {
-	if hr.statefulIncomingResponseHandler != nil {
-		hr.statefulIncomingResponseHandler(hr.Meta(), resMeta, responseBody, state)
-	}
-	if hr.incomingResponseHandler != nil {
-		hr.incomingResponseHandler(hr.Meta(), resMeta, responseBody)
+func (r *Request) logResponse(resMeta *ResponseMeta, responseBody []byte, state interface{}) {
+	reqMeta := r.Meta()
+	if r.responseHandler != nil {
+		r.responseHandler(reqMeta, resMeta, responseBody, state)
 	}
 
-	if hr.log != nil {
-		hr.log.Trigger(ResponseEvent{
+	if r.log != nil {
+		r.log.Trigger(ResponseEvent{
 			ts:   time.Now().UTC(),
-			req:  hr.Meta(),
+			req:  reqMeta,
 			res:  resMeta,
 			body: responseBody,
 		})
@@ -805,35 +840,27 @@ func (hr *Request) logResponse(resMeta *ResponseMeta, responseBody []byte, state
 // Hash / Mock Utility Functions
 
 // Hash returns a hashcode for a request.
-func (hr *Request) Hash() uint32 {
-	if hr == nil {
-		return 0
-	}
-
-	buffer := bytes.NewBuffer(nil)
-	buffer.WriteString(hr.Verb)
+func (r *Request) Hash() uint32 {
+	buffer := new(bytes.Buffer)
+	buffer.WriteString(r.method)
 	buffer.WriteRune('|')
-	buffer.WriteString(hr.URL().String())
-
+	buffer.WriteString(r.URL().String())
 	h := fnv.New32a()
 	h.Write(buffer.Bytes())
 	return h.Sum32()
 }
 
 // Equals returns if a request equals another request.
-func (hr *Request) Equals(other *Request) bool {
+func (r *Request) Equals(other *Request) bool {
 	if other == nil {
 		return false
 	}
-
-	if hr.Verb != other.Verb {
+	if r.method != other.method {
 		return false
 	}
-
-	if hr.URL().String() != other.URL().String() {
+	if r.URL().String() != other.URL().String() {
 		return false
 	}
-
 	return true
 }
 
@@ -841,61 +868,57 @@ func (hr *Request) Equals(other *Request) bool {
 // Unexported Utility Functions
 //--------------------------------------------------------------------------------
 
-func newJSONDeserializer(object interface{}) Deserializer {
+func (r *Request) jsonDeserializer(object interface{}) Deserializer {
 	return func(body []byte) error {
-		return deserializeJSON(object, body)
+		return r.deserializeJSON(object, body)
 	}
 }
 
-func newXMLDeserializer(object interface{}) Deserializer {
+func (r *Request) xmlDeserializer(object interface{}) Deserializer {
 	return func(body []byte) error {
-		return deserializeXML(object, body)
+		return r.deserializeXML(object, body)
 	}
 }
 
-func deserializeJSON(object interface{}, body []byte) error {
+func (r *Request) deserializeJSON(object interface{}, body []byte) error {
 	decoder := json.NewDecoder(bytes.NewBuffer(body))
 	decodeErr := decoder.Decode(object)
 	return exception.New(decodeErr)
 }
 
-func deserializeJSONFromReader(object interface{}, body io.Reader) error {
+func (r *Request) deserializeJSONFromReader(object interface{}, body io.Reader) error {
 	decoder := json.NewDecoder(body)
 	decodeErr := decoder.Decode(object)
 	return exception.New(decodeErr)
 }
 
-func serializeJSON(object interface{}) ([]byte, error) {
+func (r *Request) serializeJSON(object interface{}) ([]byte, error) {
 	return json.Marshal(object)
 }
 
-func serializeJSONToReader(object interface{}) (io.Reader, error) {
+func (r *Request) serializeJSONToReader(object interface{}) (io.Reader, error) {
 	buf := bytes.NewBuffer([]byte{})
 	encoder := json.NewEncoder(buf)
 	err := encoder.Encode(object)
 	return buf, err
 }
 
-func deserializeXML(object interface{}, body []byte) error {
-	return deserializeXMLFromReader(object, bytes.NewBuffer(body))
+func (r *Request) deserializeXML(object interface{}, body []byte) error {
+	return r.deserializeXMLFromReader(object, bytes.NewBuffer(body))
 }
 
-func deserializeXMLFromReader(object interface{}, reader io.Reader) error {
+func (r *Request) deserializeXMLFromReader(object interface{}, reader io.Reader) error {
 	decoder := xml.NewDecoder(reader)
 	return decoder.Decode(object)
 }
 
-func serializeXML(object interface{}) ([]byte, error) {
+func (r *Request) serializeXML(object interface{}) ([]byte, error) {
 	return xml.Marshal(object)
 }
 
-func serializeXMLToReader(object interface{}) (io.Reader, error) {
+func (r *Request) serializeXMLToReader(object interface{}) (io.Reader, error) {
 	buf := bytes.NewBuffer([]byte{})
 	encoder := xml.NewEncoder(buf)
 	err := encoder.Encode(object)
 	return buf, err
-}
-
-func isEmpty(str string) bool {
-	return len(str) == 0
 }
