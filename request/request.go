@@ -23,12 +23,12 @@ import (
 
 // Get returns a new get request.
 func Get(url string) *Request {
-	return New().AsGet().WithRawURL(url)
+	return New().AsGet().MustWithRawURL(url)
 }
 
 // Post returns a new post request with an optional body.
 func Post(url string, body []byte) *Request {
-	return New().AsPost().WithRawURL(url).WithPostBody(body)
+	return New().AsPost().MustWithRawURL(url).WithPostBody(body)
 }
 
 // New returns a new HTTPRequest instance.
@@ -278,17 +278,32 @@ func (r *Request) WithPathf(format string, args ...interface{}) *Request {
 }
 
 // WithRawURLf sets the url based on a format and args.
-func (r *Request) WithRawURLf(format string, args ...interface{}) *Request {
+func (r *Request) WithRawURLf(format string, args ...interface{}) (*Request, error) {
 	return r.WithRawURL(fmt.Sprintf(format, args...))
 }
 
+// MustWithRawURLf sets the url based on a format and args.
+func (r *Request) MustWithRawURLf(format string, args ...interface{}) *Request {
+	return r.MustWithRawURL(fmt.Sprintf(format, args...))
+}
+
 // WithRawURL sets the request target url whole hog.
-func (r *Request) WithRawURL(rawURL string) *Request {
-	if parsedURL, err := url.ParseRequestURI(rawURL); err != nil {
-		panic(err)
-	} else {
-		r.url = parsedURL
+func (r *Request) WithRawURL(rawURL string) (*Request, error) {
+	parsedURL, err := url.ParseRequestURI(rawURL)
+	if err != nil {
+		return r, err
 	}
+	r.url = parsedURL
+	return r, nil
+}
+
+// MustWithRawURL sets the request target url whole hog.
+func (r *Request) MustWithRawURL(rawURL string) *Request {
+	parsedURL, err := url.ParseRequestURI(rawURL)
+	if err != nil {
+		panic(err)
+	}
+	r.url = parsedURL
 	return r
 }
 

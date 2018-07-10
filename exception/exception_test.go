@@ -32,7 +32,7 @@ func TestNewOfError(t *testing.T) {
 
 func TestNewOfException(t *testing.T) {
 	a := assert.New(t)
-	ex := New(Error("This is an exception"))
+	ex := New(Class("This is an exception"))
 	wrappedEx := New(ex)
 	a.NotNil(wrappedEx)
 	typedWrappedEx := As(wrappedEx)
@@ -83,7 +83,7 @@ func TestNewOfReturnedNil(t *testing.T) {
 func TestError(t *testing.T) {
 	a := assert.New(t)
 
-	ex := New(Error("this is a test"))
+	ex := New(Class("this is a test"))
 	message := ex.Error()
 	a.NotEmpty(message)
 }
@@ -102,10 +102,10 @@ func TestExceptionFormatters(t *testing.T) {
 	assert := assert.New(t)
 
 	// test the "%v" formatter with just the exception class.
-	class := &Ex{class: Error("this is a test")}
+	class := &Ex{class: Class("this is a test")}
 	assert.Equal("this is a test", fmt.Sprintf("%v", class))
 
-	classAndMessage := &Ex{class: Error("foo"), message: "bar"}
+	classAndMessage := &Ex{class: Class("foo"), message: "bar"}
 	assert.Equal("foo\nmessage: bar", fmt.Sprintf("%v", classAndMessage))
 }
 
@@ -146,8 +146,8 @@ func TestNest(t *testing.T) {
 	a.NotNil(err.Inner())
 	a.NotEmpty(err.Error())
 
-	a.True(Is(ex1, Error("this is an error")))
-	a.True(Is(ex1.Inner(), Error("this is another error")))
+	a.True(Is(ex1, Class("this is an error")))
+	a.True(Is(ex1.Inner(), Class("this is another error")))
 }
 
 func TestNestNil(t *testing.T) {

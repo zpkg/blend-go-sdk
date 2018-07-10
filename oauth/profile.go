@@ -42,7 +42,7 @@ func (p Profile) Username() string {
 func FetchProfile(accessToken string) (*Profile, error) {
 	var profile Profile
 	meta, err := request.New().AsGet().
-		WithRawURL("https://www.googleapis.com/oauth2/v1/userinfo").
+		MustWithRawURL("https://www.googleapis.com/oauth2/v1/userinfo").
 		WithQueryString("alt", "json").
 		WithQueryString("access_token", accessToken).
 		WithMockProvider(request.MockedResponseInjector).

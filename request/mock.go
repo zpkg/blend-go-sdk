@@ -81,12 +81,12 @@ func MockResponseFromBinary(req *Request, statusCode int, responseBody []byte) {
 
 // MockResponseFromString mocks a service request response from a string responseBody.
 func MockResponseFromString(verb string, url string, statusCode int, responseBody string) {
-	MockResponseFromBinary(New().WithMethod(verb).WithRawURL(url), statusCode, []byte(responseBody))
+	MockResponseFromBinary(New().WithMethod(verb).MustWithRawURL(url), statusCode, []byte(responseBody))
 }
 
 // MockResponseFromFile mocks a service request response from a set of file paths.
 func MockResponseFromFile(verb string, url string, statusCode int, responseFilePath string) {
-	MockResponse(New().WithMethod(verb).WithRawURL(url), readFile(statusCode, responseFilePath))
+	MockResponse(New().WithMethod(verb).MustWithRawURL(url), readFile(statusCode, responseFilePath))
 }
 
 // ClearMockedResponses clears any mocked responses that have been set up for the test.

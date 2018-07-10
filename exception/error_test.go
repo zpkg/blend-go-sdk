@@ -7,10 +7,10 @@ import (
 	"github.com/blend/go-sdk/assert"
 )
 
-func TestErrorMarshalJSON(t *testing.T) {
+func TestClassMarshalJSON(t *testing.T) {
 	assert := assert.New(t)
 
-	err := Error("this is only a test")
+	err := Class("this is only a test")
 	contents, marshalErr := json.Marshal(err)
 	assert.Nil(marshalErr)
 	assert.Equal(`"this is only a test"`, string(contents))
