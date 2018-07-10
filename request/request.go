@@ -647,7 +647,10 @@ func (r *Request) Response() (*http.Response, error) {
 			return nil, exception.New(err)
 		}
 	}
-	client.Transport = r.transport
+	if r.transport != nil {
+		client.Transport = r.transport
+	}
+
 	if r.timeout > 0 {
 		client.Timeout = r.timeout
 	}
