@@ -9,7 +9,7 @@ import (
 func TestIs(t *testing.T) {
 	assert := assert.New(t)
 
-	errInvalidSomething := Error("invalid something")
+	errInvalidSomething := Class("invalid something")
 
 	ex := New(errInvalidSomething)
 

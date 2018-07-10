@@ -16,7 +16,7 @@ var (
 
 const (
 	// ErrBooleanUnmarshal is an exception class.
-	ErrBooleanUnmarshal = exception.Error("cannot unmarshal boolean")
+	ErrBooleanUnmarshal = exception.Class("cannot unmarshal boolean")
 )
 
 // Boolean is a type alias for bool that can be unmarshaled from 0|1, true|false etc.

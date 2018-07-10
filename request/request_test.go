@@ -152,8 +152,7 @@ func getTLSMockServer(handler http.HandlerFunc) *httptest.Server {
 
 func TestCreateHttpRequestWithUrl(t *testing.T) {
 	assert := assert.New(t)
-	sr := New().
-		WithRawURL("http://localhost:5001/api/v1/path/2?env=dev&foo=bar")
+	sr := New().MustWithRawURL("http://localhost:5001/api/v1/path/2?env=dev&foo=bar")
 
 	assert.Equal("http", sr.url.Scheme)
 	assert.Equal("localhost:5001", sr.url.Host)
@@ -169,7 +168,7 @@ func TestHttpGet(t *testing.T) {
 	returnedObject := newTestObject()
 	ts := mockEndpoint(okMeta(), returnedObject, nil)
 	testObject := testObject{}
-	meta, err := New().AsGet().WithRawURL(ts.URL).JSONWithMeta(&testObject)
+	meta, err := New().AsGet().MustWithRawURL(ts.URL).JSONWithMeta(&testObject)
 	assert.Nil(err)
 	assert.Equal(http.StatusOK, meta.StatusCode)
 	assert.Equal(returnedObject, testObject)
@@ -181,7 +180,7 @@ func TestHttpGetWithErrorHandler(t *testing.T) {
 	ts := mockEndpoint(errorMeta(), returnedObject, nil)
 	testObject := testObject{}
 	errorObject := errorObject{}
-	meta, err := New().AsGet().WithRawURL(ts.URL).JSONWithErrorHandler(&testObject, &errorObject)
+	meta, err := New().AsGet().MustWithRawURL(ts.URL).JSONWithErrorHandler(&testObject, &errorObject)
 	assert.Nil(err)
 	assert.Equal(http.StatusInternalServerError, meta.StatusCode)
 	assert.Equal(returnedObject, errorObject)
@@ -200,7 +199,7 @@ func TestHttpGetWithExpiringTimeout(t *testing.T) {
 	testObject := testObject{}
 
 	before := time.Now()
-	_, err := New().AsGet().WithTimeout(250 * time.Millisecond).WithRawURL(ts.URL).JSONWithMeta(&testObject)
+	_, err := New().AsGet().WithTimeout(250 * time.Millisecond).MustWithRawURL(ts.URL).JSONWithMeta(&testObject)
 	after := time.Now()
 
 	diff := after.Sub(before)
@@ -215,7 +214,7 @@ func TestHttpGetWithTimeout(t *testing.T) {
 		assert.Equal("GET", r.Method)
 	})
 	testObject := testObject{}
-	meta, err := New().AsGet().WithTimeout(250 * time.Millisecond).WithRawURL(ts.URL).JSONWithMeta(&testObject)
+	meta, err := New().AsGet().WithTimeout(250 * time.Millisecond).MustWithRawURL(ts.URL).JSONWithMeta(&testObject)
 	assert.Nil(err)
 	assert.Equal(http.StatusOK, meta.StatusCode)
 	assert.Equal(returnedObject, testObject)
@@ -226,7 +225,7 @@ func TestHttpGetNoContent(t *testing.T) {
 	emptyObject := testObject{}
 	ts := mockNoContentEndpoint(noContentMeta(), nil)
 	testObject := testObject{}
-	meta, err := New().AsGet().WithRawURL(ts.URL).JSONWithMeta(&testObject)
+	meta, err := New().AsGet().MustWithRawURL(ts.URL).JSONWithMeta(&testObject)
 	assert.Nil(err)
 	assert.Equal(http.StatusNoContent, meta.StatusCode)
 	assert.Equal(emptyObject, testObject)
@@ -238,7 +237,7 @@ func TestHttpGetNoContentWithErrorHandler(t *testing.T) {
 	ts := mockNoContentEndpoint(noContentMeta(), nil)
 	errorObject := testObject{}
 	testObject := testObject{}
-	meta, err := New().AsGet().WithRawURL(ts.URL).JSONWithErrorHandler(&testObject, &errorObject)
+	meta, err := New().AsGet().MustWithRawURL(ts.URL).JSONWithErrorHandler(&testObject, &errorObject)
 	assert.Nil(err)
 	assert.Equal(http.StatusNoContent, meta.StatusCode)
 	assert.Equal(emptyObject, testObject)
@@ -250,7 +249,7 @@ func TestTlsHttpGet(t *testing.T) {
 	returnedObject := newTestObject()
 	ts := mockTLSEndpoint(okMeta(), returnedObject, nil)
 	testObject := testObject{}
-	meta, err := New().AsGet().WithRawURL(ts.URL).JSONWithMeta(&testObject)
+	meta, err := New().AsGet().MustWithRawURL(ts.URL).JSONWithMeta(&testObject)
 	assert.Nil(err)
 	assert.Equal(http.StatusOK, meta.StatusCode)
 	assert.Equal(returnedObject, testObject)
@@ -266,7 +265,7 @@ func TestHttpPostWithPostData(t *testing.T) {
 	})
 
 	testObject := testObject{}
-	meta, err := New().AsPost().WithRawURL(ts.URL).WithPostData("foo", "bar").JSONWithMeta(&testObject)
+	meta, err := New().AsPost().MustWithRawURL(ts.URL).WithPostData("foo", "bar").JSONWithMeta(&testObject)
 	assert.Nil(err)
 	assert.Equal(http.StatusOK, meta.StatusCode)
 	assert.Equal(returnedObject, testObject)
@@ -283,7 +282,7 @@ func TestHttpPostWithBasicAuth(t *testing.T) {
 	})
 
 	testObject := statusObject{}
-	meta, err := New().AsPost().WithRawURL(ts.URL).WithBasicAuth("test_user", "test_password").WithPostBody([]byte(`{"status":"ok!"}`)).JSONWithMeta(&testObject)
+	meta, err := New().AsPost().MustWithRawURL(ts.URL).WithBasicAuth("test_user", "test_password").WithPostBody([]byte(`{"status":"ok!"}`)).JSONWithMeta(&testObject)
 	assert.Nil(err)
 	assert.Equal(http.StatusOK, meta.StatusCode)
 	assert.Equal("ok!", testObject.Status)
@@ -298,7 +297,7 @@ func TestHttpPostWithHeader(t *testing.T) {
 	})
 
 	testObject := statusObject{}
-	meta, err := New().AsPost().WithRawURL(ts.URL).WithHeader("test_header", "foosballs").WithPostBody([]byte(`{"status":"ok!"}`)).JSONWithMeta(&testObject)
+	meta, err := New().AsPost().MustWithRawURL(ts.URL).WithHeader("test_header", "foosballs").WithPostBody([]byte(`{"status":"ok!"}`)).JSONWithMeta(&testObject)
 	assert.Nil(err)
 	assert.Equal(http.StatusOK, meta.StatusCode)
 	assert.Equal("ok!", testObject.Status)
@@ -323,7 +322,7 @@ func TestHttpPostWithCookies(t *testing.T) {
 	})
 
 	testObject := statusObject{}
-	meta, err := New().AsPost().WithRawURL(ts.URL).WithCookie(cookie).WithPostBody([]byte(`{"status":"ok!"}`)).JSONWithMeta(&testObject)
+	meta, err := New().AsPost().MustWithRawURL(ts.URL).WithCookie(cookie).WithPostBody([]byte(`{"status":"ok!"}`)).JSONWithMeta(&testObject)
 	assert.Nil(err)
 	assert.Equal(http.StatusOK, meta.StatusCode)
 	assert.Equal("ok!", testObject.Status)
@@ -336,7 +335,7 @@ func TestHttpPostWithJSONBody(t *testing.T) {
 	ts := mockEchoEndpoint(okMeta())
 
 	testObject := testObject{}
-	meta, err := New().AsPost().WithRawURL(ts.URL).WithPostBodyAsJSON(&returnedObject).JSONWithMeta(&testObject)
+	meta, err := New().AsPost().MustWithRawURL(ts.URL).WithPostBodyAsJSON(&returnedObject).JSONWithMeta(&testObject)
 	assert.Nil(err)
 	assert.Equal(http.StatusOK, meta.StatusCode)
 	assert.Equal(returnedObject, testObject)
@@ -349,7 +348,7 @@ func TestHttpPostWithXMLBody(t *testing.T) {
 	ts := mockEchoEndpoint(okMeta())
 
 	testObject := testObject{}
-	meta, err := New().AsPost().WithRawURL(ts.URL).WithPostBodyAsXML(&returnedObject).XMLWithMeta(&testObject)
+	meta, err := New().AsPost().MustWithRawURL(ts.URL).WithPostBodyAsXML(&returnedObject).XMLWithMeta(&testObject)
 	assert.Nil(err)
 	assert.Equal(http.StatusOK, meta.StatusCode)
 	assert.Equal(returnedObject, testObject)
@@ -362,7 +361,7 @@ func TestMockedRequests(t *testing.T) {
 		assert.True(false, "This shouldnt run in a mocked context.")
 	})
 
-	verifyString, meta, err := New().AsPut().WithPostBody([]byte("foobar")).WithRawURL(ts.URL).WithMockProvider(func(_ *Request) *MockedResponse {
+	verifyString, meta, err := New().AsPut().WithPostBody([]byte("foobar")).MustWithRawURL(ts.URL).WithMockProvider(func(_ *Request) *MockedResponse {
 		return &MockedResponse{Meta: *okMeta(), Res: []byte("ok!")}
 	}).StringWithMeta()
 
@@ -377,7 +376,7 @@ func TestOnRequestHook(t *testing.T) {
 	ts := mockEchoEndpoint(okMeta())
 
 	called := false
-	_, _, err := New().AsPut().WithPostBody([]byte("foobar")).WithRawURL(ts.URL).WithRequestHandler(func(meta *Meta) {
+	_, _, err := New().AsPut().WithPostBody([]byte("foobar")).MustWithRawURL(ts.URL).WithRequestHandler(func(meta *Meta) {
 		called = true
 	}).StringWithMeta()
 	assert.Nil(err)
@@ -396,7 +395,7 @@ func TestRequestLogger(t *testing.T) {
 	defer log.Close()
 
 	testObject := testObject{}
-	_, err := New().WithLogger(log).AsGet().WithRawURL(ts.URL).JSONWithMeta(&testObject)
+	_, err := New().WithLogger(log).AsGet().MustWithRawURL(ts.URL).JSONWithMeta(&testObject)
 	assert.Nil(err)
 
 	log.Drain()
@@ -418,7 +417,7 @@ func TestClientTrace(t *testing.T) {
 	}
 
 	testObject := testObject{}
-	_, err := New().WithClientTrace(trace).AsGet().WithRawURL(ts.URL).JSONWithMeta(&testObject)
+	_, err := New().WithClientTrace(trace).AsGet().MustWithRawURL(ts.URL).JSONWithMeta(&testObject)
 	assert.Nil(err)
 	assert.True(receivedByte)
 }
@@ -434,7 +433,7 @@ func TestRequestInsecureSkipVerify(t *testing.T) {
 
 	assert.True(strings.HasPrefix(ts.URL, "https"), "the test server should be listening tls")
 
-	req := New().AsGet().WithTLSSkipVerify(true).WithRawURL(ts.URL)
+	req := New().AsGet().WithTLSSkipVerify(true).MustWithRawURL(ts.URL)
 
 	contents, meta, err := req.BytesWithMeta()
 	assert.NotNil(req.Transport())

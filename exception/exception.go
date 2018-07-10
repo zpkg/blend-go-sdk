@@ -31,12 +31,12 @@ func newWithStartDepth(class interface{}, startDepth int) Exception {
 		}
 	} else if str, isStr := class.(string); isStr {
 		return &Ex{
-			class: Error(str),
+			class: Class(str),
 			stack: callers(startDepth),
 		}
 	}
 	return &Ex{
-		class: Error(fmt.Sprint(class)),
+		class: Class(fmt.Sprint(class)),
 		stack: callers(startDepth),
 	}
 }

@@ -8,7 +8,7 @@ import (
 
 const (
 	// ErrMultipleBodySources is an error returned if a request has both the post body and post data set.
-	ErrMultipleBodySources = exception.Error("Cannot set both `Body` and `Post Data`")
+	ErrMultipleBodySources = exception.Class("Cannot set both `Body` and `Post Data`")
 )
 
 const (
