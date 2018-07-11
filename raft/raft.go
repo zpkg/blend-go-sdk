@@ -308,6 +308,8 @@ func (r *Raft) Stop() error {
 	if !r.latch.IsRunning() {
 		return exception.New(ErrNotRunning)
 	}
+	r.latch.Stop()
+
 	if r.leaderCheckTicker != nil {
 		r.leaderCheckTicker.Stop()
 		r.leaderCheckTicker = nil
@@ -320,6 +322,7 @@ func (r *Raft) Stop() error {
 	if r.server != nil {
 		return r.server.Stop()
 	}
+	r.latch.Stopped()
 	return nil
 }
 
