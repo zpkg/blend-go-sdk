@@ -42,8 +42,8 @@ func (i Interval) Interval() time.Duration {
 	return i.interval
 }
 
-// Running returns if the worker is running.
-func (i *Interval) Running() bool {
+// IsRunning returns if the worker is running.
+func (i *Interval) IsRunning() bool {
 	return i.latch.IsRunning()
 }
 
