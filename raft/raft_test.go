@@ -134,6 +134,7 @@ func TestRaftSoloStart(t *testing.T) {
 	assert.Equal(Leader, solo.State())
 	assert.Nil(solo.leaderCheckTicker)
 	assert.Nil(solo.heartbeatTicker)
+	assert.True(solo.IsRunning())
 }
 
 func TestRaftStart(t *testing.T) {
@@ -150,6 +151,7 @@ func TestRaftStart(t *testing.T) {
 
 	assert.NotNil(node.Server())
 	assert.Len(node.Peers(), 3)
+	assert.True(node.IsRunning())
 
 	assert.True(node.leaderCheckTicker.IsRunning())
 	assert.True(node.heartbeatTicker.IsRunning())
