@@ -266,19 +266,16 @@ func (r *Raft) Start() error {
 	if r.latch.IsStarting() || r.latch.IsRunning() {
 		return exception.New(ErrAlreadyStarted)
 	}
-	r.latch.Starting()
-
 	r.infof("node starting")
-	defer func() {
-		r.infof("node started")
-	}()
+	r.latch.Starting()
 
 	if len(r.peers) == 0 {
 		r.infof("node operating in solo node configuration")
 		r.transitionTo(Leader)
+		r.latch.Started()
+		r.infof("node started")
 		return nil
 	}
-
 	if r.server == nil {
 		return exception.New(ErrServerUnset)
 	}
@@ -287,8 +284,7 @@ func (r *Raft) Start() error {
 	r.server.SetAppendEntriesHandler(r.AppendEntriesHandler)
 	r.server.SetRequestVoteHandler(r.RequestVoteHandler)
 
-	err := r.server.Start()
-	if err != nil {
+	if err := r.server.Start(); err != nil {
 		return err
 	}
 
@@ -299,6 +295,7 @@ func (r *Raft) Start() error {
 	r.heartbeatTicker.Start()
 
 	r.latch.Started()
+	r.infof("node started")
 	return nil
 }
 
