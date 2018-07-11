@@ -125,6 +125,11 @@ func (r *Raft) IsLeader() (output bool) {
 	return
 }
 
+// Latch returns the latch coordinator.
+func (r *Raft) Latch() *worker.Latch {
+	return r.latch
+}
+
 // VotedFor returns the current known leader. It is read only.
 func (r *Raft) VotedFor() string {
 	return r.votedFor
