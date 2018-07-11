@@ -191,6 +191,9 @@ func (s *RPCServer) Start() error {
 // Stop stops the server.
 // It allows up to a second for the shutdown to process.
 func (s *RPCServer) Stop() error {
+	if s.server == nil {
+		return nil
+	}
 	timeout, cancel := context.WithTimeout(context.TODO(), time.Second)
 	defer cancel()
 	return exception.Wrap(s.server.Shutdown(timeout))
