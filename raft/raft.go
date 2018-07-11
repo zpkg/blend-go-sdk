@@ -130,6 +130,11 @@ func (r *Raft) Latch() *worker.Latch {
 	return r.latch
 }
 
+// IsRunning returns if the raft node is started.
+func (r *Raft) IsRunning() bool {
+	return r.latch.IsRunning()
+}
+
 // VotedFor returns the current known leader. It is read only.
 func (r *Raft) VotedFor() string {
 	return r.votedFor
