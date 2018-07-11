@@ -151,8 +151,8 @@ func TestRaftStart(t *testing.T) {
 	assert.NotNil(node.Server())
 	assert.Len(node.Peers(), 3)
 
-	assert.True(node.leaderCheckTicker.Running())
-	assert.True(node.heartbeatTicker.Running())
+	assert.True(node.leaderCheckTicker.IsRunning())
+	assert.True(node.heartbeatTicker.IsRunning())
 }
 
 func TestRaftStop(t *testing.T) {
@@ -170,8 +170,8 @@ func TestRaftStop(t *testing.T) {
 	assert.NotNil(node.Server())
 	assert.Len(node.Peers(), 3)
 
-	assert.True(node.leaderCheckTicker.Running())
-	assert.True(node.heartbeatTicker.Running())
+	assert.True(node.leaderCheckTicker.IsRunning())
+	assert.True(node.heartbeatTicker.IsRunning())
 
 	node.Stop()
 
