@@ -47,6 +47,7 @@ func NewConfigFromEnv() *Config {
 type Config struct {
 	ID                  string        `json:"id,omitempty" yaml:"id,omitempty" env:"RAFT_ID"`
 	BindAddr            string        `json:"bindAddr,omitempty" yaml:"bindAddr,omitempty" env:"RAFT_BIND_ADDR"`
+	ExcludePeer         string        `json:"excludePeer,omitempty" yaml:"excludePeer,omitempty" env:"RAFT_EXCLUDE_PEER"`
 	Peers               []string      `json:"peers,omitempty" yaml:"peers,omitempty" env:"RAFT_PEERS,csv"`
 	HeartbeatInterval   time.Duration `json:"heartbeatInterval,omitempty" yaml:"heartbeatInterval,omitempty" env:"RAFT_HEARTBEAT_INTERVAL"`
 	LeaderCheckInterval time.Duration `json:"leaderCheckInterval,omitempty" yaml:"leaderCheckInterval,omitempty" env:"RAFT_LEADER_CHECK_INTERVAL"`
@@ -80,9 +81,29 @@ func (c *Config) WithBindAddr(value string) *Config {
 	return c
 }
 
+// GetExcludePeer returns a peer to exclude in the peers list.
+func (c Config) GetExcludePeer(inherited ...string) string {
+	return util.Coalesce.String(c.ExcludePeer, "", inherited...)
+}
+
 // GetPeers gets a field or a default.
 func (c Config) GetPeers(inherited ...[]string) []string {
 	return util.Coalesce.Strings(c.Peers, nil, inherited...)
+}
+
+// GetPeersFiltered returns a filtered list of peers less an excluded peer.
+func (c Config) GetPeersFiltered(inherited ...[]string) []string {
+	if len(c.GetExcludePeer()) == 0 {
+		return c.GetPeers(inherited...)
+	}
+
+	var output []string
+	for _, peer := range c.GetPeers(inherited...) {
+		if !IsExcluded(peer, c.GetExcludePeer()) {
+			output = append(output, peer)
+		}
+	}
+	return output
 }
 
 // GetHeartbeatInterval gets a field or a default.

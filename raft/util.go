@@ -6,7 +6,10 @@ import (
 	"math"
 	"math/big"
 	"math/rand"
+	"strings"
 	"time"
+
+	"github.com/blend/go-sdk/util"
 )
 
 var (
@@ -34,6 +37,11 @@ func RandomTimeout(minVal time.Duration) time.Duration {
 
 	randomValue := time.Duration(_randSource.Int63())
 	return minVal + (randomValue % (2 * minVal))
+}
+
+// IsExcluded returns if a peer is excluded.
+func IsExcluded(peer, excludedPeer string) bool {
+	return util.String.CaseInsensitiveEquals(strings.TrimSpace(peer), strings.TrimSpace(excludedPeer))
 }
 
 // min returns the minimum.
