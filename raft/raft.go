@@ -101,6 +101,30 @@ func (r *Raft) State() State {
 	return r.state
 }
 
+// IsState returns if the node is a given state.
+func (r *Raft) IsState(state State) (output bool) {
+	r.Lock()
+	output = state == r.state
+	r.Unlock()
+	return
+}
+
+// IsNotState returns if the node is not a given state.
+func (r *Raft) IsNotState(state State) (output bool) {
+	r.Lock()
+	output = state != r.state
+	r.Unlock()
+	return
+}
+
+// IsLeader returns if the node is the leader.
+func (r *Raft) IsLeader() (output bool) {
+	r.Lock()
+	output = Leader == r.state
+	r.Unlock()
+	return
+}
+
 // VotedFor returns the current known leader. It is read only.
 func (r *Raft) VotedFor() string {
 	return r.votedFor
@@ -299,7 +323,7 @@ func (r *Raft) Stop() error {
 // LeaderCheck is the action that fires on an interval to check if the leader lease has expired.
 // If it fails, it triggers an election.
 func (r *Raft) LeaderCheck() error {
-	if r.isState(Follower) {
+	if r.IsState(Follower) {
 		// if we've never elected a leader, or if the current leader hasn't sent a heartbeat in a while ...
 		if r.isLeaderFailed() {
 			// if we haven't voted yet
@@ -318,7 +342,7 @@ func (r *Raft) LeaderCheck() error {
 // This method is fully interlocked.
 // This method launches a goroutine.
 func (r *Raft) Heartbeat() error {
-	if r.isNotState(Leader) {
+	if r.IsNotState(Leader) {
 		return nil
 	}
 	r.sendHeartbeats()
@@ -423,7 +447,7 @@ func (r *Raft) election() error {
 
 	started := time.Now().UTC()
 	for time.Since(started) < r.electionTimeout {
-		if r.isNotState(Candidate) {
+		if r.IsNotState(Candidate) {
 			return nil
 		}
 
@@ -432,7 +456,7 @@ func (r *Raft) election() error {
 			return err
 		}
 
-		if r.isNotState(Candidate) {
+		if r.IsNotState(Candidate) {
 			return nil
 		}
 
@@ -614,20 +638,6 @@ func (r *Raft) transitionTo(newState State) {
 			go r.safeExecute(r.leaderHandler)
 		}
 	}
-}
-
-func (r *Raft) isState(state State) (output bool) {
-	r.Lock()
-	output = state == r.state
-	r.Unlock()
-	return
-}
-
-func (r *Raft) isNotState(state State) (output bool) {
-	r.Lock()
-	output = state != r.state
-	r.Unlock()
-	return
 }
 
 func (r *Raft) isLeaderFailed() (output bool) {
