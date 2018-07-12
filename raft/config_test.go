@@ -23,6 +23,17 @@ func TestConfig(t *testing.T) {
 func TestConfigGetPeersFiltered(t *testing.T) {
 	assert := assert.New(t)
 
+	unfiltered := (&Config{
+		Peers: []string{
+			"worker-0",
+			"worker-1",
+			"worker-2",
+			"worker-3",
+			"worker-4",
+		},
+	}).GetPeersFiltered()
+	assert.Len(unfiltered, 5)
+
 	filtered := (&Config{
 		ExcludePeer: "worker-2",
 		Peers: []string{
