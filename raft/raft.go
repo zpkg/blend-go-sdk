@@ -335,13 +335,11 @@ func (r *Raft) Stop() error {
 func (r *Raft) LeaderCheck() error {
 	if r.IsState(Follower) {
 		// if we've never elected a leader, or if the current leader hasn't sent a heartbeat in a while ...
-		if r.isLeaderFailed() {
+		if r.shouldTriggerElection() {
 			// if we haven't voted yet
 			if !r.hasVotedRecently() {
 				// trigger an election
 				r.err(r.election())
-			} else {
-				r.debugf("voted too recently, cannot trigger election")
 			}
 		}
 	}
@@ -457,16 +455,16 @@ func (r *Raft) election() error {
 
 	started := time.Now().UTC()
 	for time.Since(started) < r.electionTimeout {
-		if r.IsNotState(Candidate) {
+		if r.shouldStopElection() {
+			r.debugf("should stop election; no longer candidate or no longer running")
 			return nil
 		}
-
 		result, err := r.requestVotes()
 		if err != nil {
 			return err
 		}
-
-		if r.IsNotState(Candidate) {
+		if r.shouldStopElection() {
+			r.debugf("should stop election; no longer candidate or no longer running")
 			return nil
 		}
 
@@ -476,13 +474,11 @@ func (r *Raft) election() error {
 			return r.Heartbeat() // send immediate heartbeat
 		}
 
-		r.debugf("election loss or tie, backing off")
+		r.debugf("election loss or tie")
 		r.backoff(r.electionTimeout)
-		// continues until election timeout
 	}
 
 	r.debugf("election timed out")
-	r.setFollowerSafe()
 	r.backoff(r.electionTimeout)
 	return nil
 }
@@ -650,12 +646,16 @@ func (r *Raft) transitionTo(newState State) {
 	}
 }
 
-func (r *Raft) isLeaderFailed() (output bool) {
+func (r *Raft) shouldTriggerElection() (output bool) {
 	r.Lock()
 	now := time.Now().UTC()
 	output = r.lastLeaderContact.IsZero() || now.Sub(r.lastLeaderContact) > RandomTimeout(r.electionTimeout)
 	r.Unlock()
 	return
+}
+
+func (r *Raft) shouldStopElection() bool {
+	return r.IsNotState(Candidate) || !r.latch.IsRunning()
 }
 
 func (r *Raft) hasVotedRecently() (output bool) {
@@ -715,7 +715,13 @@ func (r *Raft) now() time.Time {
 func (r *Raft) backoff(d time.Duration) {
 	backoffTimeout := RandomTimeout(Backoff(d, r.backoffIndex))
 	r.debugf("backing off for: %v", backoffTimeout)
-	time.Sleep(backoffTimeout)
+	alarm := time.After(backoffTimeout)
+	select {
+	case <-alarm:
+		break
+	case <-r.latch.NotifyStopped():
+		break
+	}
 	atomic.AddInt32(&r.backoffIndex, 1)
 }
 
