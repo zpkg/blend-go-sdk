@@ -13,7 +13,7 @@ const (
 	// DefaultHeartbeatInterval is the tick rate for leaders to send heartbeats.
 	DefaultHeartbeatInterval = 1000 * time.Millisecond
 	// DefaultElectionTimeout is a default.
-	DefaultElectionTimeout = 5 * DefaultHeartbeatInterval
+	DefaultElectionTimeout = 10 * DefaultHeartbeatInterval
 	// DefaultElectionBackoffTimeout is a default.
 	DefaultElectionBackoffTimeout = DefaultElectionTimeout
 	// DefaultPeerDialTimeout is the default peer dial timeout.
