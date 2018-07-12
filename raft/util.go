@@ -31,10 +31,6 @@ func Backoff(base time.Duration, backoffIndex int32) time.Duration {
 // RandomTimeout returns a value that is between the minVal and 3x minVal.
 // i.e. it is minVal + ([0, 2 * minVal])
 func RandomTimeout(minVal time.Duration) time.Duration {
-	if minVal == 0 {
-		return minVal
-	}
-
 	randomValue := time.Duration(_randSource.Int63())
 	return minVal + (randomValue % (2 * minVal))
 }

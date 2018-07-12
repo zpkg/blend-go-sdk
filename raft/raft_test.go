@@ -188,7 +188,7 @@ func TestRaftAppendEntriesHandler(t *testing.T) {
 	r.state = Leader
 
 	var res AppendEntriesResults
-	assert.Nil(r.AppendEntriesHandler(&AppendEntries{
+	assert.Nil(r.ReceiveEntries(&AppendEntries{
 		ID:   "test-node",
 		Term: 1,
 	}, &res))
@@ -212,7 +212,7 @@ func TestRaftAppendEntriesHandlerInvalidTerm(t *testing.T) {
 	r.currentTerm = 2
 
 	var res AppendEntriesResults
-	assert.Nil(r.AppendEntriesHandler(&AppendEntries{
+	assert.Nil(r.ReceiveEntries(&AppendEntries{
 		ID:   "test-node",
 		Term: 1,
 	}, &res))
@@ -236,7 +236,7 @@ func TestRaftRequestVoteHandler(t *testing.T) {
 
 	var res RequestVoteResults
 
-	assert.Nil(r.RequestVoteHandler(&RequestVote{
+	assert.Nil(r.Vote(&RequestVote{
 		ID:   "test-node",
 		Term: 1,
 	}, &res))
@@ -261,7 +261,7 @@ func TestRaftRequestVoteHandlerAlreadyVoted(t *testing.T) {
 	r.votedFor = "test-node-2"
 
 	var res RequestVoteResults
-	assert.Nil(r.RequestVoteHandler(&RequestVote{
+	assert.Nil(r.Vote(&RequestVote{
 		ID:   "test-node",
 		Term: 1,
 	}, &res))
