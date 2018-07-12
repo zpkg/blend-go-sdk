@@ -3,7 +3,6 @@ package raft
 import (
 	"fmt"
 	"sync"
-	"sync/atomic"
 	"time"
 
 	"github.com/blend/go-sdk/exception"
@@ -68,6 +67,7 @@ type Raft struct {
 	// state is the current fsm state
 	state        State
 	backoffIndex int32
+	stateChanged chan struct{}
 
 	server Server
 	peers  []Client
@@ -281,8 +281,8 @@ func (r *Raft) Start() error {
 	}
 
 	// wire up the rpc server.
-	r.server.SetAppendEntriesHandler(r.AppendEntriesHandler)
-	r.server.SetRequestVoteHandler(r.RequestVoteHandler)
+	r.server.SetAppendEntriesHandler(r.ReceiveEntries)
+	r.server.SetRequestVoteHandler(r.Vote)
 
 	if err := r.server.Start(); err != nil {
 		return err
@@ -361,9 +361,9 @@ func (r *Raft) Heartbeat() error {
 // handlers
 // --------------------------------------------------------------------------------
 
-// AppendEntriesHandler is the rpc server handler for AppendEntries rpc requests.
+// ReceiveEntries is the rpc server handler for AppendEntries rpc requests.
 // This method is fully interlocked.
-func (r *Raft) AppendEntriesHandler(args *AppendEntries, res *AppendEntriesResults) error {
+func (r *Raft) ReceiveEntries(args *AppendEntries, res *AppendEntriesResults) error {
 	r.Lock()
 	defer r.Unlock()
 
@@ -378,14 +378,14 @@ func (r *Raft) AppendEntriesHandler(args *AppendEntries, res *AppendEntriesResul
 	}
 
 	if r.state == Leader {
-		r.debugf("received leader heartbeat from %s as leader", args.ID)
+		r.debugf("received entries from %s as leader", args.ID)
+	} else if r.state == Candidate {
+		r.debugf("received entries from %s as candidate", args.ID)
 	}
 
 	r.transitionTo(Follower)
 	r.currentTerm = args.Term
 	r.lastLeaderContact = r.now()
-	r.lastVoteGranted = time.Time{}
-	r.votedFor = ""
 
 	*res = AppendEntriesResults{
 		ID:      r.id,
@@ -395,16 +395,16 @@ func (r *Raft) AppendEntriesHandler(args *AppendEntries, res *AppendEntriesResul
 	return nil
 }
 
-// RequestVoteHandler is the rpc server handler for RequestVote rpc requests.
+// Vote is the rpc server handler for RequestVote rpc requests.
 // This method is fully interlocked.
 // It is called when a peer is calling for an election, and the result determines this node's vote.
-func (r *Raft) RequestVoteHandler(args *RequestVote, res *RequestVoteResults) error {
+func (r *Raft) Vote(args *RequestVote, res *RequestVoteResults) error {
 	r.Lock()
 	defer r.Unlock()
 
 	// if the term is very out of date
 	if args.Term < r.currentTerm {
-		r.debugf("rejecting request vote from %s, term: %d", args.ID, args.Term)
+		r.debugf("rejecting request vote from %s, term: %d  (past term)", args.ID, args.Term)
 		*res = RequestVoteResults{
 			ID:      r.id,
 			Term:    r.currentTerm,
@@ -413,17 +413,16 @@ func (r *Raft) RequestVoteHandler(args *RequestVote, res *RequestVoteResults) er
 		return nil
 	}
 
-	if r.currentTerm == args.Term {
-		if !r.lastVoteGranted.IsZero() && r.now().Sub(r.lastVoteGranted) < r.electionTimeout {
-			if len(r.votedFor) > 0 && r.votedFor != args.ID {
-				r.debugf("rejecting request vote from %s, term: %d", args.ID, args.Term)
-				*res = RequestVoteResults{
-					ID:      r.votedFor,
-					Term:    r.currentTerm,
-					Granted: false,
-				}
-				return nil
+	// if we've voted (this term) and
+	if !r.lastVoteGranted.IsZero() {
+		if len(r.votedFor) > 0 && r.votedFor != args.ID {
+			r.debugf("rejecting request vote from %s, term: %d (already voted)", args.ID, args.Term)
+			*res = RequestVoteResults{
+				ID:      r.votedFor,
+				Term:    r.currentTerm,
+				Granted: false,
 			}
+			return nil
 		}
 	}
 
@@ -448,38 +447,35 @@ func (r *Raft) RequestVoteHandler(args *RequestVote, res *RequestVoteResults) er
 
 // Election requests votes from all peers, totalling the results and potentially promoting self to leader.
 // It is time bound on the ElectionTimeout.
-// It does not interlock during the election as the election can last a while.
+// It does not interlock during the election as the election can last a while, but does acquire locks for
+// some sub calls.
 func (r *Raft) election() error {
 	r.debugf("election triggered")
 	r.setCandidateSafe()
 
-	started := time.Now().UTC()
-	for time.Since(started) < r.electionTimeout {
-		if r.shouldStopElection() {
-			r.debugf("should stop election; no longer candidate or no longer running")
-			return nil
-		}
-		result, err := r.requestVotes()
-		if err != nil {
-			return err
-		}
-		if r.shouldStopElection() {
-			r.debugf("should stop election; no longer candidate or no longer running")
-			return nil
-		}
-
-		if result == ElectionVictory {
-			r.debugf("election successful, promoting self to leader")
-			r.setLeaderSafe()
-			return r.Heartbeat() // send immediate heartbeat
-		}
-
-		r.debugf("election loss or tie")
-		r.backoff(r.electionTimeout)
+	if r.shouldStopElection() {
+		r.debugf("should stop election; no longer candidate or no longer running")
+		r.resetVote()
+		return nil
+	}
+	result, err := r.requestVotes()
+	if err != nil {
+		return err
+	}
+	if r.shouldStopElection() {
+		r.debugf("should stop election; no longer candidate or no longer running")
+		r.resetVote()
+		return nil
 	}
 
-	r.debugf("election timed out")
-	r.backoff(r.electionTimeout)
+	if result == ElectionVictory {
+		r.debugf("election successful, promoting self to leader")
+		r.setLeaderSafe()
+		return r.Heartbeat() // send immediate heartbeat
+	}
+
+	r.debugf("election loss or tie, backing off")
+	r.setFollowerSafe()
 	return nil
 }
 
@@ -501,10 +497,10 @@ func (r *Raft) requestVotes() (result ElectionOutcome, err error) {
 
 			res, err := c.RequestVote(&voteRequest)
 			if err != nil {
-				r.debugf("requesting vote from %s: error", c.RemoteAddr())
+				r.debugf("seeking vote from %s: error", c.RemoteAddr())
 				errs <- err
 			} else {
-				r.debugf("requesting vote from %s: %v", c.RemoteAddr(), res.Granted)
+				r.debugf("seeking vote from %s: %v", c.RemoteAddr(), res.Granted)
 				results <- res
 			}
 		}(peer)
@@ -632,15 +628,15 @@ func (r *Raft) transitionTo(newState State) {
 
 	switch newState {
 	case Follower:
-		if r.followerHandler != nil && isTransition {
+		if isTransition && r.followerHandler != nil {
 			go r.safeExecute(r.followerHandler)
 		}
 	case Candidate:
-		if r.candidateHandler != nil && isTransition {
+		if isTransition && r.candidateHandler != nil {
 			go r.safeExecute(r.candidateHandler)
 		}
 	case Leader:
-		if r.leaderHandler != nil && isTransition {
+		if isTransition && r.leaderHandler != nil {
 			go r.safeExecute(r.leaderHandler)
 		}
 	}
@@ -660,10 +656,19 @@ func (r *Raft) shouldStopElection() bool {
 
 func (r *Raft) hasVotedRecently() (output bool) {
 	r.Lock()
-	now := time.Now().UTC()
-	output = !r.lastVoteGranted.IsZero() && now.Sub(r.lastVoteGranted) < r.electionTimeout
+	output = !r.lastVoteGranted.IsZero()
 	r.Unlock()
 	return
+}
+
+func (r *Raft) resetVote() {
+	r.lastVoteGranted = time.Time{}
+	r.votedFor = ""
+}
+
+func (r *Raft) voteSelf() {
+	r.lastVoteGranted = r.now()
+	r.votedFor = r.id
 }
 
 func (r *Raft) setFollowerSafe() {
@@ -674,8 +679,7 @@ func (r *Raft) setFollowerSafe() {
 
 func (r *Raft) setFollower() {
 	r.transitionTo(Follower)
-	r.lastVoteGranted = time.Time{}
-	r.votedFor = ""
+	r.resetVote()
 }
 
 func (r *Raft) setCandidateSafe() {
@@ -686,9 +690,8 @@ func (r *Raft) setCandidateSafe() {
 
 func (r *Raft) setCandidate() {
 	r.currentTerm = r.currentTerm + 1
-	r.votedFor = r.id
-	r.lastVoteGranted = r.now()
 	r.transitionTo(Candidate)
+	r.voteSelf()
 }
 
 func (r *Raft) setLeaderSafe() {
@@ -699,8 +702,7 @@ func (r *Raft) setLeaderSafe() {
 
 func (r *Raft) setLeader() {
 	r.transitionTo(Leader)
-	r.lastVoteGranted = time.Time{}
-	r.votedFor = ""
+	r.resetVote()
 }
 
 // now returns the current time in utc.
@@ -711,25 +713,6 @@ func (r *Raft) now() time.Time {
 // --------------------------------------------------------------------------------
 // runtime methods
 // --------------------------------------------------------------------------------
-
-func (r *Raft) backoff(d time.Duration) {
-	backoffTimeout := RandomTimeout(Backoff(d, r.backoffIndex))
-	r.debugf("backing off for: %v", backoffTimeout)
-	alarm := time.After(backoffTimeout)
-	select {
-	case <-alarm:
-		break
-	case <-r.latch.NotifyStopped():
-		break
-	}
-	atomic.AddInt32(&r.backoffIndex, 1)
-}
-
-func (r *Raft) interlocked(action func()) {
-	r.Lock()
-	defer r.Unlock()
-	action()
-}
 
 func (r *Raft) safeExecute(action func()) {
 	defer func() {
