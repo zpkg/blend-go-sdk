@@ -7,9 +7,9 @@ import (
 	"sync"
 	"time"
 
+	"github.com/blend/go-sdk/async"
 	"github.com/blend/go-sdk/exception"
 	"github.com/blend/go-sdk/logger"
-	"github.com/blend/go-sdk/worker"
 )
 
 // New returns a new job manager.
@@ -20,8 +20,8 @@ func New() *JobManager {
 		tasks:             map[string]*TaskMeta{},
 	}
 
-	jm.schedulerWorker = worker.NewInterval(jm.runDueJobs, DefaultHeartbeatInterval)
-	jm.killHangingTasksWorker = worker.NewInterval(jm.killHangingTasks, DefaultHeartbeatInterval)
+	jm.schedulerWorker = async.NewInterval(jm.runDueJobs, DefaultHeartbeatInterval)
+	jm.killHangingTasksWorker = async.NewInterval(jm.killHangingTasks, DefaultHeartbeatInterval)
 	return &jm
 }
 
@@ -42,8 +42,8 @@ type JobManager struct {
 	heartbeatInterval time.Duration
 	log               *logger.Logger
 
-	schedulerWorker        *worker.Interval
-	killHangingTasksWorker *worker.Interval
+	schedulerWorker        *async.Interval
+	killHangingTasksWorker *async.Interval
 
 	jobs  map[string]*JobMeta
 	tasks map[string]*TaskMeta

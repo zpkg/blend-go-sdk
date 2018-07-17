@@ -1,4 +1,4 @@
-package worker
+package async
 
 // Error is an error string.
 type Error string

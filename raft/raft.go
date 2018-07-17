@@ -7,9 +7,9 @@ import (
 
 	"github.com/blend/go-sdk/exception"
 
+	"github.com/blend/go-sdk/async"
 	"github.com/blend/go-sdk/logger"
 	"github.com/blend/go-sdk/uuid"
-	"github.com/blend/go-sdk/worker"
 )
 
 const (
@@ -26,7 +26,7 @@ func New() *Raft {
 	return &Raft{
 		id:                  uuid.V4().String(),
 		state:               Follower,
-		latch:               &worker.Latch{},
+		latch:               &async.Latch{},
 		electionTimeout:     DefaultElectionTimeout,
 		leaderCheckInterval: DefaultLeaderCheckInterval,
 		heartbeatInterval:   DefaultHeartbeatInterval,
@@ -72,9 +72,9 @@ type Raft struct {
 	server Server
 	peers  []Client
 
-	latch             *worker.Latch
-	leaderCheckTicker *worker.Interval
-	heartbeatTicker   *worker.Interval
+	latch             *async.Latch
+	leaderCheckTicker *async.Interval
+	heartbeatTicker   *async.Interval
 
 	leaderHandler    func()
 	candidateHandler func()
@@ -126,7 +126,7 @@ func (r *Raft) IsLeader() (output bool) {
 }
 
 // Latch returns the latch coordinator.
-func (r *Raft) Latch() *worker.Latch {
+func (r *Raft) Latch() *async.Latch {
 	return r.latch
 }
 
@@ -288,10 +288,10 @@ func (r *Raft) Start() error {
 		return err
 	}
 
-	r.leaderCheckTicker = worker.NewInterval(r.LeaderCheck, r.leaderCheckInterval)
+	r.leaderCheckTicker = async.NewInterval(r.LeaderCheck, r.leaderCheckInterval)
 	r.leaderCheckTicker.Start()
 
-	r.heartbeatTicker = worker.NewInterval(r.Heartbeat, r.heartbeatInterval)
+	r.heartbeatTicker = async.NewInterval(r.Heartbeat, r.heartbeatInterval)
 	r.heartbeatTicker.Start()
 
 	r.latch.Started()
@@ -308,7 +308,7 @@ func (r *Raft) Stop() error {
 	if !r.latch.IsRunning() {
 		return exception.New(ErrNotRunning)
 	}
-	r.latch.Stop()
+	r.latch.Stopping()
 
 	if r.leaderCheckTicker != nil {
 		r.leaderCheckTicker.Stop()
@@ -322,6 +322,7 @@ func (r *Raft) Stop() error {
 	if r.server != nil {
 		return r.server.Stop()
 	}
+
 	r.latch.Stopped()
 	return nil
 }

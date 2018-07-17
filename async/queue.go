@@ -1,4 +1,4 @@
-package worker
+package async
 
 const (
 	// DefaultQueueWorkerMaxWork is the maximum number of work items before queueing blocks.
@@ -78,7 +78,7 @@ func (qw *QueueWorker) Start() {
 				if err != nil && qw.errors != nil {
 					qw.errors <- err
 				}
-			case <-qw.latch.NotifyStop():
+			case <-qw.latch.NotifyStopping():
 				qw.latch.Stopped()
 				return
 			}
@@ -89,6 +89,6 @@ func (qw *QueueWorker) Start() {
 
 // Stop stops the worker.
 func (qw *QueueWorker) Stop() {
-	qw.latch.Stop()
+	qw.latch.Stopping()
 	<-qw.latch.NotifyStopped()
 }
