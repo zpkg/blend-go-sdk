@@ -414,16 +414,14 @@ func (r *Raft) Vote(args *RequestVote, res *RequestVoteResults) error {
 	}
 
 	// if we've voted (this term) and
-	if !r.lastVoteGranted.IsZero() {
-		if len(r.votedFor) > 0 && r.votedFor != args.ID {
-			r.debugf("rejecting request vote from %s, term: %d (already voted)", args.ID, args.Term)
-			*res = RequestVoteResults{
-				ID:      r.votedFor,
-				Term:    r.currentTerm,
-				Granted: false,
-			}
-			return nil
+	if !r.lastVoteGranted.IsZero() && len(r.votedFor) > 0 && r.votedFor != args.ID {
+		r.debugf("rejecting request vote from %s, term: %d (already voted)", args.ID, args.Term)
+		*res = RequestVoteResults{
+			ID:      r.votedFor,
+			Term:    r.currentTerm,
+			Granted: false,
 		}
+		return nil
 	}
 
 	r.debugf("accepting request vote from %s, term: %d", args.ID, args.Term)

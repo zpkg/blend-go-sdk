@@ -36,6 +36,7 @@ func New() *Request {
 	return &Request{
 		method:   MethodGet,
 		header:   make(http.Header),
+		query:    make(url.Values),
 		postData: make(url.Values),
 		url:      &url.URL{},
 		context:  context.TODO(),
@@ -49,6 +50,7 @@ type Request struct {
 	method  string
 	url     *url.URL
 	cookies []*http.Cookie
+	query   url.Values
 	header  http.Header
 
 	basicAuthUsername string
@@ -331,7 +333,7 @@ func (r *Request) Header() http.Header {
 
 // WithQueryString sets a query string value for the host url of the request.
 func (r *Request) WithQueryString(field string, value string) *Request {
-	r.url.Query().Add(field, value)
+	r.query.Add(field, value)
 	return r
 }
 
@@ -589,7 +591,10 @@ func (r *Request) Request() (*http.Request, error) {
 		return nil, exception.New(ErrMultipleBodySources)
 	}
 
-	req, err := http.NewRequest(r.Method(), r.URL().String(), bytes.NewBuffer(r.PostBody()))
+	workingURL := &url.URL{Scheme: r.url.Scheme, Host: r.url.Host, Path: r.url.Path}
+	workingURL.RawQuery = r.query.Encode()
+
+	req, err := http.NewRequest(r.Method(), workingURL.String(), bytes.NewBuffer(r.PostBody()))
 	if err != nil {
 		return nil, exception.New(err)
 	}

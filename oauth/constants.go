@@ -1,5 +1,14 @@
 package oauth
 
+var (
+	// DefaultScopes is the default oauth scopes.
+	DefaultScopes = []string{
+		"openid",
+		"email",
+		"profile",
+	}
+)
+
 const (
 	// ErrCodeMissing is returned if the code was missing from an oauth return request.
 	ErrCodeMissing Error = "state missing from request"
@@ -10,8 +19,13 @@ const (
 	// ErrInvalidAntiforgeryToken is an error returns on oauth finish that indicates we didn't originate the auth request.
 	ErrInvalidAntiforgeryToken Error = "invalid anti-forgery token"
 
+	// ErrFailedCodeExchange happens if the code exchange for an access token fails.
+	ErrFailedCodeExchange Error = "oauth code exchange failed"
 	// ErrGoogleResponseStatus is an error that can occur when querying the google apis.
 	ErrGoogleResponseStatus Error = "google returned a non 2xx response"
+
+	// ErrProfileJSONUnmarshal is an error returned if the json unmarshal failed.
+	ErrProfileJSONUnmarshal Error = "profile json unmarshal failed"
 
 	// ErrSecretRequired is a configuration error indicating we did not provide a secret.
 	ErrSecretRequired Error = "manager secret required"
