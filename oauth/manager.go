@@ -4,10 +4,13 @@ import (
 	"crypto/hmac"
 	"crypto/sha512"
 	"encoding/base64"
+	"encoding/json"
 	"fmt"
 	"net/http"
 	"strings"
 
+	"github.com/blend/go-sdk/exception"
+	"github.com/blend/go-sdk/request"
 	"github.com/blend/go-sdk/util"
 	"github.com/blend/go-sdk/uuid"
 	"golang.org/x/oauth2"
@@ -43,15 +46,17 @@ func NewFromConfig(cfg *Config) (*Manager, error) {
 	return &Manager{
 		secret:       secret,
 		redirectURI:  cfg.GetRedirectURI(),
+		hostedDomain: cfg.GetHostedDomain(),
+		scopes:       cfg.GetScopes(),
 		clientID:     cfg.GetClientID(),
 		clientSecret: cfg.GetClientSecret(),
-		hostedDomain: cfg.GetHostedDomain(),
 	}, nil
 }
 
 // Manager is the oauth manager.
 type Manager struct {
 	secret       []byte
+	scopes       []string
 	redirectURI  string
 	hostedDomain string
 	clientID     string
@@ -63,12 +68,8 @@ func (m *Manager) conf() *oauth2.Config {
 		ClientID:     m.clientID,
 		ClientSecret: m.clientSecret,
 		RedirectURL:  m.redirectURI,
-		Scopes: []string{
-			"openid",
-			"email",
-			"profile",
-		},
-		Endpoint: google.Endpoint,
+		Scopes:       m.scopes,
+		Endpoint:     google.Endpoint,
 	}
 }
 
@@ -116,19 +117,43 @@ func (m *Manager) Finish(r *http.Request) (*Result, error) {
 	// Handle the exchange code to initiate a transport.
 	tok, err := m.conf().Exchange(oauth2.NoContext, code)
 	if err != nil {
-		return nil, err
+		return nil, exception.New(ErrFailedCodeExchange).WithMessagef("inner: %+v", err)
 	}
 	result.Response.AccessToken = tok.AccessToken
 	result.Response.TokenType = tok.TokenType
 	result.Response.RefreshToken = tok.RefreshToken
 	result.Response.Expiry = tok.Expiry
 
-	prof, err := FetchProfile(tok.AccessToken)
+	prof, err := m.FetchProfile(tok.AccessToken)
 	if err != nil {
 		return nil, err
 	}
 	result.Profile = prof
 	return &result, nil
+}
+
+// FetchProfile gets a google profile for an access token.
+func (m *Manager) FetchProfile(accessToken string) (*Profile, error) {
+	var profile Profile
+	req, err := request.New().AsGet().
+		WithRawURL("https://www.googleapis.com/oauth2/v1/userinfo")
+
+	contents, meta, err := req.
+		WithQueryString("alt", "json").
+		WithQueryString("access_token", accessToken).
+		WithMockProvider(request.MockedResponseInjector).
+		BytesWithMeta()
+
+	if err != nil {
+		return nil, err
+	}
+	if meta.StatusCode > 299 {
+		return nil, exception.New(ErrGoogleResponseStatus).WithMessagef("status code: %d, response: %s", meta.StatusCode, string(contents))
+	}
+	if err = json.Unmarshal(contents, &profile); err != nil {
+		return nil, exception.New(ErrProfileJSONUnmarshal).WithMessagef("inner: %v", err)
+	}
+	return &profile, err
 }
 
 // CreateState creates auth state.
@@ -146,7 +171,9 @@ func (m *Manager) CreateState(redirect ...string) *State {
 	return &state
 }
 
+// --------------------------------------------------------------------------------
 // Validation Helpers
+// --------------------------------------------------------------------------------
 
 // ValidateState validates oauth state.
 func (m *Manager) ValidateState(state *State) error {
@@ -220,6 +247,17 @@ func (m *Manager) HostedDomain() string {
 func (m *Manager) WithClientID(clientID string) *Manager {
 	m.clientID = clientID
 	return m
+}
+
+// WithScopes sets the oauth scopes.
+func (m *Manager) WithScopes(scopes ...string) *Manager {
+	m.scopes = scopes
+	return m
+}
+
+// Scopes returns the oauth scopes.
+func (m *Manager) Scopes() []string {
+	return m.scopes
 }
 
 // ClientID returns a property.

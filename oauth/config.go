@@ -26,6 +26,8 @@ type Config struct {
 	// HostedDomain is a specific domain we want to filter identities to.
 	HostedDomain string `json:"hostedDomain" yaml:"hostedDomain" env:"OAUTH_HOSTED_DOMAIN"`
 
+	Scopes []string `json:"scopes" yaml:"scopes"`
+
 	// ClientID is part of the oauth credential pair.
 	ClientID string `json:"clientID" yaml:"clientID" env:"OAUTH_CLIENT_ID"`
 	// ClientSecret is part of the oauth credential pair.
@@ -60,6 +62,11 @@ func (c Config) GetRedirectURI(inherited ...string) string {
 // GetHostedDomain returns a property or a default.
 func (c Config) GetHostedDomain(inherited ...string) string {
 	return util.Coalesce.String(c.HostedDomain, "", inherited...)
+}
+
+// GetScopes gets oauth scopes to authenticate with.
+func (c Config) GetScopes(inherited ...[]string) []string {
+	return util.Coalesce.Strings(c.Scopes, DefaultScopes, inherited...)
 }
 
 // GetClientID returns a property or a default.

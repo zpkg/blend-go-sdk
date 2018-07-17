@@ -443,3 +443,19 @@ func TestRequestInsecureSkipVerify(t *testing.T) {
 	assert.Equal(http.StatusOK, meta.StatusCode)
 	assert.NotEmpty(contents)
 }
+
+func TestRequestWithQueryString(t *testing.T) {
+	assert := assert.New(t)
+
+	req, err := New().AsGet().WithRawURL("http://foo.bar.com")
+	assert.Nil(err)
+	req = req.WithQueryString("foo", "bar")
+	req = req.WithQueryString("buzz", "fuzz")
+
+	full, err := req.Request()
+	assert.Nil(err)
+	assert.NotNil(full.URL)
+	assert.NotNil(full.URL.Query())
+	assert.Equal("bar", full.URL.Query().Get("foo"))
+	assert.Equal("fuzz", full.URL.Query().Get("buzz"))
+}

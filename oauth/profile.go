@@ -2,9 +2,6 @@ package oauth
 
 import (
 	"strings"
-
-	"github.com/blend/go-sdk/exception"
-	"github.com/blend/go-sdk/request"
 )
 
 // Profile is a profile with google.
@@ -36,23 +33,4 @@ func (p Profile) Username() string {
 		return ""
 	}
 	return parts[0]
-}
-
-// FetchProfile gets a google profile for an access token.
-func FetchProfile(accessToken string) (*Profile, error) {
-	var profile Profile
-	meta, err := request.New().AsGet().
-		MustWithRawURL("https://www.googleapis.com/oauth2/v1/userinfo").
-		WithQueryString("alt", "json").
-		WithQueryString("access_token", accessToken).
-		WithMockProvider(request.MockedResponseInjector).
-		JSONWithMeta(&profile)
-
-	if err != nil {
-		return nil, err
-	}
-	if meta.StatusCode > 299 {
-		return nil, exception.New(ErrGoogleResponseStatus).WithMessagef("status code: %d", meta.StatusCode)
-	}
-	return &profile, err
 }
