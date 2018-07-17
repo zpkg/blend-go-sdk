@@ -28,7 +28,7 @@ type Config struct {
 	// Timeout is the dial timeout for requests to the secrets store.
 	Timeout time.Duration `json:"timeout" yaml:"timeout"`
 	// RootCAs is a list of certificate authority paths.
-	RootCAs []string `json:"rootCAs" yaml:"rootCAs"`
+	RootCAs []string `json:"rootCAs" yaml:"rootCAs" env:"VAULT_CACERT,csv"`
 }
 
 // IsZero returns if the config is set or not.

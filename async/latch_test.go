@@ -1,4 +1,4 @@
-package worker
+package async
 
 import (
 	"testing"
@@ -31,7 +31,7 @@ func TestLatch(t *testing.T) {
 			case <-work:
 				didGetWork = true
 				workComplete <- true
-			case <-l.NotifyStop():
+			case <-l.NotifyStopping():
 				didAbort = true
 				l.Stopped()
 				return
@@ -46,7 +46,7 @@ func TestLatch(t *testing.T) {
 	<-workComplete
 
 	// signal stop
-	l.Stop()
+	l.Stopping()
 	<-l.NotifyStopped()
 
 	assert.True(didStart)
@@ -57,7 +57,7 @@ func TestLatch(t *testing.T) {
 	assert.True(l.IsStopped())
 
 	didAbort = false
-	l.Stop()
+	l.Stopping()
 
 	assert.False(didAbort)
 	assert.False(l.IsStopping())

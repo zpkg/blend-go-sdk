@@ -1,4 +1,4 @@
-package worker
+package async
 
 import "time"
 
@@ -97,7 +97,7 @@ func (i *Interval) Start() {
 				if err != nil && i.errors != nil {
 					i.errors <- err
 				}
-			case <-i.latch.NotifyStop():
+			case <-i.latch.NotifyStopping():
 				i.latch.Stopped()
 				return
 			}
@@ -111,6 +111,6 @@ func (i *Interval) Stop() {
 	if !i.latch.CanStop() {
 		return
 	}
-	i.latch.Stop()
+	i.latch.Stopping()
 	<-i.latch.NotifyStopped()
 }

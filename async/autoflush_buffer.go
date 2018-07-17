@@ -1,4 +1,4 @@
-package worker
+package async
 
 import (
 	"sync"
@@ -80,7 +80,8 @@ func (ab *AutoflushBuffer) Stop() {
 	if !ab.latch.CanStop() {
 		return
 	}
-	ab.latch.Stop()
+	ab.latch.Stopping()
+	<-ab.latch.NotifyStopped()
 }
 
 // Add adds a new object to the buffer, blocking if it triggers a flush.
@@ -153,7 +154,7 @@ func (ab *AutoflushBuffer) runLoop() {
 		select {
 		case <-ticker:
 			ab.FlushAsync()
-		case <-ab.latch.NotifyStop():
+		case <-ab.latch.NotifyStopping():
 			if ab.flushOnAbort {
 				ab.Flush()
 			}
