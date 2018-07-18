@@ -323,10 +323,10 @@ func TestRaftTransitionTo(t *testing.T) {
 		close(didCallHandler)
 	}
 
-	r.transitionTo(Follower)
+	r.transition(Follower)
 	r.state = Leader
 
-	r.transitionTo(Follower)
+	r.transition(Follower)
 	<-didCallHandler
 	assert.Equal(Follower, r.state)
 
@@ -336,10 +336,10 @@ func TestRaftTransitionTo(t *testing.T) {
 		close(didCallHandler)
 	}
 
-	r.transitionTo(Leader)
+	r.transition(Leader)
 	r.state = Candidate
 
-	r.transitionTo(Leader)
+	r.transition(Leader)
 	<-didCallHandler
 	assert.Equal(Leader, r.state)
 
@@ -349,10 +349,10 @@ func TestRaftTransitionTo(t *testing.T) {
 		close(didCallHandler)
 	}
 
-	r.transitionTo(Candidate)
+	r.transition(Candidate)
 
 	r.state = Follower
-	r.transitionTo(Candidate)
+	r.transition(Candidate)
 	<-didCallHandler
 	assert.Equal(Candidate, r.state)
 }

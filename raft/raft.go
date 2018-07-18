@@ -271,7 +271,7 @@ func (r *Raft) Start() error {
 
 	if len(r.peers) == 0 {
 		r.infof("node operating in solo node configuration")
-		r.transitionTo(Leader)
+		r.transition(Leader)
 		r.latch.Started()
 		r.infof("node started")
 		return nil
@@ -328,7 +328,7 @@ func (r *Raft) Stop() error {
 }
 
 // --------------------------------------------------------------------------------
-// tick methods
+// interval handlers
 // --------------------------------------------------------------------------------
 
 // LeaderCheck is the action that fires on an interval to check if the leader lease has expired.
@@ -336,12 +336,10 @@ func (r *Raft) Stop() error {
 func (r *Raft) LeaderCheck() error {
 	if r.IsState(Follower) {
 		// if we've never elected a leader, or if the current leader hasn't sent a heartbeat in a while ...
+		// and if we haven't voted yet
 		if r.shouldTriggerElection() {
-			// if we haven't voted yet
-			if !r.hasVotedRecently() {
-				// trigger an election
-				r.err(r.election())
-			}
+			// trigger an election
+			r.err(r.election())
 		}
 	}
 	return nil
@@ -359,7 +357,7 @@ func (r *Raft) Heartbeat() error {
 }
 
 // --------------------------------------------------------------------------------
-// handlers
+// rpc handlers
 // --------------------------------------------------------------------------------
 
 // ReceiveEntries is the rpc server handler for AppendEntries rpc requests.
@@ -384,7 +382,7 @@ func (r *Raft) ReceiveEntries(args *AppendEntries, res *AppendEntriesResults) er
 		r.debugf("received entries from %s as candidate", args.ID)
 	}
 
-	r.transitionTo(Follower)
+	r.setFollower()
 	r.currentTerm = args.Term
 	r.lastLeaderContact = r.now()
 
@@ -415,7 +413,9 @@ func (r *Raft) Vote(args *RequestVote, res *RequestVoteResults) error {
 	}
 
 	// if we've voted (this term) and
-	if !r.lastVoteGranted.IsZero() && len(r.votedFor) > 0 && r.votedFor != args.ID {
+	isVoteValid := !r.lastVoteGranted.IsZero() && r.now().Sub(r.lastVoteGranted) < r.electionTimeout
+	votedForCandidate := r.votedFor == args.ID
+	if isVoteValid && !votedForCandidate {
 		r.debugf("rejecting request vote from %s, term: %d (already voted)", args.ID, args.Term)
 		*res = RequestVoteResults{
 			ID:      r.votedFor,
@@ -426,7 +426,7 @@ func (r *Raft) Vote(args *RequestVote, res *RequestVoteResults) error {
 	}
 
 	r.debugf("accepting request vote from %s, term: %d", args.ID, args.Term)
-	r.transitionTo(Follower)
+	r.transition(Follower)
 
 	r.votedFor = args.ID
 	r.currentTerm = args.Term
@@ -450,6 +450,7 @@ func (r *Raft) Vote(args *RequestVote, res *RequestVoteResults) error {
 // some sub calls.
 func (r *Raft) election() error {
 	r.debugf("election triggered")
+	r.resetVoteSafe()
 	r.setCandidateSafe()
 
 	if r.shouldStopElection() {
@@ -457,12 +458,14 @@ func (r *Raft) election() error {
 		r.resetVote()
 		return nil
 	}
+
 	result, err := r.requestVotes()
 	if err != nil {
 		return err
 	}
+
 	if r.shouldStopElection() {
-		r.debugf("should stop election; no longer candidate or no longer running")
+		r.debugf("should stop election; after request votes, no longer candidate or no longer running")
 		r.resetVote()
 		return nil
 	}
@@ -473,8 +476,11 @@ func (r *Raft) election() error {
 		return r.Heartbeat() // send immediate heartbeat
 	}
 
-	r.debugf("election loss or tie, backing off")
-	r.setFollowerSafe()
+	r.debugf("election loss or tie, backing off for rest of election period")
+
+	// transition back to follower but do not reset the vote.
+	r.transitionSafe(Follower)
+
 	return nil
 }
 
@@ -618,7 +624,13 @@ func (r *Raft) voteOutcome(votesFor, total int) ElectionOutcome {
 	return ElectionLoss
 }
 
-func (r *Raft) transitionTo(newState State) {
+func (r *Raft) transitionSafe(newState State) {
+	r.Lock()
+	defer r.Unlock()
+	r.transition(newState)
+}
+
+func (r *Raft) transition(newState State) {
 	isTransition := newState != r.state
 	if isTransition {
 		r.debugf("transitioning to %s", newState)
@@ -644,7 +656,9 @@ func (r *Raft) transitionTo(newState State) {
 func (r *Raft) shouldTriggerElection() (output bool) {
 	r.Lock()
 	now := time.Now().UTC()
-	output = r.lastLeaderContact.IsZero() || now.Sub(r.lastLeaderContact) > RandomTimeout(r.electionTimeout)
+	isLeaderTimedOut := r.lastLeaderContact.IsZero() || now.Sub(r.lastLeaderContact) > RandomTimeout(r.electionTimeout)
+	isElectionDue := r.lastVoteGranted.IsZero() || now.Sub(r.lastVoteGranted) > RandomTimeout(r.electionTimeout)
+	output = isLeaderTimedOut && isElectionDue
 	r.Unlock()
 	return
 }
@@ -653,11 +667,10 @@ func (r *Raft) shouldStopElection() bool {
 	return r.IsNotState(Candidate) || !r.latch.IsRunning()
 }
 
-func (r *Raft) hasVotedRecently() (output bool) {
+func (r *Raft) resetVoteSafe() {
 	r.Lock()
-	output = !r.lastVoteGranted.IsZero()
-	r.Unlock()
-	return
+	defer r.Unlock()
+	r.resetVote()
 }
 
 func (r *Raft) resetVote() {
@@ -677,7 +690,7 @@ func (r *Raft) setFollowerSafe() {
 }
 
 func (r *Raft) setFollower() {
-	r.transitionTo(Follower)
+	r.transition(Follower)
 	r.resetVote()
 }
 
@@ -689,7 +702,7 @@ func (r *Raft) setCandidateSafe() {
 
 func (r *Raft) setCandidate() {
 	r.currentTerm = r.currentTerm + 1
-	r.transitionTo(Candidate)
+	r.transition(Candidate)
 	r.voteSelf()
 }
 
@@ -700,7 +713,7 @@ func (r *Raft) setLeaderSafe() {
 }
 
 func (r *Raft) setLeader() {
-	r.transitionTo(Leader)
+	r.transition(Leader)
 	r.resetVote()
 }
 

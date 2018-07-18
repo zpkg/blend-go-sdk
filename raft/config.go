@@ -7,33 +7,6 @@ import (
 	"github.com/blend/go-sdk/util"
 )
 
-const (
-	// DefaultLeaderCheckInterval is the tick rate for the leader check.
-	DefaultLeaderCheckInterval = 2000 * time.Millisecond
-	// DefaultHeartbeatInterval is the tick rate for leaders to send heartbeats.
-	DefaultHeartbeatInterval = 1000 * time.Millisecond
-	// DefaultElectionTimeout is a default.
-	DefaultElectionTimeout = 10 * DefaultHeartbeatInterval
-	// DefaultElectionBackoffTimeout is a default.
-	DefaultElectionBackoffTimeout = DefaultElectionTimeout
-	// DefaultPeerDialTimeout is the default peer dial timeout.
-	DefaultPeerDialTimeout = time.Second
-
-	// DefaultBindAddr is the default rpc server bind address.
-	DefaultBindAddr = ":6060"
-
-	// EnvVarIdentifier is an environment variable.
-	EnvVarIdentifier = "RAFT_ID"
-	// EnvVarBindAddr is an environment variable.
-	EnvVarBindAddr = "RAFT_BIND_ADDR"
-	// EnvVarPeers is an environment variable.
-	EnvVarPeers = "RAFT_PEERS"
-	// EnvVarElectionTimeout is an environment variable.
-	EnvVarElectionTimeout = "RAFT_ELECTION_TIMEOUT"
-	// EnvVarRaftPeerDialTimeout is an environment variable.
-	EnvVarRaftPeerDialTimeout = "RAFT_PEER_DIAL_TIMEOUT"
-)
-
 // NewConfigFromEnv creates a new config from environment variables.
 func NewConfigFromEnv() *Config {
 	var cfg Config
