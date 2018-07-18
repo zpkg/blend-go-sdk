@@ -64,21 +64,6 @@ func (c Config) GetPeers(inherited ...[]string) []string {
 	return util.Coalesce.Strings(c.Peers, nil, inherited...)
 }
 
-// GetPeersFiltered returns a filtered list of peers less an excluded peer.
-func (c Config) GetPeersFiltered(inherited ...[]string) []string {
-	if len(c.GetExcludePeer()) == 0 {
-		return c.GetPeers(inherited...)
-	}
-
-	var output []string
-	for _, peer := range c.GetPeers(inherited...) {
-		if !IsExcluded(peer, c.GetExcludePeer()) {
-			output = append(output, peer)
-		}
-	}
-	return output
-}
-
 // GetHeartbeatInterval gets a field or a default.
 func (c Config) GetHeartbeatInterval(inherited ...time.Duration) time.Duration {
 	return util.Coalesce.Duration(c.HeartbeatInterval, DefaultHeartbeatInterval, inherited...)
