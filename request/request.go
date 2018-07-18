@@ -35,10 +35,10 @@ func Post(url string, body []byte) *Request {
 func New() *Request {
 	return &Request{
 		method:   MethodGet,
-		header:   make(http.Header),
+		scheme:   "http",
 		query:    make(url.Values),
+		header:   make(http.Header),
 		postData: make(url.Values),
-		url:      &url.URL{},
 		context:  context.TODO(),
 	}
 }
@@ -47,10 +47,14 @@ func New() *Request {
 type Request struct {
 	log *logger.Logger
 
-	method  string
-	url     *url.URL
+	method string
+
+	scheme string
+	host   string // host or host:port
+	path   string // path (relative paths may omit leading slash)
+	query  url.Values
+
 	cookies []*http.Cookie
-	query   url.Values
 	header  http.Header
 
 	basicAuthUsername string
@@ -252,31 +256,41 @@ func (r *Request) ContentType() string {
 
 // WithScheme sets the scheme, or protocol, of the request.
 func (r *Request) WithScheme(scheme string) *Request {
-	r.url.Scheme = scheme
+	r.scheme = scheme
 	return r
 }
 
 // Scheme returns the request url scheme.
 func (r *Request) Scheme() string {
-	return r.url.Scheme
+	return r.scheme
 }
 
 // WithHost sets the target url host for the request.
 func (r *Request) WithHost(host string) *Request {
-	r.url.Host = host
+	r.host = host
 	return r
+}
+
+// Host returns the host.
+func (r *Request) Host() string {
+	return r.host
 }
 
 // WithPath sets the path component of the host url..
 func (r *Request) WithPath(path string) *Request {
-	r.url.Path = path
+	r.path = path
 	return r
 }
 
 // WithPathf sets the path component of the host url by the format and arguments.
 func (r *Request) WithPathf(format string, args ...interface{}) *Request {
-	r.url.Path = fmt.Sprintf(format, args...)
+	r.path = fmt.Sprintf(format, args...)
 	return r
+}
+
+// Path returns the request path.
+func (r *Request) Path() string {
+	return r.path
 }
 
 // WithRawURLf sets the url based on a format and args.
@@ -295,8 +309,7 @@ func (r *Request) WithRawURL(rawURL string) (*Request, error) {
 	if err != nil {
 		return r, err
 	}
-	r.url = parsedURL
-	return r, nil
+	return r.WithURL(parsedURL), nil
 }
 
 // MustWithRawURL sets the request target url whole hog.
@@ -305,19 +318,30 @@ func (r *Request) MustWithRawURL(rawURL string) *Request {
 	if err != nil {
 		panic(err)
 	}
-	r.url = parsedURL
-	return r
+	return r.WithURL(parsedURL)
 }
 
 // WithURL sets the request url target.
 func (r *Request) WithURL(target *url.URL) *Request {
-	r.url = target
+	r.scheme = target.Scheme
+	r.host = target.Host
+	r.path = target.Path
+	for key, values := range target.Query() {
+		for _, value := range values {
+			r.query.Add(key, value)
+		}
+	}
 	return r
 }
 
 // URL returns the request target url.
 func (r *Request) URL() *url.URL {
-	return r.url
+	return &url.URL{
+		Scheme:   r.scheme,
+		Host:     r.host,
+		Path:     r.path,
+		RawQuery: r.query.Encode(),
+	}
 }
 
 // WithHeader sets a header on the request.
@@ -591,10 +615,7 @@ func (r *Request) Request() (*http.Request, error) {
 		return nil, exception.New(ErrMultipleBodySources)
 	}
 
-	workingURL := &url.URL{Scheme: r.url.Scheme, Host: r.url.Host, Path: r.url.Path}
-	workingURL.RawQuery = r.query.Encode()
-
-	req, err := http.NewRequest(r.Method(), workingURL.String(), bytes.NewBuffer(r.PostBody()))
+	req, err := http.NewRequest(r.Method(), r.URL().String(), bytes.NewBuffer(r.PostBody()))
 	if err != nil {
 		return nil, exception.New(err)
 	}

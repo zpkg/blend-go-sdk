@@ -33,8 +33,8 @@ func testServiceRequest(t *testing.T, additionalTests ...func(*Request)) {
 		WithQueryString("moobar", "zoobar").
 		WithScheme("http")
 
-	assert.Equal("http", sr.url.Scheme)
-	assert.Equal("localhost:5001", sr.url.Host)
+	assert.Equal("http", sr.scheme)
+	assert.Equal("localhost:5001", sr.host)
 	assert.Equal("GET", sr.method)
 
 	req, err := sr.Request()
