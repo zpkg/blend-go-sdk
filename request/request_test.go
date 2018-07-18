@@ -154,13 +154,13 @@ func TestCreateHttpRequestWithUrl(t *testing.T) {
 	assert := assert.New(t)
 	sr := New().MustWithRawURL("http://localhost:5001/api/v1/path/2?env=dev&foo=bar")
 
-	assert.Equal("http", sr.url.Scheme)
-	assert.Equal("localhost:5001", sr.url.Host)
+	assert.Equal("http", sr.scheme)
+	assert.Equal("localhost:5001", sr.host)
 	assert.Equal("GET", sr.method)
-	assert.Equal("/api/v1/path/2", sr.url.Path)
-	assert.Equal(2, len(sr.url.Query()))
-	assert.Equal([]string{"dev"}, sr.url.Query()["env"])
-	assert.Equal([]string{"bar"}, sr.url.Query()["foo"])
+	assert.Equal("/api/v1/path/2", sr.path)
+	assert.Equal(2, len(sr.query))
+	assert.Equal([]string{"dev"}, sr.query["env"])
+	assert.Equal([]string{"bar"}, sr.query["foo"])
 }
 
 func TestHttpGet(t *testing.T) {
