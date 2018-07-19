@@ -825,11 +825,11 @@ func (r *Request) deserialize(handler Deserializer) (*ResponseMeta, error) {
 
 func (r *Request) deserializeWithError(okHandler Deserializer, errorHandler Deserializer) (*ResponseMeta, error) {
 	res, err := r.Response()
+	if err != nil {
+		return nil, exception.New(err)
+	}
 	meta := NewResponseMeta(res)
 
-	if err != nil {
-		return meta, exception.New(err)
-	}
 	defer res.Body.Close()
 
 	body, err := ioutil.ReadAll(res.Body)
