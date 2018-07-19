@@ -828,6 +828,7 @@ func (r *Request) deserializeWithError(okHandler Deserializer, errorHandler Dese
 	if err != nil {
 		return nil, exception.New(err)
 	}
+	// do not move this above the error or else risk a nil ref from the response
 	meta := NewResponseMeta(res)
 
 	defer res.Body.Close()
