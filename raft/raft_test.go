@@ -6,6 +6,7 @@ import (
 
 	"github.com/blend/go-sdk/assert"
 	"github.com/blend/go-sdk/logger"
+	"github.com/blend/go-sdk/uuid"
 )
 
 func TestNew(t *testing.T) {
@@ -188,7 +189,7 @@ func TestRaftAppendEntriesHandler(t *testing.T) {
 	r.state = Leader
 
 	var res AppendEntriesResults
-	assert.Nil(r.ReceiveEntries(&AppendEntries{
+	assert.Nil(r.receiveEntries(&AppendEntries{
 		ID:   "test-node",
 		Term: 1,
 	}, &res))
@@ -212,7 +213,7 @@ func TestRaftAppendEntriesHandlerInvalidTerm(t *testing.T) {
 	r.currentTerm = 2
 
 	var res AppendEntriesResults
-	assert.Nil(r.ReceiveEntries(&AppendEntries{
+	assert.Nil(r.receiveEntries(&AppendEntries{
 		ID:   "test-node",
 		Term: 1,
 	}, &res))
@@ -236,7 +237,7 @@ func TestRaftRequestVoteHandler(t *testing.T) {
 
 	var res RequestVoteResults
 
-	assert.Nil(r.Vote(&RequestVote{
+	assert.Nil(r.vote(&RequestVote{
 		ID:   "test-node",
 		Term: 1,
 	}, &res))
@@ -261,7 +262,7 @@ func TestRaftRequestVoteHandlerAlreadyVoted(t *testing.T) {
 	r.votedFor = "test-node-2"
 
 	var res RequestVoteResults
-	assert.Nil(r.Vote(&RequestVote{
+	assert.Nil(r.vote(&RequestVote{
 		ID:   "test-node",
 		Term: 1,
 	}, &res))
@@ -323,10 +324,10 @@ func TestRaftTransitionTo(t *testing.T) {
 		close(didCallHandler)
 	}
 
-	r.transition(Follower)
+	go r.transition(Follower)
 	r.state = Leader
 
-	r.transition(Follower)
+	go r.transition(Follower)
 	<-didCallHandler
 	assert.Equal(Follower, r.state)
 
@@ -336,10 +337,10 @@ func TestRaftTransitionTo(t *testing.T) {
 		close(didCallHandler)
 	}
 
-	r.transition(Leader)
+	go r.transition(Leader)
 	r.state = Candidate
 
-	r.transition(Leader)
+	go r.transition(Leader)
 	<-didCallHandler
 	assert.Equal(Leader, r.state)
 
@@ -349,10 +350,30 @@ func TestRaftTransitionTo(t *testing.T) {
 		close(didCallHandler)
 	}
 
-	r.transition(Candidate)
+	go r.transition(Candidate)
 
 	r.state = Follower
-	r.transition(Candidate)
+	go r.transition(Candidate)
 	<-didCallHandler
 	assert.Equal(Candidate, r.state)
+}
+
+func TestRaftAppendEntriesDemotesSelf(t *testing.T) {
+	assert := assert.New(t)
+
+	r := New()
+	r.state = Leader
+	calledHandler := make(chan struct{})
+	r.followerHandler = func() {
+		close(calledHandler)
+	}
+	assert.True(r.IsState(Leader))
+
+	var response AppendEntriesResults
+	go r.receiveEntries(&AppendEntries{
+		ID:   uuid.V4().String(),
+		Term: r.currentTerm + 1,
+	}, &response)
+	<-calledHandler
+	assert.True(r.IsState(Follower))
 }

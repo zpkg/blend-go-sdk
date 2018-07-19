@@ -281,17 +281,17 @@ func (r *Raft) Start() error {
 	}
 
 	// wire up the rpc server.
-	r.server.SetAppendEntriesHandler(r.ReceiveEntries)
-	r.server.SetRequestVoteHandler(r.Vote)
+	r.server.SetAppendEntriesHandler(r.receiveEntries)
+	r.server.SetRequestVoteHandler(r.vote)
 
 	if err := r.server.Start(); err != nil {
 		return err
 	}
 
-	r.leaderCheckTicker = async.NewInterval(r.LeaderCheck, r.leaderCheckInterval)
+	r.leaderCheckTicker = async.NewInterval(r.leaderCheck, r.leaderCheckInterval)
 	r.leaderCheckTicker.Start()
 
-	r.heartbeatTicker = async.NewInterval(r.Heartbeat, r.heartbeatInterval)
+	r.heartbeatTicker = async.NewInterval(r.heartbeat, r.heartbeatInterval)
 	r.heartbeatTicker.Start()
 
 	r.latch.Started()
@@ -333,7 +333,7 @@ func (r *Raft) Stop() error {
 
 // LeaderCheck is the action that fires on an interval to check if the leader lease has expired.
 // If it fails, it triggers an election.
-func (r *Raft) LeaderCheck() error {
+func (r *Raft) leaderCheck() error {
 	if r.IsState(Follower) {
 		// if we've never elected a leader, or if the current leader hasn't sent a heartbeat in a while ...
 		// and if we haven't voted yet
@@ -348,7 +348,7 @@ func (r *Raft) LeaderCheck() error {
 // Heartbeat is the action triggered upon send heartbeat.
 // This method is fully interlocked.
 // This method launches a goroutine.
-func (r *Raft) Heartbeat() error {
+func (r *Raft) heartbeat() error {
 	if r.IsNotState(Leader) {
 		return nil
 	}
@@ -362,7 +362,7 @@ func (r *Raft) Heartbeat() error {
 
 // ReceiveEntries is the rpc server handler for AppendEntries rpc requests.
 // This method is fully interlocked.
-func (r *Raft) ReceiveEntries(args *AppendEntries, res *AppendEntriesResults) error {
+func (r *Raft) receiveEntries(args *AppendEntries, res *AppendEntriesResults) error {
 	r.Lock()
 	defer r.Unlock()
 
@@ -397,7 +397,7 @@ func (r *Raft) ReceiveEntries(args *AppendEntries, res *AppendEntriesResults) er
 // Vote is the rpc server handler for RequestVote rpc requests.
 // This method is fully interlocked.
 // It is called when a peer is calling for an election, and the result determines this node's vote.
-func (r *Raft) Vote(args *RequestVote, res *RequestVoteResults) error {
+func (r *Raft) vote(args *RequestVote, res *RequestVoteResults) error {
 	r.Lock()
 	defer r.Unlock()
 
@@ -473,14 +473,13 @@ func (r *Raft) election() error {
 	if result == ElectionVictory {
 		r.debugf("election successful, promoting self to leader")
 		r.setLeaderSafe()
-		return r.Heartbeat() // send immediate heartbeat
+		return r.heartbeat() // send immediate heartbeat
 	}
 
 	r.debugf("election loss or tie, backing off for rest of election period")
 
 	// transition back to follower but do not reset the vote.
 	r.transitionSafe(Follower)
-
 	return nil
 }
 
@@ -630,25 +629,27 @@ func (r *Raft) transitionSafe(newState State) {
 	r.transition(newState)
 }
 
+// transition does a state transition, firing transition listeners.
 func (r *Raft) transition(newState State) {
 	isTransition := newState != r.state
 	if isTransition {
 		r.debugf("transitioning to %s", newState)
 	}
 	r.state = newState
-
-	switch newState {
-	case Follower:
-		if isTransition && r.followerHandler != nil {
-			go r.safeExecute(r.followerHandler)
-		}
-	case Candidate:
-		if isTransition && r.candidateHandler != nil {
-			go r.safeExecute(r.candidateHandler)
-		}
-	case Leader:
-		if isTransition && r.leaderHandler != nil {
-			go r.safeExecute(r.leaderHandler)
+	if isTransition {
+		switch newState {
+		case Follower:
+			if r.followerHandler != nil {
+				r.safeExecute(r.followerHandler)
+			}
+		case Candidate:
+			if r.candidateHandler != nil {
+				r.safeExecute(r.candidateHandler)
+			}
+		case Leader:
+			if r.leaderHandler != nil {
+				r.safeExecute(r.leaderHandler)
+			}
 		}
 	}
 }
