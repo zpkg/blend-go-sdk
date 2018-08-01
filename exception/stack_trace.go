@@ -67,7 +67,7 @@ func (st StackPointers) Format(s fmt.State, verb rune) {
 func (st StackPointers) Strings() []string {
 	res := make([]string, len(st))
 	for i, frame := range st {
-		res[i] = fmt.Sprintf("%+v", frame)
+		res[i] = fmt.Sprintf("%+v", Frame(frame))
 	}
 	return res
 }
