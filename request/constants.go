@@ -9,6 +9,9 @@ import (
 const (
 	// ErrMultipleBodySources is an error returned if a request has both the post body and post data set.
 	ErrMultipleBodySources = exception.Class("Cannot set both `Body` and `Post Data`")
+
+	// ErrRequiresTransport is an error michael turner is going to hate.
+	ErrRequiresTransport = exception.Class("Request settings require a http.Transport to be provided")
 )
 
 const (
