@@ -422,26 +422,13 @@ func TestClientTrace(t *testing.T) {
 	assert.True(receivedByte)
 }
 
-func TestRequestInsecureSkipVerify(t *testing.T) {
+func TestRequestEnforcesTransportRequirements(t *testing.T) {
 	assert := assert.New(t)
 
-	ts := httptest.NewTLSServer(http.HandlerFunc(func(res http.ResponseWriter, req *http.Request) {
-		res.WriteHeader(http.StatusOK)
-		fmt.Fprintf(res, "OK!\n")
-	}))
-	defer ts.Close()
-
-	assert.True(strings.HasPrefix(ts.URL, "https"), "the test server should be listening tls")
-
-	req := New().AsGet().WithTLSSkipVerify(true).MustWithRawURL(ts.URL)
-
-	contents, meta, err := req.BytesWithMeta()
-	assert.NotNil(req.Transport())
-	assert.NotNil(req.Transport().TLSClientConfig)
-	assert.True(req.Transport().TLSClientConfig.InsecureSkipVerify)
-	assert.Nil(err, "we shouldn't get tls verification errors")
-	assert.Equal(http.StatusOK, meta.StatusCode)
-	assert.NotEmpty(contents)
+	req := New().AsGet().WithHost("foo.com").WithTLSSkipVerify(true)
+	_, _, err := req.BytesWithMeta()
+	assert.True(exception.Is(err, ErrRequiresTransport))
+	assert.Nil(req.Transport())
 }
 
 func TestRequestWithQueryString(t *testing.T) {

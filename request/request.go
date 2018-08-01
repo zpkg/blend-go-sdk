@@ -666,7 +666,7 @@ func (r *Request) Response() (*http.Response, error) {
 	client := &http.Client{}
 	if r.RequiresTransport() {
 		if r.transport == nil {
-			r.transport = &http.Transport{}
+			return nil, exception.New(ErrRequiresTransport)
 		}
 		err := r.ApplyTransport(r.transport)
 		if err != nil {
