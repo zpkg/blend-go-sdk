@@ -94,7 +94,7 @@ func (q *Query) Execute() (stmt *sql.Stmt, rows *sql.Rows, err error) {
 		if q.shouldCacheStatement() {
 			q.conn.statementCache.InvalidateStatement(q.statementLabel)
 		}
-		err = exception.New(queryErr)
+		err = exception.New(queryErr).WithMessagef("query: %s", q.statement)
 	}
 	return
 }

@@ -164,7 +164,7 @@ func (i *Invocation) Get(object DatabaseMapped, ids ...interface{}) (err error) 
 	queryBody = queryBodyBuffer.String()
 	stmt, stmtErr := i.Prepare(queryBody)
 	if stmtErr != nil {
-		err = exception.New(stmtErr)
+		err = exception.New(stmtErr).WithMessagef("query: %s", queryBody)
 		return
 	}
 	defer i.closeStatement(err, stmt)
@@ -178,7 +178,7 @@ func (i *Invocation) Get(object DatabaseMapped, ids ...interface{}) (err error) 
 	}
 
 	if queryErr != nil {
-		err = exception.New(queryErr)
+		err = exception.New(queryErr).WithMessagef("query: %s", queryBody)
 		i.invalidateCachedStatement()
 		return
 	}
@@ -246,7 +246,7 @@ func (i *Invocation) GetAll(collection interface{}) (err error) {
 	queryBody = queryBodyBuffer.String()
 	stmt, stmtErr := i.Prepare(queryBody)
 	if stmtErr != nil {
-		err = exception.New(stmtErr)
+		err = exception.New(stmtErr).WithMessagef("query: %s", queryBody)
 		i.invalidateCachedStatement()
 		return
 	}
@@ -260,7 +260,7 @@ func (i *Invocation) GetAll(collection interface{}) (err error) {
 		rows, queryErr = stmt.Query()
 	}
 	if queryErr != nil {
-		err = exception.New(queryErr)
+		err = exception.New(queryErr).WithMessagef("query: %s", queryBody)
 		return
 	}
 	defer func() {
@@ -350,7 +350,7 @@ func (i *Invocation) Create(object DatabaseMapped) (err error) {
 	queryBody = queryBodyBuffer.String()
 	stmt, stmtErr := i.Prepare(queryBody)
 	if stmtErr != nil {
-		err = exception.New(stmtErr)
+		err = exception.New(stmtErr).WithMessagef("query: %s", queryBody)
 		return
 	}
 	defer func() { err = i.closeStatement(err, stmt) }()
@@ -364,7 +364,7 @@ func (i *Invocation) Create(object DatabaseMapped) (err error) {
 		}
 
 		if execErr != nil {
-			err = exception.New(execErr)
+			err = exception.New(execErr).WithMessagef("query: %s", queryBody)
 			i.invalidateCachedStatement()
 			return
 		}
@@ -381,7 +381,7 @@ func (i *Invocation) Create(object DatabaseMapped) (err error) {
 		}
 
 		if execErr != nil {
-			err = exception.New(execErr)
+			err = exception.New(execErr).WithMessagef("query: %s", queryBody)
 			return
 		}
 
@@ -464,7 +464,7 @@ func (i *Invocation) CreateIfNotExists(object DatabaseMapped) (err error) {
 	queryBody = queryBodyBuffer.String()
 	stmt, stmtErr := i.Prepare(queryBody)
 	if stmtErr != nil {
-		err = exception.New(stmtErr)
+		err = exception.New(stmtErr).WithMessagef("query: %s", queryBody)
 		return
 	}
 	defer func() { err = i.closeStatement(err, stmt) }()
@@ -477,7 +477,7 @@ func (i *Invocation) CreateIfNotExists(object DatabaseMapped) (err error) {
 			_, execErr = stmt.Exec(colValues...)
 		}
 		if execErr != nil {
-			err = exception.New(execErr)
+			err = exception.New(execErr).WithMessagef("query: %s", queryBody)
 			i.invalidateCachedStatement()
 			return
 		}
@@ -494,7 +494,7 @@ func (i *Invocation) CreateIfNotExists(object DatabaseMapped) (err error) {
 		}
 
 		if execErr != nil {
-			err = exception.New(execErr)
+			err = exception.New(execErr).WithMessagef("query: %s", queryBody)
 			return
 		}
 
@@ -570,7 +570,7 @@ func (i *Invocation) CreateMany(objects interface{}) (err error) {
 	queryBody = queryBodyBuffer.String()
 	stmt, stmtErr := i.Prepare(queryBody)
 	if stmtErr != nil {
-		err = exception.New(stmtErr)
+		err = exception.New(stmtErr).WithMessagef("query: %s", queryBody)
 		return
 	}
 	defer func() { err = i.closeStatement(err, stmt) }()
@@ -582,7 +582,7 @@ func (i *Invocation) CreateMany(objects interface{}) (err error) {
 
 	_, execErr := stmt.Exec(colValues...)
 	if execErr != nil {
-		err = exception.New(execErr)
+		err = exception.New(execErr).WithMessagef("query: %s", queryBody)
 		i.invalidateCachedStatement()
 		return
 	}
@@ -645,7 +645,7 @@ func (i *Invocation) Update(object DatabaseMapped) (err error) {
 	queryBody = queryBodyBuffer.String()
 	stmt, stmtErr := i.Prepare(queryBody)
 	if stmtErr != nil {
-		err = exception.New(stmtErr)
+		err = exception.New(stmtErr).WithMessagef("query: %s", queryBody)
 		return
 	}
 
@@ -658,7 +658,7 @@ func (i *Invocation) Update(object DatabaseMapped) (err error) {
 		_, execErr = stmt.Exec(updateValues...)
 	}
 	if execErr != nil {
-		err = exception.New(execErr)
+		err = exception.New(execErr).WithMessagef("query: %s", queryBody)
 		i.invalidateCachedStatement()
 		return
 	}
@@ -711,7 +711,7 @@ func (i *Invocation) Exists(object DatabaseMapped) (exists bool, err error) {
 	stmt, stmtErr := i.Prepare(queryBody)
 	if stmtErr != nil {
 		exists = false
-		err = exception.New(stmtErr)
+		err = exception.New(stmtErr).WithMessagef("query: %s", queryBody)
 		return
 	}
 
@@ -734,7 +734,7 @@ func (i *Invocation) Exists(object DatabaseMapped) (exists bool, err error) {
 
 	if queryErr != nil {
 		exists = false
-		err = exception.New(queryErr)
+		err = exception.New(queryErr).WithMessagef("query: %s", queryBody)
 		i.invalidateCachedStatement()
 		return
 	}
@@ -788,7 +788,7 @@ func (i *Invocation) Delete(object DatabaseMapped) (err error) {
 	queryBody = queryBodyBuffer.String()
 	stmt, stmtErr := i.Prepare(queryBody)
 	if stmtErr != nil {
-		err = exception.New(stmtErr)
+		err = exception.New(stmtErr).WithMessagef("query: %s", queryBody)
 		return
 	}
 	defer func() { err = i.closeStatement(err, stmt) }()
@@ -802,7 +802,7 @@ func (i *Invocation) Delete(object DatabaseMapped) (err error) {
 		_, execErr = stmt.Exec(pkValues...)
 	}
 	if execErr != nil {
-		err = exception.New(execErr)
+		err = exception.New(execErr).WithMessagef("query: %s", queryBody)
 		i.invalidateCachedStatement()
 	}
 	return
@@ -834,7 +834,7 @@ func (i *Invocation) Truncate(object DatabaseMapped) (err error) {
 	queryBody = queryBodyBuffer.String()
 	stmt, stmtErr := i.Prepare(queryBody)
 	if stmtErr != nil {
-		err = exception.New(stmtErr)
+		err = exception.New(stmtErr).WithMessagef("query: %s", queryBody)
 		return
 	}
 	defer func() { err = i.closeStatement(err, stmt) }()
@@ -847,7 +847,7 @@ func (i *Invocation) Truncate(object DatabaseMapped) (err error) {
 	}
 
 	if execErr != nil {
-		err = exception.New(execErr)
+		err = exception.New(execErr).WithMessagef("query: %s", queryBody)
 		i.invalidateCachedStatement()
 	}
 	return
@@ -938,7 +938,8 @@ func (i *Invocation) Upsert(object DatabaseMapped) (err error) {
 
 	stmt, stmtErr := i.Prepare(queryBody)
 	if stmtErr != nil {
-		err = exception.New(stmtErr)
+		err = exception.New(stmtErr).WithMessagef("query: %s", queryBody)
+		i.invalidateCachedStatement()
 		return
 	}
 	defer func() { err = i.closeStatement(err, stmt) }()
@@ -952,7 +953,7 @@ func (i *Invocation) Upsert(object DatabaseMapped) (err error) {
 			execErr = stmt.QueryRow(colValues...).Scan(&id)
 		}
 		if execErr != nil {
-			err = exception.New(execErr)
+			err = exception.New(execErr).WithMessagef("query: %s", queryBody)
 			i.invalidateCachedStatement()
 			return
 		}
@@ -968,7 +969,7 @@ func (i *Invocation) Upsert(object DatabaseMapped) (err error) {
 			_, execErr = stmt.Exec(colValues...)
 		}
 		if execErr != nil {
-			err = exception.New(execErr)
+			err = exception.New(execErr).WithMessagef("query: %s", queryBody)
 			return
 		}
 	}
