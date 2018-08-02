@@ -673,6 +673,7 @@ func (r *Request) Response() (*http.Response, error) {
 			return nil, exception.New(err)
 		}
 	}
+
 	if r.transport != nil {
 		client.Transport = r.transport
 	}
