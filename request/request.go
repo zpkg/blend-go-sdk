@@ -531,18 +531,16 @@ func (r *Request) ApplyTransport(transport *http.Transport) error {
 		}
 		transport.Dial = dialer.Dial
 	}
-	if r.tlsRootCAPool != nil || r.tlsSkipVerify || (len(r.tlsClientCert) > 0 && len(r.tlsClientKey) > 0) {
-		transport.TLSClientConfig = &tls.Config{
-			RootCAs:            r.tlsRootCAPool,
-			InsecureSkipVerify: r.tlsSkipVerify,
+	transport.TLSClientConfig = &tls.Config{
+		RootCAs:            r.tlsRootCAPool,
+		InsecureSkipVerify: r.tlsSkipVerify,
+	}
+	if len(r.tlsClientCert) > 0 && len(r.tlsClientKey) > 0 {
+		cert, err := tls.X509KeyPair(r.tlsClientCert, r.tlsClientKey)
+		if err != nil {
+			return exception.New(err)
 		}
-		if len(r.tlsClientCert) > 0 && len(r.tlsClientKey) > 0 {
-			cert, err := tls.X509KeyPair(r.tlsClientCert, r.tlsClientKey)
-			if err != nil {
-				return exception.New(err)
-			}
-			transport.TLSClientConfig.Certificates = []tls.Certificate{cert}
-		}
+		transport.TLSClientConfig.Certificates = []tls.Certificate{cert}
 	}
 	return nil
 }
