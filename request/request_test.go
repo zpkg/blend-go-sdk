@@ -446,3 +446,27 @@ func TestRequestWithQueryString(t *testing.T) {
 	assert.Equal("bar", full.URL.Query().Get("foo"))
 	assert.Equal("fuzz", full.URL.Query().Get("buzz"))
 }
+
+func TestResponseRequiresTransport(t *testing.T) {
+	assert := assert.New(t)
+	assert.NotNil(New().AsGet().MustWithRawURL("https://foo.bar.com").WithTLSSkipVerify(true).Execute())
+}
+
+func TestResponseAppliesTransportDefaults(t *testing.T) {
+	assert := assert.New(t)
+
+	ts := mockEndpoint(okMeta(), nil, func(r *http.Request) {
+		assert.Equal("GET", r.Method)
+	})
+
+	xport := &http.Transport{}
+	assert.Nil(New().AsGet().MustWithRawURL(ts.URL).WithTransport(xport).WithTLSSkipVerify(true).Execute())
+
+	assert.NotNil(xport.TLSClientConfig)
+	assert.True(xport.TLSClientConfig.InsecureSkipVerify)
+
+	assert.Nil(New().AsGet().MustWithRawURL(ts.URL).WithTransport(xport).WithTLSSkipVerify(false).Execute())
+
+	assert.NotNil(xport.TLSClientConfig)
+	assert.False(xport.TLSClientConfig.InsecureSkipVerify)
+}
