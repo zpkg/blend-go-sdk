@@ -662,17 +662,15 @@ func (r *Request) Response() (*http.Response, error) {
 	}
 
 	client := &http.Client{}
-	if r.RequiresTransport() {
-		if r.transport == nil {
-			return nil, exception.New(ErrRequiresTransport)
-		}
+	if r.RequiresTransport() && r.transport == nil {
+		return nil, exception.New(ErrRequiresTransport)
+	}
+
+	if r.transport != nil {
 		err := r.ApplyTransport(r.transport)
 		if err != nil {
 			return nil, exception.New(err)
 		}
-	}
-
-	if r.transport != nil {
 		client.Transport = r.transport
 	}
 
