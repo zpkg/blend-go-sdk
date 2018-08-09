@@ -46,8 +46,8 @@ func NewCertInfo(res *http.Response) *CertInfo {
 
 // CertInfo is the information for a certificate.
 type CertInfo struct {
-	IssuerCommonName string
-	DNSNames         []string
-	NotAfter         time.Time
-	NotBefore        time.Time
+	IssuerCommonName string    `json:"issuerCommonName" yaml:"issuerCommonName"`
+	DNSNames         []string  `json:"dnsNames" yaml:"dnsNames"`
+	NotAfter         time.Time `json:"notAfter" yaml:"notAfter"`
+	NotBefore        time.Time `json:"notBefore" yaml:"notBefore"`
 }
