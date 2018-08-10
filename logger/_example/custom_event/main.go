@@ -60,6 +60,7 @@ func main() {
 
 	// make a text logger.
 	text := logger.NewText().WithFlags(logger.AllFlags())
+	// make a json logger
 	js := logger.NewJSON().WithFlags(logger.AllFlags())
 
 	event := NewCustomEvent("bailey", "session0", "Console Demo")
