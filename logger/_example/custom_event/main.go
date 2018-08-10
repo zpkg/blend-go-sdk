@@ -2,6 +2,7 @@ package main
 
 import (
 	"bytes"
+	"fmt"
 
 	"github.com/blend/go-sdk/logger"
 )
@@ -70,7 +71,7 @@ func main() {
 
 	listener := logger.New().WithFlags(logger.AllFlags())
 	listener.Listen(logger.Flag("custom_event"), "demo", NewCustomEventListener(func(ce CustomEvent) {
-		println("listener got event")
+		fmt.Println("listener got event")
 	}))
 
 	listener.SyncTrigger(event)
