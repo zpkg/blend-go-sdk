@@ -40,13 +40,15 @@ func NewAuthManagerFromConfig(cfg *Config) *AuthManager {
 
 // AuthManager is a manager for sessions.
 type AuthManager struct {
-	useSessionCache      bool
-	sessionCache         *SessionCache
-	persistHandler       func(*Ctx, *Session, State) error
-	fetchHandler         func(sessionID string, state State) (*Session, error)
-	removeHandler        func(sessionID string, state State) error
-	validateHandler      func(*Session, State) error
-	loginRedirectHandler func(*Ctx) *url.URL
+	useSessionCache bool
+	sessionCache    *SessionCache
+	persistHandler  func(*Ctx, *Session, State) error
+	fetchHandler    func(sessionID string, state State) (*Session, error)
+	removeHandler   func(sessionID string, state State) error
+	validateHandler func(*Session, State) error
+
+	loginRedirectHandler     func(*Ctx) *url.URL
+	postLoginRedirectHandler func(*Ctx) *url.URL
 
 	log *logger.Logger
 
@@ -226,9 +228,9 @@ func (am *AuthManager) VerifySession(ctx *Ctx) (*Session, error) {
 	return session, nil
 }
 
-// Redirect returns a redirect result for when auth fails and you need to
+// LoginRedirect returns a redirect result for when auth fails and you need to
 // send the user to a login page.
-func (am *AuthManager) Redirect(ctx *Ctx) Result {
+func (am *AuthManager) LoginRedirect(ctx *Ctx) Result {
 	if am.loginRedirectHandler != nil {
 		redirectTo := am.loginRedirectHandler(ctx)
 		if redirectTo != nil {
@@ -236,6 +238,19 @@ func (am *AuthManager) Redirect(ctx *Ctx) Result {
 		}
 	}
 	return ctx.DefaultResultProvider().NotAuthorized()
+}
+
+// PostLoginRedirect returns a redirect result for when auth fails and you need to
+// send the user to a login page.
+func (am *AuthManager) PostLoginRedirect(ctx *Ctx) Result {
+	if am.postLoginRedirectHandler != nil {
+		redirectTo := am.postLoginRedirectHandler(ctx)
+		if redirectTo != nil {
+			return ctx.Redirectf(redirectTo.String())
+		}
+	}
+	// the default authed redirect is the root.
+	return ctx.RedirectWithMethodf("GET", "/")
 }
 
 // --------------------------------------------------------------------------------
