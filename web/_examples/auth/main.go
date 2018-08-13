@@ -13,12 +13,12 @@ func main() {
 	app := web.NewFromEnv().WithLogger(logger.All())
 
 	app.ServeStaticCached("/cached", "_static")
-	app.WithStaticMiddleware("/cached", web.SessionMiddleware(func(ctx *web.Ctx) web.Result {
+	app.SetStaticMiddleware("/cached", web.SessionMiddleware(func(ctx *web.Ctx) web.Result {
 		return ctx.Text().NotAuthorized()
 	}, web.SessionReadLock))
 
 	app.ServeStatic("/static", "_static")
-	app.WithStaticMiddleware("/static", web.SessionMiddleware(func(ctx *web.Ctx) web.Result {
+	app.SetStaticMiddleware("/static", web.SessionMiddleware(func(ctx *web.Ctx) web.Result {
 		return ctx.Text().NotAuthorized()
 	}, web.SessionUnsafe))
 
