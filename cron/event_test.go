@@ -30,11 +30,10 @@ func TestEventStartedListener(t *testing.T) {
 		defer wg.Done()
 	}))
 
-	go func() { all.Trigger(NewEvent(FlagStarted, "test_task")) }()
-	go func() { all.Trigger(NewEvent(FlagStarted, "test_task")) }()
+	go func() { all.SyncTrigger(NewEvent(FlagStarted, "test_task")) }()
+	go func() { all.SyncTrigger(NewEvent(FlagStarted, "test_task")) }()
 
 	wg.Wait()
-	all.Drain()
 
 	assert.NotEmpty(textBuffer.String())
 	assert.NotEmpty(jsonBuffer.String())

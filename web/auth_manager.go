@@ -72,7 +72,9 @@ func (am *AuthManager) Login(userID string, ctx *Ctx) (session *Session, err err
 	var sessionID string
 	var secureSessionID string
 
+	// create a new session
 	sessionID = am.createSessionID()
+	// if we should issue a verification session id, create one too
 	if am.shouldIssueSecureSesssionID() {
 		secureSessionID, err = am.createSecureSessionID(sessionID)
 		if err != nil {
@@ -80,9 +82,13 @@ func (am *AuthManager) Login(userID string, ctx *Ctx) (session *Session, err err
 		}
 	}
 
+	// userID and sessionID are required
 	session = NewSession(userID, sessionID)
 	session.ExpiresUTC = am.GenerateSessionTimeout(ctx)
+	session.UserAgent = logger.GetUserAgent(ctx.request)
+	session.RemoteAddr = logger.GetRemoteAddr(ctx.request)
 
+	// call the perist handler if one's been provided
 	if am.persistHandler != nil {
 		err = am.persistHandler(ctx, session, ctx.state)
 		if err != nil {
@@ -90,14 +96,17 @@ func (am *AuthManager) Login(userID string, ctx *Ctx) (session *Session, err err
 		}
 	}
 
+	// if we are tracking sessions locally, add it to the cache.
 	if am.useSessionCache {
 		am.sessionCache.Upsert(session)
 	}
 
+	// inject cookies into the response
 	am.injectCookie(ctx, am.CookieName(), sessionID, session.ExpiresUTC)
 	if am.shouldIssueSecureSesssionID() {
 		am.injectCookie(ctx, am.SecureCookieName(), secureSessionID, session.ExpiresUTC)
 	}
+
 	return session, nil
 }
 
@@ -110,13 +119,15 @@ func (am *AuthManager) Logout(ctx *Ctx) error {
 		am.sessionCache.Remove(sessionID)
 	}
 
+	// issue the expiration cookies to the response
 	ctx.ExpireCookie(am.CookieName(), am.CookiePath())
 	if am.shouldIssueSecureSesssionID() {
 		ctx.ExpireCookie(am.SecureCookieName(), am.CookiePath())
 	}
+	// nil out the current session in the ctx
 	ctx.WithSession(nil)
 
-	// remove the session from a backing store
+	// call the remove handler if one has been provided
 	if am.removeHandler != nil {
 		return am.err(am.removeHandler(sessionID, ctx.state))
 	}
@@ -126,12 +137,16 @@ func (am *AuthManager) Logout(ctx *Ctx) error {
 // VerifySession checks a sessionID to see if it's valid.
 // It also handles updating a rolling expiry.
 func (am *AuthManager) VerifySession(ctx *Ctx) (*Session, error) {
+	// pull the sessionID off the request
 	sessionID := am.readSessionID(ctx)
+
+	// validate the sessionID is formatted correctly
 	err := am.validateSessionID(sessionID)
 	if err != nil {
 		return nil, err
 	}
 
+	// validate the secure session id if it's required
 	var secureSessionID string
 	if am.shouldIssueSecureSesssionID() {
 		secureSessionID = am.readSecureSessionID(ctx)
@@ -141,11 +156,17 @@ func (am *AuthManager) VerifySession(ctx *Ctx) (*Session, error) {
 		}
 	}
 
+	// pull the session from the cache
+	// or call the fetch handler.
+	// we call the fetch handler if we're using cached sessions
+	// and it just hasn't been loaded yet.
 	var session *Session
 	if am.useSessionCache {
 		session = am.sessionCache.Get(sessionID)
 	}
 
+	// call the fetch handler if it's been provided and
+	// the session is currently unset.
 	if session == nil && am.fetchHandler != nil {
 		session, err = am.fetchHandler(sessionID, ctx.state)
 		if err != nil {
@@ -153,6 +174,7 @@ func (am *AuthManager) VerifySession(ctx *Ctx) (*Session, error) {
 		}
 	}
 
+	// if the session is invalid, expire the cookie(s)
 	if session == nil || session.IsZero() || session.IsExpired() {
 		ctx.ExpireCookie(am.CookieName(), DefaultCookiePath)
 		if am.shouldIssueSecureSesssionID() {
@@ -171,6 +193,7 @@ func (am *AuthManager) VerifySession(ctx *Ctx) (*Session, error) {
 		return nil, nil
 	}
 
+	// call a custom validate handler if one's been provided.
 	if am.validateHandler != nil {
 		err = am.validateHandler(session, ctx.state)
 		if err != nil {
@@ -196,6 +219,7 @@ func (am *AuthManager) VerifySession(ctx *Ctx) (*Session, error) {
 		}
 	}
 
+	// upsert the session
 	if am.useSessionCache {
 		am.sessionCache.Upsert(session)
 	}
