@@ -18,12 +18,12 @@ type APIController struct {
 
 // Register adds routes for the controller to the app.
 func (ac *APIController) Register(app *web.App) {
-	app.GET("/", ac.index)
-	app.GET("/api", ac.all)
-	app.GET("/api/:key", ac.get)
-	app.POST("/api/:key", ac.post)
-	app.PUT("/api/:key", ac.put)
-	app.DELETE("/api/:key", ac.delete)
+	app.GET("/", ac.index, web.JSON)
+	app.GET("/api", ac.all, web.JSON)
+	app.GET("/api/:key", ac.get, web.JSON)
+	app.POST("/api/:key", ac.post, web.JSON)
+	app.PUT("/api/:key", ac.put, web.JSON)
+	app.DELETE("/api/:key", ac.delete, web.JSON)
 }
 
 func (ac *APIController) ensureDB() {

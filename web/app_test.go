@@ -278,7 +278,7 @@ func TestAppProviderMiddleware(t *testing.T) {
 	}
 
 	app := New()
-	app.GET("/", okAction, JSONProviderAsDefault)
+	app.GET("/", okAction, JSON)
 
 	err := app.Mock().WithPathf("/").Execute()
 	assert.Nil(err)
@@ -301,7 +301,7 @@ func TestAppProviderMiddlewareOrder(t *testing.T) {
 		}
 	}
 
-	app.GET("/", okAction, dependsOnProvider, JSONProviderAsDefault)
+	app.GET("/", okAction, dependsOnProvider, JSON)
 
 	err := app.Mock().WithPathf("/").Execute()
 	assert.Nil(err)
@@ -323,7 +323,7 @@ func TestAppDefaultResultProvider(t *testing.T) {
 
 func TestAppDefaultResultProviderWithDefault(t *testing.T) {
 	assert := assert.New(t)
-	app := New().WithDefaultMiddleware(ViewProviderAsDefault)
+	app := New().WithDefaultMiddleware(View)
 	assert.NotNil(app.DefaultMiddleware())
 
 	rc := app.createCtx(nil, nil, nil, nil, nil)
@@ -346,9 +346,9 @@ func TestAppDefaultResultProviderWithDefault(t *testing.T) {
 func TestAppDefaultResultProviderWithDefaultFromRoute(t *testing.T) {
 	assert := assert.New(t)
 
-	app := New().WithDefaultMiddleware(JSONProviderAsDefault)
+	app := New().WithDefaultMiddleware(JSON)
 	app.Views().AddLiterals(DefaultTemplateNotAuthorized)
-	app.GET("/", controllerNoOp, SessionRequired, ViewProviderAsDefault)
+	app.GET("/", controllerNoOp, SessionRequired, View)
 
 	//somehow assert that the content type is html
 	meta, err := app.Mock().WithPathf("/").ExecuteWithMeta()
