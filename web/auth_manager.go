@@ -508,7 +508,7 @@ func (am *AuthManager) WithLoginRedirectHandler(handler func(*Ctx) *url.URL) *Au
 	return am
 }
 
-// SetLoginRedirectHandler sets the handler to determin where to redirect on not authorized attempts.
+// SetLoginRedirectHandler sets the handler to determine where to redirect on not authorized attempts.
 // It should return (nil) if you want to just show the `not_authorized` template, provided one is configured.
 func (am *AuthManager) SetLoginRedirectHandler(handler func(*Ctx) *url.URL) {
 	am.loginRedirectHandler = handler
@@ -517,6 +517,22 @@ func (am *AuthManager) SetLoginRedirectHandler(handler func(*Ctx) *url.URL) {
 // LoginRedirectHandler returns the login redirect handler.
 func (am *AuthManager) LoginRedirectHandler() func(*Ctx) *url.URL {
 	return am.loginRedirectHandler
+}
+
+// WithPostLoginRedirectHandler sets the post login redirect handler.
+func (am *AuthManager) WithPostLoginRedirectHandler(handler func(*Ctx) *url.URL) *AuthManager {
+	am.SetPostLoginRedirectHandler(handler)
+	return am
+}
+
+// SetPostLoginRedirectHandler sets the handler to determine where to redirect on login complete.
+func (am *AuthManager) SetPostLoginRedirectHandler(handler func(*Ctx) *url.URL) {
+	am.postLoginRedirectHandler = handler
+}
+
+// PostLoginRedirectHandler returns the redirect handler for login complete.
+func (am *AuthManager) PostLoginRedirectHandler() func(*Ctx) *url.URL {
+	return am.postLoginRedirectHandler
 }
 
 // SessionCache returns the session cache.
