@@ -7,29 +7,45 @@ import (
 )
 
 // GracefulShutdown starts an app and responds to SIGINT and SIGTERM to shut the app down.
-func GracefulShutdown(app *App) {
+// It will return any errors returned by app.Start() that are not caused by shutting down the server.
+func GracefulShutdown(app *App) error {
 	shutdown := make(chan struct{})
-	serverExit := make(chan struct{})
-	quit := make(chan os.Signal, 1)
-	signal.Notify(quit, os.Interrupt, syscall.SIGTERM)
+	server := make(chan struct{})
+	abort := make(chan struct{})
+
+	terminate := make(chan os.Signal, 1)
+	signal.Notify(terminate, os.Interrupt, syscall.SIGTERM)
+
+	errors := make(chan error, 2)
 
 	go func() {
 		if err := app.Start(); err != nil {
-			if app.log != nil {
-				app.log.SyncFatal(err)
-			}
+			errors <- err
 		}
-		close(serverExit)
+		close(server)
 	}()
 
 	go func() {
-		<-quit
-		if err := app.Shutdown(); err != nil {
-			app.log.SyncFatal(err)
+		select {
+		case <-terminate:
+			if err := app.Shutdown(); err != nil {
+				errors <- err
+			}
+			close(shutdown)
+		case <-abort:
+			return
 		}
-		close(shutdown)
 	}()
 
-	<-shutdown
-	<-serverExit
+	select {
+	case <-shutdown: // if we've issued a shutdown, wait for the server to exit
+		<-server
+	case <-server: // if the server exited
+		close(abort) // quit the signal listener
+	}
+
+	if len(errors) > 0 {
+		return <-errors
+	}
+	return nil
 }
