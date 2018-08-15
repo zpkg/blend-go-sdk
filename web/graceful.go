@@ -10,11 +10,12 @@ import (
 // It will return any errors returned by app.Start() that are not caused by shutting down the server.
 func GracefulShutdown(app *App) error {
 	shutdown := make(chan struct{})
+	shutdownAbort := make(chan struct{})
+	shutdownComplete := make(chan struct{})
 	server := make(chan struct{})
-	abort := make(chan struct{})
 
-	terminate := make(chan os.Signal, 1)
-	signal.Notify(terminate, os.Interrupt, syscall.SIGTERM)
+	terminateSignal := make(chan os.Signal, 1)
+	signal.Notify(terminateSignal, os.Interrupt, syscall.SIGTERM)
 
 	errors := make(chan error, 2)
 
@@ -27,21 +28,25 @@ func GracefulShutdown(app *App) error {
 
 	go func() {
 		select {
-		case <-terminate:
+		case <-shutdown:
 			if err := app.Shutdown(); err != nil {
 				errors <- err
 			}
-			close(shutdown)
-		case <-abort:
+			close(shutdownComplete)
+			return
+		case <-shutdownAbort:
+			close(shutdownComplete)
 			return
 		}
 	}()
 
 	select {
-	case <-shutdown: // if we've issued a shutdown, wait for the server to exit
+	case <-terminateSignal: // if we've issued a shutdown, wait for the server to exit
+		close(shutdown)
+		<-shutdownComplete
 		<-server
 	case <-server: // if the server exited
-		close(abort) // quit the signal listener
+		close(shutdownAbort) // quit the signal listener
 	}
 
 	if len(errors) > 0 {
