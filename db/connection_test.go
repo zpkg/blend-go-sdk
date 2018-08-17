@@ -65,22 +65,13 @@ func TestQuery(t *testing.T) {
 func TestConnectionStatementCacheExecute(t *testing.T) {
 	a := assert.New(t)
 
-	conn := NewFromEnv()
-	defer func() {
-		closeErr := conn.Close()
-		a.Nil(closeErr)
-	}()
+	conn := New()
+	a.Nil(conn.Open())
+	defer conn.Close()
+	conn.StatementCache().WithEnabled(true)
 
-	conn.EnableStatementCache()
-	_, err := conn.Open()
-	a.Nil(err)
-
-	err = conn.Exec("select 'ok!'")
-	a.Nil(err)
-
-	err = conn.Exec("select 'ok!'")
-	a.Nil(err)
-
+	a.Nil(conn.Exec("select 'ok!'"))
+	a.Nil(conn.Exec("select 'ok!'"))
 	a.True(conn.StatementCache().HasStatement("select 'ok!'"))
 }
 
@@ -88,22 +79,16 @@ func TestConnectionStatementCacheQuery(t *testing.T) {
 	a := assert.New(t)
 
 	conn := NewFromEnv()
-	defer func() {
-		closeErr := conn.Close()
-		a.Nil(closeErr)
-	}()
+	a.Nil(conn.Open())
+	defer conn.Close()
 
-	conn.EnableStatementCache()
-	_, err := conn.Open()
-	a.Nil(err)
+	conn.StatementCache().WithEnabled(true)
 
 	var ok string
-	err = conn.Query("select 'ok!'").CachedAs("status").Scan(&ok)
-	a.Nil(err)
+	a.Nil(conn.Query("select 'ok!'").WithLabel("status").Scan(&ok))
 	a.Equal("ok!", ok)
 
-	err = conn.Query("select 'ok!'").CachedAs("status").Scan(&ok)
-	a.Nil(err)
+	a.Nil(conn.Query("select 'ok!'").WithLabel("status").Scan(&ok))
 	a.Equal("ok!", ok)
 
 	a.True(conn.StatementCache().HasStatement("status"))
@@ -162,12 +147,8 @@ func TestCRUDMethodsCached(t *testing.T) {
 	a := assert.New(t)
 
 	conn := NewFromEnv()
-	defer func() {
-		err := conn.Close()
-		a.Nil(err)
-	}()
-
-	conn.EnableStatementCache()
+	a.Nil(conn.Open())
+	defer conn.Close()
 
 	tx, err := conn.Begin()
 	a.Nil(err)
@@ -219,11 +200,13 @@ func TestCRUDMethodsCached(t *testing.T) {
 func TestConnectionOpen(t *testing.T) {
 	a := assert.New(t)
 
-	testAlias := NewFromEnv()
-	db, dbErr := testAlias.Open()
-	a.Nil(dbErr)
-	a.NotNil(db)
-	defer db.Close()
+	conn := NewFromEnv()
+	a.Nil(conn.Open())
+	defer conn.Close()
+
+	a.NotNil(conn.bufferPool)
+	a.NotNil(conn.connection)
+	a.NotNil(conn.statementCache)
 }
 
 func TestExec(t *testing.T) {
@@ -457,11 +440,10 @@ func TestConnectionInvalidatesBadCachedStatements(t *testing.T) {
 	assert := assert.New(t)
 
 	conn := NewFromEnv()
+	assert.Nil(conn.Open())
 	defer conn.Close()
 
-	conn.EnableStatementCache()
-	_, err := conn.Open()
-	assert.Nil(err)
+	conn.StatementCache().WithEnabled(true)
 
 	createTableStatement := `CREATE TABLE state_invalidation (id int not null, name varchar(64))`
 	insertStatement := `INSERT INTO state_invalidation (id, name) VALUES ($1, $2)`
@@ -469,6 +451,7 @@ func TestConnectionInvalidatesBadCachedStatements(t *testing.T) {
 	dropTableStatement := `DROP TABLE state_invalidation`
 	queryStatement := `SELECT * from state_invalidation`
 
+	var err error
 	defer func() {
 		err = conn.Exec(dropTableStatement)
 		assert.Nil(err)
@@ -501,7 +484,8 @@ func TestConnectionInvalidatesBadCachedStatements(t *testing.T) {
 // TestConnectionConfigSetsDatabase tests if we set the .database property on open.
 func TestConnectionConfigSetsDatabase(t *testing.T) {
 	assert := assert.New(t)
-	conn, err := NewFromEnv().Open()
-	assert.Nil(err)
+	conn := NewFromEnv()
+	assert.Nil(conn.Open())
+	defer conn.Close()
 	assert.NotEmpty(conn.Config().GetDatabase())
 }

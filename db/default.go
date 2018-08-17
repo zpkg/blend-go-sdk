@@ -32,10 +32,10 @@ func Default() *Connection {
 
 // OpenDefault sets the default connection and opens it.
 func OpenDefault(conn *Connection) error {
-	db, err := conn.Open()
+	err := conn.Open()
 	if err != nil {
 		return err
 	}
-	SetDefault(db)
+	SetDefault(conn)
 	return nil
 }

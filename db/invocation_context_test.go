@@ -27,12 +27,12 @@ func TestCtxInvoke(t *testing.T) {
 	assert := assert.New(t)
 
 	inv := NewInvocationContext(Default()).Invoke()
-	assert.Nil(inv.Validate())
+	assert.Nil(inv.validate())
 }
 
 func TestCtxInvokeError(t *testing.T) {
 	assert := assert.New(t)
 
 	inv := NewInvocationContext(nil).Invoke()
-	assert.NotNil(inv.Validate(), "should fail the connection not nil check")
+	assert.NotNil(inv.validate(), "should fail the connection not nil check")
 }
