@@ -2,7 +2,6 @@ package db
 
 import (
 	"database/sql"
-	"fmt"
 	"sync"
 	"time"
 
@@ -33,11 +32,8 @@ const (
 // It will use very bare bones defaults for the config.
 func New() *Connection {
 	return &Connection{
-		config:             &Config{},
-		bufferPool:         NewBufferPool(DefaultBufferPoolSize),
-		useStatementCache:  DefaultUseStatementCache,
-		statementCacheLock: &sync.Mutex{},
-		connectionLock:     &sync.Mutex{},
+		config:         &Config{},
+		statementCache: NewStatementCache(),
 	}
 }
 
@@ -55,17 +51,13 @@ func NewFromEnv() *Connection {
 
 // Connection is the basic wrapper for connection parameters and saves a reference to the created sql.Connection.
 type Connection struct {
-	connection *sql.DB
-	config     *Config
+	sync.Mutex
 
-	connectionLock     *sync.Mutex
-	statementCacheLock *sync.Mutex
-
-	bufferPool *BufferPool
-	log        *logger.Logger
-
-	useStatementCache bool
-	statementCache    *StatementCache
+	connection     *sql.DB
+	config         *Config
+	bufferPool     *BufferPool
+	log            *logger.Logger
+	statementCache *StatementCache
 }
 
 // WithConfig sets the config.
@@ -86,12 +78,10 @@ func (dbc *Connection) Connection() *sql.DB {
 
 // Close implements a closer.
 func (dbc *Connection) Close() error {
-	var err error
 	if dbc.statementCache != nil {
-		err = dbc.statementCache.Close()
-	}
-	if err != nil {
-		return err
+		if err := dbc.statementCache.Close(); err != nil {
+			return err
+		}
 	}
 	return dbc.connection.Close()
 }
@@ -107,145 +97,79 @@ func (dbc *Connection) Logger() *logger.Logger {
 	return dbc.log
 }
 
-func (dbc *Connection) fireEvent(flag logger.Flag, query string, elapsed time.Duration, err error, optionalQueryLabel ...string) {
-	if dbc.log != nil {
-		var queryLabel string
-		if len(optionalQueryLabel) > 0 {
-			queryLabel = optionalQueryLabel[0]
-		}
-
-		dbc.log.Trigger(logger.NewQueryEvent(query, elapsed).WithFlag(flag).WithDatabase(dbc.config.GetDatabase()).WithQueryLabel(queryLabel).WithEngine("postgres").WithErr(err))
-		if err != nil {
-			dbc.log.Error(err)
-		}
-	}
-}
-
-// EnableStatementCache opts to cache statements for the connection.
-func (dbc *Connection) EnableStatementCache() {
-	dbc.useStatementCache = true
-}
-
-// DisableStatementCache opts to not use the statement cache.
-func (dbc *Connection) DisableStatementCache() {
-	dbc.useStatementCache = false
-}
-
-// WithUseStatementCache returns if we should use the statement cache.
-func (dbc *Connection) WithUseStatementCache(enabled bool) *Connection {
-	dbc.useStatementCache = enabled
-	return dbc
-}
-
 // StatementCache returns the statement cache.
 func (dbc *Connection) StatementCache() *StatementCache {
 	return dbc.statementCache
 }
 
-// openNewSQLConnection returns a new connection object.
-func (dbc *Connection) openNewSQLConnection() (*sql.DB, error) {
+// Open returns a connection object, either a cached connection object or creating a new one in the process.
+func (dbc *Connection) Open() error {
+	dbc.Lock()
+	defer dbc.Unlock()
+
+	// bail if we've already opened the connection.
+	if dbc.connection != nil {
+		return exception.New(ErrConnectionAlreadyOpen)
+	}
 	if dbc.config == nil {
-		return nil, exception.New("connection configuration is unset")
+		return exception.New(ErrConfigUnset)
+	}
+	if dbc.bufferPool == nil {
+		dbc.bufferPool = NewBufferPool(dbc.config.GetBufferPoolSize())
+	}
+	if dbc.statementCache == nil {
+		dbc.statementCache = NewStatementCache()
 	}
 
 	// open the connection
-	dbConn, err := sql.Open("postgres", dbc.config.CreateDSN())
+	dbConn, err := sql.Open(dbc.config.GetEngine(), dbc.config.CreateDSN())
 	if err != nil {
-		return nil, exception.New(err)
-	}
-	dbc.statementCache = newStatementCache(dbConn)
-
-	// action config points.
-	dbConn.SetConnMaxLifetime(dbc.config.GetMaxLifetime())
-	dbConn.SetMaxIdleConns(dbc.config.GetIdleConnections())
-	dbConn.SetMaxOpenConns(dbc.config.GetMaxConnections())
-
-	schema := dbc.config.GetSchema()
-	if len(schema) > 0 {
-		_, err = dbConn.Exec(fmt.Sprintf("SET search_path TO %s,public;", schema))
-		if err != nil {
-			return nil, exception.New(err)
-		}
+		return exception.New(err)
 	}
 
-	// sanity check on the connection.
-	_, err = dbConn.Exec("select 'ok!'")
-	if err != nil {
-		return nil, exception.New(err)
-	}
+	dbc.statementCache.WithConnection(dbConn)
+	dbc.statementCache.WithEnabled(dbc.config.GetUseStatementCache())
 
-	return dbConn, nil
-}
-
-// Open returns a connection object, either a cached connection object or creating a new one in the process.
-func (dbc *Connection) Open() (*Connection, error) {
-	if dbc.connection == nil {
-		dbc.connectionLock.Lock()
-		defer dbc.connectionLock.Unlock()
-
-		if dbc.connection == nil {
-			newConn, err := dbc.openNewSQLConnection()
-			if err != nil {
-				return nil, err
-			}
-			dbc.connection = newConn
-		}
-	}
-	return dbc, nil
+	dbc.connection = dbConn
+	dbc.connection.SetConnMaxLifetime(dbc.config.GetMaxLifetime())
+	dbc.connection.SetMaxIdleConns(dbc.config.GetIdleConnections())
+	dbc.connection.SetMaxOpenConns(dbc.config.GetMaxConnections())
+	return nil
 }
 
 // Begin starts a new transaction.
 func (dbc *Connection) Begin() (*sql.Tx, error) {
-	if dbc.connection != nil {
-		tx, txErr := dbc.connection.Begin()
-		return tx, exception.New(txErr)
+	if dbc.connection == nil {
+		return nil, exception.New(ErrConnectionClosed)
 	}
-
-	connection, err := dbc.Open()
-	if err != nil {
-		return nil, exception.New(err)
-	}
-	tx, err := connection.Begin()
+	tx, err := dbc.connection.Begin()
 	return tx, exception.New(err)
 }
 
 // Prepare prepares a new statement for the connection.
 func (dbc *Connection) Prepare(statement string, tx *sql.Tx) (*sql.Stmt, error) {
+	if dbc.connection == nil {
+		return nil, exception.New(ErrConnectionClosed)
+	}
+
 	if tx != nil {
 		stmt, err := tx.Prepare(statement)
-		if err != nil {
-			return nil, exception.New(err)
-		}
-		return stmt, nil
+		return stmt, exception.New(err)
 	}
 
-	// open shared connection
-	dbConn, err := dbc.Open()
-	if err != nil {
-		return nil, exception.New(err)
-	}
-
-	stmt, err := dbConn.connection.Prepare(statement)
-	if err != nil {
-		return nil, exception.New(err)
-	}
-	return stmt, nil
+	stmt, err := dbc.connection.Prepare(statement)
+	return stmt, exception.New(err)
 }
 
 // PrepareCached prepares a potentially cached statement.
-func (dbc *Connection) PrepareCached(id, statement string, tx *sql.Tx) (*sql.Stmt, error) {
-	if tx != nil {
-		stmt, err := tx.Prepare(statement)
-		if err != nil {
-			return nil, exception.New(err)
-		}
-		return stmt, nil
+func (dbc *Connection) PrepareCached(statementID, statement string, tx *sql.Tx) (*sql.Stmt, error) {
+	if dbc.connection == nil {
+		return nil, exception.New(ErrConnectionClosed)
 	}
-
-	if dbc.useStatementCache {
-		return dbc.statementCache.Prepare(id, statement)
+	if dbc.statementCache == nil {
+		return nil, exception.New(ErrStatementCacheUnset)
 	}
-	return dbc.Prepare(statement, tx)
+	return dbc.statementCache.Prepare(statementID, statement, tx)
 }
 
 // --------------------------------------------------------------------------------
@@ -407,4 +331,22 @@ func (dbc *Connection) Truncate(object DatabaseMapped) error {
 // TruncateInTx applies a truncation in a transaction.
 func (dbc *Connection) TruncateInTx(object DatabaseMapped, tx *sql.Tx) error {
 	return dbc.Invoke(tx).Truncate(object)
+}
+
+// --------------------------------------------------------------------------------
+// internal methods
+// --------------------------------------------------------------------------------
+
+func (dbc *Connection) fireEvent(flag logger.Flag, query string, elapsed time.Duration, err error, optionalQueryLabel ...string) {
+	if dbc.log != nil {
+		var queryLabel string
+		if len(optionalQueryLabel) > 0 {
+			queryLabel = optionalQueryLabel[0]
+		}
+
+		dbc.log.Trigger(logger.NewQueryEvent(query, elapsed).WithFlag(flag).WithDatabase(dbc.config.GetDatabase()).WithQueryLabel(queryLabel).WithEngine("postgres").WithErr(err))
+		if err != nil {
+			dbc.log.Error(err)
+		}
+	}
 }

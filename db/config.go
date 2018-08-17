@@ -13,6 +13,9 @@ import (
 )
 
 const (
+	// DefaultEngine is the default database engine.
+	DefaultEngine = "postgres"
+
 	// EnvVarDatabaseURL is an environment variable.
 	EnvVarDatabaseURL = "DATABASE_URL"
 
@@ -51,7 +54,7 @@ const (
 	// DefaultMaxConnections is the default maximum number of connections.
 	DefaultMaxConnections = 32
 	// DefaultMaxLifetime is the default maximum lifetime of driver connections.
-	DefaultMaxLifetime time.Duration = 0
+	DefaultMaxLifetime = time.Duration(0)
 	// DefaultBufferPoolSize is the default number of buffer pool entries to maintain.
 	DefaultBufferPoolSize = 1024
 )
@@ -106,6 +109,8 @@ func NewConfigFromEnv() *Config {
 
 // Config is a set of connection config options.
 type Config struct {
+	// Engine is the database engine.
+	Engine string `json:"engine,omitempty" yaml:"engine,omitempty" env:"DB_ENGINE"`
 	// DSN is a fully formed DSN (this skips DSN formation from all other variables outside `schema`).
 	DSN string `json:"dsn,omitempty" yaml:"dsn,omitempty" env:"DATABASE_URL"`
 	// Host is the server to connect to.
@@ -132,6 +137,12 @@ type Config struct {
 	MaxLifetime time.Duration `json:"maxLifetime,omitempty" yaml:"maxLifetime,omitempty" env:"DB_MAX_LIFETIME"`
 	// BufferPoolSize is the number of query composition buffers to maintain.
 	BufferPoolSize int `json:"bufferPoolSize,omitempty" yaml:"bufferPoolSize,omitempty" env:"DB_BUFFER_POOL_SIZE"`
+}
+
+// WithEngine sets the databse engine.
+func (c *Config) WithEngine(engine string) *Config {
+	c.Engine = engine
+	return c
 }
 
 // WithDSN sets the config dsn and returns a reference to the config.
@@ -180,6 +191,11 @@ func (c *Config) WithPassword(password string) *Config {
 func (c *Config) WithSSLMode(sslMode string) *Config {
 	c.SSLMode = sslMode
 	return c
+}
+
+// GetEngine returns the database engine.
+func (c Config) GetEngine(inherited ...string) string {
+	return util.Coalesce.String(c.Engine, DefaultEngine, inherited...)
 }
 
 // GetDSN returns the postgres dsn (fully quallified url) for the config.

@@ -3,13 +3,26 @@ package db
 import "github.com/blend/go-sdk/exception"
 
 const (
+	// ErrConfigUnset is an exception class.
+	ErrConfigUnset exception.Class = "db: config is unset"
 	// ErrUnsafeSSLMode is an error indicating unsafe ssl mode in production.
-	ErrUnsafeSSLMode Error = "db: unsafe ssl mode in prodlike environment"
+	ErrUnsafeSSLMode exception.Class = "db: unsafe ssl mode in prodlike environment"
 	// ErrUsernameUnset is an error indicating there is no username set in a prodlike environment.
-	ErrUsernameUnset Error = "db: username is unset in prodlike environment"
+	ErrUsernameUnset exception.Class = "db: username is unset in prodlike environment"
 	// ErrPasswordUnset is an error indicating there is no password set in a prodlike environment.
-	ErrPasswordUnset Error = "db: password is unset in prodlike environment"
+	ErrPasswordUnset exception.Class = "db: password is unset in prodlike environment"
+	// ErrConnectionAlreadyOpen is an error indicating the db connection was already opened.
+	ErrConnectionAlreadyOpen exception.Class = "db: the connection is already opened"
+	// ErrConnectionClosed is an error indicating the db connection hasn't been opened.
+	ErrConnectionClosed exception.Class = "db: the connection is closed"
+	// ErrStatementCacheUnset is an error indicating the statement cache is unset.
+	ErrStatementCacheUnset exception.Class = "db: the statement cache is unset"
 )
+
+// IsConfigUnset returns if the error is an `ErrConfigUnset`.
+func IsConfigUnset(err error) bool {
+	return exception.Is(err, ErrConfigUnset)
+}
 
 // IsUnsafeSSLMode returns if an error is an `ErrUnsafeSSLMode`.
 func IsUnsafeSSLMode(err error) bool {
@@ -24,4 +37,14 @@ func IsUsernameUnset(err error) bool {
 // IsPasswordUnset returns if an error is an `ErrPasswordUnset`.
 func IsPasswordUnset(err error) bool {
 	return exception.Is(err, ErrPasswordUnset)
+}
+
+// IsConnectionClosed returns if the error is an `ErrConnectionClosed`.
+func IsConnectionClosed(err error) bool {
+	return exception.Is(err, ErrConnectionClosed)
+}
+
+// IsStatementCacheUnset returns if the error is an `ErrConnectionClosed`.
+func IsStatementCacheUnset(err error) bool {
+	return exception.Is(err, ErrStatementCacheUnset)
 }

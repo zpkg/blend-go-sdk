@@ -65,7 +65,7 @@ func (i *Invocation) Tx() *sql.Tx {
 
 // Prepare returns a cached or newly prepared statment plan for a given sql statement.
 func (i *Invocation) Prepare(statement string) (*sql.Stmt, error) {
-	if len(i.statementLabel) > 0 {
+	if i.conn.StatementCache().Enabled() && len(i.statementLabel) > 0 {
 		return i.conn.PrepareCached(i.statementLabel, statement, i.tx)
 	}
 	return i.conn.Prepare(statement, i.tx)
@@ -73,7 +73,7 @@ func (i *Invocation) Prepare(statement string) (*sql.Stmt, error) {
 
 // Exec executes a sql statement with a given set of arguments.
 func (i *Invocation) Exec(statement string, args ...interface{}) (err error) {
-	err = i.Validate()
+	err = i.validate()
 	if err != nil {
 		return
 	}
@@ -107,7 +107,7 @@ func (i *Invocation) Query(query string, args ...interface{}) *Query {
 
 // Get returns a given object based on a group of primary key ids within a transaction.
 func (i *Invocation) Get(object DatabaseMapped, ids ...interface{}) (err error) {
-	err = i.Validate()
+	err = i.validate()
 	if err != nil {
 		return
 	}
@@ -209,7 +209,7 @@ func (i *Invocation) Get(object DatabaseMapped, ids ...interface{}) (err error) 
 
 // GetAll returns all rows of an object mapped table wrapped in a transaction.
 func (i *Invocation) GetAll(collection interface{}) (err error) {
-	err = i.Validate()
+	err = i.validate()
 	if err != nil {
 		return
 	}
@@ -299,7 +299,7 @@ func (i *Invocation) GetAll(collection interface{}) (err error) {
 
 // Create writes an object to the database within a transaction.
 func (i *Invocation) Create(object DatabaseMapped) (err error) {
-	err = i.Validate()
+	err = i.validate()
 	if err != nil {
 		return
 	}
@@ -399,7 +399,7 @@ func (i *Invocation) Create(object DatabaseMapped) (err error) {
 
 // CreateIfNotExists writes an object to the database if it does not already exist within a transaction.
 func (i *Invocation) CreateIfNotExists(object DatabaseMapped) (err error) {
-	err = i.Validate()
+	err = i.validate()
 	if err != nil {
 		return
 	}
@@ -512,7 +512,7 @@ func (i *Invocation) CreateIfNotExists(object DatabaseMapped) (err error) {
 
 // CreateMany writes many an objects to the database within a transaction.
 func (i *Invocation) CreateMany(objects interface{}) (err error) {
-	err = i.Validate()
+	err = i.validate()
 	if err != nil {
 		return
 	}
@@ -592,7 +592,7 @@ func (i *Invocation) CreateMany(objects interface{}) (err error) {
 
 // Update updates an object wrapped in a transaction.
 func (i *Invocation) Update(object DatabaseMapped) (err error) {
-	err = i.Validate()
+	err = i.validate()
 	if err != nil {
 		return
 	}
@@ -668,7 +668,7 @@ func (i *Invocation) Update(object DatabaseMapped) (err error) {
 
 // Exists returns a bool if a given object exists (utilizing the primary key columns if they exist) wrapped in a transaction.
 func (i *Invocation) Exists(object DatabaseMapped) (exists bool, err error) {
-	err = i.Validate()
+	err = i.validate()
 	if err != nil {
 		return
 	}
@@ -745,7 +745,7 @@ func (i *Invocation) Exists(object DatabaseMapped) (exists bool, err error) {
 
 // Delete deletes an object from the database wrapped in a transaction.
 func (i *Invocation) Delete(object DatabaseMapped) (err error) {
-	err = i.Validate()
+	err = i.validate()
 	if err != nil {
 		return
 	}
@@ -810,7 +810,7 @@ func (i *Invocation) Delete(object DatabaseMapped) (err error) {
 
 // Truncate completely empties a table in a single command.
 func (i *Invocation) Truncate(object DatabaseMapped) (err error) {
-	err = i.Validate()
+	err = i.validate()
 	if err != nil {
 		return
 	}
@@ -855,7 +855,7 @@ func (i *Invocation) Truncate(object DatabaseMapped) (err error) {
 
 // Upsert inserts the object if it doesn't exist already (as defined by its primary keys) or updates it wrapped in a transaction.
 func (i *Invocation) Upsert(object DatabaseMapped) (err error) {
-	err = i.Validate()
+	err = i.validate()
 	if err != nil {
 		return
 	}
@@ -982,7 +982,7 @@ func (i *Invocation) Upsert(object DatabaseMapped) (err error) {
 // --------------------------------------------------------------------------------
 
 // Validate validates the invocation is ready
-func (i *Invocation) Validate() error {
+func (i *Invocation) validate() error {
 	if i.conn == nil {
 		return exception.New(connectionErrorMessage)
 	}
@@ -990,17 +990,19 @@ func (i *Invocation) Validate() error {
 }
 
 func (i *Invocation) invalidateCachedStatement() {
-	if i.conn.useStatementCache && len(i.statementLabel) > 0 {
+	if i.conn.StatementCache().Enabled() && len(i.statementLabel) > 0 {
 		i.conn.statementCache.InvalidateStatement(i.statementLabel)
 	}
 }
 
 func (i *Invocation) closeStatement(err error, stmt *sql.Stmt) error {
-	if !i.conn.useStatementCache {
-		closeErr := stmt.Close()
-		if closeErr != nil {
-			return exception.Nest(err, closeErr)
-		}
+	if i.conn.StatementCache().Enabled() && len(i.statementLabel) > 0 {
+		return nil
+	}
+
+	closeErr := stmt.Close()
+	if closeErr != nil {
+		return exception.Nest(err, closeErr)
 	}
 	return err
 }

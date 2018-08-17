@@ -40,19 +40,19 @@ func (q *Query) Close() error {
 		rowsErr = q.rows.Close()
 		q.rows = nil
 	}
-
-	if !q.conn.useStatementCache {
-		if q.stmt != nil {
+	// if the statement isn't cached
+	if q.stmt != nil {
+		if q.conn.statementCache == nil {
 			stmtErr = q.stmt.Close()
-			q.stmt = nil
 		}
+		q.stmt = nil
 	}
 	return exception.Nest(rowsErr, stmtErr)
 }
 
-// CachedAs sets the statement cache label for the query.
-func (q *Query) CachedAs(cacheLabel string) *Query {
-	q.statementLabel = cacheLabel
+// WithLabel sets the statement cache label for the query.
+func (q *Query) WithLabel(label string) *Query {
+	q.statementLabel = label
 	return q
 }
 
@@ -75,10 +75,10 @@ func (q *Query) Execute() (stmt *sql.Stmt, rows *sql.Rows, err error) {
 
 	defer func() {
 		if r := recover(); r != nil {
-			if q.conn.useStatementCache {
+			if q.conn.statementCache != nil {
 				err = exception.Nest(err, exception.New(r))
 			} else {
-				err = exception.Nest(err, exception.New(r), stmt.Close())
+				err = exception.Nest(err, exception.New(r), exception.New(stmt.Close()))
 			}
 		}
 	}()
@@ -333,5 +333,5 @@ func (q *Query) finalizer(r interface{}, err error) error {
 }
 
 func (q *Query) shouldCacheStatement() bool {
-	return q.conn.useStatementCache && len(q.statementLabel) > 0
+	return q.conn.statementCache != nil && len(q.statementLabel) > 0
 }
