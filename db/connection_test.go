@@ -65,7 +65,7 @@ func TestQuery(t *testing.T) {
 func TestConnectionStatementCacheExecute(t *testing.T) {
 	a := assert.New(t)
 
-	conn := New()
+	conn := NewFromEnv()
 	a.Nil(conn.Open())
 	defer conn.Close()
 	conn.StatementCache().WithEnabled(true)

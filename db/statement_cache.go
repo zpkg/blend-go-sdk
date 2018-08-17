@@ -10,7 +10,8 @@ import (
 // NewStatementCache returns a new `StatementCache`.
 func NewStatementCache() *StatementCache {
 	return &StatementCache{
-		cache: make(map[string]*sql.Stmt),
+		enabled: true,
+		cache:   make(map[string]*sql.Stmt),
 	}
 }
 
