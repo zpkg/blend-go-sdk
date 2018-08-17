@@ -386,6 +386,13 @@ func (r *Request) WithBasicAuth(username, password string) *Request {
 	return r
 }
 
+// BasicAuth returns the basic auth credentials for the request.
+func (r *Request) BasicAuth() (username, password string) {
+	username = r.basicAuthUsername
+	password = r.basicAuthPassword
+	return
+}
+
 // WithTimeout sets a timeout for the request.
 // This timeout enforces the time between the start of the connection dial to the first response byte.
 func (r *Request) WithTimeout(timeout time.Duration) *Request {
