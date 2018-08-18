@@ -49,9 +49,11 @@ func (e Event) WriteText(tf logger.TextFormatter, buf *bytes.Buffer) {
 		resultColor = logger.ColorRed
 	}
 
-	buf.WriteString(tf.Colorize("--", logger.ColorLightBlack))
-	buf.WriteRune(logger.RuneSpace)
-	buf.WriteString(tf.Colorize(e.result, resultColor))
+	if len(e.result) > 0 {
+		buf.WriteString(tf.Colorize("--", logger.ColorLightBlack))
+		buf.WriteRune(logger.RuneSpace)
+		buf.WriteString(tf.Colorize(e.result, resultColor))
+	}
 
 	if len(e.labels) > 0 {
 		buf.WriteRune(logger.RuneSpace)

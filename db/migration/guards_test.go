@@ -187,9 +187,10 @@ func TestGuard(t *testing.T) {
 		return nil
 	})
 
-	err = DynamicGuard("test", func(c *db.Connection, itx *sql.Tx) (bool, error) {
+	err = Guard("test", func(c *db.Connection, itx *sql.Tx) (bool, error) {
 		return c.QueryInTx(fmt.Sprintf("select * from %s", tableName), itx).Any()
 	})(
+		nil, nil,
 		&Step{body: action},
 		db.Default(),
 		tx,

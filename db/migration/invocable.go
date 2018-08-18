@@ -6,52 +6,41 @@ import (
 	"github.com/blend/go-sdk/db"
 )
 
-// Statements is an alias to Body(...Statement(stmt))
-func Statements(stmts ...string) Invocable {
-	return statements(stmts)
+// Invocable is a thing that can be invoked.
+type Invocable interface {
+	Label() string
+	Invoke(*Suite, *Group, *db.Connection, *sql.Tx) error
 }
 
-// statements is a collection of statements to run as an action.
-// they are executed serially.
-type statements []string
+// InvocableFunc is a function that can be run during a migration step.
+type InvocableFunc func(c *db.Connection, tx *sql.Tx) error
 
-// Invoke executes the statement block
-func (s statements) Invoke(c *db.Connection, tx *sql.Tx) (err error) {
-	for _, step := range s {
-		err = c.ExecInTx(step, tx)
-		if err != nil {
-			return
+// Statements is an alias to Body(...Statement(stmt))
+func Statements(statements ...string) InvocableFunc {
+	return func(c *db.Connection, tx *sql.Tx) (err error) {
+		for _, statement := range statements {
+			err = c.ExecInTx(statement, tx)
+			if err != nil {
+				return
+			}
 		}
+		return
 	}
-	return
+
 }
 
 // Actions returns an invocable of a set of actions.
-func Actions(invocableActions ...InvocableAction) Invocable {
-	return actions(invocableActions)
-}
-
-// actions wraps a user supplied invocation body.
-type actions []InvocableAction
-
-// Invoke applies the invocation.
-func (a actions) Invoke(c *db.Connection, tx *sql.Tx) error {
-	var err error
-	for _, action := range a {
-		err = action(c, tx)
-		if err != nil {
-			return err
+func Actions(actions ...InvocableFunc) InvocableFunc {
+	return func(c *db.Connection, tx *sql.Tx) (err error) {
+		for _, action := range actions {
+			err = action(c, tx)
+			if err != nil {
+				return err
+			}
 		}
+		return
 	}
-	return nil
 }
 
-var (
-	// NoOp is used when testing guards.
-	NoOp = noOp{}
-)
-
-type noOp struct{}
-
-// Invoke implements Invocable.
-func (no noOp) Invoke(c *db.Connection, tx *sql.Tx) error { return nil }
+// NoOp performs no action.
+func NoOp(c *db.Connection, tx *sql.Tx) error { return nil }

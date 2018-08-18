@@ -24,11 +24,6 @@ const (
 	regexCopyExtract = `COPY (.*)? \((.*)?\)`
 )
 
-var (
-	// assert dfr implements migration.
-	_ Migration = &DataFileReader{}
-)
-
 // ReadDataFile returns a new DataFileReader
 func ReadDataFile(filePath string) *DataFileReader {
 	return &DataFileReader{
@@ -39,87 +34,37 @@ func ReadDataFile(filePath string) *DataFileReader {
 
 // DataFileReader reads a postgres dump.
 type DataFileReader struct {
-	parent             Migration
-	rollbackOnComplete bool
-	transactionBound   bool
-	label              string
-	path               string
-	collector          *Collector
-	copyExtractor      *regexp.Regexp
+	parent        *Group
+	label         string
+	path          string
+	copyExtractor *regexp.Regexp
 }
 
 // WithLabel sets the migration label.
-func (dfr *DataFileReader) WithLabel(value string) Migration {
+func (dfr *DataFileReader) WithLabel(value string) *DataFileReader {
 	dfr.label = value
 	return dfr
 }
 
 // Label returns the label for the data file reader.
 func (dfr *DataFileReader) Label() string {
-	if len(dfr.label) == 0 {
-		dfr.label = fmt.Sprintf("read data file `%s`", dfr.path)
+	if len(dfr.label) > 0 {
+		return dfr.label
 	}
-	return dfr.label
+	return fmt.Sprintf("read data file `%s`", dfr.path)
 }
 
-// WithParent sets the parent for the data file reader.
-func (dfr *DataFileReader) WithParent(parent Migration) Migration {
-	dfr.parent = parent
-	return dfr
-}
-
-// Parent returns the parent for the data file reader.
-func (dfr *DataFileReader) Parent() Migration {
-	return dfr.parent
-}
-
-// WithCollector sets the logger for the data file reader.
-func (dfr *DataFileReader) WithCollector(collector *Collector) Migration {
-	dfr.collector = collector
-	return dfr
-}
-
-// Collector returns the logger.
-func (dfr *DataFileReader) Collector() *Collector {
-	return dfr.collector
-}
-
-// WithTransactionBound sets if the migration manages its own transactions or not.
-func (dfr *DataFileReader) WithTransactionBound(transactionBound bool) Migration {
-	dfr.transactionBound = transactionBound
-	return dfr
-}
-
-// TransactionBound returns if the migration manages its own transactions.
-func (dfr *DataFileReader) TransactionBound() bool {
-	return dfr.transactionBound
-}
-
-// Apply applies the data file reader.
-func (dfr *DataFileReader) Apply(c *db.Connection, optionalTx ...*sql.Tx) (err error) {
-	tx, err := c.Begin()
-	if err != nil {
-		return
+// Invoke implements the invocable interface.
+func (dfr *DataFileReader) Invoke(suite *Suite, group *Group, c *db.Connection, tx *sql.Tx) error {
+	if err := dfr.Apply(c, tx); err != nil {
+		return suite.error(group, dfr, err)
 	}
-	defer func() {
-		if r := recover(); r != nil {
-			err = fmt.Errorf("%v", err)
-		}
-		if err == nil {
-			tx.Commit()
-			dfr.collector.Applyf(dfr, "done")
-		} else {
-			tx.Rollback()
-			dfr.collector.Error(dfr, err)
-		}
-	}()
-
-	err = dfr.Invoke(c, tx)
-	return
+	suite.applyf(group, dfr, "")
+	return nil
 }
 
-// Invoke consumes the data file and writes it to the db.
-func (dfr *DataFileReader) Invoke(c *db.Connection, tx *sql.Tx) (err error) {
+// Apply applies the file reader.
+func (dfr *DataFileReader) Apply(c *db.Connection, tx *sql.Tx) (err error) {
 	var f *os.File
 	if f, err = os.Open(dfr.path); err != nil {
 		return
