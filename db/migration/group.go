@@ -2,39 +2,34 @@ package migration
 
 import (
 	"database/sql"
-	"fmt"
 
 	"github.com/blend/go-sdk/db"
 	"github.com/blend/go-sdk/exception"
 )
 
 // NewGroup creates a new migration group.
-func NewGroup(steps ...*Step) *Group {
-	r := &Group{
-		useTransaction: true,
-		abortOnError:   true,
-	}
-	return r.With(migrations...)
+func NewGroup(steps ...Invocable) *Group {
+	r := &Group{}
+	return r.WithSteps(steps...)
 }
 
 // Group is an atomic series of migrations.
 // It uses transactions to apply a set of sub-migrations as a unit.
 type Group struct {
-	label  string
-	parent *Suite
-	steps  []*Step
+	label string
+	steps []Invocable
 }
 
 // WithSteps adds steps to the group.
-func (g *Group) WithSteps(steps ...*Step) {
+func (g *Group) WithSteps(steps ...Invocable) *Group {
 	for _, s := range steps {
-		g.steps = append(g.steps, s.WithParent(g))
+		g.steps = append(g.steps, s)
 	}
 	return g
 }
 
 // WithLabel sets the migration label.
-func (g *Group) WithLabel(value string) Migration {
+func (g *Group) WithLabel(value string) *Group {
 	g.label = value
 	return g
 }
@@ -44,57 +39,32 @@ func (g *Group) Label() string {
 	return g.label
 }
 
-// WithParent sets the runner's parent.
-func (g *Group) WithParent(parent *Suite) *Group {
-	g.parent = parent
-	return g
-}
+// Invoke runs the steps in a transaction.
+func (g *Group) Invoke(suite *Suite, c *db.Connection) (err error) {
+	var tx *sql.Tx
+	tx, err = c.Begin()
+	if err != nil {
+		return
+	}
 
-// Parent returns the runner's parent.
-func (g *Group) Parent() *Group {
-	return g.parent
-}
-
-// Apply wraps the action in a transaction and commits it if there were no errors, rolling back if there were.
-func (g *Group) Apply(c *db.Connection, txs ...*sql.Tx) (err error) {
+	// commit or rollback the transaction.
 	defer func() {
-		if r := recover(); r != nil {
-			err = fmt.Errorf("%v", err)
-		}
-
-		if g.IsRoot() && g.collector != nil {
-			g.collector.WriteStats()
+		if err != nil {
+			if txErr := tx.Rollback(); txErr != nil {
+				err = exception.Nest(err, txErr)
+			}
+		} else {
+			if txErr := tx.Commit(); txErr != nil {
+				err = exception.Nest(err, txErr)
+			}
 		}
 	}()
 
-	// if the migration
-	var tx *sql.Tx
-	if g.useTransaction {
-		tx, err = c.Begin()
+	for _, s := range g.steps {
+		err = s.Invoke(suite, g, c, tx)
 		if err != nil {
 			return
 		}
-
-		defer func() {
-			if err != nil || g.rollbackOnComplete {
-				err = exception.Nest(err, exception.New(tx.Rollback()))
-			} else if err == nil {
-				err = exception.New(tx.Commit())
-			}
-		}()
-	}
-
-	for _, m := range g.migrations {
-		// if the migration is a group or something else that manages it's own transactions ...
-		if m.TransactionBound() {
-			err = m.WithCollector(g.collector).Apply(c, tx)
-		} else {
-			err = m.WithCollector(g.collector).Apply(c)
-		}
-		if err != nil && g.abortOnError {
-			return
-		}
-		continue
 	}
 
 	return

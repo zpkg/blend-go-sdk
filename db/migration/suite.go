@@ -1,6 +1,12 @@
 package migration
 
-import "github.com/blend/go-sdk/logger"
+import (
+	"fmt"
+
+	"github.com/blend/go-sdk/db"
+	"github.com/blend/go-sdk/exception"
+	"github.com/blend/go-sdk/logger"
+)
 
 const (
 	// StatApplied is a stat name.
@@ -13,16 +19,16 @@ const (
 	StatTotal = "total"
 )
 
-func New(groups ...*Groups) *Suite {
-	return &Migration{
+// New returns a new suite of groups.
+func New(groups ...*Group) *Suite {
+	return &Suite{
 		groups: groups,
 	}
 }
 
 // Suite is a migration suite.
 type Suite struct {
-	log *logger.Logger
-
+	log    *logger.Logger
 	groups []*Group
 
 	applied int
@@ -31,9 +37,21 @@ type Suite struct {
 	total   int
 }
 
+// WithLogger sets the suite logger.
+func (s *Suite) WithLogger(log *logger.Logger) *Suite {
+	s.log = log
+	return s
+}
+
 // Logger returns the underlying logger.
 func (s *Suite) Logger() *logger.Logger {
 	return s.log
+}
+
+// WithGroups adds groups to the suite and returns the suite.
+func (s *Suite) WithGroups(groups ...*Group) *Suite {
+	s.groups = append(s.groups, groups...)
+	return s
 }
 
 // Apply applies the suite.
@@ -41,70 +59,54 @@ func (s *Suite) Apply(c *db.Connection) (err error) {
 	defer s.writeStats()
 	defer func() {
 		if r := recover(); r != nil {
-			err = fmt.Errorf("%v", err)
+			err = exception.New(r)
 		}
 	}()
+
+	for _, group := range s.groups {
+		if err = group.Invoke(s, c); err != nil {
+			return
+		}
+	}
+	return
 }
 
-
-
-// Applyf active actions to the log.
-func (s *Suite) applyf(step *Step, body string, args ...interface{}) {
-	if s == nil {
-		return
-	}
-	s.applied = c.applied + 1
-	s.total = c.total + 1
-	s.write(step, StatApplied, fmt.Sprintf(body, args...))
+func (s *Suite) applyf(group *Group, step Invocable, body string, args ...interface{}) {
+	s.applied = s.applied + 1
+	s.total = s.total + 1
+	s.write(group, step, StatApplied, fmt.Sprintf(body, args...))
 }
 
-// Skipf passive actions to the log.
-func (s *Suite) skipf(m Migration, body string, args ...interface{}) {
-	if s == nil {
-		return
-	}
+func (s *Suite) skipf(group *Group, step Invocable, body string, args ...interface{}) {
 	s.skipped = s.skipped + 1
 	s.total = s.total + 1
-	s.write(step, StatSkipped, fmt.Sprintf(body, args...))
+	s.write(group, step, StatSkipped, fmt.Sprintf(body, args...))
 }
 
-
-// Errorf writes errors to the log.
-func (s *Suite) errorf(step *Step, body string, args ...interface{}) error {
-	if s == nil {
-		return 
-	}
-	s.failed = c.failed + 1
-	s.total = c.total + 1
-	s.write(m, StatFailed, fmt.Sprintf(body, args...))
+func (s *Suite) errorf(group *Group, step Invocable, body string, args ...interface{}) {
+	s.failed = s.failed + 1
+	s.total = s.total + 1
+	s.write(group, step, StatFailed, fmt.Sprintf(body, args...))
 }
 
-func (s *Suite) write(step *Step, label, body string) {
-	if c == nil {
-		return
-	}
-	if c.output == nil {
-		return
-	}
-	s.log.SyncTrigger(NewEvent(result, body, c.labels(m)...))
+func (s *Suite) error(group *Group, step Invocable, err error) error {
+	s.failed = s.failed + 1
+	s.total = s.total + 1
+	s.write(group, step, StatFailed, fmt.Sprintf("%v", err))
+	return err
 }
 
-func (c *Collector) labels(m Migration) []string {
-	if c == nil {
-		return nil
-	}
-
+func (s *Suite) write(group *Group, step Invocable, result, body string) {
 	var labels []string
-	if len(m.Label()) > 0 {
-		labels = append(labels, m.Label())
+	if group != nil && len(group.Label()) > 0 {
+		labels = append(labels, group.Label())
 	}
+	if step != nil && len(step.Label()) > 0 {
+		labels = append(labels, step.Label())
+	}
+	s.log.SyncTrigger(NewEvent(result, body, labels...))
+}
 
-	cursor := m.Parent()
-	for cursor != nil {
-		if len(cursor.Label()) > 0 {
-			labels = append([]string{cursor.Label()}, labels...)
-		}
-		cursor = cursor.Parent()
-	}
-	return labels
+func (s *Suite) writeStats() {
+	s.log.SyncTrigger(NewStatsEvent(s.applied, s.skipped, s.failed, s.total))
 }
