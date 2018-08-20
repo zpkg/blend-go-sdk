@@ -234,7 +234,7 @@ func (am *AuthManager) LoginRedirect(ctx *Ctx) Result {
 	if am.loginRedirectHandler != nil {
 		redirectTo := am.loginRedirectHandler(ctx)
 		if redirectTo != nil {
-			return ctx.Redirectf(redirectTo.String())
+			return ctx.Redirect(redirectTo.String())
 		}
 	}
 	return ctx.DefaultResultProvider().NotAuthorized()
@@ -250,7 +250,7 @@ func (am *AuthManager) PostLoginRedirect(ctx *Ctx) Result {
 		}
 	}
 	// the default authed redirect is the root.
-	return ctx.RedirectWithMethodf("GET", "/")
+	return ctx.RedirectWithMethod("GET", "/")
 }
 
 // --------------------------------------------------------------------------------
