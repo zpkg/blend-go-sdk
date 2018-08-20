@@ -9,22 +9,24 @@ import (
 )
 
 // DeserializeState deserializes the oauth state.
-func DeserializeState(raw string) (*State, error) {
-	corpus, err := base64.StdEncoding.DecodeString(raw)
+func DeserializeState(raw string) (state State, err error) {
+	var corpus []byte
+	corpus, err = base64.StdEncoding.DecodeString(raw)
 	if err != nil {
-		return nil, exception.New(err)
+		err = exception.New(err)
+		return
 	}
 	buffer := bytes.NewBuffer(corpus)
-	var state State
-	if err := gob.NewDecoder(buffer).Decode(&state); err != nil {
-		return nil, exception.New(err)
+	if err = gob.NewDecoder(buffer).Decode(&state); err != nil {
+		err = exception.New(err)
+		return
 	}
 
-	return &state, nil
+	return
 }
 
 // SerializeState serializes the oauth state.
-func SerializeState(state *State) (output string, err error) {
+func SerializeState(state State) (output string, err error) {
 	buffer := bytes.NewBuffer(nil)
 	err = gob.NewEncoder(buffer).Encode(state)
 	if err != nil {
