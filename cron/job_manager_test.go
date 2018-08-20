@@ -298,10 +298,10 @@ func TestFiresErrorOnTaskError(t *testing.T) {
 		}
 	})
 
-	manager.LoadJob(NewJob().WithAction(func(ctx context.Context) error {
+	manager.LoadJob(NewJob("error_test").WithAction(func(ctx context.Context) error {
 		defer wg.Done()
 		return fmt.Errorf("this is only a test")
-	}).WithName("error_test"))
+	}))
 	manager.RunJob("error_test")
 	wg.Wait()
 
