@@ -11,6 +11,7 @@ import (
 	"strings"
 
 	"github.com/blend/go-sdk/exception"
+	"github.com/blend/go-sdk/logger"
 	"github.com/blend/go-sdk/request"
 	"github.com/blend/go-sdk/util"
 	"github.com/blend/go-sdk/uuid"
@@ -81,8 +82,11 @@ func (m *Manager) getRedirectURI(r *http.Request) string {
 		return m.redirectURI
 	}
 
-	requestURI, _ := url.Parse(r.RequestURI)
-	requestURI.Path = m.redirectURI
+	requestURI := &url.URL{
+		Scheme: logger.GetProto(r),
+		Host:   logger.GetHost(r),
+		Path:   m.redirectURI,
+	}
 	return requestURI.String()
 }
 

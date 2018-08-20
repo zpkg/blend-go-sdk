@@ -2,6 +2,7 @@ package logger
 
 import (
 	"net/http"
+	"net/url"
 	"testing"
 
 	"github.com/blend/go-sdk/assert"
@@ -88,4 +89,30 @@ func TestGetProto(t *testing.T) {
 		Header: headers,
 	}
 	assert.Equal("http", GetProto(&r))
+}
+
+func TestGetHost(t *testing.T) {
+	assert := assert.New(t)
+
+	r := http.Request{
+		Host: "local.test.com",
+	}
+	assert.Equal("local.test.com", GetHost(&r))
+
+	r = http.Request{
+		Host: "local.test.com:8080",
+	}
+	assert.Equal("local.test.com", GetHost(&r))
+
+	r = http.Request{
+		URL:  &url.URL{},
+		Host: "local.test.com:8080",
+	}
+	assert.Equal("local.test.com", GetHost(&r))
+
+	r = http.Request{
+		URL:  &url.URL{Host: "local.foo.com"},
+		Host: "local.test.com:8080",
+	}
+	assert.Equal("local.foo.com", GetHost(&r))
 }
