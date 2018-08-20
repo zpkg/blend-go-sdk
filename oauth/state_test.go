@@ -16,7 +16,7 @@ func TestSerializeState(t *testing.T) {
 		SecureToken: util.String.RandomLetters(64),
 	}
 
-	contents, err := SerializeState(&state)
+	contents, err := SerializeState(state)
 	assert.Nil(err)
 	assert.NotEmpty(contents)
 

@@ -6,8 +6,8 @@ import "time"
 // It is the user profile of the user and the state information.
 type Result struct {
 	Response Response
-	Profile  *Profile
-	State    *State
+	Profile  Profile
+	State    State
 }
 
 // Response is the response details from the oauth exchange.

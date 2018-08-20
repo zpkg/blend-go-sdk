@@ -7,6 +7,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"net/http"
+	"net/url"
 	"strings"
 
 	"github.com/blend/go-sdk/exception"
@@ -80,24 +81,26 @@ func (m *Manager) getRedirectURI(r *http.Request) string {
 		return m.redirectURI
 	}
 
-	requestURI := &(*r.URL) // copy the incoming request uri
+	requestURI, _ := url.Parse(r.RequestURI)
 	requestURI.Path = m.redirectURI
 	return requestURI.String()
 }
 
 // OAuthURL is the auth url for google with a given clientID.
 // This is typically the link that a user will click on to start the auth process.
-func (m *Manager) OAuthURL(r *http.Request, redirect ...string) (string, error) {
-	state, err := SerializeState(m.CreateState(redirect...))
+func (m *Manager) OAuthURL(r *http.Request, redirect ...string) (oauthURL string, err error) {
+	var state string
+	state, err = SerializeState(m.CreateState(redirect...))
 	if err != nil {
-		return "", err
+		return
 	}
 
 	var opts []oauth2.AuthCodeOption
 	if len(m.hostedDomain) > 0 {
 		opts = append(opts, oauth2.SetAuthURLParam("hd", m.hostedDomain))
 	}
-	return m.conf(r).AuthCodeURL(state, opts...), nil
+	oauthURL = m.conf(r).AuthCodeURL(state, opts...)
+	return
 }
 
 // Finish processes the returned code, exchanging for an access token, and fetches the user profile.
@@ -145,8 +148,7 @@ func (m *Manager) Finish(r *http.Request) (*Result, error) {
 }
 
 // FetchProfile gets a google profile for an access token.
-func (m *Manager) FetchProfile(accessToken string) (*Profile, error) {
-	var profile Profile
+func (m *Manager) FetchProfile(accessToken string) (profile Profile, err error) {
 	req, err := request.New().AsGet().
 		WithRawURL("https://www.googleapis.com/oauth2/v1/userinfo")
 
@@ -157,20 +159,21 @@ func (m *Manager) FetchProfile(accessToken string) (*Profile, error) {
 		BytesWithMeta()
 
 	if err != nil {
-		return nil, err
+		return
 	}
 	if meta.StatusCode > 299 {
-		return nil, exception.New(ErrGoogleResponseStatus).WithMessagef("status code: %d, response: %s", meta.StatusCode, string(contents))
+		err = exception.New(ErrGoogleResponseStatus).WithMessagef("status code: %d, response: %s", meta.StatusCode, string(contents))
+		return
 	}
 	if err = json.Unmarshal(contents, &profile); err != nil {
-		return nil, exception.New(ErrProfileJSONUnmarshal).WithMessagef("inner: %v", err)
+		err = exception.New(ErrProfileJSONUnmarshal).WithMessagef("inner: %v", err)
+		return
 	}
-	return &profile, err
+	return
 }
 
 // CreateState creates auth state.
-func (m *Manager) CreateState(redirect ...string) *State {
-	var state State
+func (m *Manager) CreateState(redirect ...string) (state State) {
 	if len(m.secret) > 0 {
 		state.Token = uuid.V4().String()
 		state.SecureToken = m.hash(state.Token)
@@ -179,8 +182,7 @@ func (m *Manager) CreateState(redirect ...string) *State {
 	if len(redirect) > 0 && len(redirect[0]) > 0 {
 		state.RedirectURL = redirect[0]
 	}
-
-	return &state
+	return
 }
 
 // --------------------------------------------------------------------------------
@@ -188,10 +190,7 @@ func (m *Manager) CreateState(redirect ...string) *State {
 // --------------------------------------------------------------------------------
 
 // ValidateState validates oauth state.
-func (m *Manager) ValidateState(state *State) error {
-	if state == nil {
-		return nil
-	}
+func (m *Manager) ValidateState(state State) error {
 	if len(m.secret) > 0 {
 		expected := m.hash(state.Token)
 		actual := state.SecureToken

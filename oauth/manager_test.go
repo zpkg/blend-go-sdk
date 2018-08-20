@@ -67,10 +67,7 @@ func TestManagerOAuthURL(t *testing.T) {
 		WithClientID("test_client_id").
 		WithRedirectURI("/oauth/google")
 
-	requestURI, err := url.Parse("https://test.blend.com/foo")
-	assert.Nil(err)
-
-	oauthURL, err := m.OAuthURL(&http.Request{URL: requestURI})
+	oauthURL, err := m.OAuthURL(&http.Request{RequestURI: "https://test.blend.com/foo"})
 	assert.Nil(err)
 
 	_, err = url.Parse(oauthURL)
@@ -84,11 +81,7 @@ func TestManagerGetRedirectURI(t *testing.T) {
 		WithClientID("test_client_id").
 		WithRedirectURI("/oauth/google")
 
-	requestURI, err := url.Parse("https://test.blend.com/foo")
-	assert.Nil(err)
-
-	redirectURI := m.getRedirectURI(&http.Request{URL: requestURI})
-
+	redirectURI := m.getRedirectURI(&http.Request{RequestURI: "https://test.blend.com/foo"})
 	parsedRedirectURI, err := url.Parse(redirectURI)
 	assert.Nil(err)
 	assert.Equal("https", parsedRedirectURI.Scheme)
@@ -136,7 +129,6 @@ func TestManagerGetRedirectURIFullyQualifiedSPDY(t *testing.T) {
 		WithRedirectURI("spdy://test.blend.com/oauth/google")
 
 	redirectURI := m.getRedirectURI(nil)
-
 	parsedRedirectURI, err := url.Parse(redirectURI)
 	assert.Nil(err)
 	assert.Equal("spdy", parsedRedirectURI.Scheme)
