@@ -316,6 +316,7 @@ func (rc *Ctx) RouteParam(key string) (output string, err error) {
 func (rc *Ctx) RouteParamInt(key string) (output int, err error) {
 	if value, hasKey := rc.routeParameters[key]; hasKey {
 		output, err = strconv.Atoi(value)
+		return
 	}
 	err = newParameterMissingError(key)
 	return
@@ -674,29 +675,33 @@ func (rc *Ctx) Static(filePath string) *StaticResult {
 	return NewStaticResultForFile(filePath)
 }
 
-// Redirectf returns a redirect result.
-func (rc *Ctx) Redirectf(format string, args ...interface{}) *RedirectResult {
-	if len(args) > 0 {
-		return &RedirectResult{
-			RedirectURI: fmt.Sprintf(format, args...),
-		}
-	}
+// Redirect returns a redirect result to a given destination.
+func (rc *Ctx) Redirect(destination string) *RedirectResult {
 	return &RedirectResult{
-		RedirectURI: format,
+		RedirectURI: destination,
 	}
 }
 
-// RedirectWithMethodf returns a redirect result with a given method.
-func (rc *Ctx) RedirectWithMethodf(method, format string, args ...interface{}) *RedirectResult {
-	if len(args) > 0 {
-		return &RedirectResult{
-			Method:      method,
-			RedirectURI: fmt.Sprintf(format, args...),
-		}
+// Redirectf returns a redirect result to a given destination specified by a given format and scan arguments.
+func (rc *Ctx) Redirectf(format string, args ...interface{}) *RedirectResult {
+	return &RedirectResult{
+		RedirectURI: fmt.Sprintf(format, args...),
 	}
+}
+
+// RedirectWithMethod returns a redirect result to a destination with a given method.
+func (rc *Ctx) RedirectWithMethod(method, destination string) *RedirectResult {
 	return &RedirectResult{
 		Method:      method,
-		RedirectURI: format,
+		RedirectURI: destination,
+	}
+}
+
+// RedirectWithMethodf returns a redirect result to a destination composed of a format and scan arguments with a given method.
+func (rc *Ctx) RedirectWithMethodf(method, format string, args ...interface{}) *RedirectResult {
+	return &RedirectResult{
+		Method:      method,
+		RedirectURI: fmt.Sprintf(format, args...),
 	}
 }
 
