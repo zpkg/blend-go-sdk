@@ -63,19 +63,31 @@ type Manager struct {
 	clientSecret string
 }
 
-func (m *Manager) conf() *oauth2.Config {
+func (m *Manager) conf(r *http.Request) *oauth2.Config {
 	return &oauth2.Config{
 		ClientID:     m.clientID,
 		ClientSecret: m.clientSecret,
-		RedirectURL:  m.redirectURI,
+		RedirectURL:  m.getRedirectURI(r),
 		Scopes:       m.scopes,
 		Endpoint:     google.Endpoint,
 	}
 }
 
+func (m *Manager) getRedirectURI(r *http.Request) string {
+	if util.String.HasPrefixCaseInsensitive(m.redirectURI, "https://") ||
+		util.String.HasPrefixCaseInsensitive(m.redirectURI, "http://") ||
+		util.String.HasPrefixCaseInsensitive(m.redirectURI, "spdy://") {
+		return m.redirectURI
+	}
+
+	requestURI := &(*r.URL) // copy the incoming request uri
+	requestURI.Path = m.redirectURI
+	return requestURI.String()
+}
+
 // OAuthURL is the auth url for google with a given clientID.
 // This is typically the link that a user will click on to start the auth process.
-func (m *Manager) OAuthURL(redirect ...string) (string, error) {
+func (m *Manager) OAuthURL(r *http.Request, redirect ...string) (string, error) {
 	state, err := SerializeState(m.CreateState(redirect...))
 	if err != nil {
 		return "", err
@@ -85,7 +97,7 @@ func (m *Manager) OAuthURL(redirect ...string) (string, error) {
 	if len(m.hostedDomain) > 0 {
 		opts = append(opts, oauth2.SetAuthURLParam("hd", m.hostedDomain))
 	}
-	return m.conf().AuthCodeURL(state, opts...), nil
+	return m.conf(r).AuthCodeURL(state, opts...), nil
 }
 
 // Finish processes the returned code, exchanging for an access token, and fetches the user profile.
@@ -115,7 +127,7 @@ func (m *Manager) Finish(r *http.Request) (*Result, error) {
 	}
 
 	// Handle the exchange code to initiate a transport.
-	tok, err := m.conf().Exchange(oauth2.NoContext, code)
+	tok, err := m.conf(r).Exchange(oauth2.NoContext, code)
 	if err != nil {
 		return nil, exception.New(ErrFailedCodeExchange).WithMessagef("inner: %+v", err)
 	}

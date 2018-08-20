@@ -179,7 +179,7 @@ func TestAuthManagerLoginWithPersist(t *testing.T) {
 
 	didCallPersist := false
 	am := NewAuthManager()
-	am.SetPersistHandler(func(c *Ctx, s *Session, state State) error {
+	am.SetPersistHandler(func(s *Session, state State) error {
 		didCallPersist = true
 		sessions[s.SessionID] = s
 		return nil
@@ -425,7 +425,7 @@ func TestAuthManagerVerifyUpdatesSessionExpiry(t *testing.T) {
 	auth := NewAuthManager().WithUseSessionCache(true).WithRollingSessionTimeout().WithSessionTimeoutProvider(func(ctx *Ctx) *time.Time {
 		count++
 		return util.OptionalTime(time.Now().UTC().Add(time.Duration(count) * time.Second))
-	}).WithPersistHandler(func(ctx *Ctx, session *Session, state State) error {
+	}).WithPersistHandler(func(session *Session, state State) error {
 		didCallPersistHandler = true
 		persistedSessionID = session.SessionID
 		stateValue = state["foo"]
