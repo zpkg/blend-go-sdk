@@ -60,6 +60,17 @@ func GetProto(r *http.Request) string {
 	return r.Proto
 }
 
+// GetHost returns the request host, omiting the port if specified.
+func GetHost(r *http.Request) string {
+	if r.URL != nil && len(r.URL.Host) > 0 {
+		return r.URL.Host
+	}
+	if strings.Contains(r.Host, ":") {
+		return strings.SplitN(r.Host, ":", 2)[0]
+	}
+	return r.Host
+}
+
 // GetUserAgent gets a user agent from a request.
 func GetUserAgent(r *http.Request) string {
 	return r.UserAgent()

@@ -355,6 +355,7 @@ func TestRaftTransitionTo(t *testing.T) {
 	r.state = Follower
 	go r.transition(Candidate)
 	<-didCallHandler
+
 	assert.Equal(Candidate, r.state)
 }
 

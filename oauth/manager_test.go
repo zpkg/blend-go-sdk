@@ -81,7 +81,7 @@ func TestManagerGetRedirectURI(t *testing.T) {
 		WithClientID("test_client_id").
 		WithRedirectURI("/oauth/google")
 
-	redirectURI := m.getRedirectURI(&http.Request{RequestURI: "https://test.blend.com/foo"})
+	redirectURI := m.getRedirectURI(&http.Request{Proto: "https", Host: "test.blend.com"})
 	parsedRedirectURI, err := url.Parse(redirectURI)
 	assert.Nil(err)
 	assert.Equal("https", parsedRedirectURI.Scheme)
