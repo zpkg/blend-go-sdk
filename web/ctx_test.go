@@ -190,3 +190,47 @@ func TestCtxWriteNewCookie(t *testing.T) {
 	context.WriteNewCookie("foo", "bar", nil, "/foo/bar", true)
 	assert.Equal("foo=bar; Path=/foo/bar; HttpOnly; Secure", context.Response().Header().Get("Set-Cookie"))
 }
+
+func TestCtxRedirect(t *testing.T) {
+	assert := assert.New(t)
+
+	context, err := NewMockRequestBuilder(nil).CreateCtx(nil)
+	assert.Nil(err)
+
+	result := context.Redirect("foo%sbar")
+	assert.Empty(result.Method)
+	assert.Equal("foo%sbar", result.RedirectURI)
+}
+
+func TestCtxRedirectf(t *testing.T) {
+	assert := assert.New(t)
+
+	context, err := NewMockRequestBuilder(nil).CreateCtx(nil)
+	assert.Nil(err)
+
+	result := context.Redirectf("foo%sbar", "buzz")
+	assert.Empty(result.Method)
+	assert.Equal("foobuzzbar", result.RedirectURI)
+}
+
+func TestCtxRedirectWithMethod(t *testing.T) {
+	assert := assert.New(t)
+
+	context, err := NewMockRequestBuilder(nil).CreateCtx(nil)
+	assert.Nil(err)
+
+	result := context.RedirectWithMethod("POST", "foo%sbar")
+	assert.Equal("POST", result.Method)
+	assert.Equal("foo%sbar", result.RedirectURI)
+}
+
+func TestCtxRedirectWithMethodf(t *testing.T) {
+	assert := assert.New(t)
+
+	context, err := NewMockRequestBuilder(nil).CreateCtx(nil)
+	assert.Nil(err)
+
+	result := context.RedirectWithMethodf("POST", "foo%sbar", "buzz")
+	assert.Equal("POST", result.Method)
+	assert.Equal("foobuzzbar", result.RedirectURI)
+}
