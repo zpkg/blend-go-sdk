@@ -77,7 +77,7 @@ func (am *AuthManager) Login(userID string, ctx *Ctx) (session *Session, err err
 	// create a new session
 	sessionID = am.createSessionID()
 	// if we should issue a verification session id, create one too
-	if am.shouldIssueSecureSesssionID() {
+	if am.shouldIssueSecureSessionID() {
 		secureSessionID, err = am.createSecureSessionID(sessionID)
 		if err != nil {
 			return nil, err
@@ -105,7 +105,7 @@ func (am *AuthManager) Login(userID string, ctx *Ctx) (session *Session, err err
 
 	// inject cookies into the response
 	am.injectCookie(ctx, am.CookieName(), sessionID, session.ExpiresUTC)
-	if am.shouldIssueSecureSesssionID() {
+	if am.shouldIssueSecureSessionID() {
 		am.injectCookie(ctx, am.SecureCookieName(), secureSessionID, session.ExpiresUTC)
 	}
 
@@ -123,7 +123,7 @@ func (am *AuthManager) Logout(ctx *Ctx) error {
 
 	// issue the expiration cookies to the response
 	ctx.ExpireCookie(am.CookieName(), am.CookiePath())
-	if am.shouldIssueSecureSesssionID() {
+	if am.shouldIssueSecureSessionID() {
 		ctx.ExpireCookie(am.SecureCookieName(), am.CookiePath())
 	}
 	// nil out the current session in the ctx
@@ -150,7 +150,7 @@ func (am *AuthManager) VerifySession(ctx *Ctx) (*Session, error) {
 
 	// validate the secure session id if it's required
 	var secureSessionID string
-	if am.shouldIssueSecureSesssionID() {
+	if am.shouldIssueSecureSessionID() {
 		secureSessionID = am.readSecureSessionID(ctx)
 		err := am.validateSecureSessionID(sessionID, secureSessionID)
 		if err != nil {
@@ -179,7 +179,7 @@ func (am *AuthManager) VerifySession(ctx *Ctx) (*Session, error) {
 	// if the session is invalid, expire the cookie(s)
 	if session == nil || session.IsZero() || session.IsExpired() {
 		ctx.ExpireCookie(am.CookieName(), DefaultCookiePath)
-		if am.shouldIssueSecureSesssionID() {
+		if am.shouldIssueSecureSessionID() {
 			ctx.ExpireCookie(am.SecureCookieName(), am.CookiePath())
 		}
 
@@ -216,7 +216,7 @@ func (am *AuthManager) VerifySession(ctx *Ctx) (*Session, error) {
 		}
 
 		am.injectCookie(ctx, am.CookieName(), sessionID, session.ExpiresUTC)
-		if am.shouldIssueSecureSesssionID() {
+		if am.shouldIssueSecureSessionID() {
 			am.injectCookie(ctx, am.SecureCookieName(), secureSessionID, session.ExpiresUTC)
 		}
 	}
@@ -339,13 +339,13 @@ func (am *AuthManager) SetSessionTimeoutIsAbsolute(isAbsolute bool) {
 	am.sessionTimeoutIsAbsolute = isAbsolute
 }
 
-// SesssionTimeoutIsAbsolute returns if the session timeout is absolute (vs. rolling).
-func (am *AuthManager) SesssionTimeoutIsAbsolute() bool {
+// SessionTimeoutIsAbsolute returns if the session timeout is absolute (vs. rolling).
+func (am *AuthManager) SessionTimeoutIsAbsolute() bool {
 	return am.sessionTimeoutIsAbsolute
 }
 
-// SesssionTimeoutIsRolling returns if the session timeout is absolute (vs. rolling).
-func (am *AuthManager) SesssionTimeoutIsRolling() bool {
+// SessionTimeoutIsRolling returns if the session timeout is absolute (vs. rolling).
+func (am *AuthManager) SessionTimeoutIsRolling() bool {
 	return !am.sessionTimeoutIsAbsolute
 }
 
@@ -570,12 +570,12 @@ func (am *AuthManager) GenerateSessionTimeout(context *Ctx) *time.Time {
 	return nil
 }
 
-func (am *AuthManager) shouldIssueSecureSesssionID() bool {
+func (am *AuthManager) shouldIssueSecureSessionID() bool {
 	return len(am.secret) > 0
 }
 
 func (am AuthManager) shouldUpdateSessionExpiry() bool {
-	return am.SesssionTimeoutIsRolling() && (am.sessionTimeout > 0 || am.sessionTimeoutProvider != nil)
+	return am.SessionTimeoutIsRolling() && (am.sessionTimeout > 0 || am.sessionTimeoutProvider != nil)
 }
 
 // CreateSessionID creates a new session id.
