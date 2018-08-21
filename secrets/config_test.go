@@ -37,4 +37,5 @@ func TestConfig(t *testing.T) {
 	assert.Equal(DefaultMount, cfg.GetMount())
 	assert.Equal(DefaultTimeout, cfg.GetTimeout())
 	assert.Empty(cfg.GetRootCAs())
+	assert.Empty(cfg.GetServicePath())
 }

@@ -29,6 +29,8 @@ type Config struct {
 	Timeout time.Duration `json:"timeout" yaml:"timeout"`
 	// RootCAs is a list of certificate authority paths.
 	RootCAs []string `json:"rootCAs" yaml:"rootCAs" env:"VAULT_CACERT,csv"`
+	// ServicePath is the path that service secrets live under
+	ServicePath string `json:"servicePath" yaml:"servicePath" env:"SECRETS_SERVICE_PATH"`
 }
 
 // IsZero returns if the config is set or not.
@@ -68,4 +70,9 @@ func (c Config) GetTimeout() time.Duration {
 // GetRootCAs returns root ca paths.
 func (c Config) GetRootCAs() []string {
 	return util.Coalesce.Strings(c.RootCAs, nil)
+}
+
+// GetServicePath returns the service path
+func (c Config) GetServicePath() string {
+	return util.Coalesce.String(c.ServicePath, "")
 }
