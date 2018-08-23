@@ -9,11 +9,11 @@ import (
 	"net"
 	"net/http"
 	"strings"
-	"sync/atomic"
 	"time"
 
 	"net/url"
 
+	"github.com/blend/go-sdk/async"
 	"github.com/blend/go-sdk/env"
 	"github.com/blend/go-sdk/exception"
 	"github.com/blend/go-sdk/logger"
@@ -25,7 +25,7 @@ func New() *App {
 	vrp := &ViewResultProvider{views: views}
 
 	return &App{
-		auth:                  NewAuthManager(),
+		auth:                  &AuthManager{},
 		bindAddr:              DefaultBindAddr,
 		state:                 map[string]interface{}{},
 		statics:               map[string]Fileserver{},
@@ -39,7 +39,7 @@ func New() *App {
 		jsonProvider:          &JSONResultProvider{},
 		xmlProvider:           &XMLResultProvider{},
 		textProvider:          &TextResultProvider{},
-		started:               make(chan struct{}),
+		started:               &async.Latch{},
 	}
 }
 
@@ -55,7 +55,8 @@ func NewFromConfig(cfg *Config) *App {
 
 // App is the server for the app.
 type App struct {
-	cfg *Config
+	cfg     *Config
+	started *async.Latch
 
 	log   *logger.Logger
 	auth  *AuthManager
@@ -75,9 +76,6 @@ type App struct {
 
 	didRunStartupTasks bool
 	onStartDelegate    AppStartDelegate
-
-	started chan struct{}
-	running int32
 
 	server   *http.Server
 	listener *net.TCPListener
@@ -146,8 +144,8 @@ func (a *App) WithConfig(cfg *Config) *App {
 }
 
 // Running returns if the app is running.
-func (a *App) Running() (running bool) {
-	return atomic.LoadInt32(&a.running) == 1
+func (a *App) Running() bool {
+	return a.started.IsRunning()
 }
 
 // WithShutdownGracePeriod sets the shutdown grace period.
@@ -531,9 +529,6 @@ func (a *App) WithLogger(log *logger.Logger) *App {
 	if a.textProvider != nil {
 		a.textProvider.log = log
 	}
-	if a.auth != nil {
-		a.auth.log = log
-	}
 	return a
 }
 
@@ -662,9 +657,9 @@ func (a *App) Start() (err error) {
 	return
 }
 
-// Started returns a channel signalling the app has started.
-func (a *App) Started() <-chan struct{} {
-	return a.started
+// NotifyStarted returns a channel indicating the app has started.
+func (a *App) NotifyStarted() <-chan struct{} {
+	return a.started.NotifyStarted()
 }
 
 // Shutdown stops the server.
@@ -1281,10 +1276,9 @@ func (a *App) syncFatalf(format string, args ...interface{}) {
 }
 
 func (a *App) setRunning() {
-	close(a.started)
-	atomic.StoreInt32(&a.running, 1)
+	a.started.Started()
 }
 
 func (a *App) setStopped() {
-	atomic.StoreInt32(&a.running, 0)
+	a.started.Stopped()
 }

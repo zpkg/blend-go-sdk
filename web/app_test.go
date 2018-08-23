@@ -518,7 +518,7 @@ func TestAppAddsDefaultHeaders(t *testing.T) {
 	})
 	go app.Start()
 	defer app.Shutdown()
-	<-app.Started()
+	<-app.NotifyStarted()
 
 	res, err := http.Get("http://" + app.Listener().Addr().String() + "/")
 	assert.Nil(err)
@@ -545,7 +545,7 @@ func TestAppHandlesPanics(t *testing.T) {
 		app.Start()
 	}()
 	defer app.Shutdown()
-	<-app.Started()
+	<-app.NotifyStarted()
 
 	res, err := http.Get("http://" + app.Listener().Addr().String() + "/")
 	assert.Nil(err)
