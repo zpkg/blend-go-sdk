@@ -1276,9 +1276,11 @@ func (a *App) syncFatalf(format string, args ...interface{}) {
 }
 
 func (a *App) setRunning() {
+	a.started.Starting()
 	a.started.Started()
 }
 
 func (a *App) setStopped() {
+	a.started.Stopping()
 	a.started.Stopped()
 }
