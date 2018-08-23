@@ -23,11 +23,6 @@ func TestSessionAware(t *testing.T) {
 		return r.Text().Result("COOL")
 	}, SessionAware)
 
-	app.Auth().SessionCache().Upsert(&Session{
-		UserID:    util.String.Random(10),
-		SessionID: sessionID,
-	})
-
 	meta, err := app.Mock().WithPathf("/").WithCookieValue(app.Auth().CookieName(), sessionID).ExecuteWithMeta()
 	assert.Nil(err)
 	assert.Equal(http.StatusOK, meta.StatusCode)
@@ -54,11 +49,6 @@ func TestSessionRequired(t *testing.T) {
 		return r.Text().Result("COOL")
 	}, SessionRequired)
 
-	app.Auth().SessionCache().Upsert(&Session{
-		UserID:    util.String.Random(10),
-		SessionID: sessionID,
-	})
-
 	unsetMeta, err := app.Mock().WithPathf("/").ExecuteWithMeta()
 	assert.Nil(err)
 	assert.Equal(http.StatusForbidden, unsetMeta.StatusCode)
@@ -77,17 +67,12 @@ func TestSessionRequiredCustomParamName(t *testing.T) {
 
 	var sessionWasSet bool
 	app := New()
-	app.Auth().SetCookieName("web_auth")
+	app.Auth().WithCookieName("web_auth")
 
 	app.GET("/", func(r *Ctx) Result {
 		sessionWasSet = r.Session() != nil
 		return r.Text().Result("COOL")
 	}, SessionRequired)
-
-	app.Auth().SessionCache().Upsert(&Session{
-		UserID:    util.String.Random(10),
-		SessionID: sessionID,
-	})
 
 	unsetMeta, err := app.Mock().WithPathf("/").ExecuteWithMeta()
 	assert.Nil(err)

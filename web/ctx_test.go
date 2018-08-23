@@ -3,6 +3,7 @@ package web
 import (
 	"net/http"
 	"testing"
+	"time"
 
 	"github.com/blend/go-sdk/assert"
 )
@@ -187,7 +188,7 @@ func TestCtxWriteNewCookie(t *testing.T) {
 	context, err := NewMockRequestBuilder(nil).CreateCtx(nil)
 	assert.Nil(err)
 
-	context.WriteNewCookie("foo", "bar", nil, "/foo/bar", true)
+	context.WriteNewCookie("foo", "bar", time.Time{}, "/foo/bar", true)
 	assert.Equal("foo=bar; Path=/foo/bar; HttpOnly; Secure", context.Response().Header().Get("Set-Cookie"))
 }
 
