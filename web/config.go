@@ -1,6 +1,7 @@
 package web
 
 import (
+	"encoding/base64"
 	"fmt"
 	"strings"
 	"time"
@@ -184,7 +185,7 @@ func (c Config) GetAuthManagerMode(inherited ...string) string {
 
 // GetAuthSecret returns a property or a default.
 func (c Config) GetAuthSecret(defaults ...[]byte) []byte {
-	decoded, err := Base64Decode(c.AuthSecret)
+	decoded, err := base64.StdEncoding.DecodeString(c.AuthSecret)
 	if err != nil {
 		panic(err)
 	}

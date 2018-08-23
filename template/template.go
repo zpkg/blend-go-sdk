@@ -1,6 +1,7 @@
 package template
 
 import (
+	"crypto/rand"
 	"crypto/sha1"
 	"crypto/sha256"
 	"crypto/sha512"
@@ -12,6 +13,7 @@ import (
 	"time"
 
 	"github.com/blend/go-sdk/semver"
+	"github.com/blend/go-sdk/uuid"
 	"github.com/blend/go-sdk/yaml"
 
 	"encoding/base64"
@@ -59,7 +61,6 @@ type Template struct {
 	env        map[string]string
 	includes   []string
 	funcs      texttemplate.FuncMap
-	helpers    Helpers
 	leftDelim  string
 	rightDelim string
 }
@@ -169,11 +170,6 @@ func (t *Template) File(path string) (string, error) {
 func (t *Template) HasFile(path string) bool {
 	_, err := os.Stat(path)
 	return err == nil
-}
-
-// Helpers returns the helpers object.
-func (t *Template) Helpers() *Helpers {
-	return &t.helpers
 }
 
 // Process processes the template.
@@ -302,6 +298,14 @@ func (t *Template) baseFuncMap() texttemplate.FuncMap {
 				return "", err
 			}
 			return string(result), nil
+		},
+		"createKey": func(keySize int) string {
+			key := make([]byte, keySize)
+			io.ReadFull(rand.Reader, key)
+			return base64.StdEncoding.EncodeToString(key)
+		},
+		"uuidv4": func() string {
+			return uuid.V4().String()
 		},
 
 		// string transforms
