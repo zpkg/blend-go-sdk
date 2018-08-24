@@ -16,7 +16,9 @@ func TestSessionAware(t *testing.T) {
 	var didExecuteHandler bool
 	var sessionWasSet bool
 
-	app := New()
+	app := New().WithAuth(NewLocalAuthManager())
+	app.Auth().PersistHandler()(&Session{SessionID: sessionID}, nil)
+
 	app.GET("/", func(r *Ctx) Result {
 		didExecuteHandler = true
 		sessionWasSet = r.Session() != nil
@@ -42,7 +44,8 @@ func TestSessionRequired(t *testing.T) {
 	sessionID := util.String.MustSecureRandom(64)
 
 	var sessionWasSet bool
-	app := New()
+	app := New().WithAuth(NewLocalAuthManager())
+	app.Auth().PersistHandler()(&Session{SessionID: sessionID}, nil)
 
 	app.GET("/", func(r *Ctx) Result {
 		sessionWasSet = r.Session() != nil
@@ -66,7 +69,7 @@ func TestSessionRequiredCustomParamName(t *testing.T) {
 	sessionID := util.String.MustSecureRandom(64)
 
 	var sessionWasSet bool
-	app := New()
+	app := New().WithAuth(NewLocalAuthManager())
 	app.Auth().WithCookieName("web_auth")
 
 	app.GET("/", func(r *Ctx) Result {

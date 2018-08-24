@@ -23,9 +23,8 @@ import (
 func New() *App {
 	views := NewViewCache()
 	vrp := &ViewResultProvider{views: views}
-
 	return &App{
-		latch:                 &async.Latch{},
+		latch:                 async.NewLatch(),
 		auth:                  &AuthManager{},
 		bindAddr:              DefaultBindAddr,
 		state:                 map[string]interface{}{},
@@ -113,6 +112,11 @@ type App struct {
 	recoverPanics bool
 }
 
+// Latch returns the app lifecycle latch.
+func (a *App) Latch() *async.Latch {
+	return a.latch
+}
+
 // WithConfig sets the config and applies the config's setting.
 func (a *App) WithConfig(cfg *Config) *App {
 	a.cfg = cfg
@@ -138,15 +142,9 @@ func (a *App) WithConfig(cfg *Config) *App {
 	a.WithViews(NewViewCacheFromConfig(&cfg.Views))
 	a.WithViewResultProvider(&ViewResultProvider{views: a.Views()})
 	a.WithBaseURL(MustParseURL(cfg.GetBaseURL()))
-
 	a.WithShutdownGracePeriod(cfg.GetShutdownGracePeriod())
 
 	return a
-}
-
-// Running returns if the app is running.
-func (a *App) Running() bool {
-	return a.latch.IsRunning()
 }
 
 // WithShutdownGracePeriod sets the shutdown grace period.
@@ -643,9 +641,10 @@ func (a *App) Start() (err error) {
 		a.log.SyncTrigger(NewAppEvent(AppStartComplete).WithApp(a).WithElapsed(time.Since(start)))
 	}
 
-	a.latch.Started()
 	keepAliveListener := TCPKeepAliveListener{a.listener}
 	var shutdownErr error
+
+	a.latch.Started()
 	if a.server.TLSConfig != nil {
 		shutdownErr = a.server.ServeTLS(keepAliveListener, "", "")
 	} else {
@@ -655,20 +654,14 @@ func (a *App) Start() (err error) {
 	if shutdownErr != nil && shutdownErr != http.ErrServerClosed {
 		err = exception.New(shutdownErr)
 	}
-
 	a.latch.Stopping()
 	a.latch.Stopped()
 	return
 }
 
-// NotifyStarted returns a channel indicating the app has started.
-func (a *App) NotifyStarted() <-chan struct{} {
-	return a.latch.NotifyStarted()
-}
-
 // Shutdown stops the server.
 func (a *App) Shutdown() error {
-	if !a.Running() {
+	if !a.Latch().IsRunning() {
 		return nil
 	}
 

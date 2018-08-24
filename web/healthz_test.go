@@ -33,7 +33,7 @@ func TestHealthz(t *testing.T) {
 	}))
 
 	assert.NotNil(hz.App())
-	assert.False(app.Running())
+	assert.False(app.Latch().IsRunning())
 
 	go app.Start()
 	go hz.Start()
@@ -41,8 +41,8 @@ func TestHealthz(t *testing.T) {
 	<-appStarted
 	<-hzStarted
 
-	assert.True(app.Running())
-	assert.True(hz.App().Running())
+	assert.True(app.Latch().IsRunning())
+	assert.True(hz.App().Latch().IsRunning())
 
 	assert.NotNil(hz.Listener())
 

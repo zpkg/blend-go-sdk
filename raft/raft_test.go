@@ -317,45 +317,40 @@ func TestRaftTransitionTo(t *testing.T) {
 	assert := assert.New(t)
 
 	r := New()
-	r.state = Follower
+	calledFollowerHandler := make(chan struct{})
+	calledCandidateHandler := make(chan struct{})
+	calledLeaderHandler := make(chan struct{})
 
-	didCallHandler := make(chan struct{})
 	r.followerHandler = func() {
-		close(didCallHandler)
+		close(calledFollowerHandler)
 	}
-
-	go r.transition(Follower)
-	r.state = Leader
-
-	go r.transition(Follower)
-	<-didCallHandler
-	assert.Equal(Follower, r.state)
-
-	r.state = Leader
-	didCallHandler = make(chan struct{})
+	r.candidateHandler = func() {
+		close(calledCandidateHandler)
+	}
 	r.leaderHandler = func() {
-		close(didCallHandler)
+		close(calledLeaderHandler)
 	}
 
+	// start in follower
+	r.state = Follower
+	go r.transition(Follower)
+	r.state = Leader
+	go r.transition(Follower)
+	<-calledFollowerHandler
+	assert.Equal(Follower, r.state) // we should have transitioned
+
+	r.state = Leader
 	go r.transition(Leader)
 	r.state = Candidate
-
 	go r.transition(Leader)
-	<-didCallHandler
+	<-calledLeaderHandler
 	assert.Equal(Leader, r.state)
 
 	r.state = Candidate
-	didCallHandler = make(chan struct{})
-	r.candidateHandler = func() {
-		close(didCallHandler)
-	}
-
 	go r.transition(Candidate)
-
 	r.state = Follower
 	go r.transition(Candidate)
-	<-didCallHandler
-
+	<-calledCandidateHandler
 	assert.Equal(Candidate, r.state)
 }
 

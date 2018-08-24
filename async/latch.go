@@ -16,6 +16,16 @@ const (
 	LatchStopping int32 = 3
 )
 
+// NewLatch returns a new latch.
+func NewLatch() *Latch {
+	return &Latch{
+		starting: make(chan struct{}),
+		started:  make(chan struct{}),
+		stopping: make(chan struct{}),
+		stopped:  make(chan struct{}),
+	}
+}
+
 // Latch is a helper to coordinate goroutine lifecycles.
 // The lifecycle is generally as follows.
 // 0 - stopped / idle
@@ -64,7 +74,7 @@ func (l *Latch) IsRunning() bool {
 	return atomic.LoadInt32(&l.state) == LatchRunning
 }
 
-// NotifyStarting returns the starting signal.
+// NotifyStarting returns the started signal.
 // It is used to coordinate the transition from stopped -> starting.
 func (l *Latch) NotifyStarting() (notifyStarting <-chan struct{}) {
 	l.Lock()
@@ -109,7 +119,12 @@ func (l *Latch) Starting() {
 	}
 	l.Lock()
 	atomic.StoreInt32(&l.state, LatchStarting)
-	l.started = make(chan struct{})
+	if l.starting != nil {
+		close(l.starting)
+	}
+	if l.started == nil {
+		l.started = make(chan struct{})
+	}
 	l.Unlock()
 }
 
@@ -122,8 +137,12 @@ func (l *Latch) Started() {
 	}
 	l.Lock()
 	atomic.StoreInt32(&l.state, LatchRunning)
-	l.stopping = make(chan struct{})
-	close(l.started)
+	if l.started != nil {
+		close(l.started)
+	}
+	if l.stopping == nil {
+		l.stopping = make(chan struct{})
+	}
 	l.Unlock()
 }
 
@@ -135,8 +154,12 @@ func (l *Latch) Stopping() {
 	}
 	l.Lock()
 	atomic.StoreInt32(&l.state, LatchStopping)
-	l.stopped = make(chan struct{})
-	close(l.stopping)
+	if l.stopping != nil {
+		close(l.stopping)
+	}
+	if l.stopped == nil {
+		l.stopped = make(chan struct{})
+	}
 	l.Unlock()
 }
 
@@ -147,6 +170,11 @@ func (l *Latch) Stopped() {
 	}
 	l.Lock()
 	atomic.StoreInt32(&l.state, LatchStopped)
-	close(l.stopped)
+	if l.stopped != nil {
+		close(l.stopped)
+	}
+	if l.starting == nil {
+		l.starting = make(chan struct{})
+	}
 	l.Unlock()
 }
