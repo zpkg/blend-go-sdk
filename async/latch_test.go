@@ -9,7 +9,7 @@ import (
 func TestLatch(t *testing.T) {
 	assert := assert.New(t)
 
-	l := NewLatch()
+	l := &Latch{}
 
 	var didStart bool
 	var didAbort bool
@@ -18,10 +18,7 @@ func TestLatch(t *testing.T) {
 	work := make(chan bool)
 	workComplete := make(chan bool)
 
-	go func() {
-		l.Starting()
-	}()
-	<-l.NotifyStarting()
+	l.Starting()
 	assert.True(l.IsStarting())
 	assert.False(l.IsRunning())
 	assert.False(l.IsStopping())
@@ -61,14 +58,14 @@ func TestLatch(t *testing.T) {
 	assert.True(l.IsStopped())
 
 	didAbort = false
-	l.Stopping()
-
 	assert.False(didAbort)
 	assert.False(l.IsStopping())
 	assert.False(l.IsRunning())
 	assert.True(l.IsStopped())
 
 	// we should be able to do this again.
+	l.Reset()
+
 	go func() {
 		l.Starting()
 	}()

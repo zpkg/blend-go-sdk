@@ -44,6 +44,17 @@ type Latch struct {
 	stopped  chan struct{}
 }
 
+// Reset resets the latch.
+func (l *Latch) Reset() {
+	l.Lock()
+	l.state = LatchStopped
+	l.starting = make(chan struct{})
+	l.started = make(chan struct{})
+	l.stopping = make(chan struct{})
+	l.stopped = make(chan struct{})
+	l.Unlock()
+}
+
 // CanStart returns if the latch can start.
 func (l *Latch) CanStart() bool {
 	return atomic.LoadInt32(&l.state) == LatchStopped
@@ -113,8 +124,7 @@ func (l *Latch) NotifyStopped() (notifyStopped <-chan struct{}) {
 // Starting signals the latch is starting.
 // This is typically done before you kick off a goroutine.
 func (l *Latch) Starting() {
-	// can only trigger if we're stopped.
-	if !l.IsStopped() {
+	if l.IsStarting() {
 		return
 	}
 	l.Lock()
@@ -122,17 +132,14 @@ func (l *Latch) Starting() {
 	if l.starting != nil {
 		close(l.starting)
 	}
-	if l.started == nil {
-		l.started = make(chan struct{})
-	}
+	l.started = make(chan struct{})
 	l.Unlock()
 }
 
 // Started signals that the latch is started and has entered
 // the `IsRunning` state.
 func (l *Latch) Started() {
-	// can fast forward from stopped or starting.
-	if !l.IsStarting() {
+	if l.IsRunning() {
 		return
 	}
 	l.Lock()
@@ -140,16 +147,14 @@ func (l *Latch) Started() {
 	if l.started != nil {
 		close(l.started)
 	}
-	if l.stopping == nil {
-		l.stopping = make(chan struct{})
-	}
+	l.stopping = make(chan struct{})
 	l.Unlock()
 }
 
 // Stopping signals the latch to stop.
 // It could also be thought of as `SignalStopping`.
 func (l *Latch) Stopping() {
-	if !l.IsRunning() {
+	if l.IsStopping() {
 		return
 	}
 	l.Lock()
@@ -157,15 +162,13 @@ func (l *Latch) Stopping() {
 	if l.stopping != nil {
 		close(l.stopping)
 	}
-	if l.stopped == nil {
-		l.stopped = make(chan struct{})
-	}
+	l.stopped = make(chan struct{})
 	l.Unlock()
 }
 
 // Stopped signals the latch has stopped.
 func (l *Latch) Stopped() {
-	if !l.IsStopping() {
+	if l.IsStopped() {
 		return
 	}
 	l.Lock()
@@ -173,8 +176,6 @@ func (l *Latch) Stopped() {
 	if l.stopped != nil {
 		close(l.stopped)
 	}
-	if l.starting == nil {
-		l.starting = make(chan struct{})
-	}
+	l.starting = make(chan struct{})
 	l.Unlock()
 }
