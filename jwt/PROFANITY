@@ -1,0 +1,3 @@
+- id: GOLANG_JWT_GO
+  contains: dgrijalva/jwt-go
+  message: should not reference original library
