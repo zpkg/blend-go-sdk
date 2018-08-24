@@ -82,13 +82,13 @@ func TestHMACSign(t *testing.T) {
 }
 
 func BenchmarkHS256Signing(b *testing.B) {
-	benchmarkSigning(b, jwt.SigningMethodHS256, hmacTestKey)
+	benchmarkSigning(b, jwt.SigningMethodHMAC256, hmacTestKey)
 }
 
 func BenchmarkHS384Signing(b *testing.B) {
-	benchmarkSigning(b, jwt.SigningMethodHS384, hmacTestKey)
+	benchmarkSigning(b, jwt.SigningMethodHMAC384, hmacTestKey)
 }
 
 func BenchmarkHS512Signing(b *testing.B) {
-	benchmarkSigning(b, jwt.SigningMethodHS512, hmacTestKey)
+	benchmarkSigning(b, jwt.SigningMethodHMAC512, hmacTestKey)
 }

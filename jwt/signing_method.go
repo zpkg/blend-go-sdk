@@ -28,7 +28,7 @@ type SigningMethod interface {
 var (
 	SigningMethodHMAC256 = &SigningMethodHMAC{SigningMethodNameHMAC256, crypto.SHA256}
 	SigningMethodHMAC384 = &SigningMethodHMAC{SigningMethodNameHMAC384, crypto.SHA384}
-	SingingMethodHMAC512 = &SigningMethodHMAC{SingingMethodNameHMAC512, crypto.SHA512}
+	SigningMethodHMAC512 = &SigningMethodHMAC{SingingMethodNameHMAC512, crypto.SHA512}
 
 	SigningMethodES256 = &SigningMethodECDSA{SigningMethodNameES256, crypto.SHA256, 32, 256}
 	SigningMethodES384 = &SigningMethodECDSA{SigningMethodNameES384, crypto.SHA384, 48, 384}
@@ -47,7 +47,7 @@ func GetSigningMethod(name string) SigningMethod {
 	case SigningMethodNameHMAC384:
 		return SigningMethodHMAC384
 	case SingingMethodNameHMAC512:
-		return SingingMethodHMAC512
+		return SigningMethodHMAC512
 	case SigningMethodNameES256:
 		return SigningMethodES256
 	case SigningMethodNameES384:
