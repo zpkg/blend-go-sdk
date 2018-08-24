@@ -155,6 +155,7 @@ func (am *AuthManager) VerifySession(ctx *Ctx) (*Session, error) {
 	if err = am.sanityCheckSessionValue(sessionValue); err != nil {
 		return nil, err
 	}
+
 	var session *Session
 	// if we have a separate step to parse the sesion value
 	// (i.e. jwt mode) do that now.
