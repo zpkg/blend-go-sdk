@@ -12,7 +12,6 @@ func TestSessionAware(t *testing.T) {
 	assert := assert.New(t)
 
 	sessionID := NewSessionID()
-	println("test session id is", sessionID)
 
 	var didExecuteHandler bool
 	var sessionWasSet bool

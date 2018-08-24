@@ -149,8 +149,6 @@ func (am *AuthManager) VerifySession(ctx *Ctx) (*Session, error) {
 	// pull the sessionID off the request
 	sessionValue := am.readSessionValue(ctx)
 
-	println("auth manager got session value", sessionValue)
-
 	// validate the sessionValue isn't unset or crazy long.
 	if err = am.sanityCheckSessionValue(sessionValue); err != nil {
 		return nil, err
