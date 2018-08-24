@@ -2,8 +2,9 @@ package jwt
 
 import (
 	"crypto/subtle"
-	"fmt"
 	"time"
+
+	"github.com/blend/go-sdk/exception"
 )
 
 // Claims are a type that must just have a Valid method that determines
@@ -30,32 +31,21 @@ type StandardClaims struct {
 // As well, if any of the above claims are not in the token, it will still
 // be considered a valid claim.
 func (c StandardClaims) Valid() error {
-	vErr := new(ValidationError)
 	now := TimeFunc().Unix()
 
-	// The claims below are optional, by default, so if they are set to the
-	// default value in Go, let's not fail the verification for them.
 	if c.VerifyExpiresAt(now, false) == false {
 		delta := time.Unix(now, 0).Sub(time.Unix(c.ExpiresAt, 0))
-		vErr.Inner = fmt.Errorf("token is expired by %v", delta)
-		vErr.Errors |= ValidationErrorExpired
+		return exception.New(ErrValidationExpired).WithMessagef("token is expired by %v", delta)
 	}
 
 	if c.VerifyIssuedAt(now, false) == false {
-		vErr.Inner = fmt.Errorf("Token used before issued")
-		vErr.Errors |= ValidationErrorIssuedAt
+		return exception.New(ErrValidationIssued)
 	}
 
 	if c.VerifyNotBefore(now, false) == false {
-		vErr.Inner = fmt.Errorf("token is not valid yet")
-		vErr.Errors |= ValidationErrorNotValidYet
+		return exception.New(ErrValidationNotBefore)
 	}
-
-	if vErr.valid() {
-		return nil
-	}
-
-	return vErr
+	return nil
 }
 
 // VerifyAudience compares the aud claim against cmp.
@@ -87,8 +77,6 @@ func (c *StandardClaims) VerifyIssuer(cmp string, req bool) bool {
 func (c *StandardClaims) VerifyNotBefore(cmp int64, req bool) bool {
 	return verifyNbf(c.NotBefore, cmp, req)
 }
-
-// ----- helpers
 
 func verifyAud(aud string, cmp string, required bool) bool {
 	if aud == "" {

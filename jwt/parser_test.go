@@ -8,6 +8,7 @@ import (
 	"testing"
 	"time"
 
+	"github.com/blend/go-sdk/exception"
 	"github.com/blend/go-sdk/jwt"
 	"github.com/blend/go-sdk/jwt/test"
 )
@@ -32,7 +33,8 @@ var jwtTestData = []struct {
 	keyfunc     jwt.Keyfunc
 	claims      jwt.Claims
 	valid       bool
-	errors      uint32
+	err         error
+	inner       error
 	parser      *jwt.Parser
 }{
 	{
@@ -41,7 +43,8 @@ var jwtTestData = []struct {
 		defaultKeyFunc,
 		jwt.MapClaims{"foo": "bar"},
 		true,
-		0,
+		nil,
+		nil,
 		nil,
 	},
 	{
@@ -50,7 +53,8 @@ var jwtTestData = []struct {
 		defaultKeyFunc,
 		jwt.MapClaims{"foo": "bar", "exp": float64(time.Now().Unix() - 100)},
 		false,
-		jwt.ValidationErrorExpired,
+		jwt.ErrValidation,
+		jwt.ErrValidationExpired,
 		nil,
 	},
 	{
@@ -59,7 +63,8 @@ var jwtTestData = []struct {
 		defaultKeyFunc,
 		jwt.MapClaims{"foo": "bar", "nbf": float64(time.Now().Unix() + 100)},
 		false,
-		jwt.ValidationErrorNotValidYet,
+		jwt.ErrValidation,
+		jwt.ErrValidationNotBefore,
 		nil,
 	},
 	{
@@ -68,7 +73,8 @@ var jwtTestData = []struct {
 		defaultKeyFunc,
 		jwt.MapClaims{"foo": "bar", "nbf": float64(time.Now().Unix() + 100), "exp": float64(time.Now().Unix() - 100)},
 		false,
-		jwt.ValidationErrorNotValidYet | jwt.ValidationErrorExpired,
+		jwt.ErrValidation,
+		jwt.ErrValidationExpired,
 		nil,
 	},
 	{
@@ -77,7 +83,8 @@ var jwtTestData = []struct {
 		defaultKeyFunc,
 		jwt.MapClaims{"foo": "bar"},
 		false,
-		jwt.ValidationErrorSignatureInvalid,
+		jwt.ErrValidation,
+		jwt.ErrValidationSignature,
 		nil,
 	},
 	{
@@ -86,7 +93,8 @@ var jwtTestData = []struct {
 		nilKeyFunc,
 		jwt.MapClaims{"foo": "bar"},
 		false,
-		jwt.ValidationErrorUnverifiable,
+		jwt.ErrValidation,
+		jwt.ErrKeyfuncUnset,
 		nil,
 	},
 	{
@@ -95,7 +103,8 @@ var jwtTestData = []struct {
 		emptyKeyFunc,
 		jwt.MapClaims{"foo": "bar"},
 		false,
-		jwt.ValidationErrorSignatureInvalid,
+		jwt.ErrValidation,
+		jwt.ErrValidationSignature,
 		nil,
 	},
 	{
@@ -104,7 +113,8 @@ var jwtTestData = []struct {
 		errorKeyFunc,
 		jwt.MapClaims{"foo": "bar"},
 		false,
-		jwt.ValidationErrorUnverifiable,
+		keyFuncError,
+		nil,
 		nil,
 	},
 	{
@@ -113,7 +123,8 @@ var jwtTestData = []struct {
 		defaultKeyFunc,
 		jwt.MapClaims{"foo": "bar"},
 		false,
-		jwt.ValidationErrorSignatureInvalid,
+		jwt.ErrValidation,
+		jwt.ErrInvalidSigningMethod,
 		&jwt.Parser{ValidMethods: []string{"HS256"}},
 	},
 	{
@@ -122,7 +133,8 @@ var jwtTestData = []struct {
 		defaultKeyFunc,
 		jwt.MapClaims{"foo": "bar"},
 		true,
-		0,
+		nil,
+		nil,
 		&jwt.Parser{ValidMethods: []string{"RS256", "HS256"}},
 	},
 	{
@@ -131,7 +143,8 @@ var jwtTestData = []struct {
 		defaultKeyFunc,
 		jwt.MapClaims{"foo": json.Number("123.4")},
 		true,
-		0,
+		nil,
+		nil,
 		&jwt.Parser{UseJSONNumber: true},
 	},
 	{
@@ -142,7 +155,8 @@ var jwtTestData = []struct {
 			ExpiresAt: time.Now().Add(time.Second * 10).Unix(),
 		},
 		true,
-		0,
+		nil,
+		nil,
 		&jwt.Parser{UseJSONNumber: true},
 	},
 	{
@@ -151,7 +165,8 @@ var jwtTestData = []struct {
 		defaultKeyFunc,
 		jwt.MapClaims{"foo": "bar", "exp": json.Number(fmt.Sprintf("%v", time.Now().Unix()-100))},
 		false,
-		jwt.ValidationErrorExpired,
+		jwt.ErrValidation,
+		jwt.ErrValidationExpired,
 		&jwt.Parser{UseJSONNumber: true},
 	},
 	{
@@ -160,7 +175,8 @@ var jwtTestData = []struct {
 		defaultKeyFunc,
 		jwt.MapClaims{"foo": "bar", "nbf": json.Number(fmt.Sprintf("%v", time.Now().Unix()+100))},
 		false,
-		jwt.ValidationErrorNotValidYet,
+		jwt.ErrValidation,
+		jwt.ErrValidationNotBefore,
 		&jwt.Parser{UseJSONNumber: true},
 	},
 	{
@@ -169,7 +185,8 @@ var jwtTestData = []struct {
 		defaultKeyFunc,
 		jwt.MapClaims{"foo": "bar", "nbf": json.Number(fmt.Sprintf("%v", time.Now().Unix()+100)), "exp": json.Number(fmt.Sprintf("%v", time.Now().Unix()-100))},
 		false,
-		jwt.ValidationErrorNotValidYet | jwt.ValidationErrorExpired,
+		jwt.ErrValidation,
+		jwt.ErrValidationExpired,
 		&jwt.Parser{UseJSONNumber: true},
 	},
 	{
@@ -178,7 +195,8 @@ var jwtTestData = []struct {
 		defaultKeyFunc,
 		jwt.MapClaims{"foo": "bar", "nbf": json.Number(fmt.Sprintf("%v", time.Now().Unix()+100))},
 		true,
-		0,
+		nil,
+		nil,
 		&jwt.Parser{UseJSONNumber: true, SkipClaimsValidation: true},
 	},
 }
@@ -210,7 +228,7 @@ func TestParser_Parse(t *testing.T) {
 
 		// Verify result matches expectation
 		if !reflect.DeepEqual(data.claims, token.Claims) {
-			t.Errorf("[%v] Claims mismatch. Expecting: %v  Got: %v", data.name, data.claims, token.Claims)
+			t.Errorf("[%v] Claims mismatch. Expecting: %v Got: %v", data.name, data.claims, token.Claims)
 		}
 
 		if data.valid && err != nil {
@@ -225,19 +243,21 @@ func TestParser_Parse(t *testing.T) {
 			t.Errorf("[%v] Inconsistent behavior between returned error and token.Valid", data.name)
 		}
 
-		if data.errors != 0 {
+		if data.err != nil {
 			if err == nil {
-				t.Errorf("[%v] Expecting error.  Didn't get one.", data.name)
+				t.Errorf("[%v] Expecting error. Didn't get one.", data.name)
 			} else {
-
-				ve := err.(*jwt.ValidationError)
-				// compare the bitfield part of the error
-				if e := ve.Errors; e != data.errors {
-					t.Errorf("[%v] Errors don't match expectation.  %v != %v", data.name, e, data.errors)
+				if !exception.Is(err, data.err) {
+					t.Errorf("[%v] Errors don't match expectation. `%v` != `%v`", data.name, err, data.err)
 				}
-
-				if err.Error() == keyFuncError.Error() && ve.Inner != keyFuncError {
-					t.Errorf("[%v] Inner error does not match expectation.  %v != %v", data.name, ve.Inner, keyFuncError)
+				if data.inner != nil {
+					if typed, ok := err.(*exception.Ex); ok {
+						if !exception.Is(typed.Inner(), data.inner) {
+							t.Errorf("[%v] Causing Errors don't match expectation. `%+v` != `%+v`", data.name, typed.Inner(), data.inner)
+						}
+					} else {
+						t.Errorf("[%v] Errors aren't exceptions and we expect a causing error", data.name)
+					}
 				}
 			}
 		}

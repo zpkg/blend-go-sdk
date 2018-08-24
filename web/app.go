@@ -25,6 +25,7 @@ func New() *App {
 	vrp := &ViewResultProvider{views: views}
 
 	return &App{
+		latch:                 &async.Latch{},
 		auth:                  &AuthManager{},
 		bindAddr:              DefaultBindAddr,
 		state:                 map[string]interface{}{},
@@ -39,7 +40,6 @@ func New() *App {
 		jsonProvider:          &JSONResultProvider{},
 		xmlProvider:           &XMLResultProvider{},
 		textProvider:          &TextResultProvider{},
-		started:               &async.Latch{},
 	}
 }
 
@@ -55,8 +55,9 @@ func NewFromConfig(cfg *Config) *App {
 
 // App is the server for the app.
 type App struct {
-	cfg     *Config
-	started *async.Latch
+	latch *async.Latch
+
+	cfg *Config
 
 	log   *logger.Logger
 	auth  *AuthManager
@@ -145,7 +146,7 @@ func (a *App) WithConfig(cfg *Config) *App {
 
 // Running returns if the app is running.
 func (a *App) Running() bool {
-	return a.started.IsRunning()
+	return a.latch.IsRunning()
 }
 
 // WithShutdownGracePeriod sets the shutdown grace period.
@@ -582,6 +583,8 @@ func (a *App) Listener() *net.TCPListener {
 // Start starts the server and binds to the given address.
 func (a *App) Start() (err error) {
 	start := time.Now()
+	a.latch.Starting()
+
 	if a.log != nil {
 		a.log.SyncTrigger(NewAppEvent(AppStart).WithApp(a))
 		defer a.log.SyncTrigger(NewAppEvent(AppExit).WithApp(a).WithErr(err))
@@ -640,7 +643,7 @@ func (a *App) Start() (err error) {
 		a.log.SyncTrigger(NewAppEvent(AppStartComplete).WithApp(a).WithElapsed(time.Since(start)))
 	}
 
-	a.setRunning()
+	a.latch.Started()
 	keepAliveListener := TCPKeepAliveListener{a.listener}
 	var shutdownErr error
 	if a.server.TLSConfig != nil {
@@ -653,13 +656,14 @@ func (a *App) Start() (err error) {
 		err = exception.New(shutdownErr)
 	}
 
-	a.setStopped()
+	a.latch.Stopping()
+	a.latch.Stopped()
 	return
 }
 
 // NotifyStarted returns a channel indicating the app has started.
 func (a *App) NotifyStarted() <-chan struct{} {
-	return a.started.NotifyStarted()
+	return a.latch.NotifyStarted()
 }
 
 // Shutdown stops the server.
@@ -1273,14 +1277,4 @@ func (a *App) syncFatalf(format string, args ...interface{}) {
 		return
 	}
 	a.log.SyncFatalf(format, args...)
-}
-
-func (a *App) setRunning() {
-	a.started.Starting()
-	a.started.Started()
-}
-
-func (a *App) setStopped() {
-	a.started.Stopping()
-	a.started.Stopped()
 }

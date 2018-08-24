@@ -6,15 +6,9 @@ import (
 	"crypto/rand"
 	"crypto/x509"
 	"encoding/pem"
-	"errors"
 	"math/big"
 
 	"github.com/blend/go-sdk/exception"
-)
-
-// ECDSA specific errors.
-var (
-	ErrECDSAVerification = errors.New("crypto/ecdsa: verification error")
 )
 
 // SigningMethodECDSA implements the ECDSA family of signing methods signing methods
@@ -48,11 +42,11 @@ func (m *SigningMethodECDSA) Verify(signingString, signature string, key interfa
 	case *ecdsa.PublicKey:
 		ecdsaKey = k
 	default:
-		return ErrInvalidKeyType
+		return exception.Wrap(ErrInvalidKeyType)
 	}
 
 	if len(sig) != 2*m.KeySize {
-		return ErrECDSAVerification
+		return exception.Wrap(ErrECDSAVerification)
 	}
 
 	r := big.NewInt(0).SetBytes(sig[:m.KeySize])
@@ -60,7 +54,7 @@ func (m *SigningMethodECDSA) Verify(signingString, signature string, key interfa
 
 	// Create hasher
 	if !m.Hash.Available() {
-		return ErrHashUnavailable
+		return exception.Wrap(ErrHashUnavailable)
 	}
 	hasher := m.Hash.New()
 	hasher.Write([]byte(signingString))
@@ -69,7 +63,7 @@ func (m *SigningMethodECDSA) Verify(signingString, signature string, key interfa
 	if verifystatus := ecdsa.Verify(ecdsaKey, hasher.Sum(nil), r, s); verifystatus == true {
 		return nil
 	}
-	return ErrECDSAVerification
+	return exception.New(ErrECDSAVerification)
 }
 
 // Sign implements the Sign method from SigningMethod
@@ -98,7 +92,7 @@ func (m *SigningMethodECDSA) Sign(signingString string, key interface{}) (string
 		curveBits := ecdsaKey.Curve.Params().BitSize
 
 		if m.CurveBits != curveBits {
-			return "", ErrInvalidKey
+			return "", exception.Wrap(ErrInvalidKey)
 		}
 
 		keyBytes := curveBits / 8

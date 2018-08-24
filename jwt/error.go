@@ -2,58 +2,29 @@ package jwt
 
 import "github.com/blend/go-sdk/exception"
 
-// Error constants
+// Error constants.
 var (
-	// ErrInvalidKey is a error if the provided key is invalid.
-	ErrInvalidKey exception.Class = "key is invalid"
-	// ErrInvalidKeyType is an error returned if the key is an invalid type.
-	ErrInvalidKeyType  exception.Class = "key is of invalid type"
-	ErrHashUnavailable exception.Class = "the requested hash function is unavailable"
+	// ErrValidation will be the top most class in most cases.
+	ErrValidation exception.Class = "validation error"
+
+	ErrValidationAudienceUnset exception.Class = "token claims audience unset"
+	ErrValidationExpired       exception.Class = "token expired"
+	ErrValidationIssued        exception.Class = "token issued in future"
+	ErrValidationNotBefore     exception.Class = "token not before"
+
+	ErrValidationSignature exception.Class = "signature is invalid"
+
+	ErrKeyfuncUnset         exception.Class = "keyfunc is unset"
+	ErrInvalidKey           exception.Class = "key is invalid"
+	ErrInvalidKeyType       exception.Class = "key is of invalid type"
+	ErrInvalidSigningMethod exception.Class = "invalid signing method"
+	ErrHashUnavailable      exception.Class = "the requested hash function is unavailable"
+
+	ErrHMACSignatureInvalid exception.Class = "hmac signature is invalid"
+
+	ErrECDSAVerification exception.Class = "crypto/ecdsa: verification error"
+
+	ErrKeyMustBePEMEncoded exception.Class = "invalid key: key must be pem encoded pkcs1 or pkcs8 private key"
+	ErrNotRSAPrivateKey    exception.Class = "key is not a valid rsa private key"
+	ErrNotRSAPublicKey     exception.Class = "key is not a valid rsa public key"
 )
-
-// The errors that might occur when parsing and validating a token
-const (
-	ValidationErrorMalformed        uint32 = 1 << iota // Token is malformed
-	ValidationErrorUnverifiable                        // Token could not be verified because of signing problems
-	ValidationErrorSignatureInvalid                    // Signature validation failed
-
-	// Standard Claim validation errors
-	ValidationErrorAudience      // AUD validation failed
-	ValidationErrorExpired       // EXP validation failed
-	ValidationErrorIssuedAt      // IAT validation failed
-	ValidationErrorIssuer        // ISS validation failed
-	ValidationErrorNotValidYet   // NBF validation failed
-	ValidationErrorID            // JTI validation failed
-	ValidationErrorClaimsInvalid // Generic claims validation error
-)
-
-// NewValidationError is a helper for constructing a ValidationError with a string error message
-func NewValidationError(errorText string, errorFlags uint32) *ValidationError {
-	return &ValidationError{
-		text:   errorText,
-		Errors: errorFlags,
-	}
-}
-
-// ValidationError is the error from Parse if token is not valid.
-type ValidationError struct {
-	Inner  error  // stores the error returned by external dependencies, i.e.: KeyFunc
-	Errors uint32 // bitfield.  see ValidationError... constants
-	text   string // errors that do not have a valid error just have text
-}
-
-// Validation error is an error type
-func (e ValidationError) Error() string {
-	if e.Inner != nil {
-		return e.Inner.Error()
-	} else if e.text != "" {
-		return e.text
-	} else {
-		return "token is invalid"
-	}
-}
-
-// No errors
-func (e *ValidationError) valid() bool {
-	return e.Errors == 0
-}

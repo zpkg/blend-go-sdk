@@ -103,6 +103,10 @@ func (l *Latch) NotifyStopped() (notifyStopped <-chan struct{}) {
 // Starting signals the latch is starting.
 // This is typically done before you kick off a goroutine.
 func (l *Latch) Starting() {
+	// can only trigger if we're stopped.
+	if !l.IsStopped() {
+		return
+	}
 	l.Lock()
 	atomic.StoreInt32(&l.state, LatchStarting)
 	l.started = make(chan struct{})
@@ -112,7 +116,8 @@ func (l *Latch) Starting() {
 // Started signals that the latch is started and has entered
 // the `IsRunning` state.
 func (l *Latch) Started() {
-	if !l.IsStopped() && !l.IsStarting() {
+	// can fast forward from stopped or starting.
+	if !l.IsStarting() {
 		return
 	}
 	l.Lock()

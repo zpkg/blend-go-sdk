@@ -2,7 +2,8 @@ package jwt
 
 import (
 	"encoding/json"
-	"errors"
+
+	"github.com/blend/go-sdk/exception"
 )
 
 // MapClaims is a claims type that uses the map[string]interface{} for JSON decoding
@@ -67,27 +68,19 @@ func (m MapClaims) VerifyNotBefore(cmp int64, req bool) bool {
 // As well, if any of the above claims are not in the token, it will still
 // be considered a valid claim.
 func (m MapClaims) Valid() error {
-	vErr := new(ValidationError)
 	now := TimeFunc().Unix()
 
 	if m.VerifyExpiresAt(now, false) == false {
-		vErr.Inner = errors.New("Token is expired")
-		vErr.Errors |= ValidationErrorExpired
+		return exception.New(ErrValidationExpired)
 	}
 
 	if m.VerifyIssuedAt(now, false) == false {
-		vErr.Inner = errors.New("Token used before issued")
-		vErr.Errors |= ValidationErrorIssuedAt
+		return exception.New(ErrValidationIssued)
 	}
 
 	if m.VerifyNotBefore(now, false) == false {
-		vErr.Inner = errors.New("Token is not valid yet")
-		vErr.Errors |= ValidationErrorNotValidYet
+		return exception.New(ErrValidationNotBefore)
 	}
 
-	if vErr.valid() {
-		return nil
-	}
-
-	return vErr
+	return nil
 }

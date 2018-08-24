@@ -161,3 +161,21 @@ func TestNestNil(t *testing.T) {
 	a.Nil(err)
 	a.Equal(nil, err)
 }
+
+func TestExceptionPrintsInner(t *testing.T) {
+	assert := assert.New(t)
+
+	ex := New("outer").WithInner(New("middle").WithInner(New("terminal")))
+
+	output := fmt.Sprintf("%v", ex)
+
+	assert.Contains(output, "outer")
+	assert.Contains(output, "middle")
+	assert.Contains(output, "terminal")
+
+	output = fmt.Sprintf("%+v", ex)
+
+	assert.Contains(output, "outer")
+	assert.Contains(output, "middle")
+	assert.Contains(output, "terminal")
+}

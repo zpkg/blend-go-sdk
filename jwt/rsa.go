@@ -37,18 +37,18 @@ func (m *SigningMethodRSA) Verify(signingString, signature string, key interface
 	var ok bool
 
 	if rsaKey, ok = key.(*rsa.PublicKey); !ok {
-		return ErrInvalidKeyType
+		return exception.New(ErrInvalidKeyType)
 	}
 
 	// Create hasher
 	if !m.Hash.Available() {
-		return ErrHashUnavailable
+		return exception.New(ErrHashUnavailable)
 	}
 	hasher := m.Hash.New()
 	hasher.Write([]byte(signingString))
 
 	// Verify the signature
-	return rsa.VerifyPKCS1v15(rsaKey, m.Hash, hasher.Sum(nil), sig)
+	return exception.Wrap(rsa.VerifyPKCS1v15(rsaKey, m.Hash, hasher.Sum(nil), sig))
 }
 
 // Sign implements the Sign method from SigningMethod
@@ -64,7 +64,7 @@ func (m *SigningMethodRSA) Sign(signingString string, key interface{}) (string, 
 
 	// Create the hasher
 	if !m.Hash.Available() {
-		return "", ErrHashUnavailable
+		return "", exception.New(ErrHashUnavailable)
 	}
 
 	hasher := m.Hash.New()
@@ -78,13 +78,6 @@ func (m *SigningMethodRSA) Sign(signingString string, key interface{}) (string, 
 	return "", err
 }
 
-// RSA specific errors
-var (
-	ErrKeyMustBePEMEncoded exception.Class = "Invalid Key: Key must be PEM encoded PKCS1 or PKCS8 private key"
-	ErrNotRSAPrivateKey    exception.Class = "Key is not a valid RSA private key"
-	ErrNotRSAPublicKey     exception.Class = "Key is not a valid RSA public key"
-)
-
 //ParseRSAPrivateKeyFromPEM parses a PEM encoded PKCS1 or PKCS8 private key.
 func ParseRSAPrivateKeyFromPEM(key []byte) (*rsa.PrivateKey, error) {
 	var err error
@@ -92,20 +85,20 @@ func ParseRSAPrivateKeyFromPEM(key []byte) (*rsa.PrivateKey, error) {
 	// Parse PEM block
 	var block *pem.Block
 	if block, _ = pem.Decode(key); block == nil {
-		return nil, ErrKeyMustBePEMEncoded
+		return nil, exception.New(ErrKeyMustBePEMEncoded)
 	}
 
 	var parsedKey interface{}
 	if parsedKey, err = x509.ParsePKCS1PrivateKey(block.Bytes); err != nil {
 		if parsedKey, err = x509.ParsePKCS8PrivateKey(block.Bytes); err != nil {
-			return nil, err
+			return nil, exception.New(err)
 		}
 	}
 
 	var pkey *rsa.PrivateKey
 	var ok bool
 	if pkey, ok = parsedKey.(*rsa.PrivateKey); !ok {
-		return nil, ErrNotRSAPrivateKey
+		return nil, exception.New(ErrNotRSAPrivateKey)
 	}
 
 	return pkey, nil
@@ -118,26 +111,26 @@ func ParseRSAPrivateKeyFromPEMWithPassword(key []byte, password string) (*rsa.Pr
 	// Parse PEM block
 	var block *pem.Block
 	if block, _ = pem.Decode(key); block == nil {
-		return nil, ErrKeyMustBePEMEncoded
+		return nil, exception.New(ErrKeyMustBePEMEncoded)
 	}
 
 	var parsedKey interface{}
 
 	var blockDecrypted []byte
 	if blockDecrypted, err = x509.DecryptPEMBlock(block, []byte(password)); err != nil {
-		return nil, err
+		return nil, exception.New(err)
 	}
 
 	if parsedKey, err = x509.ParsePKCS1PrivateKey(blockDecrypted); err != nil {
 		if parsedKey, err = x509.ParsePKCS8PrivateKey(blockDecrypted); err != nil {
-			return nil, err
+			return nil, exception.New(err)
 		}
 	}
 
 	var pkey *rsa.PrivateKey
 	var ok bool
 	if pkey, ok = parsedKey.(*rsa.PrivateKey); !ok {
-		return nil, ErrNotRSAPrivateKey
+		return nil, exception.New(ErrNotRSAPrivateKey)
 	}
 
 	return pkey, nil
@@ -150,7 +143,7 @@ func ParseRSAPublicKeyFromPEM(key []byte) (*rsa.PublicKey, error) {
 	// Parse PEM block
 	var block *pem.Block
 	if block, _ = pem.Decode(key); block == nil {
-		return nil, ErrKeyMustBePEMEncoded
+		return nil, exception.New(ErrKeyMustBePEMEncoded)
 	}
 
 	// Parse the key
@@ -159,14 +152,14 @@ func ParseRSAPublicKeyFromPEM(key []byte) (*rsa.PublicKey, error) {
 		if cert, err := x509.ParseCertificate(block.Bytes); err == nil {
 			parsedKey = cert.PublicKey
 		} else {
-			return nil, err
+			return nil, exception.New(err)
 		}
 	}
 
 	var pkey *rsa.PublicKey
 	var ok bool
 	if pkey, ok = parsedKey.(*rsa.PublicKey); !ok {
-		return nil, ErrNotRSAPublicKey
+		return nil, exception.New(ErrNotRSAPublicKey)
 	}
 
 	return pkey, nil
