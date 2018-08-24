@@ -14,20 +14,7 @@ func URL(format string, args ...interface{}) *url.URL {
 	return output
 }
 
-// MetaProvider is a service path meta provider.
-type MetaProvider interface {
-	GetServiceName(...string) string
-	GetServiceEnv(...string) string
-}
-
-// ServicePath is the service key path.
-func ServicePath(metaProvider MetaProvider) string {
-	name := metaProvider.GetServiceName()
-	environment := metaProvider.GetServiceEnv()
-	return fmt.Sprintf("/services/%s/%s", environment, name)
-}
-
 // ServiceConfigPath returns the service config path.
-func ServiceConfigPath(metaProvider MetaProvider) string {
-	return fmt.Sprintf("%s/config", ServicePath(metaProvider))
+func ServiceConfigPath(config Config) string {
+	return fmt.Sprintf("%s/config", config.GetServicePath())
 }
