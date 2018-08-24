@@ -5,19 +5,20 @@ import (
 	"time"
 )
 
-// Cancel injects the context for a given action with a cancel func.
-func Cancel(action Action) Action {
+// WithCancel injects the context for a given action with a cancel func.
+// It allows you to cancel the request.
+func WithCancel(action Action) Action {
 	return func(ctx *Ctx) Result {
-		ctx.ctx, ctx.cancel = context.WithCancel(context.Background())
+		ctx.ctx, ctx.cancel = context.WithCancel(ctx.Context())
 		return action(ctx)
 	}
 }
 
-// Timeout injects the context for a given action with a timeout context.
-func Timeout(d time.Duration) Middleware {
+// WithTimeout injects the context for a given action with a timeout context.
+func WithTimeout(d time.Duration) Middleware {
 	return func(action Action) Action {
 		return func(ctx *Ctx) Result {
-			ctx.ctx, ctx.cancel = context.WithTimeout(context.Background(), d)
+			ctx.ctx, ctx.cancel = context.WithTimeout(ctx.Context(), d)
 			return action(ctx)
 		}
 	}

@@ -519,7 +519,7 @@ func TestAppAddsDefaultHeaders(t *testing.T) {
 
 	go app.Start()
 	defer app.Shutdown()
-	<-app.Latch().NotifyStarted()
+	<-app.NotifyStarted()
 
 	res, err := http.Get("http://" + app.Listener().Addr().String() + "/")
 	assert.Nil(err)

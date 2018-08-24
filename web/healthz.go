@@ -46,7 +46,7 @@ func NewHealthz(app *App) *Healthz {
 		app:            app,
 		defaultHeaders: map[string]string{},
 		state:          State{},
-		vars: map[string]interface{}{
+		vars: State{
 			VarzRequests:    int64(0),
 			VarzRequests2xx: int64(0),
 			VarzRequests3xx: int64(0),
@@ -129,7 +129,7 @@ type Healthz struct {
 	state State
 
 	varsLock sync.Mutex
-	vars     map[string]interface{}
+	vars     State
 
 	recoverPanics bool
 	err           error
@@ -488,7 +488,7 @@ func (hz *Healthz) varzHandler(w ResponseWriter, r *http.Request) {
 
 	var index int
 	for key := range hz.vars {
-		keys[index] = key
+		keys[index] = fmt.Sprintf("%v", key)
 		index++
 	}
 

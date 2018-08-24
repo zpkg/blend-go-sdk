@@ -7,19 +7,21 @@ import (
 	"os"
 	"time"
 
+	_ "net/http/pprof"
+
 	"github.com/blend/go-sdk/exception"
 	"github.com/blend/go-sdk/logger"
 )
 
 var pool = logger.NewBufferPool(16)
 
-func logged(handler http.HandlerFunc) http.HandlerFunc {
+func logged(log *logger.Logger, handler http.HandlerFunc) http.HandlerFunc {
 	return func(res http.ResponseWriter, req *http.Request) {
 		start := time.Now()
-		logger.Default().Trigger(logger.NewHTTPRequestEvent(req))
+		log.Trigger(logger.NewHTTPRequestEvent(req))
 		rw := logger.NewResponseWriter(res)
 		handler(rw, req)
-		logger.Default().Trigger(logger.NewHTTPResponseEvent(req).WithStatusCode(rw.StatusCode()).WithContentLength(rw.ContentLength()).WithElapsed(time.Now().Sub(start)))
+		log.Trigger(logger.NewHTTPResponseEvent(req).WithStatusCode(rw.StatusCode()).WithContentLength(rw.ContentLength()).WithElapsed(time.Now().Sub(start)))
 	}
 }
 
@@ -69,7 +71,7 @@ func subContextHandler(res http.ResponseWriter, req *http.Request) {
 }
 
 func auditHandler(res http.ResponseWriter, req *http.Request) {
-	logger.Default().Trigger(logger.NewAuditEvent(logger.GetIP(req), "viewed").WithExtra(map[string]string{
+	logger.Default().Trigger(logger.NewAuditEvent(logger.GetRemoteAddr(req), "viewed").WithExtra(map[string]string{
 		"remoteAddr": req.RemoteAddr,
 		"host":       req.Host,
 	}).WithNoun("audit route"))
@@ -86,20 +88,24 @@ func port() string {
 }
 
 func main() {
-	logger.SetDefault(logger.NewFromEnv().WithEnabled(logger.Info, logger.Audit))
+	go func() {
+		log.Println(http.ListenAndServe("localhost:6060", nil))
+	}()
 
-	http.HandleFunc("/", logged(indexHandler))
+	log := logger.NewFromEnv().WithEnabled(logger.Info, logger.Audit)
 
-	http.HandleFunc("/sub-context", logged(subContextHandler))
-	http.HandleFunc("/fatalerror", logged(fatalErrorHandler))
-	http.HandleFunc("/error", logged(errorHandler))
-	http.HandleFunc("/warning", logged(warningHandler))
-	http.HandleFunc("/audit", logged(auditHandler))
+	http.HandleFunc("/", logged(log, indexHandler))
 
-	http.HandleFunc("/bench/logged", logged(indexHandler))
+	http.HandleFunc("/sub-context", logged(log, subContextHandler))
+	http.HandleFunc("/fatalerror", logged(log, fatalErrorHandler))
+	http.HandleFunc("/error", logged(log, errorHandler))
+	http.HandleFunc("/warning", logged(log, warningHandler))
+	http.HandleFunc("/audit", logged(log, auditHandler))
+
+	http.HandleFunc("/bench/logged", logged(log, indexHandler))
 	http.HandleFunc("/bench/stdout", stdoutLogged(indexHandler))
 
-	logger.Default().Infof("Listening on :%s", port())
-	logger.Default().Infof("Events %s", logger.Default().Flags().String())
+	log.SyncInfof("Listening on :%s", port())
+	log.SyncInfof("Events %s", log.Flags().String())
 	log.Fatal(http.ListenAndServe(":"+port(), nil))
 }
