@@ -27,7 +27,7 @@ func New() *App {
 		latch:                 async.NewLatch(),
 		auth:                  &AuthManager{},
 		bindAddr:              DefaultBindAddr,
-		state:                 map[string]interface{}{},
+		state:                 State{},
 		statics:               map[string]Fileserver{},
 		readTimeout:           DefaultReadTimeout,
 		redirectTrailingSlash: true,
@@ -107,7 +107,7 @@ type App struct {
 	writeTimeout      time.Duration
 	idleTimeout       time.Duration
 
-	state map[string]interface{}
+	state State
 
 	recoverPanics bool
 }

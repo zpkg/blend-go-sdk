@@ -89,7 +89,7 @@ func TestWebRequestEventProperties(t *testing.T) {
 	assert.NotNil(e.WithRequest(&http.Request{}).Request())
 
 	assert.Nil(e.State())
-	assert.Equal("foo", e.WithState(map[string]interface{}{"bar": "foo"}).State()["bar"])
+	assert.Equal("foo", e.WithState(map[interface{}]interface{}{"bar": "foo"}).State()["bar"])
 
 	assert.Empty(e.Route())
 	assert.Equal("Route", e.WithRoute("Route").Route())
