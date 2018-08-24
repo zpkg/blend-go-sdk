@@ -28,3 +28,9 @@ var (
 	ErrNotRSAPrivateKey    exception.Class = "key is not a valid rsa private key"
 	ErrNotRSAPublicKey     exception.Class = "key is not a valid rsa public key"
 )
+
+// IsValidation returns if the error is a validation error
+// instead of a more structural error with the key infrastructure.
+func IsValidation(err error) bool {
+	return exception.Is(err, ErrValidation)
+}
