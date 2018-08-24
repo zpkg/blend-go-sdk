@@ -5,8 +5,8 @@ import (
 	"strings"
 	"testing"
 
+	"github.com/blend/go-sdk/jwt"
 	"github.com/blend/go-sdk/jwt/test"
-	"github.com/dgrijalva/jwt-go"
 )
 
 var ecdsaTestData = []struct {
