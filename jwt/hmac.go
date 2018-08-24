@@ -14,11 +14,6 @@ type SigningMethodHMAC struct {
 	Hash crypto.Hash
 }
 
-// Specific instances for HS256 and company
-var (
-	ErrSignatureInvalid exception.Class = "signature is invalid"
-)
-
 // Alg returns the name of the signing method.
 func (m *SigningMethodHMAC) Alg() string {
 	return m.Name
@@ -29,7 +24,7 @@ func (m *SigningMethodHMAC) Verify(signingString, signature string, key interfac
 	// Verify the key is the right type
 	keyBytes, ok := key.([]byte)
 	if !ok {
-		return ErrInvalidKeyType
+		return exception.New(ErrInvalidKeyType)
 	}
 
 	// Decode signature, for comparison
@@ -40,7 +35,7 @@ func (m *SigningMethodHMAC) Verify(signingString, signature string, key interfac
 
 	// Can we use the specified hashing method?
 	if !m.Hash.Available() {
-		return ErrHashUnavailable
+		return exception.New(ErrHashUnavailable)
 	}
 
 	// This signing method is symmetric, so we validate the signature
@@ -49,7 +44,7 @@ func (m *SigningMethodHMAC) Verify(signingString, signature string, key interfac
 	hasher := hmac.New(m.Hash.New, keyBytes)
 	hasher.Write([]byte(signingString))
 	if !hmac.Equal(sig, hasher.Sum(nil)) {
-		return ErrSignatureInvalid
+		return exception.New(ErrHMACSignatureInvalid)
 	}
 
 	// No validation errors.  Signature is good.
@@ -61,7 +56,7 @@ func (m *SigningMethodHMAC) Verify(signingString, signature string, key interfac
 func (m *SigningMethodHMAC) Sign(signingString string, key interface{}) (string, error) {
 	if keyBytes, ok := key.([]byte); ok {
 		if !m.Hash.Available() {
-			return "", ErrHashUnavailable
+			return "", exception.New(ErrHashUnavailable)
 		}
 
 		hasher := hmac.New(m.Hash.New, keyBytes)
@@ -70,5 +65,5 @@ func (m *SigningMethodHMAC) Sign(signingString string, key interface{}) (string,
 		return EncodeSegment(hasher.Sum(nil)), nil
 	}
 
-	return "", ErrInvalidKeyType
+	return "", exception.New(ErrInvalidKeyType)
 }

@@ -5,8 +5,6 @@ import (
 	"testing"
 	"time"
 
-	"strconv"
-
 	"fmt"
 	"os"
 
@@ -192,25 +190,10 @@ func TestTemplateViewFuncTimeUnix(t *testing.T) {
 	assert.Equal("1495314000", buffer.String())
 }
 
-func TestTemplateHelpersUTCNow(t *testing.T) {
+func TestTemplateCreateKey(t *testing.T) {
 	assert := assert.New(t)
 
-	test := `{{ .Helpers.UTCNow | unix }}`
-	temp := New().WithBody(test)
-
-	buffer := bytes.NewBuffer(nil)
-	err := temp.Process(buffer)
-	assert.Nil(err)
-
-	parsed, err := strconv.ParseInt(buffer.String(), 10, 64)
-	assert.Nil(err)
-	assert.NotZero(parsed)
-}
-
-func TestTemplateHelpersCreateKey(t *testing.T) {
-	assert := assert.New(t)
-
-	test := `{{ .Helpers.CreateKey 64 }}`
+	test := `{{ createKey 64 }}`
 	temp := New().WithBody(test)
 
 	buffer := bytes.NewBuffer(nil)
@@ -243,6 +226,7 @@ func TestTemplateViewFuncTime(t *testing.T) {
 	assert.Nil(err)
 	assert.Equal("30", buffer.String())
 }
+
 func TestTemplateViewFuncTimeFromUnix(t *testing.T) {
 	assert := assert.New(t)
 
