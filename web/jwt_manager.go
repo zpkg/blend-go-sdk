@@ -61,7 +61,7 @@ func (jwtm JWTManager) SerializeSessionValueHandler(session *Session, _ State) (
 		return
 	}
 
-	token := jwt.NewWithClaims(jwt.SingingMethodHMAC512, jwtm.Claims(session))
+	token := jwt.NewWithClaims(jwt.SigningMethodHMAC512, jwtm.Claims(session))
 	output, err = token.SignedString(key)
 	return
 }
