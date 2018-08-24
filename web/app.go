@@ -117,6 +117,11 @@ func (a *App) Latch() *async.Latch {
 	return a.latch
 }
 
+// NotifyStarted returns the notify started chan.
+func (a *App) NotifyStarted() <-chan struct{} {
+	return a.latch.NotifyStarted()
+}
+
 // WithConfig sets the config and applies the config's setting.
 func (a *App) WithConfig(cfg *Config) *App {
 	a.cfg = cfg
@@ -581,8 +586,6 @@ func (a *App) Listener() *net.TCPListener {
 // Start starts the server and binds to the given address.
 func (a *App) Start() (err error) {
 	start := time.Now()
-	a.latch.Starting()
-
 	if a.log != nil {
 		a.log.SyncTrigger(NewAppEvent(AppStart).WithApp(a))
 		defer a.log.SyncTrigger(NewAppEvent(AppExit).WithApp(a).WithErr(err))
