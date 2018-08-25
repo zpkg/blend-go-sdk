@@ -689,19 +689,35 @@ func (r *Request) Response() (*http.Response, error) {
 	return res, exception.New(err)
 }
 
-// Execute makes the request but does not read the response.
-func (r *Request) Execute() error {
+// Discard executes the request does not pass the response to handlers or events.
+func (r *Request) Discard() error {
+	_, err := r.DiscardWithMeta()
+	return err
+}
+
+// DiscardWithMeta discards the response but triggers listeners.
+func (r *Request) DiscardWithMeta() (*ResponseMeta, error) {
 	res, err := r.Response()
 	if err != nil {
-		return exception.New(err)
+		return nil, exception.New(err)
 	}
+	meta := NewResponseMeta(res)
 	if res.Body != nil {
 		defer res.Body.Close()
-		if _, err := io.Copy(ioutil.Discard, res.Body); err != nil {
-			return exception.New(err)
+		contentLength, err := io.Copy(ioutil.Discard, res.Body)
+		if err != nil {
+			return meta, exception.New(err)
 		}
+		meta.ContentLength = contentLength
+		r.logResponse(meta, nil)
 	}
-	return nil
+	return meta, nil
+}
+
+// Execute makes the request and reads the response.
+func (r *Request) Execute() error {
+	_, err := r.ExecuteWithMeta()
+	return err
 }
 
 // ExecuteWithMeta makes the request and returns the meta of the response.
@@ -718,7 +734,7 @@ func (r *Request) ExecuteWithMeta() (*ResponseMeta, error) {
 			return nil, exception.New(err)
 		}
 		meta.ContentLength = int64(len(contents))
-		r.logResponse(meta, contents, r.state)
+		r.logResponse(meta, contents)
 	}
 
 	return meta, nil
@@ -739,7 +755,7 @@ func (r *Request) BytesWithMeta() ([]byte, *ResponseMeta, error) {
 	}
 
 	resMeta.ContentLength = int64(len(bytes))
-	r.logResponse(resMeta, bytes, r.state)
+	r.logResponse(resMeta, bytes)
 	return bytes, resMeta, nil
 }
 
@@ -820,7 +836,7 @@ func (r *Request) deserialize(handler Deserializer) (*ResponseMeta, error) {
 	}
 
 	meta.ContentLength = int64(len(body))
-	r.logResponse(meta, body, r.state)
+	r.logResponse(meta, body)
 	if meta.ContentLength > 0 && handler != nil {
 		err = handler(body)
 	}
@@ -843,7 +859,7 @@ func (r *Request) deserializeWithError(okHandler Deserializer, errorHandler Dese
 	}
 
 	meta.ContentLength = int64(len(body))
-	r.logResponse(meta, body, r.state)
+	r.logResponse(meta, body)
 	if meta.ContentLength > 0 {
 		if res.StatusCode == http.StatusOK {
 			if okHandler != nil {
@@ -857,11 +873,11 @@ func (r *Request) deserializeWithError(okHandler Deserializer, errorHandler Dese
 }
 
 func (r *Request) logRequest() {
-	meta := r.Meta()
 	if r.requestHandler != nil {
-		r.requestHandler(meta)
+		r.requestHandler(r)
 	}
 
+	meta := r.Meta()
 	if r.log != nil {
 		r.log.Trigger(Event{
 			ts:  now(),
@@ -870,13 +886,13 @@ func (r *Request) logRequest() {
 	}
 }
 
-func (r *Request) logResponse(resMeta *ResponseMeta, responseBody []byte, state interface{}) {
-	reqMeta := r.Meta()
+func (r *Request) logResponse(resMeta *ResponseMeta, responseBody []byte) {
 	if r.responseHandler != nil {
-		r.responseHandler(reqMeta, resMeta, responseBody, state)
+		r.responseHandler(r, resMeta, responseBody)
 	}
 
 	if r.log != nil {
+		reqMeta := r.Meta()
 		r.log.Trigger(ResponseEvent{
 			ts:   time.Now().UTC(),
 			req:  reqMeta,

@@ -8,13 +8,22 @@ import (
 	"github.com/blend/go-sdk/util"
 )
 
-// NewConfigFromEnv returns a config populated by the env.
-func NewConfigFromEnv() *Config {
-	var cfg Config
-	if err := env.Env().ReadInto(&cfg); err != nil {
+// MustNewConfigFromEnv returns a config set from the env, and panics on error.
+func MustNewConfigFromEnv() (cfg *Config) {
+	var err error
+	if cfg, err = NewConfigFromEnv(); err != nil {
 		panic(err)
 	}
-	return &cfg
+	return
+}
+
+// NewConfigFromEnv returns a config populated by the env.
+func NewConfigFromEnv() (*Config, error) {
+	var cfg Config
+	if err := env.Env().ReadInto(&cfg); err != nil {
+		return nil, err
+	}
+	return &cfg, nil
 }
 
 // Config is the secrets config object.

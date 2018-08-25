@@ -1,10 +1,10 @@
 package request
 
 // ResponseHandler is a receiver for `OnResponse`.
-type ResponseHandler func(req *Meta, res *ResponseMeta, content []byte, state interface{})
+type ResponseHandler func(req *Request, res *ResponseMeta, content []byte)
 
 // Handler is a receiver for `OnRequest`.
-type Handler func(req *Meta)
+type Handler func(req *Request)
 
 // MockedResponseProvider is a mocked response provider.
 type MockedResponseProvider func(*Request) *MockedResponse

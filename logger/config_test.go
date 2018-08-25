@@ -30,9 +30,9 @@ func TestConfigProperties(t *testing.T) {
 	assert.Equal(!DefaultRecoverPanics, Config{}.GetRecoverPanics(!DefaultRecoverPanics))
 	assert.Equal(!DefaultRecoverPanics, Config{RecoverPanics: b(!DefaultRecoverPanics)}.GetRecoverPanics())
 
-	assert.Equal(DefaultWorkerQueueDepth, Config{}.GetQueueDepth())
-	assert.Equal(DefaultWorkerQueueDepth>>1, Config{}.GetQueueDepth(DefaultWorkerQueueDepth>>1))
-	assert.Equal(DefaultWorkerQueueDepth>>2, Config{QueueDepth: DefaultWorkerQueueDepth >> 2}.GetQueueDepth(DefaultWorkerQueueDepth>>1))
+	assert.Equal(DefaultWriteQueueDepth, Config{}.GetWriteQueueDepth())
+	assert.Equal(DefaultWriteQueueDepth>>1, Config{}.GetWriteQueueDepth(DefaultWriteQueueDepth>>1))
+	assert.Equal(DefaultWriteQueueDepth>>2, Config{WriteQueueDepth: DefaultWriteQueueDepth >> 2}.GetWriteQueueDepth(DefaultWriteQueueDepth>>1))
 }
 
 func TestNewConfigFlags(t *testing.T) {
@@ -61,7 +61,8 @@ outputFormat: test-format
 flags: [ "foo", "bar" ]
 hiddenFlags: [ "buzz", "wuzz" ]
 recoverPanics: false
-queueDepth: 256
+writeQueueDepth: 256
+listenerQueueDepth: 128
 `
 
 	var cfg Config
@@ -71,7 +72,8 @@ queueDepth: 256
 	assert.Equal([]string{"foo", "bar"}, cfg.GetFlags())
 	assert.Equal([]string{"buzz", "wuzz"}, cfg.GetHiddenFlags())
 	assert.False(cfg.GetRecoverPanics())
-	assert.Equal(256, cfg.GetQueueDepth())
+	assert.Equal(256, cfg.GetWriteQueueDepth())
+	assert.Equal(128, cfg.GetListenerQueueDepth())
 }
 
 func TestConfigJSON(t *testing.T) {
@@ -83,7 +85,8 @@ func TestConfigJSON(t *testing.T) {
 "flags": [ "foo", "bar" ],
 "hiddenFlags": [ "buzz", "wuzz" ],
 "recoverPanics": false,
-"queueDepth": 256
+"writeQueueDepth": 256,
+"listenerQueueDepth": 128
 }
 `
 
@@ -94,7 +97,8 @@ func TestConfigJSON(t *testing.T) {
 	assert.Equal([]string{"foo", "bar"}, cfg.GetFlags())
 	assert.Equal([]string{"buzz", "wuzz"}, cfg.GetHiddenFlags())
 	assert.False(cfg.GetRecoverPanics())
-	assert.Equal(256, cfg.GetQueueDepth())
+	assert.Equal(256, cfg.GetWriteQueueDepth())
+	assert.Equal(128, cfg.GetListenerQueueDepth())
 }
 
 func TestNewConfigFromEnv(t *testing.T) {
