@@ -93,8 +93,9 @@ func NewJSON() *Logger {
 type Logger struct {
 	writers []Writer
 
-	heading    string
-	queueDepth int
+	heading                  string
+	writeWorkerQueueDepth    int
+	listenerWorkerQueueDepth int
 
 	state int32
 
@@ -352,7 +353,7 @@ func (l *Logger) Listen(flag Flag, listenerName string, listener Listener) {
 		l.workers = map[Flag]map[string]*Worker{}
 	}
 
-	w := NewWorker(l, listener, l.queueDepth)
+	w := NewWorker(l, listener, l.listenerQueueDepth)
 	if listeners, hasListeners := l.workers[flag]; hasListeners {
 		listeners[listenerName] = w
 	} else {
