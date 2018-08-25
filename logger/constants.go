@@ -46,7 +46,11 @@ var (
 )
 
 const (
-	// DefaultWorkerQueueDepth is the default depth per listener to queue work.
+	// DefaultWriteWorkerQueueDepth is the default depth per listener to queue work.
 	// It's currently set to 256k entries.
-	DefaultWorkerQueueDepth = 1 << 18
+	DefaultWriteWorkerQueueDepth = 1 << 18
+
+	// DefaultListenerWorkerQueueDepth is the default depth per listener to queue work.
+	// It's currently set to 256k entries.
+	DefaultListenerWorkerQueueDepth = 1 << 10
 )

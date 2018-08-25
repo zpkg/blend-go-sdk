@@ -15,12 +15,13 @@ func NewConfigFromEnv() *Config {
 
 // Config is the logger config.
 type Config struct {
-	Heading       string   `json:"heading,omitempty" yaml:"heading,omitempty" env:"LOG_HEADING"`
-	OutputFormat  string   `json:"outputFormat,omitempty" yaml:"outputFormat,omitempty" env:"LOG_FORMAT"`
-	Flags         []string `json:"flags,omitempty" yaml:"flags,omitempty" env:"LOG_EVENTS,csv"`
-	HiddenFlags   []string `json:"hiddenFlags,omitempty" yaml:"hiddenFlags,omitempty" env:"LOG_HIDDEN,csv"`
-	RecoverPanics *bool    `json:"recoverPanics,omitempty" yaml:"recoverPanics,omitempty" env:"LOG_RECOVER"`
-	QueueDepth    int      `json:"queueDepth,omitempty" yaml:"queueDepth,omitempty" env:"LOG_QUEUE_DEPTH"`
+	Heading            string   `json:"heading,omitempty" yaml:"heading,omitempty" env:"LOG_HEADING"`
+	OutputFormat       string   `json:"outputFormat,omitempty" yaml:"outputFormat,omitempty" env:"LOG_FORMAT"`
+	Flags              []string `json:"flags,omitempty" yaml:"flags,omitempty" env:"LOG_EVENTS,csv"`
+	HiddenFlags        []string `json:"hiddenFlags,omitempty" yaml:"hiddenFlags,omitempty" env:"LOG_HIDDEN,csv"`
+	RecoverPanics      *bool    `json:"recoverPanics,omitempty" yaml:"recoverPanics,omitempty" env:"LOG_RECOVER"`
+	WriteQueueDepth    int      `json:"writeQueueDepth,omitempty" yaml:"writeQueueDepth,omitempty" env:"LOG_WRITE_QUEUE_DEPTH"`
+	ListenerQueueDepth int      `json:"listenerQueueDepth,omitempty" yaml:"listenerQueueDepth,omitempty" env:"LOG_LISTENER_QUEUE_DEPTH"`
 
 	TextOutput TextWriterConfig `json:"textOutput,omitempty" yaml:"textOutput,omitempty"`
 	JSONOutput JSONWriterConfig `json:"jsonOutput,omitempty" yaml:"jsonOutput,omitempty"`
@@ -69,15 +70,26 @@ func (c Config) GetRecoverPanics(defaults ...bool) bool {
 	return DefaultRecoverPanics
 }
 
-// GetQueueDepth returns the config queue depth.
-func (c Config) GetQueueDepth(defaults ...int) int {
-	if c.QueueDepth > 0 {
-		return c.QueueDepth
+// GetWriteWorkerQueueDepth returns the config queue depth.
+func (c Config) GetWriteWorkerQueueDepth(defaults ...int) int {
+	if c.WriteQueueDepth > 0 {
+		return c.WriteQueueDepth
 	}
 	if len(defaults) > 0 {
 		return defaults[0]
 	}
-	return DefaultWorkerQueueDepth
+	return DefaultWriteWorkerQueueDepth
+}
+
+// GetListenerWorkerQueueDepth returns the config queue depth.
+func (c Config) GetListenerWorkerQueueDepth(defaults ...int) int {
+	if c.ListenerQueueDepth > 0 {
+		return c.ListenerQueueDepth
+	}
+	if len(defaults) > 0 {
+		return defaults[0]
+	}
+	return DefaultListenerWorkerQueueDepth
 }
 
 // GetWriters returns the configured writers
