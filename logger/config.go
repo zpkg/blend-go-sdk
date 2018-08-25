@@ -70,26 +70,26 @@ func (c Config) GetRecoverPanics(defaults ...bool) bool {
 	return DefaultRecoverPanics
 }
 
-// GetWriteWorkerQueueDepth returns the config queue depth.
-func (c Config) GetWriteWorkerQueueDepth(defaults ...int) int {
+// GetWriteQueueDepth returns the config queue depth.
+func (c Config) GetWriteQueueDepth(defaults ...int) int {
 	if c.WriteQueueDepth > 0 {
 		return c.WriteQueueDepth
 	}
 	if len(defaults) > 0 {
 		return defaults[0]
 	}
-	return DefaultWriteWorkerQueueDepth
+	return DefaultWriteQueueDepth
 }
 
-// GetListenerWorkerQueueDepth returns the config queue depth.
-func (c Config) GetListenerWorkerQueueDepth(defaults ...int) int {
+// GetListenerQueueDepth returns the config queue depth.
+func (c Config) GetListenerQueueDepth(defaults ...int) int {
 	if c.ListenerQueueDepth > 0 {
 		return c.ListenerQueueDepth
 	}
 	if len(defaults) > 0 {
 		return defaults[0]
 	}
-	return DefaultListenerWorkerQueueDepth
+	return DefaultListenerQueueDepth
 }
 
 // GetWriters returns the configured writers

@@ -68,7 +68,11 @@ func NewVaultClientFromConfig(cfg *Config) (*VaultClient, error) {
 
 // NewVaultClientFromEnv is a helper to create a client from a config read from the environment.
 func NewVaultClientFromEnv() (*VaultClient, error) {
-	return NewVaultClientFromConfig(NewConfigFromEnv())
+	cfg, err := NewConfigFromEnv()
+	if err != nil {
+		return nil, err
+	}
+	return NewVaultClientFromConfig(cfg)
 }
 
 // Must does things with the error such as panic.

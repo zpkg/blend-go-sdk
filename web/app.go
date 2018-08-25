@@ -72,10 +72,8 @@ type App struct {
 
 	tlsConfig *tls.Config
 
-	defaultHeaders map[string]string
-
+	defaultHeaders     map[string]string
 	didRunStartupTasks bool
-	onStartDelegate    AppStartDelegate
 
 	server   *http.Server
 	listener *net.TCPListener
@@ -547,12 +545,6 @@ func (a *App) DefaultMiddleware() []Middleware {
 	return a.defaultMiddleware
 }
 
-// OnStart lets you register a task that is run before the server starts.
-// Typically this delegate sets up the database connection and other init items.
-func (a *App) OnStart(action AppStartDelegate) {
-	a.onStartDelegate = action
-}
-
 // CreateServer returns the basic http.Server for the app.
 func (a *App) CreateServer() *http.Server {
 	return &http.Server{
@@ -602,14 +594,6 @@ func (a *App) Start() (err error) {
 		a.server = a.CreateServer()
 	}
 
-	// run the provided startup delegate.
-	if a.onStartDelegate != nil {
-		err = a.onStartDelegate(a)
-		if err != nil {
-			return
-		}
-	}
-
 	// initialize the view cache.
 	err = a.StartupTasks()
 	if err != nil {
@@ -646,14 +630,12 @@ func (a *App) Start() (err error) {
 
 	keepAliveListener := TCPKeepAliveListener{a.listener}
 	var shutdownErr error
-
 	a.latch.Started()
 	if a.server.TLSConfig != nil {
 		shutdownErr = a.server.ServeTLS(keepAliveListener, "", "")
 	} else {
 		shutdownErr = a.server.Serve(keepAliveListener)
 	}
-
 	if shutdownErr != nil && shutdownErr != http.ErrServerClosed {
 		err = exception.New(shutdownErr)
 	}

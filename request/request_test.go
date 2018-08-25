@@ -370,17 +370,21 @@ func TestMockedRequests(t *testing.T) {
 	assert.Equal("ok!", verifyString)
 }
 
-func TestOnRequestHook(t *testing.T) {
+func TestHandlers(t *testing.T) {
 	assert := assert.New(t)
 
 	ts := mockEchoEndpoint(okMeta())
 
-	called := false
-	_, _, err := New().AsPut().WithPostBody([]byte("foobar")).MustWithRawURL(ts.URL).WithRequestHandler(func(meta *Meta) {
-		called = true
-	}).StringWithMeta()
+	var calledRequest, calledResponse bool
+	err := New().AsPut().WithPostBody([]byte("foobar")).MustWithRawURL(ts.URL).WithRequestHandler(func(req *Request) {
+		calledRequest = true
+	}).WithResponseHandler(func(req *Request, res *ResponseMeta, contents []byte) {
+		calledResponse = true
+	}).Execute()
+
 	assert.Nil(err)
-	assert.True(called)
+	assert.True(calledRequest)
+	assert.True(calledResponse)
 }
 
 func TestRequestLogger(t *testing.T) {
