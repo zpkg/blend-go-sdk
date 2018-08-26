@@ -206,10 +206,13 @@ func (wr *TextWriter) FormatTimestamp(optionalTime ...time.Time) string {
 	if len(wr.timeFormat) > 0 {
 		timeFormat = wr.timeFormat
 	}
+	var value string
 	if len(optionalTime) > 0 {
-		return wr.Colorize(optionalTime[0].Format(timeFormat), ColorGray)
+		value = optionalTime[0].Format(timeFormat)
+	} else {
+		value = time.Now().UTC().Format(timeFormat)
 	}
-	return wr.Colorize(time.Now().UTC().Format(timeFormat), ColorGray)
+	return wr.Colorize(fmt.Sprintf("%-30s", value), ColorGray)
 }
 
 // GetBuffer returns a leased buffer from the buffer pool.
