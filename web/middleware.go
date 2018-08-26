@@ -9,7 +9,7 @@ import (
 // It allows you to cancel the request.
 func WithCancel(action Action) Action {
 	return func(ctx *Ctx) Result {
-		ctx.ctx, ctx.cancel = context.WithCancel(ctx.Context())
+		ctx.context, ctx.cancel = context.WithCancel(ctx.Context())
 		return action(ctx)
 	}
 }
@@ -18,7 +18,7 @@ func WithCancel(action Action) Action {
 func WithTimeout(d time.Duration) Middleware {
 	return func(action Action) Action {
 		return func(ctx *Ctx) Result {
-			ctx.ctx, ctx.cancel = context.WithTimeout(ctx.Context(), d)
+			ctx.context, ctx.cancel = context.WithTimeout(ctx.Context(), d)
 			return action(ctx)
 		}
 	}

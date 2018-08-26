@@ -35,7 +35,9 @@ type Config struct {
 	// Hostname is the dns name or ip of the datadog collector.
 	Hostname string `json:"hostname,omitempty" yaml:"hostname,omitempty" env:"DATADOG_HOSTNAME"`
 	// Port is the port of the datadog collector.
-	Port string `json:"port,omitempty" yaml:"omitempty" env:"DATADOG_PORT"`
+	Port string `json:"port,omitempty" yaml:"port,omitempty" env:"DATADOG_PORT"`
+	// TracePort is the port of the datadog apm collector.
+	TracePort string `json:"tracePort,omitempty" yaml:"tracePort,omitempty" env:"DATADOG_TRACE_PORT"`
 	// Buffered indicates if we should buffer statsd messages or not.
 	Buffered *bool `json:"buffered,omitempty" yaml:"buffered,omitempty" env:"DATADOG_BUFFERED"`
 	// BufferDepth is the depth of the buffer for datadog events.
@@ -62,9 +64,19 @@ func (c Config) GetPort(defaults ...string) string {
 	return util.Coalesce.String(c.Port, DefaultPort, defaults...)
 }
 
+// GetTracePort returns the datadog trace port.
+func (c Config) GetTracePort(defaults ...string) string {
+	return util.Coalesce.String(c.TracePort, DefaultTracePort, defaults...)
+}
+
 // GetHost returns the datadog collector host:port string.
 func (c Config) GetHost() string {
-	return fmt.Sprintf("%s:%s", c.Hostname, c.GetPort())
+	return fmt.Sprintf("%s:%s", c.GetHostname(), c.GetPort())
+}
+
+// GetTraceHost returns the datadog trace collector host:port string.
+func (c Config) GetTraceHost() string {
+	return fmt.Sprintf("%s:%s", c.GetHostname(), c.GetTracePort())
 }
 
 // GetBuffered returns if the client should buffer messages or not.

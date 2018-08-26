@@ -1146,6 +1146,7 @@ func (a *App) handlePanic(w http.ResponseWriter, r *http.Request, err interface{
 
 func (a *App) createCtx(w ResponseWriter, r *http.Request, route *Route, p RouteParameters, s State) *Ctx {
 	ctx := &Ctx{
+		context:         r.Context(),
 		response:        w,
 		request:         r,
 		app:             a,

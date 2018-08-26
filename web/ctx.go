@@ -16,11 +16,6 @@ import (
 	"github.com/blend/go-sdk/logger"
 )
 
-var (
-	// assert that a ctx implements context.Context
-	_ context.Context = &Ctx{}
-)
-
 const (
 	// PostBodySize is the maximum post body size we will typically consume.
 	PostBodySize = int64(1 << 26) //64mb
@@ -59,8 +54,8 @@ func NewCtx(w ResponseWriter, r *http.Request, p RouteParameters, s State) *Ctx 
 
 // Ctx is the struct that represents the context for an hc request.
 type Ctx struct {
-	ctx    context.Context
-	cancel context.CancelFunc
+	context context.Context
+	cancel  context.CancelFunc
 
 	response ResponseWriter
 	request  *http.Request
@@ -111,54 +106,14 @@ func (rc *Ctx) Request() *http.Request {
 }
 
 // WithContext sets the background context for the request.
-func (rc *Ctx) WithContext(ctx context.Context) *Ctx {
-	rc.ctx = ctx
+func (rc *Ctx) WithContext(context context.Context) *Ctx {
+	rc.context = context
 	return rc
 }
 
 // Context returns the context.
 func (rc *Ctx) Context() context.Context {
-	if rc.ctx != nil {
-		return rc.ctx
-	}
-	return rc
-}
-
-// Deadline implements the context.Context.Deadline method.
-func (rc *Ctx) Deadline() (deadline time.Time, ok bool) {
-	if rc.ctx != nil {
-		deadline, ok = rc.ctx.Deadline()
-		return
-	}
-	return
-}
-
-// Done implements the context.Context.Done method.
-func (rc *Ctx) Done() <-chan struct{} {
-	if rc.ctx != nil {
-		return rc.ctx.Done()
-	}
-	return nil
-}
-
-// Err implements the context.Context.Err method.
-func (rc *Ctx) Err() error {
-	if rc.ctx != nil {
-		return rc.ctx.Err()
-	}
-	return nil
-}
-
-// Value returns a value from the request state.
-// It implements the context.Context.Value method.
-func (rc *Ctx) Value(key interface{}) interface{} {
-	if rc.ctx != nil {
-		return rc.ctx.Value(key)
-	}
-	if rc.state != nil {
-		return rc.state.Value(key)
-	}
-	return nil
+	return rc.context
 }
 
 // Cancel calls the cancel func if it's set.
