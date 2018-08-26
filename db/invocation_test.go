@@ -1,6 +1,7 @@
 package db
 
 import (
+	"context"
 	"database/sql"
 	"testing"
 
@@ -33,11 +34,11 @@ func (jt jsonTest) TableName() string {
 }
 
 func createJSONTestTable(tx *sql.Tx) error {
-	return Default().InTx(tx).Exec("create table json_test (id serial primary key, name varchar(255), not_null json, nullable json)")
+	return Default().Invoke(context.Background(), tx).Exec("create table json_test (id serial primary key, name varchar(255), not_null json, nullable json)")
 }
 
 func dropJSONTextTable(tx *sql.Tx) error {
-	return Default().InTx(tx).Exec("drop table if exists json_test")
+	return Default().Invoke(context.Background(), tx).Exec("drop table if exists json_test")
 }
 
 func TestInvocationJSONNulls(t *testing.T) {
@@ -51,10 +52,10 @@ func TestInvocationJSONNulls(t *testing.T) {
 
 	// try creating fully set object and reading it out
 	obj0 := jsonTest{Name: uuid.V4().String(), NotNull: jsonTestChild{Label: uuid.V4().String()}, Nullable: []string{uuid.V4().String()}}
-	assert.Nil(Default().InTx(tx).Create(&obj0))
+	assert.Nil(Default().Invoke(context.Background(), tx).Create(&obj0))
 
 	var verify0 jsonTest
-	assert.Nil(Default().InTx(tx).Get(&verify0, obj0.ID))
+	assert.Nil(Default().Invoke(context.Background(), tx).Get(&verify0, obj0.ID))
 
 	assert.Equal(obj0.ID, verify0.ID)
 	assert.Equal(obj0.Name, verify0.Name)
@@ -70,25 +71,25 @@ func TestInvocationJSONNulls(t *testing.T) {
 	assert.Nil(values[3], "we shouldn't emit a literal 'null' here")
 	assert.NotEqual("null", values[3], "we shouldn't emit a literal 'null' here")
 
-	assert.Nil(Default().InTx(tx).Create(&obj1))
+	assert.Nil(Default().Invoke(context.Background(), tx).Create(&obj1))
 
 	var verify1 jsonTest
-	assert.Nil(Default().InTx(tx).Get(&verify1, obj1.ID))
+	assert.Nil(Default().Invoke(context.Background(), tx).Get(&verify1, obj1.ID))
 
 	assert.Equal(obj1.ID, verify1.ID)
 	assert.Equal(obj1.Name, verify1.Name)
 	assert.Nil(verify1.Nullable)
 	assert.Equal(obj1.NotNull.Label, verify1.NotNull.Label)
 
-	any, err := Default().InTx(tx).Query("select 1 from json_test where id = $1 and nullable is null", obj1.ID).Any()
+	any, err := Default().Invoke(context.Background(), tx).Query("select 1 from json_test where id = $1 and nullable is null", obj1.ID).Any()
 	assert.Nil(err)
 	assert.True(any, "we should have written a sql null, not a literal string 'null'")
 
 	// set it to literal 'null' to test this is backward compatible
-	assert.Nil(Default().InTx(tx).Exec("update json_test set nullable = 'null' where id = $1", obj1.ID))
+	assert.Nil(Default().Invoke(context.Background(), tx).Exec("update json_test set nullable = 'null' where id = $1", obj1.ID))
 
 	var verify2 jsonTest
-	assert.Nil(Default().InTx(tx).Get(&verify2, obj1.ID))
+	assert.Nil(Default().Invoke(context.Background(), tx).Get(&verify2, obj1.ID))
 	assert.Equal(obj1.ID, verify2.ID)
 	assert.Equal(obj1.Name, verify2.Name)
 	assert.Nil(verify2.Nullable, "even if we set it to literal 'null' it should come out golang nil")

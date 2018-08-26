@@ -7,7 +7,6 @@ import (
 	"time"
 
 	"github.com/blend/go-sdk/exception"
-	"github.com/blend/go-sdk/logger"
 )
 
 // --------------------------------------------------------------------------------
@@ -26,7 +25,7 @@ type Query struct {
 	stmt       *sql.Stmt
 	fireEvents bool
 	conn       *Connection
-	ctx        context.Context
+	context    context.Context
 	tx         *sql.Tx
 	err        error
 }
@@ -60,9 +59,9 @@ func (q *Query) WithLabel(label string) *Query {
 func (q *Query) Execute() (stmt *sql.Stmt, rows *sql.Rows, err error) {
 	var stmtErr error
 	if q.shouldCacheStatement() {
-		stmt, stmtErr = q.conn.PrepareCached(q.statementLabel, q.statement, q.tx)
+		stmt, stmtErr = q.conn.PrepareCachedContext(q.context, q.statementLabel, q.statement, q.tx)
 	} else {
-		stmt, stmtErr = q.conn.Prepare(q.statement, q.tx)
+		stmt, stmtErr = q.conn.PrepareContext(q.context, q.statement, q.tx)
 	}
 
 	if stmtErr != nil {
@@ -84,8 +83,8 @@ func (q *Query) Execute() (stmt *sql.Stmt, rows *sql.Rows, err error) {
 	}()
 
 	var queryErr error
-	if q.ctx != nil {
-		rows, queryErr = stmt.QueryContext(q.ctx, q.args...)
+	if q.context != nil {
+		rows, queryErr = stmt.QueryContext(q.context, q.args...)
 	} else {
 		rows, queryErr = stmt.Query(q.args...)
 	}
@@ -317,21 +316,15 @@ func (q *Query) First(consumer RowsConsumer) (err error) {
 // helpers
 // --------------------------------------------------------------------------------
 
+func (q *Query) shouldCacheStatement() bool {
+	return q.conn.statementCache != nil && len(q.statementLabel) > 0
+}
+
 func (q *Query) finalizer(r interface{}, err error) error {
 	if r != nil {
 		err = exception.Nest(err, exception.New(r))
 	}
-
-	if closeErr := q.Close(); closeErr != nil {
-		err = exception.Nest(err, closeErr)
-	}
-
-	if q.fireEvents {
-		q.conn.fireEvent(logger.Query, q.statement, time.Since(q.start), err, q.statementLabel)
-	}
-	return err
-}
-
-func (q *Query) shouldCacheStatement() bool {
-	return q.conn.statementCache != nil && len(q.statementLabel) > 0
+	err = exception.Nest(err, q.Close())
+	q.conn.done(q.context, q.statement, q.statementLabel, time.Now().Sub(q.start), err)
+	return nil
 }
