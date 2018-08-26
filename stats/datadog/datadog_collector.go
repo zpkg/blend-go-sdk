@@ -18,9 +18,6 @@ var (
 
 // NewCollector returns a new stats collector from a config.
 func NewCollector(cfg *Config) (*Collector, error) {
-	if cfg == nil {
-		return nil, nil
-	}
 	var client *statsd.Client
 	var err error
 	if cfg.GetBuffered() {

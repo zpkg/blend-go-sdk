@@ -12,6 +12,7 @@ func Runtime(log *logger.Logger, collector Collector) {
 	if collector == nil {
 		return
 	}
+
 	go func() {
 		var previous, current runtime.MemStats
 		runtimeCollect(log, collector, &previous, &current)
