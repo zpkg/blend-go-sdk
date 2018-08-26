@@ -72,7 +72,11 @@ func TestConnectionStatementCacheExecute(t *testing.T) {
 
 	a.Nil(conn.Exec("select 'ok!'"))
 	a.Nil(conn.Exec("select 'ok!'"))
-	a.True(conn.StatementCache().HasStatement("select 'ok!'"))
+	a.False(conn.StatementCache().HasStatement("select 'ok!'"))
+
+	a.Nil(conn.ExecWithLabel("select 'ok!'", "ping"))
+	a.Nil(conn.ExecWithLabel("select 'ok!'", "ping"))
+	a.True(conn.StatementCache().HasStatement("ping"))
 }
 
 func TestConnectionStatementCacheQuery(t *testing.T) {

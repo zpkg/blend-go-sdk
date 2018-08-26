@@ -326,5 +326,5 @@ func (q *Query) finalizer(r interface{}, err error) error {
 	}
 	err = exception.Nest(err, q.Close())
 	q.conn.done(q.context, q.statement, q.statementLabel, time.Now().Sub(q.start), err)
-	return nil
+	return err
 }
