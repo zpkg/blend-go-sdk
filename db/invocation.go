@@ -9,7 +9,6 @@ import (
 	"time"
 
 	"github.com/blend/go-sdk/exception"
-	"github.com/blend/go-sdk/logger"
 )
 
 const (
@@ -19,32 +18,23 @@ const (
 // Invocation is a specific operation against a context.
 type Invocation struct {
 	conn           *Connection
-	ctx            context.Context
+	context        context.Context
 	tx             *sql.Tx
-	fireEvents     bool
 	statementLabel string
 }
 
-// WithCtx sets the ctx and returns a reference to the invocation.
-func (i *Invocation) WithCtx(ctx context.Context) *Invocation {
-	i.ctx = ctx
+// WithContext sets the context and returns a reference to the invocation.
+func (i *Invocation) WithContext(context context.Context) *Invocation {
+	i.context = context
 	return i
 }
 
-// Ctx returns the underlying context.
-func (i *Invocation) Ctx() context.Context {
-	return i.ctx
-}
-
-// FireEvents returns if events are enabled.
-func (i *Invocation) FireEvents() bool {
-	return i.fireEvents
-}
-
-// WithFireEvents sets the fire events property and returns an invocation.
-func (i *Invocation) WithFireEvents(flag bool) *Invocation {
-	i.fireEvents = flag
-	return i
+// Context returns the underlying context.
+func (i *Invocation) Context() context.Context {
+	if i.context == nil {
+		return context.Background()
+	}
+	return i.context
 }
 
 // WithLabel instructs the query generator to get or create a cached prepared statement.
@@ -66,9 +56,9 @@ func (i *Invocation) Tx() *sql.Tx {
 // Prepare returns a cached or newly prepared statment plan for a given sql statement.
 func (i *Invocation) Prepare(statement string) (*sql.Stmt, error) {
 	if i.conn.StatementCache().Enabled() && len(i.statementLabel) > 0 {
-		return i.conn.PrepareCached(i.statementLabel, statement, i.tx)
+		return i.conn.PrepareCachedContext(i.Context(), i.statementLabel, statement, i.tx)
 	}
-	return i.conn.Prepare(statement, i.tx)
+	return i.conn.PrepareContext(i.Context(), statement, i.tx)
 }
 
 // Exec executes a sql statement with a given set of arguments.
@@ -79,7 +69,7 @@ func (i *Invocation) Exec(statement string, args ...interface{}) (err error) {
 	}
 
 	start := time.Now()
-	defer func() { err = i.finalizer(recover(), err, logger.Query, statement, start) }()
+	defer func() { err = i.finalizer(statement, start, recover(), err) }()
 
 	stmt, stmtErr := i.Prepare(statement)
 	if stmtErr != nil {
@@ -101,8 +91,16 @@ func (i *Invocation) Exec(statement string, args ...interface{}) (err error) {
 }
 
 // Query returns a new query object for a given sql query and arguments.
-func (i *Invocation) Query(query string, args ...interface{}) *Query {
-	return &Query{statement: query, args: args, start: time.Now(), conn: i.conn, ctx: i.ctx, tx: i.tx, fireEvents: i.fireEvents, statementLabel: i.statementLabel}
+func (i *Invocation) Query(statement string, args ...interface{}) *Query {
+	return &Query{
+		statement:      statement,
+		statementLabel: i.statementLabel,
+		args:           args,
+		start:          time.Now(),
+		conn:           i.conn,
+		context:        i.context,
+		tx:             i.tx,
+	}
 }
 
 // Get returns a given object based on a group of primary key ids within a transaction.
@@ -127,7 +125,7 @@ func (i *Invocation) Get(object DatabaseMapped, ids ...interface{}) (err error) 
 		i.statementLabel = fmt.Sprintf("%s_get", tableName)
 	}
 
-	defer func() { err = i.finalizer(recover(), err, logger.Query, queryBody, start) }()
+	defer func() { err = i.finalizer(queryBody, start, recover(), err) }()
 
 	columnNames := standardCols.ColumnNames()
 	pks := standardCols.PrimaryKeys()
@@ -171,8 +169,8 @@ func (i *Invocation) Get(object DatabaseMapped, ids ...interface{}) (err error) 
 
 	var rows *sql.Rows
 	var queryErr error
-	if i.ctx != nil {
-		rows, queryErr = stmt.QueryContext(i.ctx, ids...)
+	if i.context != nil {
+		rows, queryErr = stmt.QueryContext(i.context, ids...)
 	} else {
 		rows, queryErr = stmt.Query(ids...)
 	}
@@ -216,7 +214,7 @@ func (i *Invocation) GetAll(collection interface{}) (err error) {
 
 	var queryBody string
 	start := time.Now()
-	defer func() { err = i.finalizer(recover(), err, logger.Query, queryBody, start) }()
+	defer func() { err = i.finalizer(queryBody, start, recover(), err) }()
 
 	collectionValue := reflectValue(collection)
 	t := reflectSliceType(collection)
@@ -254,8 +252,8 @@ func (i *Invocation) GetAll(collection interface{}) (err error) {
 
 	var rows *sql.Rows
 	var queryErr error
-	if i.ctx != nil {
-		rows, queryErr = stmt.QueryContext(i.ctx)
+	if i.context != nil {
+		rows, queryErr = stmt.QueryContext(i.context)
 	} else {
 		rows, queryErr = stmt.Query()
 	}
@@ -306,7 +304,7 @@ func (i *Invocation) Create(object DatabaseMapped) (err error) {
 
 	var queryBody string
 	start := time.Now()
-	defer func() { err = i.finalizer(recover(), err, logger.Query, queryBody, start) }()
+	defer func() { err = i.finalizer(queryBody, start, recover(), err) }()
 
 	cols := getCachedColumnCollectionFromInstance(object)
 	writeCols := cols.NotReadOnly().NotAutos()
@@ -357,8 +355,8 @@ func (i *Invocation) Create(object DatabaseMapped) (err error) {
 
 	var execErr error
 	if autos.Len() == 0 {
-		if i.ctx != nil {
-			_, execErr = stmt.ExecContext(i.ctx, colValues...)
+		if i.context != nil {
+			_, execErr = stmt.ExecContext(i.context, colValues...)
 		} else {
 			_, execErr = stmt.Exec(colValues...)
 		}
@@ -374,8 +372,8 @@ func (i *Invocation) Create(object DatabaseMapped) (err error) {
 			autoValues[i] = reflect.New(reflect.PtrTo(autoCol.FieldType)).Interface()
 		}
 
-		if i.ctx != nil {
-			execErr = stmt.QueryRowContext(i.ctx, colValues...).Scan(autoValues...)
+		if i.context != nil {
+			execErr = stmt.QueryRowContext(i.context, colValues...).Scan(autoValues...)
 		} else {
 			execErr = stmt.QueryRow(colValues...).Scan(autoValues...)
 		}
@@ -406,7 +404,7 @@ func (i *Invocation) CreateIfNotExists(object DatabaseMapped) (err error) {
 
 	var queryBody string
 	start := time.Now()
-	defer func() { err = i.finalizer(recover(), err, logger.Query, queryBody, start) }()
+	defer func() { err = i.finalizer(queryBody, start, recover(), err) }()
 
 	cols := getCachedColumnCollectionFromInstance(object)
 	writeCols := cols.NotReadOnly().NotAutos()
@@ -471,8 +469,8 @@ func (i *Invocation) CreateIfNotExists(object DatabaseMapped) (err error) {
 
 	var execErr error
 	if autos.Len() == 0 {
-		if i.ctx != nil {
-			_, execErr = stmt.ExecContext(i.ctx, colValues...)
+		if i.context != nil {
+			_, execErr = stmt.ExecContext(i.context, colValues...)
 		} else {
 			_, execErr = stmt.Exec(colValues...)
 		}
@@ -487,8 +485,8 @@ func (i *Invocation) CreateIfNotExists(object DatabaseMapped) (err error) {
 			autoValues[i] = reflect.New(reflect.PtrTo(autoCol.FieldType)).Interface()
 		}
 
-		if i.ctx != nil {
-			execErr = stmt.QueryRowContext(i.ctx, colValues...).Scan(autoValues...)
+		if i.context != nil {
+			execErr = stmt.QueryRowContext(i.context, colValues...).Scan(autoValues...)
 		} else {
 			execErr = stmt.QueryRow(colValues...).Scan(autoValues...)
 		}
@@ -519,7 +517,7 @@ func (i *Invocation) CreateMany(objects interface{}) (err error) {
 
 	var queryBody string
 	start := time.Now()
-	defer func() { err = i.finalizer(recover(), err, logger.Query, queryBody, start) }()
+	defer func() { err = i.finalizer(queryBody, start, recover(), err) }()
 
 	sliceValue := reflectValue(objects)
 	if sliceValue.Len() == 0 {
@@ -580,7 +578,12 @@ func (i *Invocation) CreateMany(objects interface{}) (err error) {
 		colValues = append(colValues, writeCols.ColumnValues(sliceValue.Index(row).Interface())...)
 	}
 
-	_, execErr := stmt.Exec(colValues...)
+	var execErr error
+	if i.context != nil {
+		_, execErr = stmt.ExecContext(i.context, colValues...)
+	} else {
+		_, execErr = stmt.Exec(colValues...)
+	}
 	if execErr != nil {
 		err = exception.New(execErr).WithMessagef("query: %s", queryBody)
 		i.invalidateCachedStatement()
@@ -599,7 +602,7 @@ func (i *Invocation) Update(object DatabaseMapped) (err error) {
 
 	var queryBody string
 	start := time.Now()
-	defer func() { err = i.finalizer(recover(), err, logger.Query, queryBody, start) }()
+	defer func() { err = i.finalizer(queryBody, start, recover(), err) }()
 
 	tableName := TableName(object)
 	if len(i.statementLabel) == 0 {
@@ -652,8 +655,8 @@ func (i *Invocation) Update(object DatabaseMapped) (err error) {
 	defer func() { err = i.closeStatement(err, stmt) }()
 
 	var execErr error
-	if i.ctx != nil {
-		_, execErr = stmt.ExecContext(i.ctx, updateValues...)
+	if i.context != nil {
+		_, execErr = stmt.ExecContext(i.context, updateValues...)
 	} else {
 		_, execErr = stmt.Exec(updateValues...)
 	}
@@ -675,7 +678,7 @@ func (i *Invocation) Exists(object DatabaseMapped) (exists bool, err error) {
 
 	var queryBody string
 	start := time.Now()
-	defer func() { err = i.finalizer(recover(), err, logger.Query, queryBody, start) }()
+	defer func() { err = i.finalizer(queryBody, start, recover(), err) }()
 
 	tableName := TableName(object)
 	if len(i.statementLabel) == 0 {
@@ -720,8 +723,8 @@ func (i *Invocation) Exists(object DatabaseMapped) (exists bool, err error) {
 	pkValues := pks.ColumnValues(object)
 	var rows *sql.Rows
 	var queryErr error
-	if i.ctx != nil {
-		rows, queryErr = stmt.QueryContext(i.ctx, pkValues...)
+	if i.context != nil {
+		rows, queryErr = stmt.QueryContext(i.context, pkValues...)
 	} else {
 		rows, queryErr = stmt.Query(pkValues...)
 	}
@@ -752,7 +755,7 @@ func (i *Invocation) Delete(object DatabaseMapped) (err error) {
 
 	var queryBody string
 	start := time.Now()
-	defer func() { err = i.finalizer(recover(), err, logger.Query, queryBody, start) }()
+	defer func() { err = i.finalizer(queryBody, start, recover(), err) }()
 
 	tableName := TableName(object)
 
@@ -796,8 +799,8 @@ func (i *Invocation) Delete(object DatabaseMapped) (err error) {
 	pkValues := pks.ColumnValues(object)
 
 	var execErr error
-	if i.ctx != nil {
-		_, execErr = stmt.ExecContext(i.ctx, pkValues...)
+	if i.context != nil {
+		_, execErr = stmt.ExecContext(i.context, pkValues...)
 	} else {
 		_, execErr = stmt.Exec(pkValues...)
 	}
@@ -817,7 +820,7 @@ func (i *Invocation) Truncate(object DatabaseMapped) (err error) {
 
 	var queryBody string
 	start := time.Now()
-	defer func() { err = i.finalizer(recover(), err, logger.Query, queryBody, start) }()
+	defer func() { err = i.finalizer(queryBody, start, recover(), err) }()
 
 	tableName := TableName(object)
 
@@ -840,8 +843,8 @@ func (i *Invocation) Truncate(object DatabaseMapped) (err error) {
 	defer func() { err = i.closeStatement(err, stmt) }()
 
 	var execErr error
-	if i.ctx != nil {
-		_, execErr = stmt.ExecContext(i.ctx)
+	if i.context != nil {
+		_, execErr = stmt.ExecContext(i.context)
 	} else {
 		_, execErr = stmt.Exec()
 	}
@@ -862,7 +865,7 @@ func (i *Invocation) Upsert(object DatabaseMapped) (err error) {
 
 	var queryBody string
 	start := time.Now()
-	defer func() { err = i.finalizer(recover(), err, logger.Query, queryBody, start) }()
+	defer func() { err = i.finalizer(queryBody, start, recover(), err) }()
 
 	cols := getCachedColumnCollectionFromInstance(object)
 	writeCols := cols.NotReadOnly().NotAutos()
@@ -947,8 +950,8 @@ func (i *Invocation) Upsert(object DatabaseMapped) (err error) {
 	var execErr error
 	if serials.Len() != 0 {
 		var id interface{}
-		if i.ctx != nil {
-			execErr = stmt.QueryRowContext(i.ctx, colValues...).Scan(&id)
+		if i.context != nil {
+			execErr = stmt.QueryRowContext(i.context, colValues...).Scan(&id)
 		} else {
 			execErr = stmt.QueryRow(colValues...).Scan(&id)
 		}
@@ -963,8 +966,8 @@ func (i *Invocation) Upsert(object DatabaseMapped) (err error) {
 			return
 		}
 	} else {
-		if i.ctx != nil {
-			_, execErr = stmt.ExecContext(i.ctx, colValues...)
+		if i.context != nil {
+			_, execErr = stmt.ExecContext(i.context, colValues...)
 		} else {
 			_, execErr = stmt.Exec(colValues...)
 		}
@@ -1000,21 +1003,13 @@ func (i *Invocation) closeStatement(err error, stmt *sql.Stmt) error {
 		return nil
 	}
 
-	closeErr := stmt.Close()
-	if closeErr != nil {
-		return exception.Nest(err, closeErr)
-	}
-	return err
+	return exception.Nest(err, stmt.Close())
 }
 
-func (i *Invocation) finalizer(r interface{}, err error, flag logger.Flag, statement string, start time.Time) error {
+func (i *Invocation) finalizer(statement string, start time.Time, r interface{}, err error) error {
 	if r != nil {
-		recoveryException := exception.New(r)
-		err = exception.Nest(err, recoveryException)
+		err = exception.Nest(err, exception.New(r))
 	}
-	if i.fireEvents {
-		i.conn.fireEvent(flag, statement, time.Now().Sub(start), err, i.statementLabel)
-	}
-	i.statementLabel = ""
+	i.conn.done(i.context, statement, i.statementLabel, time.Now().Sub(start), err)
 	return err
 }

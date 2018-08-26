@@ -1,6 +1,7 @@
 package db
 
 import (
+	"context"
 	"database/sql"
 	"fmt"
 	"os"
@@ -162,7 +163,7 @@ func seedObjects(count int, tx *sql.Tx) error {
 func readManual(tx *sql.Tx) ([]benchObj, error) {
 	objs := []benchObj{}
 	readSQL := `select id,name,timestamp_utc,amount,pending,category from bench_object`
-	readStmt, readStmtErr := Default().Prepare(readSQL, tx)
+	readStmt, readStmtErr := Default().PrepareContext(context.Background(), readSQL, tx)
 	if readStmtErr != nil {
 		return nil, readStmtErr
 	}

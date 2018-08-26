@@ -1,6 +1,7 @@
 package db
 
 import (
+	"context"
 	"database/sql"
 	"sync"
 	"time"
@@ -52,6 +53,7 @@ func NewFromEnv() *Connection {
 // Connection is the basic wrapper for connection parameters and saves a reference to the created sql.Connection.
 type Connection struct {
 	sync.Mutex
+	middleware []Middleware
 
 	connection     *sql.DB
 	config         *Config
@@ -69,6 +71,17 @@ func (dbc *Connection) WithConfig(cfg *Config) *Connection {
 // Config returns the config.
 func (dbc *Connection) Config() *Config {
 	return dbc.config
+}
+
+// WithMiddleware adds a new middleware.
+func (dbc *Connection) WithMiddleware(middleware Middleware) *Connection {
+	dbc.middleware = append(dbc.middleware, middleware)
+	return dbc
+}
+
+// Middleware returns the middleware.
+func (dbc *Connection) Middleware() []Middleware {
+	return dbc.middleware
 }
 
 // Connection returns the underlying driver connection.
@@ -146,205 +159,382 @@ func (dbc *Connection) Begin() (*sql.Tx, error) {
 	return tx, exception.New(err)
 }
 
-// Prepare prepares a new statement for the connection.
-func (dbc *Connection) Prepare(statement string, tx *sql.Tx) (*sql.Stmt, error) {
+// BeginContext starts a new transaction in a givent context.
+func (dbc *Connection) BeginContext(context context.Context) (*sql.Tx, error) {
+	if dbc.connection == nil {
+		return nil, exception.New(ErrConnectionClosed)
+	}
+	tx, err := dbc.connection.BeginTx(context, nil)
+	return tx, exception.New(err)
+}
+
+// PrepareContext prepares a new statement for the connection.
+func (dbc *Connection) PrepareContext(context context.Context, statement string, tx *sql.Tx) (stmt *sql.Stmt, err error) {
 	if dbc.connection == nil {
 		return nil, exception.New(ErrConnectionClosed)
 	}
 
+	dbc.prepareMiddleware(context, statement)
+	defer func() { dbc.prepareMiddlewareDone(context, statement, err) }()
+
 	if tx != nil {
-		stmt, err := tx.Prepare(statement)
-		return stmt, exception.New(err)
+		stmt, err = tx.PrepareContext(context, statement)
+		if err != nil {
+			err = exception.New(err)
+		}
+		return
 	}
 
-	stmt, err := dbc.connection.Prepare(statement)
-	return stmt, exception.New(err)
+	stmt, err = dbc.connection.PrepareContext(context, statement)
+	if err != nil {
+		err = exception.New(err)
+	}
+	return
 }
 
-// PrepareCached prepares a potentially cached statement.
-func (dbc *Connection) PrepareCached(statementID, statement string, tx *sql.Tx) (*sql.Stmt, error) {
+// PrepareCachedContext prepares a potentially cached statement.
+func (dbc *Connection) PrepareCachedContext(context context.Context, statementID, statement string, tx *sql.Tx) (*sql.Stmt, error) {
 	if dbc.connection == nil {
 		return nil, exception.New(ErrConnectionClosed)
 	}
 	if dbc.statementCache == nil {
 		return nil, exception.New(ErrStatementCacheUnset)
 	}
-	return dbc.statementCache.Prepare(statementID, statement, tx)
+	return dbc.statementCache.PrepareContext(context, statementID, statement, tx)
 }
 
 // --------------------------------------------------------------------------------
-// Invocation context
+// Invocation
 // --------------------------------------------------------------------------------
-
-// InvokeContext returns a new db context.
-func (dbc *Connection) InvokeContext(txs ...*sql.Tx) *InvocationContext {
-	return &InvocationContext{
-		conn:       dbc,
-		tx:         OptionalTx(txs...),
-		fireEvents: dbc.log != nil,
-	}
-}
 
 // Invoke returns a new invocation.
-func (dbc *Connection) Invoke(txs ...*sql.Tx) *Invocation {
+func (dbc *Connection) Invoke(context context.Context, txs ...*sql.Tx) *Invocation {
 	return &Invocation{
-		conn:       dbc,
-		tx:         OptionalTx(txs...),
-		fireEvents: dbc.log != nil,
+		conn:    dbc,
+		context: context,
+		tx:      OptionalTx(txs...),
 	}
 }
 
-// InTx is an alias to Invoke.
-func (dbc *Connection) InTx(txs ...*sql.Tx) *Invocation {
-	return dbc.Invoke(txs...)
+// Background returns an empty context.Context.
+func (dbc *Connection) Background() context.Context {
+	return context.Background()
 }
 
 // --------------------------------------------------------------------------------
 // Invocation Context Stubs
+//
+// These are stubs that both preserve backwards compatibility but also help
+// incrementally add extra functionality without needing to dig into the
+// invocation fluent api.
 // --------------------------------------------------------------------------------
 
 // Exec runs the statement without creating a QueryResult.
 func (dbc *Connection) Exec(statement string, args ...interface{}) error {
-	return dbc.ExecInTx(statement, nil, args...)
+	return dbc.Invoke(dbc.Background()).Exec(statement, args...)
 }
 
-// ExecWithCacheLabel runs the statement without creating a QueryResult.
-func (dbc *Connection) ExecWithCacheLabel(statement, cacheLabel string, args ...interface{}) error {
-	return dbc.ExecInTxWithCacheLabel(statement, cacheLabel, nil, args...)
+// ExecContext runs the statement without creating a QueryResult.
+func (dbc *Connection) ExecContext(context context.Context, statement string, args ...interface{}) error {
+	return dbc.Invoke(context).Exec(statement, args...)
+}
+
+// ExecWithLabel runs the statement without creating a QueryResult.
+func (dbc *Connection) ExecWithLabel(statement, label string, args ...interface{}) error {
+	return dbc.Invoke(context.Background()).WithLabel(label).Exec(statement, args...)
+}
+
+// ExecContextWithLabel runs the statement without creating a QueryResult.
+func (dbc *Connection) ExecContextWithLabel(context context.Context, statement, label string, args ...interface{}) error {
+	return dbc.Invoke(context).WithLabel(label).Exec(statement, args...)
 }
 
 // ExecInTx runs a statement within a transaction.
 func (dbc *Connection) ExecInTx(statement string, tx *sql.Tx, args ...interface{}) (err error) {
-	return dbc.ExecInTxWithCacheLabel(statement, statement, tx, args...)
+	return dbc.Invoke(dbc.Background(), tx).Exec(statement, args...)
 }
 
-// ExecInTxWithCacheLabel runs a statement within a transaction.
-func (dbc *Connection) ExecInTxWithCacheLabel(statement, cacheLabel string, tx *sql.Tx, args ...interface{}) (err error) {
-	return dbc.Invoke(tx).WithLabel(cacheLabel).Exec(statement, args...)
+// ExecInTxContext runs a statement within a transaction with a context.
+func (dbc *Connection) ExecInTxContext(context context.Context, statement string, tx *sql.Tx, args ...interface{}) (err error) {
+	return dbc.Invoke(context, tx).Exec(statement, args...)
+}
+
+// ExecInTxContextWithLabel runs a statement within a transaction with a label and a context.
+func (dbc *Connection) ExecInTxContextWithLabel(context context.Context, statement, label string, tx *sql.Tx, args ...interface{}) (err error) {
+	return dbc.Invoke(context, tx).WithLabel(label).Exec(statement, args...)
 }
 
 // Query runs the selected statement and returns a Query.
 func (dbc *Connection) Query(statement string, args ...interface{}) *Query {
-	return dbc.QueryInTx(statement, nil, args...)
+	return dbc.Invoke(dbc.Background()).Query(statement, args...)
+}
+
+// QueryContext runs the selected statement and returns a Query.
+func (dbc *Connection) QueryContext(context context.Context, statement string, args ...interface{}) *Query {
+	return dbc.Invoke(context).Query(statement, args...)
+}
+
+// QueryWithLabel runs the selected statement and returns a Query.
+func (dbc *Connection) QueryWithLabel(statement, label string, args ...interface{}) *Query {
+	return dbc.Invoke(dbc.Background()).WithLabel(label).Query(statement, args...)
+}
+
+// QueryContextWithLabel runs the selected statement and returns a Query.
+func (dbc *Connection) QueryContextWithLabel(context context.Context, statement, label string, args ...interface{}) *Query {
+	return dbc.Invoke(context).WithLabel(label).Query(statement, args...)
 }
 
 // QueryInTx runs the selected statement in a transaction and returns a Query.
 func (dbc *Connection) QueryInTx(statement string, tx *sql.Tx, args ...interface{}) (result *Query) {
-	return dbc.Invoke(tx).Query(statement, args...)
+	return dbc.Invoke(dbc.Background(), tx).Query(statement, args...)
+}
+
+// QueryInTxContext runs the selected statement in a transaction and returns a Query.
+func (dbc *Connection) QueryInTxContext(context context.Context, statement string, tx *sql.Tx, args ...interface{}) (result *Query) {
+	return dbc.Invoke(context, tx).Query(statement, args...)
+}
+
+// QueryInTxWithLabel runs the selected statement in a transaction and returns a Query.
+func (dbc *Connection) QueryInTxWithLabel(statement, label string, tx *sql.Tx, args ...interface{}) (result *Query) {
+	return dbc.Invoke(dbc.Background(), tx).WithLabel(label).Query(statement, args...)
+}
+
+// QueryInTxContextWithLabel runs the selected statement in a transaction and returns a Query.
+func (dbc *Connection) QueryInTxContextWithLabel(context context.Context, statement, label string, tx *sql.Tx, args ...interface{}) (result *Query) {
+	return dbc.Invoke(context, tx).WithLabel(label).Query(statement, args...)
 }
 
 // Get returns a given object based on a group of primary key ids.
 func (dbc *Connection) Get(object DatabaseMapped, ids ...interface{}) error {
-	return dbc.GetInTx(object, nil, ids...)
+	return dbc.Invoke(dbc.Background()).Get(object, ids...)
+}
+
+// GetContext returns a given object based on a group of primary key ids using the given context.
+func (dbc *Connection) GetContext(context context.Context, object DatabaseMapped, ids ...interface{}) error {
+	return dbc.Invoke(context).Get(object, ids...)
 }
 
 // GetInTx returns a given object based on a group of primary key ids within a transaction.
 func (dbc *Connection) GetInTx(object DatabaseMapped, tx *sql.Tx, args ...interface{}) error {
-	return dbc.Invoke(tx).Get(object, args...)
+	return dbc.Invoke(dbc.Background(), tx).Get(object, args...)
+}
+
+// GetInTxContext returns a given object based on a group of primary key ids within a transaction and a given context.
+func (dbc *Connection) GetInTxContext(context context.Context, object DatabaseMapped, tx *sql.Tx, args ...interface{}) error {
+	return dbc.Invoke(context, tx).Get(object, args...)
 }
 
 // GetAll returns all rows of an object mapped table.
 func (dbc *Connection) GetAll(collection interface{}) error {
-	return dbc.GetAllInTx(collection, nil)
+	return dbc.Invoke(dbc.Background()).GetAll(collection)
+}
+
+// GetAllContext returns all rows of an object mapped table.
+func (dbc *Connection) GetAllContext(context context.Context, collection interface{}) error {
+	return dbc.Invoke(context).GetAll(collection)
 }
 
 // GetAllInTx returns all rows of an object mapped table wrapped in a transaction.
 func (dbc *Connection) GetAllInTx(collection interface{}, tx *sql.Tx) error {
-	return dbc.Invoke(tx).GetAll(collection)
+	return dbc.Invoke(dbc.Background(), tx).GetAll(collection)
+}
+
+// GetAllInTxContext returns all rows of an object mapped table wrapped in a transaction.
+func (dbc *Connection) GetAllInTxContext(context context.Context, collection interface{}, tx *sql.Tx) error {
+	return dbc.Invoke(context, tx).GetAll(collection)
 }
 
 // Create writes an object to the database.
 func (dbc *Connection) Create(object DatabaseMapped) error {
-	return dbc.CreateInTx(object, nil)
+	return dbc.Invoke(dbc.Background()).Create(object)
+}
+
+// CreateContext writes an object to the database.
+func (dbc *Connection) CreateContext(context context.Context, object DatabaseMapped) error {
+	return dbc.Invoke(context).Create(object)
 }
 
 // CreateInTx writes an object to the database within a transaction.
 func (dbc *Connection) CreateInTx(object DatabaseMapped, tx *sql.Tx) (err error) {
-	return dbc.Invoke(tx).Create(object)
+	return dbc.Invoke(dbc.Background(), tx).Create(object)
+}
+
+// CreateInTxContext writes an object to the database within a transaction.
+func (dbc *Connection) CreateInTxContext(context context.Context, object DatabaseMapped, tx *sql.Tx) (err error) {
+	return dbc.Invoke(context, tx).Create(object)
 }
 
 // CreateIfNotExists writes an object to the database if it does not already exist.
 func (dbc *Connection) CreateIfNotExists(object DatabaseMapped) error {
-	return dbc.CreateIfNotExistsInTx(object, nil)
+	return dbc.Invoke(dbc.Background()).CreateIfNotExists(object)
+}
+
+// CreateIfNotExistsContext writes an object to the database if it does not already exist.
+func (dbc *Connection) CreateIfNotExistsContext(context context.Context, object DatabaseMapped) error {
+	return dbc.Invoke(context).CreateIfNotExists(object)
 }
 
 // CreateIfNotExistsInTx writes an object to the database if it does not already exist within a transaction.
 func (dbc *Connection) CreateIfNotExistsInTx(object DatabaseMapped, tx *sql.Tx) (err error) {
-	return dbc.Invoke(tx).CreateIfNotExists(object)
+	return dbc.Invoke(dbc.Background(), tx).CreateIfNotExists(object)
+}
+
+// CreateIfNotExistsInTxContext writes an object to the database if it does not already exist within a transaction.
+func (dbc *Connection) CreateIfNotExistsInTxContext(context context.Context, object DatabaseMapped, tx *sql.Tx) (err error) {
+	return dbc.Invoke(context, tx).CreateIfNotExists(object)
 }
 
 // CreateMany writes many an objects to the database.
 func (dbc *Connection) CreateMany(objects interface{}) error {
-	return dbc.CreateManyInTx(objects, nil)
+	return dbc.Invoke(dbc.Background()).CreateMany(objects)
+}
+
+// CreateManyContext writes many an objects to the database.
+func (dbc *Connection) CreateManyContext(context context.Context, objects interface{}) error {
+	return dbc.Invoke(context).CreateMany(objects)
 }
 
 // CreateManyInTx writes many an objects to the database within a transaction.
 func (dbc *Connection) CreateManyInTx(objects interface{}, tx *sql.Tx) (err error) {
-	return dbc.Invoke(tx).CreateMany(objects)
+	return dbc.Invoke(dbc.Background(), tx).CreateMany(objects)
+}
+
+// CreateManyInTxContext writes many an objects to the database within a transaction.
+func (dbc *Connection) CreateManyInTxContext(context context.Context, objects interface{}, tx *sql.Tx) (err error) {
+	return dbc.Invoke(context, tx).CreateMany(objects)
 }
 
 // Update updates an object.
 func (dbc *Connection) Update(object DatabaseMapped) error {
-	return dbc.UpdateInTx(object, nil)
+	return dbc.Invoke(dbc.Background()).Update(object)
+}
+
+// UpdateContext updates an object.
+func (dbc *Connection) UpdateContext(context context.Context, object DatabaseMapped) error {
+	return dbc.Invoke(context).Update(object)
 }
 
 // UpdateInTx updates an object wrapped in a transaction.
 func (dbc *Connection) UpdateInTx(object DatabaseMapped, tx *sql.Tx) (err error) {
-	return dbc.Invoke(tx).Update(object)
+	return dbc.Invoke(dbc.Background(), tx).Update(object)
+}
+
+// UpdateInTxContext updates an object wrapped in a transaction.
+func (dbc *Connection) UpdateInTxContext(context context.Context, object DatabaseMapped, tx *sql.Tx) (err error) {
+	return dbc.Invoke(context, tx).Update(object)
 }
 
 // Exists returns a bool if a given object exists (utilizing the primary key columns if they exist).
 func (dbc *Connection) Exists(object DatabaseMapped) (bool, error) {
-	return dbc.ExistsInTx(object, nil)
+	return dbc.Invoke(dbc.Background()).Exists(object)
+}
+
+// ExistsContext returns a bool if a given object exists (utilizing the primary key columns if they exist).
+func (dbc *Connection) ExistsContext(context context.Context, object DatabaseMapped) (bool, error) {
+	return dbc.Invoke(context).Exists(object)
 }
 
 // ExistsInTx returns a bool if a given object exists (utilizing the primary key columns if they exist) wrapped in a transaction.
 func (dbc *Connection) ExistsInTx(object DatabaseMapped, tx *sql.Tx) (exists bool, err error) {
-	return dbc.Invoke(tx).Exists(object)
+	return dbc.Invoke(dbc.Background(), tx).Exists(object)
+}
+
+// ExistsInTxContext returns a bool if a given object exists (utilizing the primary key columns if they exist) wrapped in a transaction.
+func (dbc *Connection) ExistsInTxContext(context context.Context, object DatabaseMapped, tx *sql.Tx) (exists bool, err error) {
+	return dbc.Invoke(context, tx).Exists(object)
 }
 
 // Delete deletes an object from the database.
 func (dbc *Connection) Delete(object DatabaseMapped) error {
-	return dbc.DeleteInTx(object, nil)
+	return dbc.Invoke(dbc.Background()).Delete(object)
+}
+
+// DeleteContext deletes an object from the database.
+func (dbc *Connection) DeleteContext(context context.Context, object DatabaseMapped) error {
+	return dbc.Invoke(context).Delete(object)
 }
 
 // DeleteInTx deletes an object from the database wrapped in a transaction.
 func (dbc *Connection) DeleteInTx(object DatabaseMapped, tx *sql.Tx) (err error) {
-	return dbc.Invoke(tx).Delete(object)
+	return dbc.Invoke(dbc.Background(), tx).Delete(object)
+}
+
+// DeleteInTxContext deletes an object from the database wrapped in a transaction.
+func (dbc *Connection) DeleteInTxContext(context context.Context, object DatabaseMapped, tx *sql.Tx) (err error) {
+	return dbc.Invoke(context, tx).Delete(object)
 }
 
 // Upsert inserts the object if it doesn't exist already (as defined by its primary keys) or updates it.
 func (dbc *Connection) Upsert(object DatabaseMapped) error {
-	return dbc.UpsertInTx(object, nil)
+	return dbc.Invoke(dbc.Background()).Upsert(object)
+}
+
+// UpsertContext inserts the object if it doesn't exist already (as defined by its primary keys) or updates it.
+func (dbc *Connection) UpsertContext(context context.Context, object DatabaseMapped) error {
+	return dbc.Invoke(context).Upsert(object)
 }
 
 // UpsertInTx inserts the object if it doesn't exist already (as defined by its primary keys) or updates it wrapped in a transaction.
 func (dbc *Connection) UpsertInTx(object DatabaseMapped, tx *sql.Tx) (err error) {
-	return dbc.Invoke(tx).Upsert(object)
+	return dbc.Invoke(dbc.Background(), tx).Upsert(object)
+}
+
+// UpsertInTxContext inserts the object if it doesn't exist already (as defined by its primary keys) or updates it wrapped in a transaction.
+func (dbc *Connection) UpsertInTxContext(context context.Context, object DatabaseMapped, tx *sql.Tx) (err error) {
+	return dbc.Invoke(context, tx).Upsert(object)
 }
 
 // Truncate fully removes an tables rows in a single opertation.
 func (dbc *Connection) Truncate(object DatabaseMapped) error {
-	return dbc.TruncateInTx(object, nil)
+	return dbc.Invoke(dbc.Background()).Truncate(object)
+}
+
+// TruncateContext fully removes an tables rows in a single opertation.
+func (dbc *Connection) TruncateContext(context context.Context, object DatabaseMapped) error {
+	return dbc.Invoke(context).Truncate(object)
 }
 
 // TruncateInTx applies a truncation in a transaction.
 func (dbc *Connection) TruncateInTx(object DatabaseMapped, tx *sql.Tx) error {
-	return dbc.Invoke(tx).Truncate(object)
+	return dbc.Invoke(dbc.Background(), tx).Truncate(object)
+}
+
+// TruncateInTxContext applies a truncation in a transaction.
+func (dbc *Connection) TruncateInTxContext(context context.Context, object DatabaseMapped, tx *sql.Tx) error {
+	return dbc.Invoke(context, tx).Truncate(object)
 }
 
 // --------------------------------------------------------------------------------
 // internal methods
 // --------------------------------------------------------------------------------
 
-func (dbc *Connection) fireEvent(flag logger.Flag, query string, elapsed time.Duration, err error, optionalQueryLabel ...string) {
-	if dbc.log != nil {
-		var queryLabel string
-		if len(optionalQueryLabel) > 0 {
-			queryLabel = optionalQueryLabel[0]
+func (dbc *Connection) prepareMiddleware(context context.Context, statement string) {
+	if len(dbc.middleware) > 0 {
+		for _, middleware := range dbc.middleware {
+			middleware.Prepare(context, dbc, statement)
 		}
+	}
+}
 
-		dbc.log.Trigger(logger.NewQueryEvent(query, elapsed).WithFlag(flag).WithDatabase(dbc.config.GetDatabase()).WithQueryLabel(queryLabel).WithEngine("postgres").WithErr(err))
+func (dbc *Connection) prepareMiddlewareDone(context context.Context, statement string, err error) {
+	if len(dbc.middleware) > 0 {
+		for _, middleware := range dbc.middleware {
+			middleware.PrepareDone(context, dbc, statement, err)
+		}
+	}
+}
+
+func (dbc *Connection) invocationMiddleware(context context.Context, inv *Invocation) {
+	if len(dbc.middleware) > 0 {
+		for _, middleware := range dbc.middleware {
+			middleware.Invocation(context, dbc, inv)
+		}
+	}
+}
+
+func (dbc *Connection) done(context context.Context, statement, statementLabel string, elapsed time.Duration, err error) {
+	if dbc.log != nil {
+		dbc.log.Trigger(logger.NewQueryEvent(statement, elapsed).WithDatabase(dbc.config.GetDatabase()).WithQueryLabel(statementLabel).WithEngine("postgres").WithErr(err))
 		if err != nil {
 			dbc.log.Error(err)
 		}

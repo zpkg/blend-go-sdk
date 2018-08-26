@@ -1,6 +1,7 @@
 package db
 
 import (
+	"context"
 	"database/sql"
 	"sync"
 
@@ -86,14 +87,14 @@ func (sc *StatementCache) InvalidateStatement(statementID string) error {
 	return nil
 }
 
-// Prepare returns a cached expression for a statement, or creates and caches a new one.
-func (sc *StatementCache) Prepare(statementID, statement string, tx *sql.Tx) (*sql.Stmt, error) {
+// PrepareContext returns a cached expression for a statement, or creates and caches a new one.
+func (sc *StatementCache) PrepareContext(context context.Context, statementID, statement string, tx *sql.Tx) (*sql.Stmt, error) {
 	if tx != nil {
-		return tx.Prepare(statement)
+		return tx.PrepareContext(context, statement)
 	}
 
 	if !sc.enabled {
-		return sc.dbc.Prepare(statement)
+		return sc.dbc.PrepareContext(context, statement)
 	}
 
 	sc.Lock()
@@ -102,7 +103,7 @@ func (sc *StatementCache) Prepare(statementID, statement string, tx *sql.Tx) (*s
 	if stmt, hasStmt := sc.cache[statementID]; hasStmt {
 		return stmt, nil
 	}
-	stmt, err := sc.dbc.Prepare(statement)
+	stmt, err := sc.dbc.PrepareContext(context, statement)
 	if err != nil {
 		return nil, err
 	}
