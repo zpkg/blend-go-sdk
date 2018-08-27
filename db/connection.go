@@ -174,8 +174,12 @@ func (dbc *Connection) PrepareContext(context context.Context, statement string,
 		return nil, exception.New(ErrConnectionClosed)
 	}
 
-	dbc.prepareStart(context, statement)
-	defer func() { dbc.prepareFinish(context, statement, err) }()
+	if dbc.tracer != nil {
+		tf := dbc.tracer.Prepare(context, dbc, statement)
+		if tf != nil {
+			defer func() { tf.Finish(err) }()
+		}
+	}
 
 	if tx != nil {
 		stmt, err = tx.PrepareContext(context, statement)
@@ -517,29 +521,6 @@ func (dbc *Connection) TruncateInTxContext(context context.Context, object Datab
 // --------------------------------------------------------------------------------
 // internal methods
 // --------------------------------------------------------------------------------
-
-func (dbc *Connection) prepareStart(context context.Context, statement string) {
-	if dbc.tracer != nil {
-		dbc.tracer.PrepareStart(context, dbc, statement)
-	}
-}
-
-func (dbc *Connection) prepareFinish(context context.Context, statement string, err error) {
-	if dbc.tracer != nil {
-		dbc.tracer.PrepareFinish(context, dbc, statement, err)
-	}
-}
-
-func (dbc *Connection) invocationStart(context context.Context, inv *Invocation) {
-	if dbc.tracer != nil {
-		dbc.tracer.InvocationStart(context, dbc, inv)
-	}
-}
-func (dbc *Connection) invocationFinish(context context.Context, inv *Invocation, statement string, err error) {
-	if dbc.tracer != nil {
-		dbc.tracer.InvocationFinish(context, dbc, inv, statement, err)
-	}
-}
 
 func (dbc *Connection) done(context context.Context, statement, statementLabel string, elapsed time.Duration, err error) {
 	if dbc.log != nil {

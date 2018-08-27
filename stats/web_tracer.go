@@ -22,7 +22,7 @@ type webTracer struct {
 	tracer opentracing.Tracer
 }
 
-func (wt webTracer) Start(ctx *web.Ctx) {
+func (wt webTracer) Start(ctx *web.Ctx) web.TraceFinisher {
 	var resource string
 	if ctx.Route() != nil {
 		resource = ctx.Route().String()
@@ -59,14 +59,18 @@ func (wt webTracer) Start(ctx *web.Ctx) {
 	ctx.WithContext(spanCtx)
 	// also store the span in the request state
 	ctx.WithStateValue(StateKeySpan, span)
+
+	return &webTraceFinisher{span: span}
 }
 
-func (wt webTracer) Finish(ctx *web.Ctx) {
-	span := GetTracingSpanFromCtx(ctx)
-	if span == nil {
-		println("span not found")
+type webTraceFinisher struct {
+	span opentracing.Span
+}
+
+func (wtf webTraceFinisher) Finish(ctx *web.Ctx) {
+	if wtf.span == nil {
 		return
 	}
-	span.SetTag("http.status_code", strconv.Itoa(ctx.Response().StatusCode()))
-	span.Finish()
+	wtf.span.SetTag("http.status_code", strconv.Itoa(ctx.Response().StatusCode()))
+	wtf.span.Finish()
 }

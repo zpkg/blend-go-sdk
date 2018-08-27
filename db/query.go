@@ -15,6 +15,7 @@ import (
 
 // Query is the intermediate result of a query.
 type Query struct {
+	context        context.Context
 	statement      string
 	statementLabel string
 	args           []interface{}
@@ -22,12 +23,11 @@ type Query struct {
 	start time.Time
 	rows  *sql.Rows
 
-	stmt       *sql.Stmt
-	fireEvents bool
-	conn       *Connection
-	context    context.Context
-	tx         *sql.Tx
-	err        error
+	stmt *sql.Stmt
+	conn *Connection
+	inv  *Invocation
+	tx   *sql.Tx
+	err  error
 }
 
 // Close closes and releases any resources retained by the QueryResult.
@@ -325,6 +325,9 @@ func (q *Query) finalizer(r interface{}, err error) error {
 		err = exception.Nest(err, exception.New(r))
 	}
 	err = exception.Nest(err, q.Close())
+	if q.inv.traceFinisher != nil {
+		q.inv.traceFinisher.Finish(err)
+	}
 	q.conn.done(q.context, q.statement, q.statementLabel, time.Now().Sub(q.start), err)
 	return err
 }

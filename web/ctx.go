@@ -27,10 +27,6 @@ const (
 	StringEmpty = ""
 )
 
-// Request is an alias to Ctx.
-// It is part of a longer term transition.
-type Request = Ctx
-
 // defaultResultProvider is used by bare ctx results, it generally
 // won't stay the default for long, as it's overwritten by `App`.
 var defaultResultProvider = &TextResultProvider{}
@@ -64,7 +60,8 @@ type Ctx struct {
 	log  *logger.Logger
 	auth *AuthManager
 
-	tracer Tracer
+	tracer        Tracer
+	traceFinisher TraceFinisher
 
 	postBody []byte
 
@@ -754,14 +751,14 @@ func (rc *Ctx) setLoggedContentLength(length int) {
 func (rc *Ctx) onRequestStart() {
 	rc.requestStart = time.Now().UTC()
 	if rc.tracer != nil {
-		rc.tracer.Start(rc)
+		rc.traceFinisher = rc.tracer.Start(rc)
 	}
 }
 
 func (rc *Ctx) onRequestFinish() {
 	rc.requestEnd = time.Now().UTC()
-	if rc.tracer != nil {
-		rc.tracer.Finish(rc)
+	if rc.traceFinisher != nil {
+		rc.traceFinisher.Finish(rc)
 	}
 }
 
