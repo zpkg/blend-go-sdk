@@ -17,12 +17,10 @@ func TestQueryExecute(t *testing.T) {
 	seedErr := seedObjects(10, tx)
 	a.Nil(seedErr)
 
-	stmt, rows, err := Default().QueryInTx("select * from bench_object", tx).Execute()
+	rows, err := Default().QueryInTx("select * from bench_object", tx).Execute()
 	a.Nil(err)
-	defer stmt.Close()
 	defer rows.Close()
 	a.NotNil(rows)
-	a.NotNil(stmt)
 }
 
 func TestQueryEach(t *testing.T) {

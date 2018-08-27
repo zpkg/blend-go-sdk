@@ -17,13 +17,19 @@ const (
 
 // Invocation is a specific operation against a context.
 type Invocation struct {
-	conn           *Connection
-	context        context.Context
-	tx             *sql.Tx
 	statementLabel string
 
+	conn          *Connection
+	context       context.Context
 	tracer        Tracer
 	traceFinisher TraceFinisher
+	startTime     time.Time
+	tx            *sql.Tx
+}
+
+// Start returns the invocation start time.
+func (i *Invocation) Start() time.Time {
+	return i.startTime
 }
 
 // WithContext sets the context and returns a reference to the invocation.
@@ -71,9 +77,8 @@ func (i *Invocation) Exec(statement string, args ...interface{}) (err error) {
 		return
 	}
 
-	start := time.Now()
 	i.start(statement)
-	defer func() { err = i.finish(statement, start, recover(), err) }()
+	defer func() { err = i.finish(statement, recover(), err) }()
 
 	stmt, stmtErr := i.Prepare(statement)
 	if stmtErr != nil {
@@ -81,7 +86,7 @@ func (i *Invocation) Exec(statement string, args ...interface{}) (err error) {
 		return
 	}
 
-	defer i.closeStatement(err, stmt)
+	defer func() { err = i.closeStatement(err, stmt) }()
 
 	if _, execErr := stmt.Exec(args...); execErr != nil {
 		err = exception.New(execErr)
@@ -96,13 +101,15 @@ func (i *Invocation) Exec(statement string, args ...interface{}) (err error) {
 
 // Query returns a new query object for a given sql query and arguments.
 func (i *Invocation) Query(statement string, args ...interface{}) *Query {
+	stmt, err := i.Prepare(statement)
 	i.start(statement)
 	return &Query{
-		context:        i.context,
+		stmt:           stmt,
+		err:            err,
+		context:        i.Context(),
 		statement:      statement,
 		statementLabel: i.statementLabel,
 		args:           args,
-		start:          i.now(),
 		conn:           i.conn,
 		inv:            i,
 		tx:             i.tx,
@@ -116,22 +123,19 @@ func (i *Invocation) Get(object DatabaseMapped, ids ...interface{}) (err error) 
 		return
 	}
 
-	if ids == nil {
+	if len(ids) == 0 {
 		return exception.New("invalid `ids` parameter.")
 	}
 
 	var queryBody string
-	start := time.Now()
-
 	meta := getCachedColumnCollectionFromInstance(object)
 	standardCols := meta.NotReadOnly()
 	tableName := TableName(object)
-
 	if len(i.statementLabel) == 0 {
 		i.statementLabel = fmt.Sprintf("%s_get", tableName)
 	}
 
-	defer func() { err = i.finish(queryBody, start, recover(), err) }()
+	defer func() { err = i.finish(queryBody, recover(), err) }()
 
 	columnNames := standardCols.ColumnNames()
 	pks := standardCols.PrimaryKeys()
@@ -175,14 +179,7 @@ func (i *Invocation) Get(object DatabaseMapped, ids ...interface{}) (err error) 
 	defer i.closeStatement(err, stmt)
 
 	i.start(queryBody)
-
-	var rows *sql.Rows
-	var queryErr error
-	if i.context != nil {
-		rows, queryErr = stmt.QueryContext(i.context, ids...)
-	} else {
-		rows, queryErr = stmt.Query(ids...)
-	}
+	rows, queryErr := stmt.QueryContext(i.Context(), ids...)
 
 	if queryErr != nil {
 		err = exception.New(queryErr)
@@ -222,8 +219,7 @@ func (i *Invocation) GetAll(collection interface{}) (err error) {
 	}
 
 	var queryBody string
-	start := time.Now()
-	defer func() { err = i.finish(queryBody, start, recover(), err) }()
+	defer func() { err = i.finish(queryBody, recover(), err) }()
 
 	collectionValue := reflectValue(collection)
 	t := reflectSliceType(collection)
@@ -262,13 +258,7 @@ func (i *Invocation) GetAll(collection interface{}) (err error) {
 
 	i.start(queryBody)
 
-	var rows *sql.Rows
-	var queryErr error
-	if i.context != nil {
-		rows, queryErr = stmt.QueryContext(i.context)
-	} else {
-		rows, queryErr = stmt.Query()
-	}
+	rows, queryErr := stmt.QueryContext(i.Context())
 	if queryErr != nil {
 		err = exception.New(queryErr)
 		return
@@ -315,8 +305,7 @@ func (i *Invocation) Create(object DatabaseMapped) (err error) {
 	}
 
 	var queryBody string
-	start := time.Now()
-	defer func() { err = i.finish(queryBody, start, recover(), err) }()
+	defer func() { err = i.finish(queryBody, recover(), err) }()
 
 	cols := getCachedColumnCollectionFromInstance(object)
 	writeCols := cols.NotReadOnly().NotAutos()
@@ -417,8 +406,7 @@ func (i *Invocation) CreateIfNotExists(object DatabaseMapped) (err error) {
 	}
 
 	var queryBody string
-	start := time.Now()
-	defer func() { err = i.finish(queryBody, start, recover(), err) }()
+	defer func() { err = i.finish(queryBody, recover(), err) }()
 
 	cols := getCachedColumnCollectionFromInstance(object)
 	writeCols := cols.NotReadOnly().NotAutos()
@@ -532,8 +520,7 @@ func (i *Invocation) CreateMany(objects interface{}) (err error) {
 	}
 
 	var queryBody string
-	start := time.Now()
-	defer func() { err = i.finish(queryBody, start, recover(), err) }()
+	defer func() { err = i.finish(queryBody, recover(), err) }()
 
 	sliceValue := reflectValue(objects)
 	if sliceValue.Len() == 0 {
@@ -618,8 +605,7 @@ func (i *Invocation) Update(object DatabaseMapped) (err error) {
 	}
 
 	var queryBody string
-	start := time.Now()
-	defer func() { err = i.finish(queryBody, start, recover(), err) }()
+	defer func() { err = i.finish(queryBody, recover(), err) }()
 
 	tableName := TableName(object)
 	if len(i.statementLabel) == 0 {
@@ -688,199 +674,6 @@ func (i *Invocation) Update(object DatabaseMapped) (err error) {
 	return
 }
 
-// Exists returns a bool if a given object exists (utilizing the primary key columns if they exist) wrapped in a transaction.
-func (i *Invocation) Exists(object DatabaseMapped) (exists bool, err error) {
-	err = i.validate()
-	if err != nil {
-		return
-	}
-
-	var queryBody string
-	start := time.Now()
-	defer func() { err = i.finish(queryBody, start, recover(), err) }()
-
-	tableName := TableName(object)
-	if len(i.statementLabel) == 0 {
-		i.statementLabel = fmt.Sprintf("%s_exists", tableName)
-	}
-	cols := getCachedColumnCollectionFromInstance(object)
-	pks := cols.PrimaryKeys()
-
-	if pks.Len() == 0 {
-		exists = false
-		err = exception.New("No primary key on object.")
-		return
-	}
-
-	queryBodyBuffer := i.conn.bufferPool.Get()
-	defer i.conn.bufferPool.Put(queryBodyBuffer)
-
-	queryBodyBuffer.WriteString("SELECT 1 FROM ")
-	queryBodyBuffer.WriteString(tableName)
-	queryBodyBuffer.WriteString(" WHERE ")
-
-	for i, pk := range pks.Columns() {
-		queryBodyBuffer.WriteString(pk.ColumnName)
-		queryBodyBuffer.WriteString(" = ")
-		queryBodyBuffer.WriteString("$" + strconv.Itoa(i+1))
-
-		if i < (pks.Len() - 1) {
-			queryBodyBuffer.WriteString(" AND ")
-		}
-	}
-
-	queryBody = queryBodyBuffer.String()
-	stmt, stmtErr := i.Prepare(queryBody)
-	if stmtErr != nil {
-		exists = false
-		err = exception.New(stmtErr)
-		return
-	}
-
-	defer func() { err = i.closeStatement(err, stmt) }()
-
-	i.start(queryBody)
-
-	pkValues := pks.ColumnValues(object)
-	var rows *sql.Rows
-	var queryErr error
-	if i.context != nil {
-		rows, queryErr = stmt.QueryContext(i.context, pkValues...)
-	} else {
-		rows, queryErr = stmt.Query(pkValues...)
-	}
-	defer func() {
-		closeErr := rows.Close()
-		if closeErr != nil {
-			err = exception.Nest(err, closeErr)
-		}
-	}()
-
-	if queryErr != nil {
-		exists = false
-		err = exception.New(queryErr)
-		i.invalidateCachedStatement()
-		return
-	}
-
-	exists = rows.Next()
-	return
-}
-
-// Delete deletes an object from the database wrapped in a transaction.
-func (i *Invocation) Delete(object DatabaseMapped) (err error) {
-	err = i.validate()
-	if err != nil {
-		return
-	}
-
-	var queryBody string
-	start := time.Now()
-	defer func() { err = i.finish(queryBody, start, recover(), err) }()
-
-	tableName := TableName(object)
-
-	if len(i.statementLabel) == 0 {
-		i.statementLabel = fmt.Sprintf("%s_delete", tableName)
-	}
-
-	cols := getCachedColumnCollectionFromInstance(object)
-	pks := cols.PrimaryKeys()
-
-	if len(pks.Columns()) == 0 {
-		err = exception.New("No primary key on object.")
-		return
-	}
-
-	queryBodyBuffer := i.conn.bufferPool.Get()
-	defer i.conn.bufferPool.Put(queryBodyBuffer)
-
-	queryBodyBuffer.WriteString("DELETE FROM ")
-	queryBodyBuffer.WriteString(tableName)
-	queryBodyBuffer.WriteString(" WHERE ")
-
-	for i, pk := range pks.Columns() {
-		queryBodyBuffer.WriteString(pk.ColumnName)
-		queryBodyBuffer.WriteString(" = ")
-		queryBodyBuffer.WriteString("$" + strconv.Itoa(i+1))
-
-		if i < (pks.Len() - 1) {
-			queryBodyBuffer.WriteString(" AND ")
-		}
-	}
-
-	queryBody = queryBodyBuffer.String()
-	stmt, stmtErr := i.Prepare(queryBody)
-	if stmtErr != nil {
-		err = exception.New(stmtErr)
-		return
-	}
-	defer func() { err = i.closeStatement(err, stmt) }()
-
-	i.start(queryBody)
-
-	pkValues := pks.ColumnValues(object)
-
-	var execErr error
-	if i.context != nil {
-		_, execErr = stmt.ExecContext(i.context, pkValues...)
-	} else {
-		_, execErr = stmt.Exec(pkValues...)
-	}
-	if execErr != nil {
-		err = exception.New(execErr)
-		i.invalidateCachedStatement()
-	}
-	return
-}
-
-// Truncate completely empties a table in a single command.
-func (i *Invocation) Truncate(object DatabaseMapped) (err error) {
-	err = i.validate()
-	if err != nil {
-		return
-	}
-
-	var queryBody string
-	start := time.Now()
-	defer func() { err = i.finish(queryBody, start, recover(), err) }()
-
-	tableName := TableName(object)
-
-	if len(i.statementLabel) == 0 {
-		i.statementLabel = fmt.Sprintf("%s_truncate", tableName)
-	}
-
-	queryBodyBuffer := i.conn.bufferPool.Get()
-	defer i.conn.bufferPool.Put(queryBodyBuffer)
-
-	queryBodyBuffer.WriteString("TRUNCATE ")
-	queryBodyBuffer.WriteString(tableName)
-
-	queryBody = queryBodyBuffer.String()
-	stmt, stmtErr := i.Prepare(queryBody)
-	if stmtErr != nil {
-		err = exception.New(stmtErr)
-		return
-	}
-	defer func() { err = i.closeStatement(err, stmt) }()
-
-	i.start(queryBody)
-
-	var execErr error
-	if i.context != nil {
-		_, execErr = stmt.ExecContext(i.context)
-	} else {
-		_, execErr = stmt.Exec()
-	}
-
-	if execErr != nil {
-		err = exception.New(execErr)
-		i.invalidateCachedStatement()
-	}
-	return
-}
-
 // Upsert inserts the object if it doesn't exist already (as defined by its primary keys) or updates it wrapped in a transaction.
 func (i *Invocation) Upsert(object DatabaseMapped) (err error) {
 	err = i.validate()
@@ -889,8 +682,7 @@ func (i *Invocation) Upsert(object DatabaseMapped) (err error) {
 	}
 
 	var queryBody string
-	start := i.now()
-	defer func() { err = i.finish(queryBody, start, recover(), err) }()
+	defer func() { err = i.finish(queryBody, recover(), err) }()
 
 	cols := getCachedColumnCollectionFromInstance(object)
 	writeCols := cols.NotReadOnly().NotAutos()
@@ -966,7 +758,7 @@ func (i *Invocation) Upsert(object DatabaseMapped) (err error) {
 
 	stmt, stmtErr := i.Prepare(queryBody)
 	if stmtErr != nil {
-		err = exception.New(stmtErr).WithMessagef("query: %s", queryBody)
+		err = exception.New(stmtErr)
 		i.invalidateCachedStatement()
 		return
 	}
@@ -983,7 +775,7 @@ func (i *Invocation) Upsert(object DatabaseMapped) (err error) {
 			execErr = stmt.QueryRow(colValues...).Scan(&id)
 		}
 		if execErr != nil {
-			err = exception.New(execErr).WithMessagef("query: %s", queryBody)
+			err = exception.New(execErr)
 			i.invalidateCachedStatement()
 			return
 		}
@@ -1005,6 +797,192 @@ func (i *Invocation) Upsert(object DatabaseMapped) (err error) {
 	}
 
 	return nil
+}
+
+// Exists returns a bool if a given object exists (utilizing the primary key columns if they exist) wrapped in a transaction.
+func (i *Invocation) Exists(object DatabaseMapped) (exists bool, err error) {
+	err = i.validate()
+	if err != nil {
+		return
+	}
+
+	var queryBody string
+	defer func() { err = i.finish(queryBody, recover(), err) }()
+
+	tableName := TableName(object)
+	if len(i.statementLabel) == 0 {
+		i.statementLabel = fmt.Sprintf("%s_exists", tableName)
+	}
+	cols := getCachedColumnCollectionFromInstance(object)
+	pks := cols.PrimaryKeys()
+
+	if pks.Len() == 0 {
+		err = exception.New("No primary key on object.")
+		return
+	}
+
+	queryBodyBuffer := i.conn.bufferPool.Get()
+	defer i.conn.bufferPool.Put(queryBodyBuffer)
+
+	queryBodyBuffer.WriteString("SELECT 1 FROM ")
+	queryBodyBuffer.WriteString(tableName)
+	queryBodyBuffer.WriteString(" WHERE ")
+
+	for i, pk := range pks.Columns() {
+		queryBodyBuffer.WriteString(pk.ColumnName)
+		queryBodyBuffer.WriteString(" = ")
+		queryBodyBuffer.WriteString("$" + strconv.Itoa(i+1))
+
+		if i < (pks.Len() - 1) {
+			queryBodyBuffer.WriteString(" AND ")
+		}
+	}
+
+	queryBody = queryBodyBuffer.String()
+	stmt, stmtErr := i.Prepare(queryBody)
+	if stmtErr != nil {
+		err = exception.New(stmtErr)
+		return
+	}
+
+	defer func() { err = i.closeStatement(err, stmt) }()
+	i.start(queryBody)
+
+	pkValues := pks.ColumnValues(object)
+	var rows *sql.Rows
+	var queryErr error
+	if i.context != nil {
+		rows, queryErr = stmt.QueryContext(i.context, pkValues...)
+	} else {
+		rows, queryErr = stmt.Query(pkValues...)
+	}
+	defer func() {
+		closeErr := rows.Close()
+		if closeErr != nil {
+			err = exception.Nest(err, closeErr)
+		}
+	}()
+
+	if queryErr != nil {
+		exists = false
+		err = exception.New(queryErr)
+		i.invalidateCachedStatement()
+		return
+	}
+
+	exists = rows.Next()
+	return
+}
+
+// Delete deletes an object from the database wrapped in a transaction.
+func (i *Invocation) Delete(object DatabaseMapped) (err error) {
+	err = i.validate()
+	if err != nil {
+		return
+	}
+
+	var queryBody string
+	defer func() { err = i.finish(queryBody, recover(), err) }()
+
+	tableName := TableName(object)
+
+	if len(i.statementLabel) == 0 {
+		i.statementLabel = fmt.Sprintf("%s_delete", tableName)
+	}
+
+	cols := getCachedColumnCollectionFromInstance(object)
+	pks := cols.PrimaryKeys()
+
+	if len(pks.Columns()) == 0 {
+		err = exception.New("No primary key on object.")
+		return
+	}
+
+	queryBodyBuffer := i.conn.bufferPool.Get()
+	defer i.conn.bufferPool.Put(queryBodyBuffer)
+
+	queryBodyBuffer.WriteString("DELETE FROM ")
+	queryBodyBuffer.WriteString(tableName)
+	queryBodyBuffer.WriteString(" WHERE ")
+
+	for i, pk := range pks.Columns() {
+		queryBodyBuffer.WriteString(pk.ColumnName)
+		queryBodyBuffer.WriteString(" = ")
+		queryBodyBuffer.WriteString("$" + strconv.Itoa(i+1))
+
+		if i < (pks.Len() - 1) {
+			queryBodyBuffer.WriteString(" AND ")
+		}
+	}
+
+	queryBody = queryBodyBuffer.String()
+	stmt, stmtErr := i.Prepare(queryBody)
+	if stmtErr != nil {
+		err = exception.New(stmtErr)
+		return
+	}
+	defer func() { err = i.closeStatement(err, stmt) }()
+	i.start(queryBody)
+
+	pkValues := pks.ColumnValues(object)
+
+	var execErr error
+	if i.context != nil {
+		_, execErr = stmt.ExecContext(i.context, pkValues...)
+	} else {
+		_, execErr = stmt.Exec(pkValues...)
+	}
+	if execErr != nil {
+		err = exception.New(execErr)
+		i.invalidateCachedStatement()
+	}
+	return
+}
+
+// Truncate completely empties a table in a single command.
+func (i *Invocation) Truncate(object DatabaseMapped) (err error) {
+	err = i.validate()
+	if err != nil {
+		return
+	}
+
+	var queryBody string
+	defer func() { err = i.finish(queryBody, recover(), err) }()
+
+	tableName := TableName(object)
+
+	if len(i.statementLabel) == 0 {
+		i.statementLabel = fmt.Sprintf("%s_truncate", tableName)
+	}
+
+	queryBodyBuffer := i.conn.bufferPool.Get()
+	defer i.conn.bufferPool.Put(queryBodyBuffer)
+
+	queryBodyBuffer.WriteString("TRUNCATE ")
+	queryBodyBuffer.WriteString(tableName)
+
+	queryBody = queryBodyBuffer.String()
+	stmt, stmtErr := i.Prepare(queryBody)
+	if stmtErr != nil {
+		err = exception.New(stmtErr)
+		return
+	}
+	defer func() { err = i.closeStatement(err, stmt) }()
+
+	i.start(queryBody)
+
+	var execErr error
+	if i.context != nil {
+		_, execErr = stmt.ExecContext(i.context)
+	} else {
+		_, execErr = stmt.Exec()
+	}
+
+	if execErr != nil {
+		err = exception.New(execErr)
+		i.invalidateCachedStatement()
+	}
+	return
 }
 
 // --------------------------------------------------------------------------------
@@ -1039,21 +1017,13 @@ func (i *Invocation) start(statement string) {
 	}
 }
 
-func (i *Invocation) finish(statement string, start time.Time, r interface{}, err error) error {
+func (i *Invocation) finish(statement string, r interface{}, err error) error {
 	if r != nil {
 		err = exception.Nest(err, exception.New(r))
 	}
 	if i.traceFinisher != nil {
 		i.traceFinisher.Finish(err)
 	}
-	i.conn.done(i.context, statement, i.statementLabel, i.since(start), err)
+	i.conn.finish(i.context, statement, i.statementLabel, since(i.startTime), err)
 	return err
-}
-
-func (i Invocation) now() time.Time {
-	return time.Now().UTC()
-}
-
-func (i Invocation) since(ts time.Time) time.Duration {
-	return i.now().Sub(ts)
 }
