@@ -11,9 +11,6 @@ import (
 const (
 	// StateKeySpan is the span state key.
 	StateKeySpan = "web-span"
-
-	// TracingOperationHTTPRequest is the http request tracing operation name.
-	TracingOperationHTTPRequest = "http.request"
 )
 
 // WebTracer returns a web tracer.
@@ -26,11 +23,19 @@ type webTracer struct {
 }
 
 func (wt webTracer) Start(ctx *web.Ctx) {
+	var resource string
+	if ctx.Route() != nil {
+		resource = ctx.Route().String()
+	} else {
+		resource = ctx.Request().URL.Path
+	}
+
 	// set up basic start options (these are mostly tags).
 	startOptions := []opentracing.StartSpanOption{
-		opentracing.Tag{Key: "span.type", Value: "http"},
+		opentracing.Tag{Key: TagKeyResourceName, Value: resource},
+		opentracing.Tag{Key: TagKeySpanType, Value: SpanTypeWeb},
 		opentracing.Tag{Key: "http.method", Value: ctx.Request().Method},
-		opentracing.Tag{Key: "http.url", Value: ctx.Request().RequestURI},
+		opentracing.Tag{Key: "http.url", Value: ctx.Request().URL.Path},
 		opentracing.Tag{Key: "http.remote_addr", Value: logger.GetRemoteAddr(ctx.Request())},
 		opentracing.Tag{Key: "http.host", Value: logger.GetHost(ctx.Request())},
 		opentracing.Tag{Key: "http.user_agent", Value: logger.GetUserAgent(ctx.Request())},
@@ -59,6 +64,7 @@ func (wt webTracer) Start(ctx *web.Ctx) {
 func (wt webTracer) Finish(ctx *web.Ctx) {
 	span := GetTracingSpanFromCtx(ctx)
 	if span == nil {
+		println("span not found")
 		return
 	}
 	span.SetTag("http.status_code", strconv.Itoa(ctx.Response().StatusCode()))
