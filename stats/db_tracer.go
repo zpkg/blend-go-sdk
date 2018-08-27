@@ -2,6 +2,7 @@ package stats
 
 import (
 	"context"
+	"fmt"
 	"time"
 
 	"github.com/blend/go-sdk/db"
@@ -61,6 +62,9 @@ type dbTraceFinisher struct {
 func (dbtf dbTraceFinisher) Finish(err error) {
 	if dbtf.span == nil {
 		return
+	}
+	if err != nil {
+		dbtf.span.SetTag("err", fmt.Sprintf("%+v", err))
 	}
 	dbtf.span.Finish()
 }

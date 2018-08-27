@@ -214,8 +214,9 @@ func (dbc *Connection) PrepareCachedContext(context context.Context, statementID
 // Invoke returns a new invocation.
 func (dbc *Connection) Invoke(context context.Context, txs ...*sql.Tx) *Invocation {
 	return &Invocation{
-		conn:    dbc,
 		context: context,
+		tracer:  dbc.tracer,
+		conn:    dbc,
 		tx:      OptionalTx(txs...),
 	}
 }

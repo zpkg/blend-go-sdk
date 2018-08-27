@@ -96,6 +96,7 @@ func (i *Invocation) Exec(statement string, args ...interface{}) (err error) {
 
 // Query returns a new query object for a given sql query and arguments.
 func (i *Invocation) Query(statement string, args ...interface{}) *Query {
+	i.start(statement)
 	return &Query{
 		context:        i.context,
 		statement:      statement,
@@ -166,13 +167,14 @@ func (i *Invocation) Get(object DatabaseMapped, ids ...interface{}) (err error) 
 
 	queryBody = queryBodyBuffer.String()
 
-	i.start(queryBody)
 	stmt, stmtErr := i.Prepare(queryBody)
 	if stmtErr != nil {
 		err = exception.New(stmtErr)
 		return
 	}
 	defer i.closeStatement(err, stmt)
+
+	i.start(queryBody)
 
 	var rows *sql.Rows
 	var queryErr error
