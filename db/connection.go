@@ -231,8 +231,18 @@ func (dbc *Connection) Ping() error {
 }
 
 // PingContext checks the db connection.
-func (dbc *Connection) PingContext(context context.Context) error {
-	return exception.New(dbc.connection.PingContext(context))
+func (dbc *Connection) PingContext(context context.Context) (err error) {
+	if dbc.tracer != nil {
+		tf := dbc.tracer.Ping(context, dbc)
+		if tf != nil {
+			defer func() {
+				tf.Finish(err)
+			}()
+		}
+
+	}
+	err = exception.New(dbc.connection.PingContext(context))
+	return
 }
 
 // --------------------------------------------------------------------------------

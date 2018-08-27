@@ -5,7 +5,6 @@ import "context"
 // Tracer is a type that can implement traces.
 // If any of the methods return a nil finisher, they will be skipped.
 type Tracer interface {
-	Connect(context.Context, *Connection) TraceFinisher
 	Ping(context.Context, *Connection) TraceFinisher
 	Prepare(context.Context, *Connection, string) TraceFinisher
 	Query(context.Context, *Connection, *Invocation, string) TraceFinisher
