@@ -138,26 +138,6 @@ func TestCtxRouteParam(t *testing.T) {
 	assert.Equal("bar", value)
 }
 
-func TestCtxRouteParamInt(t *testing.T) {
-	assert := assert.New(t)
-
-	context, err := NewMockRequestBuilder(nil).CreateCtx(RouteParameters{"foo": "1"})
-	assert.Nil(err)
-	value, err := context.RouteParamInt("foo")
-	assert.Nil(err)
-	assert.Equal(1, value)
-}
-
-func TestCtxRouteParamInt64(t *testing.T) {
-	assert := assert.New(t)
-
-	context, err := NewMockRequestBuilder(nil).CreateCtx(RouteParameters{"foo": "1"})
-	assert.Nil(err)
-	value, err := context.RouteParamInt64("foo")
-	assert.Nil(err)
-	assert.Equal(1, value)
-}
-
 func TestCtxGetCookie(t *testing.T) {
 	assert := assert.New(t)
 
@@ -171,13 +151,13 @@ func TestCtxHeaderParam(t *testing.T) {
 
 	context, err := NewMockRequestBuilder(nil).CreateCtx(nil)
 	assert.Nil(err)
-	value, err := context.HeaderParam("test")
+	value, err := context.HeaderValue("test")
 	assert.NotNil(err)
 	assert.Empty(value)
 
 	context, err = NewMockRequestBuilder(nil).WithHeader("test", "foo").CreateCtx(nil)
 	assert.Nil(err)
-	value, err = context.HeaderParam("test")
+	value, err = context.HeaderValue("test")
 	assert.Nil(err)
 	assert.Equal("foo", value)
 }

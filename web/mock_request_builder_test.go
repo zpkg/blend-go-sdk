@@ -1,12 +1,12 @@
 package web
 
 import (
-	"fmt"
 	"testing"
 
 	"net/http"
 
 	"github.com/blend/go-sdk/assert"
+	"github.com/blend/go-sdk/exception"
 )
 
 func TestMockRequestBuilderWithPathf(t *testing.T) {
@@ -64,7 +64,7 @@ func TestMockRequestBuilderPanicHandler(t *testing.T) {
 	app := New()
 	app.WithPanicAction(func(r *Ctx, err interface{}) Result {
 		didPanic = true
-		return r.Text().InternalError(fmt.Errorf("%v", err))
+		return r.Text().InternalError(exception.New(err))
 	})
 	app.GET("/test_path", func(r *Ctx) Result {
 		panic("this is only a test")
@@ -72,6 +72,6 @@ func TestMockRequestBuilderPanicHandler(t *testing.T) {
 
 	meta, err := app.Mock().Get("/test_path").ExecuteWithMeta()
 	assert.Nil(err)
-	assert.Equal(http.StatusInternalServerError, meta.StatusCode)
 	assert.True(didPanic)
+	assert.Equal(http.StatusInternalServerError, meta.StatusCode)
 }

@@ -314,10 +314,6 @@ func TestAppDefaultResultProvider(t *testing.T) {
 	assert.Nil(app.DefaultMiddleware())
 
 	rc := app.createCtx(nil, nil, nil, nil, nil)
-	assert.NotNil(rc.view)
-	assert.NotNil(rc.json)
-	assert.NotNil(rc.xml)
-	assert.NotNil(rc.text)
 	assert.NotNil(rc.defaultResultProvider)
 }
 
@@ -327,17 +323,13 @@ func TestAppDefaultResultProviderWithDefault(t *testing.T) {
 	assert.NotNil(app.DefaultMiddleware())
 
 	rc := app.createCtx(nil, nil, nil, nil, nil)
-	assert.NotNil(rc.view)
-	assert.NotNil(rc.json)
-	assert.NotNil(rc.xml)
-	assert.NotNil(rc.text)
 
 	// this will be set to the default initially
 	assert.NotNil(rc.defaultResultProvider)
 
 	app.GET("/", func(ctx *Ctx) Result {
 		assert.NotNil(ctx.DefaultResultProvider())
-		_, isTyped := ctx.DefaultResultProvider().(*ViewResultProvider)
+		_, isTyped := ctx.DefaultResultProvider().(*ViewCache)
 		assert.True(isTyped)
 		return nil
 	})

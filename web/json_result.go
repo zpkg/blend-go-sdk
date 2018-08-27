@@ -7,6 +7,6 @@ type JSONResult struct {
 }
 
 // Render renders the result
-func (ar *JSONResult) Render(ctx *Ctx) error {
-	return WriteJSON(ctx.Response(), ctx.Request(), ar.StatusCode, ar.Response)
+func (jr *JSONResult) Render(ctx *Ctx) error {
+	return WriteJSON(ctx.Response(), ctx.Request(), jr.StatusCode, jr.Response)
 }

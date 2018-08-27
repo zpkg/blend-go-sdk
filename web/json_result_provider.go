@@ -2,22 +2,18 @@ package web
 
 import (
 	"net/http"
-
-	"github.com/blend/go-sdk/logger"
 )
 
-// NewJSONResultProvider Creates a new JSONResults object.
-func NewJSONResultProvider(log *logger.Logger) *JSONResultProvider {
-	return &JSONResultProvider{log: log}
-}
+var (
+	// JSON is a static singleton json result provider.
+	JSON JSONResultProvider
+)
 
 // JSONResultProvider are context results for api methods.
-type JSONResultProvider struct {
-	log *logger.Logger
-}
+type JSONResultProvider struct{}
 
 // NotFound returns a service response.
-func (jrp *JSONResultProvider) NotFound() Result {
+func (jrp JSONResultProvider) NotFound() Result {
 	return &JSONResult{
 		StatusCode: http.StatusNotFound,
 		Response:   "Not Found",
@@ -25,7 +21,7 @@ func (jrp *JSONResultProvider) NotFound() Result {
 }
 
 // NotAuthorized returns a service response.
-func (jrp *JSONResultProvider) NotAuthorized() Result {
+func (jrp JSONResultProvider) NotAuthorized() Result {
 	return &JSONResult{
 		StatusCode: http.StatusForbidden,
 		Response:   "Not Authorized",
@@ -33,23 +29,19 @@ func (jrp *JSONResultProvider) NotAuthorized() Result {
 }
 
 // InternalError returns a service response.
-func (jrp *JSONResultProvider) InternalError(err error) Result {
-	if jrp.log != nil {
-		jrp.log.Fatal(err)
-	}
-
-	return &JSONResult{
+func (jrp JSONResultProvider) InternalError(err error) Result {
+	return resultWithLoggedError(&JSONResult{
 		StatusCode: http.StatusInternalServerError,
-		Response:   err.Error(),
-	}
+		Response:   err,
+	}, err)
 }
 
 // BadRequest returns a service response.
-func (jrp *JSONResultProvider) BadRequest(err error) Result {
+func (jrp JSONResultProvider) BadRequest(err error) Result {
 	if err != nil {
 		return &JSONResult{
 			StatusCode: http.StatusBadRequest,
-			Response:   err.Error(),
+			Response:   err,
 		}
 	}
 	return &JSONResult{
@@ -59,7 +51,7 @@ func (jrp *JSONResultProvider) BadRequest(err error) Result {
 }
 
 // OK returns a service response.
-func (jrp *JSONResultProvider) OK() Result {
+func (jrp JSONResultProvider) OK() Result {
 	return &JSONResult{
 		StatusCode: http.StatusOK,
 		Response:   "OK!",
@@ -67,7 +59,7 @@ func (jrp *JSONResultProvider) OK() Result {
 }
 
 // Result returns a json response.
-func (jrp *JSONResultProvider) Result(response interface{}) Result {
+func (jrp JSONResultProvider) Result(response interface{}) Result {
 	return &JSONResult{
 		StatusCode: http.StatusOK,
 		Response:   response,

@@ -1,8 +1,10 @@
 package stats
 
 import (
+	"fmt"
 	"strconv"
 
+	"github.com/blend/go-sdk/exception"
 	"github.com/blend/go-sdk/logger"
 	"github.com/blend/go-sdk/web"
 	opentracing "github.com/opentracing/opentracing-go"
@@ -11,6 +13,10 @@ import (
 const (
 	// StateKeySpan is the span state key.
 	StateKeySpan = "web-span"
+)
+
+var (
+	_ web.Tracer = webTracer{}
 )
 
 // WebTracer returns a web tracer.
@@ -59,7 +65,6 @@ func (wt webTracer) Start(ctx *web.Ctx) web.TraceFinisher {
 	ctx.WithContext(spanCtx)
 	// also store the span in the request state
 	ctx.WithStateValue(StateKeySpan, span)
-
 	return &webTraceFinisher{span: span}
 }
 
@@ -67,9 +72,18 @@ type webTraceFinisher struct {
 	span opentracing.Span
 }
 
-func (wtf webTraceFinisher) Finish(ctx *web.Ctx) {
+func (wtf webTraceFinisher) Finish(ctx *web.Ctx, err error) {
 	if wtf.span == nil {
 		return
+	}
+	if err != nil {
+		if typed := exception.As(err); typed != nil {
+			wtf.span.SetTag(TagKeyError, typed.Class())
+			wtf.span.SetTag(TagKeyErrorMessage, typed.Message())
+			wtf.span.SetTag(TagKeyErrorStack, typed.Stack().String())
+		} else {
+			wtf.span.SetTag(TagKeyError, fmt.Sprintf("%v", err))
+		}
 	}
 	wtf.span.SetTag("http.status_code", strconv.Itoa(ctx.Response().StatusCode()))
 	wtf.span.Finish()
