@@ -69,7 +69,8 @@ func (i *Invocation) Exec(statement string, args ...interface{}) (err error) {
 	}
 
 	start := time.Now()
-	defer func() { err = i.finalizer(statement, start, recover(), err) }()
+	i.start()
+	defer func() { err = i.finish(statement, start, recover(), err) }()
 
 	stmt, stmtErr := i.Prepare(statement)
 	if stmtErr != nil {
@@ -125,7 +126,8 @@ func (i *Invocation) Get(object DatabaseMapped, ids ...interface{}) (err error) 
 		i.statementLabel = fmt.Sprintf("%s_get", tableName)
 	}
 
-	defer func() { err = i.finalizer(queryBody, start, recover(), err) }()
+	i.start()
+	defer func() { err = i.finish(queryBody, start, recover(), err) }()
 
 	columnNames := standardCols.ColumnNames()
 	pks := standardCols.PrimaryKeys()
@@ -214,7 +216,8 @@ func (i *Invocation) GetAll(collection interface{}) (err error) {
 
 	var queryBody string
 	start := time.Now()
-	defer func() { err = i.finalizer(queryBody, start, recover(), err) }()
+	i.start()
+	defer func() { err = i.finish(queryBody, start, recover(), err) }()
 
 	collectionValue := reflectValue(collection)
 	t := reflectSliceType(collection)
@@ -304,7 +307,8 @@ func (i *Invocation) Create(object DatabaseMapped) (err error) {
 
 	var queryBody string
 	start := time.Now()
-	defer func() { err = i.finalizer(queryBody, start, recover(), err) }()
+	i.start()
+	defer func() { err = i.finish(queryBody, start, recover(), err) }()
 
 	cols := getCachedColumnCollectionFromInstance(object)
 	writeCols := cols.NotReadOnly().NotAutos()
@@ -404,7 +408,8 @@ func (i *Invocation) CreateIfNotExists(object DatabaseMapped) (err error) {
 
 	var queryBody string
 	start := time.Now()
-	defer func() { err = i.finalizer(queryBody, start, recover(), err) }()
+	i.start()
+	defer func() { err = i.finish(queryBody, start, recover(), err) }()
 
 	cols := getCachedColumnCollectionFromInstance(object)
 	writeCols := cols.NotReadOnly().NotAutos()
@@ -517,7 +522,8 @@ func (i *Invocation) CreateMany(objects interface{}) (err error) {
 
 	var queryBody string
 	start := time.Now()
-	defer func() { err = i.finalizer(queryBody, start, recover(), err) }()
+	i.start()
+	defer func() { err = i.finish(queryBody, start, recover(), err) }()
 
 	sliceValue := reflectValue(objects)
 	if sliceValue.Len() == 0 {
@@ -602,7 +608,8 @@ func (i *Invocation) Update(object DatabaseMapped) (err error) {
 
 	var queryBody string
 	start := time.Now()
-	defer func() { err = i.finalizer(queryBody, start, recover(), err) }()
+	i.start()
+	defer func() { err = i.finish(queryBody, start, recover(), err) }()
 
 	tableName := TableName(object)
 	if len(i.statementLabel) == 0 {
@@ -678,7 +685,8 @@ func (i *Invocation) Exists(object DatabaseMapped) (exists bool, err error) {
 
 	var queryBody string
 	start := time.Now()
-	defer func() { err = i.finalizer(queryBody, start, recover(), err) }()
+	i.start()
+	defer func() { err = i.finish(queryBody, start, recover(), err) }()
 
 	tableName := TableName(object)
 	if len(i.statementLabel) == 0 {
@@ -755,7 +763,8 @@ func (i *Invocation) Delete(object DatabaseMapped) (err error) {
 
 	var queryBody string
 	start := time.Now()
-	defer func() { err = i.finalizer(queryBody, start, recover(), err) }()
+	i.start()
+	defer func() { err = i.finish(queryBody, start, recover(), err) }()
 
 	tableName := TableName(object)
 
@@ -820,7 +829,8 @@ func (i *Invocation) Truncate(object DatabaseMapped) (err error) {
 
 	var queryBody string
 	start := time.Now()
-	defer func() { err = i.finalizer(queryBody, start, recover(), err) }()
+	i.start()
+	defer func() { err = i.finish(queryBody, start, recover(), err) }()
 
 	tableName := TableName(object)
 
@@ -864,8 +874,9 @@ func (i *Invocation) Upsert(object DatabaseMapped) (err error) {
 	}
 
 	var queryBody string
-	start := time.Now()
-	defer func() { err = i.finalizer(queryBody, start, recover(), err) }()
+	start := i.now()
+	i.start()
+	defer func() { err = i.finish(queryBody, start, recover(), err) }()
 
 	cols := getCachedColumnCollectionFromInstance(object)
 	writeCols := cols.NotReadOnly().NotAutos()
@@ -1006,10 +1017,23 @@ func (i *Invocation) closeStatement(err error, stmt *sql.Stmt) error {
 	return exception.Nest(err, stmt.Close())
 }
 
-func (i *Invocation) finalizer(statement string, start time.Time, r interface{}, err error) error {
+func (i *Invocation) start() {
+	i.conn.invocationStart(i.context, i)
+}
+
+func (i *Invocation) finish(statement string, start time.Time, r interface{}, err error) error {
 	if r != nil {
 		err = exception.Nest(err, exception.New(r))
 	}
-	i.conn.done(i.context, statement, i.statementLabel, time.Now().Sub(start), err)
+	i.conn.invocationFinish(i.context, i, statement, err)
+	i.conn.done(i.context, statement, i.statementLabel, i.since(start), err)
 	return err
+}
+
+func (i Invocation) now() time.Time {
+	return time.Now().UTC()
+}
+
+func (i Invocation) since(ts time.Time) time.Duration {
+	return i.now().Sub(ts)
 }

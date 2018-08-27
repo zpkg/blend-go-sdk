@@ -53,7 +53,7 @@ func NewFromEnv() *Connection {
 // Connection is the basic wrapper for connection parameters and saves a reference to the created sql.Connection.
 type Connection struct {
 	sync.Mutex
-	middleware []Middleware
+	tracer Tracer
 
 	connection     *sql.DB
 	config         *Config
@@ -73,15 +73,15 @@ func (dbc *Connection) Config() *Config {
 	return dbc.config
 }
 
-// WithMiddleware adds a new middleware.
-func (dbc *Connection) WithMiddleware(middleware Middleware) *Connection {
-	dbc.middleware = append(dbc.middleware, middleware)
+// WithTracer sets the connection tracer and returns a reference.
+func (dbc *Connection) WithTracer(tracer Tracer) *Connection {
+	dbc.tracer = tracer
 	return dbc
 }
 
-// Middleware returns the middleware.
-func (dbc *Connection) Middleware() []Middleware {
-	return dbc.middleware
+// Tracer returns the tracer.
+func (dbc *Connection) Tracer() Tracer {
+	return dbc.tracer
 }
 
 // Connection returns the underlying driver connection.
@@ -174,8 +174,8 @@ func (dbc *Connection) PrepareContext(context context.Context, statement string,
 		return nil, exception.New(ErrConnectionClosed)
 	}
 
-	dbc.prepareMiddleware(context, statement)
-	defer func() { dbc.prepareMiddlewareDone(context, statement, err) }()
+	dbc.prepareStart(context, statement)
+	defer func() { dbc.prepareFinish(context, statement, err) }()
 
 	if tx != nil {
 		stmt, err = tx.PrepareContext(context, statement)
@@ -219,6 +219,16 @@ func (dbc *Connection) Invoke(context context.Context, txs ...*sql.Tx) *Invocati
 // Background returns an empty context.Context.
 func (dbc *Connection) Background() context.Context {
 	return context.Background()
+}
+
+// Ping checks the db connection.
+func (dbc *Connection) Ping() error {
+	return exception.New(dbc.connection.Ping())
+}
+
+// PingContext checks the db connection.
+func (dbc *Connection) PingContext(context context.Context) error {
+	return exception.New(dbc.connection.PingContext(context))
 }
 
 // --------------------------------------------------------------------------------
@@ -508,27 +518,26 @@ func (dbc *Connection) TruncateInTxContext(context context.Context, object Datab
 // internal methods
 // --------------------------------------------------------------------------------
 
-func (dbc *Connection) prepareMiddleware(context context.Context, statement string) {
-	if len(dbc.middleware) > 0 {
-		for _, middleware := range dbc.middleware {
-			middleware.Prepare(context, dbc, statement)
-		}
+func (dbc *Connection) prepareStart(context context.Context, statement string) {
+	if dbc.tracer != nil {
+		dbc.tracer.PrepareStart(context, dbc, statement)
 	}
 }
 
-func (dbc *Connection) prepareMiddlewareDone(context context.Context, statement string, err error) {
-	if len(dbc.middleware) > 0 {
-		for _, middleware := range dbc.middleware {
-			middleware.PrepareDone(context, dbc, statement, err)
-		}
+func (dbc *Connection) prepareFinish(context context.Context, statement string, err error) {
+	if dbc.tracer != nil {
+		dbc.tracer.PrepareFinish(context, dbc, statement, err)
 	}
 }
 
-func (dbc *Connection) invocationMiddleware(context context.Context, inv *Invocation) {
-	if len(dbc.middleware) > 0 {
-		for _, middleware := range dbc.middleware {
-			middleware.Invocation(context, dbc, inv)
-		}
+func (dbc *Connection) invocationStart(context context.Context, inv *Invocation) {
+	if dbc.tracer != nil {
+		dbc.tracer.InvocationStart(context, dbc, inv)
+	}
+}
+func (dbc *Connection) invocationFinish(context context.Context, inv *Invocation, statement string, err error) {
+	if dbc.tracer != nil {
+		dbc.tracer.InvocationFinish(context, dbc, inv, statement, err)
 	}
 }
 
