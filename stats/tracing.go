@@ -30,6 +30,8 @@ const (
 
 	// TracingOperationHTTPRequest is the http request tracing operation name.
 	TracingOperationHTTPRequest = "http.request"
+	// TracingOperationDBPing is the db ping tracing operation.
+	TracingOperationDBPing = "db.ping"
 	// TracingOperationDBPrepare is the db prepare tracing operation.
 	TracingOperationDBPrepare = "db.prepare"
 	// TracingOperationDBQuery is the db query tracing operation.
