@@ -21,9 +21,15 @@ type dbTracer struct {
 	tracer opentracing.Tracer
 }
 
-func (dbt dbTracer) Connect(ctx context.Context, conn *db.Connection) db.TraceFinisher { return nil }
-
-func (dbt dbTracer) Ping(ctx context.Context, conn *db.Connection) db.TraceFinisher { return nil }
+func (dbt dbTracer) Ping(ctx context.Context, conn *db.Connection) db.TraceFinisher {
+	startOptions := []opentracing.StartSpanOption{
+		opentracing.Tag{Key: TagKeyResourceName, Value: conn.Config().GetDatabase()},
+		opentracing.Tag{Key: TagKeySpanType, Value: SpanTypeSQL},
+		opentracing.StartTime(time.Now().UTC()),
+	}
+	span, _ := StartSpanFromContext(ctx, dbt.tracer, TracingOperationDBPing, startOptions...)
+	return dbTraceFinisher{span: span}
+}
 
 func (dbt dbTracer) Prepare(ctx context.Context, conn *db.Connection, statement string) db.TraceFinisher {
 	startOptions := []opentracing.StartSpanOption{
@@ -44,7 +50,7 @@ func (dbt dbTracer) Query(ctx context.Context, conn *db.Connection, inv *db.Invo
 		opentracing.Tag{Key: "db.query", Value: statement},
 		opentracing.StartTime(time.Now().UTC()),
 	}
-	span, _ := StartSpanFromContext(ctx, dbt.tracer, TracingOperationDBPrepare, startOptions...)
+	span, _ := StartSpanFromContext(ctx, dbt.tracer, TracingOperationDBQuery, startOptions...)
 	return dbTraceFinisher{span: span}
 }
 

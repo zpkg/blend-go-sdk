@@ -239,8 +239,8 @@ func (dbc *Connection) PingContext(context context.Context) (err error) {
 				tf.Finish(err)
 			}()
 		}
-
 	}
+
 	err = exception.New(dbc.connection.PingContext(context))
 	return
 }
