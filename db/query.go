@@ -4,7 +4,6 @@ import (
 	"context"
 	"database/sql"
 	"reflect"
-	"time"
 
 	"github.com/blend/go-sdk/exception"
 )
@@ -20,9 +19,6 @@ type Query struct {
 	statementLabel string
 	args           []interface{}
 
-	start time.Time
-	rows  *sql.Rows
-
 	stmt *sql.Stmt
 	conn *Connection
 	inv  *Invocation
@@ -30,71 +26,23 @@ type Query struct {
 	err  error
 }
 
-// Close closes and releases any resources retained by the QueryResult.
-func (q *Query) Close() error {
-	var rowsErr error
-	var stmtErr error
-
-	if q.rows != nil {
-		rowsErr = q.rows.Close()
-		q.rows = nil
+func (q *Query) exec() (rows *sql.Rows, err error) {
+	if q.err != nil {
+		err = q.err
+		return
 	}
-	// if the statement isn't cached
-	if q.stmt != nil {
-		if q.conn.statementCache == nil {
-			stmtErr = q.stmt.Close()
-		}
-		q.stmt = nil
+	rows, err = q.stmt.QueryContext(q.context, q.args...)
+	if err != nil {
+		q.inv.invalidateCachedStatement()
+		err = exception.New(err)
 	}
-	return exception.Nest(rowsErr, stmtErr)
-}
-
-// WithLabel sets the statement cache label for the query.
-func (q *Query) WithLabel(label string) *Query {
-	q.statementLabel = label
-	return q
+	return
 }
 
 // Execute runs a given query, yielding the raw results.
-func (q *Query) Execute() (stmt *sql.Stmt, rows *sql.Rows, err error) {
-	var stmtErr error
-	if q.shouldCacheStatement() {
-		stmt, stmtErr = q.conn.PrepareCachedContext(q.context, q.statementLabel, q.statement, q.tx)
-	} else {
-		stmt, stmtErr = q.conn.PrepareContext(q.context, q.statement, q.tx)
-	}
-
-	if stmtErr != nil {
-		if q.shouldCacheStatement() {
-			q.conn.statementCache.InvalidateStatement(q.statementLabel)
-		}
-		err = exception.New(stmtErr)
-		return
-	}
-
-	defer func() {
-		if r := recover(); r != nil {
-			if q.conn.statementCache != nil {
-				err = exception.Nest(err, exception.New(r))
-			} else {
-				err = exception.Nest(err, exception.New(r), exception.New(stmt.Close()))
-			}
-		}
-	}()
-
-	var queryErr error
-	if q.context != nil {
-		rows, queryErr = stmt.QueryContext(q.context, q.args...)
-	} else {
-		rows, queryErr = stmt.Query(q.args...)
-	}
-
-	if queryErr != nil {
-		if q.shouldCacheStatement() {
-			q.conn.statementCache.InvalidateStatement(q.statementLabel)
-		}
-		err = exception.New(queryErr).WithMessagef("query: %s", q.statement)
-	}
+func (q *Query) Execute() (rows *sql.Rows, err error) {
+	defer func() { q.finalizer(recover(), err) }()
+	rows, err = q.exec()
 	return
 }
 
@@ -102,21 +50,20 @@ func (q *Query) Execute() (stmt *sql.Stmt, rows *sql.Rows, err error) {
 func (q *Query) Any() (hasRows bool, err error) {
 	defer func() { err = q.finalizer(recover(), err) }()
 
-	q.stmt, q.rows, q.err = q.Execute()
-	if q.err != nil {
-		hasRows = false
-		err = exception.New(q.err)
+	var rows *sql.Rows
+	rows, err = q.exec()
+	if err != nil {
 		return
 	}
+	defer rows.Close()
 
-	rowsErr := q.rows.Err()
+	rowsErr := rows.Err()
 	if rowsErr != nil {
-		hasRows = false
 		err = exception.New(rowsErr)
 		return
 	}
 
-	hasRows = q.rows.Next()
+	hasRows = rows.Next()
 	return
 }
 
@@ -124,22 +71,20 @@ func (q *Query) Any() (hasRows bool, err error) {
 func (q *Query) None() (hasRows bool, err error) {
 	defer func() { err = q.finalizer(recover(), err) }()
 
-	q.stmt, q.rows, q.err = q.Execute()
+	var rows *sql.Rows
+	rows, err = q.exec()
+	if err != nil {
+		return
+	}
+	defer rows.Close()
 
-	if q.err != nil {
-		hasRows = false
-		err = exception.New(q.err)
+	err = rows.Err()
+	if err != nil {
+		err = exception.New(err)
 		return
 	}
 
-	rowsErr := q.rows.Err()
-	if rowsErr != nil {
-		hasRows = false
-		err = exception.New(rowsErr)
-		return
-	}
-
-	hasRows = !q.rows.Next()
+	hasRows = !rows.Next()
 	return
 }
 
@@ -147,22 +92,24 @@ func (q *Query) None() (hasRows bool, err error) {
 func (q *Query) Scan(args ...interface{}) (err error) {
 	defer func() { err = q.finalizer(recover(), err) }()
 
-	q.stmt, q.rows, q.err = q.Execute()
-	if q.err != nil {
-		err = exception.New(q.err)
+	var rows *sql.Rows
+	rows, err = q.exec()
+	if err != nil {
+		return
+	}
+	defer rows.Close()
+
+	err = rows.Err()
+	if err != nil {
+		err = exception.New(err)
 		return
 	}
 
-	rowsErr := q.rows.Err()
-	if rowsErr != nil {
-		err = exception.New(rowsErr)
-		return
-	}
-
-	if q.rows.Next() {
-		scanErr := q.rows.Scan(args...)
-		if scanErr != nil {
-			err = exception.New(scanErr)
+	if rows.Next() {
+		err = rows.Scan(args...)
+		if err != nil {
+			err = exception.New(err)
+			return
 		}
 	}
 
@@ -173,15 +120,16 @@ func (q *Query) Scan(args ...interface{}) (err error) {
 func (q *Query) Out(object interface{}) (err error) {
 	defer func() { err = q.finalizer(recover(), err) }()
 
-	q.stmt, q.rows, q.err = q.Execute()
-	if q.err != nil {
-		err = exception.New(q.err)
+	var rows *sql.Rows
+	rows, err = q.exec()
+	if err != nil {
 		return
 	}
+	defer rows.Close()
 
-	rowsErr := q.rows.Err()
-	if rowsErr != nil {
-		err = exception.New(rowsErr)
+	err = rows.Err()
+	if err != nil {
+		err = exception.New(err)
 		return
 	}
 
@@ -192,15 +140,13 @@ func (q *Query) Out(object interface{}) (err error) {
 	}
 
 	columnMeta := getCachedColumnCollectionFromInstance(object)
-	var popErr error
-	if q.rows.Next() {
-		if populatable, isPopulatable := object.(Populatable); isPopulatable {
-			popErr = populatable.Populate(q.rows)
+	if rows.Next() {
+		if populatable, ok := object.(Populatable); ok {
+			err = populatable.Populate(rows)
 		} else {
-			popErr = PopulateByName(object, q.rows, columnMeta)
+			err = PopulateByName(object, rows, columnMeta)
 		}
-		if popErr != nil {
-			err = popErr
+		if err != nil {
 			return
 		}
 	}
@@ -212,47 +158,45 @@ func (q *Query) Out(object interface{}) (err error) {
 func (q *Query) OutMany(collection interface{}) (err error) {
 	defer func() { err = q.finalizer(recover(), err) }()
 
-	q.stmt, q.rows, q.err = q.Execute()
-	if q.err != nil {
-		err = exception.New(q.err)
+	var rows *sql.Rows
+	rows, err = q.exec()
+	if err != nil {
 		return err
 	}
+	defer rows.Close()
 
-	rowsErr := q.rows.Err()
-	if rowsErr != nil {
-		err = exception.New(rowsErr)
+	err = rows.Err()
+	if err != nil {
+		err = exception.New(err)
 		return
 	}
 
 	sliceType := reflectType(collection)
 	if sliceType.Kind() != reflect.Slice {
-		err = exception.New("destination collection is not a slice")
+		err = exception.New(ErrCollectionNotSlice)
 		return
 	}
 
 	sliceInnerType := reflectSliceType(collection)
 	collectionValue := reflectValue(collection)
-
 	v := makeNew(sliceInnerType)
 	meta := getCachedColumnCollectionFromType(newColumnCacheKey(sliceInnerType), sliceInnerType)
 
 	isPopulatable := isPopulatable(v)
 
-	var popErr error
 	didSetRows := false
-	for q.rows.Next() {
+	for rows.Next() {
 		newObj := makeNew(sliceInnerType)
 
 		if isPopulatable {
-			popErr = asPopulatable(newObj).Populate(q.rows)
+			err = asPopulatable(newObj).Populate(rows)
 		} else {
-			popErr = PopulateByName(newObj, q.rows, meta)
+			err = PopulateByName(newObj, rows, meta)
 		}
-
-		if popErr != nil {
-			err = popErr
+		if err != nil {
 			return
 		}
+
 		newObjValue := reflectValue(newObj)
 		collectionValue.Set(reflect.Append(collectionValue, newObjValue))
 		didSetRows = true
@@ -268,21 +212,24 @@ func (q *Query) OutMany(collection interface{}) (err error) {
 func (q *Query) Each(consumer RowsConsumer) (err error) {
 	defer func() { err = q.finalizer(recover(), err) }()
 
-	q.stmt, q.rows, q.err = q.Execute()
-	if q.err != nil {
-		return q.err
+	var rows *sql.Rows
+	rows, err = q.exec()
+	if err != nil {
+		return
 	}
+	defer rows.Close()
 
-	rowsErr := q.rows.Err()
-	if rowsErr != nil {
-		err = exception.New(rowsErr)
+	err = rows.Err()
+	if err != nil {
+		err = exception.New(err)
 		return
 	}
 
-	for q.rows.Next() {
-		err = consumer(q.rows)
+	for rows.Next() {
+		err = consumer(rows)
 		if err != nil {
-			return err
+			err = exception.New(err)
+			return
 		}
 	}
 	return
@@ -292,21 +239,23 @@ func (q *Query) Each(consumer RowsConsumer) (err error) {
 func (q *Query) First(consumer RowsConsumer) (err error) {
 	defer func() { err = q.finalizer(recover(), err) }()
 
-	q.stmt, q.rows, q.err = q.Execute()
-	if q.err != nil {
-		return q.err
+	var rows *sql.Rows
+	rows, err = q.exec()
+	if err != nil {
+		return
 	}
+	defer rows.Close()
 
-	rowsErr := q.rows.Err()
-	if rowsErr != nil {
-		err = exception.New(rowsErr)
+	err = rows.Err()
+	if err != nil {
+		err = exception.New(err)
 		return
 	}
 
-	if q.rows.Next() {
-		err = consumer(q.rows)
+	if rows.Next() {
+		err = consumer(rows)
 		if err != nil {
-			return err
+			return
 		}
 	}
 	return
@@ -316,18 +265,15 @@ func (q *Query) First(consumer RowsConsumer) (err error) {
 // helpers
 // --------------------------------------------------------------------------------
 
-func (q *Query) shouldCacheStatement() bool {
-	return q.conn.statementCache != nil && len(q.statementLabel) > 0
-}
-
 func (q *Query) finalizer(r interface{}, err error) error {
 	if r != nil {
 		err = exception.Nest(err, exception.New(r))
 	}
-	err = exception.Nest(err, q.Close())
-	if q.inv.traceFinisher != nil {
-		q.inv.traceFinisher.Finish(err)
+	// close the statement if it's set using the invocation
+	if q.stmt != nil {
+		err = q.inv.closeStatement(err, q.stmt)
 	}
-	q.conn.done(q.context, q.statement, q.statementLabel, time.Now().Sub(q.start), err)
+	// call the invocation finisher
+	q.inv.finish(q.statement, nil, err)
 	return err
 }

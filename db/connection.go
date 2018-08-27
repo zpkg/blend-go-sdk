@@ -214,10 +214,11 @@ func (dbc *Connection) PrepareCachedContext(context context.Context, statementID
 // Invoke returns a new invocation.
 func (dbc *Connection) Invoke(context context.Context, txs ...*sql.Tx) *Invocation {
 	return &Invocation{
-		context: context,
-		tracer:  dbc.tracer,
-		conn:    dbc,
-		tx:      OptionalTx(txs...),
+		context:   context,
+		tracer:    dbc.tracer,
+		conn:      dbc,
+		startTime: time.Now().UTC(),
+		tx:        OptionalTx(txs...),
 	}
 }
 
@@ -533,7 +534,7 @@ func (dbc *Connection) TruncateInTxContext(context context.Context, object Datab
 // internal methods
 // --------------------------------------------------------------------------------
 
-func (dbc *Connection) done(context context.Context, statement, statementLabel string, elapsed time.Duration, err error) {
+func (dbc *Connection) finish(context context.Context, statement, statementLabel string, elapsed time.Duration, err error) {
 	if dbc.log != nil {
 		dbc.log.Trigger(logger.NewQueryEvent(statement, elapsed).WithDatabase(dbc.config.GetDatabase()).WithQueryLabel(statementLabel).WithEngine("postgres").WithErr(err))
 		if err != nil {

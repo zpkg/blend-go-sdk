@@ -1,6 +1,7 @@
 package db
 
 import (
+	"context"
 	"database/sql"
 	"fmt"
 	"testing"
@@ -89,10 +90,10 @@ func TestConnectionStatementCacheQuery(t *testing.T) {
 	conn.StatementCache().WithEnabled(true)
 
 	var ok string
-	a.Nil(conn.Query("select 'ok!'").WithLabel("status").Scan(&ok))
+	a.Nil(conn.Invoke(context.TODO()).WithLabel("status").Query("select 'ok!'").Scan(&ok))
 	a.Equal("ok!", ok)
 
-	a.Nil(conn.Query("select 'ok!'").WithLabel("status").Scan(&ok))
+	a.Nil(conn.Invoke(context.TODO()).WithLabel("status").Query("select 'ok!'").Scan(&ok))
 	a.Equal("ok!", ok)
 
 	a.True(conn.StatementCache().HasStatement("status"))

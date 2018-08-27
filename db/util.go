@@ -6,6 +6,7 @@ import (
 	"reflect"
 	"strconv"
 	"strings"
+	"time"
 
 	"github.com/blend/go-sdk/exception"
 )
@@ -161,4 +162,12 @@ func makeNew(t reflect.Type) interface{} {
 
 func makeSliceOfType(t reflect.Type) interface{} {
 	return reflect.New(reflect.SliceOf(t)).Interface()
+}
+
+func now() time.Time {
+	return time.Now().UTC()
+}
+
+func since(ts time.Time) time.Duration {
+	return now().Sub(ts)
 }
