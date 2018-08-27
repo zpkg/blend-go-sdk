@@ -124,7 +124,7 @@ func (i *Invocation) Get(object DatabaseMapped, ids ...interface{}) (err error) 
 	}
 
 	if len(ids) == 0 {
-		return exception.New("invalid `ids` parameter.")
+		return exception.New(ErrInvalidIDs)
 	}
 
 	var queryBody string
@@ -140,7 +140,7 @@ func (i *Invocation) Get(object DatabaseMapped, ids ...interface{}) (err error) 
 	columnNames := standardCols.ColumnNames()
 	pks := standardCols.PrimaryKeys()
 	if pks.Len() == 0 {
-		err = exception.New("no primary key on object to get by.")
+		err = exception.New(ErrNoPrimaryKey)
 		return
 	}
 

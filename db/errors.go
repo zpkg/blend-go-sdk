@@ -19,6 +19,10 @@ const (
 	ErrStatementCacheUnset exception.Class = "db: the statement cache is unset"
 	// ErrCollectionNotSlice is an error returned by OutMany if the destination is not a slice.
 	ErrCollectionNotSlice exception.Class = "db: outmany destination collection is not a slice"
+	// ErrInvalidIDs is an error returned by Get if the ids aren't provided.
+	ErrInvalidIDs exception.Class = "db: invalid `ids` parameter"
+	// ErrNoPrimaryKey is an error returned by a number of operations that depend on a primary key.
+	ErrNoPrimaryKey exception.Class = "db: no primary key on object"
 )
 
 // IsConfigUnset returns if the error is an `ErrConfigUnset`.

@@ -238,6 +238,9 @@ const (
 
 	// DefaultShutdownGracePeriod is the default shutdown grace period.
 	DefaultShutdownGracePeriod = 5 * time.Second
+
+	// DefaultBufferPoolSize is the default buffer pool size.
+	DefaultViewBufferPoolSize = 256
 )
 
 // DefaultHeaders are the default headers added by go-web.
@@ -258,6 +261,14 @@ const (
 
 	// SessionReadWriteLock is a lock policy that acquires both a read and a write lock on session.
 	SessionReadWriteLock SessionLockPolicy = 2
+)
+
+const (
+	// PostBodySize is the maximum post body size we will typically consume.
+	PostBodySize = int64(1 << 26) //64mb
+
+	// PostBodySizeMax is the absolute maximum file size the server can handle.
+	PostBodySizeMax = int64(1 << 32) //enormous.
 )
 
 const (

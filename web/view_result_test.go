@@ -10,6 +10,10 @@ import (
 	"github.com/blend/go-sdk/assert"
 )
 
+type testViewModel struct {
+	Text string
+}
+
 func TestViewResultRender(t *testing.T) {
 	assert := assert.New(t)
 
