@@ -64,6 +64,8 @@ type Ctx struct {
 	log  *logger.Logger
 	auth *AuthManager
 
+	tracer Tracer
+
 	postBody []byte
 
 	view                  *ViewResultProvider
@@ -702,6 +704,29 @@ func (rc *Ctx) RedirectWithMethodf(method, format string, args ...interface{}) *
 	}
 }
 
+// Start returns the start request time.
+func (rc Ctx) Start() time.Time {
+	return rc.requestStart
+}
+
+// End returns the end request time.
+func (rc Ctx) End() time.Time {
+	return rc.requestEnd
+}
+
+// Elapsed is the time delta between start and end.
+func (rc *Ctx) Elapsed() time.Duration {
+	if !rc.requestEnd.IsZero() {
+		return rc.requestEnd.Sub(rc.requestStart)
+	}
+	return time.Now().UTC().Sub(rc.requestStart)
+}
+
+// Route returns the original route match for the request.
+func (rc *Ctx) Route() *Route {
+	return rc.route
+}
+
 // --------------------------------------------------------------------------------
 // Stats Methods used for logging.
 // --------------------------------------------------------------------------------
@@ -726,32 +751,18 @@ func (rc *Ctx) setLoggedContentLength(length int) {
 	rc.contentLength = length
 }
 
-// OnRequestStart will mark the start of request timing.
 func (rc *Ctx) onRequestStart() {
 	rc.requestStart = time.Now().UTC()
-}
-
-// Start returns the request start time.
-func (rc Ctx) Start() time.Time {
-	return rc.requestStart
-}
-
-// OnRequestEnd will mark the end of request timing.
-func (rc *Ctx) onRequestEnd() {
-	rc.requestEnd = time.Now().UTC()
-}
-
-// Elapsed is the time delta between start and end.
-func (rc *Ctx) Elapsed() time.Duration {
-	if !rc.requestEnd.IsZero() {
-		return rc.requestEnd.Sub(rc.requestStart)
+	if rc.tracer != nil {
+		rc.tracer.Start(rc)
 	}
-	return time.Now().UTC().Sub(rc.requestStart)
 }
 
-// Route returns the original route match for the request.
-func (rc *Ctx) Route() *Route {
-	return rc.route
+func (rc *Ctx) onRequestFinish() {
+	rc.requestEnd = time.Now().UTC()
+	if rc.tracer != nil {
+		rc.tracer.Finish(rc)
+	}
 }
 
 // PostedFile is a file that has been posted to an hc endpoint.

@@ -92,6 +92,7 @@ type App struct {
 	handleMethodNotAllowed  bool
 
 	defaultMiddleware []Middleware
+	tracer            Tracer
 
 	defaultResultProvider ResultProvider
 	viewProvider          *ViewResultProvider
@@ -545,6 +546,17 @@ func (a *App) DefaultMiddleware() []Middleware {
 	return a.defaultMiddleware
 }
 
+// WithTracer sets the tracer.
+func (a *App) WithTracer(tracer Tracer) *App {
+	a.tracer = tracer
+	return a
+}
+
+// Tracer returns the tracer.
+func (a *App) Tracer() Tracer {
+	return a.tracer
+}
+
 // CreateServer returns the basic http.Server for the app.
 func (a *App) CreateServer() *http.Server {
 	return &http.Server{
@@ -573,6 +585,15 @@ func (a *App) Server() *http.Server {
 // Listener returns the underlying listener.
 func (a *App) Listener() *net.TCPListener {
 	return a.listener
+}
+
+// StartupTasks runs common startup tasks.
+func (a *App) StartupTasks() error {
+	if a.didRunStartupTasks {
+		return nil
+	}
+	a.didRunStartupTasks = true
+	return a.views.Initialize()
 }
 
 // Start starts the server and binds to the given address.
@@ -1051,9 +1072,9 @@ func (a *App) renderAction(action Action) Handler {
 			}
 		}
 
-		ctx.onRequestEnd()
 		ctx.setLoggedStatusCode(response.StatusCode())
 		ctx.setLoggedContentLength(response.ContentLength())
+		ctx.onRequestFinish()
 
 		err = response.Close()
 		if err != nil && err != http.ErrBodyNotAllowed {
@@ -1070,15 +1091,6 @@ func (a *App) renderAction(action Action) Handler {
 			a.log.Trigger(a.loggerHTTPResponseEvent(ctx))
 		}
 	}
-}
-
-// StartupTasks runs common startup tasks.
-func (a *App) StartupTasks() error {
-	if a.didRunStartupTasks {
-		return nil
-	}
-	a.didRunStartupTasks = true
-	return a.views.Initialize()
 }
 
 func (a *App) addHSTSHeader(w http.ResponseWriter) {
@@ -1146,7 +1158,7 @@ func (a *App) handlePanic(w http.ResponseWriter, r *http.Request, err interface{
 
 func (a *App) createCtx(w ResponseWriter, r *http.Request, route *Route, p RouteParameters, s State) *Ctx {
 	ctx := &Ctx{
-		context:         r.Context(),
+		tracer:          a.tracer,
 		response:        w,
 		request:         r,
 		app:             a,
@@ -1162,6 +1174,9 @@ func (a *App) createCtx(w ResponseWriter, r *http.Request, route *Route, p Route
 		defaultResultProvider: a.defaultResultProvider,
 	}
 
+	if r != nil {
+		ctx.context = r.Context()
+	}
 	if ctx.defaultResultProvider == nil {
 		ctx.defaultResultProvider = a.textProvider
 	}
