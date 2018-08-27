@@ -21,6 +21,9 @@ type Invocation struct {
 	context        context.Context
 	tx             *sql.Tx
 	statementLabel string
+
+	tracer        Tracer
+	traceFinisher TraceFinisher
 }
 
 // WithContext sets the context and returns a reference to the invocation.
@@ -69,7 +72,7 @@ func (i *Invocation) Exec(statement string, args ...interface{}) (err error) {
 	}
 
 	start := time.Now()
-	i.start()
+	i.start(statement)
 	defer func() { err = i.finish(statement, start, recover(), err) }()
 
 	stmt, stmtErr := i.Prepare(statement)
@@ -94,12 +97,13 @@ func (i *Invocation) Exec(statement string, args ...interface{}) (err error) {
 // Query returns a new query object for a given sql query and arguments.
 func (i *Invocation) Query(statement string, args ...interface{}) *Query {
 	return &Query{
+		context:        i.context,
 		statement:      statement,
 		statementLabel: i.statementLabel,
 		args:           args,
-		start:          time.Now(),
+		start:          i.now(),
 		conn:           i.conn,
-		context:        i.context,
+		inv:            i,
 		tx:             i.tx,
 	}
 }
@@ -126,7 +130,6 @@ func (i *Invocation) Get(object DatabaseMapped, ids ...interface{}) (err error) 
 		i.statementLabel = fmt.Sprintf("%s_get", tableName)
 	}
 
-	i.start()
 	defer func() { err = i.finish(queryBody, start, recover(), err) }()
 
 	columnNames := standardCols.ColumnNames()
@@ -162,9 +165,11 @@ func (i *Invocation) Get(object DatabaseMapped, ids ...interface{}) (err error) 
 	}
 
 	queryBody = queryBodyBuffer.String()
+
+	i.start(queryBody)
 	stmt, stmtErr := i.Prepare(queryBody)
 	if stmtErr != nil {
-		err = exception.New(stmtErr).WithMessagef("query: %s", queryBody)
+		err = exception.New(stmtErr)
 		return
 	}
 	defer i.closeStatement(err, stmt)
@@ -178,7 +183,7 @@ func (i *Invocation) Get(object DatabaseMapped, ids ...interface{}) (err error) 
 	}
 
 	if queryErr != nil {
-		err = exception.New(queryErr).WithMessagef("query: %s", queryBody)
+		err = exception.New(queryErr)
 		i.invalidateCachedStatement()
 		return
 	}
@@ -216,7 +221,6 @@ func (i *Invocation) GetAll(collection interface{}) (err error) {
 
 	var queryBody string
 	start := time.Now()
-	i.start()
 	defer func() { err = i.finish(queryBody, start, recover(), err) }()
 
 	collectionValue := reflectValue(collection)
@@ -247,11 +251,14 @@ func (i *Invocation) GetAll(collection interface{}) (err error) {
 	queryBody = queryBodyBuffer.String()
 	stmt, stmtErr := i.Prepare(queryBody)
 	if stmtErr != nil {
-		err = exception.New(stmtErr).WithMessagef("query: %s", queryBody)
+		err = exception.New(stmtErr)
 		i.invalidateCachedStatement()
 		return
 	}
+
 	defer func() { err = i.closeStatement(err, stmt) }()
+
+	i.start(queryBody)
 
 	var rows *sql.Rows
 	var queryErr error
@@ -261,7 +268,7 @@ func (i *Invocation) GetAll(collection interface{}) (err error) {
 		rows, queryErr = stmt.Query()
 	}
 	if queryErr != nil {
-		err = exception.New(queryErr).WithMessagef("query: %s", queryBody)
+		err = exception.New(queryErr)
 		return
 	}
 	defer func() {
@@ -307,7 +314,6 @@ func (i *Invocation) Create(object DatabaseMapped) (err error) {
 
 	var queryBody string
 	start := time.Now()
-	i.start()
 	defer func() { err = i.finish(queryBody, start, recover(), err) }()
 
 	cols := getCachedColumnCollectionFromInstance(object)
@@ -352,10 +358,12 @@ func (i *Invocation) Create(object DatabaseMapped) (err error) {
 	queryBody = queryBodyBuffer.String()
 	stmt, stmtErr := i.Prepare(queryBody)
 	if stmtErr != nil {
-		err = exception.New(stmtErr).WithMessagef("query: %s", queryBody)
+		err = exception.New(stmtErr)
 		return
 	}
 	defer func() { err = i.closeStatement(err, stmt) }()
+
+	i.start(queryBody)
 
 	var execErr error
 	if autos.Len() == 0 {
@@ -366,7 +374,7 @@ func (i *Invocation) Create(object DatabaseMapped) (err error) {
 		}
 
 		if execErr != nil {
-			err = exception.New(execErr).WithMessagef("query: %s", queryBody)
+			err = exception.New(execErr)
 			i.invalidateCachedStatement()
 			return
 		}
@@ -383,7 +391,7 @@ func (i *Invocation) Create(object DatabaseMapped) (err error) {
 		}
 
 		if execErr != nil {
-			err = exception.New(execErr).WithMessagef("query: %s", queryBody)
+			err = exception.New(execErr)
 			return
 		}
 
@@ -408,7 +416,6 @@ func (i *Invocation) CreateIfNotExists(object DatabaseMapped) (err error) {
 
 	var queryBody string
 	start := time.Now()
-	i.start()
 	defer func() { err = i.finish(queryBody, start, recover(), err) }()
 
 	cols := getCachedColumnCollectionFromInstance(object)
@@ -467,10 +474,12 @@ func (i *Invocation) CreateIfNotExists(object DatabaseMapped) (err error) {
 	queryBody = queryBodyBuffer.String()
 	stmt, stmtErr := i.Prepare(queryBody)
 	if stmtErr != nil {
-		err = exception.New(stmtErr).WithMessagef("query: %s", queryBody)
+		err = exception.New(stmtErr)
 		return
 	}
 	defer func() { err = i.closeStatement(err, stmt) }()
+
+	i.start(queryBody)
 
 	var execErr error
 	if autos.Len() == 0 {
@@ -480,7 +489,7 @@ func (i *Invocation) CreateIfNotExists(object DatabaseMapped) (err error) {
 			_, execErr = stmt.Exec(colValues...)
 		}
 		if execErr != nil {
-			err = exception.New(execErr).WithMessagef("query: %s", queryBody)
+			err = exception.New(execErr)
 			i.invalidateCachedStatement()
 			return
 		}
@@ -522,7 +531,6 @@ func (i *Invocation) CreateMany(objects interface{}) (err error) {
 
 	var queryBody string
 	start := time.Now()
-	i.start()
 	defer func() { err = i.finish(queryBody, start, recover(), err) }()
 
 	sliceValue := reflectValue(objects)
@@ -574,10 +582,11 @@ func (i *Invocation) CreateMany(objects interface{}) (err error) {
 	queryBody = queryBodyBuffer.String()
 	stmt, stmtErr := i.Prepare(queryBody)
 	if stmtErr != nil {
-		err = exception.New(stmtErr).WithMessagef("query: %s", queryBody)
+		err = exception.New(stmtErr)
 		return
 	}
 	defer func() { err = i.closeStatement(err, stmt) }()
+	i.start(queryBody)
 
 	var colValues []interface{}
 	for row := 0; row < sliceValue.Len(); row++ {
@@ -591,7 +600,7 @@ func (i *Invocation) CreateMany(objects interface{}) (err error) {
 		_, execErr = stmt.Exec(colValues...)
 	}
 	if execErr != nil {
-		err = exception.New(execErr).WithMessagef("query: %s", queryBody)
+		err = exception.New(execErr)
 		i.invalidateCachedStatement()
 		return
 	}
@@ -608,7 +617,6 @@ func (i *Invocation) Update(object DatabaseMapped) (err error) {
 
 	var queryBody string
 	start := time.Now()
-	i.start()
 	defer func() { err = i.finish(queryBody, start, recover(), err) }()
 
 	tableName := TableName(object)
@@ -655,11 +663,13 @@ func (i *Invocation) Update(object DatabaseMapped) (err error) {
 	queryBody = queryBodyBuffer.String()
 	stmt, stmtErr := i.Prepare(queryBody)
 	if stmtErr != nil {
-		err = exception.New(stmtErr).WithMessagef("query: %s", queryBody)
+		err = exception.New(stmtErr)
 		return
 	}
 
 	defer func() { err = i.closeStatement(err, stmt) }()
+
+	i.start(queryBody)
 
 	var execErr error
 	if i.context != nil {
@@ -668,7 +678,7 @@ func (i *Invocation) Update(object DatabaseMapped) (err error) {
 		_, execErr = stmt.Exec(updateValues...)
 	}
 	if execErr != nil {
-		err = exception.New(execErr).WithMessagef("query: %s", queryBody)
+		err = exception.New(execErr)
 		i.invalidateCachedStatement()
 		return
 	}
@@ -685,7 +695,6 @@ func (i *Invocation) Exists(object DatabaseMapped) (exists bool, err error) {
 
 	var queryBody string
 	start := time.Now()
-	i.start()
 	defer func() { err = i.finish(queryBody, start, recover(), err) }()
 
 	tableName := TableName(object)
@@ -722,11 +731,13 @@ func (i *Invocation) Exists(object DatabaseMapped) (exists bool, err error) {
 	stmt, stmtErr := i.Prepare(queryBody)
 	if stmtErr != nil {
 		exists = false
-		err = exception.New(stmtErr).WithMessagef("query: %s", queryBody)
+		err = exception.New(stmtErr)
 		return
 	}
 
 	defer func() { err = i.closeStatement(err, stmt) }()
+
+	i.start(queryBody)
 
 	pkValues := pks.ColumnValues(object)
 	var rows *sql.Rows
@@ -745,7 +756,7 @@ func (i *Invocation) Exists(object DatabaseMapped) (exists bool, err error) {
 
 	if queryErr != nil {
 		exists = false
-		err = exception.New(queryErr).WithMessagef("query: %s", queryBody)
+		err = exception.New(queryErr)
 		i.invalidateCachedStatement()
 		return
 	}
@@ -763,7 +774,6 @@ func (i *Invocation) Delete(object DatabaseMapped) (err error) {
 
 	var queryBody string
 	start := time.Now()
-	i.start()
 	defer func() { err = i.finish(queryBody, start, recover(), err) }()
 
 	tableName := TableName(object)
@@ -800,10 +810,12 @@ func (i *Invocation) Delete(object DatabaseMapped) (err error) {
 	queryBody = queryBodyBuffer.String()
 	stmt, stmtErr := i.Prepare(queryBody)
 	if stmtErr != nil {
-		err = exception.New(stmtErr).WithMessagef("query: %s", queryBody)
+		err = exception.New(stmtErr)
 		return
 	}
 	defer func() { err = i.closeStatement(err, stmt) }()
+
+	i.start(queryBody)
 
 	pkValues := pks.ColumnValues(object)
 
@@ -814,7 +826,7 @@ func (i *Invocation) Delete(object DatabaseMapped) (err error) {
 		_, execErr = stmt.Exec(pkValues...)
 	}
 	if execErr != nil {
-		err = exception.New(execErr).WithMessagef("query: %s", queryBody)
+		err = exception.New(execErr)
 		i.invalidateCachedStatement()
 	}
 	return
@@ -829,7 +841,6 @@ func (i *Invocation) Truncate(object DatabaseMapped) (err error) {
 
 	var queryBody string
 	start := time.Now()
-	i.start()
 	defer func() { err = i.finish(queryBody, start, recover(), err) }()
 
 	tableName := TableName(object)
@@ -847,10 +858,12 @@ func (i *Invocation) Truncate(object DatabaseMapped) (err error) {
 	queryBody = queryBodyBuffer.String()
 	stmt, stmtErr := i.Prepare(queryBody)
 	if stmtErr != nil {
-		err = exception.New(stmtErr).WithMessagef("query: %s", queryBody)
+		err = exception.New(stmtErr)
 		return
 	}
 	defer func() { err = i.closeStatement(err, stmt) }()
+
+	i.start(queryBody)
 
 	var execErr error
 	if i.context != nil {
@@ -860,7 +873,7 @@ func (i *Invocation) Truncate(object DatabaseMapped) (err error) {
 	}
 
 	if execErr != nil {
-		err = exception.New(execErr).WithMessagef("query: %s", queryBody)
+		err = exception.New(execErr)
 		i.invalidateCachedStatement()
 	}
 	return
@@ -875,7 +888,6 @@ func (i *Invocation) Upsert(object DatabaseMapped) (err error) {
 
 	var queryBody string
 	start := i.now()
-	i.start()
 	defer func() { err = i.finish(queryBody, start, recover(), err) }()
 
 	cols := getCachedColumnCollectionFromInstance(object)
@@ -958,6 +970,8 @@ func (i *Invocation) Upsert(object DatabaseMapped) (err error) {
 	}
 	defer func() { err = i.closeStatement(err, stmt) }()
 
+	i.start(queryBody)
+
 	var execErr error
 	if serials.Len() != 0 {
 		var id interface{}
@@ -1017,15 +1031,19 @@ func (i *Invocation) closeStatement(err error, stmt *sql.Stmt) error {
 	return exception.Nest(err, stmt.Close())
 }
 
-func (i *Invocation) start() {
-	i.conn.invocationStart(i.context, i)
+func (i *Invocation) start(statement string) {
+	if i.tracer != nil {
+		i.traceFinisher = i.tracer.Query(i.context, i.conn, i, statement)
+	}
 }
 
 func (i *Invocation) finish(statement string, start time.Time, r interface{}, err error) error {
 	if r != nil {
 		err = exception.Nest(err, exception.New(r))
 	}
-	i.conn.invocationFinish(i.context, i, statement, err)
+	if i.traceFinisher != nil {
+		i.traceFinisher.Finish(err)
+	}
 	i.conn.done(i.context, statement, i.statementLabel, i.since(start), err)
 	return err
 }

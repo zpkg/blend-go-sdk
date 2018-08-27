@@ -2,11 +2,16 @@ package db
 
 import "context"
 
-// Tracer is a shim that can be used to report stats for queries.
+// Tracer is a type that can implement traces.
+// If any of the methods return a nil finisher, they will be skipped.
 type Tracer interface {
-	PrepareStart(context.Context, *Connection, string)
-	PrepareFinish(context.Context, *Connection, string, error)
+	Connect(context.Context, *Connection) TraceFinisher
+	Ping(context.Context, *Connection) TraceFinisher
+	Prepare(context.Context, *Connection, string) TraceFinisher
+	Query(context.Context, *Connection, *Invocation, string) TraceFinisher
+}
 
-	InvocationStart(context.Context, *Connection, *Invocation)
-	InvocationFinish(context.Context, *Connection, *Invocation, string, error)
+// TraceFinisher is a type that can finish traces.
+type TraceFinisher interface {
+	Finish(error)
 }
