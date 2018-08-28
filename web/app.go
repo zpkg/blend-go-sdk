@@ -1002,25 +1002,22 @@ func (a *App) renderAction(action Action) Handler {
 
 		result := action(ctx)
 		if result != nil {
-			// check for a prerender step.
+			// check for a prerender step
+			// errors returned here are typically fatal, and should
+			// be passed to a trace handler.
 			if typed, ok := result.(ResultPreRender); ok {
 				err = typed.PreRender(ctx)
 				if err != nil {
-					a.logError(err)
+					a.logFatal(err)
 				}
 			}
-			if err = result.Render(ctx); err != nil {
-				a.logError(err)
-			}
+			a.logError(result.Render(ctx))
 		}
 
 		ctx.setStatusCode(response.StatusCode())
 		ctx.setContentLength(response.ContentLength())
 		ctx.onRequestFinish()
-
-		if err = response.Close(); err != nil && err != http.ErrBodyNotAllowed {
-			a.logError(err)
-		}
+		a.logError(response.Close())
 
 		// call the cancel func if it's set.
 		if ctx.cancel != nil {
@@ -1050,7 +1047,6 @@ func (a *App) createCtx(w ResponseWriter, r *http.Request, route *Route, p Route
 		log:             a.log,
 		defaultResultProvider: a.defaultResultProvider,
 	}
-
 	if r != nil {
 		ctx.context = r.Context()
 	}
@@ -1185,6 +1181,15 @@ func (a *App) handlePanic(w http.ResponseWriter, r *http.Request, err interface{
 		}
 		return a.panicAction(ctx, err)
 	})(w, r, nil, nil, nil)
+}
+
+func (a *App) logFatal(err error) {
+	if a.log == nil {
+		return
+	}
+	if err != nil {
+		a.log.Fatal(err)
+	}
 }
 
 func (a *App) logError(err error) {

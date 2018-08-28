@@ -3,6 +3,7 @@ package web
 import (
 	"bytes"
 	"crypto/tls"
+	"fmt"
 	"net/http"
 	"strings"
 	"sync"
@@ -544,4 +545,173 @@ func TestAppHandlesPanics(t *testing.T) {
 	assert.Nil(err)
 	assert.Equal(http.StatusInternalServerError, res.StatusCode)
 	assert.False(didRecover)
+}
+
+var (
+	_ Tracer     = (*mockTracer)(nil)
+	_ ViewTracer = (*mockTracer)(nil)
+)
+
+type mockTracer struct {
+	OnStart  func(*Ctx)
+	OnFinish func(*Ctx, error)
+
+	OnViewStart  func(*Ctx, *ViewResult)
+	OnViewFinish func(*Ctx, *ViewResult, error)
+}
+
+func (mt mockTracer) Start(ctx *Ctx) TraceFinisher {
+	if mt.OnStart != nil {
+		mt.OnStart(ctx)
+	}
+	return &mockTraceFinisher{parent: &mt}
+}
+
+func (mt mockTracer) StartView(ctx *Ctx, vr *ViewResult) ViewTraceFinisher {
+	if mt.OnViewStart != nil {
+		mt.OnViewStart(ctx, vr)
+	}
+	return &mockViewTraceFinisher{parent: &mt}
+}
+
+type mockTraceFinisher struct {
+	parent *mockTracer
+}
+
+func (mtf mockTraceFinisher) Finish(ctx *Ctx, err error) {
+	mtf.parent.OnFinish(ctx, err)
+}
+
+type mockViewTraceFinisher struct {
+	parent *mockTracer
+}
+
+func (mvf mockViewTraceFinisher) Finish(ctx *Ctx, vr *ViewResult, err error) {
+	mvf.parent.OnViewFinish(ctx, vr, err)
+}
+
+func ok(_ *Ctx) Result            { return JSON.OK() }
+func internalError(_ *Ctx) Result { return JSON.InternalError(fmt.Errorf("only a test")) }
+func viewOK(ctx *Ctx) Result      { return ctx.View().View("ok", nil) }
+
+func TestAppTracer(t *testing.T) {
+	assert := assert.New(t)
+
+	wg := sync.WaitGroup{}
+	wg.Add(2)
+
+	var hasValue bool
+
+	app := New()
+	app.GET("/", ok)
+	app.WithTracer(mockTracer{
+		OnStart: func(ctx *Ctx) {
+			defer wg.Done()
+			ctx.WithStateValue("foo", "bar")
+		},
+		OnFinish: func(ctx *Ctx, err error) {
+			defer wg.Done()
+			hasValue = ctx.StateValue("foo") != nil
+		},
+	})
+
+	assert.Nil(app.Mock().Get("/").Execute())
+	wg.Wait()
+
+	assert.True(hasValue)
+}
+
+func TestAppTracerError(t *testing.T) {
+	assert := assert.New(t)
+
+	wg := sync.WaitGroup{}
+	wg.Add(1)
+
+	var hasError bool
+
+	app := New()
+	app.GET("/", ok)
+	app.GET("/error", internalError)
+
+	app.WithTracer(mockTracer{
+		OnFinish: func(ctx *Ctx, err error) {
+			defer wg.Done()
+			hasError = err != nil
+		},
+	})
+
+	assert.Nil(app.Mock().Get("/error").Execute())
+	wg.Wait()
+
+	assert.True(hasError)
+}
+
+func TestAppViewTracer(t *testing.T) {
+	assert := assert.New(t)
+
+	wg := sync.WaitGroup{}
+	wg.Add(4)
+
+	var hasValue bool
+
+	app := New()
+	app.Views().AddLiterals("{{ define \"ok\" }}ok{{end}}")
+	assert.Nil(app.Views().Initialize())
+
+	app.GET("/", ok)
+	app.GET("/view", viewOK)
+	app.WithTracer(mockTracer{
+		OnStart:  func(_ *Ctx) { wg.Done() },
+		OnFinish: func(_ *Ctx, _ error) { wg.Done() },
+		OnViewStart: func(ctx *Ctx, vr *ViewResult) {
+			defer wg.Done()
+			hasValue = vr.ViewName == "ok"
+		},
+		OnViewFinish: func(ctx *Ctx, vr *ViewResult, err error) {
+			defer wg.Done()
+		},
+	})
+
+	assert.Nil(app.Mock().Get("/view").Execute())
+	wg.Wait()
+
+	assert.True(hasValue)
+}
+
+func TestAppViewTracerError(t *testing.T) {
+	assert := assert.New(t)
+
+	wg := sync.WaitGroup{}
+	wg.Add(4)
+
+	var hasValue, hasError, hasViewError bool
+
+	app := New()
+	app.Views().AddLiterals("{{ define \"ok\" }}{{template \"fake\"}}ok{{end}}")
+	assert.Nil(app.Views().Initialize())
+
+	app.GET("/", ok)
+	app.GET("/view", viewOK)
+	app.WithTracer(mockTracer{
+		OnStart: func(_ *Ctx) { wg.Done() },
+		OnFinish: func(_ *Ctx, err error) {
+			defer wg.Done()
+			hasError = err != nil
+		},
+		OnViewStart: func(ctx *Ctx, vr *ViewResult) {
+			defer wg.Done()
+			hasValue = vr.ViewName == "ok"
+		},
+		OnViewFinish: func(ctx *Ctx, vr *ViewResult, err error) {
+			defer wg.Done()
+			hasViewError = err != nil
+		},
+	})
+
+	assert.Nil(app.Mock().Get("/view").Execute())
+	wg.Wait()
+
+	assert.True(hasValue)
+	assert.False(hasError)
+	assert.True(hasViewError)
 }
