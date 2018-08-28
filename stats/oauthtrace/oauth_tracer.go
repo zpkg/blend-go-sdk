@@ -1,15 +1,16 @@
-package stats
+package oauthtrace
 
 import (
 	"net/http"
 	"time"
 
 	"github.com/blend/go-sdk/oauth"
+	"github.com/blend/go-sdk/stats/tracing"
 	"github.com/opentracing/opentracing-go"
 )
 
-// OAuthTracer returns a oauth tracer.
-func OAuthTracer(tracer opentracing.Tracer) oauth.Tracer {
+// Tracer returns a oauth tracer.
+func Tracer(tracer opentracing.Tracer) oauth.Tracer {
 	return &oauthTracer{tracer: tracer}
 }
 
@@ -19,10 +20,10 @@ type oauthTracer struct {
 
 func (ot oauthTracer) Start(r *http.Request) oauth.TraceFinisher {
 	startOptions := []opentracing.StartSpanOption{
-		opentracing.Tag{Key: TagKeySpanType, Value: SpanTypeHTTP},
+		opentracing.Tag{Key: tracing.TagKeySpanType, Value: tracing.SpanTypeHTTP},
 		opentracing.StartTime(time.Now().UTC()),
 	}
-	span, _ := StartSpanFromContext(r.Context(), ot.tracer, "oauth", startOptions...)
+	span, _ := tracing.StartSpanFromContext(r.Context(), ot.tracer, "oauth", startOptions...)
 	return oauthTraceFinisher{span: span}
 }
 
@@ -34,6 +35,6 @@ func (otf oauthTraceFinisher) Finish(r *http.Request, res *oauth.Result, err err
 	if otf.span == nil {
 		return
 	}
-	SpanError(otf.span, err)
+	tracing.SpanError(otf.span, err)
 	otf.span.Finish()
 }

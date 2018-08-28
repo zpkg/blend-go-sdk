@@ -1,10 +1,11 @@
-package stats
+package webtrace
 
 import (
 	"strconv"
 	"time"
 
 	"github.com/blend/go-sdk/logger"
+	"github.com/blend/go-sdk/stats/tracing"
 	"github.com/blend/go-sdk/web"
 	opentracing "github.com/opentracing/opentracing-go"
 )
@@ -18,8 +19,8 @@ var (
 	_ web.Tracer = (*webTracer)(nil)
 )
 
-// WebTracer returns a web tracer.
-func WebTracer(tracer opentracing.Tracer) web.Tracer {
+// Tracer returns a web tracer.
+func Tracer(tracer opentracing.Tracer) web.Tracer {
 	return &webTracer{tracer: tracer}
 }
 
@@ -37,10 +38,10 @@ func (wt webTracer) Start(ctx *web.Ctx) web.TraceFinisher {
 
 	// set up basic start options (these are mostly tags).
 	startOptions := []opentracing.StartSpanOption{
-		opentracing.Tag{Key: TagKeyResourceName, Value: resource},
-		opentracing.Tag{Key: TagKeySpanType, Value: SpanTypeWeb},
-		opentracing.Tag{Key: TagKeyHTTPMethod, Value: ctx.Request().Method},
-		opentracing.Tag{Key: TagKeyHTTPURL, Value: ctx.Request().URL.Path},
+		opentracing.Tag{Key: tracing.TagKeyResourceName, Value: resource},
+		opentracing.Tag{Key: tracing.TagKeySpanType, Value: tracing.SpanTypeWeb},
+		opentracing.Tag{Key: tracing.TagKeyHTTPMethod, Value: ctx.Request().Method},
+		opentracing.Tag{Key: tracing.TagKeyHTTPURL, Value: ctx.Request().URL.Path},
 		opentracing.Tag{Key: "http.remote_addr", Value: logger.GetRemoteAddr(ctx.Request())},
 		opentracing.Tag{Key: "http.host", Value: logger.GetHost(ctx.Request())},
 		opentracing.Tag{Key: "http.user_agent", Value: logger.GetUserAgent(ctx.Request())},
@@ -58,7 +59,7 @@ func (wt webTracer) Start(ctx *web.Ctx) web.TraceFinisher {
 		startOptions = append(startOptions, opentracing.ChildOf(spanContext))
 	}
 	// start the span.
-	span, spanCtx := StartSpanFromContext(ctx.Context(), wt.tracer, TracingOperationHTTPRequest, startOptions...)
+	span, spanCtx := tracing.StartSpanFromContext(ctx.Context(), wt.tracer, tracing.OperationHTTPRequest, startOptions...)
 
 	// inject the new context
 	ctx.Request().WithContext(spanCtx)
@@ -77,20 +78,20 @@ func (wtf webTraceFinisher) Finish(ctx *web.Ctx, err error) {
 	if wtf.span == nil {
 		return
 	}
-	SpanError(wtf.span, err)
-	wtf.span.SetTag(TagKeyHTTPCode, strconv.Itoa(ctx.Response().StatusCode()))
+	tracing.SpanError(wtf.span, err)
+	wtf.span.SetTag(tracing.TagKeyHTTPCode, strconv.Itoa(ctx.Response().StatusCode()))
 	wtf.span.Finish()
 }
 
 func (wt webTracer) StartView(ctx *web.Ctx, vr *web.ViewResult) web.ViewTraceFinisher {
 	// set up basic start options (these are mostly tags).
 	startOptions := []opentracing.StartSpanOption{
-		opentracing.Tag{Key: TagKeyResourceName, Value: vr.ViewName},
-		opentracing.Tag{Key: TagKeySpanType, Value: SpanTypeWeb},
+		opentracing.Tag{Key: tracing.TagKeyResourceName, Value: vr.ViewName},
+		opentracing.Tag{Key: tracing.TagKeySpanType, Value: tracing.SpanTypeWeb},
 		opentracing.StartTime(time.Now().UTC()),
 	}
 	// start the span.
-	span, _ := StartSpanFromContext(ctx.Context(), wt.tracer, TracingOperationHTTPRender, startOptions...)
+	span, _ := tracing.StartSpanFromContext(ctx.Context(), wt.tracer, tracing.OperationHTTPRender, startOptions...)
 	return &webViewTraceFinisher{span: span}
 }
 
@@ -102,6 +103,6 @@ func (wvtf webViewTraceFinisher) Finish(ctx *web.Ctx, vr *web.ViewResult, err er
 	if wvtf.span == nil {
 		return
 	}
-	SpanError(wvtf.span, err)
+	tracing.SpanError(wvtf.span, err)
 	wvtf.span.Finish()
 }

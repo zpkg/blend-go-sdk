@@ -2,6 +2,7 @@ package request
 
 import (
 	"bytes"
+	"context"
 	"encoding/json"
 	"fmt"
 	"io/ioutil"
@@ -10,6 +11,7 @@ import (
 	"net/http/httptest"
 	"net/http/httptrace"
 	"strings"
+	"sync"
 	"testing"
 	"time"
 
@@ -473,4 +475,61 @@ func TestResponseAppliesTransportDefaults(t *testing.T) {
 
 	assert.NotNil(xport.TLSClientConfig)
 	assert.False(xport.TLSClientConfig.InsecureSkipVerify)
+}
+
+var (
+	_ Tracer = (*mockTracer)(nil)
+)
+
+type mockTracer struct {
+	OnStart  func(*http.Request)
+	OnFinish func(*http.Request, *ResponseMeta, error)
+}
+
+func (mt mockTracer) Start(req *http.Request) TraceFinisher {
+	if mt.OnStart != nil {
+		mt.OnStart(req)
+	}
+	return &mockTraceFinisher{parent: &mt}
+}
+
+type mockTraceFinisher struct {
+	parent *mockTracer
+}
+
+func (mtf mockTraceFinisher) Finish(req *http.Request, meta *ResponseMeta, err error) {
+	mtf.parent.OnFinish(req, meta, err)
+}
+
+type testKey int
+
+const testKeyID testKey = iota
+
+func TestRequestTracer(t *testing.T) {
+	assert := assert.New(t)
+
+	MockResponseFromString("GET", "https://test.com/foo", 200, "just a test")
+	defer ClearMockedResponses()
+
+	wg := sync.WaitGroup{}
+	wg.Add(2)
+
+	var hasValue bool
+	req := New().
+		MustWithRawURL("https://test.com/foo").
+		WithMockProvider(MockedResponseInjector).
+		WithTracer(mockTracer{
+			OnStart: func(r *http.Request) {
+				defer wg.Done()
+				(*r) = *r.WithContext(context.WithValue(r.Context(), testKeyID, "bar"))
+			},
+			OnFinish: func(r *http.Request, meta *ResponseMeta, err error) {
+				defer wg.Done()
+				hasValue = r.Context().Value(testKeyID) != nil
+			},
+		})
+
+	assert.Nil(req.Execute())
+	wg.Wait()
+	assert.True(hasValue)
 }
