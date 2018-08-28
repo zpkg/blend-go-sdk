@@ -634,32 +634,26 @@ func (r *Request) Request() (*http.Request, error) {
 	if err != nil {
 		return nil, exception.New(err)
 	}
-
 	if r.context != nil {
 		req = req.WithContext(r.context)
 	}
-
 	if r.trace != nil {
 		req = req.WithContext(httptrace.WithClientTrace(req.Context(), r.trace))
 	}
-
 	if len(r.basicAuthUsername) > 0 {
 		req.SetBasicAuth(r.basicAuthUsername, r.basicAuthPassword)
 	}
-
 	if r.cookies != nil {
 		for i := 0; i < len(r.cookies); i++ {
 			cookie := r.cookies[i]
 			req.AddCookie(cookie)
 		}
 	}
-
 	for key, values := range r.Headers() {
 		for _, value := range values {
 			req.Header.Set(key, value)
 		}
 	}
-
 	return req, nil
 }
 

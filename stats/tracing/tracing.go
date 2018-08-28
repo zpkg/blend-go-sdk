@@ -1,11 +1,10 @@
-package stats
+package tracing
 
 import (
 	"context"
 	"fmt"
 
 	"github.com/blend/go-sdk/exception"
-	"github.com/blend/go-sdk/web"
 	opentracing "github.com/opentracing/opentracing-go"
 )
 
@@ -43,20 +42,19 @@ const (
 	TagKeyDBUser = "db.user"
 )
 
-// TracingOperations are actions represented by spans.
+// Operations are actions represented by spans.
 const (
-	TracingOperationHTTPRouteLookup = "http.route_lookup"
-	// TracingOperationHTTPRequest is the http request tracing operation name.
-	TracingOperationHTTPRequest = "http.request"
-	// TracingOperationHTTPRender is the operation name for rendering a server side view.
-	TracingOperationHTTPRender = "http.render"
-
-	// TracingOperationDBPing is the db ping tracing operation.
-	TracingOperationSQLPing = "sql.ping"
-	// TracingOperationDBPrepare is the db prepare tracing operation.
-	TracingOperationSQLPrepare = "sql.prepare"
-	// TracingOperationDBQuery is the db query tracing operation.
-	TracingOperationSQLQuery = "sql.query"
+	OperationHTTPRouteLookup = "http.route_lookup"
+	// OperationHTTPRequest is the http request tracing operation name.
+	OperationHTTPRequest = "http.request"
+	// OperationHTTPRender is the operation name for rendering a server side view.
+	OperationHTTPRender = "http.render"
+	// OperationDBPing is the db ping tracing operation.
+	OperationSQLPing = "sql.ping"
+	// OperationDBPrepare is the db prepare tracing operation.
+	OperationSQLPrepare = "sql.prepare"
+	// OperationDBQuery is the db query tracing operation.
+	OperationSQLQuery = "sql.query"
 )
 
 // Span types have similar behaviour to "app types" and help categorize
@@ -114,15 +112,6 @@ func StartSpanFromContext(ctx context.Context, tracer opentracing.Tracer, operat
 	}
 	span := tracer.StartSpan(operationName, opts...)
 	return span, opentracing.ContextWithSpan(ctx, span)
-}
-
-// GetTracingSpanFromCtx gets a tracing span from a web ctx.
-func GetTracingSpanFromCtx(ctx *web.Ctx) (span opentracing.Span) {
-	value := ctx.StateValue(StateKeySpan)
-	if typed, ok := value.(opentracing.Span); ok {
-		return typed
-	}
-	return nil
 }
 
 // GetTracingSpanFromContext returns a tracing span from a given context.
