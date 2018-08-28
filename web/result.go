@@ -29,10 +29,7 @@ type loggedErrorResult struct {
 }
 
 func (ler loggedErrorResult) PreRender(ctx *Ctx) error {
-	if ctx.Logger() != nil && ler.Error != nil {
-		ctx.Logger().Error(ler.Error)
-	}
-	return nil
+	return ler.Error
 }
 
 func (ler loggedErrorResult) Render(ctx *Ctx) error {

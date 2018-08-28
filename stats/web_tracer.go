@@ -1,10 +1,9 @@
 package stats
 
 import (
-	"fmt"
 	"strconv"
+	"time"
 
-	"github.com/blend/go-sdk/exception"
 	"github.com/blend/go-sdk/logger"
 	"github.com/blend/go-sdk/web"
 	opentracing "github.com/opentracing/opentracing-go"
@@ -16,7 +15,7 @@ const (
 )
 
 var (
-	_ web.Tracer = webTracer{}
+	_ web.Tracer = (*webTracer)(nil)
 )
 
 // WebTracer returns a web tracer.
@@ -40,8 +39,8 @@ func (wt webTracer) Start(ctx *web.Ctx) web.TraceFinisher {
 	startOptions := []opentracing.StartSpanOption{
 		opentracing.Tag{Key: TagKeyResourceName, Value: resource},
 		opentracing.Tag{Key: TagKeySpanType, Value: SpanTypeWeb},
-		opentracing.Tag{Key: "http.method", Value: ctx.Request().Method},
-		opentracing.Tag{Key: "http.url", Value: ctx.Request().URL.Path},
+		opentracing.Tag{Key: TagKeyHTTPMethod, Value: ctx.Request().Method},
+		opentracing.Tag{Key: TagKeyHTTPURL, Value: ctx.Request().URL.Path},
 		opentracing.Tag{Key: "http.remote_addr", Value: logger.GetRemoteAddr(ctx.Request())},
 		opentracing.Tag{Key: "http.host", Value: logger.GetHost(ctx.Request())},
 		opentracing.Tag{Key: "http.user_agent", Value: logger.GetUserAgent(ctx.Request())},
@@ -62,7 +61,9 @@ func (wt webTracer) Start(ctx *web.Ctx) web.TraceFinisher {
 	span, spanCtx := StartSpanFromContext(ctx.Context(), wt.tracer, TracingOperationHTTPRequest, startOptions...)
 
 	// inject the new context
+	ctx.Request().WithContext(spanCtx)
 	ctx.WithContext(spanCtx)
+
 	// also store the span in the request state
 	ctx.WithStateValue(StateKeySpan, span)
 	return &webTraceFinisher{span: span}
@@ -76,15 +77,31 @@ func (wtf webTraceFinisher) Finish(ctx *web.Ctx, err error) {
 	if wtf.span == nil {
 		return
 	}
-	if err != nil {
-		if typed := exception.As(err); typed != nil {
-			wtf.span.SetTag(TagKeyError, typed.Class())
-			wtf.span.SetTag(TagKeyErrorMessage, typed.Message())
-			wtf.span.SetTag(TagKeyErrorStack, typed.Stack().String())
-		} else {
-			wtf.span.SetTag(TagKeyError, fmt.Sprintf("%v", err))
-		}
-	}
-	wtf.span.SetTag("http.status_code", strconv.Itoa(ctx.Response().StatusCode()))
+	SpanError(wtf.span, err)
+	wtf.span.SetTag(TagKeyHTTPCode, strconv.Itoa(ctx.Response().StatusCode()))
 	wtf.span.Finish()
+}
+
+func (wt webTracer) StartView(ctx *web.Ctx, vr *web.ViewResult) web.ViewTraceFinisher {
+	// set up basic start options (these are mostly tags).
+	startOptions := []opentracing.StartSpanOption{
+		opentracing.Tag{Key: TagKeyResourceName, Value: vr.ViewName},
+		opentracing.Tag{Key: TagKeySpanType, Value: SpanTypeWeb},
+		opentracing.StartTime(time.Now().UTC()),
+	}
+	// start the span.
+	span, _ := StartSpanFromContext(ctx.Context(), wt.tracer, TracingOperationHTTPRender, startOptions...)
+	return &webViewTraceFinisher{span: span}
+}
+
+type webViewTraceFinisher struct {
+	span opentracing.Span
+}
+
+func (wvtf webViewTraceFinisher) Finish(ctx *web.Ctx, vr *web.ViewResult, err error) {
+	if wvtf.span == nil {
+		return
+	}
+	SpanError(wvtf.span, err)
+	wvtf.span.Finish()
 }

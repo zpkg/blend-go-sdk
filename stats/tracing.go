@@ -2,7 +2,9 @@ package stats
 
 import (
 	"context"
+	"fmt"
 
+	"github.com/blend/go-sdk/exception"
 	"github.com/blend/go-sdk/web"
 	opentracing "github.com/opentracing/opentracing-go"
 )
@@ -43,6 +45,7 @@ const (
 
 // TracingOperations are actions represented by spans.
 const (
+	TracingOperationHTTPRouteLookup = "http.route_lookup"
 	// TracingOperationHTTPRequest is the http request tracing operation name.
 	TracingOperationHTTPRequest = "http.request"
 	// TracingOperationHTTPRender is the operation name for rendering a server side view.
@@ -128,4 +131,17 @@ func GetTracingSpanFromContext(ctx context.Context, key string) opentracing.Span
 		return typed
 	}
 	return nil
+}
+
+// SpanError injects error metadata into a span.
+func SpanError(span opentracing.Span, err error) {
+	if err != nil {
+		if typed := exception.As(err); typed != nil {
+			span.SetTag(TagKeyError, typed.Class())
+			span.SetTag(TagKeyErrorMessage, typed.Message())
+			span.SetTag(TagKeyErrorStack, typed.Stack().String())
+		} else {
+			span.SetTag(TagKeyError, fmt.Sprintf("%v", err))
+		}
+	}
 }
