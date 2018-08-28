@@ -8,6 +8,9 @@ import (
 
 // NewResponseMeta returns a new meta object for a response.
 func NewResponseMeta(res *http.Response) *ResponseMeta {
+	if res == nil {
+		return nil
+	}
 	return &ResponseMeta{
 		CompleteTime:    now(),
 		StatusCode:      res.StatusCode,
@@ -17,16 +20,6 @@ func NewResponseMeta(res *http.Response) *ResponseMeta {
 		Headers:         res.Header,
 		Cert:            NewCertInfo(res),
 	}
-
-}
-
-func tryHeader(headers http.Header, keys ...string) string {
-	for _, key := range keys {
-		if values, hasValues := headers[key]; hasValues {
-			return strings.Join(values, ";")
-		}
-	}
-	return ""
 }
 
 // ResponseMeta is just the meta information for an http response.
@@ -38,4 +31,13 @@ type ResponseMeta struct {
 	ContentEncoding string
 	ContentType     string
 	Headers         http.Header
+}
+
+func tryHeader(headers http.Header, keys ...string) string {
+	for _, key := range keys {
+		if values, hasValues := headers[key]; hasValues {
+			return strings.Join(values, ";")
+		}
+	}
+	return ""
 }

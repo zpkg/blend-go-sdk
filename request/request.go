@@ -48,7 +48,6 @@ type Request struct {
 	log *logger.Logger
 
 	method string
-
 	scheme string
 	host   string // host or host:port
 	path   string // path (relative paths may omit leading slash)
@@ -84,13 +83,24 @@ type Request struct {
 
 	context context.Context
 	trace   *httptrace.ClientTrace
+	tracer  Tracer
 
 	state interface{}
 
 	requestHandler  Handler
 	responseHandler ResponseHandler
+	mockProvider    MockedResponseProvider
+}
 
-	mockProvider MockedResponseProvider
+// WithTracer sets the request tracer.
+func (r *Request) WithTracer(tracer Tracer) *Request {
+	r.tracer = tracer
+	return r
+}
+
+// Tracer returns the request tracer.
+func (r *Request) Tracer() Tracer {
+	return r.tracer
 }
 
 // WithRequestHandler configures an event receiver.
@@ -654,39 +664,55 @@ func (r *Request) Request() (*http.Request, error) {
 }
 
 // Response makes the actual request but returns the underlying http.Response object.
-func (r *Request) Response() (*http.Response, error) {
-	req, err := r.Request()
+func (r *Request) Response() (res *http.Response, err error) {
+	var req *http.Request
+	req, err = r.Request()
 	if err != nil {
-		return nil, err
+		err = exception.Wrap(err)
+		return
+	}
+
+	if r.tracer != nil {
+		tf := r.tracer.Start(req)
+		if tf != nil {
+			defer func() {
+				tf.Finish(req, NewResponseMeta(res), err)
+			}()
+		}
 	}
 
 	r.logRequest()
 	if r.mockProvider != nil {
 		mockedRes := r.mockProvider(r)
 		if mockedRes != nil {
-			return mockedRes.Response(), mockedRes.Err
+			res = mockedRes.Response()
+			err = mockedRes.Err
+			return
 		}
 	}
 
 	client := &http.Client{}
 	if r.RequiresTransport() && r.transport == nil {
-		return nil, exception.New(ErrRequiresTransport)
+		err = exception.New(ErrRequiresTransport)
+		return
 	}
 
 	if r.transport != nil {
-		err := r.ApplyTransport(r.transport)
+		err = r.ApplyTransport(r.transport)
 		if err != nil {
-			return nil, exception.New(err)
+			return
 		}
 		client.Transport = r.transport
 	}
-
 	if r.timeout > 0 {
 		client.Timeout = r.timeout
 	}
 
-	res, err := client.Do(req)
-	return res, exception.New(err)
+	res, err = client.Do(req)
+	if err != nil {
+		err = exception.New(err)
+	}
+	return
 }
 
 // Discard executes the request does not pass the response to handlers or events.
@@ -740,6 +766,12 @@ func (r *Request) ExecuteWithMeta() (*ResponseMeta, error) {
 	return meta, nil
 }
 
+// Bytes fetches the response as bytes.
+func (r *Request) Bytes() ([]byte, error) {
+	contents, _, err := r.BytesWithMeta()
+	return contents, err
+}
+
 // BytesWithMeta fetches the response as bytes with meta.
 func (r *Request) BytesWithMeta() ([]byte, *ResponseMeta, error) {
 	res, err := r.Response()
@@ -757,12 +789,6 @@ func (r *Request) BytesWithMeta() ([]byte, *ResponseMeta, error) {
 	resMeta.ContentLength = int64(len(bytes))
 	r.logResponse(resMeta, bytes)
 	return bytes, resMeta, nil
-}
-
-// Bytes fetches the response as bytes.
-func (r *Request) Bytes() ([]byte, error) {
-	contents, _, err := r.BytesWithMeta()
-	return contents, err
 }
 
 // String returns the body of the response as a string.
@@ -901,8 +927,6 @@ func (r *Request) logResponse(resMeta *ResponseMeta, responseBody []byte) {
 		})
 	}
 }
-
-// Hash / Mock Utility Functions
 
 // Hash returns a hashcode for a request.
 func (r *Request) Hash() uint32 {

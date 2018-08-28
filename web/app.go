@@ -950,10 +950,7 @@ func (a *App) ServeHTTP(w http.ResponseWriter, req *http.Request) {
 				if a.methodNotAllowedHandler != nil {
 					a.methodNotAllowedHandler(w, req, nil, nil, nil)
 				} else {
-					http.Error(w,
-						http.StatusText(http.StatusMethodNotAllowed),
-						http.StatusMethodNotAllowed,
-					)
+					http.Error(w, http.StatusText(http.StatusMethodNotAllowed), http.StatusMethodNotAllowed)
 				}
 				return
 			}
@@ -973,15 +970,7 @@ func (a *App) ServeHTTP(w http.ResponseWriter, req *http.Request) {
 func (a *App) renderAction(action Action) Handler {
 	return func(w http.ResponseWriter, r *http.Request, route *Route, p RouteParameters, state State) {
 		var err error
-		if len(a.defaultHeaders) > 0 {
-			for key, value := range a.defaultHeaders {
-				w.Header().Set(key, value)
-			}
-		}
-
-		if a.hsts {
-			a.addHSTSHeader(w)
-		}
+		var tf TraceFinisher
 
 		var response ResponseWriter
 		if strings.Contains(r.Header.Get(HeaderAcceptEncoding), ContentEncodingGZIP) {
@@ -994,8 +983,21 @@ func (a *App) renderAction(action Action) Handler {
 
 		ctx := a.createCtx(response, r, route, p, state)
 		ctx.onRequestStart()
+		if a.tracer != nil {
+			tf = a.tracer.Start(ctx)
+		}
 		if a.log != nil {
 			a.log.Trigger(a.httpRequestEvent(ctx))
+		}
+
+		if len(a.defaultHeaders) > 0 {
+			for key, value := range a.defaultHeaders {
+				response.Header().Set(key, value)
+			}
+		}
+
+		if a.hsts {
+			a.addHSTSHeader(response)
 		}
 
 		result := action(ctx)
@@ -1007,8 +1009,7 @@ func (a *App) renderAction(action Action) Handler {
 					a.logError(err)
 				}
 			}
-			err = result.Render(ctx)
-			if err != nil {
+			if err = result.Render(ctx); err != nil {
 				a.logError(err)
 			}
 		}
@@ -1017,8 +1018,7 @@ func (a *App) renderAction(action Action) Handler {
 		ctx.setContentLength(response.ContentLength())
 		ctx.onRequestFinish()
 
-		err = response.Close()
-		if err != nil && err != http.ErrBodyNotAllowed {
+		if err = response.Close(); err != nil && err != http.ErrBodyNotAllowed {
 			a.logError(err)
 		}
 
@@ -1026,10 +1026,12 @@ func (a *App) renderAction(action Action) Handler {
 		if ctx.cancel != nil {
 			ctx.cancel()
 		}
-
 		// effectively "request complete"
 		if a.log != nil {
 			a.log.Trigger(a.httpResponseEvent(ctx))
+		}
+		if tf != nil {
+			tf.Finish(ctx, err)
 		}
 	}
 }

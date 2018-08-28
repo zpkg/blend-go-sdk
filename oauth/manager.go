@@ -1,6 +1,7 @@
 package oauth
 
 import (
+	"context"
 	"crypto/hmac"
 	"crypto/sha512"
 	"encoding/base64"
@@ -23,7 +24,9 @@ import (
 // By default it will error if you try and validate a profile.
 // You must either enable `SkipDomainvalidation` or provide valid domains.
 func New() *Manager {
-	return &Manager{}
+	return &Manager{
+		requestCreator: request.NewManager(),
+	}
 }
 
 // Must is a helper for handling NewFromEnv() and NewFromConfig().
@@ -46,48 +49,26 @@ func NewFromConfig(cfg *Config) (*Manager, error) {
 		return nil, err
 	}
 	return &Manager{
-		secret:       secret,
-		redirectURI:  cfg.GetRedirectURI(),
-		hostedDomain: cfg.GetHostedDomain(),
-		scopes:       cfg.GetScopes(),
-		clientID:     cfg.GetClientID(),
-		clientSecret: cfg.GetClientSecret(),
+		requestCreator: request.NewManager(),
+		secret:         secret,
+		redirectURI:    cfg.GetRedirectURI(),
+		hostedDomain:   cfg.GetHostedDomain(),
+		scopes:         cfg.GetScopes(),
+		clientID:       cfg.GetClientID(),
+		clientSecret:   cfg.GetClientSecret(),
 	}, nil
 }
 
 // Manager is the oauth manager.
 type Manager struct {
-	secret       []byte
-	scopes       []string
-	redirectURI  string
-	hostedDomain string
-	clientID     string
-	clientSecret string
-}
-
-func (m *Manager) conf(r *http.Request) *oauth2.Config {
-	return &oauth2.Config{
-		ClientID:     m.clientID,
-		ClientSecret: m.clientSecret,
-		RedirectURL:  m.getRedirectURI(r),
-		Scopes:       m.scopes,
-		Endpoint:     google.Endpoint,
-	}
-}
-
-func (m *Manager) getRedirectURI(r *http.Request) string {
-	if util.String.HasPrefixCaseInsensitive(m.redirectURI, "https://") ||
-		util.String.HasPrefixCaseInsensitive(m.redirectURI, "http://") ||
-		util.String.HasPrefixCaseInsensitive(m.redirectURI, "spdy://") {
-		return m.redirectURI
-	}
-
-	requestURI := &url.URL{
-		Scheme: logger.GetProto(r),
-		Host:   logger.GetHost(r),
-		Path:   m.redirectURI,
-	}
-	return requestURI.String()
+	requestCreator *request.Manager
+	tracer         Tracer
+	secret         []byte
+	scopes         []string
+	redirectURI    string
+	hostedDomain   string
+	clientID       string
+	clientSecret   string
 }
 
 // OAuthURL is the auth url for google with a given clientID.
@@ -108,58 +89,67 @@ func (m *Manager) OAuthURL(r *http.Request, redirect ...string) (oauthURL string
 }
 
 // Finish processes the returned code, exchanging for an access token, and fetches the user profile.
-func (m *Manager) Finish(r *http.Request) (*Result, error) {
-	var result Result
-	var err error
+func (m *Manager) Finish(r *http.Request) (result *Result, err error) {
+	if m.tracer != nil {
+		tf := m.tracer.Start(r)
+		if tf != nil {
+			defer func() { tf.Finish(r, result, err) }()
+		}
+	}
 
 	// grab the code off the request.
 	code := r.URL.Query().Get("code")
 	if len(code) == 0 {
-		return nil, ErrCodeMissing
+		err = ErrCodeMissing
+		return
 	}
 
 	// fetch the state
 	state := r.URL.Query().Get("state")
+	result = &Result{}
 	if len(state) > 0 {
-		deserialized, err := DeserializeState(state)
+		var deserialized State
+		deserialized, err = DeserializeState(state)
 		if err != nil {
-			return nil, err
+			return
 		}
 		result.State = deserialized
 	}
 
 	err = m.ValidateState(result.State)
 	if err != nil {
-		return nil, err
+		return
 	}
 
 	// Handle the exchange code to initiate a transport.
-	tok, err := m.conf(r).Exchange(oauth2.NoContext, code)
+	tok, err := m.conf(r).Exchange(r.Context(), code)
 	if err != nil {
-		return nil, exception.New(ErrFailedCodeExchange).WithMessagef("inner: %+v", err)
+		err = exception.New(ErrFailedCodeExchange).WithInner(err)
+		return
 	}
+
 	result.Response.AccessToken = tok.AccessToken
 	result.Response.TokenType = tok.TokenType
 	result.Response.RefreshToken = tok.RefreshToken
 	result.Response.Expiry = tok.Expiry
 
-	prof, err := m.FetchProfile(tok.AccessToken)
+	var prof Profile
+	prof, err = m.FetchProfile(r.Context(), tok.AccessToken)
 	if err != nil {
-		return nil, err
+		return
 	}
 	result.Profile = prof
-	return &result, nil
+	return
 }
 
 // FetchProfile gets a google profile for an access token.
-func (m *Manager) FetchProfile(accessToken string) (profile Profile, err error) {
-	req, err := request.New().AsGet().
-		WithRawURL("https://www.googleapis.com/oauth2/v1/userinfo")
+func (m *Manager) FetchProfile(ctx context.Context, accessToken string) (profile Profile, err error) {
+	req, err := m.requestCreator.Get("https://www.googleapis.com/oauth2/v1/userinfo")
 
 	contents, meta, err := req.
+		WithContext(ctx).
 		WithQueryString("alt", "json").
 		WithQueryString("access_token", accessToken).
-		WithMockProvider(request.MockedResponseInjector).
 		BytesWithMeta()
 
 	if err != nil {
@@ -170,7 +160,7 @@ func (m *Manager) FetchProfile(accessToken string) (profile Profile, err error) 
 		return
 	}
 	if err = json.Unmarshal(contents, &profile); err != nil {
-		err = exception.New(ErrProfileJSONUnmarshal).WithMessagef("inner: %v", err)
+		err = exception.New(ErrProfileJSONUnmarshal).WithInner(err)
 		return
 	}
 	return
@@ -224,6 +214,22 @@ func (m *Manager) ValidateProfile(p *Profile) error {
 // --------------------------------------------------------------------------------
 // Properties
 // --------------------------------------------------------------------------------
+
+// WithTracer sets the oauth manager tracer.
+func (m *Manager) WithTracer(tracer Tracer) *Manager {
+	m.tracer = tracer
+	return m
+}
+
+// Tracer returns the tracer.
+func (m *Manager) Tracer() Tracer {
+	return m.tracer
+}
+
+// RequestCreator returns the request creator.
+func (m *Manager) RequestCreator() *request.Manager {
+	return m.requestCreator
+}
 
 // WithSecret sets the secret used to create state tokens.
 func (m *Manager) WithSecret(secret []byte) *Manager {
@@ -294,6 +300,31 @@ func (m *Manager) ClientSecret() string {
 // --------------------------------------------------------------------------------
 // internal helpers
 // --------------------------------------------------------------------------------
+
+func (m *Manager) conf(r *http.Request) *oauth2.Config {
+	return &oauth2.Config{
+		ClientID:     m.clientID,
+		ClientSecret: m.clientSecret,
+		RedirectURL:  m.getRedirectURI(r),
+		Scopes:       m.scopes,
+		Endpoint:     google.Endpoint,
+	}
+}
+
+func (m *Manager) getRedirectURI(r *http.Request) string {
+	if util.String.HasPrefixCaseInsensitive(m.redirectURI, "https://") ||
+		util.String.HasPrefixCaseInsensitive(m.redirectURI, "http://") ||
+		util.String.HasPrefixCaseInsensitive(m.redirectURI, "spdy://") {
+		return m.redirectURI
+	}
+
+	requestURI := &url.URL{
+		Scheme: logger.GetProto(r),
+		Host:   logger.GetHost(r),
+		Path:   m.redirectURI,
+	}
+	return requestURI.String()
+}
 
 func (m *Manager) hash(plaintext string) string {
 	return base64.URLEncoding.EncodeToString(m.hmac([]byte(plaintext)))
