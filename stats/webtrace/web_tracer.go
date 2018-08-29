@@ -4,9 +4,9 @@ import (
 	"strconv"
 	"time"
 
-	"github.com/blend/go-sdk/logger"
 	"github.com/blend/go-sdk/stats/tracing"
 	"github.com/blend/go-sdk/web"
+	"github.com/blend/go-sdk/webutil"
 	opentracing "github.com/opentracing/opentracing-go"
 )
 
@@ -42,9 +42,9 @@ func (wt webTracer) Start(ctx *web.Ctx) web.TraceFinisher {
 		opentracing.Tag{Key: tracing.TagKeySpanType, Value: tracing.SpanTypeWeb},
 		opentracing.Tag{Key: tracing.TagKeyHTTPMethod, Value: ctx.Request().Method},
 		opentracing.Tag{Key: tracing.TagKeyHTTPURL, Value: ctx.Request().URL.Path},
-		opentracing.Tag{Key: "http.remote_addr", Value: logger.GetRemoteAddr(ctx.Request())},
-		opentracing.Tag{Key: "http.host", Value: logger.GetHost(ctx.Request())},
-		opentracing.Tag{Key: "http.user_agent", Value: logger.GetUserAgent(ctx.Request())},
+		opentracing.Tag{Key: "http.remote_addr", Value: webutil.GetRemoteAddr(ctx.Request())},
+		opentracing.Tag{Key: "http.host", Value: webutil.GetHost(ctx.Request())},
+		opentracing.Tag{Key: "http.user_agent", Value: webutil.GetUserAgent(ctx.Request())},
 		opentracing.StartTime(ctx.Start()),
 	}
 	if ctx.Route() != nil {

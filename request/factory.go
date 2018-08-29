@@ -4,14 +4,14 @@ import (
 	"github.com/blend/go-sdk/logger"
 )
 
-// NewManager creates a new manager.
-func NewManager() *Manager {
-	return &Manager{}
+// NewFactory creates a new Factory.
+func NewFactory() *Factory {
+	return &Factory{}
 }
 
-// Manager is a helper to create requests with common metadata.
+// Factory is a helper to create requests with common metadata.
 // It is generally for creating requests to *any* host.
-type Manager struct {
+type Factory struct {
 	Log                    *logger.Logger
 	MockedResponseProvider MockedResponseProvider
 	OnRequest              Handler
@@ -20,37 +20,37 @@ type Manager struct {
 }
 
 // WithLogger sets the logger.
-func (m *Manager) WithLogger(log *logger.Logger) *Manager {
+func (m *Factory) WithLogger(log *logger.Logger) *Factory {
 	m.Log = log
 	return m
 }
 
 // WithMockedResponseProvider sets the mocked response provider.
-func (m *Manager) WithMockedResponseProvider(mrp MockedResponseProvider) *Manager {
+func (m *Factory) WithMockedResponseProvider(mrp MockedResponseProvider) *Factory {
 	m.MockedResponseProvider = mrp
 	return m
 }
 
 // WithOnRequest sets the on request handler..
-func (m *Manager) WithOnRequest(handler Handler) *Manager {
+func (m *Factory) WithOnRequest(handler Handler) *Factory {
 	m.OnRequest = handler
 	return m
 }
 
 // WithOnResponse sets the on response handler.
-func (m *Manager) WithOnResponse(handler ResponseHandler) *Manager {
+func (m *Factory) WithOnResponse(handler ResponseHandler) *Factory {
 	m.OnResponse = handler
 	return m
 }
 
 // WithTracer sets the tracer.
-func (m *Manager) WithTracer(tracer Tracer) *Manager {
+func (m *Factory) WithTracer(tracer Tracer) *Factory {
 	m.Tracer = tracer
 	return m
 }
 
 // Create creates a new request.
-func (m Manager) Create() *Request {
+func (m Factory) Create() *Request {
 	return New().
 		WithLogger(m.Log).
 		WithMockProvider(m.MockedResponseProvider).
@@ -60,11 +60,11 @@ func (m Manager) Create() *Request {
 }
 
 // Get returns a new get request for a given url.
-func (m Manager) Get(url string) (*Request, error) {
+func (m Factory) Get(url string) (*Request, error) {
 	return m.Create().AsGet().WithRawURL(url)
 }
 
 // Post returns a new post request for a given url.
-func (m Manager) Post(url string, body []byte) (*Request, error) {
+func (m Factory) Post(url string, body []byte) (*Request, error) {
 	return m.Create().AsPost().WithPostBody(body).WithRawURL(url)
 }

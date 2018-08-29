@@ -4,7 +4,7 @@ import "fmt"
 
 // Assert that the mock collector implements Collector.
 var (
-	_ Collector = &MockCollector{}
+	_ Collector = (*MockCollector)(nil)
 )
 
 // NewMockCollector returns a new mock collector.
@@ -22,15 +22,14 @@ type MockCollector struct {
 	Events chan MockMetric
 }
 
+// AddDefaultTag adds a default tag.
+func (mc MockCollector) AddDefaultTag(key, value string) {
+	mc.defaultTags = append(mc.defaultTags, fmt.Sprintf("%s:%s", key, value))
+}
+
 // DefaultTags returns the default tags set.
 func (mc MockCollector) DefaultTags() []string {
 	return mc.defaultTags
-}
-
-// WithDefaultTag adds a default tag and returns a reference to the mock collector.
-func (mc *MockCollector) WithDefaultTag(key, value string) *MockCollector {
-	mc.defaultTags = append(mc.defaultTags, fmt.Sprintf("%s:%s", key, value))
-	return mc
 }
 
 // Count adds a mock count event to the event stream.

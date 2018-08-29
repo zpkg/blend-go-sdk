@@ -2,29 +2,15 @@ package web
 
 import (
 	"encoding/base64"
-	"encoding/json"
-	"encoding/xml"
 	"fmt"
-	"io"
-	"net"
 	"net/http"
 	"net/url"
 	"strconv"
 	"strings"
 	"time"
 
-	"github.com/blend/go-sdk/exception"
 	"github.com/blend/go-sdk/util"
 )
-
-// MustParseURL parses a url and panics if there is an error.
-func MustParseURL(rawURL string) *url.URL {
-	u, err := url.Parse(rawURL)
-	if err != nil {
-		panic(err)
-	}
-	return u
-}
 
 // PathRedirectHandler returns a handler for AuthManager.RedirectHandler based on a path.
 func PathRedirectHandler(path string) func(*Ctx) *url.URL {
@@ -55,57 +41,6 @@ func NestMiddleware(action Action, middleware ...Middleware) Action {
 		metaAction = nest(step, metaAction)
 	}
 	return metaAction(action)
-}
-
-// WriteNoContent writes http.StatusNoContent for a request.
-func WriteNoContent(w http.ResponseWriter) error {
-	w.WriteHeader(http.StatusNoContent)
-	w.Write([]byte{})
-	return nil
-}
-
-// WriteRawContent writes raw content for the request.
-func WriteRawContent(w http.ResponseWriter, statusCode int, content []byte) error {
-	w.WriteHeader(statusCode)
-	_, err := w.Write(content)
-	return exception.New(err)
-}
-
-// WriteJSON marshalls an object to json.
-func WriteJSON(w http.ResponseWriter, r *http.Request, statusCode int, response interface{}) error {
-	w.Header().Set(HeaderContentType, ContentTypeApplicationJSON)
-	w.WriteHeader(statusCode)
-	return exception.New(json.NewEncoder(w).Encode(response))
-}
-
-// WriteXML marshalls an object to json.
-func WriteXML(w http.ResponseWriter, r *http.Request, statusCode int, response interface{}) error {
-	w.Header().Set(HeaderContentType, ContentTypeXML)
-	w.WriteHeader(statusCode)
-	return exception.New(xml.NewEncoder(w).Encode(response))
-}
-
-// DeserializeReaderAsJSON deserializes a post body as json to a given object.
-func DeserializeReaderAsJSON(object interface{}, body io.ReadCloser) error {
-	defer body.Close()
-	return exception.New(json.NewDecoder(body).Decode(object))
-}
-
-// LocalIP returns the local server ip.
-func LocalIP() string {
-	addrs, err := net.InterfaceAddrs()
-	if err != nil {
-		return ""
-	}
-	for _, address := range addrs {
-		// check the address type and if it is not a loopback the display it
-		if ipnet, ok := address.(*net.IPNet); ok && !ipnet.IP.IsLoopback() {
-			if ipnet.IP.To4() != nil {
-				return ipnet.IP.String()
-			}
-		}
-	}
-	return ""
 }
 
 // NewSessionID returns a new session id.
@@ -228,4 +163,9 @@ func DurationValue(value string, inputErr error) (output time.Duration, err erro
 	}
 	output, err = time.ParseDuration(value)
 	return
+}
+
+// StringValue just returns the string directly from a value error pair.
+func StringValue(value string, _ error) string {
+	return value
 }

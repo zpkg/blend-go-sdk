@@ -2,6 +2,7 @@ package stats
 
 // Collector is a stats collector.
 type Collector interface {
+	AddDefaultTag(string, string)
 	DefaultTags() []string
 	Count(name string, value int64, tags ...string) error
 	Increment(name string, tags ...string) error

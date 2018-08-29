@@ -321,6 +321,54 @@ func (v *Version) String() string {
 	return buf.String()
 }
 
+// Major returns the Major segment, or the highest order segment.
+func (v *Version) Major() (major int64) {
+	if len(v.segments) < 1 {
+		return
+	}
+	major = v.segments[0]
+	return
+}
+
+// Minor returns the Minor segment, or the second highest order segment.
+func (v *Version) Minor() (minor int64) {
+	if len(v.segments) < 2 {
+		return
+	}
+	minor = v.segments[1]
+	return
+}
+
+// Patch returns the Patch segment, or the thrid highest order segment.
+func (v *Version) Patch() (patch int64) {
+	if len(v.segments) < 3 {
+		return
+	}
+	patch = v.segments[2]
+	return
+}
+
+// BumpMajor increments the Major field by 1 and resets all other fields to their default values
+func (v *Version) BumpMajor() {
+	v.segments = []int64{v.Major() + 1, 0, 0}
+	v.pre = ""
+	v.metadata = ""
+}
+
+// BumpMinor increments the Minor field by 1 and resets all other fields to their default values
+func (v *Version) BumpMinor() {
+	v.segments = []int64{v.Major(), v.Minor() + 1, 0}
+	v.pre = ""
+	v.metadata = ""
+}
+
+// BumpPatch increments the Patch field by 1 and resets all other fields to their default values
+func (v *Version) BumpPatch() {
+	v.segments = []int64{v.Major(), v.Minor(), v.Patch() + 1}
+	v.pre = ""
+	v.metadata = ""
+}
+
 // Collection is a type that implements the sort.Interface interface
 // so that versions can be sorted.
 type Collection []*Version

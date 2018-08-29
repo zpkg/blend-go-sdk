@@ -66,7 +66,7 @@ func main() {
 	app.GET("/status", func(ctx *web.Ctx) web.Result {
 		return ctx.Raw([]byte(`{"status":"ok!"}`))
 	})
-	app.GET("/timeout", timeoutHandler, web.Timeout(time.Second))
+	app.GET("/timeout", timeoutHandler, web.WithTimeout(time.Second))
 
 	done := make(chan struct{})
 	quit := make(chan os.Signal, 1)

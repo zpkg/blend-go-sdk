@@ -55,7 +55,7 @@ func (ac *APIController) get(r *web.Ctx) web.Result {
 	defer ac.dbLock.Unlock()
 	ac.ensureDB()
 
-	value, hasValue := ac.db[r.ParamString("key")]
+	value, hasValue := ac.db[web.StringValue(r.Param("key"))]
 	if !hasValue {
 		return r.JSON().NotFound()
 	}
@@ -71,7 +71,7 @@ func (ac *APIController) post(r *web.Ctx) web.Result {
 	if err != nil {
 		return r.JSON().InternalError(err)
 	}
-	ac.db[r.ParamString("key")] = string(body)
+	ac.db[web.StringValue(r.Param("key"))] = string(body)
 	return r.JSON().OK()
 }
 
@@ -80,7 +80,7 @@ func (ac *APIController) put(r *web.Ctx) web.Result {
 	defer ac.dbLock.Unlock()
 	ac.ensureDB()
 
-	_, hasValue := ac.db[r.ParamString("key")]
+	_, hasValue := ac.db[web.StringValue(r.Param("key"))]
 	if !hasValue {
 		return r.JSON().NotFound()
 	}
@@ -89,7 +89,7 @@ func (ac *APIController) put(r *web.Ctx) web.Result {
 	if err != nil {
 		return r.JSON().InternalError(err)
 	}
-	ac.db[r.ParamString("key")] = string(body)
+	ac.db[web.StringValue(r.Param("key"))] = string(body)
 
 	return r.JSON().OK()
 }
@@ -99,7 +99,7 @@ func (ac *APIController) delete(r *web.Ctx) web.Result {
 	defer ac.dbLock.Unlock()
 	ac.ensureDB()
 
-	key := r.ParamString("key")
+	key := web.StringValue(r.Param("key"))
 	_, hasValue := ac.db[key]
 	if !hasValue {
 		return r.JSON().NotFound()

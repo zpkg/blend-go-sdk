@@ -24,29 +24,26 @@ func TestHealthz(t *testing.T) {
 
 	hzLog := logger.New().WithFlags(logger.AllFlags())
 	defer hzLog.Close()
+
 	hz := NewHealthz(app).WithBindAddr("127.0.0.1:0").WithLogger(hzLog)
-	defer hz.Shutdown()
+	hzServer := hz.Server()
 
-	hzStarted := make(chan struct{})
-	hzLog.Listen(HealthzStartComplete, "default", NewAppEventListener(func(aes *AppEvent) {
-		close(hzStarted)
-	}))
+	hzApp := New().WithServer(hzServer)
 
-	assert.NotNil(hz.App())
+	assert.NotNil(hz.Monitored())
 	assert.False(app.Latch().IsRunning())
 
 	go app.Start()
-	go hz.Start()
+	go hzApp.Start()
 
-	<-appStarted
-	<-hzStarted
+	<-app.NotifyStarted()
+	<-hzApp.NotifyStarted()
 
 	assert.True(app.Latch().IsRunning())
-	assert.True(hz.App().Latch().IsRunning())
+	assert.True(hz.Monitored().Latch().IsRunning())
+	assert.NotNil(hzApp.Listener())
 
-	assert.NotNil(hz.Listener())
-
-	healthzRes, err := http.Get("http://" + hz.Listener().Addr().String() + "/healthz")
+	healthzRes, err := http.Get("http://" + hzApp.Listener().Addr().String() + "/healthz")
 	assert.Nil(err)
 	assert.Equal(http.StatusOK, healthzRes.StatusCode)
 }

@@ -6,7 +6,7 @@ import (
 )
 
 func main() {
-	log := logger.All().WithLabel("app")
+	log := logger.All().WithHeading("app")
 	app := web.NewFromEnv().WithLogger(log)
 	app.GET("/", func(r *web.Ctx) web.Result {
 		return r.Text().Result("ok!")

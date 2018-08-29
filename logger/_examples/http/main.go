@@ -9,7 +9,6 @@ import (
 
 	_ "net/http/pprof"
 
-	"github.com/blend/go-sdk/exception"
 	"github.com/blend/go-sdk/logger"
 )
 
@@ -48,33 +47,25 @@ func indexHandler(res http.ResponseWriter, req *http.Request) {
 
 func fatalErrorHandler(res http.ResponseWriter, req *http.Request) {
 	res.WriteHeader(http.StatusInternalServerError)
-	logger.Default().Fatal(exception.New("this is a fatal exception"))
 	res.Write([]byte(`{"status":"not ok."}`))
 }
 
 func errorHandler(res http.ResponseWriter, req *http.Request) {
 	res.WriteHeader(http.StatusInternalServerError)
-	logger.Default().Error(exception.New("this is an exception"))
 	res.Write([]byte(`{"status":"not ok."}`))
 }
 
 func warningHandler(res http.ResponseWriter, req *http.Request) {
 	res.WriteHeader(http.StatusBadRequest)
-	logger.Default().Warning(exception.New("this is warning"))
 	res.Write([]byte(`{"status":"not ok."}`))
 }
 
 func subContextHandler(res http.ResponseWriter, req *http.Request) {
-	logger.Default().SubContext("sub-context").SubContext("another one").Infof("called an endpoint we care about")
 	res.WriteHeader(http.StatusOK)
 	res.Write([]byte(`{"status":"did sub-context things"}`))
 }
 
 func auditHandler(res http.ResponseWriter, req *http.Request) {
-	logger.Default().Trigger(logger.NewAuditEvent(logger.GetRemoteAddr(req), "viewed").WithExtra(map[string]string{
-		"remoteAddr": req.RemoteAddr,
-		"host":       req.Host,
-	}).WithNoun("audit route"))
 	res.WriteHeader(http.StatusOK)
 	res.Write([]byte(`{"status":"audit logged!"}`))
 }

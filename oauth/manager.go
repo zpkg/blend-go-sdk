@@ -12,10 +12,10 @@ import (
 	"strings"
 
 	"github.com/blend/go-sdk/exception"
-	"github.com/blend/go-sdk/logger"
 	"github.com/blend/go-sdk/request"
 	"github.com/blend/go-sdk/util"
 	"github.com/blend/go-sdk/uuid"
+	"github.com/blend/go-sdk/webutil"
 	"golang.org/x/oauth2"
 	"golang.org/x/oauth2/google"
 )
@@ -25,7 +25,7 @@ import (
 // You must either enable `SkipDomainvalidation` or provide valid domains.
 func New() *Manager {
 	return &Manager{
-		requestCreator: request.NewManager(),
+		requestFactory: request.NewFactory(),
 	}
 }
 
@@ -49,7 +49,7 @@ func NewFromConfig(cfg *Config) (*Manager, error) {
 		return nil, err
 	}
 	return &Manager{
-		requestCreator: request.NewManager(),
+		requestFactory: request.NewFactory(),
 		secret:         secret,
 		redirectURI:    cfg.GetRedirectURI(),
 		hostedDomain:   cfg.GetHostedDomain(),
@@ -61,7 +61,7 @@ func NewFromConfig(cfg *Config) (*Manager, error) {
 
 // Manager is the oauth manager.
 type Manager struct {
-	requestCreator *request.Manager
+	requestFactory *request.Factory
 	tracer         Tracer
 	secret         []byte
 	scopes         []string
@@ -144,7 +144,7 @@ func (m *Manager) Finish(r *http.Request) (result *Result, err error) {
 
 // FetchProfile gets a google profile for an access token.
 func (m *Manager) FetchProfile(ctx context.Context, accessToken string) (profile Profile, err error) {
-	req, err := m.requestCreator.Get("https://www.googleapis.com/oauth2/v1/userinfo")
+	req, err := m.requestFactory.Get("https://www.googleapis.com/oauth2/v1/userinfo")
 
 	contents, meta, err := req.
 		WithContext(ctx).
@@ -227,8 +227,8 @@ func (m *Manager) Tracer() Tracer {
 }
 
 // RequestCreator returns the request creator.
-func (m *Manager) RequestCreator() *request.Manager {
-	return m.requestCreator
+func (m *Manager) RequestCreator() *request.Factory {
+	return m.requestFactory
 }
 
 // WithSecret sets the secret used to create state tokens.
@@ -319,8 +319,8 @@ func (m *Manager) getRedirectURI(r *http.Request) string {
 	}
 
 	requestURI := &url.URL{
-		Scheme: logger.GetProto(r),
-		Host:   logger.GetHost(r),
+		Scheme: webutil.GetProto(r),
+		Host:   webutil.GetHost(r),
 		Path:   m.redirectURI,
 	}
 	return requestURI.String()

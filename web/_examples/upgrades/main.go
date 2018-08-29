@@ -58,7 +58,8 @@ HCsYkCmGXiwJN2guZo6l/5+GqRo3SN19dZptrH/rC/wAai0+Ctqw
 func main() {
 	log := logger.All()
 	app := web.New().WithPort(443).WithLogger(log)
-	upgrade := web.NewHTTPSUpgrader().WithPort(80).WithLogger(log).WithTargetPort(443)
+	upgradeServer := web.NewHTTPSUpgrader().WithPort(80).WithLogger(log).WithTargetPort(443).Server()
+	upgrader := web.New().WithServer(upgradeServer)
 
 	err := app.SetTLSCertPair([]byte(cert), []byte(key))
 	if err != nil {
@@ -69,7 +70,15 @@ func main() {
 		return r.Text().Result("OK!")
 	})
 
-	go func() { log.SyncFatalExit(upgrade.Start()) }()
-	go func() { log.SyncFatalExit(app.Start()) }()
+	go func() {
+		if err := web.GracefulShutdown(upgrader); err != nil {
+			log.SyncFatalExit(err)
+		}
+	}()
+	go func() {
+		if err := web.GracefulShutdown(app); err != nil {
+			log.SyncFatalExit(err)
+		}
+	}()
 	select {}
 }

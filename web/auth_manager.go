@@ -4,7 +4,7 @@ import (
 	"net/url"
 	"time"
 
-	"github.com/blend/go-sdk/logger"
+	"github.com/blend/go-sdk/webutil"
 )
 
 const (
@@ -102,8 +102,8 @@ func (am *AuthManager) Login(userID string, ctx *Ctx) (session *Session, err err
 	// userID and sessionID are required
 	session = NewSession(userID, sessionValue)
 	session.ExpiresUTC = am.GenerateSessionTimeout(ctx)
-	session.UserAgent = logger.GetUserAgent(ctx.request)
-	session.RemoteAddr = logger.GetRemoteAddr(ctx.request)
+	session.UserAgent = webutil.GetUserAgent(ctx.request)
+	session.RemoteAddr = webutil.GetRemoteAddr(ctx.request)
 
 	// call the perist handler if one's been provided
 	if am.persistHandler != nil {

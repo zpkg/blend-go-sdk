@@ -13,7 +13,7 @@ import (
 
 // Assert that the datadog collector implements Collector.
 var (
-	_ stats.Collector = &Collector{}
+	_ stats.Collector = (*Collector)(nil)
 )
 
 // NewCollector returns a new stats collector from a config.
@@ -52,9 +52,9 @@ type Collector struct {
 	defaultTags []string
 }
 
-// Tags returns the default tags with a given set of optional extra tags.
-func (dc *Collector) Tags(tags ...string) []string {
-	return append(dc.defaultTags, tags...)
+// AddDefaultTag adds a new default tag and returns a reference to the collector.
+func (dc *Collector) AddDefaultTag(key, value string) {
+	dc.defaultTags = append(dc.defaultTags, fmt.Sprintf("%s:%s", key, value))
 }
 
 // DefaultTags returns the default tags for the collector.
@@ -62,35 +62,29 @@ func (dc *Collector) DefaultTags() []string {
 	return dc.defaultTags
 }
 
-// WithDefaultTag adds a new default tag and returns a reference to the collector.
-func (dc *Collector) WithDefaultTag(key, value string) *Collector {
-	dc.defaultTags = append(dc.defaultTags, fmt.Sprintf("%s:%s", key, value))
-	return dc
-}
-
 // Count increments a counter by a value.
 func (dc *Collector) Count(name string, value int64, tags ...string) error {
-	return dc.client.Count(name, value, dc.Tags(tags...), 1.0)
+	return dc.client.Count(name, value, dc.tags(tags...), 1.0)
 }
 
 // Increment increments a counter by 1.
 func (dc *Collector) Increment(name string, tags ...string) error {
-	return dc.client.Count(name, 1, dc.Tags(tags...), 1.0)
+	return dc.client.Count(name, 1, dc.tags(tags...), 1.0)
 }
 
 // Gauge sets a gauge value.
 func (dc *Collector) Gauge(name string, value float64, tags ...string) error {
-	return dc.client.Gauge(name, value, dc.Tags(tags...), 1.0)
+	return dc.client.Gauge(name, value, dc.tags(tags...), 1.0)
 }
 
 // Histogram sets a guage value.
 func (dc *Collector) Histogram(name string, value float64, tags ...string) error {
-	return dc.client.Histogram(name, value, dc.Tags(tags...), 1.0)
+	return dc.client.Histogram(name, value, dc.tags(tags...), 1.0)
 }
 
 // Timing sets a timing value.
 func (dc *Collector) Timing(name string, value time.Duration, tags ...string) error {
-	return dc.client.TimeInMilliseconds(name, util.Time.Millis(value), dc.Tags(tags...), 1.0)
+	return dc.client.TimeInMilliseconds(name, util.Time.Millis(value), dc.tags(tags...), 1.0)
 }
 
 // SimpleEvent sends an event w/ title and text
@@ -106,6 +100,12 @@ func (dc *Collector) SendEvent(event *statsd.Event) error {
 // CreateEvent makes a new Event with the collectors default tags.
 func (dc *Collector) CreateEvent(title, text string, tags ...string) *statsd.Event {
 	event := statsd.NewEvent(title, text)
-	event.Tags = dc.Tags(tags...)
+	event.Tags = dc.tags(tags...)
 	return event
+}
+
+// helpers
+
+func (dc *Collector) tags(tags ...string) []string {
+	return append(dc.defaultTags, tags...)
 }
