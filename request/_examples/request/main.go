@@ -9,7 +9,7 @@ import (
 )
 
 func main() {
-	_, meta, err := request.New().AsGet().WithRawURLf("https://google.com").BytesWithMeta()
+	_, meta, err := request.New().AsGet().MustWithRawURL("https://google.com").BytesWithMeta()
 	if err != nil {
 		fmt.Fprintf(os.Stderr, "%v", err)
 		os.Exit(1)

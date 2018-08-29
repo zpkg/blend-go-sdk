@@ -20,23 +20,23 @@ func main() {
 	app.ServeStaticCached("/cached", "_static")
 	app.SetStaticMiddleware("/cached", web.SessionMiddleware(func(ctx *web.Ctx) web.Result {
 		return ctx.Text().NotAuthorized()
-	}, web.SessionReadLock))
+	}))
 
 	app.ServeStatic("/static", "_static")
 	app.SetStaticMiddleware("/static", web.SessionMiddleware(func(ctx *web.Ctx) web.Result {
 		return ctx.Text().NotAuthorized()
-	}, web.SessionUnsafe))
+	}))
 
 	app.ServeStatic("/static_unauthed", "_static")
 
-	app.Auth().SetValidateHandler(func(session *web.Session, state web.State) error {
+	app.Auth().WithValidateHandler(func(session *web.Session, state web.State) error {
 		if session.UserID == "bailey" {
 			return fmt.Errorf("bailey isn't allowed here")
 		}
 		return nil
 	})
 
-	app.Auth().SetLoginRedirectHandler(web.PathRedirectHandler("/login"))
+	app.Auth().WithLoginRedirectHandler(web.PathRedirectHandler("/login"))
 
 	app.Views().AddLiterals(`{{ define "login" }}<a href="/login/user_valid">Login Valid</a><br/><a href="/login/user_notvalid">Login Invalid</a>{{end}}`)
 	app.GET("/login", func(r *web.Ctx) web.Result {
@@ -49,7 +49,7 @@ func main() {
 			return r.RedirectWithMethodf("GET", "/")
 		}
 
-		userID := r.ParamString("userID")
+		userID, _ := r.Param("userID")
 		if !strings.HasSuffix(userID, "_valid") { //maximum security
 			return r.Text().NotAuthorized()
 		}

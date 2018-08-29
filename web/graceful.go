@@ -6,9 +6,15 @@ import (
 	"syscall"
 )
 
+// Shutdowner is a server that can start and shutdown.
+type Shutdowner interface {
+	Start() error
+	Shutdown() error
+}
+
 // GracefulShutdown starts an app and responds to SIGINT and SIGTERM to shut the app down.
 // It will return any errors returned by app.Start() that are not caused by shutting down the server.
-func GracefulShutdown(app *App) error {
+func GracefulShutdown(app Shutdowner) error {
 	shutdown := make(chan struct{})
 	shutdownAbort := make(chan struct{})
 	shutdownComplete := make(chan struct{})

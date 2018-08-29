@@ -23,8 +23,7 @@ func main() {
 	app.GET("/", func(r *web.Ctx) web.Result {
 		return r.View().View("index", nil)
 	})
-	err := app.Start()
-	if err != nil {
+	if err := web.GracefulShutdown(app); err != nil {
 		log.SyncFatalExit(err)
 	}
 }

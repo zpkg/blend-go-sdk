@@ -6,25 +6,27 @@ import (
 	"os"
 )
 
+// Common constants.
 const (
-	HEADER_CONTENT_LENGTH = "Content-Length"
-	HEADER_CONTENT_TYPE   = "Content-Type"
-	HEADER_SERVER         = "Server"
-	HEADER_DATE           = "Date"
-	SERVER_NAME           = "golang"
-	APPLICATION_JSON      = "application/json; charset=UTF-8"
-	MESSAGE_TEXT          = "Hello, World!"
-	JSON_CONTENT_LENGTH   = "27"
+	HeaderContentLength        = "Content-Length"
+	HeaderContentType          = "Content-Type"
+	HeaderServer               = "Server"
+	HeaderDate                 = "Date"
+	ServerName                 = "golang"
+	ContentTypeApplicationJSON = "application/json; charset=UTF-8"
+	MessageText                = "Hello, World!"
+	JSONContentLength          = "27"
 )
 
+// Message is a json message.
 type Message struct {
 	Message string `json:"message"`
 }
 
 func jsonHandler(w http.ResponseWriter, r *http.Request) {
-	w.Header().Set(HEADER_CONTENT_TYPE, APPLICATION_JSON)
-	w.Header().Set(HEADER_SERVER, SERVER_NAME)
-	json.NewEncoder(w).Encode(&Message{Message: MESSAGE_TEXT})
+	w.Header().Set(HeaderContentType, ContentTypeApplicationJSON)
+	w.Header().Set(HeaderServer, ServerName)
+	json.NewEncoder(w).Encode(&Message{Message: MessageText})
 }
 
 func port() string {
@@ -37,5 +39,5 @@ func port() string {
 
 func main() {
 	http.HandleFunc("/json", jsonHandler)
-	http.ListenAndServe(":"+port(), nil)
+	http.ListenAndServe("127.0.0.1:"+port(), nil)
 }

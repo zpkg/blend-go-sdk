@@ -16,7 +16,7 @@ func main() {
 		return r.Text().Result("foo")
 	})
 
-	log.Listen(logger.WebRequest, logger.DefaultListenerName, logger.NewWebRequestEventListener(func(wre *logger.WebRequestEvent) {
+	log.Listen(logger.HTTPRequest, logger.DefaultListenerName, logger.NewHTTPRequestEventListener(func(wre *logger.HTTPRequestEvent) {
 		fmt.Printf("Route: %s\n", wre.Route())
 	}))
 

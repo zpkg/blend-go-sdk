@@ -15,7 +15,7 @@ func main() {
 	transport := &http.Transport{}
 
 	// pass to the request
-	req := request.New().AsGet().WithRawURLf("https://google.com/robots.txt").WithTransport(transport)
+	req := request.New().AsGet().MustWithRawURL("https://google.com/robots.txt").WithTransport(transport)
 
 	var meta *request.ResponseMeta
 	var err error

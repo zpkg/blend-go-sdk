@@ -17,6 +17,7 @@ import (
 	"github.com/blend/go-sdk/env"
 	"github.com/blend/go-sdk/exception"
 	"github.com/blend/go-sdk/logger"
+	"github.com/blend/go-sdk/webutil"
 )
 
 // New returns a new app.
@@ -137,7 +138,7 @@ func (a *App) WithConfig(cfg *Config) *App {
 	a.WithAuth(NewAuthManagerFromConfig(cfg))
 	a.WithViews(NewViewCacheFromConfig(&cfg.Views))
 	a.WithDefaultResultProvider(a.Views())
-	a.WithBaseURL(MustParseURL(cfg.GetBaseURL()))
+	a.WithBaseURL(webutil.MustParseURL(cfg.GetBaseURL()))
 	a.WithShutdownGracePeriod(cfg.GetShutdownGracePeriod())
 	return a
 }
@@ -1035,16 +1036,16 @@ func (a *App) renderAction(action Action) Handler {
 
 func (a *App) createCtx(w ResponseWriter, r *http.Request, route *Route, p RouteParameters, s State) *Ctx {
 	ctx := &Ctx{
-		tracer:          a.tracer,
-		response:        w,
-		request:         r,
-		app:             a,
-		views:           a.views,
-		route:           route,
-		routeParameters: p,
-		state:           s,
-		auth:            a.auth,
-		log:             a.log,
+		tracer:                a.tracer,
+		response:              w,
+		request:               r,
+		app:                   a,
+		views:                 a.views,
+		route:                 route,
+		routeParameters:       p,
+		state:                 s,
+		auth:                  a.auth,
+		log:                   a.log,
 		defaultResultProvider: a.defaultResultProvider,
 	}
 	if r != nil {
