@@ -22,12 +22,12 @@ func NewAuthManagerFromConfig(cfg *Config) (manager *AuthManager) {
 	switch cfg.GetAuthManagerMode() {
 	case AuthManagerModeJWT:
 		manager = NewJWTAuthManager(cfg.GetAuthSecret())
+	case AuthManagerModeLocal: // local should only be used for debugging.
+		manager = NewLocalAuthManager()
 	case AuthManagerModeServer:
 		manager = NewServerAuthManager()
-	case AuthManagerModeLocal:
-		fallthrough
 	default:
-		manager = NewLocalAuthManager()
+		panic("invalid auth manager mode")
 	}
 
 	return manager.WithCookieHTTPSOnly(cfg.GetCookieHTTPSOnly()).
@@ -167,6 +167,10 @@ func (am *AuthManager) VerifySession(ctx *Ctx) (*Session, error) {
 		session, err = am.fetchHandler(ctx.Context(), sessionValue, ctx.state)
 		if err != nil {
 			return nil, err
+		}
+	} else {
+		if ctx.Logger() != nil {
+			ctx.Logger().Debugf("authManager: neither the parseSessionHandler nor the fetchHandler were set")
 		}
 	}
 
