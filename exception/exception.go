@@ -85,6 +85,7 @@ type Exception interface {
 
 	WithClass(error) Exception
 	Class() error
+	WithMessage(string) Exception
 	WithMessagef(string, ...interface{}) Exception
 	Message() string
 	WithInner(error) Exception
@@ -207,6 +208,12 @@ func (e *Ex) WithInner(err error) Exception {
 // Inner returns an optional nested exception.
 func (e *Ex) Inner() error {
 	return e.inner
+}
+
+// WithMessage sets the exception message.
+func (e *Ex) WithMessage(message string) Exception {
+	e.message = message
+	return e
 }
 
 // WithMessagef sets the message based on a format and args, and returns the exception.

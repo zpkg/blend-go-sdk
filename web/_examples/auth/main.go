@@ -1,6 +1,7 @@
 package main
 
 import (
+	"context"
 	"fmt"
 	"strings"
 
@@ -29,7 +30,7 @@ func main() {
 
 	app.ServeStatic("/static_unauthed", "_static")
 
-	app.Auth().WithValidateHandler(func(session *web.Session, state web.State) error {
+	app.Auth().WithValidateHandler(func(_ context.Context, session *web.Session, state web.State) error {
 		if session.UserID == "bailey" {
 			return fmt.Errorf("bailey isn't allowed here")
 		}
