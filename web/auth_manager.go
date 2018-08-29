@@ -1,6 +1,7 @@
 package web
 
 import (
+	"context"
 	"net/url"
 	"time"
 
@@ -72,16 +73,16 @@ func NewServerAuthManager() *AuthManager {
 // AuthManager is a manager for sessions.
 type AuthManager struct {
 	// these generally apply to jwt mode.
-	serializeSessionValueHandler func(*Session, State) (string, error)
-	parseSessionValueHandler     func(string, State) (*Session, error) // should provide the server tracked session id or should return the jwt.
+	serializeSessionValueHandler func(context.Context, *Session, State) (string, error)
+	parseSessionValueHandler     func(context.Context, string, State) (*Session, error) // should provide the server tracked session id or should return the jwt.
 
 	// these generally apply to server or local modes.
-	persistHandler func(*Session, State) error
-	fetchHandler   func(sessionID string, state State) (*Session, error)
-	removeHandler  func(sessionID string, state State) error
+	persistHandler func(context.Context, *Session, State) error
+	fetchHandler   func(ctx context.Context, sessionID string, state State) (*Session, error)
+	removeHandler  func(ctx context.Context, sessionID string, state State) error
 
 	// these generally apply to any mode.
-	validateHandler          func(*Session, State) error
+	validateHandler          func(context.Context, *Session, State) error
 	sessionTimeoutProvider   func(*Session) time.Time
 	loginRedirectHandler     func(*Ctx) *url.URL
 	postLoginRedirectHandler func(*Ctx) *url.URL
@@ -107,7 +108,7 @@ func (am *AuthManager) Login(userID string, ctx *Ctx) (session *Session, err err
 
 	// call the perist handler if one's been provided
 	if am.persistHandler != nil {
-		err = am.persistHandler(session, ctx.state)
+		err = am.persistHandler(ctx.Context(), session, ctx.state)
 		if err != nil {
 			return nil, err
 		}
@@ -115,7 +116,7 @@ func (am *AuthManager) Login(userID string, ctx *Ctx) (session *Session, err err
 
 	// if we're in jwt mode, serialize the jwt.
 	if am.serializeSessionValueHandler != nil {
-		sessionValue, err = am.serializeSessionValueHandler(session, ctx.state)
+		sessionValue, err = am.serializeSessionValueHandler(ctx.Context(), session, ctx.state)
 		if err != nil {
 			return nil, err
 		}
@@ -137,7 +138,7 @@ func (am *AuthManager) Logout(ctx *Ctx) error {
 
 	// call the remove handler if one has been provided
 	if am.removeHandler != nil {
-		return am.removeHandler(sessionValue, ctx.state)
+		return am.removeHandler(ctx.Context(), sessionValue, ctx.state)
 	}
 	return nil
 }
@@ -158,12 +159,12 @@ func (am *AuthManager) VerifySession(ctx *Ctx) (*Session, error) {
 	// if we have a separate step to parse the sesion value
 	// (i.e. jwt mode) do that now.
 	if am.parseSessionValueHandler != nil {
-		session, err = am.parseSessionValueHandler(sessionValue, ctx.state)
+		session, err = am.parseSessionValueHandler(ctx.Context(), sessionValue, ctx.state)
 		if err != nil {
 			return nil, err
 		}
 	} else if am.fetchHandler != nil { // if we're in server tracked mode, pull it from whatever backing store we use.
-		session, err = am.fetchHandler(sessionValue, ctx.state)
+		session, err = am.fetchHandler(ctx.Context(), sessionValue, ctx.state)
 		if err != nil {
 			return nil, err
 		}
@@ -174,7 +175,7 @@ func (am *AuthManager) VerifySession(ctx *Ctx) (*Session, error) {
 		ctx.ExpireCookie(am.CookieName(), am.CookiePath())
 		// if we have a remove handler and the sessionID is set
 		if am.removeHandler != nil {
-			err = am.removeHandler(sessionValue, ctx.state)
+			err = am.removeHandler(ctx.Context(), sessionValue, ctx.state)
 			if err != nil {
 				return nil, err
 			}
@@ -186,7 +187,7 @@ func (am *AuthManager) VerifySession(ctx *Ctx) (*Session, error) {
 
 	// call a custom validate handler if one's been provided.
 	if am.validateHandler != nil {
-		err = am.validateHandler(session, ctx.state)
+		err = am.validateHandler(ctx.Context(), session, ctx.state)
 		if err != nil {
 			return nil, err
 		}
@@ -198,7 +199,7 @@ func (am *AuthManager) VerifySession(ctx *Ctx) (*Session, error) {
 	if am.shouldUpdateSessionExpiry() {
 		session.ExpiresUTC = am.GenerateSessionTimeout(ctx)
 		if am.persistHandler != nil {
-			err = am.persistHandler(session, ctx.state)
+			err = am.persistHandler(ctx.Context(), session, ctx.state)
 			if err != nil {
 				return nil, err
 			}
@@ -287,48 +288,48 @@ func (am *AuthManager) CookiePath() string {
 }
 
 // WithPersistHandler sets the persist handler.
-func (am *AuthManager) WithPersistHandler(handler func(*Session, State) error) *AuthManager {
+func (am *AuthManager) WithPersistHandler(handler func(context.Context, *Session, State) error) *AuthManager {
 	am.persistHandler = handler
 	return am
 }
 
 // PersistHandler returns the persist handler.
-func (am *AuthManager) PersistHandler() func(*Session, State) error {
+func (am *AuthManager) PersistHandler() func(context.Context, *Session, State) error {
 	return am.persistHandler
 }
 
 // WithFetchHandler sets the fetch handler.
-func (am *AuthManager) WithFetchHandler(handler func(sessionID string, state State) (*Session, error)) *AuthManager {
+func (am *AuthManager) WithFetchHandler(handler func(ctx context.Context, sessionID string, state State) (*Session, error)) *AuthManager {
 	am.fetchHandler = handler
 	return am
 }
 
 // FetchHandler returns the fetch handler.
 // It is used in `VerifySession` to satisfy session cache misses.
-func (am *AuthManager) FetchHandler() func(sessionID string, state State) (*Session, error) {
+func (am *AuthManager) FetchHandler() func(ctx context.Context, sessionID string, state State) (*Session, error) {
 	return am.fetchHandler
 }
 
 // WithRemoveHandler sets the remove handler.
-func (am *AuthManager) WithRemoveHandler(handler func(sessionID string, state State) error) *AuthManager {
+func (am *AuthManager) WithRemoveHandler(handler func(ctx context.Context, sessionID string, state State) error) *AuthManager {
 	am.removeHandler = handler
 	return am
 }
 
 // RemoveHandler returns the remove handler.
 // It is used in validate session if the session is found to be invalid.
-func (am *AuthManager) RemoveHandler() func(sessionID string, state State) error {
+func (am *AuthManager) RemoveHandler() func(ctx context.Context, sessionID string, state State) error {
 	return am.removeHandler
 }
 
 // WithValidateHandler sets the validate handler.
-func (am *AuthManager) WithValidateHandler(handler func(*Session, State) error) *AuthManager {
+func (am *AuthManager) WithValidateHandler(handler func(context.Context, *Session, State) error) *AuthManager {
 	am.validateHandler = handler
 	return am
 }
 
 // ValidateHandler returns the validate handler.
-func (am *AuthManager) ValidateHandler() func(*Session, State) error {
+func (am *AuthManager) ValidateHandler() func(context.Context, *Session, State) error {
 	return am.validateHandler
 }
 
