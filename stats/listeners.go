@@ -60,3 +60,20 @@ func AddQueryListeners(log *logger.Logger, stats Collector) {
 		stats.Histogram("request.elapsed", util.Time.Millis(qe.Elapsed()), labelTag)
 	}))
 }
+
+// AddErrorListeners adds error listeners.
+func AddErrorListeners(log *logger.Logger, stats Collector) {
+	if log == nil || stats == nil {
+		return
+	}
+
+	log.Listen(logger.Warning, "stats", logger.NewErrorEventListener(func(qe *logger.ErrorEvent) {
+		stats.Increment("warning")
+	}))
+	log.Listen(logger.Error, "stats", logger.NewErrorEventListener(func(qe *logger.ErrorEvent) {
+		stats.Increment("error")
+	}))
+	log.Listen(logger.Fatal, "stats", logger.NewErrorEventListener(func(qe *logger.ErrorEvent) {
+		stats.Increment("fatal")
+	}))
+}
