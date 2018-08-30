@@ -25,9 +25,6 @@ var exclude = flag.String("exclude", "", "the exclude file filter in glob form, 
 var verbose = flag.Bool("v", false, "verbose output")
 
 func main() {
-	// walk the filesystem
-	// for each file named by the gob filter
-	// run the rules on it
 	flag.Parse()
 
 	if rulesFile != nil && len(*rulesFile) > 0 {
