@@ -382,7 +382,8 @@ func (jm *JobManager) runTaskUnsafe(t Task) error {
 			jm.Unlock()
 		}()
 		if jm.tracer != nil {
-			tf := jm.tracer.Start(ctx, t)
+			var tf TraceFinisher
+			ctx, tf = jm.tracer.Start(ctx, t)
 			if tf != nil {
 				defer func() { tf.Finish(ctx, t, err) }()
 			}
