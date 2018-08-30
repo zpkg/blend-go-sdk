@@ -40,6 +40,9 @@ const (
 	TagKeyDBName = "db.name"
 	// TagKeyDBUser is the user on the database connection.
 	TagKeyDBUser = "db.user"
+
+	// TagKeyJobName is the job name.
+	TagKeyJobName = "job.name"
 )
 
 // Operations are actions represented by spans.
@@ -55,6 +58,8 @@ const (
 	OperationSQLPrepare = "sql.prepare"
 	// OperationDBQuery is the db query tracing operation.
 	OperationSQLQuery = "sql.query"
+	// OperationJob is a job operation.
+	OperationJob = "job"
 )
 
 // Span types have similar behaviour to "app types" and help categorize
@@ -82,6 +87,8 @@ const (
 	// SpanTypeElasticSearch marks a span as an ElasticSearch operation.
 	// These spans may also have an "elasticsearch.body" tag.
 	SpanTypeElasticSearch = "elasticsearch"
+	// SpanTypeJob is a span type used by cron jobs.
+	SpanTypeJob = "job"
 )
 
 // Priority is a hint given to the backend so that it knows which traces to reject or kept.

@@ -19,7 +19,6 @@ func New() *JobManager {
 		jobs:              map[string]*JobMeta{},
 		tasks:             map[string]*TaskMeta{},
 	}
-
 	jm.schedulerWorker = async.NewInterval(jm.runDueJobs, DefaultHeartbeatInterval)
 	jm.killHangingTasksWorker = async.NewInterval(jm.killHangingTasks, DefaultHeartbeatInterval)
 	return &jm
@@ -38,6 +37,7 @@ func NewFromEnv() *JobManager {
 // JobManager is the main orchestration and job management object.
 type JobManager struct {
 	sync.Mutex
+	tracer Tracer
 
 	heartbeatInterval time.Duration
 	log               *logger.Logger
@@ -56,38 +56,37 @@ func (jm *JobManager) Logger() *logger.Logger {
 
 // WithLogger sets the logger and returns a reference to the job manager.
 func (jm *JobManager) WithLogger(log *logger.Logger) *JobManager {
-	jm.SetLogger(log)
+	jm.log = log
 	return jm
 }
 
-// SetLogger sets the logger.
-func (jm *JobManager) SetLogger(log *logger.Logger) {
-	jm.log = log
+// WithTracer sets the manager's tracer.
+func (jm *JobManager) WithTracer(tracer Tracer) *JobManager {
+	jm.tracer = tracer
+	return jm
+}
+
+// Tracer returns the manager's tracer.
+func (jm *JobManager) Tracer() Tracer {
+	return jm.tracer
 }
 
 // WithHighPrecisionHeartbeat sets the heartbeat interval to the high precision interval and returns the job manager.
 func (jm *JobManager) WithHighPrecisionHeartbeat() *JobManager {
-	jm.SetHeartbeatInterval(DefaultHighPrecisionHeartbeatInterval)
-	return jm
+	return jm.WithHeartbeatInterval(DefaultHighPrecisionHeartbeatInterval)
 }
 
 // WithDefaultHeartbeat sets the heartbeat interval to the default interval and returns the job manager.
 func (jm *JobManager) WithDefaultHeartbeat() *JobManager {
-	jm.SetHeartbeatInterval(DefaultHeartbeatInterval)
-	return jm
+	return jm.WithHeartbeatInterval(DefaultHeartbeatInterval)
 }
 
 // WithHeartbeatInterval sets the heartbeat interval explicitly and returns the job manager.
 func (jm *JobManager) WithHeartbeatInterval(interval time.Duration) *JobManager {
-	jm.SetHeartbeatInterval(interval)
-	return jm
-}
-
-// SetHeartbeatInterval sets the heartbeat interval explicitly.
-func (jm *JobManager) SetHeartbeatInterval(interval time.Duration) {
 	jm.schedulerWorker.WithInterval(interval)
 	jm.killHangingTasksWorker.WithInterval(interval)
 	jm.heartbeatInterval = interval
+	return jm
 }
 
 // HeartbeatInterval returns the current heartbeat interval.
@@ -382,7 +381,12 @@ func (jm *JobManager) runTaskUnsafe(t Task) error {
 			}
 			jm.Unlock()
 		}()
-
+		if jm.tracer != nil {
+			tf := jm.tracer.Start(ctx, t)
+			if tf != nil {
+				defer func() { tf.Finish(ctx, t, err) }()
+			}
+		}
 		jm.onTaskStart(t)
 		err = t.Execute(ctx)
 	}()

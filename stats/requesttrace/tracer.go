@@ -12,7 +12,7 @@ import (
 
 // Tracer returns a request tracer that also injects span context into outgoing headers.
 func Tracer(tracer opentracing.Tracer) request.Tracer {
-	return nil
+	return &requestTracer{tracer: tracer}
 }
 
 type requestTracer struct {
