@@ -18,14 +18,14 @@ type tracer struct {
 	tracer opentracing.Tracer
 }
 
-func (t tracer) Start(ctx context.Context, task cron.Task) cron.TraceFinisher {
+func (t tracer) Start(ctx context.Context, task cron.Task) (context.Context, cron.TraceFinisher) {
 	startOptions := []opentracing.StartSpanOption{
-		opentracing.Tag{Key: tracing.TagKeySpanType, Value: tracing.SpanTypeJob},
 		opentracing.Tag{Key: tracing.TagKeyResourceName, Value: task.Name()},
+		opentracing.Tag{Key: tracing.TagKeySpanType, Value: tracing.SpanTypeJob},
 		opentracing.StartTime(time.Now().UTC()),
 	}
-	span, _ := tracing.StartSpanFromContext(ctx, t.tracer, tracing.OperationJob, startOptions...)
-	return &traceFinisher{span: span}
+	span, spanCtx := tracing.StartSpanFromContext(ctx, t.tracer, tracing.OperationJob, startOptions...)
+	return spanCtx, &traceFinisher{span: span}
 }
 
 type traceFinisher struct {

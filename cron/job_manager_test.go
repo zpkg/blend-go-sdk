@@ -313,11 +313,11 @@ type mockTracer struct {
 	OnFinish func(Task, error)
 }
 
-func (mt mockTracer) Start(ctx context.Context, t Task) TraceFinisher {
+func (mt mockTracer) Start(ctx context.Context, t Task) (context.Context, TraceFinisher) {
 	if mt.OnStart != nil {
 		mt.OnStart(t)
 	}
-	return &mockTraceFinisher{Parent: &mt}
+	return ctx, &mockTraceFinisher{Parent: &mt}
 }
 
 type mockTraceFinisher struct {
