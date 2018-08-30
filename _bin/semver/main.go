@@ -1,7 +1,6 @@
 package main
 
 import (
-	"flag"
 	"fmt"
 	"io/ioutil"
 	"os"
@@ -20,32 +19,23 @@ func usage() {
 	fmt.Fprint(os.Stdout, "\tversion [command] [args] -f [filename]\n")
 }
 
-var filePath = flag.String("f", "", "the filename")
-
 func main() {
-	flag.Parse()
-
-	if len(flag.Args()) < 2 {
+	if len(os.Args) < 3 {
 		usage()
 		os.Exit(1)
 	}
 
-	contents, err := ioutil.ReadFile(*filePath)
-	if err != nil {
-		fmt.Fprintf(os.Stderr, "%+v\n", err)
-		os.Exit(1)
-	}
+	command, args := os.Args[1], os.Args[2:]
 
-	command, args := flag.Args()[0], flag.Args()[1:]
 	switch command {
 	case "increment":
-		increment(contents, args)
+		increment(args)
 		os.Exit(0)
 	case "satisfies":
-		satisfies(contents, args)
+		satisfies(args)
 		os.Exit(0)
 	case "validate":
-		validate(contents, args)
+		validate(args)
 		os.Exit(0)
 	default:
 		fmt.Fprintf(os.Stderr, "invalid command: %s\n", command)
@@ -53,9 +43,27 @@ func main() {
 	}
 }
 
-func increment(contents []byte, args []string) {
-	if len(args) == 0 {
-		fmt.Fprintf(os.Stderr, "must supply a semver segment\n")
+func readContents(path string) (contents []byte, err error) {
+	if strings.TrimSpace(path) == "-" {
+		contents, err = ioutil.ReadAll(os.Stdin)
+	} else {
+		contents, err = ioutil.ReadFile(path)
+	}
+	return
+}
+
+func increment(args []string) {
+	if len(args) < 2 {
+		fmt.Fprintf(os.Stderr, "must supply a semver segment and a file\n")
+		os.Exit(1)
+	}
+
+	segment := args[0]
+	filepath := args[1]
+
+	contents, err := readContents(filepath)
+	if err != nil {
+		fmt.Fprintf(os.Stderr, "%+v\n", err)
 		os.Exit(1)
 	}
 
@@ -65,7 +73,7 @@ func increment(contents []byte, args []string) {
 		os.Exit(1)
 	}
 
-	switch strings.ToLower(os.Args[1]) {
+	switch strings.ToLower(segment) {
 	case "patch":
 		version.BumpPatch()
 	case "minor":
@@ -73,17 +81,26 @@ func increment(contents []byte, args []string) {
 	case "major":
 		version.BumpMajor()
 	default:
-		fmt.Fprintf(os.Stderr, "invalid segment: %s\n", os.Args[1])
+		fmt.Fprintf(os.Stderr, "invalid segment: %s\n", segment)
 		fmt.Fprintf(os.Stderr, "should be one of: 'major', 'minor', and 'patch'\n")
 		os.Exit(1)
 	}
 
-	fmt.Printf("%v", version)
+	fmt.Printf("%v\n", version)
 }
 
-func satisfies(contents []byte, args []string) {
-	if len(args) == 0 {
-		fmt.Fprintf(os.Stderr, "must supply a version constraint\n")
+func satisfies(args []string) {
+	if len(args) < 2 {
+		fmt.Fprintf(os.Stderr, "must supply a version constraint and a file\n")
+		os.Exit(1)
+	}
+
+	constraintValue := args[0]
+	filepath := args[1]
+
+	contents, err := readContents(filepath)
+	if err != nil {
+		fmt.Fprintf(os.Stderr, "%+v\n", err)
 		os.Exit(1)
 	}
 
@@ -93,7 +110,7 @@ func satisfies(contents []byte, args []string) {
 		os.Exit(1)
 	}
 
-	constraint, err := semver.NewConstraint(args[0])
+	constraint, err := semver.NewConstraint(constraintValue)
 	if err != nil {
 		fmt.Fprintf(os.Stderr, "%+v\n", err)
 		os.Exit(1)
@@ -105,8 +122,18 @@ func satisfies(contents []byte, args []string) {
 	}
 }
 
-func validate(contents []byte, args []string) {
-	_, err := semver.NewVersion(strings.TrimSpace(string(contents)))
+func validate(args []string) {
+	if len(args) == 0 {
+		fmt.Fprintf(os.Stderr, "must supply a file\n")
+		os.Exit(1)
+	}
+	filepath := args[0]
+	contents, err := readContents(filepath)
+	if err != nil {
+		fmt.Fprintf(os.Stderr, "%+v\n", err)
+		os.Exit(1)
+	}
+	_, err = semver.NewVersion(strings.TrimSpace(string(contents)))
 	if err != nil {
 		fmt.Fprintf(os.Stderr, "%+v\n", err)
 		os.Exit(1)
