@@ -280,8 +280,7 @@ func TestFiresErrorOnTaskError(t *testing.T) {
 
 	agent := logger.New(logger.Error)
 	defer agent.Close()
-	manager := New()
-	manager.SetLogger(agent)
+	manager := New().WithLogger(agent)
 
 	var errorDidFire bool
 	var errorMatched bool
@@ -307,4 +306,62 @@ func TestFiresErrorOnTaskError(t *testing.T) {
 
 	a.True(errorDidFire)
 	a.True(errorMatched)
+}
+
+type mockTracer struct {
+	OnStart  func(Task)
+	OnFinish func(Task, error)
+}
+
+func (mt mockTracer) Start(ctx context.Context, t Task) TraceFinisher {
+	if mt.OnStart != nil {
+		mt.OnStart(t)
+	}
+	return &mockTraceFinisher{Parent: &mt}
+}
+
+type mockTraceFinisher struct {
+	Parent *mockTracer
+}
+
+func (mtf mockTraceFinisher) Finish(ctx context.Context, t Task, err error) {
+	if mtf.Parent != nil && mtf.Parent.OnFinish != nil {
+		mtf.Parent.OnFinish(t, err)
+	}
+}
+
+type testTask struct{}
+
+func (tt testTask) Name() string                    { return "test_task" }
+func (tt testTask) Execute(_ context.Context) error { return nil }
+
+func TestManagerTracer(t *testing.T) {
+	assert := assert.New(t)
+
+	wg := sync.WaitGroup{}
+	wg.Add(2)
+	var didCallStart, didCallFinish bool
+	var startTaskCorrect, finishTaskCorrect, errorUnset bool
+	manager := New().
+		WithTracer(&mockTracer{
+			OnStart: func(t Task) {
+				defer wg.Done()
+				didCallStart = true
+				startTaskCorrect = t.Name() == "test_task"
+			},
+			OnFinish: func(t Task, err error) {
+				defer wg.Done()
+				didCallFinish = true
+				finishTaskCorrect = t.Name() == "test_task"
+				errorUnset = err == nil
+			},
+		})
+
+	assert.Nil(manager.RunTask(&testTask{}))
+	wg.Wait()
+	assert.True(didCallStart)
+	assert.True(didCallFinish)
+	assert.True(startTaskCorrect)
+	assert.True(finishTaskCorrect)
+	assert.True(errorUnset)
 }
