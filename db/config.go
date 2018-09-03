@@ -103,7 +103,9 @@ func NewConfigFromDSN(dsn string) (*Config, error) {
 //	-	DB_SSLMODE 		= SSLMode
 func NewConfigFromEnv() *Config {
 	var config Config
-	env.Env().ReadInto(&config)
+	if err := env.Env().ReadInto(&config); err != nil {
+		panic(err)
+	}
 	return &config
 }
 

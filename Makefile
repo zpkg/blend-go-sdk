@@ -7,7 +7,7 @@ CURRENT_USER 	:= $(shell whoami)
 VERSION 		:= $(shell cat ./.version)
 
 # this is to allow local go-sdk/db tests to pass
-DB_PORT 		?= 26257
+DB_PORT 		?= 5432
 DB_SSLMODE		?= disable
 
 # coverage stuff
