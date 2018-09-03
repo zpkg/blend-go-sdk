@@ -86,6 +86,10 @@ increment-major:
 	@mv ./NEW_VERSION ./.version
 	@cat ./.version
 
+clean:
+	@echo "Cleaning COVERAGE files"
+	@find . -name "COVERAGE" -exec rm {} \;
+
 tag-version:
 	git tag -f $(VERSION)
 
