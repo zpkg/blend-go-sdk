@@ -17,7 +17,8 @@ import (
 )
 
 const (
-	star = "*"
+	star             = "*"
+	defaultFileFlags = 0644
 )
 
 var reportOutputPath = flag.String("output", "coverage.html", "the path to write the full html coverage report")
@@ -129,7 +130,7 @@ func main() {
 	fmt.Fprintf(os.Stdout, "final coverage: %.2f\n", finalCoverage)
 	fmt.Fprintf(os.Stdout, "merging coverage output: %s\n", *reportOutputPath)
 	maybeFatal(execCoverageReportCompile())
-	// maybeFatal(removeIfExists(*temporaryOutputPath))
+	maybeFatal(removeIfExists(*temporaryOutputPath))
 	fmt.Fprintln(os.Stdout, "coverage complete")
 }
 
@@ -235,7 +236,7 @@ func extractCoverage(corpus string) string {
 }
 
 func writeCoverage(path, coverage string) error {
-	return ioutil.WriteFile(filepath.Join(path, "COVERAGE"), []byte(strings.TrimSpace(coverage)), 0755)
+	return ioutil.WriteFile(filepath.Join(path, "COVERAGE"), []byte(strings.TrimSpace(coverage)), defaultFileFlags)
 }
 
 func dirHasGlob(path, glob string) bool {
