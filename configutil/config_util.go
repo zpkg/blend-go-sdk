@@ -25,6 +25,8 @@ const (
 
 var (
 	// DefaultPaths are default path locations.
+	// They are tested and read in order, so the later
+	// paths will override data found in the earlier ones.
 	DefaultPaths = []string{
 		"/var/secrets/config.yml",
 		"/var/secrets/config.yaml",
@@ -32,10 +34,15 @@ var (
 		"./_config/config.yml",
 		"./_config/config.yaml",
 		"./_config/config.json",
+		"./config.yml",
+		"./config.yaml",
+		"./config.json",
 	}
 )
 
-// Read reads a config from a default path (or inferred path from the environment).
+// Read reads a config from optional path(s).
+// Paths will be tested from a standard set of defaults (ex. config.yml)
+// and optionally a csv named in the `CONFIG_PATH` environment variable.
 func Read(ref Any, paths ...string) error {
 	return TryReadFromPaths(ref, PathsWithDefaults(paths...)...)
 }
@@ -81,8 +88,8 @@ func PathsWithDefaults(paths ...string) []string {
 }
 
 // Paths returns config paths.
-// It is coalesced from a csv read from the env var 'CONFIG_PATH'
-// and defaults passed into the function.
+// The results are the provided defaults and the `CONFIG_PATH`
+// environment variable as a csv if it's set.
 func Paths(defaults ...string) (output []string) {
 	if env.Env().Has(EnvVarConfigPath) {
 		output = append(output, env.Env().CSV(EnvVarConfigPath)...)

@@ -19,10 +19,11 @@ type config struct {
 func TestPathsWithDefaults(t *testing.T) {
 	assert := assert.New(t)
 
-	assert.Len(PathsWithDefaults(), 6)
+	assert.Len(PathsWithDefaults(), 9)
 	assert.Equal("/var/secrets/config.yml", PathsWithDefaults()[0])
 	assert.Equal("./_config/config.json", PathsWithDefaults()[5])
-	assert.Equal("foo.yml", PathsWithDefaults("foo.yml")[6])
+	assert.Equal("./config.json", PathsWithDefaults()[8])
+	assert.Equal("foo.yml", PathsWithDefaults("foo.yml")[9])
 }
 
 func TestPaths(t *testing.T) {
