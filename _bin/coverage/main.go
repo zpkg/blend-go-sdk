@@ -323,56 +323,18 @@ func countFileLines(path string) (lines int, err error) {
 	return
 }
 
+// joinCoverPath takes a pwd, and a filename, and joins them
+// overlaying parts of the suffix of the pwd, and the prefix
+// of the filename that match.
+// ex:
+// - pwd: /foo/bar/baz, filename: bar/baz/buzz.go => /foo/bar/baz/buzz.go
 func joinCoverPath(pwd, fileName string) string {
-	var lessEmpty = func(values []string) (output []string) {
-		for _, value := range values {
-			if len(value) > 0 {
-				output = append(output, value)
-			}
-		}
-		return
-	}
-
-	var last = func(values []string) (output string) {
-		if len(values) == 0 {
-			return
-		}
-		output = values[len(values)-1]
-		return
-	}
-
-	var pop = func(values []string) (output []string) {
-		if len(values) == 0 {
-			return
-		}
-		output = values[:len(values)-1]
-		return
-	}
-
-	var maybePrefix = func(root, prefix string) string {
-		if strings.HasPrefix(root, prefix) {
-			return root
-		}
-		return prefix + root
-	}
-
 	pwdPath := lessEmpty(strings.Split(pwd, "/"))
+	fileDirPath := lessEmpty(strings.Split(filepath.Dir(fileName), "/"))
 
-	fileDir := filepath.Dir(fileName)
-	fileDirPath := lessEmpty(strings.Split(fileDir, "/"))
-
-	var value, lastDir string
-	var mustMatch bool
-	// for each dir path element
-	for i := len(fileDirPath) - 1; i >= 0; i-- {
-		value = fileDirPath[i]
-		lastDir = last(pwdPath)
-
-		// if the element matches the
-		if lastDir == value {
-			pwdPath = pop(pwdPath)
-			mustMatch = true
-		} else if mustMatch {
+	for index, dir := range pwdPath {
+		if dir == first(fileDirPath) {
+			pwdPath = pwdPath[:index]
 			break
 		}
 	}
@@ -400,4 +362,27 @@ func parseFullCoverProfile(pwd string, path string) (covered, total int, err err
 	}
 
 	return
+}
+func lessEmpty(values []string) (output []string) {
+	for _, value := range values {
+		if len(value) > 0 {
+			output = append(output, value)
+		}
+	}
+	return
+}
+
+func first(values []string) (output string) {
+	if len(values) == 0 {
+		return
+	}
+	output = values[0]
+	return
+}
+
+func maybePrefix(root, prefix string) string {
+	if strings.HasPrefix(root, prefix) {
+		return root
+	}
+	return prefix + root
 }
