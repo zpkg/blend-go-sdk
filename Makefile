@@ -4,7 +4,7 @@ SHASUMCMD 		:= $(shell command -v sha1sum || command -v shasum; 2> /dev/null)
 TARCMD 			:= $(shell command -v tar || command -v tar; 2> /dev/null)
 GIT_REF 		:= $(shell git log --pretty=format:'%h' -n 1)
 CURRENT_USER 	:= $(shell whoami)
-VERSION 		:= $(shell cat ./.version)
+VERSION 		:= $(shell cat ./VERSION)
 
 # this is to allow local go-sdk/db tests to pass
 DB_PORT 		?= 5432
@@ -70,21 +70,21 @@ cover-update:
 
 increment-patch:
 	@echo "Current Version $(VERSION)"
-	@go run _bin/increment_version/main.go patch ./.version > ./NEW_VERSION
+	@go run _bin/semver/main.go patch ./.version > ./NEW_VERSION
 	@mv ./NEW_VERSION ./.version
 	@cat ./.version
 
 increment-minor:
 	@echo "Current Version $(VERSION)"
-	@go run _bin/increment_version/main.go minor ./.version > ./NEW_VERSION
+	@go run _bin/semver/main.go minor ./.version > ./NEW_VERSION
 	@mv ./NEW_VERSION ./.version
 	@cat ./.version
 
 increment-major:
 	@echo "Current Version $(VERSION)"
-	@go run _bin/increment_version/main.go major ./.version > ./NEW_VERSION
-	@mv ./NEW_VERSION ./.version
-	@cat ./.version
+	@go run _bin/semver/main.go major ./VERSION > ./NEW_VERSION
+	@mv ./NEW_VERSION ./VERSION
+	@cat ./VERSION
 
 clean:
 	@echo "Cleaning COVERAGE files"
