@@ -57,7 +57,7 @@ func AddQueryListeners(log *logger.Logger, stats Collector) {
 		}
 
 		stats.Gauge("db.query.elapsed", util.Time.Millis(qe.Elapsed()), labelTag)
-		stats.Histogram("request.elapsed", util.Time.Millis(qe.Elapsed()), labelTag)
+		stats.Histogram("db.query.elapsed", util.Time.Millis(qe.Elapsed()), labelTag)
 	}))
 }
 
