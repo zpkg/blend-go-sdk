@@ -15,26 +15,32 @@ func AddWebListeners(log *logger.Logger, stats Collector) {
 	}
 
 	log.Listen(logger.HTTPResponse, "stats", logger.NewHTTPResponseEventListener(func(wre *logger.HTTPResponseEvent) {
-		var path string
+		var route string
 		if len(wre.Route()) > 0 {
-			path = fmt.Sprintf("path:%s", wre.Route())
+			route = fmt.Sprintf("route:%s", wre.Route())
 		} else {
-			path = "path:not_found"
+			route = "route:not_found"
 		}
 
-		stats.Increment("request", path)
+		method := fmt.Sprintf("method:%s", wre.Request().Method)
+
+		tags := []string{
+			route, method,
+		}
+
+		stats.Increment("http.request", tags...)
 		if wre.StatusCode() >= http.StatusInternalServerError {
-			stats.Increment("request.5xx", path)
+			stats.Increment("http.request.5xx", tags...)
 		} else if wre.StatusCode() >= http.StatusBadRequest {
-			stats.Increment("request.4xx", path)
+			stats.Increment("http.request.4xx", tags...)
 		} else if wre.StatusCode() >= http.StatusMultipleChoices {
-			stats.Increment("request.3xx", path)
+			stats.Increment("http.request.3xx", tags...)
 		} else if wre.StatusCode() >= http.StatusOK {
-			stats.Increment("request.2xx", path)
+			stats.Increment("http.request.2xx", tags...)
 		}
 
-		stats.Gauge("request.elapsed", util.Time.Millis(wre.Elapsed()), path)
-		stats.Histogram("request.elapsed", util.Time.Millis(wre.Elapsed()), path)
+		stats.Gauge("http.request.elapsed", util.Time.Millis(wre.Elapsed()), tags...)
+		stats.Histogram("http.request.elapsed", util.Time.Millis(wre.Elapsed()), tags...)
 	}))
 }
 
