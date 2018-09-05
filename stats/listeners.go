@@ -1,12 +1,44 @@
 package stats
 
 import (
-	"fmt"
-	"net/http"
+	"strconv"
 
+	"github.com/blend/go-sdk/exception"
 	"github.com/blend/go-sdk/logger"
 	"github.com/blend/go-sdk/util"
 )
+
+// MetricNames are names we use when sending data to the collectors.
+const (
+	MetricNameHTTPRequest        string = string(logger.HTTPRequest)
+	MetricNameHTTPRequestElapsed string = MetricNameHTTPRequest + ".elapsed"
+	MetricNameDBQuery            string = string(logger.Query)
+	MetricNameDBQueryElapsed     string = MetricNameDBQuery + ".elapsed"
+
+	MetricNameWarning string = string(logger.Warning)
+	MetricNameError   string = string(logger.Error)
+	MetricNameFatal   string = string(logger.Fatal)
+
+	TagRoute  string = "route"
+	TagMethod string = "method"
+	TagStatus string = "status"
+
+	TagQuery    string = "query"
+	TagEngine   string = "engine"
+	TagDatabase string = "database"
+
+	TagError string = "error"
+	TagClass string = "class"
+
+	RouteNotFound string = "not_found"
+
+	ListenerNameStats string = "stats"
+)
+
+// Tag creates a new tag.
+func Tag(key, value string) string {
+	return key + ":" + value
+}
 
 // AddWebListeners adds web listeners.
 func AddWebListeners(log *logger.Logger, stats Collector) {
@@ -14,33 +46,24 @@ func AddWebListeners(log *logger.Logger, stats Collector) {
 		return
 	}
 
-	log.Listen(logger.HTTPResponse, "stats", logger.NewHTTPResponseEventListener(func(wre *logger.HTTPResponseEvent) {
+	log.Listen(logger.HTTPResponse, ListenerNameStats, logger.NewHTTPResponseEventListener(func(wre *logger.HTTPResponseEvent) {
 		var route string
 		if len(wre.Route()) > 0 {
-			route = fmt.Sprintf("route:%s", wre.Route())
+			route = Tag(TagRoute, wre.Route())
 		} else {
-			route = "route:not_found"
+			route = Tag(TagRoute, wre.Request().RequestURI)
 		}
 
-		method := fmt.Sprintf("method:%s", wre.Request().Method)
-
+		method := Tag(TagMethod, wre.Request().Method)
+		status := Tag(TagStatus, strconv.Itoa(wre.StatusCode()))
 		tags := []string{
-			route, method,
+			route, method, status,
 		}
 
-		stats.Increment("http.request", tags...)
-		if wre.StatusCode() >= http.StatusInternalServerError {
-			stats.Increment("http.request.5xx", tags...)
-		} else if wre.StatusCode() >= http.StatusBadRequest {
-			stats.Increment("http.request.4xx", tags...)
-		} else if wre.StatusCode() >= http.StatusMultipleChoices {
-			stats.Increment("http.request.3xx", tags...)
-		} else if wre.StatusCode() >= http.StatusOK {
-			stats.Increment("http.request.2xx", tags...)
-		}
-
-		stats.Gauge("http.request.elapsed", util.Time.Millis(wre.Elapsed()), tags...)
-		stats.Histogram("http.request.elapsed", util.Time.Millis(wre.Elapsed()), tags...)
+		elapsed := util.Time.Millis(wre.Elapsed())
+		stats.Increment(MetricNameHTTPRequest, tags...)
+		stats.Gauge(MetricNameHTTPRequestElapsed, elapsed, tags...)
+		stats.Histogram(MetricNameHTTPRequestElapsed, elapsed, tags...)
 	}))
 }
 
@@ -50,20 +73,21 @@ func AddQueryListeners(log *logger.Logger, stats Collector) {
 		return
 	}
 
-	log.Listen(logger.Query, "stats", logger.NewQueryEventListener(func(qe *logger.QueryEvent) {
-		if len(qe.QueryLabel()) == 0 {
-			return
+	log.Listen(logger.Query, ListenerNameStats, logger.NewQueryEventListener(func(qe *logger.QueryEvent) {
+		query := Tag(TagQuery, qe.QueryLabel())
+		engine := Tag(TagEngine, qe.Engine())
+		database := Tag(TagDatabase, qe.Database())
+
+		tags := []string{
+			query, engine, database,
 		}
-
-		labelTag := fmt.Sprintf("query:%s", qe.QueryLabel())
-
-		stats.Increment("db.query", labelTag)
 		if qe.Err() != nil {
-			stats.Increment("db.query.error", labelTag)
+			tags = append(tags, TagError)
 		}
 
-		stats.Gauge("db.query.elapsed", util.Time.Millis(qe.Elapsed()), labelTag)
-		stats.Histogram("db.query.elapsed", util.Time.Millis(qe.Elapsed()), labelTag)
+		stats.Increment(MetricNameDBQuery, tags...)
+		stats.Gauge(MetricNameDBQueryElapsed, util.Time.Millis(qe.Elapsed()), tags...)
+		stats.Histogram(MetricNameDBQueryElapsed, util.Time.Millis(qe.Elapsed()), tags...)
 	}))
 }
 
@@ -72,14 +96,13 @@ func AddErrorListeners(log *logger.Logger, stats Collector) {
 	if log == nil || stats == nil {
 		return
 	}
-
-	log.Listen(logger.Warning, "stats", logger.NewErrorEventListener(func(qe *logger.ErrorEvent) {
-		stats.Increment("warning")
+	log.Listen(logger.Warning, ListenerNameStats, logger.NewErrorEventListener(func(ee *logger.ErrorEvent) {
+		stats.Increment(MetricNameWarning, Tag(TagClass, exception.ErrClass(ee.Err())))
 	}))
-	log.Listen(logger.Error, "stats", logger.NewErrorEventListener(func(qe *logger.ErrorEvent) {
-		stats.Increment("error")
+	log.Listen(logger.Error, ListenerNameStats, logger.NewErrorEventListener(func(ee *logger.ErrorEvent) {
+		stats.Increment(MetricNameError, Tag(TagClass, exception.ErrClass(ee.Err())))
 	}))
-	log.Listen(logger.Fatal, "stats", logger.NewErrorEventListener(func(qe *logger.ErrorEvent) {
-		stats.Increment("fatal")
+	log.Listen(logger.Fatal, ListenerNameStats, logger.NewErrorEventListener(func(ee *logger.ErrorEvent) {
+		stats.Increment(MetricNameFatal, Tag(TagClass, exception.ErrClass(ee.Err())))
 	}))
 }
