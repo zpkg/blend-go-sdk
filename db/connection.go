@@ -536,9 +536,6 @@ func (dbc *Connection) TruncateInTxContext(context context.Context, object Datab
 
 func (dbc *Connection) finish(context context.Context, statement, statementLabel string, elapsed time.Duration, err error) {
 	if dbc.log != nil {
-		dbc.log.Trigger(logger.NewQueryEvent(statement, elapsed).WithDatabase(dbc.config.GetDatabase()).WithQueryLabel(statementLabel).WithEngine("postgres").WithErr(err))
-		if err != nil {
-			dbc.log.Error(err)
-		}
+		dbc.log.Trigger(logger.NewQueryEvent(statement, elapsed).WithDatabase(dbc.config.GetDatabase()).WithQueryLabel(statementLabel).WithEngine(dbc.config.GetEngine()).WithErr(err))
 	}
 }

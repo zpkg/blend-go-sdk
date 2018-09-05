@@ -97,6 +97,9 @@ func (s *Suite) error(group *Group, step Invocable, err error) error {
 }
 
 func (s *Suite) write(group *Group, step Invocable, result, body string) {
+	if s.log == nil {
+		return
+	}
 	var labels []string
 	if group != nil && len(group.Label()) > 0 {
 		labels = append(labels, group.Label())
@@ -108,5 +111,7 @@ func (s *Suite) write(group *Group, step Invocable, result, body string) {
 }
 
 func (s *Suite) writeStats() {
-	s.log.SyncTrigger(NewStatsEvent(s.applied, s.skipped, s.failed, s.total))
+	if s.log != nil {
+		s.log.SyncTrigger(NewStatsEvent(s.applied, s.skipped, s.failed, s.total))
+	}
 }
