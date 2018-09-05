@@ -68,7 +68,7 @@ func reportStats(log *logger.Logger, conn *db.Connection) {
 
 func main() {
 	log := logger.All().WithDisabled(logger.Query)
-	conn := db.NewFromEnv().WithLogger(log)
+	conn := db.NewFromEnv()
 
 	if err := conn.Open(); err != nil {
 		log.SyncFatalExit(err)
@@ -86,6 +86,8 @@ func main() {
 		maybeFatal(conn.Invoke(ctx).Exec(fmt.Sprintf("INSERT INTO %s VALUES ($1)", tableName), strconv.Itoa(x)))
 		cancel()
 	}
+
+	times := collections.QueueOfDuration{}
 
 	wg := sync.WaitGroup{}
 	wg.Add(4)
