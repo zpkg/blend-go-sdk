@@ -142,6 +142,14 @@ func (e QueryEvent) Err() error {
 
 // WriteText writes the event text to the output.
 func (e QueryEvent) WriteText(tf TextFormatter, buf *bytes.Buffer) {
+	if len(e.queryLabel) > 0 {
+		buf.WriteRune(RuneSpace)
+		if len(e.engine) > 0 {
+			buf.WriteString(fmt.Sprintf("[%s:%s]", e.engine, e.queryLabel))
+		} else {
+			buf.WriteString(fmt.Sprintf("[%s]", e.queryLabel))
+		}
+	}
 	var format string
 	if e.err == nil {
 		format = "(%v)"
@@ -149,10 +157,6 @@ func (e QueryEvent) WriteText(tf TextFormatter, buf *bytes.Buffer) {
 		format = "(%v) " + tf.Colorize("failed", ColorRed)
 	}
 	buf.WriteString(fmt.Sprintf(format, e.elapsed))
-	if len(e.queryLabel) > 0 {
-		buf.WriteRune(RuneSpace)
-		buf.WriteString(fmt.Sprintf("[%s]", e.queryLabel))
-	}
 	if len(e.body) > 0 {
 		buf.WriteRune(RuneSpace)
 		buf.WriteString(strings.TrimSpace(e.body))
