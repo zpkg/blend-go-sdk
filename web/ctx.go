@@ -31,8 +31,6 @@ func NewCtx(w ResponseWriter, r *http.Request, p RouteParameters, s State) *Ctx 
 
 // Ctx is the struct that represents the context for an hc request.
 type Ctx struct {
-	cancel context.CancelFunc
-
 	response ResponseWriter
 	request  *http.Request
 
@@ -88,13 +86,6 @@ func (rc *Ctx) WithContext(context context.Context) *Ctx {
 // Context returns the context.
 func (rc *Ctx) Context() context.Context {
 	return rc.request.Context()
-}
-
-// Cancel calls the cancel func if it's set.
-func (rc *Ctx) Cancel() {
-	if rc.cancel != nil {
-		rc.cancel()
-	}
 }
 
 // WithApp sets the app reference for the ctx.

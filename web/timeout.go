@@ -11,11 +11,13 @@ func WithTimeout(d time.Duration) Middleware {
 	return func(action Action) Action {
 		return func(r *Ctx) Result {
 			ctx, cancel := context.WithTimeout(r.Context(), d)
-			r.cancel = cancel
+			defer func() { cancel() }()
+
 			r.request = r.request.WithContext(ctx)
 
 			panicChan := make(chan interface{}, 1)
 			resultChan := make(chan Result, 1)
+
 			go func() {
 				defer func() {
 					if p := recover(); p != nil {
@@ -24,12 +26,16 @@ func WithTimeout(d time.Duration) Middleware {
 				}()
 				resultChan <- action(r)
 			}()
+
 			select {
 			case p := <-panicChan:
 				panic(p)
 			case res := <-resultChan:
 				return res
 			case <-ctx.Done():
+				if len(r.Response().InnerResponse().(http.CloseNotifier).CloseNotify()) > 0 {
+					return NoContent
+				}
 				return r.DefaultResultProvider().Status(http.StatusServiceUnavailable)
 			}
 		}

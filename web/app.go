@@ -1021,10 +1021,6 @@ func (a *App) renderAction(action Action) Handler {
 		ctx.onRequestFinish()
 		a.logError(response.Close())
 
-		// call the cancel func if it's set.
-		if ctx.cancel != nil {
-			ctx.cancel()
-		}
 		// effectively "request complete"
 		if a.log != nil {
 			a.log.Trigger(a.httpResponseEvent(ctx))
