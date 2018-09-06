@@ -16,10 +16,10 @@ import (
 // NewCtx returns a new hc context.
 func NewCtx(w ResponseWriter, r *http.Request, p RouteParameters, s State) *Ctx {
 	ctx := &Ctx{
-		response:        w,
-		request:         r,
-		routeParameters: p,
-		state:           s,
+		response:              w,
+		request:               r,
+		routeParameters:       p,
+		state:                 s,
 		defaultResultProvider: Text,
 	}
 	if ctx.state == nil {
@@ -31,8 +31,7 @@ func NewCtx(w ResponseWriter, r *http.Request, p RouteParameters, s State) *Ctx 
 
 // Ctx is the struct that represents the context for an hc request.
 type Ctx struct {
-	context context.Context
-	cancel  context.CancelFunc
+	cancel context.CancelFunc
 
 	response ResponseWriter
 	request  *http.Request
@@ -82,13 +81,13 @@ func (rc *Ctx) Request() *http.Request {
 
 // WithContext sets the background context for the request.
 func (rc *Ctx) WithContext(context context.Context) *Ctx {
-	rc.context = context
+	rc.request = rc.request.WithContext(context)
 	return rc
 }
 
 // Context returns the context.
 func (rc *Ctx) Context() context.Context {
-	return rc.context
+	return rc.request.Context()
 }
 
 // Cancel calls the cancel func if it's set.

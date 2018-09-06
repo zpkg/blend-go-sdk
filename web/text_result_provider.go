@@ -59,11 +59,20 @@ func (trp TextResultProvider) BadRequest(err error) Result {
 	}
 }
 
-// Result returns a plaintext result.
-func (trp TextResultProvider) Result(response interface{}) Result {
+// Status returns a plaintext result.
+func (trp TextResultProvider) Status(statusCode int, response ...interface{}) Result {
+	return &RawResult{
+		StatusCode:  statusCode,
+		ContentType: ContentTypeText,
+		Body:        []byte(fmt.Sprintf("%v", ResultOrDefault(http.StatusText(statusCode), response...))),
+	}
+}
+
+// Result returns an xml response.
+func (trp TextResultProvider) Result(result interface{}) Result {
 	return &RawResult{
 		StatusCode:  http.StatusOK,
 		ContentType: ContentTypeText,
-		Body:        []byte(fmt.Sprintf("%s", response)),
+		Body:        []byte(fmt.Sprintf("%v", result)),
 	}
 }
