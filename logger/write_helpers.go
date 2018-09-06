@@ -43,8 +43,10 @@ func TextWriteHTTPResponse(tf TextFormatter, buf *bytes.Buffer, req *http.Reques
 	buf.WriteString(tf.ColorizeByStatusCode(statusCode, strconv.Itoa(statusCode)))
 	buf.WriteRune(RuneSpace)
 	buf.WriteString(elapsed.String())
-	buf.WriteRune(RuneSpace)
-	buf.WriteString(contentType)
+	if len(contentType) > 0 {
+		buf.WriteRune(RuneSpace)
+		buf.WriteString(contentType)
+	}
 	buf.WriteRune(RuneSpace)
 	buf.WriteString(FormatFileSize(contentLength))
 }

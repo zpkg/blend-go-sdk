@@ -9,7 +9,7 @@ import (
 )
 
 func main() {
-	app := web.New().WithLogger(logger.All())
+	app := web.NewFromEnv().WithLogger(logger.All())
 
 	app.GET("/", func(_ *web.Ctx) web.Result {
 		return web.NoContent
