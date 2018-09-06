@@ -45,8 +45,8 @@ func New(flags ...Flag) *Logger {
 // NewFromConfig returns a new logger from a config.
 func NewFromConfig(cfg *Config) *Logger {
 	l := &Logger{
-		recoverPanics: DefaultRecoverPanics,
-		flags:         NewFlagSetFromValues(cfg.GetFlags()...),
+		recoverPanics:            DefaultRecoverPanics,
+		flags:                    NewFlagSetFromValues(cfg.GetFlags()...),
 		writeWorkerQueueDepth:    cfg.GetWriteQueueDepth(),
 		listenerWorkerQueueDepth: cfg.GetListenerQueueDepth(),
 	}
