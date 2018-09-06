@@ -37,6 +37,7 @@ func NewQueryEventListener(listener func(e *QueryEvent)) Listener {
 type QueryEvent struct {
 	*EventMeta
 
+	database   string
 	engine     string
 	queryLabel string
 	body       string
@@ -87,13 +88,13 @@ func (e QueryEvent) Engine() string {
 
 // WithDatabase sets the database.
 func (e *QueryEvent) WithDatabase(db string) *QueryEvent {
-	e.SetEntity(db)
+	e.database = db
 	return e
 }
 
 // Database returns the event database.
 func (e QueryEvent) Database() string {
-	return e.Entity()
+	return e.database
 }
 
 // WithQueryLabel sets the query label.
@@ -142,20 +143,26 @@ func (e QueryEvent) Err() error {
 
 // WriteText writes the event text to the output.
 func (e QueryEvent) WriteText(tf TextFormatter, buf *bytes.Buffer) {
-	if len(e.queryLabel) > 0 {
-		buf.WriteRune(RuneSpace)
+	if len(e.database) > 0 {
 		if len(e.engine) > 0 {
-			buf.WriteString(fmt.Sprintf("[%s:%s]", e.engine, e.queryLabel))
+			buf.WriteString(fmt.Sprintf("[%s:%s]", tf.Colorize(e.engine, ColorLightWhite), tf.Colorize(e.database, ColorLightWhite)))
 		} else {
-			buf.WriteString(fmt.Sprintf("[%s]", e.queryLabel))
+			buf.WriteString(fmt.Sprintf("[%s]", tf.Colorize(e.database, ColorLightWhite)))
 		}
 	}
+	if len(e.queryLabel) > 0 {
+		buf.WriteRune(RuneSpace)
+		buf.WriteString(fmt.Sprintf("[%s]", tf.Colorize(e.queryLabel, ColorLightWhite)))
+	}
+
 	var format string
 	if e.err == nil {
-		format = "(%v)"
+		format = "%v"
 	} else {
-		format = "(%v) " + tf.Colorize("failed", ColorRed)
+		format = "%v " + tf.Colorize("failed", ColorRed)
 	}
+
+	buf.WriteRune(RuneSpace)
 	buf.WriteString(fmt.Sprintf(format, e.elapsed))
 	if len(e.body) > 0 {
 		buf.WriteRune(RuneSpace)
@@ -167,7 +174,7 @@ func (e QueryEvent) WriteText(tf TextFormatter, buf *bytes.Buffer) {
 func (e QueryEvent) WriteJSON() JSONObj {
 	return JSONObj{
 		"engine":         e.engine,
-		"database":       e.Database(),
+		"database":       e.database,
 		"queryLabel":     e.queryLabel,
 		"body":           e.body,
 		JSONFieldErr:     e.err,
