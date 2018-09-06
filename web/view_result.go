@@ -2,7 +2,9 @@ package web
 
 import (
 	"bytes"
+	"fmt"
 	"html/template"
+	"net/http"
 
 	"github.com/blend/go-sdk/exception"
 )
@@ -53,6 +55,8 @@ func (vr *ViewResult) Render(ctx *Ctx) (err error) {
 			return
 		}
 		err = exception.New(err)
+		ctx.Response().WriteHeader(http.StatusInternalServerError)
+		ctx.Response().Write([]byte(fmt.Sprintf("%+v\n", err)))
 		return
 	}
 

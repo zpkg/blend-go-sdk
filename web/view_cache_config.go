@@ -11,6 +11,7 @@ type ViewCacheConfig struct {
 	BadRequestTemplateName    string   `json:"badRequestTemplateName,omitempty" yaml:"badRequestTemplateName,omitempty"`
 	NotFoundTemplateName      string   `json:"notFoundTemplateName,omitempty" yaml:"notFoundTemplateName,omitempty"`
 	NotAuthorizedTemplateName string   `json:"notAuthorizedTemplateName,omitempty" yaml:"notAuthorizedTemplateName,omitempty"`
+	StatusTemplateName        string   `json:"statusTemplateName,omitempty" yaml:"statusTemplateName,omitempty"`
 }
 
 // GetCached returns if the viewcache should store templates in memory or read from disk.
@@ -46,4 +47,9 @@ func (vcc ViewCacheConfig) GetNotFoundTemplateName(defaults ...string) string {
 // GetNotAuthorizedTemplateName returns the not authorized template name for the app.
 func (vcc ViewCacheConfig) GetNotAuthorizedTemplateName(defaults ...string) string {
 	return util.Coalesce.String(vcc.NotAuthorizedTemplateName, DefaultTemplateNameNotAuthorized, defaults...)
+}
+
+// GetStatusTemplateName returns the not authorized template name for the app.
+func (vcc ViewCacheConfig) GetStatusTemplateName(defaults ...string) string {
+	return util.Coalesce.String(vcc.StatusTemplateName, DefaultTemplateNameStatus, defaults...)
 }

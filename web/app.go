@@ -30,6 +30,7 @@ func New() *App {
 		state:                 State{},
 		statics:               map[string]Fileserver{},
 		readTimeout:           DefaultReadTimeout,
+		writeTimeout:          DefaultWriteTimeout,
 		redirectTrailingSlash: true,
 		recoverPanics:         true,
 		defaultHeaders:        DefaultHeaders,
@@ -1047,9 +1048,6 @@ func (a *App) createCtx(w ResponseWriter, r *http.Request, route *Route, p Route
 		auth:                  a.auth,
 		log:                   a.log,
 		defaultResultProvider: a.defaultResultProvider,
-	}
-	if r != nil {
-		ctx.context = r.Context()
 	}
 	if ctx.state == nil {
 		ctx.state = State{}

@@ -7,6 +7,8 @@ import (
 var (
 	// JSON is a static singleton json result provider.
 	JSON JSONResultProvider
+
+	_ ResultProvider = (*JSONResultProvider)(nil)
 )
 
 // JSONResultProvider are context results for api methods.
@@ -55,6 +57,14 @@ func (jrp JSONResultProvider) OK() Result {
 	return &JSONResult{
 		StatusCode: http.StatusOK,
 		Response:   "OK!",
+	}
+}
+
+// Status returns a plaintext result.
+func (jrp JSONResultProvider) Status(statusCode int, response ...interface{}) Result {
+	return &JSONResult{
+		StatusCode: statusCode,
+		Response:   ResultOrDefault(http.StatusText(statusCode), response...),
 	}
 }
 
