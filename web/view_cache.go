@@ -336,13 +336,13 @@ func (vc *ViewCache) InternalError(err error) Result {
 	if t == nil {
 		t, _ = template.New("default").Parse(DefaultTemplateInternalError)
 	}
-	return &ViewResult{
+	return resultWithLoggedError(&ViewResult{
 		ViewName:   vc.InternalErrorTemplateName(),
 		StatusCode: http.StatusInternalServerError,
 		ViewModel:  err,
 		Template:   t,
 		Views:      vc,
-	}
+	}, err)
 }
 
 // NotFound returns a view result.
