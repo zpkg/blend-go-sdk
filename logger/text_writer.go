@@ -184,6 +184,11 @@ func (wr *TextWriter) FormatFlag(flag Flag, color AnsiColor) string {
 	return fmt.Sprintf("[%s]", wr.Colorize(string(flag), color))
 }
 
+// FormatEntity formats the flag portion of the message.
+func (wr *TextWriter) FormatEntity(entity string, color AnsiColor) string {
+	return fmt.Sprintf("[%s]", wr.Colorize(entity, color))
+}
+
 // FormatHeadings returns the headings section of the message.
 func (wr *TextWriter) FormatHeadings(headings ...string) string {
 	if len(headings) == 0 {
@@ -212,7 +217,7 @@ func (wr *TextWriter) FormatTimestamp(optionalTime ...time.Time) string {
 	} else {
 		value = time.Now().UTC().Format(timeFormat)
 	}
-	return wr.Colorize(fmt.Sprintf("%-28s", value), ColorGray)
+	return wr.Colorize(fmt.Sprintf("%-27s", value), ColorGray)
 }
 
 // GetBuffer returns a leased buffer from the buffer pool.
@@ -263,6 +268,13 @@ func (wr *TextWriter) write(output io.Writer, e Event) error {
 		buf.WriteString(wr.FormatFlag(e.Flag(), GetFlagTextColor(e.Flag())))
 	}
 	buf.WriteRune(RuneSpace)
+
+	if typed, isTyped := e.(EventEntity); isTyped {
+		if len(typed.Entity()) > 0 {
+			buf.WriteString(wr.FormatEntity(typed.Entity(), ColorBlue))
+			buf.WriteRune(RuneSpace)
+		}
+	}
 
 	if typed, isTyped := e.(TextWritable); isTyped {
 		typed.WriteText(wr, buf)

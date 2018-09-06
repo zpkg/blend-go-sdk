@@ -40,7 +40,6 @@ type QueryEvent struct {
 	engine     string
 	queryLabel string
 	body       string
-	database   string
 	elapsed    time.Duration
 	err        error
 }
@@ -88,13 +87,13 @@ func (e QueryEvent) Engine() string {
 
 // WithDatabase sets the database.
 func (e *QueryEvent) WithDatabase(db string) *QueryEvent {
-	e.database = db
+	e.SetEntity(db)
 	return e
 }
 
 // Database returns the event database.
 func (e QueryEvent) Database() string {
-	return e.database
+	return e.Entity()
 }
 
 // WithQueryLabel sets the query label.
@@ -145,14 +144,14 @@ func (e QueryEvent) Err() error {
 func (e QueryEvent) WriteText(tf TextFormatter, buf *bytes.Buffer) {
 	var format string
 	if e.err == nil {
-		format = "[%s] (%v)"
+		format = "(%v)"
 	} else {
-		format = "[%s] (%v) " + tf.Colorize("failed", ColorRed)
+		format = "(%v) " + tf.Colorize("failed", ColorRed)
 	}
-	buf.WriteString(fmt.Sprintf(format, tf.Colorize(e.database, ColorBlue), e.elapsed))
+	buf.WriteString(fmt.Sprintf(format, e.elapsed))
 	if len(e.queryLabel) > 0 {
 		buf.WriteRune(RuneSpace)
-		buf.WriteString(e.queryLabel)
+		buf.WriteString(fmt.Sprintf("[%s]", e.queryLabel))
 	}
 	if len(e.body) > 0 {
 		buf.WriteRune(RuneSpace)
@@ -164,7 +163,7 @@ func (e QueryEvent) WriteText(tf TextFormatter, buf *bytes.Buffer) {
 func (e QueryEvent) WriteJSON() JSONObj {
 	return JSONObj{
 		"engine":         e.engine,
-		"database":       e.database,
+		"database":       e.Database(),
 		"queryLabel":     e.queryLabel,
 		"body":           e.body,
 		JSONFieldErr:     e.err,
