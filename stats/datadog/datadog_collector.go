@@ -11,9 +11,10 @@ import (
 	"github.com/blend/go-sdk/util"
 )
 
-// Assert that the datadog collector implements Collector.
+// Assert that the datadog collector implements stats.Collector and stats.EventCollector.
 var (
-	_ stats.Collector = (*Collector)(nil)
+	_ stats.Collector      = (*Collector)(nil)
+	_ stats.EventCollector = (*Collector)(nil)
 )
 
 // NewCollector returns a new stats collector from a config.
@@ -93,19 +94,35 @@ func (dc *Collector) SimpleEvent(title, text string) error {
 }
 
 // SendEvent sends any *statsd.Event
-func (dc *Collector) SendEvent(event *statsd.Event) error {
-	return dc.client.Event(event)
+func (dc *Collector) SendEvent(event stats.Event) error {
+	return dc.client.Event(ConvertEvent(event))
 }
 
 // CreateEvent makes a new Event with the collectors default tags.
-func (dc *Collector) CreateEvent(title, text string, tags ...string) *statsd.Event {
-	event := statsd.NewEvent(title, text)
-	event.Tags = dc.tags(tags...)
-	return event
+func (dc *Collector) CreateEvent(title, text string, tags ...string) stats.Event {
+	return stats.Event{
+		Title: title,
+		Text:  text,
+		Tags:  dc.tags(tags...),
+	}
 }
 
 // helpers
-
 func (dc *Collector) tags(tags ...string) []string {
 	return append(dc.defaultTags, tags...)
+}
+
+// ConvertEvent converts a stats event to a statsd (datadog) event.
+func ConvertEvent(e stats.Event) *statsd.Event {
+	return &statsd.Event{
+		Title:          e.Title,
+		Text:           e.Text,
+		Timestamp:      e.Timestamp,
+		Hostname:       e.Hostname,
+		AggregationKey: e.AggregationKey,
+		Priority:       statsd.EventPriority(e.Priority),
+		SourceTypeName: e.SourceTypeName,
+		AlertType:      statsd.EventAlertType(e.AlertType),
+		Tags:           e.Tags,
+	}
 }

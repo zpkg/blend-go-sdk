@@ -50,10 +50,6 @@ func (vr *ViewResult) Render(ctx *Ctx) (err error) {
 	})
 
 	if err != nil {
-		if vr.Views != nil {
-			err = vr.Views.InternalError(err).Render(ctx)
-			return
-		}
 		err = exception.New(err)
 		ctx.Response().WriteHeader(http.StatusInternalServerError)
 		ctx.Response().Write([]byte(fmt.Sprintf("%+v\n", err)))

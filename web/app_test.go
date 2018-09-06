@@ -61,8 +61,8 @@ func TestAppNewFromConfig(t *testing.T) {
 	assert := assert.New(t)
 
 	app := NewFromConfig(&Config{
-		BindAddr: ":5555",
-		Port:     5000,
+		BindAddr:               ":5555",
+		Port:                   5000,
 		HandleMethodNotAllowed: util.OptionalBool(true),
 		HandleOptions:          util.OptionalBool(true),
 		RecoverPanics:          util.OptionalBool(true),
@@ -689,8 +689,6 @@ func TestAppViewTracerError(t *testing.T) {
 	app := New()
 	app.Views().AddLiterals("{{ define \"ok\" }}{{template \"fake\"}}ok{{end}}")
 	assert.Nil(app.Views().Initialize())
-
-	app.GET("/", ok)
 	app.GET("/view", viewOK)
 	app.WithTracer(mockTracer{
 		OnStart: func(_ *Ctx) { wg.Done() },
