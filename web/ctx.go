@@ -188,6 +188,19 @@ func (rc *Ctx) WithStateValue(key string, value interface{}) *Ctx {
 }
 
 // Param returns a parameter from the request.
+// It checks, in order:
+// - RouteParam
+// - QueryValue
+// - HeaderValue
+// - FormValue
+// - CookieValue
+// It should only be used in cases where you don't necessarily know where the param
+// value will be coming from. Where possible, use the more tightly scoped
+// param getters.
+// It returns the value, and a validation error if the value is not found in
+// any of the possible sources.
+// You can use one of the <TYPE>Value functions to also cast the resulting string
+// into a useful type, ex. `typed, err := web.IntValue(rc.Param("fooID"))`
 func (rc *Ctx) Param(name string) (string, error) {
 	if rc.routeParameters != nil {
 		routeValue := rc.routeParameters.Get(name)
