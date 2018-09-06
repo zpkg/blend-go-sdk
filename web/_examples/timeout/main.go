@@ -10,6 +10,7 @@ import (
 
 func main() {
 	app := web.New().WithLogger(logger.All())
+
 	app.GET("/", func(_ *web.Ctx) web.Result {
 		return web.NoContent
 	}, web.WithTimeout(500*time.Millisecond), web.JSONProviderAsDefault)

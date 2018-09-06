@@ -53,7 +53,7 @@ func TestViewResultRenderError(t *testing.T) {
 
 	err := vr.Render(rc)
 	assert.NotNil(err)
-	assert.Zero(buffer.Len())
+	assert.NotZero(buffer.Len())
 }
 
 func TestViewResultRenderErrorTemplate(t *testing.T) {
