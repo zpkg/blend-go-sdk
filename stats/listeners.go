@@ -51,7 +51,7 @@ func AddWebListeners(log *logger.Logger, stats Collector) {
 		if len(wre.Route()) > 0 {
 			route = Tag(TagRoute, wre.Route())
 		} else {
-			route = Tag(TagRoute, wre.Request().RequestURI)
+			route = Tag(TagRoute, RouteNotFound)
 		}
 
 		method := Tag(TagMethod, wre.Request().Method)
@@ -74,12 +74,15 @@ func AddQueryListeners(log *logger.Logger, stats Collector) {
 	}
 
 	log.Listen(logger.Query, ListenerNameStats, logger.NewQueryEventListener(func(qe *logger.QueryEvent) {
-		query := Tag(TagQuery, qe.QueryLabel())
+
 		engine := Tag(TagEngine, qe.Engine())
 		database := Tag(TagDatabase, qe.Database())
 
 		tags := []string{
-			query, engine, database,
+			engine, database,
+		}
+		if len(qe.QueryLabel()) > 0 {
+			tags = append(tags, Tag(TagQuery, qe.QueryLabel()))
 		}
 		if qe.Err() != nil {
 			tags = append(tags, TagError)

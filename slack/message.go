@@ -2,11 +2,13 @@ package slack
 
 // Message is a message sent to slack.
 type Message struct {
+	Channel      string `json:"channel,omitempty"`
 	ResponseType string `json:"response_type,omitempty"`
 	Text         string `json:"text"`
 	Username     string `json:"username,omitempty"`
 	UnfurlLinks  bool   `json:"unfurl_links"`
 	IconEmoji    string `json:"icon_emoji,omitempty"`
+	IconURL      string `json:"icon_url,omitempty"`
 
 	Attachments []MessageAttachment `json:"attachments"`
 }

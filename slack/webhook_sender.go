@@ -17,7 +17,7 @@ const (
 // NewWebhookSender creates a new webhook sender.
 func NewWebhookSender(cfg *Config) *WebhookSender {
 	return &WebhookSender{
-		RequestSender: webutil.NewRequestSender(webutil.MustParseURL(cfg.GetWebhookURL())),
+		RequestSender: webutil.NewRequestSender(webutil.MustParseURL(cfg.GetWebhook())),
 	}
 }
 
