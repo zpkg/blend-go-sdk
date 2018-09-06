@@ -11,11 +11,13 @@ import (
 
 	"github.com/blend/go-sdk/exception"
 	"github.com/blend/go-sdk/logger"
+	"github.com/blend/go-sdk/util"
 )
 
 // NewCtx returns a new hc context.
 func NewCtx(w ResponseWriter, r *http.Request, p RouteParameters, s State) *Ctx {
 	ctx := &Ctx{
+		id:                    util.String.RandomLetters(10),
 		response:              w,
 		request:               r,
 		routeParameters:       p,
@@ -31,6 +33,7 @@ func NewCtx(w ResponseWriter, r *http.Request, p RouteParameters, s State) *Ctx 
 
 // Ctx is the struct that represents the context for an hc request.
 type Ctx struct {
+	id       string
 	response ResponseWriter
 	request  *http.Request
 
@@ -53,6 +56,11 @@ type Ctx struct {
 	contentLength int
 	requestStart  time.Time
 	requestEnd    time.Time
+}
+
+// ID returns a pseudo unique id for the request.
+func (rc *Ctx) ID() string {
+	return rc.id
 }
 
 // WithResponse sets the underlying response.

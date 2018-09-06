@@ -17,6 +17,7 @@ import (
 	"github.com/blend/go-sdk/env"
 	"github.com/blend/go-sdk/exception"
 	"github.com/blend/go-sdk/logger"
+	"github.com/blend/go-sdk/util"
 	"github.com/blend/go-sdk/webutil"
 )
 
@@ -1033,6 +1034,7 @@ func (a *App) renderAction(action Action) Handler {
 
 func (a *App) createCtx(w ResponseWriter, r *http.Request, route *Route, p RouteParameters, s State) *Ctx {
 	ctx := &Ctx{
+		id:                    util.String.RandomLetters(12),
 		tracer:                a.tracer,
 		response:              w,
 		request:               r,
@@ -1129,7 +1131,7 @@ func (a *App) addHSTSHeader(w http.ResponseWriter) {
 func (a *App) httpRequestEvent(ctx *Ctx) *logger.HTTPRequestEvent {
 	event := logger.NewHTTPRequestEvent(ctx.Request()).
 		WithState(ctx.state)
-
+	event.SetEntity(ctx.ID())
 	if ctx.Route() != nil {
 		event = event.WithRoute(ctx.Route().String())
 	}
@@ -1142,6 +1144,7 @@ func (a *App) httpResponseEvent(ctx *Ctx) *logger.HTTPResponseEvent {
 		WithElapsed(ctx.Elapsed()).
 		WithContentLength(ctx.contentLength).
 		WithState(ctx.state)
+	event.SetEntity(ctx.ID())
 
 	if ctx.Route() != nil {
 		event = event.WithRoute(ctx.Route().String())
