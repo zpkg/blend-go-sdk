@@ -169,3 +169,11 @@ func DurationValue(value string, inputErr error) (output time.Duration, err erro
 func StringValue(value string, _ error) string {
 	return value
 }
+
+// CSVValue just returns the string directly from a value error pair.
+func CSVValue(value string, err error) ([]string, error) {
+	if err != nil {
+		return nil, err
+	}
+	return strings.Split(value, ","), nil
+}
