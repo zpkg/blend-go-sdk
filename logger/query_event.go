@@ -39,6 +39,7 @@ type QueryEvent struct {
 
 	database   string
 	engine     string
+	username   string
 	queryLabel string
 	body       string
 	elapsed    time.Duration
@@ -73,6 +74,17 @@ func (e *QueryEvent) WithFlag(flag Flag) *QueryEvent {
 func (e *QueryEvent) WithTimestamp(ts time.Time) *QueryEvent {
 	e.ts = ts
 	return e
+}
+
+// WithUsername sets the engine.
+func (e *QueryEvent) WithUsername(username string) *QueryEvent {
+	e.username = username
+	return e
+}
+
+// Username returns the username.
+func (e QueryEvent) Username() string {
+	return e.username
 }
 
 // WithEngine sets the engine.
@@ -143,27 +155,31 @@ func (e QueryEvent) Err() error {
 
 // WriteText writes the event text to the output.
 func (e QueryEvent) WriteText(tf TextFormatter, buf *bytes.Buffer) {
-	if len(e.database) > 0 {
-		if len(e.engine) > 0 {
-			buf.WriteString(fmt.Sprintf("[%s:%s]", tf.Colorize(e.engine, ColorLightWhite), tf.Colorize(e.database, ColorLightWhite)))
-		} else {
-			buf.WriteString(fmt.Sprintf("[%s]", tf.Colorize(e.database, ColorLightWhite)))
-		}
+	buf.WriteString("[")
+	if len(e.engine) > 0 {
+		buf.WriteString(tf.Colorize(e.engine, ColorLightWhite))
+		buf.WriteRune(RuneSpace)
 	}
+	if len(e.username) > 0 {
+		buf.WriteString(tf.Colorize(e.username, ColorLightWhite))
+		buf.WriteRune('@')
+	}
+	buf.WriteString(tf.Colorize(e.database, ColorLightWhite))
+	buf.WriteString("]")
+
 	if len(e.queryLabel) > 0 {
 		buf.WriteRune(RuneSpace)
 		buf.WriteString(fmt.Sprintf("[%s]", tf.Colorize(e.queryLabel, ColorLightWhite)))
 	}
 
-	var format string
-	if e.err == nil {
-		format = "%v"
-	} else {
-		format = "%v " + tf.Colorize("failed", ColorRed)
+	buf.WriteRune(RuneSpace)
+	buf.WriteString(e.elapsed.String())
+
+	if e.err != nil {
+		buf.WriteRune(RuneSpace)
+		buf.WriteString(tf.Colorize("failed", ColorRed))
 	}
 
-	buf.WriteRune(RuneSpace)
-	buf.WriteString(fmt.Sprintf(format, e.elapsed))
 	if len(e.body) > 0 {
 		buf.WriteRune(RuneSpace)
 		buf.WriteString(strings.TrimSpace(e.body))
@@ -175,6 +191,7 @@ func (e QueryEvent) WriteJSON() JSONObj {
 	return JSONObj{
 		"engine":         e.engine,
 		"database":       e.database,
+		"username":       e.username,
 		"queryLabel":     e.queryLabel,
 		"body":           e.body,
 		JSONFieldErr:     e.err,
