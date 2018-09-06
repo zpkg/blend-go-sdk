@@ -389,8 +389,6 @@ func (vc *ViewCache) Status(statusCode int, response ...interface{}) Result {
 	}
 	if t == nil {
 		t, _ = template.New("default").Parse(DefaultTemplateStatus)
-	} else {
-		println("status found template name", vc.statusTemplateName)
 	}
 
 	return &ViewResult{
