@@ -831,7 +831,16 @@ func (a *App) PanicAction() PanicAction {
 // Testing Methods
 // --------------------------------------------------------------------------------
 
-// Mock returns a request bulider to facilitate mocking requests.
+// Mock returns a request bulider to facilitate mocking requests against the app
+// without having to start it and bind it to a port.
+/*
+An example mock request that hits an already registered "GET" route at "/foo":
+
+	assert.Nil(app.Mock().Get("/").Execute())
+
+This will assert that the request completes successfully, but does not return the
+response.
+*/
 func (a *App) Mock() *MockRequestBuilder {
 	return NewMockRequestBuilder(a).WithErr(a.StartupTasks())
 }
@@ -841,6 +850,14 @@ func (a *App) Mock() *MockRequestBuilder {
 // --------------------------------------------------------------------------------
 
 // GET registers a GET request handler.
+/*
+Routes should be registered in the form:
+
+	app.GET("/myroute", myAction, myMiddleware...)
+
+It is important to note that routes are registered in order and
+cannot have any wildcards inside the routes.
+*/
 func (a *App) GET(path string, action Action, middleware ...Middleware) {
 	a.Handle("GET", path, a.renderAction(a.middlewarePipeline(action, middleware...)))
 }

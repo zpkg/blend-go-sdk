@@ -12,17 +12,22 @@ type Shutdowner interface {
 	Shutdown() error
 }
 
-// GracefulShutdown starts an app and responds to SIGINT and SIGTERM to shut the app down.
+// GracefulShutdown is an alias to StartWithGracefulShutdown.
+var GracefulShutdown = StartWithGracefulShutdown
+
+// StartWithGracefulShutdown starts an app and responds to SIGINT and SIGTERM to shut the app down.
 // It will return any errors returned by app.Start() that are not caused by shutting down the server.
-func GracefulShutdown(app Shutdowner) error {
+func StartWithGracefulShutdown(app Shutdowner) error {
+	terminateSignal := make(chan os.Signal, 1)
+	signal.Notify(terminateSignal, os.Interrupt, syscall.SIGTERM)
+	return startWithGracefulShutdownBySignal(app, terminateSignal)
+}
+
+func startWithGracefulShutdownBySignal(app Shutdowner, terminateSignal chan os.Signal) error {
 	shutdown := make(chan struct{})
 	shutdownAbort := make(chan struct{})
 	shutdownComplete := make(chan struct{})
 	server := make(chan struct{})
-
-	terminateSignal := make(chan os.Signal, 1)
-	signal.Notify(terminateSignal, os.Interrupt, syscall.SIGTERM)
-
 	errors := make(chan error, 2)
 
 	go func() {

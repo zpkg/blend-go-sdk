@@ -129,22 +129,54 @@ func (rc *Ctx) Session() *Session {
 	return rc.session
 }
 
-// View returns the view result provider.
+// View returns the view cache as a result provider.
+/*
+It returns a reference to the view cache where views can either be read from disk
+for every request (uncached) or read from an in-memory cache.
+
+To return a web result for a view with the name "index" simply return:
+
+	return r.View().View("index", myViewmodel)
+
+It is important to not you'll want to have loaded the "index" view at some point
+in the application bootstrap (typically when you register your controller).
+*/
 func (rc *Ctx) View() *ViewCache {
 	return rc.views
 }
 
 // JSON returns the JSON result provider.
+/*
+It can be eschewed for:
+
+	return web.JSON.Result(foo)
+
+But is left in place for legacy reasons.
+*/
 func (rc *Ctx) JSON() JSONResultProvider {
 	return JSON
 }
 
 // XML returns the xml result provider.
+/*
+It can be eschewed for:
+
+	return web.XML.Result(foo)
+
+But is left in place for legacy reasons.
+*/
 func (rc *Ctx) XML() XMLResultProvider {
 	return XML
 }
 
 // Text returns the text result provider.
+/*
+It can be eschewed for:
+
+	return web.Text.Result(foo)
+
+But is left in place for legacy reasons.
+*/
 func (rc *Ctx) Text() TextResultProvider {
 	return Text
 }
@@ -190,11 +222,11 @@ func (rc *Ctx) WithStateValue(key string, value interface{}) *Ctx {
 // Param returns a parameter from the request.
 /*
 It checks, in order:
-- RouteParam
-- QueryValue
-- HeaderValue
-- FormValue
-- CookieValue
+	- RouteParam
+	- QueryValue
+	- HeaderValue
+	- FormValue
+	- CookieValue
 
 It should only be used in cases where you don't necessarily know where the param
 value will be coming from. Where possible, use the more tightly scoped
@@ -203,8 +235,8 @@ param getters.
 It returns the value, and a validation error if the value is not found in
 any of the possible sources.
 
-You can use one of the <TYPE>Value functions to also cast the resulting string
-into a useful type
+You can use one of the Value functions to also cast the resulting string
+into a useful type:
 
 	typed, err := web.IntValue(rc.Param("fooID"))
 
