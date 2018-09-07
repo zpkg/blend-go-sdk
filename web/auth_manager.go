@@ -171,49 +171,35 @@ func (am *AuthManager) Logout(ctx *Ctx) error {
 
 // VerifySession checks a sessionID to see if it's valid.
 // It also handles updating a rolling expiry.
-func (am *AuthManager) VerifySession(ctx *Ctx) (*Session, error) {
-	var err error
+func (am *AuthManager) VerifySession(ctx *Ctx) (session *Session, err error) {
 	// pull the sessionID off the request
 	sessionValue := am.readSessionValue(ctx)
-
 	// validate the sessionValue isn't unset
 	if len(sessionValue) == 0 {
-		return nil, nil
+		return
 	}
-
-	var session *Session
 
 	// if we have a separate step to parse the sesion value
 	// (i.e. jwt mode) do that now.
 	if am.parseSessionValueHandler != nil {
 		session, err = am.parseSessionValueHandler(ctx.Context(), sessionValue, ctx.state)
 		if err != nil {
-			return nil, err
+			if IsErrSessionInvalid(err) {
+				am.expire(ctx, sessionValue)
+			}
+			return
 		}
 	} else if am.fetchHandler != nil { // if we're in server tracked mode, pull it from whatever backing store we use.
 		session, err = am.fetchHandler(ctx.Context(), sessionValue, ctx.state)
 		if err != nil {
-			return nil, err
-		}
-	} else {
-		if ctx.Logger() != nil {
-			ctx.Logger().Debugf("authManager: neither the parseSessionHandler nor the fetchHandler were set")
+			return
 		}
 	}
 
 	// if the session is invalid, expire the cookie(s)
 	if session == nil || session.IsZero() || session.IsExpired() {
-		ctx.ExpireCookie(am.CookieName(), am.CookiePath())
-		// if we have a remove handler and the sessionID is set
-		if am.removeHandler != nil {
-			err = am.removeHandler(ctx.Context(), sessionValue, ctx.state)
-			if err != nil {
-				return nil, err
-			}
-		}
-
-		// exit out, the session is bad
-		return nil, nil
+		err = am.expire(ctx, sessionValue)
+		return
 	}
 
 	// call a custom validate handler if one's been provided.
@@ -234,8 +220,7 @@ func (am *AuthManager) VerifySession(ctx *Ctx) (*Session, error) {
 		}
 		am.injectCookie(ctx, am.CookieName(), sessionValue, session.ExpiresUTC)
 	}
-
-	return session, nil
+	return
 }
 
 // LoginRedirect returns a redirect result for when auth fails and you need to
@@ -407,6 +392,18 @@ func (am *AuthManager) PostLoginRedirectHandler() AuthManagerRedirectHandler {
 // --------------------------------------------------------------------------------
 // Utility Methods
 // --------------------------------------------------------------------------------
+
+func (am AuthManager) expire(ctx *Ctx, sessionValue string) error {
+	ctx.ExpireCookie(am.CookieName(), am.CookiePath())
+	// if we have a remove handler and the sessionID is set
+	if am.removeHandler != nil {
+		err := am.removeHandler(ctx.Context(), sessionValue, ctx.state)
+		if err != nil {
+			return err
+		}
+	}
+	return nil
+}
 
 func (am AuthManager) shouldUpdateSessionExpiry() bool {
 	return am.sessionTimeoutProvider != nil

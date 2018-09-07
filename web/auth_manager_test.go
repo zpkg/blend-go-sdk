@@ -65,21 +65,50 @@ func TestAuthManagerVerifySession(t *testing.T) {
 
 	am := NewLocalAuthManager()
 
+	var calledFetchHandler bool
+	fetchHandler := am.FetchHandler()
+	am.WithFetchHandler(func(ctx context.Context, sessionID string, state State) (*Session, error) {
+		calledFetchHandler = true
+		if fetchHandler == nil {
+			return nil, nil
+		}
+		return fetchHandler(ctx, sessionID, state)
+	})
+
+	var calledValidateHandler bool
+	validateHandler := am.ValidateHandler()
+	am.WithValidateHandler(func(ctx context.Context, session *Session, state State) error {
+		calledValidateHandler = true
+		if validateHandler == nil {
+			return nil
+		}
+		return validateHandler(ctx, session, state)
+	})
+
 	r := NewCtx(NewMockResponseWriter(new(bytes.Buffer)), NewMockRequest("GET", "/"), nil, nil)
-
-	session, err := am.VerifySession(r)
-	assert.Nil(err)
-	assert.Nil(session)
-
-	r = NewCtx(NewMockResponseWriter(new(bytes.Buffer)), NewMockRequest("GET", "/"), nil, nil)
-	session, err = am.Login("bailey@blend.com", r)
+	session, err := am.Login("bailey@blend.com", r)
 	assert.Nil(err)
 	assert.NotNil(session)
+	assert.False(calledFetchHandler)
 
 	r = NewCtx(NewMockResponseWriter(new(bytes.Buffer)), NewMockRequestWithCookie("GET", "/", am.CookieName(), session.SessionID), nil, nil)
 	session, err = am.VerifySession(r)
 	assert.Nil(err)
 	assert.NotNil(session)
+	assert.True(calledFetchHandler)
+	assert.True(calledValidateHandler)
+}
+
+func TestAuthManagerVerifySessionUnset(t *testing.T) {
+	assert := assert.New(t)
+
+	am := NewLocalAuthManager()
+
+	r := NewCtx(NewMockResponseWriter(new(bytes.Buffer)), NewMockRequest("GET", "/"), nil, nil)
+
+	session, err := am.VerifySession(r)
+	assert.Nil(err)
+	assert.Nil(session)
 }
 
 func TestAuthManagerVerifySessionExpired(t *testing.T) {
