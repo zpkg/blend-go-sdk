@@ -71,22 +71,45 @@ func NewServerAuthManager() *AuthManager {
 	}
 }
 
+// AuthManagerSerializeSessionValueHandler serializes a session as a string.
+type AuthManagerSerializeSessionValueHandler func(context.Context, *Session, State) (string, error)
+
+// AuthManagerParseSessionValueHandler deserializes a session from a string.
+type AuthManagerParseSessionValueHandler func(context.Context, string, State) (*Session, error)
+
+// AuthManagerPersistHandler saves the session to a stable store.
+type AuthManagerPersistHandler func(context.Context, *Session, State) error
+
+// AuthManagerFetchHandler fetches a session based on a session value.
+type AuthManagerFetchHandler func(context.Context, string, State) (*Session, error)
+
+// AuthManagerRemoveHandler removes a session based on a session value.
+type AuthManagerRemoveHandler func(context.Context, string, State) error
+
+// AuthManagerValidateHandler validates a session.
+type AuthManagerValidateHandler func(context.Context, *Session, State) error
+
+// AuthManagerSessionTimeoutProvider provides a new timeout for a session.
+type AuthManagerSessionTimeoutProvider func(*Session) time.Time
+
+// AuthManagerRedirectHandler is a redirect handler.
+type AuthManagerRedirectHandler func(*Ctx) *url.URL
+
 // AuthManager is a manager for sessions.
 type AuthManager struct {
-	// these generally apply to jwt mode.
-	serializeSessionValueHandler func(context.Context, *Session, State) (string, error)
-	parseSessionValueHandler     func(context.Context, string, State) (*Session, error) // should provide the server tracked session id or should return the jwt.
+	serializeSessionValueHandler AuthManagerSerializeSessionValueHandler
+	parseSessionValueHandler     AuthManagerParseSessionValueHandler
 
 	// these generally apply to server or local modes.
-	persistHandler func(context.Context, *Session, State) error
-	fetchHandler   func(ctx context.Context, sessionID string, state State) (*Session, error)
-	removeHandler  func(ctx context.Context, sessionID string, state State) error
+	persistHandler AuthManagerPersistHandler
+	fetchHandler   AuthManagerFetchHandler
+	removeHandler  AuthManagerRemoveHandler
 
 	// these generally apply to any mode.
-	validateHandler          func(context.Context, *Session, State) error
-	sessionTimeoutProvider   func(*Session) time.Time
-	loginRedirectHandler     func(*Ctx) *url.URL
-	postLoginRedirectHandler func(*Ctx) *url.URL
+	validateHandler          AuthManagerValidateHandler
+	sessionTimeoutProvider   AuthManagerSessionTimeoutProvider
+	loginRedirectHandler     AuthManagerRedirectHandler
+	postLoginRedirectHandler AuthManagerRedirectHandler
 
 	cookieName      string
 	cookiePath      string
@@ -100,7 +123,7 @@ type AuthManager struct {
 // Login logs a userID in.
 func (am *AuthManager) Login(userID string, ctx *Ctx) (session *Session, err error) {
 	// create a new session value
-	sessionValue := am.createSessionID()
+	sessionValue := NewSessionID()
 	// userID and sessionID are required
 	session = NewSession(userID, sessionValue)
 	if am.sessionTimeoutProvider != nil {
@@ -291,71 +314,93 @@ func (am *AuthManager) CookiePath() string {
 	return am.cookiePath
 }
 
+// WithSerializeSessionValueHandler sets the serialize session value handler.
+func (am *AuthManager) WithSerializeSessionValueHandler(handler AuthManagerSerializeSessionValueHandler) *AuthManager {
+	am.serializeSessionValueHandler = handler
+	return am
+}
+
+// SerializeSessionValueHandler returns the serialize session value handler.
+func (am *AuthManager) SerializeSessionValueHandler() AuthManagerSerializeSessionValueHandler {
+	return am.serializeSessionValueHandler
+}
+
+// WithParseSessionValueHandler sets the parse session value handler.
+func (am *AuthManager) WithParseSessionValueHandler(handler AuthManagerParseSessionValueHandler) *AuthManager {
+	am.parseSessionValueHandler = handler
+	return am
+}
+
+// ParseSessionValueHandler returns the parse session value handler.
+func (am *AuthManager) ParseSessionValueHandler() AuthManagerParseSessionValueHandler {
+	return am.parseSessionValueHandler
+}
+
 // WithPersistHandler sets the persist handler.
-func (am *AuthManager) WithPersistHandler(handler func(context.Context, *Session, State) error) *AuthManager {
+func (am *AuthManager) WithPersistHandler(handler AuthManagerPersistHandler) *AuthManager {
 	am.persistHandler = handler
 	return am
 }
 
 // PersistHandler returns the persist handler.
-func (am *AuthManager) PersistHandler() func(context.Context, *Session, State) error {
+func (am *AuthManager) PersistHandler() AuthManagerPersistHandler {
 	return am.persistHandler
 }
 
 // WithFetchHandler sets the fetch handler.
-func (am *AuthManager) WithFetchHandler(handler func(ctx context.Context, sessionID string, state State) (*Session, error)) *AuthManager {
+func (am *AuthManager) WithFetchHandler(handler AuthManagerFetchHandler) *AuthManager {
 	am.fetchHandler = handler
 	return am
 }
 
 // FetchHandler returns the fetch handler.
 // It is used in `VerifySession` to satisfy session cache misses.
-func (am *AuthManager) FetchHandler() func(ctx context.Context, sessionID string, state State) (*Session, error) {
+func (am *AuthManager) FetchHandler() AuthManagerFetchHandler {
 	return am.fetchHandler
 }
 
 // WithRemoveHandler sets the remove handler.
-func (am *AuthManager) WithRemoveHandler(handler func(ctx context.Context, sessionID string, state State) error) *AuthManager {
+func (am *AuthManager) WithRemoveHandler(handler AuthManagerRemoveHandler) *AuthManager {
 	am.removeHandler = handler
 	return am
 }
 
 // RemoveHandler returns the remove handler.
 // It is used in validate session if the session is found to be invalid.
-func (am *AuthManager) RemoveHandler() func(ctx context.Context, sessionID string, state State) error {
+func (am *AuthManager) RemoveHandler() AuthManagerRemoveHandler {
 	return am.removeHandler
 }
 
 // WithValidateHandler sets the validate handler.
-func (am *AuthManager) WithValidateHandler(handler func(context.Context, *Session, State) error) *AuthManager {
+func (am *AuthManager) WithValidateHandler(handler AuthManagerValidateHandler) *AuthManager {
 	am.validateHandler = handler
 	return am
 }
 
 // ValidateHandler returns the validate handler.
-func (am *AuthManager) ValidateHandler() func(context.Context, *Session, State) error {
+func (am *AuthManager) ValidateHandler() AuthManagerValidateHandler {
 	return am.validateHandler
 }
 
 // WithLoginRedirectHandler sets the login redirect handler.
-func (am *AuthManager) WithLoginRedirectHandler(handler func(*Ctx) *url.URL) *AuthManager {
+func (am *AuthManager) WithLoginRedirectHandler(handler AuthManagerRedirectHandler) *AuthManager {
 	am.loginRedirectHandler = handler
 	return am
 }
 
 // LoginRedirectHandler returns the login redirect handler.
-func (am *AuthManager) LoginRedirectHandler() func(*Ctx) *url.URL {
+func (am *AuthManager) LoginRedirectHandler() AuthManagerRedirectHandler {
 	return am.loginRedirectHandler
 }
 
 // WithPostLoginRedirectHandler sets the post login redirect handler.
-func (am *AuthManager) WithPostLoginRedirectHandler(handler func(*Ctx) *url.URL) *AuthManager {
+func (am *AuthManager) WithPostLoginRedirectHandler(handler AuthManagerRedirectHandler) *AuthManager {
 	am.postLoginRedirectHandler = handler
 	return am
 }
 
 // PostLoginRedirectHandler returns the redirect handler for login complete.
-func (am *AuthManager) PostLoginRedirectHandler() func(*Ctx) *url.URL {
+func (am *AuthManager) PostLoginRedirectHandler() AuthManagerRedirectHandler {
 	return am.postLoginRedirectHandler
 }
 
@@ -365,11 +410,6 @@ func (am *AuthManager) PostLoginRedirectHandler() func(*Ctx) *url.URL {
 
 func (am AuthManager) shouldUpdateSessionExpiry() bool {
 	return am.sessionTimeoutProvider != nil
-}
-
-// CreateSessionID creates a new session id.
-func (am AuthManager) createSessionID() string {
-	return NewSessionID()
 }
 
 // InjectCookie injects a session cookie into the context.
@@ -388,12 +428,4 @@ func (am *AuthManager) readParam(name string, ctx *Ctx) (output string) {
 // ReadSessionID reads a session id from a given request context.
 func (am *AuthManager) readSessionValue(ctx *Ctx) string {
 	return am.readParam(am.CookieName(), ctx)
-}
-
-// ValidateSessionID verifies a session id.
-func (am *AuthManager) sanityCheckSessionValue(sessionID string) error {
-	if len(sessionID) == 0 {
-		return ErrSessionIDEmpty
-	}
-	return nil
 }
