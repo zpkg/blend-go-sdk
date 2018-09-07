@@ -1177,10 +1177,7 @@ func (a *App) httpResponseEvent(ctx *Ctx) *logger.HTTPResponseEvent {
 func (a *App) recover(w http.ResponseWriter, req *http.Request) {
 	if rcv := recover(); rcv != nil {
 		err := exception.New(rcv)
-		if a.log != nil {
-			a.log.Fatal(err)
-		}
-
+		a.logFatal(err)
 		if a.panicAction != nil {
 			a.handlePanic(w, req, rcv)
 		} else {
