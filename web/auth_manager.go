@@ -58,6 +58,7 @@ func NewJWTAuthManager(key []byte) *AuthManager {
 		parseSessionValueHandler:     jwtm.ParseSessionValueHandler,
 		cookieName:                   DefaultCookieName,
 		cookiePath:                   DefaultCookiePath,
+		sessionTimeoutProvider:       SessionTimeoutProviderAbsolute(DefaultSessionTimeout),
 	}
 }
 
@@ -102,7 +103,9 @@ func (am *AuthManager) Login(userID string, ctx *Ctx) (session *Session, err err
 	sessionValue := am.createSessionID()
 	// userID and sessionID are required
 	session = NewSession(userID, sessionValue)
-	session.ExpiresUTC = am.GenerateSessionTimeout(ctx)
+	if am.sessionTimeoutProvider != nil {
+		session.ExpiresUTC = am.sessionTimeoutProvider(session)
+	}
 	session.UserAgent = webutil.GetUserAgent(ctx.request)
 	session.RemoteAddr = webutil.GetRemoteAddr(ctx.request)
 
@@ -150,12 +153,13 @@ func (am *AuthManager) VerifySession(ctx *Ctx) (*Session, error) {
 	// pull the sessionID off the request
 	sessionValue := am.readSessionValue(ctx)
 
-	// validate the sessionValue isn't unset or crazy long.
-	if err = am.sanityCheckSessionValue(sessionValue); err != nil {
-		return nil, err
+	// validate the sessionValue isn't unset
+	if len(sessionValue) == 0 {
+		return nil, nil
 	}
 
 	var session *Session
+
 	// if we have a separate step to parse the sesion value
 	// (i.e. jwt mode) do that now.
 	if am.parseSessionValueHandler != nil {
@@ -197,18 +201,14 @@ func (am *AuthManager) VerifySession(ctx *Ctx) (*Session, error) {
 		}
 	}
 
-	// check if we need to do a rolling expiry update
-	// note this will be explicitly false by default
-	// as we use absolte expiry by default.
-	if am.shouldUpdateSessionExpiry() {
-		session.ExpiresUTC = am.GenerateSessionTimeout(ctx)
+	if am.sessionTimeoutProvider != nil {
+		session.ExpiresUTC = am.sessionTimeoutProvider(session)
 		if am.persistHandler != nil {
 			err = am.persistHandler(ctx.Context(), session, ctx.state)
 			if err != nil {
 				return nil, err
 			}
 		}
-
 		am.injectCookie(ctx, am.CookieName(), sessionValue, session.ExpiresUTC)
 	}
 
@@ -362,14 +362,6 @@ func (am *AuthManager) PostLoginRedirectHandler() func(*Ctx) *url.URL {
 // --------------------------------------------------------------------------------
 // Utility Methods
 // --------------------------------------------------------------------------------
-
-// GenerateSessionTimeout returns the absolute time the cookie would expire.
-func (am *AuthManager) GenerateSessionTimeout(context *Ctx) (output time.Time) {
-	if am.sessionTimeoutProvider != nil {
-		output = am.sessionTimeoutProvider(context.Session())
-	}
-	return
-}
 
 func (am AuthManager) shouldUpdateSessionExpiry() bool {
 	return am.sessionTimeoutProvider != nil
