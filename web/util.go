@@ -89,6 +89,10 @@ func NewMockRequest(method, path string) *http.Request {
 		ProtoMajor: 1,
 		ProtoMinor: 1,
 		Host:       "localhost",
+		RemoteAddr: "127.0.0.1:8080",
+		Header: http.Header{
+			HeaderUserAgent: []string{"go-web test"},
+		},
 		URL: &url.URL{
 			Scheme:  "http",
 			Host:    "localhost",
@@ -96,6 +100,13 @@ func NewMockRequest(method, path string) *http.Request {
 			RawPath: path,
 		},
 	}
+}
+
+// NewMockRequestWithCookie creates a mock request with a cookie attached to it.
+func NewMockRequestWithCookie(method, path, cookieName, cookieValue string) *http.Request {
+	req := NewMockRequest(method, path)
+	req.AddCookie(NewCookie(cookieName, cookieValue))
+	return req
 }
 
 // NewCookie returns a new name + value pair cookie.

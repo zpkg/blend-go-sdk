@@ -4,7 +4,7 @@ package web
 func SessionAware(action Action) Action {
 	return func(ctx *Ctx) Result {
 		session, err := ctx.Auth().VerifySession(ctx)
-		if err != nil && !IsErrSessionInvalid(err) {
+		if err != nil {
 			return ctx.DefaultResultProvider().InternalError(err)
 		}
 		ctx.WithSession(session)
@@ -17,7 +17,7 @@ func SessionAware(action Action) Action {
 func SessionRequired(action Action) Action {
 	return func(ctx *Ctx) Result {
 		session, err := ctx.Auth().VerifySession(ctx)
-		if err != nil && !IsErrSessionInvalid(err) {
+		if err != nil {
 			return ctx.DefaultResultProvider().InternalError(err)
 		}
 		if session == nil {
@@ -33,7 +33,7 @@ func SessionMiddleware(notAuthorized Action) Middleware {
 	return func(action Action) Action {
 		return func(ctx *Ctx) Result {
 			session, err := ctx.Auth().VerifySession(ctx)
-			if err != nil && !IsErrSessionInvalid(err) {
+			if err != nil {
 				return ctx.DefaultResultProvider().InternalError(err)
 			}
 
