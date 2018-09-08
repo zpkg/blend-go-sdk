@@ -8,13 +8,16 @@ import (
 	"github.com/blend/go-sdk/webutil"
 )
 
+// AuthManagerMode is an auth manager mode.
+type AuthManagerMode string
+
 const (
 	// AuthManagerModeJWT is the jwt auth mode.
-	AuthManagerModeJWT = "jwt"
+	AuthManagerModeJWT AuthManagerMode = "jwt"
 	// AuthManagerModeServer is the server managed auth mode.
-	AuthManagerModeServer = "server"
+	AuthManagerModeServer AuthManagerMode = "server"
 	// AuthManagerModeLocal is the local cache auth mode.
-	AuthManagerModeLocal = "cached"
+	AuthManagerModeLocal AuthManagerMode = "cached"
 )
 
 // NewAuthManagerFromConfig returns a new auth manager from a given config.
@@ -182,6 +185,7 @@ func (am *AuthManager) VerifySession(ctx *Ctx) (session *Session, err error) {
 	// if we have a separate step to parse the sesion value
 	// (i.e. jwt mode) do that now.
 	if am.parseSessionValueHandler != nil {
+		println("parsed")
 		session, err = am.parseSessionValueHandler(ctx.Context(), sessionValue, ctx.state)
 		if err != nil {
 			if IsErrSessionInvalid(err) {
@@ -198,6 +202,8 @@ func (am *AuthManager) VerifySession(ctx *Ctx) (session *Session, err error) {
 
 	// if the session is invalid, expire the cookie(s)
 	if session == nil || session.IsZero() || session.IsExpired() {
+		// return nil whenever the session is invalid
+		session = nil
 		err = am.expire(ctx, sessionValue)
 		return
 	}

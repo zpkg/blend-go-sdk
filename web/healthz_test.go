@@ -30,17 +30,16 @@ func TestHealthz(t *testing.T) {
 
 	hzApp := New().WithServer(hzServer)
 
-	assert.NotNil(hz.Monitored())
+	assert.NotNil(hz.App())
 	assert.False(app.Latch().IsRunning())
 
 	go app.Start()
 	go hzApp.Start()
-
 	<-app.NotifyStarted()
 	<-hzApp.NotifyStarted()
 
 	assert.True(app.Latch().IsRunning())
-	assert.True(hz.Monitored().Latch().IsRunning())
+	assert.True(hz.App().Latch().IsRunning())
 	assert.NotNil(hzApp.Listener())
 
 	healthzRes, err := http.Get("http://" + hzApp.Listener().Addr().String() + "/healthz")

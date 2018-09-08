@@ -40,9 +40,9 @@ const (
 )
 
 // NewHealthz returns a new healthz.
-func NewHealthz(monitored *App) *Healthz {
+func NewHealthz(app *App) *Healthz {
 	return &Healthz{
-		monitored:      monitored,
+		app:            app,
 		defaultHeaders: map[string]string{},
 		state:          State{},
 		vars: State{
@@ -58,13 +58,13 @@ func NewHealthz(monitored *App) *Healthz {
 }
 
 // NewHealthzFromEnv returns a new healthz from the env.
-func NewHealthzFromEnv(monitored *App) *Healthz {
-	return NewHealthzFromConfig(monitored, NewHealthzConfigFromEnv())
+func NewHealthzFromEnv(app *App) *Healthz {
+	return NewHealthzFromConfig(app, NewHealthzConfigFromEnv())
 }
 
 // NewHealthzFromConfig returns a new healthz sidecar from a config.
-func NewHealthzFromConfig(monitored *App, cfg *HealthzConfig) *Healthz {
-	hz := NewHealthz(monitored)
+func NewHealthzFromConfig(app *App, cfg *HealthzConfig) *Healthz {
+	hz := NewHealthz(app)
 	hz = hz.WithBindAddr(cfg.GetBindAddr())
 	hz = hz.WithRecoverPanics(cfg.GetRecoverPanics())
 	hz = hz.WithMaxHeaderBytes(cfg.GetMaxHeaderBytes())
@@ -77,12 +77,16 @@ func NewHealthzFromConfig(monitored *App, cfg *HealthzConfig) *Healthz {
 
 // Healthz is a sentinel / healthcheck sidecar that can run on a different
 // port to the main app.
-// It typically implements the following routes:
-// 	/healthz - overall health endpoint, 200 on healthy, 5xx on not.
-// 	/varz    - basic stats and metrics since start
-//	/debug/vars - `pkg/expvar` output.
+/*
+It typically implements the following routes:
+
+	/healthz - overall health endpoint, 200 on healthy, 5xx on not.
+	/varz    - basic stats and metrics since start
+	/debug/vars - `pkg/expvar` output.
+
+*/
 type Healthz struct {
-	monitored  *App
+	app        *App
 	startedUTC time.Time
 	bindAddr   string
 	log        *logger.Logger
@@ -106,9 +110,9 @@ type Healthz struct {
 	err           error
 }
 
-// Monitored returns the underlying app.
-func (hz *Healthz) Monitored() *App {
-	return hz.monitored
+// App returns the underlying app.
+func (hz *Healthz) App() *App {
+	return hz.app
 }
 
 // Vars returns the underlying vars collection.
@@ -243,10 +247,10 @@ func (hz *Healthz) WithLogger(log *logger.Logger) *Healthz {
 func (hz *Healthz) Server() *http.Server {
 	hz.vars[VarzStarted] = time.Now().UTC()
 
-	if hz.monitored.log != nil {
-		hz.monitored.log.Listen(logger.HTTPResponse, ListenerHealthz, logger.NewHTTPResponseEventListener(hz.httpResponseListener))
-		hz.monitored.log.Listen(logger.Error, ListenerHealthz, logger.NewErrorEventListener(hz.errorListener))
-		hz.monitored.log.Listen(logger.Fatal, ListenerHealthz, logger.NewErrorEventListener(hz.errorListener))
+	if hz.app.log != nil {
+		hz.app.log.Listen(logger.HTTPResponse, ListenerHealthz, logger.NewHTTPResponseEventListener(hz.httpResponseListener))
+		hz.app.log.Listen(logger.Error, ListenerHealthz, logger.NewErrorEventListener(hz.errorListener))
+		hz.app.log.Listen(logger.Fatal, ListenerHealthz, logger.NewErrorEventListener(hz.errorListener))
 	}
 
 	return &http.Server{
@@ -316,7 +320,7 @@ func (hz *Healthz) recover(w http.ResponseWriter, req *http.Request) {
 }
 
 func (hz *Healthz) healthzHandler(w ResponseWriter, r *http.Request) {
-	if hz.monitored.Latch().IsRunning() {
+	if hz.app.Latch().IsRunning() {
 		w.WriteHeader(http.StatusOK)
 		w.Header().Set(HeaderContentType, ContentTypeText)
 		fmt.Fprintf(w, "OK!\n")

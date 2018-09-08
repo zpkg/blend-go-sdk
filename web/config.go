@@ -179,8 +179,8 @@ func (c Config) GetHSTSPreload(inherited ...bool) bool {
 }
 
 // GetAuthManagerMode returns the auth manager mode.
-func (c Config) GetAuthManagerMode(inherited ...string) string {
-	return util.Coalesce.String(c.AuthManagerMode, AuthManagerModeServer, inherited...)
+func (c Config) GetAuthManagerMode(inherited ...string) AuthManagerMode {
+	return AuthManagerMode(util.Coalesce.String(c.AuthManagerMode, string(AuthManagerModeServer), inherited...))
 }
 
 // GetAuthSecret returns a property or a default.

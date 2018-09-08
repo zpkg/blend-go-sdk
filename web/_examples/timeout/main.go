@@ -22,13 +22,13 @@ func main() {
 		}
 		time.Sleep(duration)
 		return web.NoContent
-	}, web.WithTimeout(500*time.Millisecond), web.JSONProviderAsDefault)
+	}, web.WithTimeout(5*time.Second), web.JSONProviderAsDefault)
 
 	app.GET("/panic", func(_ *web.Ctx) web.Result {
 		panic("ONLY A TEST")
 	}, web.WithTimeout(500*time.Millisecond), web.JSONProviderAsDefault)
 
-	if err := web.GracefulShutdown(app); err != nil {
+	if err := web.StartWithGracefulShutdown(app); err != nil {
 		log.Fatal(err)
 	}
 }
