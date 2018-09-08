@@ -10,7 +10,6 @@ func TestParseInvalid(t *testing.T) {
 	assert := assert.New(t)
 
 	testBadStrings := []string{
-		"",
 		"x=a||y=b",
 		"x==a==b",
 		"!x=a",
@@ -29,6 +28,7 @@ func TestParseSemiValid(t *testing.T) {
 	assert := assert.New(t)
 
 	testGoodStrings := []string{
+		"",
 		"x=a,y=b,z=c",
 		"x!=a,y=b",
 		"x=",
