@@ -64,6 +64,7 @@ type App struct {
 
 	tls      *tls.Config
 	server   *http.Server
+	handler  http.Handler
 	listener *net.TCPListener
 
 	// defaultHeaders are the default headers we apply to any request responses.
@@ -403,7 +404,7 @@ func (a *App) Tracer() Tracer {
 func (a *App) CreateServer() *http.Server {
 	return &http.Server{
 		Addr:              a.BindAddr(),
-		Handler:           a,
+		Handler:           a.Handler(),
 		MaxHeaderBytes:    a.maxHeaderBytes,
 		ReadTimeout:       a.readTimeout,
 		ReadHeaderTimeout: a.readHeaderTimeout,
@@ -422,6 +423,20 @@ func (a *App) WithServer(server *http.Server) *App {
 // Server returns the underyling http server.
 func (a *App) Server() *http.Server {
 	return a.server
+}
+
+// WithHandler sets the handler.
+func (a *App) WithHandler(handler http.Handler) *App {
+	a.handler = handler
+	return a
+}
+
+// Handler returns either a custom handler or the app.
+func (a *App) Handler() http.Handler {
+	if a.handler != nil {
+		return a.handler
+	}
+	return a
 }
 
 // Listener returns the underlying listener.

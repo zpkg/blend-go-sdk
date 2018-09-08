@@ -1,6 +1,7 @@
 package main
 
 import (
+	"github.com/blend/go-sdk/env"
 	"github.com/blend/go-sdk/logger"
 	"github.com/blend/go-sdk/web"
 )
@@ -12,13 +13,15 @@ func main() {
 		return r.Text().Result("ok!")
 	})
 
-	hz := web.NewHealthzFromEnv(app).WithLogger(log)
+	hzLog := logger.All().WithHeading("healthz")
+	hz := web.NewHealthz(app).WithLogger(hzLog)
+	hzApp := web.New().WithLogger(hzLog).WithBindAddr(env.Env().String("HZ_BIND_ADDR", "127.0.0.1:8081")).WithHandler(hz)
 	go func() {
 		if err := web.StartWithGracefulShutdown(app); err != nil {
 			logger.FatalExit(err)
 		}
 	}()
-	if err := web.StartWithGracefulShutdown(web.New().WithServer(hz.Server())); err != nil {
+	if err := web.StartWithGracefulShutdown(hzApp); err != nil {
 		logger.FatalExit(err)
 	}
 }

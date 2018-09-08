@@ -25,10 +25,8 @@ func TestHealthz(t *testing.T) {
 	hzLog := logger.New().WithFlags(logger.AllFlags())
 	defer hzLog.Close()
 
-	hz := NewHealthz(app).WithBindAddr("127.0.0.1:0").WithLogger(hzLog)
-	hzServer := hz.Server()
-
-	hzApp := New().WithServer(hzServer)
+	hz := NewHealthz(app).WithLogger(hzLog)
+	hzApp := New().WithBindAddr("127.0.0.1:0").WithHandler(hz)
 
 	assert.NotNil(hz.App())
 	assert.False(app.Latch().IsRunning())
