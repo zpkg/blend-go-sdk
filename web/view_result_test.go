@@ -18,7 +18,7 @@ func TestViewResultRender(t *testing.T) {
 	assert := assert.New(t)
 
 	buffer := bytes.NewBuffer([]byte{})
-	rc := NewCtx(NewMockResponseWriter(buffer), nil, nil, nil)
+	rc := NewCtx(NewMockResponseWriter(buffer), nil)
 
 	testView := template.New("testView")
 	testView.Parse("{{.ViewModel.Text}}")
@@ -40,7 +40,7 @@ func TestViewResultRenderError(t *testing.T) {
 	assert := assert.New(t)
 
 	buffer := bytes.NewBuffer([]byte{})
-	rc := NewCtx(NewMockResponseWriter(buffer), nil, nil, nil)
+	rc := NewCtx(NewMockResponseWriter(buffer), nil)
 
 	testView := template.New("testView")
 	testView.Parse("{{.ViewModel.Foo}}")
@@ -60,7 +60,7 @@ func TestViewResultRenderErrorTemplate(t *testing.T) {
 	assert := assert.New(t)
 
 	buffer := bytes.NewBuffer([]byte{})
-	rc := NewCtx(NewMockResponseWriter(buffer), nil, nil, nil)
+	rc := NewCtx(NewMockResponseWriter(buffer), nil)
 
 	views := template.New("main")
 
@@ -86,7 +86,7 @@ func TestViewResultErrorNestedViews(t *testing.T) {
 	assert := assert.New(t)
 
 	buffer := bytes.NewBuffer([]byte{})
-	rc := NewCtx(NewMockResponseWriter(buffer), nil, nil, nil)
+	rc := NewCtx(NewMockResponseWriter(buffer), nil)
 
 	views := template.New("main")
 

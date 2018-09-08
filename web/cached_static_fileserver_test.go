@@ -17,9 +17,9 @@ func TestCachedStaticFileserver(t *testing.T) {
 	buffer := bytes.NewBuffer(nil)
 	res := NewMockResponseWriter(buffer)
 	req := NewMockRequest("GET", "/test_file.html")
-	result := cfs.Action(NewCtx(res, req, RouteParameters{
+	result := cfs.Action(NewCtx(res, req).WithRouteParams(RouteParameters{
 		RouteTokenFilepath: "test_file.html",
-	}, nil))
+	}))
 
 	assert.Nil(result)
 	assert.NotEmpty(buffer.Bytes())
@@ -40,9 +40,9 @@ func TestCachedStaticFileserverHeaders(t *testing.T) {
 	buffer := bytes.NewBuffer(nil)
 	res := NewMockResponseWriter(buffer)
 	req := NewMockRequest("GET", "/test_file.html")
-	result := cfs.Action(NewCtx(res, req, RouteParameters{
+	result := cfs.Action(NewCtx(res, req).WithRouteParams(RouteParameters{
 		RouteTokenFilepath: "test_file.html",
-	}, nil))
+	}))
 
 	assert.Nil(result)
 	assert.NotEmpty(buffer.Bytes())
@@ -61,9 +61,9 @@ func TestCachedStaticFileserverRewriteRule(t *testing.T) {
 	buffer := bytes.NewBuffer(nil)
 	res := NewMockResponseWriter(buffer)
 	req := NewMockRequest("GET", "/test_file.123123123.html")
-	result := cfs.Action(NewCtx(res, req, RouteParameters{
+	result := cfs.Action(NewCtx(res, req).WithRouteParams(RouteParameters{
 		RouteTokenFilepath: "test_file.123123123.html",
-	}, nil))
+	}))
 
 	assert.Nil(result)
 	assert.NotEmpty(buffer.Bytes(), "we should still have reached the file")
@@ -89,9 +89,9 @@ func TestCachedStaticFileserverMiddleware(t *testing.T) {
 	buffer := bytes.NewBuffer(nil)
 	res := NewMockResponseWriter(buffer)
 	req := NewMockRequest("GET", "/test_file.html")
-	result := cfs.Action(NewCtx(res, req, RouteParameters{
+	result := cfs.Action(NewCtx(res, req).WithRouteParams(RouteParameters{
 		RouteTokenFilepath: "test_file.html",
-	}, nil))
+	}))
 	wg.Wait()
 
 	assert.Nil(result)
@@ -102,9 +102,9 @@ func TestCachedStaticFileserverMiddleware(t *testing.T) {
 	didNestMiddleware = false
 	didCallMiddleware = false
 	wg.Add(1)
-	result = cfs.Action(NewCtx(res, req, RouteParameters{
+	result = cfs.Action(NewCtx(res, req).WithRouteParams(RouteParameters{
 		RouteTokenFilepath: "test_file.html",
-	}, nil))
+	}))
 	wg.Wait()
 
 	assert.Nil(result)

@@ -46,7 +46,7 @@ func TestAuthManagerLogin(t *testing.T) {
 	})
 
 	res := NewMockResponseWriter(new(bytes.Buffer))
-	r := NewCtx(res, NewMockRequest("GET", "/"), nil, nil)
+	r := NewCtx(res, NewMockRequest("GET", "/"))
 
 	session, err := am.Login("bailey@blend.com", r)
 	assert.Nil(err)
@@ -89,7 +89,7 @@ func TestAuthManagerVerifySessionParsed(t *testing.T) {
 	assert.NotNil(am.FetchHandler())
 	assert.NotNil(am.ValidateHandler())
 
-	r := NewCtx(NewMockResponseWriter(new(bytes.Buffer)), NewMockRequestWithCookie("GET", "/", am.CookieName(), NewSessionID()), nil, nil)
+	r := NewCtx(NewMockResponseWriter(new(bytes.Buffer)), NewMockRequestWithCookie("GET", "/", am.CookieName(), NewSessionID()))
 	session, err := am.VerifySession(r)
 	assert.Nil(err)
 	assert.NotNil(session)
@@ -124,14 +124,14 @@ func TestAuthManagerVerifySessionFetched(t *testing.T) {
 		return validateHandler(ctx, session, state)
 	})
 
-	r := NewCtx(NewMockResponseWriter(new(bytes.Buffer)), NewMockRequest("GET", "/"), nil, nil)
+	r := NewCtx(NewMockResponseWriter(new(bytes.Buffer)), NewMockRequest("GET", "/"))
 	session, err := am.Login("bailey@blend.com", r)
 	assert.Nil(err)
 	assert.NotNil(session)
 	assert.False(calledFetchHandler)
 	assert.False(calledValidateHandler)
 
-	r = NewCtx(NewMockResponseWriter(new(bytes.Buffer)), NewMockRequestWithCookie("GET", "/", am.CookieName(), session.SessionID), nil, nil)
+	r = NewCtx(NewMockResponseWriter(new(bytes.Buffer)), NewMockRequestWithCookie("GET", "/", am.CookieName(), session.SessionID))
 	session, err = am.VerifySession(r)
 	assert.Nil(err)
 	assert.NotNil(session)
@@ -144,7 +144,7 @@ func TestAuthManagerVerifySessionUnset(t *testing.T) {
 
 	am := NewLocalAuthManager()
 
-	r := NewCtx(NewMockResponseWriter(new(bytes.Buffer)), NewMockRequest("GET", "/"), nil, nil)
+	r := NewCtx(NewMockResponseWriter(new(bytes.Buffer)), NewMockRequest("GET", "/"))
 
 	session, err := am.VerifySession(r)
 	assert.Nil(err)
@@ -167,7 +167,7 @@ func TestAuthManagerVerifySessionExpired(t *testing.T) {
 	})
 
 	res := NewMockResponseWriter(new(bytes.Buffer))
-	r := NewCtx(res, NewMockRequestWithCookie("GET", "/", am.CookieName(), NewSessionID()), nil, nil)
+	r := NewCtx(res, NewMockRequestWithCookie("GET", "/", am.CookieName(), NewSessionID()))
 	session, err := am.VerifySession(r)
 	assert.Nil(err)
 	assert.Nil(session)
