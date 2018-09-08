@@ -28,7 +28,7 @@ func FatalExit(err error) {
 	if err == nil {
 		return
 	}
-	All().SyncFatalExit(err)
+	Sync().SyncFatalExit(err)
 }
 
 // New returns a new logger with a given set of enabled flags, without a writer provisioned.
@@ -88,6 +88,15 @@ func NewText() *Logger {
 // NewJSON returns a new json logger.
 func NewJSON() *Logger {
 	return New().WithFlagsFromEnv().WithWriter(NewJSONWriterFromEnv())
+}
+
+// Sync returns a valid agent that only processes events synchronously.
+func Sync() *Logger {
+	return &Logger{
+		recoverPanics: DefaultRecoverPanics,
+		flags:         NewFlagSetFromEnv(),
+		writers:       []Writer{NewWriterFromEnv()},
+	}
 }
 
 // Logger is a handler for various logging events with descendent handlers.
