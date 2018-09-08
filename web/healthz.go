@@ -9,7 +9,6 @@ import (
 	"sync"
 	"time"
 
-	"github.com/blend/go-sdk/env"
 	"github.com/blend/go-sdk/exception"
 	"github.com/blend/go-sdk/logger"
 )
@@ -44,7 +43,6 @@ func NewHealthz(app *App) *Healthz {
 	return &Healthz{
 		app:            app,
 		defaultHeaders: map[string]string{},
-		state:          State{},
 		vars: State{
 			VarzRequests:    int64(0),
 			VarzRequests2xx: int64(0),
@@ -55,24 +53,6 @@ func NewHealthz(app *App) *Healthz {
 			VarzFatals:      int64(0),
 		},
 	}
-}
-
-// NewHealthzFromEnv returns a new healthz from the env.
-func NewHealthzFromEnv(app *App) *Healthz {
-	return NewHealthzFromConfig(app, NewHealthzConfigFromEnv())
-}
-
-// NewHealthzFromConfig returns a new healthz sidecar from a config.
-func NewHealthzFromConfig(app *App, cfg *HealthzConfig) *Healthz {
-	hz := NewHealthz(app)
-	hz = hz.WithBindAddr(cfg.GetBindAddr())
-	hz = hz.WithRecoverPanics(cfg.GetRecoverPanics())
-	hz = hz.WithMaxHeaderBytes(cfg.GetMaxHeaderBytes())
-	hz = hz.WithReadHeaderTimeout(cfg.GetReadHeaderTimeout())
-	hz = hz.WithReadTimeout(cfg.GetReadTimeout())
-	hz = hz.WithWriteTimeout(cfg.GetWriteTimeout())
-	hz = hz.WithIdleTimeout(cfg.GetIdleTimeout())
-	return hz
 }
 
 // Healthz is a sentinel / healthcheck sidecar that can run on a different
@@ -95,19 +75,10 @@ type Healthz struct {
 	server         *http.Server
 	listener       *net.TCPListener
 
-	maxHeaderBytes    int
-	readTimeout       time.Duration
-	readHeaderTimeout time.Duration
-	writeTimeout      time.Duration
-	idleTimeout       time.Duration
-
-	state State
-
 	varsLock sync.Mutex
 	vars     State
 
 	recoverPanics bool
-	err           error
 }
 
 // App returns the underlying app.
@@ -131,106 +102,6 @@ func (hz *Healthz) WithRecoverPanics(value bool) *Healthz {
 	return hz
 }
 
-// MaxHeaderBytes returns the app max header bytes.
-func (hz *Healthz) MaxHeaderBytes() int {
-	return hz.maxHeaderBytes
-}
-
-// WithMaxHeaderBytes sets the max header bytes value and returns a reference.
-func (hz *Healthz) WithMaxHeaderBytes(byteCount int) *Healthz {
-	hz.maxHeaderBytes = byteCount
-	return hz
-}
-
-// ReadHeaderTimeout returns the read header timeout for the server.
-func (hz *Healthz) ReadHeaderTimeout() time.Duration {
-	return hz.readHeaderTimeout
-}
-
-// WithReadHeaderTimeout returns the read header timeout for the server.
-func (hz *Healthz) WithReadHeaderTimeout(timeout time.Duration) *Healthz {
-	hz.readHeaderTimeout = timeout
-	return hz
-}
-
-// ReadTimeout returns the read timeout for the server.
-func (hz *Healthz) ReadTimeout() time.Duration {
-	return hz.readTimeout
-}
-
-// WithReadTimeout sets the read timeout for the server and returns a reference to the app for building apps with a fluent api.
-func (hz *Healthz) WithReadTimeout(timeout time.Duration) *Healthz {
-	hz.readTimeout = timeout
-	return hz
-}
-
-// IdleTimeout is the time before we close a connection.
-func (hz *Healthz) IdleTimeout() time.Duration {
-	return hz.idleTimeout
-}
-
-// WithIdleTimeout sets the idle timeout.
-func (hz *Healthz) WithIdleTimeout(timeout time.Duration) *Healthz {
-	hz.idleTimeout = timeout
-	return hz
-}
-
-// WriteTimeout returns the write timeout for the server.
-func (hz *Healthz) WriteTimeout() time.Duration {
-	return hz.writeTimeout
-}
-
-// WithWriteTimeout sets the write timeout for the server and returns a reference to the app for building apps with a fluent api.
-func (hz *Healthz) WithWriteTimeout(timeout time.Duration) *Healthz {
-	hz.writeTimeout = timeout
-	return hz
-}
-
-// WithPort sets the port for the bind address of the app, and returns a reference to the app.
-func (hz *Healthz) WithPort(port int32) *Healthz {
-	hz.SetPort(port)
-	return hz
-}
-
-// SetPort sets the port the app listens on, typically to `:%d` which indicates listen on any interface.
-func (hz *Healthz) SetPort(port int32) {
-	hz.bindAddr = fmt.Sprintf(":%v", port)
-}
-
-// WithPortFromEnv sets the port from an environment variable, and returns a reference to the app.
-func (hz *Healthz) WithPortFromEnv() *Healthz {
-	hz.SetPortFromEnv()
-	return hz
-}
-
-// SetPortFromEnv sets the port from an environment variable, and returns a reference to the app.
-func (hz *Healthz) SetPortFromEnv() {
-	if env.Env().Has(EnvironmentVariablePort) {
-		port, err := env.Env().Int32(EnvironmentVariablePort)
-		if err != nil {
-			hz.err = err
-		}
-		hz.bindAddr = fmt.Sprintf(":%v", port)
-	}
-}
-
-// BindAddr returns the address the server will bind to.
-func (hz *Healthz) BindAddr() string {
-	return hz.bindAddr
-}
-
-// WithBindAddr sets the address the app listens on, and returns a reference to the app.
-func (hz *Healthz) WithBindAddr(bindAddr string) *Healthz {
-	hz.bindAddr = bindAddr
-	return hz
-}
-
-// WithBindAddrFromEnv sets the address the app listens on, and returns a reference to the app.
-func (hz *Healthz) WithBindAddrFromEnv() *Healthz {
-	hz.bindAddr = env.Env().String(EnvironmentVariableBindAddr)
-	return hz
-}
-
 // Logger returns the diagnostics agent for the app.
 func (hz *Healthz) Logger() *logger.Logger {
 	return hz.log
@@ -243,24 +114,18 @@ func (hz *Healthz) WithLogger(log *logger.Logger) *Healthz {
 	return hz
 }
 
-// Server returns the basic http.Server for the healthz host.
-func (hz *Healthz) Server() *http.Server {
+// ensureListeners ensures the healthz instance is monitoring the app events.
+func (hz *Healthz) ensureListeners() {
+	hz.varsLock.Lock()
+	defer hz.varsLock.Unlock()
+	if _, ok := hz.vars[VarzStarted]; ok {
+		return
+	}
 	hz.vars[VarzStarted] = time.Now().UTC()
-
 	if hz.app.log != nil {
 		hz.app.log.Listen(logger.HTTPResponse, ListenerHealthz, logger.NewHTTPResponseEventListener(hz.httpResponseListener))
 		hz.app.log.Listen(logger.Error, ListenerHealthz, logger.NewErrorEventListener(hz.errorListener))
 		hz.app.log.Listen(logger.Fatal, ListenerHealthz, logger.NewErrorEventListener(hz.errorListener))
-	}
-
-	return &http.Server{
-		Addr:              hz.BindAddr(),
-		Handler:           hz,
-		MaxHeaderBytes:    hz.maxHeaderBytes,
-		ReadTimeout:       hz.readTimeout,
-		ReadHeaderTimeout: hz.readHeaderTimeout,
-		WriteTimeout:      hz.writeTimeout,
-		IdleTimeout:       hz.idleTimeout,
 	}
 }
 
@@ -269,6 +134,7 @@ func (hz *Healthz) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	if hz.recoverPanics {
 		defer hz.recover(w, r)
 	}
+	hz.ensureListeners()
 
 	res := NewRawResponseWriter(w)
 	res.Header().Set(HeaderContentEncoding, ContentEncodingIdentity)
@@ -277,14 +143,14 @@ func (hz *Healthz) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 
 	start := time.Now()
 	if hz.log != nil {
-		hz.log.Trigger(logger.NewHTTPResponseEvent(r).WithState(hz.state).WithRoute(route))
+		hz.log.Trigger(logger.NewHTTPRequestEvent(r).WithRoute(route))
 
 		defer func() {
 			hz.log.Trigger(logger.NewHTTPResponseEvent(r).
 				WithStatusCode(res.StatusCode()).
 				WithElapsed(time.Since(start)).
-				WithContentLength(res.ContentLength()).
-				WithState(hz.state))
+				WithContentLength(res.ContentLength()),
+			)
 		}()
 	}
 
