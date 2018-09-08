@@ -56,6 +56,9 @@ func (jm *JobManager) Logger() *logger.Logger {
 
 // WithLogger sets the logger and returns a reference to the job manager.
 func (jm *JobManager) WithLogger(log *logger.Logger) *JobManager {
+	jm.Lock()
+	defer jm.Unlock()
+
 	jm.log = log
 	return jm
 }
@@ -101,18 +104,20 @@ func (jm *JobManager) HeartbeatInterval() time.Duration {
 // HasJob returns if a jobName is loaded or not.
 func (jm *JobManager) HasJob(jobName string) (hasJob bool) {
 	jm.Lock()
+	defer jm.Unlock()
+
 	_, hasJob = jm.jobs[jobName]
-	jm.Unlock()
 	return
 }
 
 // Job returns a job instance by name.
 func (jm *JobManager) Job(jobName string) (job Job) {
 	jm.Lock()
+	defer jm.Unlock()
+
 	if jobMeta, hasJob := jm.jobs[jobName]; hasJob {
 		job = jobMeta.Job
 	}
-	jm.Unlock()
 	return
 }
 
@@ -133,8 +138,9 @@ func (jm *JobManager) IsDisabled(jobName string) (value bool) {
 // IsRunning returns if a task is currently running.
 func (jm *JobManager) IsRunning(taskName string) (isRunning bool) {
 	jm.Lock()
+	defer jm.Unlock()
+
 	_, isRunning = jm.tasks[taskName]
-	jm.Unlock()
 	return
 }
 
@@ -142,6 +148,7 @@ func (jm *JobManager) IsRunning(taskName string) (isRunning bool) {
 func (jm *JobManager) ReadAllJobs(action func(jobs map[string]*JobMeta)) {
 	jm.Lock()
 	defer jm.Unlock()
+
 	action(jm.jobs)
 }
 
@@ -233,23 +240,25 @@ func (jm *JobManager) EnableJob(jobName string) error {
 }
 
 // RunJobs runs a variadic list of job names.
-func (jm *JobManager) RunJobs(jobNames ...string) error {
+func (jm *JobManager) RunJobs(jobNames ...string) (err error) {
 	jm.Lock()
 	defer jm.Unlock()
 
 	for _, jobName := range jobNames {
-		if job, hasJob := jm.jobs[jobName]; hasJob {
-			if !jm.IsDisabled(jobName) {
-				jobErr := jm.runTaskUnsafe(job.Job)
-				if jobErr != nil {
-					return jobErr
-				}
+		job, hasJob := jm.jobs[jobName]
+
+		if !hasJob {
+			err = exception.New(ErrJobNotLoaded).WithMessagef("job: %s", jobName)
+			return
+		}
+		if !jm.IsDisabled(jobName) {
+			err = jm.runTaskUnsafe(job.Job)
+			if err != nil {
+				return
 			}
-		} else {
-			return exception.New(ErrJobNotLoaded).WithMessagef("job: %s", jobName)
 		}
 	}
-	return nil
+	return
 }
 
 // RunJob runs a job by jobName on demand.
@@ -269,20 +278,20 @@ func (jm *JobManager) RunJob(jobName string) error {
 }
 
 // RunAllJobs runs every job that has been loaded in the JobManager at once.
-func (jm *JobManager) RunAllJobs() error {
+func (jm *JobManager) RunAllJobs() (err error) {
 	jm.Lock()
 	defer jm.Unlock()
 
 	for _, job := range jm.jobs {
 		if !jm.IsDisabled(job.Name) {
 			job.LastRunTime = Now()
-			jobErr := jm.runTaskUnsafe(job.Job)
-			if jobErr != nil {
-				return jobErr
+			err = jm.runTaskUnsafe(job.Job)
+			if err != nil {
+				return
 			}
 		}
 	}
-	return nil
+	return
 }
 
 // RunTask runs a task.
@@ -298,23 +307,30 @@ func (jm *JobManager) CancelTask(taskName string) (err error) {
 	jm.Lock()
 	defer jm.Unlock()
 
-	if task, hasTask := jm.tasks[taskName]; hasTask {
-		jm.onTaskCancellation(task.Task, Since(task.StartTime))
-		task.Cancel()
-	} else {
+	task, hasTask := jm.tasks[taskName]
+	if !hasTask {
 		err = exception.New(ErrTaskNotFound).WithMessagef("task: %s", taskName)
+		return
 	}
+	jm.onTaskCancellation(task.Task, Since(task.StartTime))
+	task.Cancel()
 	return
 }
 
 // Start begins the schedule runner for a JobManager.
 func (jm *JobManager) Start() {
+	jm.Lock()
+	defer jm.Unlock()
+
 	jm.schedulerWorker.Start()
 	jm.killHangingTasksWorker.Start()
 }
 
 // Stop stops the schedule runner for a JobManager.
 func (jm *JobManager) Stop() {
+	jm.Lock()
+	defer jm.Unlock()
+
 	jm.schedulerWorker.Stop()
 	jm.killHangingTasksWorker.Stop()
 }
@@ -328,7 +344,7 @@ func (jm *JobManager) runDueJobs() error {
 	defer jm.Unlock()
 
 	now := Now()
-	var taskErr error
+	var err error
 	var nextRunTime time.Time
 	for _, jobMeta := range jm.jobs {
 		nextRunTime = jobMeta.NextRunTime
@@ -336,8 +352,8 @@ func (jm *JobManager) runDueJobs() error {
 			newNext := Deref(jobMeta.Schedule.GetNextRunTime(Optional(now)))
 			jobMeta.NextRunTime = newNext
 			jobMeta.LastRunTime = now
-			if taskErr = jm.runTaskUnsafe(jobMeta.Job); taskErr != nil {
-				jm.log.Error(taskErr)
+			if err = jm.runTaskUnsafe(jobMeta.Job); err != nil {
+				jm.log.Error(err)
 			}
 		}
 	}
@@ -373,21 +389,27 @@ func (jm *JobManager) runTaskUnsafe(t Task) error {
 			if r := recover(); r != nil {
 				err = exception.New(r)
 			}
-
+		}()
+		defer func() {
 			jm.Lock()
+			defer jm.Unlock() //defer-ception
+
 			if _, hasTask := jm.tasks[taskName]; hasTask {
 				jm.onTaskComplete(t, Since(start), err)
 				delete(jm.tasks, taskName)
 			}
-			jm.Unlock()
 		}()
+
 		if jm.tracer != nil {
 			var tf TraceFinisher
 			ctx, tf = jm.tracer.Start(ctx, t)
 			if tf != nil {
-				defer func() { tf.Finish(ctx, t, err) }()
+				defer func() {
+					tf.Finish(ctx, t, err)
+				}()
 			}
 		}
+
 		jm.onTaskStart(t)
 		err = t.Execute(ctx)
 	}()
@@ -427,7 +449,7 @@ func (jm *JobManager) killHangingTasks() (err error) {
 
 		if effectiveTimeout.Before(now) {
 			err = jm.killHangingJob(taskMeta)
-			if err != nil {
+			if err != nil && jm.log != nil {
 				jm.log.Error(err)
 			}
 		}

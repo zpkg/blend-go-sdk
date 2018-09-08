@@ -103,13 +103,15 @@ func TestRunTaskAndCancel(t *testing.T) {
 
 	jm := New()
 
-	didRun := make(chan struct{})
-	didFinish := make(chan struct{})
+	didRun := sync.WaitGroup{}
+	didRun.Add(1)
+
+	didFinish := sync.WaitGroup{}
+	didFinish.Add(1)
 	jm.RunTask(NewTaskWithName("taskToCancel", func(ctx context.Context) error {
-		defer func() {
-			close(didFinish)
-		}()
-		close(didRun)
+		defer didFinish.Done()
+		didRun.Done()
+
 		alarm := time.After(time.Second)
 		select {
 		case <-ctx.Done():
@@ -119,9 +121,9 @@ func TestRunTaskAndCancel(t *testing.T) {
 		}
 	}))
 
-	<-didRun
+	didRun.Wait()
 	a.Nil(jm.CancelTask("taskToCancel"))
-	<-didFinish
+	didFinish.Wait()
 }
 
 func TestRunJobBySchedule(t *testing.T) {
@@ -280,7 +282,9 @@ func TestFiresErrorOnTaskError(t *testing.T) {
 
 	agent := logger.New(logger.Error)
 	defer agent.Close()
+
 	manager := New().WithLogger(agent)
+	defer manager.Stop()
 
 	var errorDidFire bool
 	var errorMatched bool
