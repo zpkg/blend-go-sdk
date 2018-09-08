@@ -353,7 +353,7 @@ func (jm *JobManager) runDueJobs() error {
 			jobMeta.NextRunTime = newNext
 			jobMeta.LastRunTime = now
 			if err = jm.runTaskUnsafe(jobMeta.Job); err != nil {
-				jm.log.Error(err)
+				jm.err(err)
 			}
 		}
 	}
@@ -449,9 +449,7 @@ func (jm *JobManager) killHangingTasks() (err error) {
 
 		if effectiveTimeout.Before(now) {
 			err = jm.killHangingJob(taskMeta)
-			if err != nil && jm.log != nil {
-				jm.log.Error(err)
-			}
+			jm.err(err)
 		}
 	}
 	return nil
@@ -553,10 +551,9 @@ func (jm *JobManager) onTaskComplete(t Task, elapsed time.Duration, err error) {
 			WithErr(err))
 	}
 
-	if err != nil && jm.log != nil {
-		jm.log.Error(err)
+	if err != nil {
+		jm.err(err)
 	}
-
 	if receiver, isReceiver := t.(OnCompleteReceiver); isReceiver {
 		receiver.OnComplete(err)
 	}
@@ -589,6 +586,18 @@ func (jm *JobManager) shouldWriteOutput(t Task) bool {
 		return typed.ShouldWriteOutput()
 	}
 	return true
+}
+
+func (jm *JobManager) err(err error) {
+	if err != nil && jm.log != nil {
+		jm.log.Error(err)
+	}
+}
+
+func (jm *JobManager) fatal(err error) {
+	if err != nil && jm.log != nil {
+		jm.log.Fatal(err)
+	}
 }
 
 func (jm *JobManager) errorf(format string, args ...interface{}) {
