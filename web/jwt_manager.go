@@ -8,8 +8,13 @@ import (
 	"github.com/blend/go-sdk/jwt"
 )
 
-// NewJWTManagerForKey returns a new jwt manager from a key.
-func NewJWTManagerForKey(key []byte) *JWTManager {
+const (
+	// ErrJWTNonstandardClaims can be returned by the jwt manager keyfunc.
+	ErrJWTNonstandardClaims = exception.Class("jwt; invalid claims object; should be standard claims")
+)
+
+// NewJWTManager returns a new jwt manager from a key.
+func NewJWTManager(key []byte) *JWTManager {
 	return &JWTManager{
 		KeyProvider: func(_ *Session) ([]byte, error) {
 			return key, nil
@@ -40,8 +45,8 @@ func (jwtm JWTManager) FromClaims(claims *jwt.StandardClaims) *Session {
 		SessionID:  claims.ID,
 		BaseURL:    claims.Audience,
 		UserID:     claims.Subject,
-		CreatedUTC: time.Unix(claims.IssuedAt, 0),
-		ExpiresUTC: time.Unix(claims.ExpiresAt, 0),
+		CreatedUTC: time.Unix(claims.IssuedAt, 0).In(time.UTC),
+		ExpiresUTC: time.Unix(claims.ExpiresAt, 0).In(time.UTC),
 	}
 }
 
@@ -49,7 +54,7 @@ func (jwtm JWTManager) FromClaims(claims *jwt.StandardClaims) *Session {
 func (jwtm JWTManager) KeyFunc(token *jwt.Token) (interface{}, error) {
 	typed, ok := token.Claims.(*jwt.StandardClaims)
 	if !ok {
-		return nil, exception.New("invalid claims object; should be standard claims")
+		return nil, ErrJWTNonstandardClaims
 	}
 	return jwtm.KeyProvider(jwtm.FromClaims(typed))
 }

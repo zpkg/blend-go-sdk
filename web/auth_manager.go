@@ -55,7 +55,7 @@ func NewLocalAuthManager() *AuthManager {
 // NewJWTAuthManager returns a new jwt session manager.
 // It issues JWT tokens to identify users.
 func NewJWTAuthManager(key []byte) *AuthManager {
-	jwtm := NewJWTManagerForKey(key)
+	jwtm := NewJWTManager(key)
 	return &AuthManager{
 		serializeSessionValueHandler: jwtm.SerializeSessionValueHandler,
 		parseSessionValueHandler:     jwtm.ParseSessionValueHandler,
