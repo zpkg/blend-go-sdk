@@ -209,8 +209,8 @@ const (
 	DefaultHSTS = true
 	// DefaultHSTSMaxAgeSeconds is the default hsts max age seconds.
 	DefaultHSTSMaxAgeSeconds = 31536000
-	// DefaultHSTSIncludeSubdomains is a default.
-	DefaultHSTSIncludeSubdomains = true
+	// DefaultHSTSIncludeSubDomains is a default.
+	DefaultHSTSIncludeSubDomains = true
 	// DefaultHSTSPreload is a default.
 	DefaultHSTSPreload = true
 	// DefaultMaxHeaderBytes is a default that is unset.

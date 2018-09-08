@@ -5,7 +5,6 @@ import (
 	"crypto/tls"
 	"crypto/x509"
 	"fmt"
-	"io/ioutil"
 	"net"
 	"net/http"
 	"strings"
@@ -14,7 +13,6 @@ import (
 	"net/url"
 
 	"github.com/blend/go-sdk/async"
-	"github.com/blend/go-sdk/env"
 	"github.com/blend/go-sdk/exception"
 	"github.com/blend/go-sdk/logger"
 	"github.com/blend/go-sdk/util"
@@ -26,6 +24,7 @@ func New() *App {
 	views := NewViewCache()
 	return &App{
 		latch:                 async.NewLatch(),
+		hsts:                  &HSTSConfig{},
 		auth:                  &AuthManager{},
 		bindAddr:              DefaultBindAddr,
 		state:                 State{},
@@ -54,8 +53,8 @@ func NewFromConfig(cfg *Config) *App {
 // App is the server for the app.
 type App struct {
 	latch *async.Latch
-
-	cfg *Config
+	cfg   *Config
+	hsts  *HSTSConfig
 
 	log   *logger.Logger
 	auth  *AuthManager
@@ -64,21 +63,12 @@ type App struct {
 	baseURL  *url.URL
 	bindAddr string
 
-	hsts                  bool
-	hstsMaxAgeSeconds     int
-	hstsIncludeSubdomains bool
-	hstsPreload           bool
-
-	tlsConfig *tls.Config
-
-	defaultHeaders     map[string]string
-	didRunStartupTasks bool
-
+	tls      *tls.Config
 	server   *http.Server
 	listener *net.TCPListener
 
-	shutdownGracePeriod time.Duration
-
+	// defaultHeaders are the default headers we apply to any request responses.
+	defaultHeaders map[string]string
 	// statics serve files at various routes
 	statics map[string]Fileserver
 
@@ -95,14 +85,14 @@ type App struct {
 
 	defaultResultProvider ResultProvider
 
-	maxHeaderBytes    int
-	readTimeout       time.Duration
-	readHeaderTimeout time.Duration
-	writeTimeout      time.Duration
-	idleTimeout       time.Duration
+	maxHeaderBytes      int
+	readTimeout         time.Duration
+	readHeaderTimeout   time.Duration
+	writeTimeout        time.Duration
+	idleTimeout         time.Duration
+	shutdownGracePeriod time.Duration
 
-	state State
-
+	state         State
 	recoverPanics bool
 }
 
@@ -126,10 +116,6 @@ func (a *App) WithConfig(cfg *Config) *App {
 	a.WithHandleOptions(cfg.GetHandleOptions())
 	a.WithRecoverPanics(cfg.GetRecoverPanics())
 	a.WithDefaultHeaders(cfg.GetDefaultHeaders(DefaultHeaders))
-	a.WithHSTS(cfg.GetHSTS())
-	a.WithHSTSMaxAgeSeconds(cfg.GetHSTSMaxAgeSeconds())
-	a.WithHSTSIncludeSubdomains(cfg.GetHSTSIncludeSubDomains())
-	a.WithHSTSPreload(cfg.GetHSTSPreload())
 
 	a.WithMaxHeaderBytes(cfg.GetMaxHeaderBytes())
 	a.WithReadHeaderTimeout(cfg.GetReadHeaderTimeout())
@@ -142,6 +128,8 @@ func (a *App) WithConfig(cfg *Config) *App {
 	a.WithDefaultResultProvider(a.Views())
 	a.WithBaseURL(webutil.MustParseURL(cfg.GetBaseURL()))
 	a.WithShutdownGracePeriod(cfg.GetShutdownGracePeriod())
+
+	a.WithHSTS(&cfg.HSTS)
 	return a
 }
 
@@ -173,33 +161,23 @@ func (a *App) DefaultHeaders() map[string]string {
 	return a.defaultHeaders
 }
 
-// WithState sets app state and returns a reference to the app for building apps with a fluent api.
-func (a *App) WithState(key string, value interface{}) *App {
+// WithStateValue sets app state and returns a reference to the app for building apps with a fluent api.
+func (a *App) WithStateValue(key string, value interface{}) *App {
 	a.state[key] = value
 	return a
 }
 
-// GetState gets app state element by key.
-func (a *App) GetState(key string) interface{} {
+// StateValue gets app state element by key.
+func (a *App) StateValue(key string) interface{} {
 	if value, hasValue := a.state[key]; hasValue {
 		return value
 	}
 	return nil
 }
 
-// SetState sets app state.
-func (a *App) SetState(key string, value interface{}) {
-	a.state[key] = value
-}
-
 // State is a bag for common app state.
 func (a *App) State() State {
 	return a.state
-}
-
-// RedirectTrailingSlash returns if we should redirect missing trailing slashes to the correct route.
-func (a *App) RedirectTrailingSlash() bool {
-	return a.redirectTrailingSlash
 }
 
 // WithRedirectTrailingSlash sets if we should redirect missing trailing slashes.
@@ -208,9 +186,9 @@ func (a *App) WithRedirectTrailingSlash(value bool) *App {
 	return a
 }
 
-// HandleMethodNotAllowed returns if we should handle unhandled verbs.
-func (a *App) HandleMethodNotAllowed() bool {
-	return a.handleMethodNotAllowed
+// RedirectTrailingSlash returns if we should redirect missing trailing slashes to the correct route.
+func (a *App) RedirectTrailingSlash() bool {
+	return a.redirectTrailingSlash
 }
 
 // WithHandleMethodNotAllowed sets if we should handlem ethod not allowed.
@@ -219,9 +197,9 @@ func (a *App) WithHandleMethodNotAllowed(handle bool) *App {
 	return a
 }
 
-// HandleOptions returns if we should handle OPTIONS requests.
-func (a *App) HandleOptions() bool {
-	return a.handleOptions
+// HandleMethodNotAllowed returns if we should handle unhandled verbs.
+func (a *App) HandleMethodNotAllowed() bool {
+	return a.handleMethodNotAllowed
 }
 
 // WithHandleOptions returns if we should handle OPTIONS requests.
@@ -230,9 +208,9 @@ func (a *App) WithHandleOptions(handle bool) *App {
 	return a
 }
 
-// RecoverPanics returns if the app recovers panics.
-func (a *App) RecoverPanics() bool {
-	return a.recoverPanics
+// HandleOptions returns if we should handle OPTIONS requests.
+func (a *App) HandleOptions() bool {
+	return a.handleOptions
 }
 
 // WithRecoverPanics sets if the app should recover panics.
@@ -241,35 +219,20 @@ func (a *App) WithRecoverPanics(value bool) *App {
 	return a
 }
 
-// BaseURL returns the domain for the app.
-func (a *App) BaseURL() *url.URL {
-	return a.baseURL
+// RecoverPanics returns if the app recovers panics.
+func (a *App) RecoverPanics() bool {
+	return a.recoverPanics
 }
 
 // WithBaseURL sets the `BaseURL` field and returns a reference to the app for building apps with a fluent api.
 func (a *App) WithBaseURL(baseURL *url.URL) *App {
-	a.SetBaseURL(baseURL)
+	a.baseURL = baseURL
 	return a
 }
 
-// SetBaseURL sets the base url for the app.
-func (a *App) SetBaseURL(baseURL *url.URL) {
-	a.baseURL = baseURL
-}
-
-// SetParsedBaseURL sets the BaseURL from a string.
-func (a *App) SetParsedBaseURL(baseURL string) error {
-	u, err := url.Parse(baseURL)
-	if err != nil {
-		return err
-	}
-	a.baseURL = u
-	return nil
-}
-
-// MaxHeaderBytes returns the app max header bytes.
-func (a *App) MaxHeaderBytes() int {
-	return a.maxHeaderBytes
+// BaseURL returns the domain for the app.
+func (a *App) BaseURL() *url.URL {
+	return a.baseURL
 }
 
 // WithMaxHeaderBytes sets the max header bytes value and returns a reference.
@@ -278,9 +241,9 @@ func (a *App) WithMaxHeaderBytes(byteCount int) *App {
 	return a
 }
 
-// ReadHeaderTimeout returns the read header timeout for the server.
-func (a *App) ReadHeaderTimeout() time.Duration {
-	return a.readHeaderTimeout
+// MaxHeaderBytes returns the app max header bytes.
+func (a *App) MaxHeaderBytes() int {
+	return a.maxHeaderBytes
 }
 
 // WithReadHeaderTimeout returns the read header timeout for the server.
@@ -289,9 +252,9 @@ func (a *App) WithReadHeaderTimeout(timeout time.Duration) *App {
 	return a
 }
 
-// ReadTimeout returns the read timeout for the server.
-func (a *App) ReadTimeout() time.Duration {
-	return a.readTimeout
+// ReadHeaderTimeout returns the read header timeout for the server.
+func (a *App) ReadHeaderTimeout() time.Duration {
+	return a.readHeaderTimeout
 }
 
 // WithReadTimeout sets the read timeout for the server and returns a reference to the app for building apps with a fluent api.
@@ -300,9 +263,9 @@ func (a *App) WithReadTimeout(timeout time.Duration) *App {
 	return a
 }
 
-// IdleTimeout is the time before we close a connection.
-func (a *App) IdleTimeout() time.Duration {
-	return a.idleTimeout
+// ReadTimeout returns the read timeout for the server.
+func (a *App) ReadTimeout() time.Duration {
+	return a.readTimeout
 }
 
 // WithIdleTimeout sets the idle timeout.
@@ -311,9 +274,9 @@ func (a *App) WithIdleTimeout(timeout time.Duration) *App {
 	return a
 }
 
-// WriteTimeout returns the write timeout for the server.
-func (a *App) WriteTimeout() time.Duration {
-	return a.writeTimeout
+// IdleTimeout is the time before we close a connection.
+func (a *App) IdleTimeout() time.Duration {
+	return a.idleTimeout
 }
 
 // WithWriteTimeout sets the write timeout for the server and returns a reference to the app for building apps with a fluent api.
@@ -322,175 +285,68 @@ func (a *App) WithWriteTimeout(timeout time.Duration) *App {
 	return a
 }
 
+// WriteTimeout returns the write timeout for the server.
+func (a *App) WriteTimeout() time.Duration {
+	return a.writeTimeout
+}
+
 // WithHSTS enables or disables issuing the strict transport security header.
-func (a *App) WithHSTS(enabled bool) *App {
-	a.hsts = enabled
+func (a *App) WithHSTS(hsts *HSTSConfig) *App {
+	a.hsts = hsts
 	return a
 }
 
-// HSTS returns if strict transport security is enabled.
-func (a *App) HSTS() bool {
+// HSTS returns the hsts config.
+func (a *App) HSTS() *HSTSConfig {
 	return a.hsts
-}
-
-// WithHSTSMaxAgeSeconds sets the hsts max age seconds.
-func (a *App) WithHSTSMaxAgeSeconds(ageSeconds int) *App {
-	a.hstsMaxAgeSeconds = ageSeconds
-	return a
-}
-
-// HSTSMaxAgeSeconds is the maximum lifetime browsers should honor the secure transport header.
-func (a *App) HSTSMaxAgeSeconds() int {
-	return a.hstsMaxAgeSeconds
-}
-
-// WithHSTSIncludeSubdomains sets if we should include subdomains in hsts.
-func (a *App) WithHSTSIncludeSubdomains(includeSubdomains bool) *App {
-	a.hstsIncludeSubdomains = includeSubdomains
-	return a
-}
-
-// HSTSIncludeSubdomains returns if we should include subdomains in hsts.
-func (a *App) HSTSIncludeSubdomains() bool {
-	return a.hstsIncludeSubdomains
-}
-
-// WithHSTSPreload sets if we preload hsts.
-func (a *App) WithHSTSPreload(preload bool) *App {
-	a.hstsPreload = preload
-	return a
-}
-
-// HSTSPreload returns if we should preload hsts.
-func (a *App) HSTSPreload() bool {
-	return a.hstsPreload
 }
 
 // WithTLSConfig sets the tls config for the app.
 func (a *App) WithTLSConfig(config *tls.Config) *App {
-	a.SetTLSConfig(config)
+	a.tls = config
 	return a
-}
-
-// SetTLSConfig sets the tls config.
-func (a *App) SetTLSConfig(config *tls.Config) {
-	a.tlsConfig = config
 }
 
 // TLSConfig returns the app tls config.
 func (a *App) TLSConfig() *tls.Config {
-	return a.tlsConfig
-}
-
-// SetTLSCertPair sets the app to use TLS with a given cert.
-func (a *App) SetTLSCertPair(tlsCert, tlsKey []byte) error {
-	cert, err := tls.X509KeyPair(tlsCert, tlsKey)
-	if err != nil {
-		return err
-	}
-	if a.tlsConfig == nil {
-		a.tlsConfig = &tls.Config{
-			Certificates: []tls.Certificate{cert},
-		}
-	} else {
-		a.tlsConfig.Certificates = []tls.Certificate{cert}
-	}
-	return nil
-}
-
-// SetTLSCertPairFromFiles reads a tls key pair from a given set of paths.
-func (a *App) SetTLSCertPairFromFiles(tlsCertPath, tlsKeyPath string) error {
-	cert, err := ioutil.ReadFile(tlsCertPath)
-	if err != nil {
-		return exception.New(err)
-	}
-
-	key, err := ioutil.ReadFile(tlsKeyPath)
-	if err != nil {
-		return exception.New(err)
-	}
-
-	return a.SetTLSCertPair(cert, key)
-}
-
-// SetTLSFromEnv reads TLS settings from the environment.
-func (a *App) SetTLSFromEnv() error {
-	tlsCert := env.Env().Bytes(EnvironmentVariableTLSCert)
-	tlsKey := env.Env().Bytes(EnvironmentVariableTLSKey)
-	tlsCertPath := env.Env().String(EnvironmentVariableTLSCertFile)
-	tlsKeyPath := env.Env().String(EnvironmentVariableTLSKeyFile)
-
-	if len(tlsCert) > 0 && len(tlsKey) > 0 {
-		return a.SetTLSCertPair(tlsCert, tlsKey)
-	} else if len(tlsCertPath) > 0 && len(tlsKeyPath) > 0 {
-		return a.SetTLSCertPairFromFiles(tlsCertPath, tlsKeyPath)
-	}
-	return nil
+	return a.tls
 }
 
 // SetTLSClientCertPool set the client cert pool from a given set of pems.
 func (a *App) SetTLSClientCertPool(certs ...[]byte) error {
-	if a.tlsConfig == nil {
-		a.tlsConfig = &tls.Config{}
+	if a.tls == nil {
+		a.tls = &tls.Config{}
 	}
-	a.tlsConfig.ClientCAs = x509.NewCertPool()
+	a.tls.ClientCAs = x509.NewCertPool()
 	for _, cert := range certs {
-		ok := a.tlsConfig.ClientCAs.AppendCertsFromPEM(cert)
+		ok := a.tls.ClientCAs.AppendCertsFromPEM(cert)
 		if !ok {
 			return exception.New("invalid ca cert for client cert pool")
 		}
 	}
-	a.tlsConfig.BuildNameToCertificate()
+	a.tls.BuildNameToCertificate()
 
 	// this forces the server to reload the tls config for every request if there is a cert pool loaded.
 	// normally this would introduce overhead but it allows us to hot patch the cert pool.
-	a.tlsConfig.GetConfigForClient = func(_ *tls.ClientHelloInfo) (*tls.Config, error) {
-		return a.tlsConfig, nil
+	a.tls.GetConfigForClient = func(_ *tls.ClientHelloInfo) (*tls.Config, error) {
+		return a.tls, nil
 	}
 	return nil
 }
 
 // WithTLSClientCertVerification sets the verification level for client certs.
 func (a *App) WithTLSClientCertVerification(verification tls.ClientAuthType) *App {
-	if a.tlsConfig == nil {
-		a.tlsConfig = &tls.Config{}
+	if a.tls == nil {
+		a.tls = &tls.Config{}
 	}
-	a.tlsConfig.ClientAuth = verification
+	a.tls.ClientAuth = verification
 	return a
 }
 
 // WithPort sets the port for the bind address of the app, and returns a reference to the app.
 func (a *App) WithPort(port int32) *App {
-	a.SetPort(port)
-	return a
-}
-
-// SetPort sets the port the app listens on, typically to `:%d` which indicates listen on any interface.
-func (a *App) SetPort(port int32) {
 	a.bindAddr = fmt.Sprintf(":%v", port)
-}
-
-// WithPortFromEnv sets the port from an environment variable, and returns a reference to the app.
-func (a *App) WithPortFromEnv() *App {
-	a.SetPortFromEnv()
 	return a
-}
-
-// SetPortFromEnv sets the port from an environment variable, and returns a reference to the app.
-func (a *App) SetPortFromEnv() error {
-	if env.Env().Has(EnvironmentVariablePort) {
-		port, err := env.Env().Int32(EnvironmentVariablePort)
-		if err != nil {
-			return err
-		}
-		a.bindAddr = fmt.Sprintf(":%v", port)
-	}
-	return nil
-}
-
-// BindAddr returns the address the server will bind to.
-func (a *App) BindAddr() string {
-	return a.bindAddr
 }
 
 // WithBindAddr sets the address the app listens on, and returns a reference to the app.
@@ -499,15 +355,9 @@ func (a *App) WithBindAddr(bindAddr string) *App {
 	return a
 }
 
-// WithBindAddrFromEnv sets the address the app listens on, and returns a reference to the app.
-func (a *App) WithBindAddrFromEnv() *App {
-	a.bindAddr = env.Env().String(EnvironmentVariableBindAddr)
-	return a
-}
-
-// Logger returns the diagnostics agent for the app.
-func (a *App) Logger() *logger.Logger {
-	return a.log
+// BindAddr returns the address the server will bind to.
+func (a *App) BindAddr() string {
+	return a.bindAddr
 }
 
 // WithLogger sets the app logger agent and returns a reference to the app.
@@ -517,9 +367,20 @@ func (a *App) WithLogger(log *logger.Logger) *App {
 	return a
 }
 
+// Logger returns the diagnostics agent for the app.
+func (a *App) Logger() *logger.Logger {
+	return a.log
+}
+
+// WithDefaultMiddlewares sets the application wide default middleware.
+func (a *App) WithDefaultMiddlewares(middleware ...Middleware) *App {
+	a.defaultMiddleware = middleware
+	return a
+}
+
 // WithDefaultMiddleware sets the application wide default middleware.
 func (a *App) WithDefaultMiddleware(middleware ...Middleware) *App {
-	a.defaultMiddleware = middleware
+	a.defaultMiddleware = append(a.defaultMiddleware, middleware...)
 	return a
 }
 
@@ -549,7 +410,7 @@ func (a *App) CreateServer() *http.Server {
 		ReadHeaderTimeout: a.readHeaderTimeout,
 		WriteTimeout:      a.writeTimeout,
 		IdleTimeout:       a.idleTimeout,
-		TLSConfig:         a.tlsConfig,
+		TLSConfig:         a.tls,
 	}
 }
 
@@ -571,10 +432,6 @@ func (a *App) Listener() *net.TCPListener {
 
 // StartupTasks runs common startup tasks.
 func (a *App) StartupTasks() error {
-	if a.didRunStartupTasks {
-		return nil
-	}
-	a.didRunStartupTasks = true
 	return a.views.Initialize()
 }
 
@@ -586,8 +443,8 @@ func (a *App) Start() (err error) {
 		defer a.log.SyncTrigger(NewAppEvent(AppExit).WithApp(a).WithErr(err))
 	}
 
-	if a.tlsConfig == nil && a.cfg != nil {
-		a.tlsConfig, err = a.cfg.TLS.GetConfig()
+	if a.tls == nil && a.cfg != nil {
+		a.tls, err = a.cfg.TLS.GetConfig()
 		if err != nil {
 			return
 		}
@@ -1016,7 +873,7 @@ func (a *App) renderAction(action Action) Handler {
 			}
 		}
 
-		if a.hsts {
+		if a.hsts.GetEnabled() {
 			a.addHSTSHeader(response)
 		}
 
@@ -1135,11 +992,11 @@ func (a *App) allowed(path, reqMethod string) (allow string) {
 }
 
 func (a *App) addHSTSHeader(w http.ResponseWriter) {
-	parts := []string{fmt.Sprintf(HSTSMaxAgeFormat, a.hstsMaxAgeSeconds)}
-	if a.hstsIncludeSubdomains {
+	parts := []string{fmt.Sprintf(HSTSMaxAgeFormat, a.hsts.GetMaxAgeSeconds())}
+	if a.hsts.GetIncludeSubDomains() {
 		parts = append(parts, HSTSIncludeSubDomains)
 	}
-	if a.hstsPreload {
+	if a.hsts.GetPreload() {
 		parts = append(parts, HSTSPreload)
 	}
 	w.Header().Set(HeaderStrictTransportSecurity, strings.Join(parts, "; "))

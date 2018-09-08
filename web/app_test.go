@@ -66,15 +66,17 @@ func TestAppNewFromConfig(t *testing.T) {
 		HandleMethodNotAllowed: util.OptionalBool(true),
 		HandleOptions:          util.OptionalBool(true),
 		RecoverPanics:          util.OptionalBool(true),
-		HSTS:                   util.OptionalBool(true),
-		HSTSMaxAgeSeconds:      9999,
-		HSTSPreload:            util.OptionalBool(false),
-		HSTSIncludeSubDomains:  util.OptionalBool(false),
-		MaxHeaderBytes:         128,
-		ReadHeaderTimeout:      5 * time.Second,
-		ReadTimeout:            6 * time.Second,
-		IdleTimeout:            7 * time.Second,
-		WriteTimeout:           8 * time.Second,
+		HSTS: HSTSConfig{
+			Enabled:           util.OptionalBool(true),
+			MaxAgeSeconds:     9999,
+			IncludeSubDomains: util.OptionalBool(false),
+			Preload:           util.OptionalBool(false),
+		},
+		MaxHeaderBytes:    128,
+		ReadHeaderTimeout: 5 * time.Second,
+		ReadTimeout:       6 * time.Second,
+		IdleTimeout:       7 * time.Second,
+		WriteTimeout:      8 * time.Second,
 
 		CookieName: "A GOOD ONE",
 
@@ -95,10 +97,10 @@ func TestAppNewFromConfig(t *testing.T) {
 	assert.Equal("A GOOD ONE", app.Auth().CookieName(), "we should use the auth config for the auth manager")
 	assert.True(app.Views().Cached(), "we should use the view cache config for the view cache")
 
-	assert.True(app.HSTS())
-	assert.Equal(9999, app.HSTSMaxAgeSeconds())
-	assert.False(app.HSTSIncludeSubdomains())
-	assert.False(app.HSTSPreload())
+	assert.True(app.HSTS().GetEnabled())
+	assert.Equal(9999, app.HSTS().GetMaxAgeSeconds())
+	assert.False(app.HSTS().GetIncludeSubDomains())
+	assert.False(app.HSTS().GetPreload())
 }
 
 func TestAppPathParams(t *testing.T) {
@@ -392,8 +394,6 @@ func TestAppBindAddr(t *testing.T) {
 
 	assert.Equal(":3333", New().WithBindAddr(":3333").BindAddr())
 	assert.Equal(":2222", New().WithPort(2222).BindAddr())
-	assert.Equal(":9999", New().WithBindAddrFromEnv().BindAddr())
-	assert.Equal(":1111", New().WithPortFromEnv().BindAddr())
 }
 
 func TestAppNotFound(t *testing.T) {
@@ -442,11 +442,15 @@ func TestAppDefaultHeaders(t *testing.T) {
 func TestAppIssuesHSTSHeaders(t *testing.T) {
 	assert := assert.New(t)
 
-	app := New().WithHSTS(true).WithHSTSMaxAgeSeconds(9999).WithHSTSIncludeSubdomains(true).WithHSTSPreload(true)
+	app := New().WithHSTS(&HSTSConfig{
+		Enabled:           util.OptionalBool(true),
+		MaxAgeSeconds:     9999,
+		IncludeSubDomains: util.OptionalBool(true),
+		Preload:           util.OptionalBool(true),
+	})
 	app.GET("/", func(r *Ctx) Result {
 		return r.Text().Result("ok")
 	})
-	assert.Nil(app.SetTLSCertPair([]byte(TestTLSCert), []byte(TestTLSKey)))
 
 	meta, err := app.Mock().Get("/").ExecuteWithMeta()
 	assert.Nil(err)
@@ -459,14 +463,6 @@ func TestAppTLSOptions(t *testing.T) {
 	assert := assert.New(t)
 
 	app := New()
-	assert.NotNil(app.SetTLSCertPair([]byte{}, []byte{}))
-
-	app = New()
-	assert.Nil(app.SetTLSCertPair([]byte(TestTLSCert), []byte(TestTLSKey)))
-	assert.NotNil(app.TLSConfig())
-	assert.NotNil(app.TLSConfig().Certificates)
-
-	app = New()
 	assert.NotNil(app.SetTLSClientCertPool([]byte{}))
 	app = New()
 	assert.Nil(app.SetTLSClientCertPool([]byte(TestTLSCert)))
@@ -481,9 +477,7 @@ func TestAppTLSOptions(t *testing.T) {
 
 	app = New()
 	app.WithTLSClientCertVerification(tls.RequireAndVerifyClientCert)
-	assert.Nil(app.SetTLSCertPair([]byte(TestTLSCert), []byte(TestTLSKey)))
 	assert.NotNil(app.TLSConfig())
-	assert.NotNil(app.TLSConfig().Certificates)
 	assert.Equal(tls.RequireAndVerifyClientCert, app.TLSConfig().ClientAuth)
 }
 
