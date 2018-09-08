@@ -185,7 +185,6 @@ func (am *AuthManager) VerifySession(ctx *Ctx) (session *Session, err error) {
 	// if we have a separate step to parse the sesion value
 	// (i.e. jwt mode) do that now.
 	if am.parseSessionValueHandler != nil {
-		println("parsed")
 		session, err = am.parseSessionValueHandler(ctx.Context(), sessionValue, ctx.state)
 		if err != nil {
 			if IsErrSessionInvalid(err) {

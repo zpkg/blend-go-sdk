@@ -15,7 +15,6 @@ import (
 	"github.com/blend/go-sdk/async"
 	"github.com/blend/go-sdk/exception"
 	"github.com/blend/go-sdk/logger"
-	"github.com/blend/go-sdk/util"
 	"github.com/blend/go-sdk/webutil"
 )
 
@@ -791,7 +790,7 @@ func (a *App) ServeHTTP(w http.ResponseWriter, req *http.Request) {
 	path := req.URL.Path
 	if root := a.routes[req.Method]; root != nil {
 		if route, params, tsr := root.getValue(path); route != nil {
-			route.Handler(w, req, route, params, nil)
+			route.Handler(w, req, route, params)
 			return
 		} else if req.Method != MethodConnect && path != "/" {
 			code := http.StatusMovedPermanently // 301 // Permanent redirect, request with GET method
@@ -825,7 +824,7 @@ func (a *App) ServeHTTP(w http.ResponseWriter, req *http.Request) {
 			if allow := a.allowed(path, req.Method); len(allow) > 0 {
 				w.Header().Set(HeaderAllow, allow)
 				if a.methodNotAllowedHandler != nil {
-					a.methodNotAllowedHandler(w, req, nil, nil, nil)
+					a.methodNotAllowedHandler(w, req, nil, nil)
 				} else {
 					http.Error(w, http.StatusText(http.StatusMethodNotAllowed), http.StatusMethodNotAllowed)
 				}
@@ -836,7 +835,7 @@ func (a *App) ServeHTTP(w http.ResponseWriter, req *http.Request) {
 
 	// Handle 404
 	if a.notFoundHandler != nil {
-		a.notFoundHandler(w, req, nil, nil, nil)
+		a.notFoundHandler(w, req, nil, nil)
 	} else {
 		http.NotFound(w, req)
 	}
@@ -845,7 +844,7 @@ func (a *App) ServeHTTP(w http.ResponseWriter, req *http.Request) {
 // renderAction is the translation step from Action to Handler.
 // this is where the bulk of the "pipeline" happens.
 func (a *App) renderAction(action Action) Handler {
-	return func(w http.ResponseWriter, r *http.Request, route *Route, p RouteParameters, state State) {
+	return func(w http.ResponseWriter, r *http.Request, route *Route, p RouteParameters) {
 		var err error
 		var tf TraceFinisher
 
@@ -858,7 +857,7 @@ func (a *App) renderAction(action Action) Handler {
 			response = NewRawResponseWriter(w)
 		}
 
-		ctx := a.createCtx(response, r, route, p, state)
+		ctx := a.createCtx(response, r, route, p)
 		ctx.onRequestStart()
 		if a.tracer != nil {
 			tf = a.tracer.Start(ctx)
@@ -891,8 +890,6 @@ func (a *App) renderAction(action Action) Handler {
 			a.logError(result.Render(ctx))
 		}
 
-		ctx.setStatusCode(response.StatusCode())
-		ctx.setContentLength(response.ContentLength())
 		ctx.onRequestFinish()
 		a.logError(response.Close())
 
@@ -906,31 +903,16 @@ func (a *App) renderAction(action Action) Handler {
 	}
 }
 
-func (a *App) createCtx(w ResponseWriter, r *http.Request, route *Route, p RouteParameters, s State) *Ctx {
-	ctx := &Ctx{
-		id:                    util.String.RandomLetters(12),
-		tracer:                a.tracer,
-		response:              w,
-		request:               r,
-		app:                   a,
-		views:                 a.views,
-		route:                 route,
-		routeParameters:       p,
-		state:                 s,
-		auth:                  a.auth,
-		log:                   a.log,
-		defaultResultProvider: a.defaultResultProvider,
-	}
-	if ctx.state == nil {
-		ctx.state = State{}
-	}
-	if len(a.state) > 0 {
-		for key, value := range a.state {
-			ctx.state[key] = value
-		}
-	}
-
-	return ctx
+func (a *App) createCtx(w ResponseWriter, r *http.Request, route *Route, p RouteParameters) *Ctx {
+	return NewCtx(w, r).
+		WithRoute(route).
+		WithRouteParams(p).
+		WithState(a.state).
+		WithTracer(a.tracer).
+		WithViews(a.views).
+		WithAuth(a.auth).
+		WithLogger(a.log).
+		WithDefaultResultProvider(a.defaultResultProvider)
 }
 
 func (a *App) middlewarePipeline(action Action, middleware ...Middleware) Action {
@@ -1014,9 +996,9 @@ func (a *App) httpRequestEvent(ctx *Ctx) *logger.HTTPRequestEvent {
 
 func (a *App) httpResponseEvent(ctx *Ctx) *logger.HTTPResponseEvent {
 	event := logger.NewHTTPResponseEvent(ctx.Request()).
-		WithStatusCode(ctx.statusCode).
+		WithStatusCode(ctx.Response().StatusCode()).
 		WithElapsed(ctx.Elapsed()).
-		WithContentLength(ctx.contentLength).
+		WithContentLength(ctx.Response().ContentLength()).
 		WithState(ctx.state)
 	event.SetEntity(ctx.ID())
 
@@ -1049,7 +1031,7 @@ func (a *App) handlePanic(w http.ResponseWriter, r *http.Request, err interface{
 			a.log.Fatalf("%v", err)
 		}
 		return a.panicAction(ctx, err)
-	})(w, r, nil, nil, nil)
+	})(w, r, nil, nil)
 }
 
 func (a *App) logFatal(err error) {

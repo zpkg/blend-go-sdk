@@ -266,20 +266,8 @@ func (mrb *MockRequestBuilder) CreateCtx(p RouteParameters) (*Ctx, error) {
 		return nil, err
 	}
 
-	w := NewMockResponseWriter(bytes.NewBuffer(nil))
-	if mrb.app == nil {
-		return NewCtx(w, r, p, mrb.state), nil
-	}
-
-	var rc *Ctx
 	route, _ := mrb.LookupRoute()
-	if route != nil {
-		rc = mrb.app.createCtx(w, r, route, p, mrb.state)
-	} else {
-		rc = mrb.app.createCtx(w, r, nil, nil, mrb.state)
-	}
-
-	return rc, nil
+	return mrb.app.createCtx(NewMockResponseWriter(new(bytes.Buffer)), r, route, p).WithState(mrb.state), nil
 }
 
 // Response runs the mock request.
@@ -324,7 +312,7 @@ func (mrb *MockRequestBuilder) runHandler(handler Handler, req *http.Request, ro
 
 	buffer := bytes.NewBuffer(nil)
 	w := NewMockResponseWriter(buffer)
-	handler(w, req, route, params, mrb.state)
+	handler(w, req, route, params)
 	res = mrb.createResponse(buffer, w)
 	return res
 }

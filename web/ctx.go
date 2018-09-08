@@ -14,21 +14,14 @@ import (
 	"github.com/blend/go-sdk/util"
 )
 
-// NewCtx returns a new hc context.
-func NewCtx(w ResponseWriter, r *http.Request, p RouteParameters, s State) *Ctx {
-	ctx := &Ctx{
-		id:                    util.String.RandomLetters(10),
-		response:              w,
-		request:               r,
-		routeParameters:       p,
-		state:                 s,
-		defaultResultProvider: Text,
+// NewCtx returns a new ctx.
+func NewCtx(w ResponseWriter, r *http.Request) *Ctx {
+	return &Ctx{
+		id:       util.String.RandomLetters(12),
+		response: w,
+		request:  r,
+		state:    make(State),
 	}
-	if ctx.state == nil {
-		ctx.state = State{}
-	}
-
-	return ctx
 }
 
 // Ctx is the struct that represents the context for an hc request.
@@ -47,15 +40,19 @@ type Ctx struct {
 	postBody              []byte
 	defaultResultProvider ResultProvider
 
-	state           State
-	session         *Session
-	routeParameters RouteParameters
-	route           *Route
+	state       State
+	session     *Session
+	route       *Route
+	routeParams RouteParameters
 
-	statusCode    int
-	contentLength int
-	requestStart  time.Time
-	requestEnd    time.Time
+	requestStart time.Time
+	requestEnd   time.Time
+}
+
+// WithID sets the context ID.
+func (rc *Ctx) WithID(id string) *Ctx {
+	rc.id = id
+	return rc
 }
 
 // ID returns a pseudo unique id for the request.
@@ -83,6 +80,17 @@ func (rc *Ctx) WithRequest(req *http.Request) *Ctx {
 // Request returns the underlying request.
 func (rc *Ctx) Request() *http.Request {
 	return rc.request
+}
+
+// WithTracer sets the tracer.
+func (rc *Ctx) WithTracer(tracer Tracer) *Ctx {
+	rc.tracer = tracer
+	return rc
+}
+
+// Tracer returns the tracer.
+func (rc *Ctx) Tracer() Tracer {
+	return rc.tracer
 }
 
 // WithContext sets the background context for the request.
@@ -127,6 +135,12 @@ func (rc *Ctx) WithSession(session *Session) *Ctx {
 // Session returns the session (if any) on the request.
 func (rc *Ctx) Session() *Session {
 	return rc.session
+}
+
+// WithViews sets the view cache for the ctx.
+func (rc *Ctx) WithViews(vc *ViewCache) *Ctx {
+	rc.views = vc
+	return rc
 }
 
 // View returns the view cache as a result provider.
@@ -194,9 +208,24 @@ func (rc *Ctx) WithDefaultResultProvider(provider ResultProvider) *Ctx {
 	return rc
 }
 
-// State returns the full state bag.
+// WithState sets the state.
+func (rc *Ctx) WithState(state State) *Ctx {
+	rc.state = state
+	return rc
+}
+
+// State returns the state.
 func (rc *Ctx) State() State {
 	return rc.state
+}
+
+// WithStateValue sets the state for a key to an object.
+func (rc *Ctx) WithStateValue(key string, value interface{}) *Ctx {
+	if rc.state == nil {
+		rc.state = State{}
+	}
+	rc.state[key] = value
+	return rc
 }
 
 // StateValue returns an object in the state cache.
@@ -208,15 +237,6 @@ func (rc *Ctx) StateValue(key string) interface{} {
 		return value
 	}
 	return nil
-}
-
-// WithStateValue sets the state for a key to an object.
-func (rc *Ctx) WithStateValue(key string, value interface{}) *Ctx {
-	if rc.state == nil {
-		rc.state = State{}
-	}
-	rc.state[key] = value
-	return rc
 }
 
 // Param returns a parameter from the request.
@@ -242,8 +262,8 @@ into a useful type:
 
 */
 func (rc *Ctx) Param(name string) (string, error) {
-	if rc.routeParameters != nil {
-		routeValue := rc.routeParameters.Get(name)
+	if rc.routeParams != nil {
+		routeValue := rc.routeParams.Get(name)
 		if len(routeValue) > 0 {
 			return routeValue, nil
 		}
@@ -278,7 +298,7 @@ func (rc *Ctx) Param(name string) (string, error) {
 
 // RouteParam returns a string route parameter
 func (rc *Ctx) RouteParam(key string) (output string, err error) {
-	if value, hasKey := rc.routeParameters[key]; hasKey {
+	if value, hasKey := rc.routeParams[key]; hasKey {
 		output = value
 		return
 	}
@@ -464,6 +484,12 @@ func (rc *Ctx) ExpireCookie(name string, path string) {
 // Logger
 // --------------------------------------------------------------------------------
 
+// WithLogger sets the logger.
+func (rc *Ctx) WithLogger(log *logger.Logger) *Ctx {
+	rc.log = log
+	return rc
+}
+
 // Logger returns the diagnostics agent.
 func (rc *Ctx) Logger() *logger.Logger {
 	return rc.log
@@ -541,9 +567,26 @@ func (rc *Ctx) Elapsed() time.Duration {
 	return time.Now().UTC().Sub(rc.requestStart)
 }
 
+// WithRoute sets the route.
+func (rc *Ctx) WithRoute(route *Route) *Ctx {
+	rc.route = route
+	return rc
+}
+
 // Route returns the original route match for the request.
 func (rc *Ctx) Route() *Route {
 	return rc.route
+}
+
+// WithRouteParams sets the route parameters.
+func (rc *Ctx) WithRouteParams(params RouteParameters) *Ctx {
+	rc.routeParams = params
+	return rc
+}
+
+// RouteParams returns the route parameters for the request.
+func (rc *Ctx) RouteParams() RouteParameters {
+	return rc.routeParams
 }
 
 // --------------------------------------------------------------------------------
@@ -555,22 +598,6 @@ func (rc *Ctx) getCookieDomain() string {
 		return rc.app.baseURL.Host
 	}
 	return rc.request.Host
-}
-
-func (rc *Ctx) getStatusCode() int {
-	return rc.statusCode
-}
-
-func (rc *Ctx) setStatusCode(code int) {
-	rc.statusCode = code
-}
-
-func (rc *Ctx) getContentLength() int {
-	return rc.contentLength
-}
-
-func (rc *Ctx) setContentLength(length int) {
-	rc.contentLength = length
 }
 
 func (rc *Ctx) onRequestStart() {

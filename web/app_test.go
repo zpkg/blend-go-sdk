@@ -111,7 +111,7 @@ func TestAppPathParams(t *testing.T) {
 	app := New()
 	app.GET("/:uuid", func(c *Ctx) Result {
 		route = c.Route()
-		params = c.routeParameters
+		params = c.routeParams
 		return c.Raw([]byte("ok!"))
 	})
 
@@ -134,7 +134,7 @@ func TestAppPathParamsForked(t *testing.T) {
 	app := New()
 	app.GET("/foos/bar/:uuid", func(c *Ctx) Result {
 		route = c.Route()
-		params = c.routeParameters
+		params = c.routeParams
 		return c.Raw([]byte("ok!"))
 	})
 	app.GET("/foo/:uuid", func(c *Ctx) Result { return nil })
@@ -316,7 +316,7 @@ func TestAppDefaultResultProvider(t *testing.T) {
 	app := New()
 	assert.Nil(app.DefaultMiddleware())
 
-	rc := app.createCtx(nil, nil, nil, nil, nil)
+	rc := app.createCtx(nil, nil, nil, nil)
 	assert.NotNil(rc.defaultResultProvider)
 }
 
@@ -325,7 +325,7 @@ func TestAppDefaultResultProviderWithDefault(t *testing.T) {
 	app := New().WithDefaultMiddleware(ViewProviderAsDefault)
 	assert.NotNil(app.DefaultMiddleware())
 
-	rc := app.createCtx(nil, nil, nil, nil, nil)
+	rc := app.createCtx(nil, nil, nil, nil)
 
 	// this will be set to the default initially
 	assert.NotNil(rc.defaultResultProvider)

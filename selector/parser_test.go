@@ -283,5 +283,5 @@ func TestParserLex(t *testing.T) {
 	assert := assert.New(t)
 	l := &Parser{s: ""}
 	_, err := l.Parse()
-	assert.NotNil(err)
+	assert.Nil(err)
 }
