@@ -30,12 +30,6 @@ type Config struct {
 	HandleMethodNotAllowed *bool `json:"handleMethodNotAllowed,omitempty" yaml:"handleMethodNotAllowed,omitempty"`
 	RecoverPanics          *bool `json:"recoverPanics,omitempty" yaml:"recoverPanics,omitempty"`
 
-	// HSTS determines if we should issue the Strict-Transport-Security header.
-	HSTS                  *bool `json:"hsts,omitempty" yaml:"hsts,omitempty"`
-	HSTSMaxAgeSeconds     int   `json:"hstsMaxAgeSeconds,omitempty" yaml:"hstsMaxAgeSeconds,omitempty"`
-	HSTSIncludeSubDomains *bool `json:"hstsIncludeSubdomains,omitempty" yaml:"hstsIncludeSubdomains,omitempty"`
-	HSTSPreload           *bool `json:"hstsPreload,omitempty" yaml:"hstsPreload,omitempty"`
-
 	// AuthManagerMode is a mode designation for the auth manager.
 	AuthManagerMode string `json:"authManagerMode" yaml:"authManagerMode"`
 	// AuthSecret is a secret key to use with auth management.
@@ -63,6 +57,7 @@ type Config struct {
 
 	ShutdownGracePeriod time.Duration `json:"shutdownGracePeriod" yaml:"shutdownGracePeriod" env:"SHUTDOWN_GRACE_PERIOD"`
 
+	HSTS  HSTSConfig      `json:"hsts,omitempty" yaml:"hsts,omitempty"`
 	TLS   TLSConfig       `json:"tls,omitempty" yaml:"tls,omitempty"`
 	Views ViewCacheConfig `json:"views,omitempty" yaml:"views,omitempty"`
 }
@@ -156,26 +151,6 @@ func (c Config) BaseURLIsSecureScheme() bool {
 // IsSecure returns if the config specifies the app will eventually be handling https requests.
 func (c Config) IsSecure() bool {
 	return c.ListenTLS() || c.BaseURLIsSecureScheme()
-}
-
-// GetHSTS returns a property or a default.
-func (c Config) GetHSTS(inherited ...bool) bool {
-	return util.Coalesce.Bool(c.HSTS, DefaultHSTS && c.IsSecure(), inherited...)
-}
-
-// GetHSTSMaxAgeSeconds returns a property or a default.
-func (c Config) GetHSTSMaxAgeSeconds(inherited ...int) int {
-	return util.Coalesce.Int(c.HSTSMaxAgeSeconds, DefaultHSTSMaxAgeSeconds, inherited...)
-}
-
-// GetHSTSIncludeSubDomains returns a property or a default.
-func (c Config) GetHSTSIncludeSubDomains(inherited ...bool) bool {
-	return util.Coalesce.Bool(c.HSTSIncludeSubDomains, DefaultHSTSIncludeSubdomains, inherited...)
-}
-
-// GetHSTSPreload returns a property or a default.
-func (c Config) GetHSTSPreload(inherited ...bool) bool {
-	return util.Coalesce.Bool(c.HSTSPreload, DefaultHSTSPreload, inherited...)
 }
 
 // GetAuthManagerMode returns the auth manager mode.
