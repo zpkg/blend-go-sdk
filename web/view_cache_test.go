@@ -2,7 +2,6 @@ package web
 
 import (
 	"bytes"
-	"fmt"
 	"net/http"
 	"testing"
 
@@ -74,6 +73,19 @@ func TestViewCacheCachingDisabled(t *testing.T) {
 	assert.Equal("baz", buf.String())
 }
 
+func TestViewCacheBadRequest(t *testing.T) {
+	assert := assert.New(t)
+
+	vc := NewViewCache()
+	assert.Nil(vc.Initialize())
+
+	vr, _ := vc.BadRequest(exception.Class("only a test")).(*ViewResult)
+	assert.Equal(vc.BadRequestTemplateName(), vr.ViewName)
+	assert.Equal(http.StatusBadRequest, vr.StatusCode)
+	assert.NotNil(vr.Views)
+	assert.NotNil(vr.ViewModel)
+}
+
 func TestViewCacheInternalError(t *testing.T) {
 	assert := assert.New(t)
 
@@ -86,7 +98,8 @@ func TestViewCacheInternalError(t *testing.T) {
 	assert.Equal(vc.InternalErrorTemplateName(), vr.ViewName)
 	assert.Equal(http.StatusInternalServerError, vr.StatusCode)
 	assert.NotNil(vr.Views)
-	assert.NotNil(vr.ViewModel, fmt.Sprintf("%#v\n", vr))
+	assert.NotNil(vr.Template)
+	assert.NotNil(vr.ViewModel)
 }
 
 func TestViewCacheNotFound(t *testing.T) {
@@ -100,6 +113,7 @@ func TestViewCacheNotFound(t *testing.T) {
 	assert.Equal(vc.NotFoundTemplateName(), vr.ViewName)
 	assert.Equal(http.StatusNotFound, vr.StatusCode)
 	assert.NotNil(vr.Views)
+	assert.NotNil(vr.Template)
 	assert.Nil(vr.ViewModel)
 }
 
@@ -114,6 +128,7 @@ func TestViewCacheNotAuthorized(t *testing.T) {
 	assert.Equal(vc.NotAuthorizedTemplateName(), vr.ViewName)
 	assert.Equal(http.StatusForbidden, vr.StatusCode)
 	assert.NotNil(vr.Views)
+	assert.NotNil(vr.Template)
 	assert.Nil(vr.ViewModel)
 }
 
@@ -131,6 +146,7 @@ func TestViewCacheView(t *testing.T) {
 	assert.Equal("test", vr.ViewName)
 	assert.Equal(http.StatusOK, vr.StatusCode)
 	assert.Equal("foo", vr.ViewModel)
+	assert.NotNil(vr.Template)
 	assert.NotNil(vr.Views)
 
 	// handle if the view is not found ...
@@ -139,6 +155,7 @@ func TestViewCacheView(t *testing.T) {
 	vr, _ = ler.Result.(*ViewResult)
 	assert.Equal(vc.InternalErrorTemplateName(), vr.ViewName)
 	assert.Equal(http.StatusInternalServerError, vr.StatusCode)
+	assert.NotNil(vr.Template)
 	assert.NotNil(vr.Views)
 }
 
