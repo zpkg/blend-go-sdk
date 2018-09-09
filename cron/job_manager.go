@@ -319,18 +319,12 @@ func (jm *JobManager) CancelTask(taskName string) (err error) {
 
 // Start begins the schedule runner for a JobManager.
 func (jm *JobManager) Start() {
-	jm.Lock()
-	defer jm.Unlock()
-
 	jm.schedulerWorker.Start()
 	jm.killHangingTasksWorker.Start()
 }
 
 // Stop stops the schedule runner for a JobManager.
 func (jm *JobManager) Stop() {
-	jm.Lock()
-	defer jm.Unlock()
-
 	jm.schedulerWorker.Stop()
 	jm.killHangingTasksWorker.Stop()
 }
