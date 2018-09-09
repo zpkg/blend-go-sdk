@@ -2,6 +2,8 @@ package webutil
 
 import (
 	"bytes"
+	"encoding/json"
+	"io/ioutil"
 	"net/http"
 	"testing"
 
@@ -50,4 +52,16 @@ func TestWriteXML(t *testing.T) {
 	assert.Nil(WriteXML(res, http.StatusOK, xmltest{Foo: "bar"}))
 	assert.Equal(http.StatusOK, res.StatusCode())
 	assert.Equal("<xmltest><foo>bar</foo></xmltest>", buf.String())
+}
+
+func TestDeserializeReaderAsJSON(t *testing.T) {
+	assert := assert.New(t)
+
+	contents, err := json.Marshal(map[string]interface{}{"foo": "bar"})
+	assert.Nil(err)
+
+	output := make(map[string]interface{})
+
+	assert.Nil(DeserializeReaderAsJSON(&output, ioutil.NopCloser(bytes.NewBuffer(contents))))
+	assert.Equal("bar", output["foo"])
 }
