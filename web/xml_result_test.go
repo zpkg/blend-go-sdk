@@ -6,6 +6,7 @@ import (
 	"testing"
 
 	"github.com/blend/go-sdk/assert"
+	"github.com/blend/go-sdk/webutil"
 )
 
 type xmltest struct {
@@ -17,7 +18,7 @@ func TestXMLResultRender(t *testing.T) {
 
 	buf := new(bytes.Buffer)
 	w := NewMockResponseWriter(buf)
-	r := NewCtx(w, NewMockRequest("GET", "/"))
+	r := NewCtx(w, webutil.NewMockRequest("GET", "/"))
 
 	xr := &XMLResult{
 		StatusCode: http.StatusOK,
@@ -34,7 +35,7 @@ func TestXMLResultRenderStatusCode(t *testing.T) {
 
 	buf := new(bytes.Buffer)
 	w := NewMockResponseWriter(buf)
-	r := NewCtx(w, NewMockRequest("GET", "/"))
+	r := NewCtx(w, webutil.NewMockRequest("GET", "/"))
 
 	xr := &XMLResult{
 		StatusCode: http.StatusBadRequest,

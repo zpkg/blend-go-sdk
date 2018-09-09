@@ -106,8 +106,8 @@ func TestNewJWTManagerSerialization(t *testing.T) {
 		SessionID:  uuid.V4().String(),
 		BaseURL:    uuid.V4().String(),
 		UserID:     uuid.V4().String(),
-		CreatedUTC: time.Date(2018, 9, 8, 12, 00, 0, 0, time.UTC),
-		ExpiresUTC: time.Date(2018, 9, 9, 12, 00, 0, 0, time.UTC),
+		CreatedUTC: time.Now().UTC(),
+		ExpiresUTC: time.Now().UTC().Add(time.Hour),
 	}
 
 	output, err := m.SerializeSessionValueHandler(nil, session, nil)
@@ -119,6 +119,6 @@ func TestNewJWTManagerSerialization(t *testing.T) {
 	assert.Equal(parsed.SessionID, session.SessionID)
 	assert.Equal(parsed.BaseURL, session.BaseURL)
 	assert.Equal(parsed.UserID, session.UserID)
-	assert.Equal(parsed.CreatedUTC, session.CreatedUTC)
-	assert.Equal(parsed.ExpiresUTC, session.ExpiresUTC)
+	assert.False(parsed.CreatedUTC.IsZero())
+	assert.False(parsed.ExpiresUTC.IsZero())
 }

@@ -6,6 +6,7 @@ import (
 	"testing"
 
 	"github.com/blend/go-sdk/assert"
+	"github.com/blend/go-sdk/webutil"
 )
 
 func TestJSONResultRender(t *testing.T) {
@@ -13,7 +14,7 @@ func TestJSONResultRender(t *testing.T) {
 
 	buf := new(bytes.Buffer)
 	w := NewMockResponseWriter(buf)
-	r := NewCtx(w, NewMockRequest("GET", "/"))
+	r := NewCtx(w, webutil.NewMockRequest("GET", "/"))
 
 	jr := &JSONResult{
 		StatusCode: http.StatusOK,
@@ -32,7 +33,7 @@ func TestJSONResultRenderStatusCode(t *testing.T) {
 
 	buf := new(bytes.Buffer)
 	w := NewMockResponseWriter(buf)
-	r := NewCtx(w, NewMockRequest("GET", "/"))
+	r := NewCtx(w, webutil.NewMockRequest("GET", "/"))
 
 	jr := &JSONResult{
 		StatusCode: http.StatusBadRequest,

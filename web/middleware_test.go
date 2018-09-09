@@ -5,6 +5,7 @@ import (
 	"testing"
 
 	"github.com/blend/go-sdk/assert"
+	"github.com/blend/go-sdk/webutil"
 )
 
 func TestDefaultProviderMiddlewares(t *testing.T) {
@@ -31,6 +32,6 @@ func applyMiddleware(middleware Middleware) (output *Ctx) {
 	middleware(func(ctx *Ctx) Result {
 		output = ctx
 		return NoContent
-	})(NewCtx(NewMockResponseWriter(new(bytes.Buffer)), NewMockRequest("GET", "/")))
+	})(NewCtx(NewMockResponseWriter(new(bytes.Buffer)), webutil.NewMockRequest("GET", "/")))
 	return
 }
