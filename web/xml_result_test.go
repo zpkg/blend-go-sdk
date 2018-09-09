@@ -17,7 +17,7 @@ func TestXMLResultRender(t *testing.T) {
 	assert := assert.New(t)
 
 	buf := new(bytes.Buffer)
-	w := NewMockResponseWriter(buf)
+	w := webutil.NewMockResponse(buf)
 	r := NewCtx(w, webutil.NewMockRequest("GET", "/"))
 
 	xr := &XMLResult{
@@ -34,7 +34,7 @@ func TestXMLResultRenderStatusCode(t *testing.T) {
 	assert := assert.New(t)
 
 	buf := new(bytes.Buffer)
-	w := NewMockResponseWriter(buf)
+	w := webutil.NewMockResponse(buf)
 	r := NewCtx(w, webutil.NewMockRequest("GET", "/"))
 
 	xr := &XMLResult{

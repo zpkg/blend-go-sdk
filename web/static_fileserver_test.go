@@ -16,7 +16,7 @@ func TestStaticFileserver(t *testing.T) {
 
 	cfs := NewStaticFileServer(http.Dir("testdata"))
 	buffer := bytes.NewBuffer(nil)
-	res := NewMockResponseWriter(buffer)
+	res := webutil.NewMockResponse(buffer)
 	req := webutil.NewMockRequest("GET", "/test_file.html")
 	result := cfs.Action(NewCtx(res, req).WithRouteParams(RouteParameters{
 		RouteTokenFilepath: "test_file.html",
@@ -34,7 +34,7 @@ func TestStaticFileserverHeaders(t *testing.T) {
 	assert.NotEmpty(cfs.Headers())
 
 	buffer := bytes.NewBuffer(nil)
-	res := NewMockResponseWriter(buffer)
+	res := webutil.NewMockResponse(buffer)
 	req := webutil.NewMockRequest("GET", "/test_file.html")
 	result := cfs.Action(NewCtx(res, req).WithRouteParams(RouteParameters{
 		RouteTokenFilepath: "test_file.html",
@@ -55,7 +55,7 @@ func TestStaticFileserverRewriteRule(t *testing.T) {
 	}))
 
 	buffer := bytes.NewBuffer(nil)
-	res := NewMockResponseWriter(buffer)
+	res := webutil.NewMockResponse(buffer)
 	req := webutil.NewMockRequest("GET", "/test_file.123123123.html")
 	result := cfs.Action(NewCtx(res, req).WithRouteParams(RouteParameters{
 		RouteTokenFilepath: "test_file.123123123.html",
@@ -83,7 +83,7 @@ func TestStaticFileserverMiddleware(t *testing.T) {
 	})
 
 	buffer := bytes.NewBuffer(nil)
-	res := NewMockResponseWriter(buffer)
+	res := webutil.NewMockResponse(buffer)
 	req := webutil.NewMockRequest("GET", "/test_file.html")
 	result := cfs.Action(NewCtx(res, req).WithRouteParams(RouteParameters{
 		RouteTokenFilepath: "test_file.html",

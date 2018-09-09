@@ -14,6 +14,7 @@ import (
 	"time"
 
 	"github.com/blend/go-sdk/exception"
+	"github.com/blend/go-sdk/webutil"
 )
 
 // NewMockRequestBuilder returns a new mock request builder for a given app.
@@ -267,7 +268,7 @@ func (mrb *MockRequestBuilder) CreateCtx(p RouteParameters) (*Ctx, error) {
 	}
 
 	route, _ := mrb.LookupRoute()
-	return mrb.app.createCtx(NewMockResponseWriter(new(bytes.Buffer)), r, route, p).WithState(mrb.state), nil
+	return mrb.app.createCtx(webutil.NewMockResponse(new(bytes.Buffer)), r, route, p).WithState(mrb.state), nil
 }
 
 // Response runs the mock request.
@@ -303,7 +304,7 @@ func (mrb *MockRequestBuilder) runHandler(handler Handler, req *http.Request, ro
 		defer func() {
 			if r := recover(); r != nil {
 				buffer := bytes.NewBuffer(nil)
-				w := NewMockResponseWriter(buffer)
+				w := webutil.NewMockResponse(buffer)
 				mrb.app.handlePanic(w, req, r)
 				res = mrb.createResponse(buffer, w)
 			}
@@ -311,7 +312,7 @@ func (mrb *MockRequestBuilder) runHandler(handler Handler, req *http.Request, ro
 	}
 
 	buffer := bytes.NewBuffer(nil)
-	w := NewMockResponseWriter(buffer)
+	w := webutil.NewMockResponse(buffer)
 	handler(w, req, route, params)
 	res = mrb.createResponse(buffer, w)
 	return res

@@ -32,6 +32,6 @@ func applyMiddleware(middleware Middleware) (output *Ctx) {
 	middleware(func(ctx *Ctx) Result {
 		output = ctx
 		return NoContent
-	})(NewCtx(NewMockResponseWriter(new(bytes.Buffer)), webutil.NewMockRequest("GET", "/")))
+	})(NewCtx(webutil.NewMockResponse(new(bytes.Buffer)), webutil.NewMockRequest("GET", "/")))
 	return
 }
