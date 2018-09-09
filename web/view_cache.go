@@ -68,15 +68,6 @@ func NewViewCacheFromConfig(cfg *ViewCacheConfig) *ViewCache {
 	}
 }
 
-// NewViewCacheWithTemplates creates a new view cache wrapping the templates.
-func NewViewCacheWithTemplates(templates *template.Template) *ViewCache {
-	return &ViewCache{
-		viewFuncMap: ViewFuncs(),
-		viewCache:   templates,
-		cached:      true,
-	}
-}
-
 // ViewCache is the cached views used in view results.
 type ViewCache struct {
 	viewFuncMap  template.FuncMap
@@ -157,23 +148,18 @@ func (vc *ViewCache) Initialized() bool {
 	return vc.initialized
 }
 
-// SetCached sets if we should cache views once they're compiled, or always read them from disk.
+// WithCached sets if we should cache views once they're compiled, or always read them from disk.
 // Cached == True, use in memory storage for views
 // Cached == False, read the file from disk every time we want to render the view.
-func (vc *ViewCache) SetCached(cached bool) {
-	if vc == nil {
-		return
-	}
+func (vc *ViewCache) WithCached(cached bool) *ViewCache {
 	vc.cached = cached
+	return vc
 }
 
 // Cached indicates if the cache is enabled, or if we skip parsing views each load.
 // Cached == True, use in memory storage for views
 // Cached == False, read the file from disk every time we want to render the view.
 func (vc *ViewCache) Cached() bool {
-	if vc == nil {
-		return false
-	}
 	return vc.cached
 }
 
@@ -233,57 +219,36 @@ func (vc *ViewCache) Parse() (views *template.Template, err error) {
 
 // AddPaths adds paths to the view collection.
 func (vc *ViewCache) AddPaths(paths ...string) {
-	if vc == nil {
-		return
-	}
 	vc.viewPaths = append(vc.viewPaths, paths...)
 }
 
 // AddLiterals adds view literal strings to the view collection.
 func (vc *ViewCache) AddLiterals(views ...string) {
-	if vc == nil {
-		return
-	}
 	vc.viewLiterals = append(vc.viewLiterals, views...)
 }
 
 // SetPaths sets the view paths outright.
 func (vc *ViewCache) SetPaths(paths ...string) {
-	if vc == nil {
-		return
-	}
 	vc.viewPaths = paths
 }
 
 // SetLiterals sets the raw views outright.
 func (vc *ViewCache) SetLiterals(viewLiterals ...string) {
-	if vc == nil {
-		return
-	}
 	vc.viewLiterals = viewLiterals
 }
 
 // Paths returns the view paths.
 func (vc *ViewCache) Paths() []string {
-	if vc == nil {
-		return nil
-	}
 	return vc.viewPaths
 }
 
 // FuncMap returns the global view func map.
 func (vc *ViewCache) FuncMap() template.FuncMap {
-	if vc == nil {
-		return nil
-	}
 	return vc.viewFuncMap
 }
 
 // Templates gets the view cache for the app.
 func (vc *ViewCache) Templates() (*template.Template, error) {
-	if vc == nil {
-		return nil, nil
-	}
 	if vc.cached {
 		return vc.viewCache, nil
 	}
@@ -302,9 +267,6 @@ func (vc *ViewCache) Lookup(name string) (*template.Template, error) {
 
 // SetTemplates sets the view cache for the app.
 func (vc *ViewCache) SetTemplates(viewCache *template.Template) {
-	if vc == nil {
-		return
-	}
 	vc.viewCache = viewCache
 }
 

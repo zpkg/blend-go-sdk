@@ -60,53 +60,10 @@ func Base64URLEncode(raw []byte) string {
 	return base64.URLEncoding.EncodeToString(raw)
 }
 
-// PortFromBindAddr returns a port number as an integer from a bind addr.
-func PortFromBindAddr(bindAddr string) int32 {
-	if len(bindAddr) == 0 {
-		return 0
-	}
-	parts := strings.SplitN(bindAddr, ":", 2)
-	if len(parts) == 0 {
-		return 0
-	}
-	if len(parts) < 2 {
-		return ParseInt32(parts[0])
-	}
-	return ParseInt32(parts[1])
-}
-
 // ParseInt32 parses an int32.
 func ParseInt32(v string) int32 {
 	parsed, _ := strconv.Atoi(v)
 	return int32(parsed)
-}
-
-// NewMockRequest creates a mock request.
-func NewMockRequest(method, path string) *http.Request {
-	return &http.Request{
-		Method:     method,
-		Proto:      "http",
-		ProtoMajor: 1,
-		ProtoMinor: 1,
-		Host:       "localhost",
-		RemoteAddr: "127.0.0.1:8080",
-		Header: http.Header{
-			HeaderUserAgent: []string{"go-web test"},
-		},
-		URL: &url.URL{
-			Scheme:  "http",
-			Host:    "localhost",
-			Path:    path,
-			RawPath: path,
-		},
-	}
-}
-
-// NewMockRequestWithCookie creates a mock request with a cookie attached to it.
-func NewMockRequestWithCookie(method, path, cookieName, cookieValue string) *http.Request {
-	req := NewMockRequest(method, path)
-	req.AddCookie(NewCookie(cookieName, cookieValue))
-	return req
 }
 
 // NewCookie returns a new name + value pair cookie.
