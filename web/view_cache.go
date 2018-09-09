@@ -291,12 +291,12 @@ func (vc *ViewCache) BadRequest(err error) Result {
 
 // InternalError returns a view result.
 func (vc *ViewCache) InternalError(err error) Result {
-	t, err := vc.Lookup(vc.InternalErrorTemplateName())
-	if err != nil {
-		return vc.viewError(err)
+	t, viewErr := vc.Lookup(vc.InternalErrorTemplateName())
+	if viewErr != nil {
+		return vc.viewError(viewErr)
 	}
 	if t == nil {
-		t, _ = template.New("default").Parse(DefaultTemplateInternalError)
+		t, _ = template.New("").Parse(DefaultTemplateInternalError)
 	}
 	return resultWithLoggedError(&ViewResult{
 		ViewName:   vc.InternalErrorTemplateName(),
@@ -314,9 +314,8 @@ func (vc *ViewCache) NotFound() Result {
 		return vc.viewError(viewErr)
 	}
 	if t == nil {
-		t, _ = template.New("default").Parse(DefaultTemplateNotFound)
+		t, _ = template.New("").Parse(DefaultTemplateNotFound)
 	}
-
 	return &ViewResult{
 		ViewName:   vc.NotFoundTemplateName(),
 		StatusCode: http.StatusNotFound,
@@ -350,7 +349,7 @@ func (vc *ViewCache) Status(statusCode int, response ...interface{}) Result {
 		return vc.viewError(viewErr)
 	}
 	if t == nil {
-		t, _ = template.New("default").Parse(DefaultTemplateStatus)
+		t, _ = template.New("").Parse(DefaultTemplateStatus)
 	}
 
 	return &ViewResult{
@@ -385,8 +384,9 @@ func (vc *ViewCache) View(viewName string, viewModel interface{}) Result {
 // ----------------------------------------------------------------------
 
 func (vc *ViewCache) viewError(err error) Result {
-	t, _ := template.New("default").Parse(DefaultTemplateInternalError)
+	t, _ := template.New("").Parse(DefaultTemplateInternalError)
 	return &ViewResult{
+		ViewName:   DefaultTemplateNameInternalError,
 		StatusCode: http.StatusInternalServerError,
 		ViewModel:  err,
 		Template:   t,
