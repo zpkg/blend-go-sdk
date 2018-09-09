@@ -46,19 +46,3 @@ func TestNestMiddleware(t *testing.T) {
 	assert.Equal(1, mw3Called)
 	assert.Equal(0, mw1Called)
 }
-
-func TestPortFromBindAddr(t *testing.T) {
-	assert := assert.New(t)
-
-	testCases := map[string]int32{
-		"":               0,
-		"2":              2,
-		":2":             2,
-		"127.0.0.1:1234": 1234,
-		":8080":          8080,
-	}
-
-	for input, expected := range testCases {
-		assert.Equal(expected, PortFromBindAddr(input))
-	}
-}

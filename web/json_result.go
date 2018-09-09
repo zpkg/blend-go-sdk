@@ -10,5 +10,5 @@ type JSONResult struct {
 
 // Render renders the result
 func (jr *JSONResult) Render(ctx *Ctx) error {
-	return webutil.WriteJSON(ctx.Response(), ctx.Request(), jr.StatusCode, jr.Response)
+	return webutil.WriteJSON(ctx.Response(), jr.StatusCode, jr.Response)
 }
