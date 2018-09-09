@@ -25,7 +25,7 @@ func NewMockRequestBuilder(app *App) *MockRequestBuilder {
 		queryString: url.Values{},
 		formValues:  url.Values{},
 		headers:     http.Header{},
-		state:       State{},
+		state:       &SyncState{},
 	}
 }
 
@@ -172,10 +172,7 @@ func (mrb *MockRequestBuilder) State() State {
 
 // WithStateValue sets the state for a key to an object.
 func (mrb *MockRequestBuilder) WithStateValue(key string, value interface{}) *MockRequestBuilder {
-	if mrb.state == nil {
-		mrb.state = State{}
-	}
-	mrb.state[key] = value
+	mrb.state.Set(key, value)
 	return mrb
 }
 
@@ -184,10 +181,7 @@ func (mrb *MockRequestBuilder) GetStateValue(key string) interface{} {
 	if mrb.state == nil {
 		return nil
 	}
-	if item, hasItem := mrb.state[key]; hasItem {
-		return item
-	}
-	return nil
+	return mrb.state.Get(key)
 }
 
 // Request returns the mock request builder settings as an http.Request.

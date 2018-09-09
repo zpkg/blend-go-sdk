@@ -20,7 +20,7 @@ func NewCtx(w ResponseWriter, r *http.Request) *Ctx {
 		id:       util.String.RandomLetters(12),
 		response: w,
 		request:  r,
-		state:    make(State),
+		state:    &SyncState{},
 	}
 }
 
@@ -221,22 +221,13 @@ func (rc *Ctx) State() State {
 
 // WithStateValue sets the state for a key to an object.
 func (rc *Ctx) WithStateValue(key string, value interface{}) *Ctx {
-	if rc.state == nil {
-		rc.state = State{}
-	}
-	rc.state[key] = value
+	rc.state.Set(key, value)
 	return rc
 }
 
 // StateValue returns an object in the state cache.
 func (rc *Ctx) StateValue(key string) interface{} {
-	if rc.state == nil {
-		return nil
-	}
-	if value, hasValue := rc.state[key]; hasValue {
-		return value
-	}
-	return nil
+	return rc.state.Get(key)
 }
 
 // Param returns a parameter from the request.

@@ -6,14 +6,22 @@ import (
 	"github.com/blend/go-sdk/assert"
 )
 
-func TestStateValue(t *testing.T) {
+func TestSyncState(t *testing.T) {
 	assert := assert.New(t)
 
-	state := State{
-		"foo":  "bar",
-		"buzz": "fuzz",
+	state := &SyncState{
+		Values: Values{
+			"foo":  "bar",
+			"buzz": "fuzz",
+		},
 	}
 
-	assert.Equal("bar", state.Value("foo"))
-	assert.Equal("fuzz", state.Value("buzz"))
+	assert.Len(state.Keys(), 2)
+	assert.Equal("bar", state.Get("foo"))
+	assert.Equal("fuzz", state.Get("buzz"))
+
+	state.Set("bar", "foo")
+	assert.Equal("foo", state.Get("bar"))
+	state.Remove("bar")
+	assert.Nil(state.Get("bar"))
 }

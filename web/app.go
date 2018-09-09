@@ -26,7 +26,7 @@ func New() *App {
 		hsts:                  &HSTSConfig{},
 		auth:                  &AuthManager{},
 		bindAddr:              DefaultBindAddr,
-		state:                 State{},
+		state:                 &SyncState{},
 		statics:               map[string]Fileserver{},
 		readTimeout:           DefaultReadTimeout,
 		writeTimeout:          DefaultWriteTimeout,
@@ -92,7 +92,7 @@ type App struct {
 	idleTimeout         time.Duration
 	shutdownGracePeriod time.Duration
 
-	state         State
+	state         *SyncState
 	recoverPanics bool
 }
 
@@ -163,16 +163,13 @@ func (a *App) DefaultHeaders() map[string]string {
 
 // WithStateValue sets app state and returns a reference to the app for building apps with a fluent api.
 func (a *App) WithStateValue(key string, value interface{}) *App {
-	a.state[key] = value
+	a.state.Set(key, value)
 	return a
 }
 
 // StateValue gets app state element by key.
 func (a *App) StateValue(key string) interface{} {
-	if value, hasValue := a.state[key]; hasValue {
-		return value
-	}
-	return nil
+	return a.state.Get(key)
 }
 
 // State is a bag for common app state.
@@ -922,7 +919,7 @@ func (a *App) createCtx(w ResponseWriter, r *http.Request, route *Route, p Route
 	return NewCtx(w, r).
 		WithRoute(route).
 		WithRouteParams(p).
-		WithState(a.state).
+		WithState(a.state.Copy()).
 		WithTracer(a.tracer).
 		WithViews(a.views).
 		WithAuth(a.auth).
@@ -1000,8 +997,7 @@ func (a *App) addHSTSHeader(w http.ResponseWriter) {
 }
 
 func (a *App) httpRequestEvent(ctx *Ctx) *logger.HTTPRequestEvent {
-	event := logger.NewHTTPRequestEvent(ctx.Request()).
-		WithState(ctx.state)
+	event := logger.NewHTTPRequestEvent(ctx.Request())
 	event.SetEntity(ctx.ID())
 	if ctx.Route() != nil {
 		event = event.WithRoute(ctx.Route().String())
@@ -1013,8 +1009,7 @@ func (a *App) httpResponseEvent(ctx *Ctx) *logger.HTTPResponseEvent {
 	event := logger.NewHTTPResponseEvent(ctx.Request()).
 		WithStatusCode(ctx.Response().StatusCode()).
 		WithElapsed(ctx.Elapsed()).
-		WithContentLength(ctx.Response().ContentLength()).
-		WithState(ctx.state)
+		WithContentLength(ctx.Response().ContentLength())
 	event.SetEntity(ctx.ID())
 
 	if ctx.Route() != nil {

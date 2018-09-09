@@ -6,7 +6,6 @@ import (
 	"net/http"
 	"sort"
 	"strings"
-	"sync"
 	"time"
 
 	"github.com/blend/go-sdk/exception"
@@ -43,14 +42,16 @@ func NewHealthz(app *App) *Healthz {
 	return &Healthz{
 		app:            app,
 		defaultHeaders: map[string]string{},
-		vars: State{
-			VarzRequests:    int64(0),
-			VarzRequests2xx: int64(0),
-			VarzRequests3xx: int64(0),
-			VarzRequests4xx: int64(0),
-			VarzRequests5xx: int64(0),
-			VarzErrors:      int64(0),
-			VarzFatals:      int64(0),
+		vars: &SyncState{
+			Values: map[string]interface{}{
+				VarzRequests:    int64(0),
+				VarzRequests2xx: int64(0),
+				VarzRequests3xx: int64(0),
+				VarzRequests4xx: int64(0),
+				VarzRequests5xx: int64(0),
+				VarzErrors:      int64(0),
+				VarzFatals:      int64(0),
+			},
 		},
 	}
 }
@@ -75,8 +76,7 @@ type Healthz struct {
 	server         *http.Server
 	listener       *net.TCPListener
 
-	varsLock sync.Mutex
-	vars     State
+	vars *SyncState
 
 	recoverPanics bool
 }
@@ -116,12 +116,10 @@ func (hz *Healthz) WithLogger(log *logger.Logger) *Healthz {
 
 // ensureListeners ensures the healthz instance is monitoring the app events.
 func (hz *Healthz) ensureListeners() {
-	hz.varsLock.Lock()
-	defer hz.varsLock.Unlock()
-	if _, ok := hz.vars[VarzStarted]; ok {
+	if started := hz.vars.Get(VarzStarted); started == nil {
 		return
 	}
-	hz.vars[VarzStarted] = time.Now().UTC()
+	hz.vars.Set(VarzStarted, time.Now().UTC())
 	if hz.app.log != nil {
 		hz.app.log.Listen(logger.HTTPResponse, ListenerHealthz, logger.NewHTTPResponseEventListener(hz.httpResponseListener))
 		hz.app.log.Listen(logger.Error, ListenerHealthz, logger.NewErrorEventListener(hz.errorListener))
@@ -202,62 +200,48 @@ func (hz *Healthz) healthzHandler(w ResponseWriter, r *http.Request) {
 // /varz
 // writes out the current stats
 func (hz *Healthz) varzHandler(w ResponseWriter, r *http.Request) {
-	hz.varsLock.Lock()
-	defer hz.varsLock.Unlock()
-
-	keys := make([]string, len(hz.vars))
-
-	var index int
-	for key := range hz.vars {
-		keys[index] = fmt.Sprintf("%v", key)
-		index++
-	}
-
+	keys := hz.vars.Keys()
 	sort.Strings(keys)
 
 	w.WriteHeader(http.StatusOK)
 	w.Header().Set(HeaderContentType, ContentTypeText)
 	for _, key := range keys {
-		fmt.Fprintf(w, "%s: %v\n", key, hz.vars[key])
+		fmt.Fprintf(w, "%s: %v\n", key, hz.vars.Get(key))
 	}
 }
 
 func (hz *Healthz) httpResponseListener(wre *logger.HTTPResponseEvent) {
-	hz.varsLock.Lock()
-	defer hz.varsLock.Unlock()
-
-	hz.incrementVarUnsafe(VarzRequests)
+	hz.incrementVar(VarzRequests)
 	if wre.StatusCode() >= http.StatusInternalServerError {
-		hz.incrementVarUnsafe(VarzRequests5xx)
+		hz.incrementVar(VarzRequests5xx)
 	} else if wre.StatusCode() >= http.StatusBadRequest {
-		hz.incrementVarUnsafe(VarzRequests4xx)
+		hz.incrementVar(VarzRequests4xx)
 	} else if wre.StatusCode() >= http.StatusMultipleChoices {
-		hz.incrementVarUnsafe(VarzRequests3xx)
+		hz.incrementVar(VarzRequests3xx)
 	} else {
-		hz.incrementVarUnsafe(VarzRequests2xx)
+		hz.incrementVar(VarzRequests2xx)
 	}
 }
 
 func (hz *Healthz) errorListener(e *logger.ErrorEvent) {
-	hz.varsLock.Lock()
-	defer hz.varsLock.Unlock()
-
 	switch e.Flag() {
 	case logger.Error:
-		hz.incrementVarUnsafe(VarzErrors)
+		hz.incrementVar(VarzErrors)
 		return
 	case logger.Fatal:
-		hz.incrementVarUnsafe(VarzFatals)
+		hz.incrementVar(VarzFatals)
 		return
 	}
 }
 
-func (hz *Healthz) incrementVarUnsafe(key string) {
-	if value, hasValue := hz.vars[key]; hasValue {
+func (hz *Healthz) incrementVar(key string) {
+	hz.vars.Lock()
+	defer hz.vars.Unlock()
+	if value, hasValue := hz.vars.Values[key]; hasValue {
 		if typed, isTyped := value.(int64); isTyped {
-			hz.vars[key] = typed + 1
+			hz.vars.Values[key] = typed + 1
 		}
 	} else {
-		hz.vars[key] = int64(1)
+		hz.vars.Values[key] = int64(1)
 	}
 }
