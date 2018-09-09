@@ -24,6 +24,10 @@ func TestCtxParamQuery(t *testing.T) {
 	param, err := context.Param("foo")
 	assert.Nil(err)
 	assert.Equal("bar", param)
+
+	param, err = context.QueryValue("foo")
+	assert.Nil(err)
+	assert.Equal("bar", param)
 }
 
 func TestCtxParamHeader(t *testing.T) {
@@ -34,6 +38,10 @@ func TestCtxParamHeader(t *testing.T) {
 	param, err := context.Param("foo")
 	assert.Nil(err)
 	assert.Equal("bar", param)
+
+	param, err = context.HeaderValue("foo")
+	assert.Nil(err)
+	assert.Equal("bar", param)
 }
 
 func TestCtxParamForm(t *testing.T) {
@@ -42,6 +50,10 @@ func TestCtxParamForm(t *testing.T) {
 	context, err := NewMockRequestBuilder(New()).WithFormValue("foo", "bar").CreateCtx(nil)
 	assert.Nil(err)
 	param, err := context.Param("foo")
+	assert.Nil(err)
+	assert.Equal("bar", param)
+
+	param, err = context.FormValue("foo")
 	assert.Nil(err)
 	assert.Equal("bar", param)
 }

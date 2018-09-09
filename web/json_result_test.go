@@ -13,7 +13,7 @@ func TestJSONResultRender(t *testing.T) {
 	assert := assert.New(t)
 
 	buf := new(bytes.Buffer)
-	w := NewMockResponseWriter(buf)
+	w := webutil.NewMockResponse(buf)
 	r := NewCtx(w, webutil.NewMockRequest("GET", "/"))
 
 	jr := &JSONResult{
@@ -32,7 +32,7 @@ func TestJSONResultRenderStatusCode(t *testing.T) {
 	assert := assert.New(t)
 
 	buf := new(bytes.Buffer)
-	w := NewMockResponseWriter(buf)
+	w := webutil.NewMockResponse(buf)
 	r := NewCtx(w, webutil.NewMockRequest("GET", "/"))
 
 	jr := &JSONResult{

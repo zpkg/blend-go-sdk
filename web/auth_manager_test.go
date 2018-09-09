@@ -54,7 +54,7 @@ func TestAuthManagerLogin(t *testing.T) {
 		return removeHandler(ctx, sessionID, state)
 	})
 
-	res := NewMockResponseWriter(new(bytes.Buffer))
+	res := webutil.NewMockResponse(new(bytes.Buffer))
 	r := NewCtx(res, webutil.NewMockRequest("GET", "/"))
 
 	session, err := am.Login("bailey@blend.com", r)
@@ -92,14 +92,14 @@ func TestAuthManagerLogout(t *testing.T) {
 		return removeHandler(ctx, sessionID, state)
 	})
 
-	res := NewMockResponseWriter(new(bytes.Buffer))
+	res := webutil.NewMockResponse(new(bytes.Buffer))
 	r := NewCtx(res, webutil.NewMockRequest("GET", "/"))
 
 	session, err := am.Login("bailey@blend.com", r)
 	assert.Nil(err)
 	assert.NotNil(session)
 
-	res = NewMockResponseWriter(new(bytes.Buffer))
+	res = webutil.NewMockResponse(new(bytes.Buffer))
 	r = NewCtx(res, webutil.NewMockRequestWithCookie("GET", "/", am.CookieName(), session.SessionID))
 
 	assert.Nil(am.Logout(r))
@@ -141,7 +141,7 @@ func TestAuthManagerVerifySessionParsed(t *testing.T) {
 	assert.NotNil(am.FetchHandler())
 	assert.NotNil(am.ValidateHandler())
 
-	r := NewCtx(NewMockResponseWriter(new(bytes.Buffer)), webutil.NewMockRequestWithCookie("GET", "/", am.CookieName(), NewSessionID()))
+	r := NewCtx(webutil.NewMockResponse(new(bytes.Buffer)), webutil.NewMockRequestWithCookie("GET", "/", am.CookieName(), NewSessionID()))
 	session, err := am.VerifySession(r)
 	assert.Nil(err)
 	assert.NotNil(session)
@@ -176,14 +176,14 @@ func TestAuthManagerVerifySessionFetched(t *testing.T) {
 		return validateHandler(ctx, session, state)
 	})
 
-	r := NewCtx(NewMockResponseWriter(new(bytes.Buffer)), webutil.NewMockRequest("GET", "/"))
+	r := NewCtx(webutil.NewMockResponse(new(bytes.Buffer)), webutil.NewMockRequest("GET", "/"))
 	session, err := am.Login("bailey@blend.com", r)
 	assert.Nil(err)
 	assert.NotNil(session)
 	assert.False(calledFetchHandler)
 	assert.False(calledValidateHandler)
 
-	r = NewCtx(NewMockResponseWriter(new(bytes.Buffer)), webutil.NewMockRequestWithCookie("GET", "/", am.CookieName(), session.SessionID))
+	r = NewCtx(webutil.NewMockResponse(new(bytes.Buffer)), webutil.NewMockRequestWithCookie("GET", "/", am.CookieName(), session.SessionID))
 	session, err = am.VerifySession(r)
 	assert.Nil(err)
 	assert.NotNil(session)
@@ -196,7 +196,7 @@ func TestAuthManagerVerifySessionUnset(t *testing.T) {
 
 	am := NewLocalAuthManager()
 
-	r := NewCtx(NewMockResponseWriter(new(bytes.Buffer)), webutil.NewMockRequest("GET", "/"))
+	r := NewCtx(webutil.NewMockResponse(new(bytes.Buffer)), webutil.NewMockRequest("GET", "/"))
 
 	session, err := am.VerifySession(r)
 	assert.Nil(err)
@@ -218,7 +218,7 @@ func TestAuthManagerVerifySessionExpired(t *testing.T) {
 		return nil
 	})
 
-	res := NewMockResponseWriter(new(bytes.Buffer))
+	res := webutil.NewMockResponse(new(bytes.Buffer))
 	r := NewCtx(res, webutil.NewMockRequestWithCookie("GET", "/", am.CookieName(), NewSessionID()))
 	session, err := am.VerifySession(r)
 	assert.Nil(err)
