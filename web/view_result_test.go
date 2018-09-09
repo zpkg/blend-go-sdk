@@ -8,6 +8,7 @@ import (
 	"testing"
 
 	"github.com/blend/go-sdk/assert"
+	"github.com/blend/go-sdk/exception"
 )
 
 type testViewModel struct {
@@ -19,6 +20,8 @@ func TestViewResultRender(t *testing.T) {
 
 	buffer := bytes.NewBuffer([]byte{})
 	rc := NewCtx(NewMockResponseWriter(buffer), nil)
+
+	assert.True(exception.Is((&ViewResult{}).Render(nil), ErrUnsetViewTemplate))
 
 	testView := template.New("testView")
 	testView.Parse("{{.ViewModel.Text}}")

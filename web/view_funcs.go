@@ -7,6 +7,8 @@ import (
 	"html/template"
 	"strings"
 	"time"
+
+	"github.com/blend/go-sdk/uuid"
 )
 
 // ViewFuncs are the standard / built-in view funcs.
@@ -70,6 +72,9 @@ func ViewFuncs() template.FuncMap {
 				return "", err
 			}
 			return buf.String(), nil
+		},
+		"uuid": func() string {
+			return uuid.V4().String()
 		},
 	}
 }
