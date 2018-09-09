@@ -51,7 +51,7 @@ func TestViewCacheCachingDisabled(t *testing.T) {
 
 	vc := NewViewCache()
 	assert.True(vc.Cached())
-	vc.SetCached(false)
+	vc.WithCached(false)
 	vc.AddLiterals(`{{ define "foo" }}bar{{ end }}`)
 	assert.Nil(vc.Initialize())
 

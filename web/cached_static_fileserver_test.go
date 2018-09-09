@@ -8,6 +8,7 @@ import (
 	"testing"
 
 	"github.com/blend/go-sdk/assert"
+	"github.com/blend/go-sdk/webutil"
 )
 
 func TestCachedStaticFileserver(t *testing.T) {
@@ -16,7 +17,7 @@ func TestCachedStaticFileserver(t *testing.T) {
 	cfs := NewCachedStaticFileServer(http.Dir("testdata"))
 	buffer := bytes.NewBuffer(nil)
 	res := NewMockResponseWriter(buffer)
-	req := NewMockRequest("GET", "/test_file.html")
+	req := webutil.NewMockRequest("GET", "/test_file.html")
 	result := cfs.Action(NewCtx(res, req).WithRouteParams(RouteParameters{
 		RouteTokenFilepath: "test_file.html",
 	}))
@@ -39,7 +40,7 @@ func TestCachedStaticFileserverHeaders(t *testing.T) {
 
 	buffer := bytes.NewBuffer(nil)
 	res := NewMockResponseWriter(buffer)
-	req := NewMockRequest("GET", "/test_file.html")
+	req := webutil.NewMockRequest("GET", "/test_file.html")
 	result := cfs.Action(NewCtx(res, req).WithRouteParams(RouteParameters{
 		RouteTokenFilepath: "test_file.html",
 	}))
@@ -60,7 +61,7 @@ func TestCachedStaticFileserverRewriteRule(t *testing.T) {
 
 	buffer := bytes.NewBuffer(nil)
 	res := NewMockResponseWriter(buffer)
-	req := NewMockRequest("GET", "/test_file.123123123.html")
+	req := webutil.NewMockRequest("GET", "/test_file.123123123.html")
 	result := cfs.Action(NewCtx(res, req).WithRouteParams(RouteParameters{
 		RouteTokenFilepath: "test_file.123123123.html",
 	}))
@@ -88,7 +89,7 @@ func TestCachedStaticFileserverMiddleware(t *testing.T) {
 
 	buffer := bytes.NewBuffer(nil)
 	res := NewMockResponseWriter(buffer)
-	req := NewMockRequest("GET", "/test_file.html")
+	req := webutil.NewMockRequest("GET", "/test_file.html")
 	result := cfs.Action(NewCtx(res, req).WithRouteParams(RouteParameters{
 		RouteTokenFilepath: "test_file.html",
 	}))

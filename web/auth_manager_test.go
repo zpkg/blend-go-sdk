@@ -9,6 +9,7 @@ import (
 	"github.com/blend/go-sdk/assert"
 	"github.com/blend/go-sdk/util"
 	"github.com/blend/go-sdk/uuid"
+	"github.com/blend/go-sdk/webutil"
 )
 
 func TestNewJWTAuthManager(t *testing.T) {
@@ -54,7 +55,7 @@ func TestAuthManagerLogin(t *testing.T) {
 	})
 
 	res := NewMockResponseWriter(new(bytes.Buffer))
-	r := NewCtx(res, NewMockRequest("GET", "/"))
+	r := NewCtx(res, webutil.NewMockRequest("GET", "/"))
 
 	session, err := am.Login("bailey@blend.com", r)
 	assert.Nil(err)
@@ -92,14 +93,14 @@ func TestAuthManagerLogout(t *testing.T) {
 	})
 
 	res := NewMockResponseWriter(new(bytes.Buffer))
-	r := NewCtx(res, NewMockRequest("GET", "/"))
+	r := NewCtx(res, webutil.NewMockRequest("GET", "/"))
 
 	session, err := am.Login("bailey@blend.com", r)
 	assert.Nil(err)
 	assert.NotNil(session)
 
 	res = NewMockResponseWriter(new(bytes.Buffer))
-	r = NewCtx(res, NewMockRequestWithCookie("GET", "/", am.CookieName(), session.SessionID))
+	r = NewCtx(res, webutil.NewMockRequestWithCookie("GET", "/", am.CookieName(), session.SessionID))
 
 	assert.Nil(am.Logout(r))
 	assert.True(calledRemoveHandler)
@@ -140,7 +141,7 @@ func TestAuthManagerVerifySessionParsed(t *testing.T) {
 	assert.NotNil(am.FetchHandler())
 	assert.NotNil(am.ValidateHandler())
 
-	r := NewCtx(NewMockResponseWriter(new(bytes.Buffer)), NewMockRequestWithCookie("GET", "/", am.CookieName(), NewSessionID()))
+	r := NewCtx(NewMockResponseWriter(new(bytes.Buffer)), webutil.NewMockRequestWithCookie("GET", "/", am.CookieName(), NewSessionID()))
 	session, err := am.VerifySession(r)
 	assert.Nil(err)
 	assert.NotNil(session)
@@ -175,14 +176,14 @@ func TestAuthManagerVerifySessionFetched(t *testing.T) {
 		return validateHandler(ctx, session, state)
 	})
 
-	r := NewCtx(NewMockResponseWriter(new(bytes.Buffer)), NewMockRequest("GET", "/"))
+	r := NewCtx(NewMockResponseWriter(new(bytes.Buffer)), webutil.NewMockRequest("GET", "/"))
 	session, err := am.Login("bailey@blend.com", r)
 	assert.Nil(err)
 	assert.NotNil(session)
 	assert.False(calledFetchHandler)
 	assert.False(calledValidateHandler)
 
-	r = NewCtx(NewMockResponseWriter(new(bytes.Buffer)), NewMockRequestWithCookie("GET", "/", am.CookieName(), session.SessionID))
+	r = NewCtx(NewMockResponseWriter(new(bytes.Buffer)), webutil.NewMockRequestWithCookie("GET", "/", am.CookieName(), session.SessionID))
 	session, err = am.VerifySession(r)
 	assert.Nil(err)
 	assert.NotNil(session)
@@ -195,7 +196,7 @@ func TestAuthManagerVerifySessionUnset(t *testing.T) {
 
 	am := NewLocalAuthManager()
 
-	r := NewCtx(NewMockResponseWriter(new(bytes.Buffer)), NewMockRequest("GET", "/"))
+	r := NewCtx(NewMockResponseWriter(new(bytes.Buffer)), webutil.NewMockRequest("GET", "/"))
 
 	session, err := am.VerifySession(r)
 	assert.Nil(err)
@@ -218,7 +219,7 @@ func TestAuthManagerVerifySessionExpired(t *testing.T) {
 	})
 
 	res := NewMockResponseWriter(new(bytes.Buffer))
-	r := NewCtx(res, NewMockRequestWithCookie("GET", "/", am.CookieName(), NewSessionID()))
+	r := NewCtx(res, webutil.NewMockRequestWithCookie("GET", "/", am.CookieName(), NewSessionID()))
 	session, err := am.VerifySession(r)
 	assert.Nil(err)
 	assert.Nil(session)

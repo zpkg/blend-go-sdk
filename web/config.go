@@ -8,6 +8,7 @@ import (
 
 	"github.com/blend/go-sdk/env"
 	"github.com/blend/go-sdk/util"
+	"github.com/blend/go-sdk/webutil"
 )
 
 // NewConfigFromEnv returns a new config from the environment.
@@ -88,9 +89,9 @@ func (c Config) GetPort(defaults ...int32) int32 {
 		return defaults[0]
 	}
 	if len(c.BindAddr) > 0 {
-		return PortFromBindAddr(c.BindAddr)
+		return webutil.PortFromBindAddr(c.BindAddr)
 	}
-	return PortFromBindAddr(DefaultBindAddr)
+	return webutil.PortFromBindAddr(DefaultBindAddr)
 }
 
 // GetBaseURL gets a property.
