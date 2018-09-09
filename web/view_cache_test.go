@@ -9,6 +9,37 @@ import (
 	"github.com/blend/go-sdk/exception"
 )
 
+func TestViewCacheProperties(t *testing.T) {
+	assert := assert.New(t)
+
+	vc := NewViewCache()
+	assert.False(vc.Initialized())
+	assert.NotNil(vc.FuncMap())
+
+	assert.Equal(DefaultTemplateNameBadRequest, vc.BadRequestTemplateName())
+	assert.Equal("foo", vc.WithBadRequestTemplateName("foo").BadRequestTemplateName())
+
+	assert.Equal(DefaultTemplateNameInternalError, vc.InternalErrorTemplateName())
+	assert.Equal("bar", vc.WithInternalErrorTemplateName("bar").InternalErrorTemplateName())
+
+	assert.Equal(DefaultTemplateNameNotFound, vc.NotFoundTemplateName())
+	assert.Equal("baz", vc.WithNotFoundTemplateName("baz").NotFoundTemplateName())
+
+	assert.Equal(DefaultTemplateNameNotAuthorized, vc.NotAuthorizedTemplateName())
+	assert.Equal("buzz", vc.WithNotAuthorizedTemplateName("buzz").NotAuthorizedTemplateName())
+
+	assert.Equal(DefaultTemplateNameStatus, vc.StatusTemplateName())
+	assert.Equal("fuzz", vc.WithStatusTemplateName("fuzz").StatusTemplateName())
+
+	assert.Empty(vc.Paths())
+	vc.SetPaths("foo", "bar")
+	assert.NotEmpty(vc.Paths())
+
+	assert.Empty(vc.Literals())
+	vc.SetLiterals("boo", "loo")
+	assert.NotEmpty(vc.Literals())
+}
+
 func TestViewCacheAddRawViews(t *testing.T) {
 	assert := assert.New(t)
 

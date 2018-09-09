@@ -88,81 +88,6 @@ type ViewCache struct {
 	statusTemplateName        string
 }
 
-// WithBadRequestTemplateName sets the bad request template.
-func (vc *ViewCache) WithBadRequestTemplateName(templateName string) *ViewCache {
-	vc.badRequestTemplateName = templateName
-	return vc
-}
-
-// BadRequestTemplateName returns the bad request template.
-func (vc *ViewCache) BadRequestTemplateName() string {
-	return vc.badRequestTemplateName
-}
-
-// WithInternalErrorTemplateName sets the bad request template.
-func (vc *ViewCache) WithInternalErrorTemplateName(templateName string) *ViewCache {
-	vc.internalErrorTemplateName = templateName
-	return vc
-}
-
-// InternalErrorTemplateName returns the bad request template.
-func (vc *ViewCache) InternalErrorTemplateName() string {
-	return vc.internalErrorTemplateName
-}
-
-// WithNotFoundTemplateName sets the not found request template name.
-func (vc *ViewCache) WithNotFoundTemplateName(templateName string) *ViewCache {
-	vc.notFoundTemplateName = templateName
-	return vc
-}
-
-// NotFoundTemplateName returns the not found template name.
-func (vc *ViewCache) NotFoundTemplateName() string {
-	return vc.notFoundTemplateName
-}
-
-// WithNotAuthorizedTemplateName sets the not authorized template name.
-func (vc *ViewCache) WithNotAuthorizedTemplateName(templateName string) *ViewCache {
-	vc.notAuthorizedTemplateName = templateName
-	return vc
-}
-
-// NotAuthorizedTemplateName returns the not authorized template name.
-func (vc *ViewCache) NotAuthorizedTemplateName() string {
-	return vc.notAuthorizedTemplateName
-}
-
-// WithStatusTemplateName sets the status templatename .
-func (vc *ViewCache) WithStatusTemplateName(templateName string) *ViewCache {
-	vc.statusTemplateName = templateName
-	return vc
-}
-
-// StatusTemplateName returns the status template name.
-func (vc *ViewCache) StatusTemplateName() string {
-	return vc.statusTemplateName
-}
-
-// Initialized returns if the viewcache is initialized.
-func (vc *ViewCache) Initialized() bool {
-	return vc.initialized
-}
-
-// WithCached sets if we should cache views once they're compiled, or always read them from disk.
-// Cached == True, use in memory storage for views
-// Cached == False, read the file from disk every time we want to render the view.
-func (vc *ViewCache) WithCached(cached bool) *ViewCache {
-	vc.cached = cached
-	return vc
-}
-
-// Cached indicates if the cache is enabled, or if we skip parsing views each load.
-// Cached == True, use in memory storage for views
-// Cached == False, read the file from disk every time we want to render the view.
-func (vc *ViewCache) Cached() bool {
-	return vc.cached
-}
-
 // Initialize caches templates by path.
 func (vc *ViewCache) Initialize() error {
 	if !vc.initialized {
@@ -178,19 +103,6 @@ func (vc *ViewCache) Initialize() error {
 		}
 	}
 
-	return nil
-}
-
-func (vc *ViewCache) initialize() error {
-	if len(vc.viewPaths) == 0 && len(vc.viewLiterals) == 0 {
-		return nil
-	}
-
-	views, err := vc.Parse()
-	if err != nil {
-		return err
-	}
-	vc.viewCache = views
 	return nil
 }
 
@@ -217,44 +129,6 @@ func (vc *ViewCache) Parse() (views *template.Template, err error) {
 	return
 }
 
-// AddPaths adds paths to the view collection.
-func (vc *ViewCache) AddPaths(paths ...string) {
-	vc.viewPaths = append(vc.viewPaths, paths...)
-}
-
-// AddLiterals adds view literal strings to the view collection.
-func (vc *ViewCache) AddLiterals(views ...string) {
-	vc.viewLiterals = append(vc.viewLiterals, views...)
-}
-
-// SetPaths sets the view paths outright.
-func (vc *ViewCache) SetPaths(paths ...string) {
-	vc.viewPaths = paths
-}
-
-// SetLiterals sets the raw views outright.
-func (vc *ViewCache) SetLiterals(viewLiterals ...string) {
-	vc.viewLiterals = viewLiterals
-}
-
-// Paths returns the view paths.
-func (vc *ViewCache) Paths() []string {
-	return vc.viewPaths
-}
-
-// FuncMap returns the global view func map.
-func (vc *ViewCache) FuncMap() template.FuncMap {
-	return vc.viewFuncMap
-}
-
-// Templates gets the view cache for the app.
-func (vc *ViewCache) Templates() (*template.Template, error) {
-	if vc.cached {
-		return vc.viewCache, nil
-	}
-	return vc.Parse()
-}
-
 // Lookup looks up a view.
 func (vc *ViewCache) Lookup(name string) (*template.Template, error) {
 	views, err := vc.Templates()
@@ -269,6 +143,10 @@ func (vc *ViewCache) Lookup(name string) (*template.Template, error) {
 func (vc *ViewCache) SetTemplates(viewCache *template.Template) {
 	vc.viewCache = viewCache
 }
+
+// ----------------------------------------------------------------------
+// results
+// ----------------------------------------------------------------------
 
 // BadRequest returns a view result.
 func (vc *ViewCache) BadRequest(err error) Result {
@@ -381,6 +259,128 @@ func (vc *ViewCache) View(viewName string, viewModel interface{}) Result {
 }
 
 // ----------------------------------------------------------------------
+// properties
+// ----------------------------------------------------------------------
+
+// AddPaths adds paths to the view collection.
+func (vc *ViewCache) AddPaths(paths ...string) {
+	vc.viewPaths = append(vc.viewPaths, paths...)
+}
+
+// AddLiterals adds view literal strings to the view collection.
+func (vc *ViewCache) AddLiterals(views ...string) {
+	vc.viewLiterals = append(vc.viewLiterals, views...)
+}
+
+// SetPaths sets the view paths outright.
+func (vc *ViewCache) SetPaths(paths ...string) {
+	vc.viewPaths = paths
+}
+
+// SetLiterals sets the raw views outright.
+func (vc *ViewCache) SetLiterals(viewLiterals ...string) {
+	vc.viewLiterals = viewLiterals
+}
+
+// Literals returns the view literals.
+func (vc *ViewCache) Literals() []string {
+	return vc.viewLiterals
+}
+
+// Paths returns the view paths.
+func (vc *ViewCache) Paths() []string {
+	return vc.viewPaths
+}
+
+// FuncMap returns the global view func map.
+func (vc *ViewCache) FuncMap() template.FuncMap {
+	return vc.viewFuncMap
+}
+
+// Templates gets the view cache for the app.
+func (vc *ViewCache) Templates() (*template.Template, error) {
+	if vc.cached {
+		return vc.viewCache, nil
+	}
+	return vc.Parse()
+}
+
+// WithBadRequestTemplateName sets the bad request template.
+func (vc *ViewCache) WithBadRequestTemplateName(templateName string) *ViewCache {
+	vc.badRequestTemplateName = templateName
+	return vc
+}
+
+// BadRequestTemplateName returns the bad request template.
+func (vc *ViewCache) BadRequestTemplateName() string {
+	return vc.badRequestTemplateName
+}
+
+// WithInternalErrorTemplateName sets the bad request template.
+func (vc *ViewCache) WithInternalErrorTemplateName(templateName string) *ViewCache {
+	vc.internalErrorTemplateName = templateName
+	return vc
+}
+
+// InternalErrorTemplateName returns the bad request template.
+func (vc *ViewCache) InternalErrorTemplateName() string {
+	return vc.internalErrorTemplateName
+}
+
+// WithNotFoundTemplateName sets the not found request template name.
+func (vc *ViewCache) WithNotFoundTemplateName(templateName string) *ViewCache {
+	vc.notFoundTemplateName = templateName
+	return vc
+}
+
+// NotFoundTemplateName returns the not found template name.
+func (vc *ViewCache) NotFoundTemplateName() string {
+	return vc.notFoundTemplateName
+}
+
+// WithNotAuthorizedTemplateName sets the not authorized template name.
+func (vc *ViewCache) WithNotAuthorizedTemplateName(templateName string) *ViewCache {
+	vc.notAuthorizedTemplateName = templateName
+	return vc
+}
+
+// NotAuthorizedTemplateName returns the not authorized template name.
+func (vc *ViewCache) NotAuthorizedTemplateName() string {
+	return vc.notAuthorizedTemplateName
+}
+
+// WithStatusTemplateName sets the status templatename .
+func (vc *ViewCache) WithStatusTemplateName(templateName string) *ViewCache {
+	vc.statusTemplateName = templateName
+	return vc
+}
+
+// StatusTemplateName returns the status template name.
+func (vc *ViewCache) StatusTemplateName() string {
+	return vc.statusTemplateName
+}
+
+// Initialized returns if the viewcache is initialized.
+func (vc *ViewCache) Initialized() bool {
+	return vc.initialized
+}
+
+// WithCached sets if we should cache views once they're compiled, or always read them from disk.
+// Cached == True, use in memory storage for views
+// Cached == False, read the file from disk every time we want to render the view.
+func (vc *ViewCache) WithCached(cached bool) *ViewCache {
+	vc.cached = cached
+	return vc
+}
+
+// Cached indicates if the cache is enabled, or if we skip parsing views each load.
+// Cached == True, use in memory storage for views
+// Cached == False, read the file from disk every time we want to render the view.
+func (vc *ViewCache) Cached() bool {
+	return vc.cached
+}
+
+// ----------------------------------------------------------------------
 // helpers
 // ----------------------------------------------------------------------
 
@@ -393,4 +393,17 @@ func (vc *ViewCache) viewError(err error) Result {
 		Template:   t,
 		Views:      vc,
 	}
+}
+
+func (vc *ViewCache) initialize() error {
+	if len(vc.viewPaths) == 0 && len(vc.viewLiterals) == 0 {
+		return nil
+	}
+
+	views, err := vc.Parse()
+	if err != nil {
+		return err
+	}
+	vc.viewCache = views
+	return nil
 }
