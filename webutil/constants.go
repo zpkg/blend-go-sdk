@@ -42,6 +42,10 @@ const (
 	// It specifies the MIME-type of the request or response.
 	HeaderContentType = "Content-Type"
 
+	// HeaderUserAgent is the user agent header.
+	// It typically indicates what is making the request.
+	HeaderUserAgent = "User-Agent"
+
 	// HeaderServer is the "Server" header.
 	// It is an informational header to tell the client what server software was used.
 	HeaderServer = "Server"
