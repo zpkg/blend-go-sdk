@@ -353,6 +353,7 @@ func (vc *ViewCache) Status(statusCode int, response ...interface{}) Result {
 	}
 
 	return &ViewResult{
+		Views:      vc,
 		ViewName:   vc.StatusTemplateName(),
 		StatusCode: statusCode,
 		Template:   t,

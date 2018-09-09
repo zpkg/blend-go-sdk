@@ -132,6 +132,21 @@ func TestViewCacheNotAuthorized(t *testing.T) {
 	assert.Nil(vr.ViewModel)
 }
 
+func TestViewCacheStatus(t *testing.T) {
+	assert := assert.New(t)
+
+	vc := NewViewCache()
+	assert.Nil(vc.Initialize())
+
+	vr, _ := vc.Status(http.StatusFailedDependency).(*ViewResult)
+	assert.NotNil(vr)
+	assert.Equal(vc.StatusTemplateName(), vr.ViewName)
+	assert.Equal(http.StatusFailedDependency, vr.StatusCode)
+	assert.NotNil(vr.Views)
+	assert.NotNil(vr.Template)
+	assert.NotNil(vr.ViewModel)
+}
+
 func TestViewCacheView(t *testing.T) {
 	assert := assert.New(t)
 
