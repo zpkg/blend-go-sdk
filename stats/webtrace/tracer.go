@@ -60,13 +60,9 @@ func (wt webTracer) Start(ctx *web.Ctx) web.TraceFinisher {
 	}
 	// start the span.
 	span, spanCtx := tracing.StartSpanFromContext(ctx.Context(), wt.tracer, tracing.OperationHTTPRequest, startOptions...)
-
 	// inject the new context
 	ctx.WithRequest(ctx.Request().WithContext(spanCtx))
 	ctx.WithContext(spanCtx)
-
-	// also store the span in the request state
-	ctx.WithStateValue(StateKeySpan, span)
 	return &webTraceFinisher{span: span}
 }
 
