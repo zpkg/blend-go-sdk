@@ -20,9 +20,9 @@ func TestViewFuncs(t *testing.T) {
 	assert.Nil(err)
 	assert.Equal("\"foo\"\n", jsonPrettyValue)
 
-	jsonValue, err := ViewFuncs()["jsonPretty"].(func(interface{}) (string, error))("foo")
+	jsonValue, err := ViewFuncs()["json"].(func(interface{}) (string, error))("foo")
 	assert.Nil(err)
-	assert.Equal("\"foo\"\n", jsonValue)
+	assert.Equal("\"foo\"", jsonValue)
 
 	assert.Equal("foo, bar, baz", ViewFuncs()["csv"].(func([]string) string)([]string{"foo", "bar", "baz"}))
 	assert.Equal("55.44%", ViewFuncs()["pct"].(func(float64) string)(0.554433))
