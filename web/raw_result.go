@@ -6,7 +6,7 @@ import "net/http"
 type RawResult struct {
 	StatusCode  int
 	ContentType string
-	Body        []byte
+	Response    []byte
 }
 
 // Render renders the result.
@@ -19,6 +19,6 @@ func (rr *RawResult) Render(ctx *Ctx) error {
 	} else {
 		ctx.Response().WriteHeader(rr.StatusCode)
 	}
-	_, err := ctx.Response().Write(rr.Body)
+	_, err := ctx.Response().Write(rr.Response)
 	return err
 }

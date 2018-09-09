@@ -16,6 +16,9 @@ func TestTimeout(t *testing.T) {
 		WithDefaultMiddleware(WithTimeout(1 * time.Millisecond))
 
 	var didFinish bool
+	app.GET("/panic", func(_ *Ctx) Result {
+		panic("test")
+	})
 	app.GET("/long", func(_ *Ctx) Result {
 		time.Sleep(2 * time.Millisecond)
 		didFinish = true
@@ -32,7 +35,11 @@ func TestTimeout(t *testing.T) {
 	defer app.Shutdown()
 	<-app.NotifyStarted()
 
-	_, err := http.Get("http://" + app.Listener().Addr().String() + "/long")
+	_, err := http.Get("http://" + app.Listener().Addr().String() + "/panic")
+	assert.Nil(err)
+	assert.False(didFinish)
+
+	_, err = http.Get("http://" + app.Listener().Addr().String() + "/long")
 	assert.Nil(err)
 	assert.False(didFinish)
 

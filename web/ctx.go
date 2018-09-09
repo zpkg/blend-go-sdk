@@ -506,7 +506,7 @@ func (rc *Ctx) Raw(body []byte) *RawResult {
 
 // RawWithContentType returns a binary response with a given content type.
 func (rc *Ctx) RawWithContentType(contentType string, body []byte) *RawResult {
-	return &RawResult{ContentType: contentType, Body: body}
+	return &RawResult{ContentType: contentType, Response: body}
 }
 
 // NoContent returns a service response.
