@@ -16,7 +16,7 @@ import (
 func PathRedirectHandler(path string) func(*Ctx) *url.URL {
 	return func(ctx *Ctx) *url.URL {
 		u := *ctx.Request().URL
-		u.Path = fmt.Sprintf("/login")
+		u.Path = path
 		return &u
 	}
 }
@@ -31,16 +31,16 @@ func NestMiddleware(action Action, middleware ...Middleware) Action {
 		if b == nil {
 			return a
 		}
-		return func(action Action) Action {
-			return a(b(action))
+		return func(inner Action) Action {
+			return a(b(inner))
 		}
 	}
 
-	var metaAction Middleware
+	var outer Middleware
 	for _, step := range middleware {
-		metaAction = nest(step, metaAction)
+		outer = nest(step, outer)
 	}
-	return metaAction(action)
+	return outer(action)
 }
 
 // NewSessionID returns a new session id.
