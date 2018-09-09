@@ -3,8 +3,6 @@ package web
 import (
 	"bytes"
 	"context"
-	"fmt"
-	"strings"
 	"testing"
 	"time"
 
@@ -45,6 +43,16 @@ func TestAuthManagerLogin(t *testing.T) {
 		return serializeHandler(ctx, session, state)
 	})
 
+	var calledRemoveHandler bool
+	removeHandler := am.RemoveHandler()
+	am.WithRemoveHandler(func(ctx context.Context, sessionID string, state State) error {
+		calledRemoveHandler = true
+		if removeHandler == nil {
+			return nil
+		}
+		return removeHandler(ctx, sessionID, state)
+	})
+
 	res := NewMockResponseWriter(new(bytes.Buffer))
 	r := NewCtx(res, NewMockRequest("GET", "/"))
 
@@ -58,8 +66,51 @@ func TestAuthManagerLogin(t *testing.T) {
 	assert.True(session.ExpiresUTC.IsZero())
 	assert.True(calledPersistHandler)
 	assert.True(calledSerializeHandler)
-	cookie := res.Header().Get("Set-Cookie")
-	assert.True(strings.HasPrefix(cookie, fmt.Sprintf("%s=%s", am.CookieName(), session.SessionID)))
+	assert.False(calledRemoveHandler)
+
+	cookies := ReadSetCookies(res.Header())
+	assert.NotEmpty(cookies)
+	cookie := cookies[0]
+	assert.Equal(am.CookieName(), cookie.Name)
+	assert.Equal(am.CookiePath(), cookie.Path)
+	assert.Equal(session.SessionID, cookie.Value)
+}
+
+func TestAuthManagerLogout(t *testing.T) {
+	assert := assert.New(t)
+
+	am := NewLocalAuthManager()
+
+	var calledRemoveHandler bool
+	removeHandler := am.RemoveHandler()
+	am.WithRemoveHandler(func(ctx context.Context, sessionID string, state State) error {
+		calledRemoveHandler = true
+		if removeHandler == nil {
+			return nil
+		}
+		return removeHandler(ctx, sessionID, state)
+	})
+
+	res := NewMockResponseWriter(new(bytes.Buffer))
+	r := NewCtx(res, NewMockRequest("GET", "/"))
+
+	session, err := am.Login("bailey@blend.com", r)
+	assert.Nil(err)
+	assert.NotNil(session)
+
+	res = NewMockResponseWriter(new(bytes.Buffer))
+	r = NewCtx(res, NewMockRequestWithCookie("GET", "/", am.CookieName(), session.SessionID))
+
+	assert.Nil(am.Logout(r))
+	assert.True(calledRemoveHandler)
+
+	cookies := ReadSetCookies(res.Header())
+	assert.NotEmpty(cookies)
+	cookie := cookies[0]
+	assert.Equal(am.CookieName(), cookie.Name)
+	assert.Equal(am.CookiePath(), cookie.Path)
+	assert.NotEqual(session.SessionID, cookie.Value, "we should randomize the session cookie on logout")
+	assert.True(time.Now().UTC().After(cookie.Expires))
 }
 
 func TestAuthManagerVerifySessionParsed(t *testing.T) {

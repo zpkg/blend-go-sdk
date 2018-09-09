@@ -159,6 +159,10 @@ func (am *AuthManager) Login(userID string, ctx *Ctx) (session *Session, err err
 // Logout unauthenticates a session.
 func (am *AuthManager) Logout(ctx *Ctx) error {
 	sessionValue := am.readSessionValue(ctx)
+	// validate the sessionValue isn't unset
+	if len(sessionValue) == 0 {
+		return nil
+	}
 
 	// issue the expiration cookies to the response
 	ctx.ExpireCookie(am.CookieName(), am.CookiePath())
