@@ -20,7 +20,7 @@ func TestTimeout(t *testing.T) {
 		panic("test")
 	})
 	app.GET("/long", func(_ *Ctx) Result {
-		time.Sleep(2 * time.Millisecond)
+		time.Sleep(4 * time.Millisecond)
 		didFinish = true
 		return NoContent
 	})

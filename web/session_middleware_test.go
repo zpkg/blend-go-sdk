@@ -94,3 +94,34 @@ func TestSessionRequiredCustomParamName(t *testing.T) {
 	assert.Equal(http.StatusForbidden, meta.StatusCode)
 	assert.True(sessionWasSet)
 }
+
+func TestSessionMiddleware(t *testing.T) {
+	assert := assert.New(t)
+
+	sessionID := util.String.MustSecureRandom(64)
+
+	var sessionWasSet bool
+	app := New().WithAuth(NewLocalAuthManager())
+	app.Auth().PersistHandler()(context.TODO(), &Session{SessionID: sessionID, UserID: "bailey"}, nil)
+
+	var calledCustom bool
+	app.GET("/", func(r *Ctx) Result {
+		sessionWasSet = r.Session() != nil
+		return r.Text().Result("COOL")
+	}, SessionMiddleware(func(_ *Ctx) Result {
+		calledCustom = true
+		return NoContent
+	}))
+
+	unsetMeta, err := app.Mock().WithPathf("/").ExecuteWithMeta()
+	assert.Nil(err)
+	assert.Equal(http.StatusNoContent, unsetMeta.StatusCode)
+	assert.False(sessionWasSet)
+
+	meta, err := app.Mock().WithPathf("/").WithCookieValue(app.Auth().CookieName(), sessionID).ExecuteWithMeta()
+	assert.Nil(err)
+	assert.Equal(http.StatusOK, meta.StatusCode)
+	assert.True(sessionWasSet)
+
+	assert.True(calledCustom)
+}
