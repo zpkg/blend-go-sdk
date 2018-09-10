@@ -442,7 +442,11 @@ func (rc *Ctx) ExtendCookieByDuration(name string, path string, duration time.Du
 	}
 	c.Path = path
 	c.Domain = rc.getCookieDomain()
-	c.Expires = c.Expires.Add(duration)
+	if c.Expires.IsZero() {
+		c.Expires = time.Now().UTC().Add(duration)
+	} else {
+		c.Expires = c.Expires.Add(duration)
+	}
 	rc.WriteCookie(c)
 }
 
@@ -454,7 +458,11 @@ func (rc *Ctx) ExtendCookie(name string, path string, years, months, days int) {
 	}
 	c.Path = path
 	c.Domain = rc.getCookieDomain()
-	c.Expires.AddDate(years, months, days)
+	if c.Expires.IsZero() {
+		c.Expires = time.Now().UTC().AddDate(years, months, days)
+	} else {
+		c.Expires = c.Expires.AddDate(years, months, days)
+	}
 	rc.WriteCookie(c)
 }
 
@@ -501,8 +509,8 @@ func (rc *Ctx) RawWithContentType(contentType string, body []byte) *RawResult {
 }
 
 // NoContent returns a service response.
-func (rc *Ctx) NoContent() *NoContentResult {
-	return &NoContentResult{}
+func (rc *Ctx) NoContent() NoContentResult {
+	return NoContent
 }
 
 // Static returns a static result.

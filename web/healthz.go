@@ -114,17 +114,15 @@ func (hz *Healthz) WithLogger(log *logger.Logger) *Healthz {
 	return hz
 }
 
-// ensureListeners ensures the healthz instance is monitoring the app events.
-func (hz *Healthz) ensureListeners() {
-	if started := hz.vars.Get(VarzStarted); started == nil {
-		return
-	}
-	hz.vars.Set(VarzStarted, time.Now().UTC())
-	if hz.app.log != nil {
-		hz.app.log.Listen(logger.HTTPResponse, ListenerHealthz, logger.NewHTTPResponseEventListener(hz.httpResponseListener))
-		hz.app.log.Listen(logger.Error, ListenerHealthz, logger.NewErrorEventListener(hz.errorListener))
-		hz.app.log.Listen(logger.Fatal, ListenerHealthz, logger.NewErrorEventListener(hz.errorListener))
-	}
+// WithDefaultHeader adds a default header.
+func (hz *Healthz) WithDefaultHeader(key, value string) *Healthz {
+	hz.defaultHeaders[key] = value
+	return hz
+}
+
+// DefaultHeaders returns the default headers.
+func (hz *Healthz) DefaultHeaders() map[string]string {
+	return hz.defaultHeaders
 }
 
 // ServeHTTP makes the router implement the http.Handler interface.
@@ -169,6 +167,19 @@ func (hz *Healthz) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 
 	if err := res.Close(); err != nil && err != http.ErrBodyNotAllowed && hz.log != nil {
 		hz.log.Error(err)
+	}
+}
+
+// ensureListeners ensures the healthz instance is monitoring the app events.
+func (hz *Healthz) ensureListeners() {
+	if _, ok := hz.vars.Get(VarzStarted).(time.Time); ok {
+		return
+	}
+	hz.vars.Set(VarzStarted, time.Now().UTC())
+	if hz.app.log != nil {
+		hz.app.log.Listen(logger.HTTPResponse, ListenerHealthz, logger.NewHTTPResponseEventListener(hz.httpResponseListener))
+		hz.app.log.Listen(logger.Error, ListenerHealthz, logger.NewErrorEventListener(hz.errorListener))
+		hz.app.log.Listen(logger.Fatal, ListenerHealthz, logger.NewErrorEventListener(hz.errorListener))
 	}
 }
 
