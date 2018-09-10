@@ -81,6 +81,7 @@ type Healthz struct {
 	vars *SyncState
 
 	gracePeriodSeconds int
+	stoppingProbes     chan struct{}
 	recoverPanics      bool
 }
 
@@ -93,6 +94,17 @@ func (hz *Healthz) WithBindAddr(bindAddr string) *Healthz {
 // BindAddr returns the bind address.
 func (hz *Healthz) BindAddr() string {
 	return hz.bindAddr
+}
+
+// WithGracePeriodSeconds sets the grace period seconds
+func (hz *Healthz) WithGracePeriodSeconds(seconds int) *Healthz {
+	hz.gracePeriodSeconds = seconds
+	return hz
+}
+
+// GracePeriodSeconds returns the grace period in seconds
+func (hz *Healthz) GracePeriodSeconds() int {
+	return hz.gracePeriodSeconds
 }
 
 // Hosted returns the underlying app.
@@ -141,36 +153,14 @@ func (hz *Healthz) DefaultHeaders() map[string]string {
 
 // Start implements shutdowner.
 func (hz *Healthz) Start() error {
-	hz.self = New().WithHandler(hz).WithConfig(hz.hosted.Config()).WithBindAddr(hz.bindAddr).
-		WithLogger(logger.All())
+	hz.self = New().
+		WithHandler(hz).
+		WithConfig(hz.hosted.Config()).
+		WithBindAddr(hz.bindAddr).
+		WithLogger(hz.log)
 
-	panicChan := make(chan interface{}, 1)
-	errChan := make(chan error, 1)
-
-	go func() {
-		defer func() {
-			if p := recover(); p != nil {
-				panicChan <- p
-			}
-		}()
-		errChan <- hz.hosted.Start()
-	}()
-
-	go func() {
-		defer func() {
-			if p := recover(); p != nil {
-				panicChan <- p
-			}
-		}()
-		errChan <- hz.self.Start()
-	}()
-
-	select {
-	case p := <-panicChan:
-		panic(p)
-	case err := <-errChan:
-		return err
-	}
+	hz.stoppingProbes = make(chan struct{}, 1)
+	return hz.runToError(hz.self.Start, hz.hosted.Start)
 }
 
 // Shutdown implements shutdowner.
@@ -178,11 +168,41 @@ func (hz *Healthz) Shutdown() error {
 	context, cancel := context.WithTimeout(context.Background(), time.Duration(hz.gracePeriodSeconds)*time.Second)
 	defer cancel()
 
+	hz.self.Latch().Stopping() // start stopping the server to fail probes
+
 	select {
 	case <-hz.hosted.Latch().NotifyStopped():
 		return hz.self.Shutdown()
 	case <-context.Done():
-		return hz.self.Shutdown()
+		return hz.shutdownServers()
+	case <-hz.stoppingProbes:
+		return hz.shutdownServers()
+	}
+}
+
+func (hz *Healthz) shutdownServers() error {
+	return hz.runToError(hz.hosted.Shutdown, hz.self.Shutdown)
+}
+
+func (hz *Healthz) runToError(fns ...func() error) error {
+	panicChan := make(chan interface{}, 1)
+	errChan := make(chan error, 1)
+	for _, fn := range fns {
+		go func(fn func() error) {
+			defer func() {
+				if p := recover(); p != nil {
+					panicChan <- p
+				}
+			}()
+			errChan <- fn()
+		}(fn)
+	}
+
+	select {
+	case p := <-panicChan:
+		panic(p)
+	case err := <-errChan:
+		return err
 	}
 }
 
@@ -256,7 +276,7 @@ func (hz *Healthz) recover(w http.ResponseWriter, req *http.Request) {
 }
 
 func (hz *Healthz) healthzHandler(w ResponseWriter, r *http.Request) {
-	if hz.hosted.Latch().IsRunning() {
+	if !hz.self.Latch().IsStopping() && hz.hosted.Latch().IsRunning() {
 		w.WriteHeader(http.StatusOK)
 		w.Header().Set(HeaderContentType, ContentTypeText)
 		fmt.Fprintf(w, "OK!\n")
@@ -266,6 +286,11 @@ func (hz *Healthz) healthzHandler(w ResponseWriter, r *http.Request) {
 	w.WriteHeader(http.StatusInternalServerError)
 	w.Header().Set(HeaderContentType, ContentTypeText)
 	fmt.Fprintf(w, "Failure!\n")
+
+	if hz.self.Latch().IsStopping() {
+		close(hz.stoppingProbes)
+	}
+
 	return
 }
 
