@@ -149,9 +149,13 @@ func (hz *Healthz) Start() error {
 
 // Shutdown implements shutdowner.
 func (hz *Healthz) Shutdown() error {
-	context, cancel := context.WithTimeout(context.Background(), time.Duration(hz.gracePeriodSeconds)*time.Second)
+	gracePeriod := time.Duration(hz.gracePeriodSeconds) * time.Second
+	context, cancel := context.WithTimeout(context.Background(), gracePeriod)
 	defer cancel()
 
+	if hz.log != nil {
+		hz.log.Infof("healthz is shutting down with (%s) grace period", gracePeriod)
+	}
 	// set the next call to `/healtz` to
 	// finish the shutdown
 	hz.latch.Stopping()
@@ -162,6 +166,9 @@ func (hz *Healthz) Shutdown() error {
 		return hz.self.Shutdown()
 	// if the shutdown grace period expires
 	case <-context.Done():
+		if hz.log != nil {
+			hz.log.Warningf("healthz shutdown grace period has expired")
+		}
 		return hz.shutdownServers()
 	// if we've received a final /healthz request
 	case <-hz.latch.NotifyStopped():
@@ -227,20 +234,22 @@ func (hz *Healthz) recover(w http.ResponseWriter, req *http.Request) {
 }
 
 func (hz *Healthz) healthzHandler(w ResponseWriter, r *http.Request) {
-	if !hz.self.Latch().IsStopping() && hz.hosted.Latch().IsRunning() {
+	if hz.latch.IsStopping() {
+		w.WriteHeader(http.StatusInternalServerError)
+		w.Header().Set(HeaderContentType, ContentTypeText)
+		fmt.Fprintf(w, "Shutting down.\n")
+		if hz.log != nil {
+			hz.log.Debugf("healthz received probe while in process of shutdown")
+		}
+		hz.latch.Stopped()
+	} else if hz.hosted.Latch().IsRunning() {
 		w.WriteHeader(http.StatusOK)
 		w.Header().Set(HeaderContentType, ContentTypeText)
 		fmt.Fprintf(w, "OK!\n")
-		return
+	} else {
+		w.WriteHeader(http.StatusInternalServerError)
+		w.Header().Set(HeaderContentType, ContentTypeText)
+		fmt.Fprintf(w, "Failure!\n")
 	}
-
-	w.WriteHeader(http.StatusInternalServerError)
-	w.Header().Set(HeaderContentType, ContentTypeText)
-	fmt.Fprintf(w, "Failure!\n")
-
-	if hz.latch.IsStopping() {
-		hz.latch.Stopped()
-	}
-
 	return
 }
