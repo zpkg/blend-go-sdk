@@ -92,10 +92,6 @@ type App struct {
 	idleTimeout         time.Duration
 	shutdownGracePeriod time.Duration
 
-	// child is an app that should be shutdown before this one
-	child         *App
-	preShutdownCB func(app *App) error
-
 	state         *SyncState
 	recoverPanics bool
 }
@@ -318,23 +314,6 @@ func (a *App) TLSConfig() *tls.Config {
 	return a.tls
 }
 
-// WithChildApp sets the app as the child to this app
-func (a *App) WithChildApp(child *App) *App {
-	a.child = child
-	return a
-}
-
-// ChildApp returns the child of this app
-func (a *App) ChildApp() *App {
-	return a.child
-}
-
-// WithPreShutdownCallBack sets the callback function for the app to run before shutdown
-func (a *App) WithPreShutdownCallBack(fn func(*App) error) *App {
-	a.preShutdownCB = fn
-	return a
-}
-
 // SetTLSClientCertPool set the client cert pool from a given set of pems.
 func (a *App) SetTLSClientCertPool(certs ...[]byte) error {
 	if a.tls == nil {
@@ -529,16 +508,6 @@ func (a *App) Start() (err error) {
 	var shutdownErr error
 	a.latch.Started()
 
-	// start the child app
-	if a.child != nil {
-		go func() {
-			err = a.child.Start()
-			if err != nil {
-				return
-			}
-		}()
-	}
-
 	if a.server.TLSConfig != nil {
 		shutdownErr = a.server.ServeTLS(keepAliveListener, "", "")
 	} else {
@@ -556,18 +525,6 @@ func (a *App) Start() (err error) {
 func (a *App) Shutdown() error {
 	if !a.Latch().IsRunning() {
 		return nil
-	}
-
-	if a.preShutdownCB != nil {
-		if err := a.preShutdownCB(a); err != nil {
-			return err
-		}
-	}
-
-	if a.child != nil {
-		if err := a.child.Shutdown(); err != nil {
-			return err
-		}
 	}
 
 	ctx, cancel := context.WithTimeout(context.Background(), a.shutdownGracePeriod)
