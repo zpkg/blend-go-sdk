@@ -7,7 +7,7 @@ import (
 )
 
 func main() {
-	log := logger.All()
+	log := logger.All().WithHeading("app")
 	app := web.NewFromEnv().WithLogger(log)
 
 	app.GET("/", func(r *web.Ctx) web.Result {
