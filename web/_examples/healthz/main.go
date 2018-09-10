@@ -13,10 +13,6 @@ func main() {
 	app.GET("/", func(r *web.Ctx) web.Result {
 		return r.Text().Result("ok!")
 	})
-	app.GET("/shutdown", func(r *web.Ctx) web.Result {
-		app.Shutdown()
-		return nil
-	})
 
 	// create a healthz and host our app within it.
 	hz := web.NewHealthz(app).
