@@ -6,6 +6,7 @@ import (
 	"net/http"
 	"sort"
 	"strings"
+	"sync"
 	"time"
 
 	"github.com/blend/go-sdk/exception"
@@ -42,6 +43,7 @@ func NewHealthz(app *App) *Healthz {
 	return &Healthz{
 		app:            app,
 		defaultHeaders: map[string]string{},
+		ready:          true,
 		vars: &SyncState{
 			Values: map[string]interface{}{
 				VarzRequests:    int64(0),
@@ -77,6 +79,9 @@ type Healthz struct {
 	listener       *net.TCPListener
 
 	vars *SyncState
+
+	ready     bool
+	readyLock sync.Mutex
 
 	recoverPanics bool
 }
@@ -123,6 +128,20 @@ func (hz *Healthz) WithDefaultHeader(key, value string) *Healthz {
 // DefaultHeaders returns the default headers.
 func (hz *Healthz) DefaultHeaders() map[string]string {
 	return hz.defaultHeaders
+}
+
+// Ready returns if healthz server is available ignoring the underlying server
+func (hz *Healthz) Ready() bool {
+	hz.readyLock.Lock()
+	defer hz.readyLock.Unlock()
+	return hz.ready
+}
+
+// SetReady sets whether the healthz server is available or not ignoring the underlying server
+func (hz *Healthz) SetReady(ready bool) {
+	hz.readyLock.Lock()
+	defer hz.readyLock.Unlock()
+	hz.ready = ready
 }
 
 // ServeHTTP makes the router implement the http.Handler interface.
@@ -195,7 +214,7 @@ func (hz *Healthz) recover(w http.ResponseWriter, req *http.Request) {
 }
 
 func (hz *Healthz) healthzHandler(w ResponseWriter, r *http.Request) {
-	if hz.app.Latch().IsRunning() {
+	if hz.Ready() && hz.app.Latch().IsRunning() {
 		w.WriteHeader(http.StatusOK)
 		w.Header().Set(HeaderContentType, ContentTypeText)
 		fmt.Fprintf(w, "OK!\n")
