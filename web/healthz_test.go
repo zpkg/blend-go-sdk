@@ -15,7 +15,7 @@ func TestHealthz(t *testing.T) {
 	appLog := logger.New().WithFlags(logger.AllFlags())
 	defer appLog.Close()
 
-	app := New().WithBindAddr("127.0.0.1:0").WithLogger(appLog)
+	app := New().WithBindAddr("127.0.0.1:0").WithLogger(appLog).WithConfig(NewConfigFromEnv())
 	defer app.Shutdown()
 
 	appStarted := make(chan struct{})
@@ -29,36 +29,34 @@ func TestHealthz(t *testing.T) {
 	hz := NewHealthz(app).WithLogger(hzLog)
 	hz.WithDefaultHeader("key", "secure")
 	assert.NotEmpty(hz.DefaultHeaders())
-	hzApp := New().WithBindAddr("127.0.0.1:0").WithHandler(hz)
 
 	assert.NotNil(hz.Hosted())
 	assert.False(app.Latch().IsRunning())
 
-	go app.Start()
-	go hzApp.Start()
+	go hz.Start()
 	<-app.NotifyStarted()
-	<-hzApp.NotifyStarted()
 
 	assert.True(app.Latch().IsRunning())
 	assert.True(hz.Hosted().Latch().IsRunning())
-	assert.NotNil(hzApp.Listener())
+	assert.NotNil(hz.self)
+	assert.NotNil(hz.self.Listener())
 
-	healthzRes, err := http.Get("http://" + hzApp.Listener().Addr().String() + "/healthz")
+	healthzRes, err := http.Get("http://" + hz.self.Listener().Addr().String() + "/healthz")
 	assert.Nil(err)
 	assert.Equal(http.StatusOK, healthzRes.StatusCode)
 	assert.Equal("secure", healthzRes.Header.Get("key"))
 
 	app.Shutdown()
 
-	healthzRes, err = http.Get("http://" + hzApp.Listener().Addr().String() + "/healthz")
+	healthzRes, err = http.Get("http://" + hz.self.Listener().Addr().String() + "/healthz")
 	assert.Nil(err)
 	assert.Equal(http.StatusInternalServerError, healthzRes.StatusCode)
 
-	varzRes, err := http.Get("http://" + hzApp.Listener().Addr().String() + "/varz")
+	varzRes, err := http.Get("http://" + hz.self.Listener().Addr().String() + "/varz")
 	assert.Nil(err)
 	assert.Equal(http.StatusOK, varzRes.StatusCode)
 
-	notfoundRes, err := http.Get("http://" + hzApp.Listener().Addr().String() + "/adfasdfa")
+	notfoundRes, err := http.Get("http://" + hz.self.Listener().Addr().String() + "/adfasdfa")
 	assert.Nil(err)
 	assert.Equal(http.StatusNotFound, notfoundRes.StatusCode)
 }
