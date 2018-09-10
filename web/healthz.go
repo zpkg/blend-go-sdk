@@ -9,6 +9,8 @@ import (
 	"strings"
 	"time"
 
+	"github.com/blend/go-sdk/async"
+
 	"github.com/blend/go-sdk/exception"
 	"github.com/blend/go-sdk/logger"
 )
@@ -42,6 +44,7 @@ const (
 func NewHealthz(hosted *App) *Healthz {
 	return &Healthz{
 		hosted:         hosted,
+		latch:          &async.Latch{},
 		defaultHeaders: map[string]string{},
 		vars: &SyncState{
 			Values: map[string]interface{}{
@@ -73,6 +76,8 @@ type Healthz struct {
 	startedUTC time.Time
 	bindAddr   string
 	log        *logger.Logger
+
+	latch *async.Latch
 
 	defaultHeaders map[string]string
 	server         *http.Server
@@ -153,13 +158,13 @@ func (hz *Healthz) DefaultHeaders() map[string]string {
 
 // Start implements shutdowner.
 func (hz *Healthz) Start() error {
+	hz.latch.Starting()
 	hz.self = New().
 		WithHandler(hz).
 		WithConfig(hz.hosted.Config()).
 		WithBindAddr(hz.bindAddr).
 		WithLogger(hz.log)
-
-	hz.stoppingProbes = make(chan struct{}, 1)
+	hz.latch.Started()
 	return hz.runToError(hz.self.Start, hz.hosted.Start)
 }
 
@@ -168,14 +173,19 @@ func (hz *Healthz) Shutdown() error {
 	context, cancel := context.WithTimeout(context.Background(), time.Duration(hz.gracePeriodSeconds)*time.Second)
 	defer cancel()
 
-	hz.self.Latch().Stopping() // start stopping the server to fail probes
+	// set the next call to `/healtz` to
+	// finish the shutdown
+	hz.latch.Stopping()
 
 	select {
+	// if the hosted app crashes
 	case <-hz.hosted.Latch().NotifyStopped():
 		return hz.self.Shutdown()
+	// if the shutdown grace period expires
 	case <-context.Done():
 		return hz.shutdownServers()
-	case <-hz.stoppingProbes:
+	// if we've received a final /healthz request
+	case <-hz.latch.NotifyStopped():
 		return hz.shutdownServers()
 	}
 }
@@ -213,12 +223,12 @@ func (hz *Healthz) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	}
 	hz.ensureListeners()
 
+	start := time.Now()
+	route := strings.ToLower(r.URL.Path)
+
 	res := NewRawResponseWriter(w)
 	res.Header().Set(HeaderContentEncoding, ContentEncodingIdentity)
 
-	route := strings.ToLower(r.URL.Path)
-
-	start := time.Now()
 	if hz.log != nil {
 		hz.log.Trigger(logger.NewHTTPRequestEvent(r).WithRoute(route))
 
@@ -287,8 +297,8 @@ func (hz *Healthz) healthzHandler(w ResponseWriter, r *http.Request) {
 	w.Header().Set(HeaderContentType, ContentTypeText)
 	fmt.Fprintf(w, "Failure!\n")
 
-	if hz.self.Latch().IsStopping() {
-		close(hz.stoppingProbes)
+	if hz.latch.IsStopping() {
+		hz.latch.Stopped()
 	}
 
 	return
