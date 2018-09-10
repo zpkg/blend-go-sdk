@@ -102,6 +102,20 @@ func TestCtxPostBodyAsJSON(t *testing.T) {
 	assert.NotNil(err)
 }
 
+type postXMLTest string
+
+func TestCtxPostBodyAsXML(t *testing.T) {
+	assert := assert.New(t)
+
+	context, err := NewMockRequestBuilder(New()).WithPostBody([]byte(`<postXMLTest>test payload</postXMLTest>`)).CreateCtx(nil)
+	assert.Nil(err)
+
+	var contents postXMLTest
+	err = context.PostBodyAsXML(&contents)
+	assert.Nil(err)
+	assert.Equal("test payload", string(contents))
+}
+
 func TestCtxPostBody(t *testing.T) {
 	assert := assert.New(t)
 
@@ -182,6 +196,34 @@ func TestCtxWriteNewCookie(t *testing.T) {
 
 	context.WriteNewCookie("foo", "bar", time.Time{}, "/foo/bar", true)
 	assert.Equal("foo=bar; Path=/foo/bar; HttpOnly; Secure", context.Response().Header().Get("Set-Cookie"))
+}
+
+func TestCtxExtendCookie(t *testing.T) {
+	assert := assert.New(t)
+
+	ctx, err := NewMockRequestBuilder(New()).WithCookieValue("foo", "bar").CreateCtx(nil)
+	assert.Nil(err)
+
+	ctx.ExtendCookie("foo", "/", 0, 0, 1)
+
+	cookies := ReadSetCookies(ctx.Response().Header())
+	assert.NotEmpty(cookies)
+	cookie := cookies[0]
+	assert.False(cookie.Expires.IsZero())
+}
+
+func TestCtxExtendCookieByDuration(t *testing.T) {
+	assert := assert.New(t)
+
+	ctx, err := NewMockRequestBuilder(New()).WithCookieValue("foo", "bar").CreateCtx(nil)
+	assert.Nil(err)
+
+	ctx.ExtendCookieByDuration("foo", "/", time.Hour)
+
+	cookies := ReadSetCookies(ctx.Response().Header())
+	assert.NotEmpty(cookies)
+	cookie := cookies[0]
+	assert.False(cookie.Expires.IsZero())
 }
 
 func TestCtxRedirect(t *testing.T) {
