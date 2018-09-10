@@ -1,12 +1,12 @@
 package web
 
 import (
+	"context"
 	"fmt"
 	"net"
 	"net/http"
 	"sort"
 	"strings"
-	"sync"
 	"time"
 
 	"github.com/blend/go-sdk/exception"
@@ -39,11 +39,10 @@ const (
 )
 
 // NewHealthz returns a new healthz.
-func NewHealthz(app *App) *Healthz {
+func NewHealthz(hosted *App) *Healthz {
 	return &Healthz{
-		app:            app,
+		hosted:         hosted,
 		defaultHeaders: map[string]string{},
-		ready:          true,
 		vars: &SyncState{
 			Values: map[string]interface{}{
 				VarzRequests:    int64(0),
@@ -69,7 +68,8 @@ It typically implements the following routes:
 
 */
 type Healthz struct {
-	app        *App
+	self       *App
+	hosted     *App
 	startedUTC time.Time
 	bindAddr   string
 	log        *logger.Logger
@@ -80,15 +80,24 @@ type Healthz struct {
 
 	vars *SyncState
 
-	ready     bool
-	readyLock sync.Mutex
-
-	recoverPanics bool
+	gracePeriodSeconds int
+	recoverPanics      bool
 }
 
-// App returns the underlying app.
-func (hz *Healthz) App() *App {
-	return hz.app
+// WithBindAddr sets the bind address.
+func (hz *Healthz) WithBindAddr(bindAddr string) *Healthz {
+	hz.bindAddr = bindAddr
+	return hz
+}
+
+// BindAddr returns the bind address.
+func (hz *Healthz) BindAddr() string {
+	return hz.bindAddr
+}
+
+// Hosted returns the underlying app.
+func (hz *Healthz) Hosted() *App {
+	return hz.hosted
 }
 
 // Vars returns the underlying vars collection.
@@ -130,18 +139,51 @@ func (hz *Healthz) DefaultHeaders() map[string]string {
 	return hz.defaultHeaders
 }
 
-// Ready returns if healthz server is available ignoring the underlying server
-func (hz *Healthz) Ready() bool {
-	hz.readyLock.Lock()
-	defer hz.readyLock.Unlock()
-	return hz.ready
+// Start implements shutdowner.
+func (hz *Healthz) Start() error {
+	hz.self = New().WithHandler(hz).WithConfig(hz.hosted.Config()).WithBindAddr(hz.bindAddr).
+		WithLogger(logger.All())
+
+	panicChan := make(chan interface{}, 1)
+	errChan := make(chan error, 1)
+
+	go func() {
+		defer func() {
+			if p := recover(); p != nil {
+				panicChan <- p
+			}
+		}()
+		errChan <- hz.hosted.Start()
+	}()
+
+	go func() {
+		defer func() {
+			if p := recover(); p != nil {
+				panicChan <- p
+			}
+		}()
+		errChan <- hz.self.Start()
+	}()
+
+	select {
+	case p := <-panicChan:
+		panic(p)
+	case err := <-errChan:
+		return err
+	}
 }
 
-// SetReady sets whether the healthz server is available or not ignoring the underlying server
-func (hz *Healthz) SetReady(ready bool) {
-	hz.readyLock.Lock()
-	defer hz.readyLock.Unlock()
-	hz.ready = ready
+// Shutdown implements shutdowner.
+func (hz *Healthz) Shutdown() error {
+	context, cancel := context.WithTimeout(context.Background(), time.Duration(hz.gracePeriodSeconds)*time.Second)
+	defer cancel()
+
+	select {
+	case <-hz.hosted.Latch().NotifyStopped():
+		return hz.self.Shutdown()
+	case <-context.Done():
+		return hz.self.Shutdown()
+	}
 }
 
 // ServeHTTP makes the router implement the http.Handler interface.
@@ -195,10 +237,10 @@ func (hz *Healthz) ensureListeners() {
 		return
 	}
 	hz.vars.Set(VarzStarted, time.Now().UTC())
-	if hz.app.log != nil {
-		hz.app.log.Listen(logger.HTTPResponse, ListenerHealthz, logger.NewHTTPResponseEventListener(hz.httpResponseListener))
-		hz.app.log.Listen(logger.Error, ListenerHealthz, logger.NewErrorEventListener(hz.errorListener))
-		hz.app.log.Listen(logger.Fatal, ListenerHealthz, logger.NewErrorEventListener(hz.errorListener))
+	if hz.hosted.log != nil {
+		hz.hosted.log.Listen(logger.HTTPResponse, ListenerHealthz, logger.NewHTTPResponseEventListener(hz.httpResponseListener))
+		hz.hosted.log.Listen(logger.Error, ListenerHealthz, logger.NewErrorEventListener(hz.errorListener))
+		hz.hosted.log.Listen(logger.Fatal, ListenerHealthz, logger.NewErrorEventListener(hz.errorListener))
 	}
 }
 
@@ -214,7 +256,7 @@ func (hz *Healthz) recover(w http.ResponseWriter, req *http.Request) {
 }
 
 func (hz *Healthz) healthzHandler(w ResponseWriter, r *http.Request) {
-	if hz.Ready() && hz.app.Latch().IsRunning() {
+	if hz.hosted.Latch().IsRunning() {
 		w.WriteHeader(http.StatusOK)
 		w.Header().Set(HeaderContentType, ContentTypeText)
 		fmt.Fprintf(w, "OK!\n")

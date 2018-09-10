@@ -137,6 +137,11 @@ func (a *App) WithConfig(cfg *Config) *App {
 	return a
 }
 
+// Config returns the app config.
+func (a *App) Config() *Config {
+	return a.cfg
+}
+
 // WithShutdownGracePeriod sets the shutdown grace period.
 func (a *App) WithShutdownGracePeriod(gracePeriod time.Duration) *App {
 	a.shutdownGracePeriod = gracePeriod
