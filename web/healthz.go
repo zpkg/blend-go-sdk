@@ -10,7 +10,6 @@ import (
 	"time"
 
 	"github.com/blend/go-sdk/async"
-
 	"github.com/blend/go-sdk/exception"
 	"github.com/blend/go-sdk/logger"
 )
@@ -165,7 +164,7 @@ func (hz *Healthz) Start() error {
 		WithBindAddr(hz.bindAddr).
 		WithLogger(hz.log)
 	hz.latch.Started()
-	return hz.runToError(hz.self.Start, hz.hosted.Start)
+	return async.RunToError(hz.self.Start, hz.hosted.Start)
 }
 
 // Shutdown implements shutdowner.
@@ -191,29 +190,7 @@ func (hz *Healthz) Shutdown() error {
 }
 
 func (hz *Healthz) shutdownServers() error {
-	return hz.runToError(hz.hosted.Shutdown, hz.self.Shutdown)
-}
-
-func (hz *Healthz) runToError(fns ...func() error) error {
-	panicChan := make(chan interface{}, 1)
-	errChan := make(chan error, 1)
-	for _, fn := range fns {
-		go func(fn func() error) {
-			defer func() {
-				if p := recover(); p != nil {
-					panicChan <- p
-				}
-			}()
-			errChan <- fn()
-		}(fn)
-	}
-
-	select {
-	case p := <-panicChan:
-		panic(p)
-	case err := <-errChan:
-		return err
-	}
+	return async.RunToError(hz.hosted.Shutdown, hz.self.Shutdown)
 }
 
 // ServeHTTP makes the router implement the http.Handler interface.
