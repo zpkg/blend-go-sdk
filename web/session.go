@@ -46,9 +46,6 @@ func (s *Session) WithRemoteAddr(remoteAddr string) *Session {
 
 // IsExpired returns if the session is expired.
 func (s *Session) IsExpired() bool {
-	if s == nil {
-		return false
-	}
 	if s.ExpiresUTC.IsZero() {
 		return false
 	}
@@ -58,8 +55,5 @@ func (s *Session) IsExpired() bool {
 // IsZero returns if the object is set or not.
 // It will return true if either the userID or the sessionID are unset.
 func (s *Session) IsZero() bool {
-	if s == nil {
-		return true
-	}
 	return len(s.UserID) == 0 || len(s.SessionID) == 0
 }
