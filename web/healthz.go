@@ -5,7 +5,6 @@ import (
 	"fmt"
 	"net"
 	"net/http"
-	"sort"
 	"strings"
 	"time"
 
@@ -45,17 +44,6 @@ func NewHealthz(hosted *App) *Healthz {
 		hosted:         hosted,
 		latch:          &async.Latch{},
 		defaultHeaders: map[string]string{},
-		vars: &SyncState{
-			Values: map[string]interface{}{
-				VarzRequests:    int64(0),
-				VarzRequests2xx: int64(0),
-				VarzRequests3xx: int64(0),
-				VarzRequests4xx: int64(0),
-				VarzRequests5xx: int64(0),
-				VarzErrors:      int64(0),
-				VarzFatals:      int64(0),
-			},
-		},
 	}
 }
 
@@ -65,9 +53,8 @@ func NewHealthz(hosted *App) *Healthz {
 It typically implements the following routes:
 
 	/healthz - overall health endpoint, 200 on healthy, 5xx on not.
-	/varz    - basic stats and metrics since start
+				should be used as a kubernetes readiness probe.
 	/debug/vars - `pkg/expvar` output.
-
 */
 type Healthz struct {
 	self       *App
@@ -82,10 +69,7 @@ type Healthz struct {
 	server         *http.Server
 	listener       *net.TCPListener
 
-	vars *SyncState
-
 	gracePeriodSeconds int
-	stoppingProbes     chan struct{}
 	recoverPanics      bool
 }
 
@@ -114,11 +98,6 @@ func (hz *Healthz) GracePeriodSeconds() int {
 // Hosted returns the underlying app.
 func (hz *Healthz) Hosted() *App {
 	return hz.hosted
-}
-
-// Vars returns the underlying vars collection.
-func (hz *Healthz) Vars() State {
-	return hz.vars
 }
 
 // RecoverPanics returns if the app recovers panics.
@@ -163,6 +142,7 @@ func (hz *Healthz) Start() error {
 		WithConfig(hz.hosted.Config()).
 		WithBindAddr(hz.bindAddr).
 		WithLogger(hz.log)
+
 	hz.latch.Started()
 	return async.RunToError(hz.self.Start, hz.hosted.Start)
 }
@@ -198,7 +178,6 @@ func (hz *Healthz) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	if hz.recoverPanics {
 		defer hz.recover(w, r)
 	}
-	hz.ensureListeners()
 
 	start := time.Now()
 	route := strings.ToLower(r.URL.Path)
@@ -227,27 +206,12 @@ func (hz *Healthz) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	switch route {
 	case "/healthz":
 		hz.healthzHandler(res, r)
-	case "/varz":
-		hz.varzHandler(res, r)
 	default:
 		http.NotFound(res, r)
 	}
 
 	if err := res.Close(); err != nil && err != http.ErrBodyNotAllowed && hz.log != nil {
 		hz.log.Error(err)
-	}
-}
-
-// ensureListeners ensures the healthz instance is monitoring the app events.
-func (hz *Healthz) ensureListeners() {
-	if _, ok := hz.vars.Get(VarzStarted).(time.Time); ok {
-		return
-	}
-	hz.vars.Set(VarzStarted, time.Now().UTC())
-	if hz.hosted.log != nil {
-		hz.hosted.log.Listen(logger.HTTPResponse, ListenerHealthz, logger.NewHTTPResponseEventListener(hz.httpResponseListener))
-		hz.hosted.log.Listen(logger.Error, ListenerHealthz, logger.NewErrorEventListener(hz.errorListener))
-		hz.hosted.log.Listen(logger.Fatal, ListenerHealthz, logger.NewErrorEventListener(hz.errorListener))
 	}
 }
 
@@ -279,53 +243,4 @@ func (hz *Healthz) healthzHandler(w ResponseWriter, r *http.Request) {
 	}
 
 	return
-}
-
-// /varz
-// writes out the current stats
-func (hz *Healthz) varzHandler(w ResponseWriter, r *http.Request) {
-	keys := hz.vars.Keys()
-	sort.Strings(keys)
-
-	w.WriteHeader(http.StatusOK)
-	w.Header().Set(HeaderContentType, ContentTypeText)
-	for _, key := range keys {
-		fmt.Fprintf(w, "%s: %v\n", key, hz.vars.Get(key))
-	}
-}
-
-func (hz *Healthz) httpResponseListener(wre *logger.HTTPResponseEvent) {
-	hz.incrementVar(VarzRequests)
-	if wre.StatusCode() >= http.StatusInternalServerError {
-		hz.incrementVar(VarzRequests5xx)
-	} else if wre.StatusCode() >= http.StatusBadRequest {
-		hz.incrementVar(VarzRequests4xx)
-	} else if wre.StatusCode() >= http.StatusMultipleChoices {
-		hz.incrementVar(VarzRequests3xx)
-	} else {
-		hz.incrementVar(VarzRequests2xx)
-	}
-}
-
-func (hz *Healthz) errorListener(e *logger.ErrorEvent) {
-	switch e.Flag() {
-	case logger.Error:
-		hz.incrementVar(VarzErrors)
-		return
-	case logger.Fatal:
-		hz.incrementVar(VarzFatals)
-		return
-	}
-}
-
-func (hz *Healthz) incrementVar(key string) {
-	hz.vars.Lock()
-	defer hz.vars.Unlock()
-	if value, hasValue := hz.vars.Values[key]; hasValue {
-		if typed, isTyped := value.(int64); isTyped {
-			hz.vars.Values[key] = typed + 1
-		}
-	} else {
-		hz.vars.Values[key] = int64(1)
-	}
 }
