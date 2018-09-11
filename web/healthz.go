@@ -74,6 +74,7 @@ func (hz *Healthz) WithConfig(cfg *HealthzConfig) *Healthz {
 	hz.cfg = cfg
 	hz.WithBindAddr(cfg.GetBindAddr())
 	hz.WithGracePeriodSeconds(cfg.GetGracePeriod())
+	hz.WithRecoverPanics(cfg.GetRecoverPanics())
 	return hz
 }
 
