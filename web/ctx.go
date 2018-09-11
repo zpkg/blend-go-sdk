@@ -423,15 +423,17 @@ func (rc *Ctx) WriteCookie(cookie *http.Cookie) {
 
 // WriteNewCookie is a helper method for WriteCookie.
 func (rc *Ctx) WriteNewCookie(name string, value string, expires time.Time, path string, secure bool) {
-	rc.WriteCookie(&http.Cookie{
+	c := &http.Cookie{
 		Name:     name,
-		HttpOnly: true,
+		HttpOnly: true, // this is always on because javascript is bad.
 		Value:    value,
 		Path:     path,
 		Secure:   secure,
 		Domain:   rc.getCookieDomain(),
 		Expires:  expires,
-	})
+	}
+	rc.WriteCookie(c)
+
 }
 
 // ExtendCookieByDuration extends a cookie by a time duration (on the order of nanoseconds to hours).
