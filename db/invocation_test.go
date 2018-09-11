@@ -95,3 +95,25 @@ func TestInvocationJSONNulls(t *testing.T) {
 	assert.Nil(verify2.Nullable, "even if we set it to literal 'null' it should come out golang nil")
 	assert.Equal(obj1.NotNull.Label, verify2.NotNull.Label)
 }
+
+type uniqueObj struct {
+	ID   int    `db:"id,pk"`
+	Name string `db:"name"`
+}
+
+// TableName returns the mapped table name.
+func (uo uniqueObj) TableName() string {
+	return "unique_obj"
+}
+
+func TestInvocationCreateRepeatInTx(t *testing.T) {
+	assert := assert.New(t)
+	tx, err := Default().Begin()
+	assert.Nil(err)
+	defer tx.Rollback()
+
+	assert.Nil(Default().Invoke(context.Background(), tx).Exec("CREATE TABLE IF NOT EXISTS unique_obj (id int not null primary key, name varchar)"))
+
+	assert.Nil(Default().Invoke(context.Background(), tx).Create(&uniqueObj{ID: 1, Name: "one"}))
+	assert.NotNil(Default().Invoke(context.Background(), tx).Create(&uniqueObj{ID: 1, Name: "one"}))
+}
