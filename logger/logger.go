@@ -28,7 +28,9 @@ func FatalExit(err error) {
 	if err == nil {
 		return
 	}
-	Sync().SyncFatalExit(err)
+	log := Sync()
+	log.Enable(Fatal)
+	log.SyncFatalExit(err)
 }
 
 // New returns a new logger with a given set of enabled flags, without a writer provisioned.
@@ -45,8 +47,8 @@ func New(flags ...Flag) *Logger {
 // NewFromConfig returns a new logger from a config.
 func NewFromConfig(cfg *Config) *Logger {
 	l := &Logger{
-		recoverPanics:            DefaultRecoverPanics,
-		flags:                    NewFlagSetFromValues(cfg.GetFlags()...),
+		recoverPanics: DefaultRecoverPanics,
+		flags:         NewFlagSetFromValues(cfg.GetFlags()...),
 		writeWorkerQueueDepth:    cfg.GetWriteQueueDepth(),
 		listenerWorkerQueueDepth: cfg.GetListenerQueueDepth(),
 	}
