@@ -240,7 +240,7 @@ const (
 	DefaultHTTPSUpgradeTargetPort = 443
 
 	// DefaultShutdownGracePeriod is the default shutdown grace period.
-	DefaultShutdownGracePeriod = 5 * time.Second
+	DefaultShutdownGracePeriod = 30 * time.Second
 
 	// DefaultBufferPoolSize is the default buffer pool size.
 	DefaultViewBufferPoolSize = 256
