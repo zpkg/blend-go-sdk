@@ -41,6 +41,7 @@ const (
 func NewHealthz(hosted *App) *Healthz {
 	return &Healthz{
 		hosted:         hosted,
+		bindAddr:       DefaultHealthzBindAddr,
 		gracePeriod:    DefaultShutdownGracePeriod,
 		latch:          &async.Latch{},
 		defaultHeaders: map[string]string{},
@@ -59,13 +60,26 @@ It typically implements the following routes:
 type Healthz struct {
 	self           *App
 	hosted         *App
-	startedUTC     time.Time
+	cfg            *HealthzConfig
 	bindAddr       string
 	log            *logger.Logger
 	latch          *async.Latch
 	defaultHeaders map[string]string
 	gracePeriod    time.Duration
 	recoverPanics  bool
+}
+
+// WithConfig sets the healthz config and relevant properties.
+func (hz *Healthz) WithConfig(cfg *HealthzConfig) *Healthz {
+	hz.cfg = cfg
+	hz.WithBindAddr(cfg.GetBindAddr())
+	hz.WithGracePeriodSeconds(cfg.GetGracePeriod())
+	return hz
+}
+
+// Config returns the healthz config.
+func (hz *Healthz) Config() *HealthzConfig {
+	return hz.cfg
 }
 
 // WithBindAddr sets the bind address.

@@ -61,6 +61,8 @@ type Config struct {
 	HSTS  HSTSConfig      `json:"hsts,omitempty" yaml:"hsts,omitempty"`
 	TLS   TLSConfig       `json:"tls,omitempty" yaml:"tls,omitempty"`
 	Views ViewCacheConfig `json:"views,omitempty" yaml:"views,omitempty"`
+
+	Healthz HealthzConfig `json:"healthz,omitempty" yaml:"healthz,omitempty"`
 }
 
 // GetBindAddr util.Coalesces the bind addr, the port, or the default.
