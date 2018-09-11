@@ -41,6 +41,7 @@ const (
 func NewHealthz(hosted *App) *Healthz {
 	return &Healthz{
 		hosted:         hosted,
+		gracePeriod:    hosted.ShutdownGracePeriod(),
 		latch:          &async.Latch{},
 		defaultHeaders: map[string]string{},
 	}
@@ -56,15 +57,15 @@ It typically implements the following routes:
 	/debug/vars - `pkg/expvar` output.
 */
 type Healthz struct {
-	self               *App
-	hosted             *App
-	startedUTC         time.Time
-	bindAddr           string
-	log                *logger.Logger
-	latch              *async.Latch
-	defaultHeaders     map[string]string
-	gracePeriodSeconds int
-	recoverPanics      bool
+	self           *App
+	hosted         *App
+	startedUTC     time.Time
+	bindAddr       string
+	log            *logger.Logger
+	latch          *async.Latch
+	defaultHeaders map[string]string
+	gracePeriod    time.Duration
+	recoverPanics  bool
 }
 
 // WithBindAddr sets the bind address.
@@ -79,14 +80,14 @@ func (hz *Healthz) BindAddr() string {
 }
 
 // WithGracePeriodSeconds sets the grace period seconds
-func (hz *Healthz) WithGracePeriodSeconds(seconds int) *Healthz {
-	hz.gracePeriodSeconds = seconds
+func (hz *Healthz) WithGracePeriodSeconds(gracePeriod time.Duration) *Healthz {
+	hz.gracePeriod = gracePeriod
 	return hz
 }
 
-// GracePeriodSeconds returns the grace period in seconds
-func (hz *Healthz) GracePeriodSeconds() int {
-	return hz.gracePeriodSeconds
+// GracePeriod returns the grace period in seconds
+func (hz *Healthz) GracePeriod() time.Duration {
+	return hz.gracePeriod
 }
 
 // Hosted returns the underlying app.
@@ -143,12 +144,11 @@ func (hz *Healthz) Start() error {
 
 // Shutdown implements shutdowner.
 func (hz *Healthz) Shutdown() error {
-	gracePeriod := time.Duration(hz.gracePeriodSeconds) * time.Second
-	context, cancel := context.WithTimeout(context.Background(), gracePeriod)
+	context, cancel := context.WithTimeout(context.Background(), hz.GracePeriod())
 	defer cancel()
 
 	if hz.log != nil {
-		hz.log.Infof("healthz is shutting down with (%s) grace period", gracePeriod)
+		hz.log.Infof("healthz is shutting down with (%s) grace period", hz.GracePeriod())
 	}
 	// set the next call to `/healtz` to
 	// finish the shutdown
