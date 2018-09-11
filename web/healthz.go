@@ -1,13 +1,13 @@
 package web
 
 import (
+	"context"
 	"fmt"
-	"net"
 	"net/http"
-	"sort"
 	"strings"
 	"time"
 
+	"github.com/blend/go-sdk/async"
 	"github.com/blend/go-sdk/exception"
 	"github.com/blend/go-sdk/logger"
 )
@@ -38,21 +38,11 @@ const (
 )
 
 // NewHealthz returns a new healthz.
-func NewHealthz(app *App) *Healthz {
+func NewHealthz(hosted *App) *Healthz {
 	return &Healthz{
-		app:            app,
+		hosted:         hosted,
+		latch:          &async.Latch{},
 		defaultHeaders: map[string]string{},
-		vars: &SyncState{
-			Values: map[string]interface{}{
-				VarzRequests:    int64(0),
-				VarzRequests2xx: int64(0),
-				VarzRequests3xx: int64(0),
-				VarzRequests4xx: int64(0),
-				VarzRequests5xx: int64(0),
-				VarzErrors:      int64(0),
-				VarzFatals:      int64(0),
-			},
-		},
 	}
 }
 
@@ -62,33 +52,46 @@ func NewHealthz(app *App) *Healthz {
 It typically implements the following routes:
 
 	/healthz - overall health endpoint, 200 on healthy, 5xx on not.
-	/varz    - basic stats and metrics since start
+				should be used as a kubernetes readiness probe.
 	/debug/vars - `pkg/expvar` output.
-
 */
 type Healthz struct {
-	app        *App
-	startedUTC time.Time
-	bindAddr   string
-	log        *logger.Logger
-
-	defaultHeaders map[string]string
-	server         *http.Server
-	listener       *net.TCPListener
-
-	vars *SyncState
-
-	recoverPanics bool
+	self               *App
+	hosted             *App
+	startedUTC         time.Time
+	bindAddr           string
+	log                *logger.Logger
+	latch              *async.Latch
+	defaultHeaders     map[string]string
+	gracePeriodSeconds int
+	recoverPanics      bool
 }
 
-// App returns the underlying app.
-func (hz *Healthz) App() *App {
-	return hz.app
+// WithBindAddr sets the bind address.
+func (hz *Healthz) WithBindAddr(bindAddr string) *Healthz {
+	hz.bindAddr = bindAddr
+	return hz
 }
 
-// Vars returns the underlying vars collection.
-func (hz *Healthz) Vars() State {
-	return hz.vars
+// BindAddr returns the bind address.
+func (hz *Healthz) BindAddr() string {
+	return hz.bindAddr
+}
+
+// WithGracePeriodSeconds sets the grace period seconds
+func (hz *Healthz) WithGracePeriodSeconds(seconds int) *Healthz {
+	hz.gracePeriodSeconds = seconds
+	return hz
+}
+
+// GracePeriodSeconds returns the grace period in seconds
+func (hz *Healthz) GracePeriodSeconds() int {
+	return hz.gracePeriodSeconds
+}
+
+// Hosted returns the underlying app.
+func (hz *Healthz) Hosted() *App {
+	return hz.hosted
 }
 
 // RecoverPanics returns if the app recovers panics.
@@ -125,19 +128,64 @@ func (hz *Healthz) DefaultHeaders() map[string]string {
 	return hz.defaultHeaders
 }
 
+// Start implements shutdowner.
+func (hz *Healthz) Start() error {
+	hz.latch.Starting()
+	hz.self = New().
+		WithHandler(hz).
+		WithConfig(hz.hosted.Config()).
+		WithBindAddr(hz.bindAddr).
+		WithLogger(hz.log)
+
+	hz.latch.Started()
+	return async.RunToError(hz.self.Start, hz.hosted.Start)
+}
+
+// Shutdown implements shutdowner.
+func (hz *Healthz) Shutdown() error {
+	gracePeriod := time.Duration(hz.gracePeriodSeconds) * time.Second
+	context, cancel := context.WithTimeout(context.Background(), gracePeriod)
+	defer cancel()
+
+	if hz.log != nil {
+		hz.log.Infof("healthz is shutting down with (%s) grace period", gracePeriod)
+	}
+	// set the next call to `/healtz` to
+	// finish the shutdown
+	hz.latch.Stopping()
+
+	select {
+	// if the hosted app crashes
+	case <-hz.hosted.Latch().NotifyStopped():
+		return hz.self.Shutdown()
+	// if the shutdown grace period expires
+	case <-context.Done():
+		if hz.log != nil {
+			hz.log.Warningf("healthz shutdown grace period has expired")
+		}
+		return hz.shutdownServers()
+	// if we've received a final /healthz request
+	case <-hz.latch.NotifyStopped():
+		return hz.shutdownServers()
+	}
+}
+
+func (hz *Healthz) shutdownServers() error {
+	return async.RunToError(hz.hosted.Shutdown, hz.self.Shutdown)
+}
+
 // ServeHTTP makes the router implement the http.Handler interface.
 func (hz *Healthz) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	if hz.recoverPanics {
 		defer hz.recover(w, r)
 	}
-	hz.ensureListeners()
+
+	start := time.Now()
+	route := strings.ToLower(r.URL.Path)
 
 	res := NewRawResponseWriter(w)
 	res.Header().Set(HeaderContentEncoding, ContentEncodingIdentity)
 
-	route := strings.ToLower(r.URL.Path)
-
-	start := time.Now()
 	if hz.log != nil {
 		hz.log.Trigger(logger.NewHTTPRequestEvent(r).WithRoute(route))
 
@@ -159,27 +207,12 @@ func (hz *Healthz) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	switch route {
 	case "/healthz":
 		hz.healthzHandler(res, r)
-	case "/varz":
-		hz.varzHandler(res, r)
 	default:
 		http.NotFound(res, r)
 	}
 
 	if err := res.Close(); err != nil && err != http.ErrBodyNotAllowed && hz.log != nil {
 		hz.log.Error(err)
-	}
-}
-
-// ensureListeners ensures the healthz instance is monitoring the app events.
-func (hz *Healthz) ensureListeners() {
-	if _, ok := hz.vars.Get(VarzStarted).(time.Time); ok {
-		return
-	}
-	hz.vars.Set(VarzStarted, time.Now().UTC())
-	if hz.app.log != nil {
-		hz.app.log.Listen(logger.HTTPResponse, ListenerHealthz, logger.NewHTTPResponseEventListener(hz.httpResponseListener))
-		hz.app.log.Listen(logger.Error, ListenerHealthz, logger.NewErrorEventListener(hz.errorListener))
-		hz.app.log.Listen(logger.Fatal, ListenerHealthz, logger.NewErrorEventListener(hz.errorListener))
 	}
 }
 
@@ -195,64 +228,22 @@ func (hz *Healthz) recover(w http.ResponseWriter, req *http.Request) {
 }
 
 func (hz *Healthz) healthzHandler(w ResponseWriter, r *http.Request) {
-	if hz.app.Latch().IsRunning() {
+	if hz.latch.IsStopping() {
+		w.WriteHeader(http.StatusInternalServerError)
+		w.Header().Set(HeaderContentType, ContentTypeText)
+		fmt.Fprintf(w, "Shutting down.\n")
+		if hz.log != nil {
+			hz.log.Debugf("healthz received probe while in process of shutdown")
+		}
+		hz.latch.Stopped()
+	} else if hz.hosted.Latch().IsRunning() {
 		w.WriteHeader(http.StatusOK)
 		w.Header().Set(HeaderContentType, ContentTypeText)
 		fmt.Fprintf(w, "OK!\n")
-		return
+	} else {
+		w.WriteHeader(http.StatusInternalServerError)
+		w.Header().Set(HeaderContentType, ContentTypeText)
+		fmt.Fprintf(w, "Failure!\n")
 	}
-
-	w.WriteHeader(http.StatusInternalServerError)
-	w.Header().Set(HeaderContentType, ContentTypeText)
-	fmt.Fprintf(w, "Failure!\n")
 	return
-}
-
-// /varz
-// writes out the current stats
-func (hz *Healthz) varzHandler(w ResponseWriter, r *http.Request) {
-	keys := hz.vars.Keys()
-	sort.Strings(keys)
-
-	w.WriteHeader(http.StatusOK)
-	w.Header().Set(HeaderContentType, ContentTypeText)
-	for _, key := range keys {
-		fmt.Fprintf(w, "%s: %v\n", key, hz.vars.Get(key))
-	}
-}
-
-func (hz *Healthz) httpResponseListener(wre *logger.HTTPResponseEvent) {
-	hz.incrementVar(VarzRequests)
-	if wre.StatusCode() >= http.StatusInternalServerError {
-		hz.incrementVar(VarzRequests5xx)
-	} else if wre.StatusCode() >= http.StatusBadRequest {
-		hz.incrementVar(VarzRequests4xx)
-	} else if wre.StatusCode() >= http.StatusMultipleChoices {
-		hz.incrementVar(VarzRequests3xx)
-	} else {
-		hz.incrementVar(VarzRequests2xx)
-	}
-}
-
-func (hz *Healthz) errorListener(e *logger.ErrorEvent) {
-	switch e.Flag() {
-	case logger.Error:
-		hz.incrementVar(VarzErrors)
-		return
-	case logger.Fatal:
-		hz.incrementVar(VarzFatals)
-		return
-	}
-}
-
-func (hz *Healthz) incrementVar(key string) {
-	hz.vars.Lock()
-	defer hz.vars.Unlock()
-	if value, hasValue := hz.vars.Values[key]; hasValue {
-		if typed, isTyped := value.(int64); isTyped {
-			hz.vars.Values[key] = typed + 1
-		}
-	} else {
-		hz.vars.Values[key] = int64(1)
-	}
 }
