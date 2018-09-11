@@ -51,10 +51,6 @@ func TestHealthz(t *testing.T) {
 	assert.Nil(err)
 	assert.Equal(http.StatusInternalServerError, healthzRes.StatusCode)
 
-	varzRes, err := http.Get("http://" + hz.self.Listener().Addr().String() + "/varz")
-	assert.Nil(err)
-	assert.Equal(http.StatusOK, varzRes.StatusCode)
-
 	notfoundRes, err := http.Get("http://" + hz.self.Listener().Addr().String() + "/adfasdfa")
 	assert.Nil(err)
 	assert.Equal(http.StatusNotFound, notfoundRes.StatusCode)

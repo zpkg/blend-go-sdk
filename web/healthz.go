@@ -3,7 +3,6 @@ package web
 import (
 	"context"
 	"fmt"
-	"net"
 	"net/http"
 	"strings"
 	"time"
@@ -57,18 +56,13 @@ It typically implements the following routes:
 	/debug/vars - `pkg/expvar` output.
 */
 type Healthz struct {
-	self       *App
-	hosted     *App
-	startedUTC time.Time
-	bindAddr   string
-	log        *logger.Logger
-
-	latch *async.Latch
-
-	defaultHeaders map[string]string
-	server         *http.Server
-	listener       *net.TCPListener
-
+	self               *App
+	hosted             *App
+	startedUTC         time.Time
+	bindAddr           string
+	log                *logger.Logger
+	latch              *async.Latch
+	defaultHeaders     map[string]string
 	gracePeriodSeconds int
 	recoverPanics      bool
 }
