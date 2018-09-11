@@ -41,7 +41,7 @@ const (
 func NewHealthz(hosted *App) *Healthz {
 	return &Healthz{
 		hosted:         hosted,
-		gracePeriod:    hosted.ShutdownGracePeriod(),
+		gracePeriod:    DefaultShutdownGracePeriod,
 		latch:          &async.Latch{},
 		defaultHeaders: map[string]string{},
 	}
