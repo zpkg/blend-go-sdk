@@ -46,6 +46,7 @@ func TestHealthz(t *testing.T) {
 	assert.Equal("secure", healthzRes.Header.Get("key"))
 
 	app.Shutdown()
+	<-app.NotifyShutdown()
 
 	healthzRes, err = http.Get("http://" + hz.self.Listener().Addr().String() + "/healthz")
 	assert.Nil(err)
