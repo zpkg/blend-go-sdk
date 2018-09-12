@@ -18,7 +18,10 @@ import (
 
 // TestMain is the testing entrypoint.
 func TestMain(m *testing.M) {
-	err := OpenDefault(NewFromEnv())
+	cfg := NewConfigFromEnv()
+	cfg.SSLMode = SSLModeDisable
+	conn := NewFromConfig(cfg)
+	err := OpenDefault(conn)
 	if err != nil {
 		fmt.Fprintf(os.Stderr, "%+v", err)
 		os.Exit(1)

@@ -57,6 +57,12 @@ func (i *Invocation) Label() string {
 	return i.statementLabel
 }
 
+// WithTx sets the tx
+func (i *Invocation) WithTx(tx *sql.Tx) *Invocation {
+	i.tx = tx
+	return i
+}
+
 // Tx returns the underlying transaction.
 func (i *Invocation) Tx() *sql.Tx {
 	return i.tx
@@ -383,6 +389,7 @@ func (i *Invocation) Create(object DatabaseMapped) (err error) {
 
 		if execErr != nil {
 			err = exception.New(execErr)
+			i.invalidateCachedStatement()
 			return
 		}
 
@@ -989,7 +996,7 @@ func (i *Invocation) Truncate(object DatabaseMapped) (err error) {
 // helpers
 // --------------------------------------------------------------------------------
 
-// Validate validates the invocation is ready
+// validate the invocation is ready
 func (i *Invocation) validate() error {
 	if i.conn == nil {
 		return exception.New(connectionErrorMessage)
@@ -998,14 +1005,14 @@ func (i *Invocation) validate() error {
 }
 
 func (i *Invocation) invalidateCachedStatement() {
-	if i.conn.StatementCache().Enabled() && len(i.statementLabel) > 0 {
+	if i.conn.StatementCache().Enabled() && len(i.statementLabel) > 0 && i.tx == nil {
 		i.conn.statementCache.InvalidateStatement(i.statementLabel)
 	}
 }
 
 func (i *Invocation) closeStatement(err error, stmt *sql.Stmt) error {
 	if i.conn.StatementCache().Enabled() && len(i.statementLabel) > 0 {
-		return nil
+		return err
 	}
 
 	return exception.Nest(err, stmt.Close())
