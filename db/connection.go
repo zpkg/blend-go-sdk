@@ -151,24 +151,33 @@ func (dbc *Connection) Open() error {
 }
 
 // Begin starts a new transaction.
-func (dbc *Connection) Begin() (*sql.Tx, error) {
+func (dbc *Connection) Begin(opts ...*sql.TxOptions) (*sql.Tx, error) {
 	if dbc.connection == nil {
 		return nil, exception.New(ErrConnectionClosed)
+	}
+	if len(opts) > 0 {
+		tx, err := dbc.connection.BeginTx(dbc.Background(), opts[0])
+		return tx, exception.New(err)
 	}
 	tx, err := dbc.connection.Begin()
 	return tx, exception.New(err)
 }
 
 // BeginContext starts a new transaction in a givent context.
-func (dbc *Connection) BeginContext(context context.Context) (*sql.Tx, error) {
+func (dbc *Connection) BeginContext(context context.Context, opts ...*sql.TxOptions) (*sql.Tx, error) {
 	if dbc.connection == nil {
 		return nil, exception.New(ErrConnectionClosed)
+	}
+	if len(opts) > 0 {
+		tx, err := dbc.connection.BeginTx(context, opts[0])
+		return tx, exception.New(err)
 	}
 	tx, err := dbc.connection.BeginTx(context, nil)
 	return tx, exception.New(err)
 }
 
 // PrepareContext prepares a new statement for the connection.
+// It will never hit the statement cache.
 func (dbc *Connection) PrepareContext(context context.Context, statement string, tx *sql.Tx) (stmt *sql.Stmt, err error) {
 	if dbc.connection == nil {
 		return nil, exception.New(ErrConnectionClosed)
@@ -196,7 +205,7 @@ func (dbc *Connection) PrepareContext(context context.Context, statement string,
 	return
 }
 
-// PrepareCachedContext prepares a potentially cached statement.
+// PrepareCachedContext prepares a statement potentially returning a cached version of the statement.
 func (dbc *Connection) PrepareCachedContext(context context.Context, statementID, statement string, tx *sql.Tx) (*sql.Stmt, error) {
 	if dbc.connection == nil {
 		return nil, exception.New(ErrConnectionClosed)
@@ -534,13 +543,13 @@ func (dbc *Connection) TruncateInTxContext(context context.Context, object Datab
 // internal methods
 // --------------------------------------------------------------------------------
 
-func (dbc *Connection) finish(context context.Context, statement, statementLabel string, elapsed time.Duration, err error) {
+func (dbc *Connection) finish(context context.Context, statement, statementID string, elapsed time.Duration, err error) {
 	if dbc.log != nil {
 		dbc.log.Trigger(
 			logger.NewQueryEvent(statement, elapsed).
 				WithUsername(dbc.config.GetUsername()).
 				WithDatabase(dbc.config.GetDatabase()).
-				WithQueryLabel(statementLabel).
+				WithQueryLabel(statementID).
 				WithEngine(dbc.config.GetEngine()).
 				WithErr(err),
 		)

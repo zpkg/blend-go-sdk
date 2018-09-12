@@ -113,7 +113,9 @@ func TestInvocationCreateRepeatInTx(t *testing.T) {
 	defer tx.Rollback()
 
 	assert.Nil(Default().Invoke(context.Background(), tx).Exec("CREATE TABLE IF NOT EXISTS unique_obj (id int not null primary key, name varchar)"))
-
 	assert.Nil(Default().Invoke(context.Background(), tx).Create(&uniqueObj{ID: 1, Name: "one"}))
-	assert.NotNil(Default().Invoke(context.Background(), tx).Create(&uniqueObj{ID: 1, Name: "one"}))
+	var verify uniqueObj
+	assert.Nil(Default().Invoke(context.Background(), tx).Get(&verify, 1))
+	assert.Equal("one", verify.Name)
+	assert.NotNil(Default().Invoke(context.Background(), tx).Create(&uniqueObj{ID: 1, Name: "two"}))
 }

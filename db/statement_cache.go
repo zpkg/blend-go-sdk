@@ -103,6 +103,7 @@ func (sc *StatementCache) PrepareContext(context context.Context, statementID, s
 	if stmt, hasStmt := sc.cache[statementID]; hasStmt {
 		return stmt, nil
 	}
+
 	stmt, err := sc.dbc.PrepareContext(context, statement)
 	if err != nil {
 		return nil, err
