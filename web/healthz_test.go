@@ -14,7 +14,7 @@ func TestHealthz(t *testing.T) {
 	appLog := logger.New().WithFlags(logger.AllFlags())
 	defer appLog.Close()
 
-	app := New().WithBindAddr("127.0.0.1:0").WithLogger(appLog).WithConfig(NewConfigFromEnv())
+	app := New().WithBindAddr("127.0.0.1:0").WithLogger(appLog).WithConfig(MustNewConfigFromEnv())
 	defer app.Shutdown()
 
 	appStarted := make(chan struct{})

@@ -101,12 +101,22 @@ func NewConfigFromDSN(dsn string) (*Config, error) {
 //	-	DB_USER 		= Username
 //	-	DB_PASSWORD 	= Password
 //	-	DB_SSLMODE 		= SSLMode
-func NewConfigFromEnv() *Config {
+func NewConfigFromEnv() (*Config, error) {
 	var config Config
 	if err := env.Env().ReadInto(&config); err != nil {
+		return nil, err
+	}
+	return &config, nil
+}
+
+// MustNewConfigFromEnv returns a new config from the environment,
+// it will panic if there is an error.
+func MustNewConfigFromEnv() *Config {
+	cfg, err := NewConfigFromEnv()
+	if err != nil {
 		panic(err)
 	}
-	return &config
+	return cfg
 }
 
 // Config is a set of connection config options.

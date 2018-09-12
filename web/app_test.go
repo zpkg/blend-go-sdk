@@ -42,7 +42,7 @@ func TestAppNewFromEnv(t *testing.T) {
 	assert := assert.New(t)
 
 	var route *Route
-	app := NewFromEnv()
+	app := MustNewFromEnv()
 	assert.NotNil(app.state)
 	assert.NotNil(app.Views())
 	app.GET("/", func(c *Ctx) Result {

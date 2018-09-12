@@ -39,15 +39,43 @@ func New() *Connection {
 }
 
 // NewFromConfig returns a new connection from a config.
-func NewFromConfig(cfg *Config) *Connection {
+func NewFromConfig(cfg *Config) (*Connection, error) {
 	dsn := cfg.CreateDSN()
-	parsed, _ := NewConfigFromDSN(dsn)
-	return New().WithConfig(parsed)
+	parsed, err := NewConfigFromDSN(dsn)
+	if err != nil {
+		return nil, err
+	}
+	return New().WithConfig(parsed), nil
 }
 
-// NewFromEnv creates a new db connection from environment variables.
-func NewFromEnv() *Connection {
-	return NewFromConfig(NewConfigFromEnv())
+// MustNewFromConfig returns a new connection from a config
+// and panics if there is an error.
+func MustNewFromConfig(cfg *Config) *Connection {
+	conn, err := NewFromConfig(cfg)
+	if err != nil {
+		panic(err)
+	}
+	return conn
+}
+
+// MustNewFromEnv creates a new db connection from environment variables.
+// It will panic if there is an error.
+func MustNewFromEnv() *Connection {
+	cfg, err := NewConfigFromEnv()
+	if err != nil {
+		panic(err)
+	}
+	return MustNewFromConfig(cfg)
+}
+
+// NewFromEnv will returns a new connection from a config
+// set from environment variables.
+func NewFromEnv() (*Connection, error) {
+	cfg, err := NewConfigFromEnv()
+	if err != nil {
+		return nil, err
+	}
+	return NewFromConfig(cfg)
 }
 
 // Connection is the basic wrapper for connection parameters and saves a reference to the created sql.Connection.
@@ -178,7 +206,7 @@ func (dbc *Connection) BeginContext(context context.Context, opts ...*sql.TxOpti
 
 // PrepareContext prepares a new statement for the connection.
 // It will never hit the statement cache.
-func (dbc *Connection) PrepareContext(context context.Context, statement string, tx *sql.Tx) (stmt *sql.Stmt, err error) {
+func (dbc *Connection) PrepareContext(context context.Context, statement string, txs ...*sql.Tx) (stmt *sql.Stmt, err error) {
 	if dbc.connection == nil {
 		return nil, exception.New(ErrConnectionClosed)
 	}
@@ -190,7 +218,7 @@ func (dbc *Connection) PrepareContext(context context.Context, statement string,
 		}
 	}
 
-	if tx != nil {
+	if tx := Tx(txs...); tx != nil {
 		stmt, err = tx.PrepareContext(context, statement)
 		if err != nil {
 			err = exception.New(err)
@@ -206,14 +234,14 @@ func (dbc *Connection) PrepareContext(context context.Context, statement string,
 }
 
 // PrepareCachedContext prepares a statement potentially returning a cached version of the statement.
-func (dbc *Connection) PrepareCachedContext(context context.Context, statementID, statement string, tx *sql.Tx) (*sql.Stmt, error) {
+func (dbc *Connection) PrepareCachedContext(context context.Context, statementID, statement string, txs ...*sql.Tx) (*sql.Stmt, error) {
 	if dbc.connection == nil {
 		return nil, exception.New(ErrConnectionClosed)
 	}
 	if dbc.statementCache == nil {
 		return nil, exception.New(ErrStatementCacheUnset)
 	}
-	return dbc.statementCache.PrepareContext(context, statementID, statement, tx)
+	return dbc.statementCache.PrepareContext(context, statementID, statement, Tx(txs...))
 }
 
 // --------------------------------------------------------------------------------

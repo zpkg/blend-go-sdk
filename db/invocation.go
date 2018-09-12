@@ -1004,14 +1004,15 @@ func (i *Invocation) validate() error {
 	return nil
 }
 
-func (i *Invocation) invalidateCachedStatement() {
-	if i.conn.StatementCache().Enabled() && len(i.statementLabel) > 0 && i.tx == nil {
-		i.conn.statementCache.InvalidateStatement(i.statementLabel)
+func (i *Invocation) invalidateCachedStatement() error {
+	if i.conn.statementCache.Enabled() && len(i.statementLabel) > 0 && i.tx == nil {
+		return i.conn.statementCache.InvalidateStatement(i.statementLabel)
 	}
+	return nil
 }
 
 func (i *Invocation) closeStatement(err error, stmt *sql.Stmt) error {
-	if i.conn.StatementCache().Enabled() && len(i.statementLabel) > 0 {
+	if i.conn.StatementCache().Enabled() && len(i.statementLabel) > 0 && i.tx == nil {
 		return err
 	}
 

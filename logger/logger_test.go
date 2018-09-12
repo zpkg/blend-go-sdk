@@ -39,7 +39,8 @@ func TestNewLoggerFromEnvironment(t *testing.T) {
 	env.Env().Set(EnvVarHeading, "Testing Harness")
 	defer env.Env().Restore(EnvVarHeading)
 
-	log := NewFromEnv()
+	log, err := NewFromEnv()
+	assert.Nil(err)
 	defer log.Close()
 
 	assert.NotNil(log.Flags())
@@ -55,7 +56,8 @@ func TestNewLoggerFromEnvCustomFlags(t *testing.T) {
 	env.Env().Set(EnvVarHeading, "Testing Harness")
 	defer env.Env().Restore(EnvVarHeading)
 
-	log := NewFromEnv()
+	log, err := NewFromEnv()
+	assert.Nil(err)
 	defer log.Close()
 
 	assert.True(log.IsEnabled(Flag("web.request")))

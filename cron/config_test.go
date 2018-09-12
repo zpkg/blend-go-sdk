@@ -14,7 +14,8 @@ func TestNewConfigFromEnv(t *testing.T) {
 
 	env.Env().Set(EnvVarHeartbeatInterval, "1s")
 
-	cfg := NewConfigFromEnv()
+	cfg, err := NewConfigFromEnv()
+	assert.Nil(err)
 	assert.NotZero(cfg.GetHeartbeatInterval())
 	assert.Equal(time.Second, cfg.GetHeartbeatInterval())
 }

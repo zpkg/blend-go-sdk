@@ -16,7 +16,8 @@ func TestNewConfigFromEnv(t *testing.T) {
 	env.Env().Set("OAUTH_CLIENT_ID", "foo")
 	env.Env().Set("OAUTH_CLIENT_SECRET", "bar")
 
-	cfg := NewConfigFromEnv()
+	cfg, err := NewConfigFromEnv()
+	assert.Nil(err)
 	assert.Equal("foo", cfg.GetClientID())
 	assert.Equal("bar", cfg.GetClientSecret())
 	assert.Equal("https://app.com/oauth/google", cfg.GetRedirectURI())

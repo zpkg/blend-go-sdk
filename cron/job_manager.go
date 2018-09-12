@@ -30,8 +30,21 @@ func NewFromConfig(cfg *Config) *JobManager {
 }
 
 // NewFromEnv returns a new job manager from the environment.
-func NewFromEnv() *JobManager {
-	return NewFromConfig(NewConfigFromEnv())
+func NewFromEnv() (*JobManager, error) {
+	cfg, err := NewConfigFromEnv()
+	if err != nil {
+		return nil, err
+	}
+	return NewFromConfig(cfg), nil
+}
+
+// MustNewFromEnv returns a new job manager from the environment.
+func MustNewFromEnv() *JobManager {
+	cfg, err := NewConfigFromEnv()
+	if err != nil {
+		panic(err)
+	}
+	return NewFromConfig(cfg)
 }
 
 // JobManager is the main orchestration and job management object.
