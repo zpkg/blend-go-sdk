@@ -25,7 +25,8 @@ func TestHealthz(t *testing.T) {
 	hzLog := logger.New().WithFlags(logger.AllFlags())
 	defer hzLog.Close()
 
-	hz := NewHealthz(app).WithLogger(hzLog)
+	hz := NewHealthz(app).WithLogger(hzLog).WithGracePeriodSeconds(0)
+	defer hz.Shutdown()
 	hz.WithDefaultHeader("key", "secure")
 	assert.NotEmpty(hz.DefaultHeaders())
 
@@ -33,11 +34,13 @@ func TestHealthz(t *testing.T) {
 	assert.False(app.Latch().IsRunning())
 
 	go hz.Start()
-	<-app.NotifyStarted()
+	<-hz.hosted.NotifyStarted()
+	<-hz.self.NotifyStarted()
 
-	assert.True(app.Latch().IsRunning())
-	assert.True(hz.Hosted().Latch().IsRunning())
-	assert.NotNil(hz.self)
+	assert.True(hz.hosted.Latch().IsRunning())
+	assert.True(hz.self.Latch().IsRunning())
+
+	assert.NotNil(hz.hosted.Listener())
 	assert.NotNil(hz.self.Listener())
 
 	healthzRes, err := http.Get("http://" + hz.self.Listener().Addr().String() + "/healthz")
