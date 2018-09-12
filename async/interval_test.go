@@ -1,7 +1,6 @@
 package async
 
 import (
-	"sync"
 	"testing"
 	"time"
 
@@ -12,19 +11,19 @@ func TestIntervalWorker(t *testing.T) {
 	assert := assert.New(t)
 
 	var didWork bool
-	wg := sync.WaitGroup{}
-	wg.Add(1)
+	done := make(chan struct{})
 	w := NewInterval(func() error {
-		defer wg.Done()
+		defer func() {
+			close(done)
+		}()
 		didWork = true
 		return nil
 	}, time.Millisecond)
 
 	w.Start()
 	assert.True(w.Latch().IsRunning())
-	wg.Wait()
+	<-done
 	w.Stop()
 	assert.True(w.Latch().IsStopped())
-
 	assert.True(didWork)
 }
