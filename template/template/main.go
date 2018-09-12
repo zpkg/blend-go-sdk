@@ -1,29 +1,25 @@
 package main
 
 import (
+	"bytes"
 	"encoding/json"
 	"flag"
 	"fmt"
+	"io/ioutil"
 	"log"
 	"os"
-
-	"strings"
-
-	"io/ioutil"
-
-	"strconv"
-
 	"runtime"
-
-	"bytes"
+	"strconv"
+	"strings"
 
 	"github.com/blend/go-sdk/template"
 	"github.com/blend/go-sdk/yaml"
 )
 
 var (
-	// Version is the app version.
-	Version string
+	version = "dev"
+	commit  = "none"
+	date    = "unknown"
 )
 
 // Includes are a collection of template files to include as sub templates.
@@ -142,10 +138,10 @@ func main() {
 	flag.BoolVar(&versionFlag, "version", false, "Shows the app version")
 
 	flag.Usage = func() {
-		if len(Version) == 0 {
-			Version = "master"
+		if len(version) == 0 {
+			version = "master"
 		}
-		fmt.Fprintf(os.Stderr, "%s version %s\n\n", os.Args[0], Version)
+		fmt.Fprintf(os.Stderr, "%s version %s\n\n", os.Args[0], version)
 		fmt.Fprintf(os.Stderr, "Find more information at https://github.com/blend/go-sdk/tree/master/template\n\n")
 		fmt.Fprintf(os.Stderr, "Usage:\n")
 		flag.PrintDefaults()
@@ -163,10 +159,10 @@ func main() {
 	}
 
 	if versionFlag {
-		if len(Version) == 0 {
-			Version = "master"
+		if len(version) == 0 {
+			version = "master"
 		}
-		fmt.Fprintf(os.Stdout, "%s version %s %s/%s\n", os.Args[0], Version, runtime.GOOS, runtime.GOARCH)
+		fmt.Fprintf(os.Stdout, "%s version %s %s/%s\n", os.Args[0], version, runtime.GOOS, runtime.GOARCH)
 		os.Exit(0)
 	}
 

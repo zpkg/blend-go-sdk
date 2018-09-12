@@ -9,6 +9,12 @@ import (
 	"time"
 )
 
+var (
+	version = "dev"
+	commit  = "none"
+	date    = "unknown"
+)
+
 var verbose = flag.Bool("verbose", false, "Print verbose output")
 var delay = flag.Int("delay", 0, "A time in milliseconds to wait before starting the sub process")
 var wait = flag.Int("wait", 0, "A time in milliseconds to wait between restarting the sub process on exit")
