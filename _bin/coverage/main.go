@@ -16,6 +16,12 @@ import (
 	"golang.org/x/tools/cover"
 )
 
+var (
+	version = "dev"
+	commit  = "none"
+	date    = "unknown"
+)
+
 const (
 	star             = "*"
 	defaultFileFlags = 0644

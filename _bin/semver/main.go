@@ -9,6 +9,12 @@ import (
 	"github.com/blend/go-sdk/semver"
 )
 
+var (
+	version = "dev"
+	commit  = "none"
+	date    = "unknown"
+)
+
 func usage() {
 	fmt.Fprint(os.Stdout, "version validates and manage versions from a given file\n")
 	fmt.Fprint(os.Stdout, "\ncommands:\n")

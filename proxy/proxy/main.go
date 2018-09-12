@@ -11,6 +11,12 @@ import (
 	"github.com/blend/go-sdk/proxy"
 )
 
+var (
+	version = "dev"
+	commit  = "none"
+	date    = "unknown"
+)
+
 const (
 	// DefaultPort is the default port the proxy listens on.
 	DefaultPort = "8888"

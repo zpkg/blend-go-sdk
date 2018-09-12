@@ -12,6 +12,12 @@ import (
 	"github.com/blend/go-sdk/yaml"
 )
 
+var (
+	version = "dev"
+	commit  = "none"
+	date    = "unknown"
+)
+
 const (
 	// DefaultProfanityFile is the default file to use for profanity rules
 	DefaultProfanityFile = "PROFANITY"

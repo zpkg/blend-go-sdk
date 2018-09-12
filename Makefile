@@ -90,7 +90,7 @@ clean:
 	@echo "Cleaning COVERAGE files"
 	@find . -name "COVERAGE" -exec rm {} \;
 
-tag-version:
+tag:
 	git tag -f $(VERSION)
 
 push-tags:
