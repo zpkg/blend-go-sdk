@@ -26,6 +26,11 @@ type Query struct {
 	err  error
 }
 
+// Err returns an error that occurred before execution.
+func (q *Query) Err() error {
+	return q.err
+}
+
 func (q *Query) exec() (rows *sql.Rows, err error) {
 	if q.err != nil {
 		err = q.err
@@ -271,9 +276,9 @@ func (q *Query) finalizer(r interface{}, err error) error {
 	}
 	// close the statement if it's set using the invocation
 	if q.stmt != nil {
-		err = q.inv.closeStatement(err, q.stmt)
+		err = exception.Nest(err, q.inv.closeStatement(err, q.stmt))
 	}
 	// call the invocation finisher
-	q.inv.finish(q.statement, nil, err)
+	err = exception.Nest(err, q.inv.finish(q.statement, nil, err))
 	return err
 }

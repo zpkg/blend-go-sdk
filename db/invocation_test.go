@@ -208,3 +208,160 @@ func TestInvocationInvalidateCachedStatementDisabled(t *testing.T) {
 	assert.True(sc.HasStatement("foo"))
 	assert.True(sc.HasStatement("bar"))
 }
+
+func TestInvocationExecError(t *testing.T) {
+	assert := assert.New(t)
+
+	conn := MustNewFromEnv()
+	conn.StatementCache().WithEnabled(false)
+	assert.Nil(conn.Open())
+	assert.NotNil(conn.Invoke(context.Background()).Exec("not a select"))
+	conn.StatementCache().WithEnabled(true)
+	assert.NotNil(conn.Invoke(context.Background()).Exec("not a select"))
+	assert.NotNil(conn.Invoke(context.Background()).WithLabel("exec_error_test").Exec("not a select"))
+}
+
+type modelTableNameError struct {
+	ID string `db:"id,pk"`
+}
+
+func (mtne modelTableNameError) TableName() string {
+	return uuid.V4().String()
+}
+
+func TestInvocationGetError(t *testing.T) {
+	assert := assert.New(t)
+
+	var getError modelTableNameError
+	conn := MustNewFromEnv()
+	conn.StatementCache().WithEnabled(false)
+	assert.Nil(conn.Open())
+	assert.NotNil(conn.Invoke(context.Background()).Get(&getError, uuid.V4().String()))
+	conn.StatementCache().WithEnabled(true)
+	assert.NotNil(conn.Invoke(context.Background()).Get(&getError, uuid.V4().String()))
+	assert.NotNil(conn.Invoke(context.Background()).WithLabel("get_error_test").Get(&getError, uuid.V4().String()))
+}
+
+func TestInvocationGetAllError(t *testing.T) {
+	assert := assert.New(t)
+
+	var mustError []modelTableNameError
+	conn := MustNewFromEnv()
+	conn.StatementCache().WithEnabled(false)
+	assert.Nil(conn.Open())
+	assert.NotNil(conn.Invoke(context.Background()).GetAll(&mustError))
+	conn.StatementCache().WithEnabled(true)
+	assert.NotNil(conn.Invoke(context.Background()).GetAll(&mustError))
+	assert.NotNil(conn.Invoke(context.Background()).WithLabel("get_all_error_test").GetAll(&mustError))
+}
+
+func TestInvocationCreateError(t *testing.T) {
+	assert := assert.New(t)
+
+	var mustError modelTableNameError
+	conn := MustNewFromEnv()
+	conn.StatementCache().WithEnabled(false)
+	assert.Nil(conn.Open())
+	assert.NotNil(conn.Invoke(context.Background()).Create(&mustError))
+	conn.StatementCache().WithEnabled(true)
+	assert.NotNil(conn.Invoke(context.Background()).Create(&mustError))
+	assert.NotNil(conn.Invoke(context.Background()).WithLabel("create_error_test").Create(&mustError))
+}
+
+func TestInvocationCreateIfNotExistsError(t *testing.T) {
+	assert := assert.New(t)
+
+	var mustError modelTableNameError
+	conn := MustNewFromEnv()
+	conn.StatementCache().WithEnabled(false)
+	assert.Nil(conn.Open())
+	assert.NotNil(conn.Invoke(context.Background()).CreateIfNotExists(&mustError))
+	conn.StatementCache().WithEnabled(true)
+	assert.NotNil(conn.Invoke(context.Background()).CreateIfNotExists(&mustError))
+	assert.NotNil(conn.Invoke(context.Background()).WithLabel("cne_error_test").CreateIfNotExists(&mustError))
+}
+
+func TestInvocationUpdateError(t *testing.T) {
+	assert := assert.New(t)
+
+	var mustError modelTableNameError
+	conn := MustNewFromEnv()
+	conn.StatementCache().WithEnabled(false)
+	assert.Nil(conn.Open())
+	assert.NotNil(conn.Invoke(context.Background()).Update(&mustError))
+	conn.StatementCache().WithEnabled(true)
+	assert.NotNil(conn.Invoke(context.Background()).Update(&mustError))
+	assert.NotNil(conn.Invoke(context.Background()).WithLabel("update_error_test").Update(&mustError))
+}
+
+func TestInvocationUpsertError(t *testing.T) {
+	assert := assert.New(t)
+
+	var mustError modelTableNameError
+	conn := MustNewFromEnv()
+	conn.StatementCache().WithEnabled(false)
+	assert.Nil(conn.Open())
+	assert.NotNil(conn.Invoke(context.Background()).Upsert(&mustError))
+	conn.StatementCache().WithEnabled(true)
+	assert.NotNil(conn.Invoke(context.Background()).Upsert(&mustError))
+	assert.NotNil(conn.Invoke(context.Background()).WithLabel("upsert_error_test").Upsert(&mustError))
+}
+
+func boolErr(_ bool, err error) error {
+	return err
+}
+
+func TestInvocationExistsError(t *testing.T) {
+	assert := assert.New(t)
+
+	var mustError modelTableNameError
+	conn := MustNewFromEnv()
+	conn.StatementCache().WithEnabled(false)
+	assert.Nil(conn.Open())
+	assert.NotNil(boolErr(conn.Invoke(context.Background()).Exists(mustError)))
+	conn.StatementCache().WithEnabled(true)
+	assert.NotNil(boolErr(conn.Invoke(context.Background()).Exists(mustError)))
+	assert.NotNil(boolErr(conn.Invoke(context.Background()).WithLabel("exists_error_test").Exists(mustError)))
+}
+
+func TestInvocationCreateManyError(t *testing.T) {
+	assert := assert.New(t)
+
+	mustError := []modelTableNameError{
+		{uuid.V4().String()},
+		{uuid.V4().String()},
+	}
+	conn := MustNewFromEnv()
+	conn.StatementCache().WithEnabled(false)
+	assert.Nil(conn.Open())
+	assert.NotNil(conn.Invoke(context.Background()).CreateMany(mustError))
+	conn.StatementCache().WithEnabled(true)
+	assert.NotNil(conn.Invoke(context.Background()).CreateMany(mustError))
+	assert.NotNil(conn.Invoke(context.Background()).WithLabel("cm_error_test").CreateMany(mustError))
+}
+
+func TestInvocationDeleteError(t *testing.T) {
+	assert := assert.New(t)
+
+	var mustError modelTableNameError
+	conn := MustNewFromEnv()
+	conn.StatementCache().WithEnabled(false)
+	assert.Nil(conn.Open())
+	assert.NotNil(conn.Invoke(context.Background()).Delete(&mustError))
+	conn.StatementCache().WithEnabled(true)
+	assert.NotNil(conn.Invoke(context.Background()).Delete(&mustError))
+	assert.NotNil(conn.Invoke(context.Background()).WithLabel("delete_error_test").Delete(&mustError))
+}
+
+func TestTruncateError(t *testing.T) {
+	assert := assert.New(t)
+
+	var mustError modelTableNameError
+	conn := MustNewFromEnv()
+	conn.StatementCache().WithEnabled(false)
+	assert.Nil(conn.Open())
+	assert.NotNil(conn.Invoke(context.Background()).Truncate(&mustError))
+	conn.StatementCache().WithEnabled(true)
+	assert.NotNil(conn.Invoke(context.Background()).Truncate(&mustError))
+	assert.NotNil(conn.Invoke(context.Background()).WithLabel("truncate_error_test").Truncate(&mustError))
+}
