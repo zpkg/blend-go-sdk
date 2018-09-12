@@ -120,6 +120,11 @@ func (a *App) NotifyStarted() <-chan struct{} {
 	return a.latch.NotifyStarted()
 }
 
+// NotifyShutdown returns the notify stopped chan.
+func (a *App) NotifyShutdown() <-chan struct{} {
+	return a.latch.NotifyStopped()
+}
+
 // WithConfig sets the config and applies the config's setting.
 func (a *App) WithConfig(cfg *Config) *App {
 	a.cfg = cfg
@@ -530,7 +535,7 @@ func (a *App) Start() (err error) {
 	if shutdownErr != nil && shutdownErr != http.ErrServerClosed {
 		err = exception.New(shutdownErr)
 	}
-	a.latch.Stopping()
+
 	a.latch.Stopped()
 	return
 }
@@ -540,6 +545,7 @@ func (a *App) Shutdown() error {
 	if !a.Latch().IsRunning() {
 		return nil
 	}
+	a.latch.Stopping()
 
 	ctx, cancel := context.WithTimeout(context.Background(), a.shutdownGracePeriod)
 	defer cancel()
