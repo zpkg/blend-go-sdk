@@ -104,7 +104,8 @@ func TestConfigJSON(t *testing.T) {
 func TestNewConfigFromEnv(t *testing.T) {
 	assert := assert.New(t)
 
-	cfg := NewConfigFromEnv()
+	cfg, err := NewConfigFromEnv()
+	assert.Nil(err)
 
 	assert.Any(cfg.GetFlags(), func(v Any) bool {
 		return v.(string) == "http.response"
@@ -135,7 +136,8 @@ func TestNewConfigFromEnvWithVars(t *testing.T) {
 	})
 	defer env.Restore()
 
-	cfg := NewConfigFromEnv()
+	cfg, err := NewConfigFromEnv()
+	assert.Nil(err)
 
 	assert.NotEmpty(cfg.GetFlags())
 	assert.Any(cfg.GetFlags(), func(v Any) bool {

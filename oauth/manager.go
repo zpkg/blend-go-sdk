@@ -39,7 +39,21 @@ func Must(m *Manager, err error) *Manager {
 
 // NewFromEnv returns a new manager from the environment.
 func NewFromEnv() (*Manager, error) {
-	return NewFromConfig(NewConfigFromEnv())
+	cfg, err := NewConfigFromEnv()
+	if err != nil {
+		return nil, err
+	}
+	return NewFromConfig(cfg)
+}
+
+// MustNewFromEnv returns a new manager from the environment
+// and will panic if there is an error.
+func MustNewFromEnv() *Manager {
+	mgr, err := NewFromEnv()
+	if err != nil {
+		panic(err)
+	}
+	return mgr
 }
 
 // NewFromConfig returns a new oauth manager from a config.

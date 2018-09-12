@@ -40,8 +40,22 @@ func New() *App {
 }
 
 // NewFromEnv returns a new app from the environment.
-func NewFromEnv() *App {
-	return NewFromConfig(NewConfigFromEnv())
+func NewFromEnv() (*App, error) {
+	cfg, err := NewConfigFromEnv()
+	if err != nil {
+		return nil, err
+	}
+	return NewFromConfig(cfg), nil
+}
+
+// MustNewFromEnv returns a new app with a config set from environment
+// variabales, and it will panic if there is an error.
+func MustNewFromEnv() *App {
+	cfg, err := NewConfigFromEnv()
+	if err != nil {
+		panic(err)
+	}
+	return NewFromConfig(cfg)
 }
 
 // NewFromConfig returns a new app from a given config.

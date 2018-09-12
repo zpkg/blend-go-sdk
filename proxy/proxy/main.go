@@ -34,7 +34,7 @@ func (u *Upstreams) Set(value string) error {
 }
 
 func main() {
-	log := logger.NewFromEnv().WithEnabled(logger.HTTPRequest)
+	log := logger.MustNewFromEnv().WithEnabled(logger.HTTPRequest)
 
 	var upstreams Upstreams
 	flag.Var(&upstreams, "upstream", "An upstream server to proxy traffic to")

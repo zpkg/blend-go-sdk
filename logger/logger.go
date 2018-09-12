@@ -47,8 +47,8 @@ func New(flags ...Flag) *Logger {
 // NewFromConfig returns a new logger from a config.
 func NewFromConfig(cfg *Config) *Logger {
 	l := &Logger{
-		recoverPanics: DefaultRecoverPanics,
-		flags:         NewFlagSetFromValues(cfg.GetFlags()...),
+		recoverPanics:            DefaultRecoverPanics,
+		flags:                    NewFlagSetFromValues(cfg.GetFlags()...),
 		writeWorkerQueueDepth:    cfg.GetWriteQueueDepth(),
 		listenerWorkerQueueDepth: cfg.GetListenerQueueDepth(),
 	}
@@ -64,8 +64,21 @@ func NewFromConfig(cfg *Config) *Logger {
 
 // NewFromEnv returns a new agent with settings read from the environment,
 // including the underlying writer.
-func NewFromEnv() *Logger {
-	return NewFromConfig(NewConfigFromEnv())
+func NewFromEnv() (*Logger, error) {
+	cfg, err := NewConfigFromEnv()
+	if err != nil {
+		return nil, err
+	}
+	return NewFromConfig(cfg), nil
+}
+
+// MustNewFromEnv returns a new logger based on settings from the environment.
+func MustNewFromEnv() *Logger {
+	cfg, err := NewConfigFromEnv()
+	if err != nil {
+		panic(err)
+	}
+	return NewFromConfig(cfg)
 }
 
 // All returns a valid logger that fires any and all events, and includes a writer.

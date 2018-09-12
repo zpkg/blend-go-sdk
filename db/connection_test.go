@@ -16,9 +16,11 @@ import (
 // TestConnectionSanityCheck tests if we can connect to the db, a.k.a., if the underlying driver works.
 func TestConnectionSanityCheck(t *testing.T) {
 	assert := assert.New(t)
-	conn := NewFromEnv()
+
+	conn, err := NewFromEnv()
+	assert.Nil(err)
 	str := conn.Config().CreateDSN()
-	_, err := sql.Open("postgres", str)
+	_, err = sql.Open("postgres", str)
 	assert.Nil(err)
 }
 
@@ -66,7 +68,8 @@ func TestQuery(t *testing.T) {
 func TestConnectionStatementCacheExecute(t *testing.T) {
 	a := assert.New(t)
 
-	conn := NewFromEnv()
+	conn, err := NewFromEnv()
+	a.Nil(err)
 	a.Nil(conn.Open())
 	defer conn.Close()
 	conn.StatementCache().WithEnabled(true)
@@ -83,7 +86,8 @@ func TestConnectionStatementCacheExecute(t *testing.T) {
 func TestConnectionStatementCacheQuery(t *testing.T) {
 	a := assert.New(t)
 
-	conn := NewFromEnv()
+	conn, err := NewFromEnv()
+	a.Nil(err)
 	a.Nil(conn.Open())
 	defer conn.Close()
 
@@ -151,7 +155,8 @@ func TestCRUDMethods(t *testing.T) {
 func TestCRUDMethodsCached(t *testing.T) {
 	a := assert.New(t)
 
-	conn := NewFromEnv()
+	conn, err := NewFromEnv()
+	a.Nil(err)
 	a.Nil(conn.Open())
 	defer conn.Close()
 
@@ -205,7 +210,8 @@ func TestCRUDMethodsCached(t *testing.T) {
 func TestConnectionOpen(t *testing.T) {
 	a := assert.New(t)
 
-	conn := NewFromEnv()
+	conn, err := NewFromEnv()
+	a.Nil(err)
 	a.Nil(conn.Open())
 	defer conn.Close()
 
@@ -444,7 +450,8 @@ func TestConnectionCreateIfNotExists(t *testing.T) {
 func TestConnectionInvalidatesBadCachedStatements(t *testing.T) {
 	assert := assert.New(t)
 
-	conn := NewFromEnv()
+	conn, err := NewFromEnv()
+	assert.Nil(err)
 	assert.Nil(conn.Open())
 	defer conn.Close()
 
@@ -456,7 +463,6 @@ func TestConnectionInvalidatesBadCachedStatements(t *testing.T) {
 	dropTableStatement := `DROP TABLE state_invalidation`
 	queryStatement := `SELECT * from state_invalidation`
 
-	var err error
 	defer func() {
 		err = conn.Exec(dropTableStatement)
 		assert.Nil(err)
@@ -489,7 +495,8 @@ func TestConnectionInvalidatesBadCachedStatements(t *testing.T) {
 // TestConnectionConfigSetsDatabase tests if we set the .database property on open.
 func TestConnectionConfigSetsDatabase(t *testing.T) {
 	assert := assert.New(t)
-	conn := NewFromEnv()
+	conn, err := NewFromEnv()
+	assert.Nil(err)
 	assert.Nil(conn.Open())
 	defer conn.Close()
 	assert.NotEmpty(conn.Config().GetDatabase())
