@@ -21,7 +21,7 @@ func TestJSONResultProvider(t *testing.T) {
 	assert.Equal("Bad Request", JSON.BadRequest(nil).(*JSONResult).Response)
 
 	assert.Equal(http.StatusBadRequest, JSON.BadRequest(fmt.Errorf("bad-request")).(*JSONResult).StatusCode)
-	assert.Equal(fmt.Errorf("bad-request"), JSON.BadRequest(fmt.Errorf("bad-request")).(*JSONResult).Response)
+	assert.Equal("bad-request", JSON.BadRequest(fmt.Errorf("bad-request")).(*JSONResult).Response)
 
 	assert.Equal(http.StatusOK, JSON.OK().(*JSONResult).StatusCode)
 	assert.Equal("OK!", JSON.OK().(*JSONResult).Response)
@@ -39,5 +39,5 @@ func TestJSONResultProvider(t *testing.T) {
 	assert.Equal(fmt.Errorf("only a test"), typed.Error)
 	inner := typed.Result.(*JSONResult)
 	assert.Equal(http.StatusInternalServerError, inner.StatusCode)
-	assert.Equal(fmt.Errorf("only a test"), inner.Response)
+	assert.Equal("only a test", inner.Response)
 }
