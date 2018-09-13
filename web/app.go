@@ -943,6 +943,7 @@ func (a *App) renderAction(action Action) Handler {
 
 func (a *App) createCtx(w ResponseWriter, r *http.Request, route *Route, p RouteParameters) *Ctx {
 	return NewCtx(w, r).
+		WithApp(a).
 		WithRoute(route).
 		WithRouteParams(p).
 		WithState(a.state.Copy()).

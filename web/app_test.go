@@ -318,6 +318,7 @@ func TestAppDefaultResultProvider(t *testing.T) {
 
 	rc := app.createCtx(nil, nil, nil, nil)
 	assert.NotNil(rc.defaultResultProvider)
+	assert.NotNil(rc.app)
 }
 
 func TestAppDefaultResultProviderWithDefault(t *testing.T) {
