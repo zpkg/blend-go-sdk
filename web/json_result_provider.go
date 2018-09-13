@@ -7,7 +7,8 @@ import (
 var (
 	// JSON is a static singleton json result provider.
 	JSON JSONResultProvider
-	_    ResultProvider = (*JSONResultProvider)(nil)
+	// assert it implements result provider.
+	_ ResultProvider = (*JSONResultProvider)(nil)
 )
 
 // JSONResultProvider are context results for api methods.

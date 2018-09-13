@@ -11,26 +11,40 @@ import (
 func TestJSONResultProvider(t *testing.T) {
 	assert := assert.New(t)
 
-	assert.Equal(http.StatusNotFound, JSON.NotFound().(*JSONResult).StatusCode)
-	assert.Equal("Not Found", JSON.NotFound().(*JSONResult).Response)
+	notFound, ok := JSON.NotFound().(*JSONResult)
+	assert.True(ok)
+	assert.Equal(http.StatusNotFound, notFound.StatusCode)
+	assert.Equal("Not Found", notFound.Response)
 
-	assert.Equal(http.StatusForbidden, JSON.NotAuthorized().(*JSONResult).StatusCode)
-	assert.Equal("Not Authorized", JSON.NotAuthorized().(*JSONResult).Response)
+	notAuthorized, ok := JSON.NotAuthorized().(*JSONResult)
+	assert.True(ok)
+	assert.Equal(http.StatusForbidden, notAuthorized.StatusCode)
+	assert.Equal("Not Authorized", notAuthorized.Response)
 
-	assert.Equal(http.StatusBadRequest, JSON.BadRequest(nil).(*JSONResult).StatusCode)
-	assert.Equal("Bad Request", JSON.BadRequest(nil).(*JSONResult).Response)
+	badRequest, ok := JSON.BadRequest(nil).(*JSONResult)
+	assert.True(ok)
+	assert.Equal(http.StatusBadRequest, badRequest.StatusCode)
+	assert.Equal("Bad Request", badRequest.Response)
 
-	assert.Equal(http.StatusBadRequest, JSON.BadRequest(fmt.Errorf("bad-request")).(*JSONResult).StatusCode)
-	assert.Equal("bad-request", JSON.BadRequest(fmt.Errorf("bad-request")).(*JSONResult).Response)
+	badRequestErr, ok := JSON.BadRequest(fmt.Errorf("bad-request")).(*JSONResult)
+	assert.True(ok)
+	assert.Equal(http.StatusBadRequest, badRequestErr.StatusCode)
+	assert.Equal("bad-request", badRequestErr.Response)
 
-	assert.Equal(http.StatusOK, JSON.OK().(*JSONResult).StatusCode)
-	assert.Equal("OK!", JSON.OK().(*JSONResult).Response)
+	okRes, ok := JSON.OK().(*JSONResult)
+	assert.True(ok)
+	assert.Equal(http.StatusOK, okRes.StatusCode)
+	assert.Equal("OK!", okRes.Response)
 
-	assert.Equal(http.StatusBadGateway, JSON.Status(http.StatusBadGateway, "test").(*JSONResult).StatusCode)
-	assert.Equal("test", JSON.Status(http.StatusBadGateway, "test").(*JSONResult).Response)
+	statusRes, ok := JSON.Status(http.StatusBadGateway, "test").(*JSONResult)
+	assert.True(ok)
+	assert.Equal(http.StatusBadGateway, statusRes.StatusCode)
+	assert.Equal("test", statusRes.Response)
 
-	assert.Equal(http.StatusOK, JSON.Result("foo").(*JSONResult).StatusCode)
-	assert.Equal("foo", JSON.Result("foo").(*JSONResult).Response)
+	res, ok := JSON.Result("foo").(*JSONResult)
+	assert.True(ok)
+	assert.Equal(http.StatusOK, res.StatusCode)
+	assert.Equal("foo", res.Response)
 
 	internalError := JSON.InternalError(fmt.Errorf("only a test"))
 
