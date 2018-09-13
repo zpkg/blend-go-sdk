@@ -43,6 +43,11 @@ lint:
 	@echo "$(VERSION)/$(GIT_REF) >> linting code"
 	@golint $(PKGS)
 
+build:
+	@echo "$(VERSION)/$(GIT_REF) >> linting code"
+	@docker build . -t go-sdk:$(GIT_REF) 
+	@docker run go-sdk:$(GIT_REF)
+
 .PHONY: profanity
 profanity:
 	@echo "$(VERSION)/$(GIT_REF) >> profanity"
