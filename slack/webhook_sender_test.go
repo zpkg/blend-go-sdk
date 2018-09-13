@@ -43,3 +43,22 @@ func TestWebhookSenderStatusCode(t *testing.T) {
 		Text: "this is only a test",
 	}))
 }
+
+func TestWebhookSenderApplyDefaults(t *testing.T) {
+	assert := assert.New(t)
+
+	config := &Config{
+		Webhook:  "http://foo.com",
+		Channel:  "#bot-test",
+		Username: "default-test",
+	}
+
+	sender := NewWebhookSender(config)
+	updated := sender.ApplyDefaults(&Message{
+		Text: "this is only a test",
+	})
+
+	assert.Equal("this is only a test", updated.Text)
+	assert.Equal("#bot-test", updated.Channel)
+	assert.Equal("default-test", updated.Username)
+}

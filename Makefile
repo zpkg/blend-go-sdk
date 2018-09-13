@@ -18,7 +18,7 @@ export GIT_REF
 export VERSION
 export DB_SSLMODE
 
-all: format vet profanity test-local
+all: format vet profanity test
 
 ci: vet profanity cover 
 
@@ -53,13 +53,13 @@ profanity:
 	@echo "$(VERSION)/$(GIT_REF) >> profanity"
 	@go run _bin/profanity/main.go -rules PROFANITY --exclude="_bin/*"
 
-test-local:
+test-circleci:
 	@echo "$(VERSION)/$(GIT_REF) >> tests"
-	@go test $(PKGS) -timeout 15s
+	@circleci build
 
 test:
 	@echo "$(VERSION)/$(GIT_REF) >> tests"
-	@circleci build
+	@go test $(PKGS) -timeout 15s
 
 test-verbose:
 	@echo "$(VERSION)/$(GIT_REF) >> tests"
