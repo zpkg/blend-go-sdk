@@ -29,7 +29,7 @@ type WebhookSender struct {
 }
 
 // ApplyDefaults applies defaults.
-func (whs WebhookSender) ApplyDefaults(message *Message) *Message {
+func (whs WebhookSender) ApplyDefaults(message Message) Message {
 	if len(message.Username) == 0 && whs.Config != nil {
 		message.Username = whs.Config.GetUsername()
 	}
@@ -47,7 +47,7 @@ func (whs WebhookSender) ApplyDefaults(message *Message) *Message {
 }
 
 // Send sends a slack hook.
-func (whs WebhookSender) Send(message *Message) error {
+func (whs WebhookSender) Send(message Message) error {
 	res, err := whs.SendJSON(whs.ApplyDefaults(message))
 	if err != nil {
 		return err

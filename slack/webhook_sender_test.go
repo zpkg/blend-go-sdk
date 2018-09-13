@@ -21,7 +21,7 @@ func TestWebhookSender(t *testing.T) {
 	}
 
 	sender := NewWebhookSender(config)
-	assert.Nil(sender.Send(&Message{
+	assert.Nil(sender.Send(Message{
 		Text: "this is only a test",
 	}))
 }
@@ -39,7 +39,7 @@ func TestWebhookSenderStatusCode(t *testing.T) {
 	}
 
 	sender := NewWebhookSender(config)
-	assert.NotNil(sender.Send(&Message{
+	assert.NotNil(sender.Send(Message{
 		Text: "this is only a test",
 	}))
 }
@@ -54,7 +54,7 @@ func TestWebhookSenderApplyDefaults(t *testing.T) {
 	}
 
 	sender := NewWebhookSender(config)
-	updated := sender.ApplyDefaults(&Message{
+	updated := sender.ApplyDefaults(Message{
 		Text: "this is only a test",
 	})
 
