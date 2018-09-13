@@ -23,7 +23,6 @@ The main packages are as follows:
 - `oauth` : a wrapper on `golang.org/x/oauth2` that automates fetching profiles for google oauth.
 - `proxy` : an http/https reverse proxy.
 - `proxy/proxy` : a cli server the proxy.
-- `raft` : raft leader elections.
 - `request` : wrappers for `http.Client` with support for testing and a fluent api.
 - `selector` : a portable implementation of kubernetes selectors.
 - `semver` : semantic versioning helpers.
@@ -34,6 +33,15 @@ The main packages are as follows:
 - `web` : our web framework; useful for both rest api's and view based apps.
 - `workqueue` : a background work queue when you need to have a fixed number of workers.
 - `yaml` : a yaml marshaller / unmarshaller. based on `go-yaml`.
+
+# Addtional CLI Tools
+
+We also provide the following CLI tools to help with development:
+
+- `_bin/cover` : allows for project level coverage reporting and enforcement.
+- `_bin/profanity` : profanity rules checking (i.e. fail on grep match).
+- `_bin/recover` : recover crashed processes (to be used when debugging panics).
+- `_bin/semver` : semver maniuplation and validation. 
 
 # Code Style Notes
 
@@ -46,18 +54,8 @@ The main packages are as follows:
 - Field accessors should be the uppercase name of the field, i.e. `foo` would have an accessor `Foo()`.
 - Where possible, types should have a config object that fully represent the options you can set with `With` or `Set` mutators. 
 - Said types should also have a constructor in the form `NewFromEnv` that uses the `go-sdk/env` package to read options set in the environment.
+- Anything that can return an error, should. Anything that needs to return a single value (but would return an error) should panic on that error and should be prefixed by `Must...`.
 - Minimize dependencies between packages as much as possible; add external dependencies with *extreme* care.
-    - our only current external dependencies are the golang stdlib and `github.com/lib/pq` for the `go-sdk/db`.
-
-# Dependency Guidelines
-
-- `assert` should depend only on the stdlib.
-- `exception` should depend only on `assert` and the stdlib.
-- `util` should depenend only on `exception`, `assert`, and the stdlib.
-- `logger` should depend only on `util`, `exception`, `assert`, and the stdlib.
-- Internal package dependencies otherwise are fair game, but try and minimize coupling.
-- Do not add external packages unless absolutely necessary.
-- If you do have to add an external dependency, make sure it's included in `make new-install`.
 
 # Version Management
 
