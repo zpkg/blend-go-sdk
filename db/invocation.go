@@ -21,6 +21,7 @@ type Invocation struct {
 
 	conn          *Connection
 	context       context.Context
+	cancel        func()
 	tracer        Tracer
 	traceFinisher TraceFinisher
 	startTime     time.Time
@@ -44,6 +45,17 @@ func (i *Invocation) Context() context.Context {
 		return context.Background()
 	}
 	return i.context
+}
+
+// WithCancel sets an optional cancel callback.
+func (i *Invocation) WithCancel(cancel func()) *Invocation {
+	i.cancel = cancel
+	return i
+}
+
+// Cancel returns the optional cancel callback.
+func (i *Invocation) Cancel() func() {
+	return i.cancel
 }
 
 // WithLabel instructs the query generator to get or create a cached prepared statement.
@@ -1026,6 +1038,9 @@ func (i *Invocation) start(statement string) {
 }
 
 func (i *Invocation) finish(statement string, r interface{}, err error) error {
+	if i.cancel != nil {
+		i.cancel()
+	}
 	if r != nil {
 		err = exception.Nest(err, exception.New(r))
 	}
