@@ -365,3 +365,29 @@ func TestTruncateError(t *testing.T) {
 	assert.NotNil(conn.Invoke(context.Background()).Truncate(&mustError))
 	assert.NotNil(conn.Invoke(context.Background()).WithLabel("truncate_error_test").Truncate(&mustError))
 }
+
+type uuidTest struct {
+	ID   uuid.UUID `db:"id"`
+	Name string    `db:"name"`
+}
+
+func (ut uuidTest) TableName() string {
+	return "uuid_test"
+}
+
+func TestInvocationUUIDs(t *testing.T) {
+	assert := assert.New(t)
+	tx, err := Default().Begin()
+	assert.Nil(err)
+	defer tx.Rollback()
+
+	assert.Nil(Default().Invoke(context.Background(), tx).Exec("CREATE TABLE IF NOT EXISTS uuid_test (id uuid not null, name varchar(255) not null)"))
+
+	assert.Nil(Default().Invoke(context.Background(), tx).Create(&uuidTest{ID: uuid.V4(), Name: "foo"}))
+	assert.Nil(Default().Invoke(context.Background(), tx).Create(&uuidTest{ID: uuid.V4(), Name: "foo2"}))
+
+	var objs []uuidTest
+	assert.Nil(Default().Invoke(context.Background(), tx).GetAll(&objs))
+
+	assert.Len(objs, 2)
+}

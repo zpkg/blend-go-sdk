@@ -1,10 +1,12 @@
 package uuid
 
 import (
+	"encoding/json"
 	"fmt"
 	"testing"
 
 	"github.com/blend/go-sdk/assert"
+	"github.com/blend/go-sdk/yaml"
 )
 
 func TestV4(t *testing.T) {
@@ -79,4 +81,44 @@ func TestParseUUIDv4Invalid(t *testing.T) {
 
 	_, err = Parse("4f2e28b7b8f94b9eba1d90c4452")
 	assert.NotNil(err, "should handle invalid length uuids")
+}
+
+type marshalTest struct {
+	ID UUID `json:"id" yaml:"id"`
+}
+
+func TestJSONMarshalers(t *testing.T) {
+	assert := assert.New(t)
+
+	id := V4()
+	rawJSON := []byte(fmt.Sprintf(`{"id":"%s"}`, id.ToFullString()))
+
+	var testVal marshalTest
+	assert.Nil(json.Unmarshal(rawJSON, &testVal))
+	assert.Equal(id.String(), testVal.ID.String())
+
+	newJSON, err := json.Marshal(testVal)
+	assert.Nil(err)
+
+	var verify marshalTest
+	assert.Nil(json.Unmarshal(newJSON, &verify))
+	assert.Equal(id.String(), verify.ID.String())
+}
+
+func TestYAMLMarshalers(t *testing.T) {
+	assert := assert.New(t)
+
+	id := V4()
+	rawYAML := []byte(fmt.Sprintf(`id: "%s"`, id.ToFullString()))
+
+	var testVal marshalTest
+	assert.Nil(yaml.Unmarshal(rawYAML, &testVal))
+	assert.Equal(id.String(), testVal.ID.String())
+
+	newYAML, err := yaml.Marshal(testVal)
+	assert.Nil(err)
+
+	var verify marshalTest
+	assert.Nil(yaml.Unmarshal(newYAML, &verify))
+	assert.Equal(id.String(), verify.ID.String())
 }

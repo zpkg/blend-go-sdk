@@ -1,9 +1,12 @@
 package uuid
 
 import (
-	"crypto/rand"
+	"database/sql/driver"
 	"fmt"
 	"io"
+	"strings"
+
+	"github.com/blend/go-sdk/exception"
 )
 
 var (
@@ -17,94 +20,9 @@ var (
 	}
 )
 
-func newUUID() UUID {
+// Empty returns an empty uuid block.
+func Empty() UUID {
 	return UUID(make([]byte, 16))
-}
-
-// V4 Create a new UUID version 4.
-func V4() UUID {
-	uuid := newUUID()
-	rand.Read(uuid)
-	uuid[6] = (uuid[6] & 0x0f) | 0x40 // set version 4
-	uuid[8] = (uuid[8] & 0x3f) | 0x80 // set variant 2
-	return uuid
-}
-
-// Parse parses a uuidv4 from a given string.
-// valid forms are:
-// - {xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx}
-// - xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx
-// - xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx
-func Parse(corpus string) (UUID, error) {
-	if len(corpus) == 0 {
-		return nil, fmt.Errorf("parse uuid: input is empty")
-	}
-	if len(corpus)%2 == 1 {
-		return nil, fmt.Errorf("parse uuid: input is an invalid length")
-	}
-
-	uuid := newUUID()
-	var data = []byte(corpus)
-	var c byte
-	hex := [2]byte{}
-	var hexChar byte
-	var isHexChar bool
-	var hexIndex, uuidIndex, di int
-
-	for i := 0; i < len(data); i++ {
-		c = data[i]
-		if c == '{' && i == 0 {
-			continue
-		}
-		if c == '{' {
-			return nil, fmt.Errorf("parse uuid: illegal character at %d: %v", i, string(c))
-		}
-		if c == '}' && i != len(data)-1 {
-			return nil, fmt.Errorf("parse uuid: illegal character at %d: %v", i, string(c))
-		}
-		if c == '}' {
-			continue
-		}
-
-		if c == '-' && !(di == 8 || di == 12 || di == 16 || di == 20) {
-			return nil, fmt.Errorf("parse uuid: illegal character at %d: %v", i, string(c))
-		}
-		if c == '-' {
-			continue
-		}
-
-		hexChar, isHexChar = fromHexChar(c)
-		if !isHexChar {
-			return nil, fmt.Errorf("parse uuid: illegal character at %d: %v", i, string(c))
-		}
-
-		hex[hexIndex] = hexChar
-		if hexIndex == 1 {
-			uuid[uuidIndex] = hex[0]<<4 | hex[1]
-			uuidIndex++
-			hexIndex = 0
-		} else {
-			hexIndex++
-		}
-		di++
-	}
-	if uuidIndex != 16 {
-		return nil, fmt.Errorf("parse uuid: input is an invalid length")
-	}
-	return uuid, nil
-}
-
-func fromHexChar(c byte) (byte, bool) {
-	switch {
-	case '0' <= c && c <= '9':
-		return c - '0', true
-	case 'a' <= c && c <= 'f':
-		return c - 'a' + 10, true
-	case 'A' <= c && c <= 'F':
-		return c - 'A' + 10, true
-	}
-
-	return 0, false
 }
 
 // UUID represents a unique identifier conforming to the RFC 4122 standard.
@@ -164,4 +82,61 @@ func (uuid UUID) IsV4() bool {
 	}
 	// check that variant is 2
 	return (uuid[8]&0xc0)^0x80 == 0
+}
+
+// MarshalJSON marshals a uuid as json.
+func (uuid UUID) MarshalJSON() ([]byte, error) {
+	return []byte("\"" + uuid.ToFullString() + "\""), nil
+}
+
+// UnmarshalJSON unmarshals a uuid from json.
+func (uuid *UUID) UnmarshalJSON(corpus []byte) error {
+	if len(*uuid) == 0 {
+		(*uuid) = Empty()
+	}
+	raw := strings.TrimSpace(string(corpus))
+	raw = strings.TrimPrefix(raw, "\"")
+	raw = strings.TrimSuffix(raw, "\"")
+	return ParseExisting(uuid, raw)
+}
+
+// MarshalYAML marshals a uuid as yaml.
+func (uuid UUID) MarshalYAML() (interface{}, error) {
+	return "\"" + uuid.ToFullString() + "\"", nil
+}
+
+// UnmarshalYAML unmarshals a uuid from yaml.
+func (uuid *UUID) UnmarshalYAML(unmarshaler func(interface{}) error) error {
+	if len(*uuid) == 0 {
+		(*uuid) = Empty()
+	}
+
+	var corpus string
+	if err := unmarshaler(&corpus); err != nil {
+		return err
+	}
+
+	raw := strings.TrimSpace(string(corpus))
+	raw = strings.TrimPrefix(raw, "\"")
+	raw = strings.TrimSuffix(raw, "\"")
+	return ParseExisting(uuid, raw)
+}
+
+// Scan scans a uuid from a db value.
+func (uuid *UUID) Scan(src interface{}) error {
+	if len(*uuid) == 0 {
+		(*uuid) = Empty()
+	}
+	switch src.(type) {
+	case string:
+		return ParseExisting(uuid, src.(string))
+	case []byte:
+		return ParseExisting(uuid, string(src.([]byte)))
+	}
+	return exception.New(exception.Class("uuid: invalid scan source")).WithMessagef("scan type: %T", src)
+}
+
+// Value returns a sql driver value.
+func (uuid UUID) Value() (driver.Value, error) {
+	return uuid.ToFullString(), nil
 }
