@@ -32,10 +32,12 @@ func Columns(object DatabaseMapped) *ColumnCollection {
 // --------------------------------------------------------------------------------
 // Column Collection
 // --------------------------------------------------------------------------------
-// func NewColumnCollection() *ColumnCollection { return &ColumnCollection{lookup: map[string]*Column} }
 
-// newColumnCollectionWithPrefix makes a new column collection with a column prefix.
-func newColumnCollectionWithPrefix(columnPrefix string) *ColumnCollection {
+// NewColumnCollection returns a new empty column collection.
+func NewColumnCollection() *ColumnCollection { return &ColumnCollection{lookup: map[string]*Column{}} }
+
+// NewColumnCollectionWithPrefix makes a new column collection with a column prefix.
+func NewColumnCollectionWithPrefix(columnPrefix string) *ColumnCollection {
 	return &ColumnCollection{lookup: map[string]*Column{}, columnPrefix: columnPrefix}
 }
 
@@ -91,36 +93,45 @@ func getCachedColumnCollectionFromType(identifier string, t reflect.Type) *Colum
 
 	cachedMeta, ok := metaCache[identifier]
 	if !ok {
-		metadata := generateColumnCollectionForType(t)
+		metadata := newColumnCollectionFromColumns(generateColumnsForType(nil, t))
 		metaCache[identifier] = metadata
 		return metadata
 	}
 	return cachedMeta
 }
 
-// GenerateColumnCollectionForType reflects a new column collection from a reflect.Type.
-func generateColumnCollectionForType(t reflect.Type) *ColumnCollection {
+// generateColumnsForType generates a column list for a given type.
+func generateColumnsForType(parent *Column, t reflect.Type) []Column {
 	for t.Kind() == reflect.Ptr {
 		t = t.Elem()
 	}
 
-	tableName := TableNameByType(t)
+	var tableName string
+	if parent != nil {
+		tableName = parent.TableName
+	} else {
+		tableName = TableNameByType(t)
+	}
+
 	numFields := t.NumField()
 
 	var cols []Column
 	for index := 0; index < numFields; index++ {
 		field := t.Field(index)
-		if !field.Anonymous {
-			col := NewColumnFromFieldTag(field)
-			if col != nil {
-				col.Index = index
-				col.TableName = tableName
+		col := NewColumnFromFieldTag(field)
+		if col != nil {
+			col.Parent = parent
+			col.Index = index
+			col.TableName = tableName
+			if col.Inline && field.Anonymous { // if it's not anonymous, whatchu doin
+				cols = append(cols, generateColumnsForType(col, col.FieldType)...)
+			} else if !field.Anonymous {
 				cols = append(cols, *col)
 			}
 		}
 	}
 
-	return newColumnCollectionFromColumns(cols)
+	return cols
 }
 
 // ColumnCollection represents the column metadata for a given struct.
@@ -204,7 +215,7 @@ func (cc *ColumnCollection) PrimaryKeys() *ColumnCollection {
 		return cc.primaryKeys
 	}
 
-	newCC := newColumnCollectionWithPrefix(cc.columnPrefix)
+	newCC := NewColumnCollectionWithPrefix(cc.columnPrefix)
 	for _, c := range cc.columns {
 		if c.IsPrimaryKey {
 			newCC.Add(c)
@@ -221,7 +232,7 @@ func (cc *ColumnCollection) NotPrimaryKeys() *ColumnCollection {
 		return cc.notPrimaryKeys
 	}
 
-	newCC := newColumnCollectionWithPrefix(cc.columnPrefix)
+	newCC := NewColumnCollectionWithPrefix(cc.columnPrefix)
 
 	for _, c := range cc.columns {
 		if !c.IsPrimaryKey {
@@ -239,7 +250,7 @@ func (cc *ColumnCollection) Autos() *ColumnCollection {
 		return cc.autos
 	}
 
-	newCC := newColumnCollectionWithPrefix(cc.columnPrefix)
+	newCC := NewColumnCollectionWithPrefix(cc.columnPrefix)
 
 	for _, c := range cc.columns {
 		if c.IsAuto {
@@ -257,7 +268,7 @@ func (cc *ColumnCollection) NotAutos() *ColumnCollection {
 		return cc.notAutos
 	}
 
-	newCC := newColumnCollectionWithPrefix(cc.columnPrefix)
+	newCC := NewColumnCollectionWithPrefix(cc.columnPrefix)
 
 	for _, c := range cc.columns {
 		if !c.IsAuto {
@@ -274,7 +285,7 @@ func (cc *ColumnCollection) ReadOnly() *ColumnCollection {
 		return cc.readOnly
 	}
 
-	newCC := newColumnCollectionWithPrefix(cc.columnPrefix)
+	newCC := NewColumnCollectionWithPrefix(cc.columnPrefix)
 
 	for _, c := range cc.columns {
 		if c.IsReadOnly {
@@ -292,7 +303,7 @@ func (cc *ColumnCollection) NotReadOnly() *ColumnCollection {
 		return cc.notReadOnly
 	}
 
-	newCC := newColumnCollectionWithPrefix(cc.columnPrefix)
+	newCC := NewColumnCollectionWithPrefix(cc.columnPrefix)
 
 	for _, c := range cc.columns {
 		if !c.IsReadOnly {

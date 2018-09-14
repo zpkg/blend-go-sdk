@@ -84,16 +84,6 @@ func initColumnValue(index int, values []interface{}, col *Column) {
 	if col.IsJSON {
 		values[index] = &sql.NullString{}
 	} else {
-		if col.IsNullable && col.FieldType.Kind() == reflect.String {
-			values[index] = &sql.NullString{}
-		} else if col.IsNullable && col.FieldType.Kind() == reflect.Int {
-			values[index] = &sql.NullInt64{}
-		} else if col.IsNullable && col.FieldType.Kind() == reflect.Int64 {
-			values[index] = &sql.NullInt64{}
-		} else if col.IsNullable && col.FieldType.Kind() == reflect.Float64 {
-			values[index] = &sql.NullFloat64{}
-		} else {
-			values[index] = reflect.New(reflect.PtrTo(col.FieldType)).Interface()
-		}
+		values[index] = reflect.New(reflect.PtrTo(col.FieldType)).Interface()
 	}
 }

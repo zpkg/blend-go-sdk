@@ -4,6 +4,7 @@ import (
 	"context"
 	"database/sql"
 	"testing"
+	"time"
 
 	"github.com/blend/go-sdk/assert"
 	"github.com/blend/go-sdk/uuid"
@@ -390,4 +391,64 @@ func TestInvocationUUIDs(t *testing.T) {
 	assert.Nil(Default().Invoke(context.Background(), tx).GetAll(&objs))
 
 	assert.Len(objs, 2)
+}
+
+type EmbeddedTestMeta struct {
+	ID           uuid.UUID `db:"id,pk"`
+	TimestampUTC time.Time `db:"timestamp_utc"`
+}
+
+type embeddedTest struct {
+	EmbeddedTestMeta `db:",inline"`
+	Name             string `db:"name"`
+}
+
+func (et embeddedTest) TableName() string {
+	return "embedded_test"
+}
+
+func TestInlineMeta(t *testing.T) {
+	assert := assert.New(t)
+	tx, err := Default().Begin()
+	assert.Nil(err)
+	defer tx.Rollback()
+
+	test := &embeddedTest{EmbeddedTestMeta: EmbeddedTestMeta{ID: uuid.V4(), TimestampUTC: time.Now().UTC()}, Name: "foo"}
+	cols := Columns(test)
+	assert.NotEmpty(cols.PrimaryKeys().Columns())
+	assert.Equal("id", cols.Columns()[0].ColumnName)
+	assert.Equal("timestamp_utc", cols.Columns()[1].ColumnName)
+	assert.Equal("name", cols.Columns()[2].ColumnName)
+
+	values := cols.NotReadOnly().NotAutos().ColumnValues(test)
+	assert.Len(values, 3)
+	assert.Equal(test.ID, values[0])
+	assert.False(values[1].(time.Time).IsZero())
+	assert.Equal("foo", values[2])
+
+	id0 := uuid.V4()
+	id1 := uuid.V4()
+	assert.Nil(Default().Invoke(context.Background(), tx).Exec("CREATE TABLE IF NOT EXISTS embedded_test (id uuid not null primary key, timestamp_utc timestamp not null, name varchar(255) not null)"))
+	assert.Nil(Default().Invoke(context.Background(), tx).Create(&embeddedTest{EmbeddedTestMeta: EmbeddedTestMeta{ID: id0, TimestampUTC: time.Now().UTC()}, Name: "foo"}))
+	assert.Nil(Default().Invoke(context.Background(), tx).Create(&embeddedTest{EmbeddedTestMeta: EmbeddedTestMeta{ID: id1, TimestampUTC: time.Now().UTC()}, Name: "foo2"}))
+
+	var objs []embeddedTest
+	assert.Nil(Default().Invoke(context.Background(), tx).GetAll(&objs))
+
+	assert.Len(objs, 2)
+	assert.Any(objs, func(v interface{}) bool {
+		return v.(embeddedTest).ID.Equals(id0)
+	})
+	assert.Any(objs, func(v interface{}) bool {
+		return v.(embeddedTest).ID.Equals(id1)
+	})
+	assert.Any(objs, func(v interface{}) bool {
+		return v.(embeddedTest).Name == "foo"
+	})
+	assert.Any(objs, func(v interface{}) bool {
+		return v.(embeddedTest).Name == "foo2"
+	})
+	assert.All(objs, func(v interface{}) bool {
+		return !v.(embeddedTest).TimestampUTC.IsZero()
+	})
 }

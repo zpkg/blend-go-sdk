@@ -34,7 +34,7 @@ func NewColumnFromFieldTag(field reflect.StructField) *Column {
 				col.IsPrimaryKey = strings.Contains(args, "pk")
 				col.IsAuto = strings.Contains(args, "serial") || strings.Contains(args, "auto")
 				col.IsReadOnly = strings.Contains(args, "readonly")
-				col.IsNullable = strings.Contains(args, "nullable")
+				col.Inline = strings.Contains(args, "inline")
 				col.IsJSON = strings.Contains(args, "json")
 			}
 		}
@@ -46,6 +46,7 @@ func NewColumnFromFieldTag(field reflect.StructField) *Column {
 
 // Column represents a single field on a struct that is mapped to the database.
 type Column struct {
+	Parent       *Column
 	TableName    string
 	FieldName    string
 	FieldType    reflect.Type
@@ -53,9 +54,9 @@ type Column struct {
 	Index        int
 	IsPrimaryKey bool
 	IsAuto       bool
-	IsNullable   bool
 	IsReadOnly   bool
 	IsJSON       bool
+	Inline       bool
 }
 
 // SetValue sets the field on a database mapped object to the instance of `value`.
@@ -72,7 +73,7 @@ func (c Column) SetValue(object interface{}, value interface{}) error {
 		return nil
 	}
 
-	if c.IsJSON { // very special dispensation for json columns
+	if c.IsJSON {
 		valueContents, ok := valueReflected.Interface().(sql.NullString)
 		if ok && valueContents.Valid && len(valueContents.String) > 0 {
 			fieldAddr := field.Addr().Interface()
@@ -118,6 +119,11 @@ func (c Column) SetValue(object interface{}, value interface{}) error {
 // GetValue returns the value for a column on a given database mapped object.
 func (c Column) GetValue(object DatabaseMapped) interface{} {
 	value := reflectValue(object)
+	if c.Parent != nil {
+		embedded := value.Field(c.Parent.Index)
+		valueField := embedded.Field(c.Index)
+		return valueField.Interface()
+	}
 	valueField := value.Field(c.Index)
 	return valueField.Interface()
 }

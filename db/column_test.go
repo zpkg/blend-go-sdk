@@ -59,10 +59,10 @@ func TestSetValuePtr(t *testing.T) {
 
 func TestGetValue(t *testing.T) {
 	a := assert.New(t)
-	obj := myStruct{PrimaryKeyCol: 5, InferredName: "Hello."}
-
+	obj := myStruct{EmbeddedMeta: EmbeddedMeta{PrimaryKeyCol: 5}, InferredName: "Hello."}
 	meta := getCachedColumnCollectionFromInstance(obj)
 	pk := meta.PrimaryKeys().FirstOrDefault()
+	a.NotNil(pk)
 	value := pk.GetValue(&obj)
 	a.NotNil(value)
 	a.Equal(5, value)

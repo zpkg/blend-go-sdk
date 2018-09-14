@@ -63,6 +63,19 @@ func (st SimpleTypeWithName) TableName() string {
 	return "not_simple_type_with_name"
 }
 
+type EmbeddedSimpleTypeMeta struct {
+	ID   int
+	Name string
+}
+
+type EmbeddedSimpleType struct {
+	EmbeddedSimpleTypeMeta
+}
+
+func (est EmbeddedSimpleType) TableName() string {
+	return "embedded_simple_type"
+}
+
 func TestTableName(t *testing.T) {
 	assert := assert.New(t)
 
@@ -70,4 +83,7 @@ func TestTableName(t *testing.T) {
 	assert.Equal("simpletype", TableName(&SimpleType{}))
 	assert.Equal("not_simple_type_with_name", TableName(SimpleTypeWithName{}))
 	assert.Equal("not_simple_type_with_name", TableName(&SimpleTypeWithName{}))
+
+	assert.Equal("embedded_simple_type", TableName(EmbeddedSimpleType{}))
+	assert.Equal("embedded_simple_type", TableName(&EmbeddedSimpleType{}))
 }

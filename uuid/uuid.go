@@ -29,6 +29,22 @@ func Empty() UUID {
 // UUIDs are a fixed 128bit (16 byte) binary blob.
 type UUID []byte
 
+// Equals returns if a uuid equals another uuid.
+func (uuid UUID) Equals(other UUID) bool {
+	if uuid == nil || other == nil {
+		return false
+	}
+	if len(uuid) != len(other) {
+		return false
+	}
+	for index := 0; index < len(uuid); index++ {
+		if uuid[index] != other[index] {
+			return false
+		}
+	}
+	return true
+}
+
 // ToFullString returns a "xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx" hex representation of a uuid.
 func (uuid UUID) ToFullString() string {
 	b := []byte(uuid)

@@ -6,13 +6,17 @@ import (
 	"github.com/blend/go-sdk/assert"
 )
 
+type EmbeddedMeta struct {
+	PrimaryKeyCol int    `json:"pk" db:"primary_key_column,pk,serial"`
+	AutoCol       string `json:"auto" db:"auto_column,auto"`
+}
+
 type subStruct struct {
 	Foo string `json:"foo"`
 }
 
 type myStruct struct {
-	PrimaryKeyCol     int       `json:"pk" db:"primary_key_column,pk,serial"`
-	AutoCol           string    `json:"auto" db:"auto_column,auto"`
+	EmbeddedMeta      `db:",inline"`
 	InferredName      string    `json:"normal"`
 	Excluded          string    `json:"-" db:"-"`
 	NullableCol       string    `json:"not_nullable" db:"nullable,nullable"`
