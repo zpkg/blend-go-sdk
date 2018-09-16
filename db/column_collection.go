@@ -189,13 +189,13 @@ func (cc ColumnCollection) CopyWithColumnPrefix(prefix string) *ColumnCollection
 	return newColumnCollectionWithPrefixFromColumns(prefix, cc.columns)
 }
 
-// WriteColumns are non-serial, non-primary key, non-readonly columns.
+// WriteColumns are non-auto, non-primary key, non-readonly columns.
 func (cc *ColumnCollection) WriteColumns() *ColumnCollection {
 	if cc.writeColumns != nil {
 		return cc.writeColumns
 	}
 
-	cc.writeColumns = cc.NotReadOnly().NotPrimaryKeys()
+	cc.writeColumns = cc.NotReadOnly().NotAutos()
 	return cc.writeColumns
 }
 
@@ -205,7 +205,7 @@ func (cc *ColumnCollection) UpdateColumns() *ColumnCollection {
 		return cc.updateColumns
 	}
 
-	cc.updateColumns = cc.NotReadOnly().NotPrimaryKeys().ConcatWith(cc.PrimaryKeys())
+	cc.updateColumns = cc.NotReadOnly()
 	return cc.updateColumns
 }
 

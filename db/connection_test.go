@@ -94,10 +94,10 @@ func TestConnectionStatementCacheQuery(t *testing.T) {
 	conn.StatementCache().WithEnabled(true)
 
 	var ok string
-	a.Nil(conn.Invoke(context.TODO()).WithLabel("status").Query("select 'ok!'").Scan(&ok))
+	a.Nil(conn.Invoke(context.TODO()).WithLabel("status").Query("select 'ok!'").Prepare().Scan(&ok))
 	a.Equal("ok!", ok)
 
-	a.Nil(conn.Invoke(context.TODO()).WithLabel("status").Query("select 'ok!'").Scan(&ok))
+	a.Nil(conn.Invoke(context.TODO()).WithLabel("status").Query("select 'ok!'").Prepare().Scan(&ok))
 	a.Equal("ok!", ok)
 
 	a.True(conn.StatementCache().HasStatement("status"))
@@ -129,6 +129,7 @@ func TestCRUDMethods(t *testing.T) {
 	getTestErr := Default().GetInTx(&getTest, tx, sampleObj.ID)
 	a.Nil(getTestErr)
 	a.Equal(sampleObj.ID, getTest.ID)
+	a.NotEmpty(getTest.UUID)
 
 	exists, existsErr := Default().ExistsInTx(&getTest, tx)
 	a.Nil(existsErr)
@@ -156,6 +157,7 @@ func TestCRUDMethodsCached(t *testing.T) {
 	a := assert.New(t)
 
 	conn, err := NewFromEnv()
+	conn.StatementCache().WithEnabled(true)
 	a.Nil(err)
 	a.Nil(conn.Open())
 	defer conn.Close()
@@ -164,25 +166,21 @@ func TestCRUDMethodsCached(t *testing.T) {
 	a.Nil(err)
 	defer tx.Rollback()
 
-	seedErr := seedObjects(100, tx)
-	a.Nil(seedErr)
+	err = seedObjects(100, tx)
+	a.Nil(err)
 
 	objs := []benchObj{}
-	queryErr := Default().QueryInTx("select * from bench_object", tx).OutMany(&objs)
-
-	a.Nil(queryErr)
+	a.Nil(Default().QueryInTx("select * from bench_object", tx).OutMany(&objs))
 	a.NotEmpty(objs)
 
 	all := []benchObj{}
-	allErr := Default().GetAllInTx(&all, tx)
-	a.Nil(allErr)
+	a.Nil(Default().GetAllInTx(&all, tx))
 	a.Equal(len(objs), len(all))
 
 	sampleObj := all[0]
 
 	getTest := benchObj{}
-	getTestErr := Default().GetInTx(&getTest, tx, sampleObj.ID)
-	a.Nil(getTestErr)
+	a.Nil(Default().GetInTx(&getTest, tx, sampleObj.ID))
 	a.Equal(sampleObj.ID, getTest.ID)
 
 	exists, existsErr := Default().ExistsInTx(&getTest, tx)

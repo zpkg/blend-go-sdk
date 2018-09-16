@@ -180,22 +180,11 @@ func (dbc *Connection) Open() error {
 
 // Begin starts a new transaction.
 func (dbc *Connection) Begin(opts ...*sql.TxOptions) (*sql.Tx, error) {
-	if dbc.connection == nil {
-		return nil, exception.New(ErrConnectionClosed)
-	}
-	if len(opts) > 0 {
-		tx, err := dbc.connection.BeginTx(dbc.Background(), opts[0])
-		return tx, exception.New(err)
-	}
-	tx, err := dbc.connection.Begin()
-	return tx, exception.New(err)
+	return dbc.BeginContext(context.Background(), opts...)
 }
 
 // BeginContext starts a new transaction in a givent context.
 func (dbc *Connection) BeginContext(context context.Context, opts ...*sql.TxOptions) (*sql.Tx, error) {
-	if dbc.connection == nil {
-		return nil, exception.New(ErrConnectionClosed)
-	}
 	if len(opts) > 0 {
 		tx, err := dbc.connection.BeginTx(context, opts[0])
 		return tx, exception.New(err)
@@ -207,10 +196,6 @@ func (dbc *Connection) BeginContext(context context.Context, opts ...*sql.TxOpti
 // PrepareContext prepares a new statement for the connection.
 // It will never hit the statement cache.
 func (dbc *Connection) PrepareContext(context context.Context, statement string, txs ...*sql.Tx) (stmt *sql.Stmt, err error) {
-	if dbc.connection == nil {
-		return nil, exception.New(ErrConnectionClosed)
-	}
-
 	if dbc.tracer != nil {
 		tf := dbc.tracer.Prepare(context, dbc, statement)
 		if tf != nil {
@@ -235,11 +220,8 @@ func (dbc *Connection) PrepareContext(context context.Context, statement string,
 
 // PrepareCachedContext prepares a statement potentially returning a cached version of the statement.
 func (dbc *Connection) PrepareCachedContext(context context.Context, statementID, statement string, txs ...*sql.Tx) (*sql.Stmt, error) {
-	if dbc.connection == nil {
-		return nil, exception.New(ErrConnectionClosed)
-	}
-	if dbc.statementCache == nil {
-		return nil, exception.New(ErrStatementCacheUnset)
+	if dbc.statementCache == nil || !dbc.statementCache.Enabled() || statementID == "" {
+		return dbc.PrepareContext(context, statement, txs...)
 	}
 	return dbc.statementCache.PrepareContext(context, statementID, statement, Tx(txs...))
 }

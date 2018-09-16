@@ -14,10 +14,13 @@ func ErrClass(err error) string {
 
 // Is is a helper function that returns if an error is an exception.
 func Is(err, cause error) bool {
-	if typed, isTyped := err.(Exception); isTyped {
-		return typed.Class() == cause
+	if err == nil || cause == nil {
+		return false
 	}
-	return err == cause
+	if typed, isTyped := err.(Exception); isTyped && typed.Class() != nil {
+		return (typed.Class() == cause) || (typed.Class().Error() == cause.Error())
+	}
+	return (err == cause) || (err.Error() == cause.Error())
 }
 
 // Inner returns an inner error if the error is an exception.

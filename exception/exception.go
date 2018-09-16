@@ -11,12 +11,6 @@ func New(class interface{}) Exception {
 	return newWithStartDepth(class, defaultNewStartDepth)
 }
 
-// Wrap returns a new exception with a call stack.
-// DEPRECATION NOTICE: this function is superfluous, please just use `New(...)`.
-func Wrap(class interface{}) Exception {
-	return newWithStartDepth(class, defaultNewStartDepth)
-}
-
 func newWithStartDepth(class interface{}, startDepth int) Exception {
 	if class == nil {
 		return nil

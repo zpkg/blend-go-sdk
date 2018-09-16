@@ -1,7 +1,5 @@
 package db
 
-import "database/sql"
-
 // DatabaseMapped is the interface that any objects passed into database mapped methods like Create, Update, Delete, Get, GetAll etc.
 type DatabaseMapped interface{}
 
@@ -21,8 +19,13 @@ type TableNameProvider interface {
 
 // Populatable is an interface that you can implement if your object is read often and is performance critical.
 type Populatable interface {
-	Populate(rows *sql.Rows) error
+	Populate(rows Scanner) error
 }
 
 // RowsConsumer is the function signature that is called from within Each().
-type RowsConsumer func(r *sql.Rows) error
+type RowsConsumer func(r Scanner) error
+
+// Scanner is a type that can scan into variadic values.
+type Scanner interface {
+	Scan(...interface{}) error
+}

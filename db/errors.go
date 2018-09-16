@@ -17,6 +17,8 @@ const (
 	ErrConnectionClosed exception.Class = "db: the connection is closed"
 	// ErrStatementCacheUnset is an error indicating the statement cache is unset.
 	ErrStatementCacheUnset exception.Class = "db: the statement cache is unset"
+	// ErrStatementLabelUnset is an error indicating the statement cache is unset.
+	ErrStatementLabelUnset exception.Class = "db: the statement label is unset"
 	// ErrCollectionNotSlice is an error returned by OutMany if the destination is not a slice.
 	ErrCollectionNotSlice exception.Class = "db: outmany destination collection is not a slice"
 	// ErrInvalidIDs is an error returned by Get if the ids aren't provided.

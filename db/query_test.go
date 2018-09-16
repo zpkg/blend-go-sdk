@@ -1,7 +1,6 @@
 package db
 
 import (
-	"database/sql"
 	"sync"
 	"testing"
 
@@ -20,7 +19,8 @@ func TestQueryExecute(t *testing.T) {
 	rows, err := Default().QueryInTx("select * from bench_object", tx).Execute()
 	a.Nil(err)
 	defer rows.Close()
-	a.NotNil(rows)
+	a.True(rows.Next())
+	a.Nil(rows.Err())
 }
 
 func TestQueryEach(t *testing.T) {
@@ -34,7 +34,7 @@ func TestQueryEach(t *testing.T) {
 
 	var all []benchObj
 	var popErr error
-	err = Default().QueryInTx("select * from bench_object", tx).Each(func(r *sql.Rows) error {
+	err = Default().QueryInTx("select * from bench_object", tx).Each(func(r Scanner) error {
 		bo := benchObj{}
 		popErr = bo.Populate(r)
 		if popErr != nil {
@@ -106,7 +106,7 @@ func TestQueryPanicHandling(t *testing.T) {
 	err = seedObjects(10, tx)
 	a.Nil(err)
 
-	err = Default().QueryInTx("select * from bench_object", tx).Each(func(r *sql.Rows) error {
+	err = Default().QueryInTx("select * from bench_object", tx).Each(func(r Scanner) error {
 		panic("THIS IS A TEST PANIC")
 	})
 	a.NotNil(err) // this should have the result of the panic
@@ -214,7 +214,7 @@ func TestQueryFirst(t *testing.T) {
 	a.Nil(seedErr)
 
 	var first benchObj
-	err = Default().QueryInTx("select * from bench_object", tx).First(func(r *sql.Rows) error {
+	err = Default().QueryInTx("select * from bench_object", tx).First(func(r Scanner) error {
 		return first.Populate(r)
 	})
 	a.Nil(err)

@@ -52,29 +52,28 @@ func PopulateByName(object interface{}, row *sql.Rows, cols *ColumnCollection) e
 // PopulateInOrder sets the values of an object in order from a sql.Rows object.
 // Only use this method if you're certain of the column order. It is faster than populateByName.
 // Optionally if your object implements Populatable this process will be skipped completely, which is even faster.
-func PopulateInOrder(object DatabaseMapped, row *sql.Rows, cols *ColumnCollection) error {
+func PopulateInOrder(object DatabaseMapped, row Scanner, cols *ColumnCollection) (err error) {
 	var values = make([]interface{}, cols.Len())
 
 	for i, col := range cols.Columns() {
 		initColumnValue(i, values, &col)
 	}
 
-	scanErr := row.Scan(values...)
-
-	if scanErr != nil {
-		return exception.New(scanErr)
+	if err = row.Scan(values...); err != nil {
+		err = exception.New(err)
+		return
 	}
 
 	columns := cols.Columns()
 	for i, v := range values {
 		field := columns[i]
-		err := field.SetValue(object, v)
-		if err != nil {
-			return exception.New(err)
+		if err = field.SetValue(object, v); err != nil {
+			err = exception.New(err)
+			return
 		}
 	}
 
-	return nil
+	return
 }
 
 // initColumnValue inserts the correct placeholder in the scan array of values.

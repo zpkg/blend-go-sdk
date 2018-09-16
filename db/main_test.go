@@ -111,7 +111,7 @@ type benchObj struct {
 	Category  string    `db:"category"`
 }
 
-func (b *benchObj) Populate(rows *sql.Rows) error {
+func (b *benchObj) Populate(rows Scanner) error {
 	return rows.Scan(&b.ID, &b.UUID, &b.Name, &b.Timestamp, &b.Amount, &b.Pending, &b.Category)
 }
 
