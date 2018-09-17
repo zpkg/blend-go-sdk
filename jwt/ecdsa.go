@@ -42,11 +42,11 @@ func (m *SigningMethodECDSA) Verify(signingString, signature string, key interfa
 	case *ecdsa.PublicKey:
 		ecdsaKey = k
 	default:
-		return exception.Wrap(ErrInvalidKeyType)
+		return exception.New(ErrInvalidKeyType)
 	}
 
 	if len(sig) != 2*m.KeySize {
-		return exception.Wrap(ErrECDSAVerification)
+		return exception.New(ErrECDSAVerification)
 	}
 
 	r := big.NewInt(0).SetBytes(sig[:m.KeySize])
@@ -54,7 +54,7 @@ func (m *SigningMethodECDSA) Verify(signingString, signature string, key interfa
 
 	// Create hasher
 	if !m.Hash.Available() {
-		return exception.Wrap(ErrHashUnavailable)
+		return exception.New(ErrHashUnavailable)
 	}
 	hasher := m.Hash.New()
 	hasher.Write([]byte(signingString))
@@ -92,7 +92,7 @@ func (m *SigningMethodECDSA) Sign(signingString string, key interface{}) (string
 		curveBits := ecdsaKey.Curve.Params().BitSize
 
 		if m.CurveBits != curveBits {
-			return "", exception.Wrap(ErrInvalidKey)
+			return "", exception.New(ErrInvalidKey)
 		}
 
 		keyBytes := curveBits / 8

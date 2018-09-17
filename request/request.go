@@ -662,7 +662,7 @@ func (r *Request) Response() (res *http.Response, err error) {
 	var req *http.Request
 	req, err = r.Request()
 	if err != nil {
-		err = exception.Wrap(err)
+		err = exception.New(err)
 		return
 	}
 

@@ -52,7 +52,7 @@ func (dbt dbTracer) Query(ctx context.Context, conn *db.Connection, inv *db.Invo
 		opentracing.Tag{Key: tracing.TagKeyDBName, Value: conn.Config().GetDatabase()},
 		opentracing.Tag{Key: tracing.TagKeyDBUser, Value: conn.Config().GetUsername()},
 		opentracing.Tag{Key: "db.query", Value: statement},
-		opentracing.StartTime(inv.Start()),
+		opentracing.StartTime(inv.StartTime()),
 	}
 	span, _ := tracing.StartSpanFromContext(ctx, dbt.tracer, tracing.OperationSQLQuery, startOptions...)
 	return dbTraceFinisher{span: span}

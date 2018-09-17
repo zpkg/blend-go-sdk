@@ -48,7 +48,7 @@ func (m *SigningMethodRSA) Verify(signingString, signature string, key interface
 	hasher.Write([]byte(signingString))
 
 	// Verify the signature
-	return exception.Wrap(rsa.VerifyPKCS1v15(rsaKey, m.Hash, hasher.Sum(nil), sig))
+	return exception.New(rsa.VerifyPKCS1v15(rsaKey, m.Hash, hasher.Sum(nil), sig))
 }
 
 // Sign implements the Sign method from SigningMethod

@@ -6,6 +6,8 @@ import (
 	"sync"
 	"time"
 
+	"github.com/lib/pq"
+
 	"github.com/blend/go-sdk/exception"
 	"github.com/blend/go-sdk/logger"
 
@@ -162,8 +164,15 @@ func (dbc *Connection) Open() error {
 		dbc.statementCache = NewStatementCache()
 	}
 
+	dsn := dbc.config.CreateDSN()
+	namedValues, err := pq.ParseURL(dsn)
+	if err != nil {
+		return err
+	}
+	namedValues = namedValues + " binary_parameters=yes"
+
 	// open the connection
-	dbConn, err := sql.Open(dbc.config.GetEngine(), dbc.config.CreateDSN())
+	dbConn, err := sql.Open(dbc.config.GetEngine(), namedValues)
 	if err != nil {
 		return exception.New(err)
 	}
