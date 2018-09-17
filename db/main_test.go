@@ -53,7 +53,7 @@ func BenchmarkMain(b *testing.B) {
 		}
 	}()
 
-	seedErr := seedObjects(5000, tx)
+	seedErr := seedObjects(10000, tx)
 	if seedErr != nil {
 		b.Errorf("Error seeding objects: %v", seedErr)
 		b.FailNow()
@@ -167,25 +167,25 @@ func seedObjects(count int, tx *sql.Tx) error {
 }
 
 func readManual(tx *sql.Tx) ([]benchObj, error) {
-	objs := []benchObj{}
-	readSQL := `select id,name,timestamp_utc,amount,pending,category from bench_object`
-	readStmt, readStmtErr := Default().PrepareContext(context.Background(), readSQL, tx)
-	if readStmtErr != nil {
-		return nil, readStmtErr
+	var objs []benchObj
+	readSQL := `select id,uuid,name,timestamp_utc,amount,pending,category from bench_object`
+	readStmt, err := Default().PrepareContext(context.Background(), readSQL, tx)
+	if err != nil {
+		return nil, err
 	}
 	defer readStmt.Close()
 
-	rows, queryErr := readStmt.Query()
+	rows, err := readStmt.Query()
 	defer rows.Close()
-	if queryErr != nil {
-		return nil, queryErr
+	if err != nil {
+		return nil, err
 	}
 
 	for rows.Next() {
 		obj := &benchObj{}
-		populateErr := obj.Populate(rows)
-		if populateErr != nil {
-			return nil, populateErr
+		err = obj.Populate(rows)
+		if err != nil {
+			return nil, err
 		}
 		objs = append(objs, *obj)
 	}
