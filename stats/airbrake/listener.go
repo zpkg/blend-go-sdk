@@ -1,6 +1,7 @@
 package airbrake
 
 import (
+	"fmt"
 	"net/http"
 	"os"
 	"runtime"
@@ -102,12 +103,23 @@ func NewNotice(reporter *gobrake.Notifier, ee *logger.ErrorEvent) *gobrake.Notic
 	var notice *gobrake.Notice
 
 	if ex := exception.As(ee.Err()); ex != nil {
+		var errors []gobrake.Error
+		errors = append(errors, gobrake.Error{
+			Type:      exception.ErrClass(ex),
+			Message:   ex.Message(),
+			Backtrace: frames(ex.Stack()),
+		})
+
+		for inner := exception.As(ex.Inner()); inner != nil; inner = exception.As(inner.Inner()) {
+			errors = append(errors, gobrake.Error{
+				Type:      exception.ErrClass(inner),
+				Message:   fmt.Sprintf("%+v", ex),
+				Backtrace: frames(inner.Stack()),
+			})
+		}
+
 		notice = &gobrake.Notice{
-			Errors: []gobrake.Error{{
-				Type:      exception.ErrClass(ex.Class()),
-				Message:   ex.Message(),
-				Backtrace: frames(ex.Stack()),
-			}},
+			Errors:  errors,
 			Context: make(map[string]interface{}),
 			Env:     make(map[string]interface{}),
 			Session: make(map[string]interface{}),
@@ -116,7 +128,8 @@ func NewNotice(reporter *gobrake.Notifier, ee *logger.ErrorEvent) *gobrake.Notic
 	} else {
 		notice = &gobrake.Notice{
 			Errors: []gobrake.Error{{
-				Type: ee.Err().Error(),
+				Type:    fmt.Sprint(ee.Err()),
+				Message: fmt.Sprint(ee.Err()),
 			}},
 			Context: make(map[string]interface{}),
 			Env:     make(map[string]interface{}),
