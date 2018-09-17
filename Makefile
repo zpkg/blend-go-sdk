@@ -24,6 +24,7 @@ ci: vet profanity cover
 
 new-install:
 	@go get -u github.com/lib/pq
+	@go get -u github.com/gobrake/gobrake
 	@go get -u github.com/DataDog/datadog-go/statsd
 	@go get -u github.com/opentracing/opentracing-go
 	@go get -u golang.org/x/net/http2
