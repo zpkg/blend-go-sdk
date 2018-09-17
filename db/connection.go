@@ -169,7 +169,6 @@ func (dbc *Connection) Open() error {
 	if err != nil {
 		return err
 	}
-	namedValues = namedValues + " binary_parameters=yes"
 
 	// open the connection
 	dbConn, err := sql.Open(dbc.config.GetEngine(), namedValues)
