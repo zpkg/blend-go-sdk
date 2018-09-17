@@ -16,3 +16,8 @@
 profile.cov
 coverage.cov
 coverage.html
+
+# IntelliJ-isms
+.idea
+*.ipr
+*.iml
