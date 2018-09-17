@@ -45,11 +45,10 @@ func TestQuery(t *testing.T) {
 
 	objs := []benchObj{}
 	err = Default().QueryInTx("select * from bench_object", tx).OutMany(&objs)
-
 	a.Nil(err)
 	a.NotEmpty(objs)
 
-	all := []benchObj{}
+	var all []benchObj
 	err = Default().GetAllInTx(&all, tx)
 	a.Nil(err)
 	a.Equal(len(objs), len(all))
@@ -94,10 +93,10 @@ func TestConnectionStatementCacheQuery(t *testing.T) {
 	conn.StatementCache().WithEnabled(true)
 
 	var ok string
-	a.Nil(conn.Invoke(context.TODO()).WithLabel("status").Query("select 'ok!'").Prepare().Scan(&ok))
+	a.Nil(conn.Invoke(context.TODO()).WithLabel("status").Query("select 'ok!'").Scan(&ok))
 	a.Equal("ok!", ok)
 
-	a.Nil(conn.Invoke(context.TODO()).WithLabel("status").Query("select 'ok!'").Prepare().Scan(&ok))
+	a.Nil(conn.Invoke(context.TODO()).WithLabel("status").Query("select 'ok!'").Scan(&ok))
 	a.Equal("ok!", ok)
 
 	a.True(conn.StatementCache().HasStatement("status"))

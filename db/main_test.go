@@ -169,7 +169,7 @@ func seedObjects(count int, tx *sql.Tx) error {
 func readManual(tx *sql.Tx) ([]benchObj, error) {
 	var objs []benchObj
 	readSQL := `select id,uuid,name,timestamp_utc,amount,pending,category from bench_object`
-	readStmt, err := Default().PrepareContext(context.Background(), readSQL, tx)
+	readStmt, err := Default().PrepareContext(context.Background(), "", readSQL, tx)
 	if err != nil {
 		return nil, err
 	}

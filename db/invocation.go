@@ -9,6 +9,7 @@ import (
 	"time"
 
 	"github.com/blend/go-sdk/exception"
+	"github.com/blend/go-sdk/logger"
 )
 
 // Invocation is a specific operation against a context.
@@ -78,23 +79,21 @@ func (i *Invocation) Tx() *sql.Tx {
 
 // Prepare returns a cached or newly prepared statment plan for a given sql statement.
 func (i *Invocation) Prepare(statement string) (*sql.Stmt, error) {
-	if i.isStatementCached() {
-		return i.conn.PrepareCachedContext(i.Context(), i.statementLabel, statement, i.tx)
-	}
-	return i.conn.PrepareContext(i.Context(), statement, i.tx)
+	return i.conn.PrepareContext(i.Context(), i.statementLabel, statement, i.tx)
 }
 
 // Exec executes a sql statement with a given set of arguments.
 func (i *Invocation) Exec(statement string, args ...interface{}) (err error) {
 	var stmt *sql.Stmt
 	i.start(statement)
-	defer func() { err = i.finish(statement, recover(), err, stmt, nil) }()
+	defer func() { err = i.finish(statement, recover(), err) }()
 
 	stmt, err = i.Prepare(statement)
 	if err != nil {
 		err = exception.New(err)
 		return
 	}
+	defer func() { err = i.closeStatement(stmt, err) }()
 
 	if _, err = stmt.ExecContext(i.Context(), args...); err != nil {
 		err = exception.New(err)
@@ -127,7 +126,7 @@ func (i *Invocation) Get(object DatabaseMapped, ids ...interface{}) (err error) 
 	var queryBody string
 	var stmt *sql.Stmt
 	var cols *ColumnCollection
-	defer func() { err = i.finish(queryBody, recover(), err, stmt, nil) }()
+	defer func() { err = i.finish(queryBody, recover(), err) }()
 
 	if i.statementLabel, queryBody, cols, err = i.generateGet(object); err != nil {
 		err = exception.New(err)
@@ -138,6 +137,7 @@ func (i *Invocation) Get(object DatabaseMapped, ids ...interface{}) (err error) 
 		err = exception.New(err)
 		return
 	}
+	defer func() { err = i.closeStatement(stmt, err) }()
 	i.start(queryBody)
 
 	row := stmt.QueryRowContext(i.Context(), ids...)
@@ -162,7 +162,7 @@ func (i *Invocation) GetAll(collection interface{}) (err error) {
 	var rows *sql.Rows
 	var cols *ColumnCollection
 	var collectionType reflect.Type
-	defer func() { err = i.finish(queryBody, recover(), err, stmt, rows) }()
+	defer func() { err = i.finish(queryBody, recover(), err) }()
 
 	i.statementLabel, queryBody, cols, collectionType = i.generateGetAll(collection)
 
@@ -170,12 +170,14 @@ func (i *Invocation) GetAll(collection interface{}) (err error) {
 		err = exception.New(err)
 		return
 	}
+	defer func() { err = i.closeStatement(stmt, err) }()
 	i.start(queryBody)
 
 	if rows, err = stmt.QueryContext(i.Context()); err != nil {
 		err = exception.New(err)
 		return
 	}
+	defer func() { err = exception.Nest(err, rows.Close()) }()
 
 	collectionValue := reflectValue(collection)
 	for rows.Next() {
@@ -206,7 +208,7 @@ func (i *Invocation) Create(object DatabaseMapped) (err error) {
 	var queryBody string
 	var stmt *sql.Stmt
 	var writeCols, autos *ColumnCollection
-	defer func() { err = i.finish(queryBody, recover(), err, stmt, nil) }()
+	defer func() { err = i.finish(queryBody, recover(), err) }()
 
 	i.statementLabel, queryBody, writeCols, autos = i.generateCreate(object)
 
@@ -214,6 +216,7 @@ func (i *Invocation) Create(object DatabaseMapped) (err error) {
 		err = exception.New(err)
 		return
 	}
+	defer func() { err = i.closeStatement(stmt, err) }()
 
 	i.start(queryBody)
 
@@ -243,7 +246,7 @@ func (i *Invocation) CreateIfNotExists(object DatabaseMapped) (err error) {
 	var queryBody string
 	var stmt *sql.Stmt
 	var autos, writeCols *ColumnCollection
-	defer func() { err = i.finish(queryBody, recover(), err, stmt, nil) }()
+	defer func() { err = i.finish(queryBody, recover(), err) }()
 
 	i.statementLabel, queryBody, autos, writeCols = i.generateCreateIfNotExists(object)
 
@@ -251,6 +254,7 @@ func (i *Invocation) CreateIfNotExists(object DatabaseMapped) (err error) {
 		err = exception.New(err)
 		return
 	}
+	defer func() { err = i.closeStatement(stmt, err) }()
 	i.start(queryBody)
 
 	if autos.Len() == 0 {
@@ -278,10 +282,9 @@ func (i *Invocation) CreateIfNotExists(object DatabaseMapped) (err error) {
 // is different for each cardinality of objects.
 func (i *Invocation) CreateMany(objects interface{}) (err error) {
 	var queryBody string
-	var stmt *sql.Stmt
 	var writeCols *ColumnCollection
 	var sliceValue reflect.Value
-	defer func() { err = i.finish(queryBody, recover(), err, stmt, nil) }()
+	defer func() { err = i.finish(queryBody, recover(), err) }()
 
 	queryBody, writeCols, sliceValue = i.generateCreateMany(objects)
 
@@ -307,7 +310,7 @@ func (i *Invocation) Update(object DatabaseMapped) (err error) {
 	var queryBody string
 	var stmt *sql.Stmt
 	var pks, writeCols *ColumnCollection
-	defer func() { err = i.finish(queryBody, recover(), err, stmt, nil) }()
+	defer func() { err = i.finish(queryBody, recover(), err) }()
 
 	i.statementLabel, queryBody, pks, writeCols = i.generateUpdate(object)
 
@@ -315,6 +318,7 @@ func (i *Invocation) Update(object DatabaseMapped) (err error) {
 		err = exception.New(err)
 		return
 	}
+	defer func() { err = i.closeStatement(stmt, err) }()
 	i.start(queryBody)
 
 	if _, err = stmt.ExecContext(i.Context(), append(writeCols.ColumnValues(object), pks.ColumnValues(object)...)...); err != nil {
@@ -329,8 +333,7 @@ func (i *Invocation) Upsert(object DatabaseMapped) (err error) {
 	var queryBody string
 	var autos, writeCols *ColumnCollection
 	var stmt *sql.Stmt
-	var rows *sql.Rows
-	defer func() { err = i.finish(queryBody, recover(), err, stmt, rows) }()
+	//defer func() { err = i.finish(queryBody, recover(), err) }()
 
 	i.statementLabel, queryBody, autos, writeCols = i.generateUpsert(object)
 
@@ -338,6 +341,7 @@ func (i *Invocation) Upsert(object DatabaseMapped) (err error) {
 		err = exception.New(err)
 		return
 	}
+	defer func() { err = i.closeStatement(stmt, err) }()
 	i.start(queryBody)
 
 	if autos.Len() == 0 {
@@ -366,7 +370,7 @@ func (i *Invocation) Exists(object DatabaseMapped) (exists bool, err error) {
 	var queryBody string
 	var pks *ColumnCollection
 	var stmt *sql.Stmt
-	defer func() { err = i.finish(queryBody, recover(), err, stmt, nil) }()
+	defer func() { err = i.finish(queryBody, recover(), err) }()
 
 	if i.statementLabel, queryBody, pks, err = i.generateExists(object); err != nil {
 		err = exception.New(err)
@@ -376,6 +380,7 @@ func (i *Invocation) Exists(object DatabaseMapped) (exists bool, err error) {
 		err = exception.New(err)
 		return
 	}
+	defer func() { err = i.closeStatement(stmt, err) }()
 	i.start(queryBody)
 
 	var value int
@@ -393,7 +398,7 @@ func (i *Invocation) Delete(object DatabaseMapped) (err error) {
 	var queryBody string
 	var stmt *sql.Stmt
 	var pks *ColumnCollection
-	defer func() { err = i.finish(queryBody, recover(), err, stmt, nil) }()
+	defer func() { err = i.finish(queryBody, recover(), err) }()
 
 	if i.statementLabel, queryBody, pks, err = i.generateDelete(object); err != nil {
 		return
@@ -403,6 +408,7 @@ func (i *Invocation) Delete(object DatabaseMapped) (err error) {
 		err = exception.New(err)
 		return
 	}
+	defer func() { err = i.closeStatement(stmt, err) }()
 	i.start(queryBody)
 
 	if _, err = stmt.ExecContext(i.Context(), pks.ColumnValues(object)...); err != nil {
@@ -416,7 +422,7 @@ func (i *Invocation) Delete(object DatabaseMapped) (err error) {
 func (i *Invocation) Truncate(object DatabaseMapped) (err error) {
 	var queryBody string
 	var stmt *sql.Stmt
-	defer func() { err = i.finish(queryBody, recover(), err, stmt, nil) }()
+	defer func() { err = i.finish(queryBody, recover(), err) }()
 
 	i.statementLabel, queryBody = i.generateTruncate(object)
 
@@ -424,6 +430,7 @@ func (i *Invocation) Truncate(object DatabaseMapped) (err error) {
 		err = exception.New(err)
 		return
 	}
+	defer func() { err = i.closeStatement(stmt, err) }()
 	i.start(queryBody)
 
 	if _, err = stmt.ExecContext(i.Context()); err != nil {
@@ -831,8 +838,14 @@ func (i *Invocation) setAutos(object DatabaseMapped, autos *ColumnCollection, au
 	return
 }
 
-func (i *Invocation) isStatementCached() bool {
-	return i.conn.StatementCache().Enabled() && len(i.statementLabel) > 0 && i.tx == nil
+func (i *Invocation) closeStatement(stmt *sql.Stmt, err error) error {
+	if stmt == nil {
+		return err
+	}
+	if i.tx != nil || i.conn.statementCache == nil || !i.conn.statementCache.Enabled() || i.statementLabel == "" {
+		return exception.Nest(err, stmt.Close())
+	}
+	return err
 }
 
 func (i *Invocation) start(statement string) {
@@ -841,38 +854,28 @@ func (i *Invocation) start(statement string) {
 	}
 }
 
-func (i *Invocation) maybeCloseStatement(err error, stmt *sql.Stmt) error {
-	if i.isStatementCached() {
-		if err != nil {
-			err = exception.Nest(err, i.conn.statementCache.InvalidateStatement(i.statementLabel))
-		}
-		return err
-	}
-	if stmt != nil {
-		return exception.Nest(err, stmt.Close())
-	}
-	return err
-}
-
-func (i *Invocation) finish(statement string, r interface{}, err error, stmt *sql.Stmt, rows *sql.Rows) error {
+func (i *Invocation) finish(statement string, r interface{}, err error) error {
 	if i.cancel != nil {
 		i.cancel()
 	}
 	if r != nil {
 		err = exception.Nest(err, exception.New(r))
 	}
-	if stmt != nil {
-		err = i.maybeCloseStatement(err, stmt)
+	if i.conn.log != nil {
+		i.conn.log.Trigger(
+			logger.NewQueryEvent(statement, time.Now().UTC().Sub(i.startTime)).
+				WithUsername(i.conn.config.GetUsername()).
+				WithDatabase(i.conn.config.GetDatabase()).
+				WithQueryLabel(i.statementLabel).
+				WithEngine(i.conn.config.GetEngine()).
+				WithErr(err),
+		)
 	}
-	if rows != nil {
-		err = exception.Nest(err, rows.Close(), rows.Err())
-	}
-	i.conn.finish(i.context, statement, i.statementLabel, since(i.startTime), err)
 	if i.traceFinisher != nil {
 		i.traceFinisher.Finish(err)
 	}
 	if err != nil {
-		err = exception.New(err).WithMessage(statement)
+		err = exception.New(err)
 	}
 	return err
 }

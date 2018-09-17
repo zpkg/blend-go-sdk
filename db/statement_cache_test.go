@@ -13,13 +13,13 @@ func TestStatementCachePrepare(t *testing.T) {
 	sc := NewStatementCache().WithConnection(Default().Connection())
 
 	query := "select 'ok'"
-	stmt, err := sc.PrepareContext(context.Background(), query, query, nil)
+	stmt, err := sc.PrepareContext(context.Background(), query, query)
 	assert.Nil(err)
 	assert.NotNil(stmt)
 	assert.True(sc.HasStatement(query))
 
 	// shoul result in cache hit
-	stmt, err = sc.PrepareContext(context.Background(), query, query, nil)
+	stmt, err = sc.PrepareContext(context.Background(), query, query)
 	assert.NotNil(stmt)
 	assert.True(sc.HasStatement(query))
 }

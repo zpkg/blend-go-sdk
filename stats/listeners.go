@@ -15,9 +15,7 @@ const (
 	MetricNameDBQuery            string = string(logger.Query)
 	MetricNameDBQueryElapsed     string = MetricNameDBQuery + ".elapsed"
 
-	MetricNameWarning string = string(logger.Warning)
-	MetricNameError   string = string(logger.Error)
-	MetricNameFatal   string = string(logger.Fatal)
+	MetricNameError string = string(logger.Error)
 
 	TagRoute  string = "route"
 	TagMethod string = "method"
@@ -27,8 +25,9 @@ const (
 	TagEngine   string = "engine"
 	TagDatabase string = "database"
 
-	TagError string = "error"
-	TagClass string = "class"
+	TagSeverity string = "severity"
+	TagError    string = "error"
+	TagClass    string = "class"
 
 	RouteNotFound string = "not_found"
 
@@ -74,7 +73,6 @@ func AddQueryListeners(log *logger.Logger, stats Collector) {
 	}
 
 	log.Listen(logger.Query, ListenerNameStats, logger.NewQueryEventListener(func(qe *logger.QueryEvent) {
-
 		engine := Tag(TagEngine, qe.Engine())
 		database := Tag(TagDatabase, qe.Database())
 
@@ -85,6 +83,9 @@ func AddQueryListeners(log *logger.Logger, stats Collector) {
 			tags = append(tags, Tag(TagQuery, qe.QueryLabel()))
 		}
 		if qe.Err() != nil {
+			if ex := exception.As(qe.Err()); ex != nil && ex.Class() != nil {
+				tags = append(tags, Tag(TagClass, ex.Class().Error()))
+			}
 			tags = append(tags, TagError)
 		}
 
@@ -99,13 +100,14 @@ func AddErrorListeners(log *logger.Logger, stats Collector) {
 	if log == nil || stats == nil {
 		return
 	}
-	log.Listen(logger.Warning, ListenerNameStats, logger.NewErrorEventListener(func(ee *logger.ErrorEvent) {
-		stats.Increment(MetricNameWarning, Tag(TagClass, exception.ErrClass(ee.Err())))
-	}))
-	log.Listen(logger.Error, ListenerNameStats, logger.NewErrorEventListener(func(ee *logger.ErrorEvent) {
-		stats.Increment(MetricNameError, Tag(TagClass, exception.ErrClass(ee.Err())))
-	}))
-	log.Listen(logger.Fatal, ListenerNameStats, logger.NewErrorEventListener(func(ee *logger.ErrorEvent) {
-		stats.Increment(MetricNameFatal, Tag(TagClass, exception.ErrClass(ee.Err())))
-	}))
+
+	listener := logger.NewErrorEventListener(func(ee *logger.ErrorEvent) {
+		stats.Increment(MetricNameError,
+			Tag(TagSeverity, string(ee.Flag())),
+			Tag(TagClass, exception.ErrClass(ee.Err())),
+		)
+	})
+	log.Listen(logger.Warning, ListenerNameStats, listener)
+	log.Listen(logger.Error, ListenerNameStats, listener)
+	log.Listen(logger.Fatal, ListenerNameStats, listener)
 }

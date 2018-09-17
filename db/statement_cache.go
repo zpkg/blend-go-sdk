@@ -71,11 +71,7 @@ func (sc *StatementCache) InvalidateStatement(statementID string) (err error) {
 }
 
 // PrepareContext returns a cached expression for a statement, or creates and caches a new one.
-func (sc *StatementCache) PrepareContext(context context.Context, statementID, statement string, tx *sql.Tx) (*sql.Stmt, error) {
-	if tx != nil {
-		return tx.PrepareContext(context, statement)
-	}
-
+func (sc *StatementCache) PrepareContext(context context.Context, statementID, statement string) (*sql.Stmt, error) {
 	if len(statementID) == 0 {
 		return nil, exception.New(ErrStatementLabelUnset)
 	}

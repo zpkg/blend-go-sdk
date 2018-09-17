@@ -201,37 +201,24 @@ func (dbc *Connection) BeginContext(context context.Context, opts ...*sql.TxOpti
 	return tx, exception.New(err)
 }
 
-// PrepareContext prepares a new statement for the connection.
-// It will never hit the statement cache.
-func (dbc *Connection) PrepareContext(context context.Context, statement string, txs ...*sql.Tx) (stmt *sql.Stmt, err error) {
+// PrepareContext prepares a statement potentially returning a cached version of the statement.
+func (dbc *Connection) PrepareContext(context context.Context, statementID, statement string, txs ...*sql.Tx) (stmt *sql.Stmt, err error) {
 	if dbc.tracer != nil {
 		tf := dbc.tracer.Prepare(context, dbc, statement)
 		if tf != nil {
 			defer func() { tf.Finish(err) }()
 		}
 	}
-
 	if tx := Tx(txs...); tx != nil {
 		stmt, err = tx.PrepareContext(context, statement)
-		if err != nil {
-			err = exception.New(err)
-		}
 		return
 	}
-
+	if dbc.statementCache != nil && dbc.statementCache.Enabled() && statementID != "" {
+		stmt, err = dbc.statementCache.PrepareContext(context, statementID, statement)
+		return
+	}
 	stmt, err = dbc.connection.PrepareContext(context, statement)
-	if err != nil {
-		err = exception.New(err)
-	}
 	return
-}
-
-// PrepareCachedContext prepares a statement potentially returning a cached version of the statement.
-func (dbc *Connection) PrepareCachedContext(context context.Context, statementID, statement string, txs ...*sql.Tx) (*sql.Stmt, error) {
-	if dbc.statementCache == nil || !dbc.statementCache.Enabled() || statementID == "" {
-		return dbc.PrepareContext(context, statement, txs...)
-	}
-	return dbc.statementCache.PrepareContext(context, statementID, statement, Tx(txs...))
 }
 
 // --------------------------------------------------------------------------------
@@ -555,21 +542,4 @@ func (dbc *Connection) TruncateInTx(object DatabaseMapped, tx *sql.Tx) error {
 // TruncateInTxContext applies a truncation in a transaction.
 func (dbc *Connection) TruncateInTxContext(context context.Context, object DatabaseMapped, tx *sql.Tx) error {
 	return dbc.Invoke(context, tx).Truncate(object)
-}
-
-// --------------------------------------------------------------------------------
-// internal methods
-// --------------------------------------------------------------------------------
-
-func (dbc *Connection) finish(context context.Context, statement, statementID string, elapsed time.Duration, err error) {
-	if dbc.log != nil {
-		dbc.log.Trigger(
-			logger.NewQueryEvent(statement, elapsed).
-				WithUsername(dbc.config.GetUsername()).
-				WithDatabase(dbc.config.GetDatabase()).
-				WithQueryLabel(statementID).
-				WithEngine(dbc.config.GetEngine()).
-				WithErr(err),
-		)
-	}
 }
