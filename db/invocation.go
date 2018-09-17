@@ -839,13 +839,16 @@ func (i *Invocation) setAutos(object DatabaseMapped, autos *ColumnCollection, au
 }
 
 func (i *Invocation) closeStatement(stmt *sql.Stmt, err error) error {
-	if stmt == nil {
+	// if we're within a transaction, DO NOT CLOSE THE STATEMENT.
+	if stmt == nil || i.tx != nil {
 		return err
 	}
-	if i.tx != nil || i.conn.statementCache == nil || !i.conn.statementCache.Enabled() || i.statementLabel == "" {
-		return exception.Nest(err, stmt.Close())
+	// if the statement is cached, DO NOT CLOSE THE STATEMENT.
+	if i.conn.statementCache != nil && i.conn.statementCache.Enabled() && i.statementLabel != "" {
+		return err
 	}
-	return err
+	// close the statement.
+	return exception.Nest(err, stmt.Close())
 }
 
 func (i *Invocation) start(statement string) {

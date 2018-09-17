@@ -218,7 +218,7 @@ func (q *Query) query() (rows *sql.Rows, err error) {
 		err = exception.New(stmtErr)
 		return
 	}
-	//defer func() { err = q.inv.closeStatement(stmt, err) }()
+	defer func() { err = q.inv.closeStatement(stmt, err) }()
 
 	rows, err = stmt.QueryContext(q.context, q.args...)
 	if err != nil {
