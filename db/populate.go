@@ -30,10 +30,12 @@ func PopulateByName(object interface{}, row Rows, cols *ColumnCollection) error 
 		return exception.New(err)
 	}
 
+	var colName string
+	var field *Column
+	var ok bool
 	for i, v := range values {
-		colName := rowColumns[i]
-
-		if field, ok := columnLookup[colName]; ok {
+		colName = rowColumns[i]
+		if field, ok = columnLookup[colName]; ok {
 			err = field.SetValue(object, v)
 			if err != nil {
 				return exception.New(err)
@@ -60,8 +62,9 @@ func PopulateInOrder(object DatabaseMapped, row Scanner, cols *ColumnCollection)
 	}
 
 	columns := cols.Columns()
+	var field Column
 	for i, v := range values {
-		field := columns[i]
+		field = columns[i]
 		if err = field.SetValue(object, v); err != nil {
 			err = exception.New(err)
 			return
