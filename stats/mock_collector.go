@@ -1,6 +1,11 @@
 package stats
 
-import "fmt"
+import (
+	"fmt"
+	"time"
+
+	"github.com/blend/go-sdk/util"
+)
 
 // Assert that the mock collector implements Collector.
 var (
@@ -33,34 +38,41 @@ func (mc MockCollector) DefaultTags() []string {
 }
 
 // Count adds a mock count event to the event stream.
-func (mc *MockCollector) Count(name string, value int64, tags ...string) error {
+func (mc MockCollector) Count(name string, value int64, tags ...string) error {
 	mc.Events <- MockMetric{Name: name, Count: value, Tags: append(mc.defaultTags, tags...)}
 	return nil
 }
 
 // Increment adds a mock count event to the event stream with value (1).
-func (mc *MockCollector) Increment(name string, tags ...string) error {
+func (mc MockCollector) Increment(name string, tags ...string) error {
 	mc.Events <- MockMetric{Name: name, Count: 1, Tags: append(mc.defaultTags, tags...)}
 	return nil
 }
 
 // Gauge adds a mock count event to the event stream with value (1).
-func (mc *MockCollector) Gauge(name string, value float64, tags ...string) error {
+func (mc MockCollector) Gauge(name string, value float64, tags ...string) error {
 	mc.Events <- MockMetric{Name: name, Gauge: value, Tags: append(mc.defaultTags, tags...)}
 	return nil
 }
 
 // Histogram adds a mock count event to the event stream with value (1).
-func (mc *MockCollector) Histogram(name string, value float64, tags ...string) error {
+func (mc MockCollector) Histogram(name string, value float64, tags ...string) error {
 	mc.Events <- MockMetric{Name: name, Histogram: value, Tags: append(mc.defaultTags, tags...)}
+	return nil
+}
+
+// TimeInMilliseconds adds a mock time in millis event to the event stream with a value.
+func (mc MockCollector) TimeInMilliseconds(name string, value time.Duration, tags ...string) error {
+	mc.Events <- MockMetric{Name: name, TimeInMilliseconds: util.Time.Millis(value), Tags: append(mc.defaultTags, tags...)}
 	return nil
 }
 
 // MockMetric is a mock metric.
 type MockMetric struct {
-	Name      string
-	Count     int64
-	Gauge     float64
-	Histogram float64
-	Tags      []string
+	Name               string
+	Count              int64
+	Gauge              float64
+	Histogram          float64
+	TimeInMilliseconds float64
+	Tags               []string
 }

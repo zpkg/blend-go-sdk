@@ -83,8 +83,8 @@ func (dc *Collector) Histogram(name string, value float64, tags ...string) error
 	return dc.client.Histogram(name, value, dc.tags(tags...), 1.0)
 }
 
-// Timing sets a timing value.
-func (dc *Collector) Timing(name string, value time.Duration, tags ...string) error {
+// TimeInMilliseconds sets a timing value.
+func (dc *Collector) TimeInMilliseconds(name string, value time.Duration, tags ...string) error {
 	return dc.client.TimeInMilliseconds(name, util.Time.Millis(value), dc.tags(tags...), 1.0)
 }
 

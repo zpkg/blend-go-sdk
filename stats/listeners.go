@@ -6,7 +6,6 @@ import (
 	"github.com/blend/go-sdk/env"
 	"github.com/blend/go-sdk/exception"
 	"github.com/blend/go-sdk/logger"
-	"github.com/blend/go-sdk/util"
 )
 
 // AddDefaultTagsFromEnv adds default tags to a collector from environment values.
@@ -39,10 +38,8 @@ func AddWebListeners(log *logger.Logger, stats Collector) {
 			route, method, status,
 		}
 
-		elapsed := util.Time.Millis(wre.Elapsed())
 		stats.Increment(MetricNameHTTPRequest, tags...)
-		stats.Gauge(MetricNameHTTPRequestElapsed, elapsed, tags...)
-		stats.Histogram(MetricNameHTTPRequestElapsed, elapsed, tags...)
+		stats.TimeInMilliseconds(MetricNameHTTPRequestElapsed, wre.Elapsed(), tags...)
 	}))
 }
 
@@ -70,8 +67,7 @@ func AddQueryListeners(log *logger.Logger, stats Collector) {
 		}
 
 		stats.Increment(MetricNameDBQuery, tags...)
-		stats.Gauge(MetricNameDBQueryElapsed, util.Time.Millis(qe.Elapsed()), tags...)
-		stats.Histogram(MetricNameDBQueryElapsed, util.Time.Millis(qe.Elapsed()), tags...)
+		stats.TimeInMilliseconds(MetricNameDBQueryElapsed, qe.Elapsed(), tags...)
 	}))
 }
 
