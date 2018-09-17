@@ -34,3 +34,9 @@ type Scanner interface {
 type ColumnsProvider interface {
 	Columns() ([]string, error)
 }
+
+// Rows provides the relevant fields to populate by name.
+type Rows interface {
+	Scanner
+	ColumnsProvider
+}

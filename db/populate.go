@@ -8,12 +8,8 @@ import (
 )
 
 // PopulateByName sets the values of an object from the values of a sql.Rows object using column names.
-func PopulateByName(object interface{}, row Scanner, cols *ColumnCollection) error {
-	typed, ok := row.(ColumnsProvider)
-	if !ok {
-		return exception.New(ErrRowsNotColumnsProvider)
-	}
-	rowColumns, err := typed.Columns()
+func PopulateByName(object interface{}, row Rows, cols *ColumnCollection) error {
+	rowColumns, err := row.Columns()
 	if err != nil {
 		return exception.New(err)
 	}
