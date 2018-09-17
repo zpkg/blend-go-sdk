@@ -120,10 +120,10 @@ func TestMarshalJSON(t *testing.T) {
 	ex := New("new test error")
 	a.NotNil(ex)
 	stackTrace := ex.Stack()
-	typed, isTyped := stackTrace.(*StackPointers)
+	typed, isTyped := stackTrace.(StackPointers)
 	a.True(isTyped)
 	a.NotNil(typed)
-	stackDepth := len(*typed)
+	stackDepth := len(typed)
 
 	jsonErr, err := json.Marshal(ex)
 	a.Nil(err)
