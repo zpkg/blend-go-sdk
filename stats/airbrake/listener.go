@@ -55,7 +55,6 @@ func AddListeners(log *logger.Logger, cfg *Config) {
 		// use our custom notice creator
 		airbrake.SendNotice(NewNotice(airbrake, ee))
 	})
-	log.Listen(logger.Warning, ListenerAirbrake, listener)
 	log.Listen(logger.Error, ListenerAirbrake, listener)
 	log.Listen(logger.Fatal, ListenerAirbrake, listener)
 }
@@ -76,7 +75,6 @@ func getDefaultContext() map[string]interface{} {
 			"language":     runtime.Version(),
 			"os":           runtime.GOOS,
 			"architecture": runtime.GOARCH,
-			"component":    "go-sdk",
 		}
 
 		if s, err := os.Hostname(); err == nil {
@@ -129,6 +127,8 @@ func NewNotice(reporter *gobrake.Notifier, ee *logger.ErrorEvent) *gobrake.Notic
 	for k, v := range getDefaultContext() {
 		notice.Context[k] = v
 	}
+	notice.Context["severity"] = string(ee.Flag())
+
 	// set requests minus headers
 	if req != nil {
 		notice.Context["url"] = req.URL.String()

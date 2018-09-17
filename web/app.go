@@ -922,7 +922,7 @@ func (a *App) renderAction(action Action) Handler {
 			if typed, ok := result.(ResultPreRender); ok {
 				err = typed.PreRender(ctx)
 				if err != nil {
-					a.logFatal(err)
+					a.logFatal(err, r)
 				}
 			}
 			a.logError(result.Render(ctx))
@@ -1053,7 +1053,7 @@ func (a *App) httpResponseEvent(ctx *Ctx) *logger.HTTPResponseEvent {
 func (a *App) recover(w http.ResponseWriter, req *http.Request) {
 	if rcv := recover(); rcv != nil {
 		err := exception.New(rcv)
-		a.logFatal(err)
+		a.logFatal(err, req)
 		if a.panicAction != nil {
 			a.handlePanic(w, req, rcv)
 		} else {
@@ -1071,12 +1071,12 @@ func (a *App) handlePanic(w http.ResponseWriter, r *http.Request, err interface{
 	})(w, r, nil, nil)
 }
 
-func (a *App) logFatal(err error) {
+func (a *App) logFatal(err error, req *http.Request) {
 	if a.log == nil {
 		return
 	}
 	if err != nil {
-		a.log.Fatal(err)
+		a.log.FatalWithReq(err, req)
 	}
 }
 
