@@ -23,7 +23,7 @@ type Populatable interface {
 }
 
 // RowsConsumer is the function signature that is called from within Each().
-type RowsConsumer func(r Scanner) error
+type RowsConsumer func(r Rows) error
 
 // Scanner is a type that can scan into variadic values.
 type Scanner interface {
