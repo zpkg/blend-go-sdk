@@ -29,3 +29,8 @@ type RowsConsumer func(r Scanner) error
 type Scanner interface {
 	Scan(...interface{}) error
 }
+
+// ColumnsProvider is a type that can return columns.
+type ColumnsProvider interface {
+	Columns() ([]string, error)
+}

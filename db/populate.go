@@ -8,19 +8,19 @@ import (
 )
 
 // PopulateByName sets the values of an object from the values of a sql.Rows object using column names.
-func PopulateByName(object interface{}, row *sql.Rows, cols *ColumnCollection) error {
-	rowColumns, rowColumnsErr := row.Columns()
-
-	if rowColumnsErr != nil {
-		return exception.New(rowColumnsErr)
+func PopulateByName(object interface{}, row Scanner, cols *ColumnCollection) error {
+	typed, ok := row.(ColumnsProvider)
+	if !ok {
+		return exception.New(ErrRowsNotColumnsProvider)
+	}
+	rowColumns, err := typed.Columns()
+	if err != nil {
+		return exception.New(err)
 	}
 
 	var values = make([]interface{}, len(rowColumns))
 	var columnLookup = cols.Lookup()
 	for i, name := range rowColumns {
-		// these are hard because the columns might not exist
-		// so we sniff if they map, and insert a placeholder
-		// if they're missing
 		if col, ok := columnLookup[name]; ok {
 			initColumnValue(i, values, col)
 		} else {
@@ -29,17 +29,16 @@ func PopulateByName(object interface{}, row *sql.Rows, cols *ColumnCollection) e
 		}
 	}
 
-	scanErr := row.Scan(values...)
-
-	if scanErr != nil {
-		return exception.New(scanErr)
+	err = row.Scan(values...)
+	if err != nil {
+		return exception.New(err)
 	}
 
 	for i, v := range values {
 		colName := rowColumns[i]
 
 		if field, ok := columnLookup[colName]; ok {
-			err := field.SetValue(object, v)
+			err = field.SetValue(object, v)
 			if err != nil {
 				return exception.New(err)
 			}

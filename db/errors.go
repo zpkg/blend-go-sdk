@@ -25,6 +25,8 @@ const (
 	ErrInvalidIDs exception.Class = "db: invalid `ids` parameter"
 	// ErrNoPrimaryKey is an error returned by a number of operations that depend on a primary key.
 	ErrNoPrimaryKey exception.Class = "db: no primary key on object"
+	// ErrRowsNotColumnsProvider is returned by `PopulateByName` if you do not pass in `sql.Rows` as the scanner.
+	ErrRowsNotColumnsProvider exception.Class = "db: rows is not a columns provider"
 )
 
 // IsConfigUnset returns if the error is an `ErrConfigUnset`.
