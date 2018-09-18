@@ -47,6 +47,9 @@ func (uuid UUID) Equals(other UUID) bool {
 
 // ToFullString returns a "xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx" hex representation of a uuid.
 func (uuid UUID) ToFullString() string {
+	if len(uuid) == 0 {
+		return ""
+	}
 	b := []byte(uuid)
 	return fmt.Sprintf(
 		"%08x-%04x-%04x-%04x-%012x",
@@ -154,5 +157,8 @@ func (uuid *UUID) Scan(src interface{}) error {
 
 // Value returns a sql driver value.
 func (uuid UUID) Value() (driver.Value, error) {
+	if uuid == nil || len(uuid) == 0 {
+		return nil, nil
+	}
 	return uuid.ToFullString(), nil
 }
