@@ -916,16 +916,25 @@ func (a *App) renderAction(action Action) Handler {
 
 		result := action(ctx)
 		if result != nil {
+
 			// check for a prerender step
-			// errors returned here are typically fatal, and should
-			// be passed to a trace handler.
 			if typed, ok := result.(ResultPreRender); ok {
-				err = typed.PreRender(ctx)
-				if err != nil {
+				if preRender := typed.PreRender(ctx); preRender != nil {
+					err = exception.Nest(err, preRender)
 					a.logFatal(err, r)
 				}
 			}
+
+			// do the render
 			a.logError(result.Render(ctx))
+
+			// check for a render complete step
+			if typed, ok := result.(ResultRenderComplete); ok {
+				if renderComplete := typed.RenderComplete(ctx); renderComplete != nil {
+					err = exception.Nest(err, renderComplete)
+					a.logFatal(renderComplete, r)
+				}
+			}
 		}
 
 		ctx.onRequestFinish()
