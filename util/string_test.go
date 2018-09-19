@@ -339,3 +339,26 @@ func TestStringTokenize(t *testing.T) {
 		assert.Equal(testCase.expected, String.Tokenize(testCase.corpus, testCase.tokens), testCase.message)
 	}
 }
+
+type replaceAnyTestCase struct {
+	expected  string
+	corpus    string
+	with      rune
+	toReplace []rune
+}
+
+func TestStringReplaceAny(t *testing.T) {
+	assert := assert.New(t)
+
+	testCases := []replaceAnyTestCase{
+		{expected: "", corpus: "", with: '_', toReplace: Symbols},
+		{expected: "foo", corpus: "foo", with: '_', toReplace: Symbols},
+		{expected: "foo_", corpus: "foo$", with: '_', toReplace: Symbols},
+		{expected: "_foo_", corpus: "&foo$", with: '_', toReplace: Symbols},
+		{expected: "_fo o_", corpus: "&fo o$", with: '_', toReplace: Symbols},
+	}
+
+	for _, testCase := range testCases {
+		assert.Equal(testCase.expected, String.ReplaceAny(testCase.corpus, testCase.with, testCase.toReplace...))
+	}
+}

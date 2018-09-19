@@ -605,3 +605,27 @@ func (su stringUtil) MustSecureRandom(length int) string {
 func (su stringUtil) CSV(values []string) string {
 	return strings.Join(values, ",")
 }
+
+// ReplaceAny replaces any runes in a corpus with a given rune.
+func (su stringUtil) ReplaceAny(corpus string, with rune, toReplace ...rune) string {
+	if corpus == "" {
+		return corpus
+	}
+
+	var replaced bool
+	output := make([]rune, len(corpus))
+	for index, r := range corpus {
+		replaced = false
+		for _, bad := range toReplace {
+			if r == bad {
+				output[index] = with
+				replaced = true
+				break
+			}
+		}
+		if !replaced {
+			output[index] = r
+		}
+	}
+	return string(output)
+}
