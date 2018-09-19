@@ -12,6 +12,19 @@ func ErrClass(err error) string {
 	return err.Error()
 }
 
+// ErrMessage returns the exception message.
+// This depends on if the err is itself an exception or not.
+// If it is not an exception, this will return empty string.
+func ErrMessage(err error) string {
+	if err == nil {
+		return ""
+	}
+	if ex := As(err); ex != nil && ex.Class() != nil {
+		return ex.Message()
+	}
+	return ""
+}
+
 // Is is a helper function that returns if an error is an exception.
 func Is(err, cause error) bool {
 	if err == nil || cause == nil {
