@@ -117,7 +117,8 @@ func TestMarshalJSON(t *testing.T) {
 	}
 
 	a := assert.New(t)
-	ex := New("new test error")
+	message := "new test error"
+	ex := New(message)
 	a.NotNil(ex)
 	stackTrace := ex.Stack()
 	typed, isTyped := stackTrace.(StackPointers)
@@ -133,6 +134,25 @@ func TestMarshalJSON(t *testing.T) {
 	err = json.Unmarshal(jsonErr, ex2)
 	a.Nil(err)
 	a.Len(ex2.Stack, stackDepth)
+	a.Equal(message, ex2.Class)
+
+	ex = New(fmt.Errorf(message))
+	a.NotNil(ex)
+	stackTrace = ex.Stack()
+	typed, isTyped = stackTrace.(StackPointers)
+	a.True(isTyped)
+	a.NotNil(typed)
+	stackDepth = len(typed)
+
+	jsonErr, err = json.Marshal(ex)
+	a.Nil(err)
+	a.NotNil(jsonErr)
+
+	ex2 = &ReadableStackTrace{}
+	err = json.Unmarshal(jsonErr, ex2)
+	a.Nil(err)
+	a.Len(ex2.Stack, stackDepth)
+	a.Equal(message, ex2.Class)
 }
 
 func TestNest(t *testing.T) {
