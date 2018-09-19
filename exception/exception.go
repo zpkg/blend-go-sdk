@@ -160,7 +160,7 @@ func (e *Ex) Error() string {
 // Decompose breaks the exception down to be marshalled into an intermediate format.
 func (e *Ex) Decompose() map[string]interface{} {
 	values := map[string]interface{}{}
-	values["Class"] = e.class
+	values["Class"] = e.class.Error()
 	values["Message"] = e.message
 	if e.stack != nil {
 		values["Stack"] = e.Stack().Strings()
