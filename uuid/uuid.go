@@ -121,7 +121,7 @@ func (uuid *UUID) UnmarshalJSON(corpus []byte) error {
 
 // MarshalYAML marshals a uuid as yaml.
 func (uuid UUID) MarshalYAML() (interface{}, error) {
-	return "\"" + uuid.ToFullString() + "\"", nil
+	return uuid.ToFullString(), nil
 }
 
 // UnmarshalYAML unmarshals a uuid from yaml.
