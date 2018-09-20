@@ -10,6 +10,15 @@ const (
 	ErrParseIllegalCharacter = exception.Class("parse uuid: illegal character")
 )
 
+// MustParse parses a uuid and will panic if there is an error.
+func MustParse(corpus string) UUID {
+	uuid := Empty()
+	if err := ParseExisting(&uuid, corpus); err != nil {
+		panic(err)
+	}
+	return uuid
+}
+
 // Parse parses a uuidv4 from a given string.
 // valid forms are:
 // - {xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx}
