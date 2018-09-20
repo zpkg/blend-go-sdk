@@ -23,6 +23,11 @@ var (
 	}
 )
 
+// ErrInvalidScanSource is an error returned by scan.
+const (
+	ErrInvalidScanSource exception.Class = "uuid: invalid scan source"
+)
+
 // Empty returns an empty uuid block.
 func Empty() UUID {
 	return UUID(make([]byte, 16))
@@ -188,7 +193,7 @@ func (uuid *UUID) Scan(src interface{}) error {
 	case []byte:
 		return ParseExisting(uuid, string(src.([]byte)))
 	}
-	return exception.New(exception.Class("uuid: invalid scan source")).WithMessagef("scan type: %T", src)
+	return exception.New(ErrInvalidScanSource).WithMessagef("scan type: %T", src)
 }
 
 // Value returns a sql driver value.
@@ -196,5 +201,5 @@ func (uuid UUID) Value() (driver.Value, error) {
 	if uuid == nil || len(uuid) == 0 {
 		return nil, nil
 	}
-	return uuid.ToFullString(), nil
+	return uuid.String(), nil
 }
