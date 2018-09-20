@@ -66,7 +66,7 @@ func (uuid UUID) ToShortString() string {
 
 // String is an alias for `ToShortString`.
 func (uuid UUID) String() string {
-	return uuid.ToShortString()
+	return hex.EncodeToString([]byte(uuid))
 }
 
 // Version returns the version byte of a uuid.
