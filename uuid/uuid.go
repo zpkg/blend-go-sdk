@@ -83,12 +83,20 @@ func (uuid UUID) Format(s fmt.State, verb rune) {
 			io.WriteString(s, uuid.ToFullString())
 			return
 		}
-		io.WriteString(s, uuid.ToShortString())
+		io.WriteString(s, uuid.String())
 	case 's':
-		io.WriteString(s, uuid.ToShortString())
+		io.WriteString(s, uuid.String())
 	case 'q':
 		fmt.Fprintf(s, "%b", uuid.Version())
 	}
+}
+
+// IsZero returns if the uuid is unset.
+func (uuid UUID) IsZero() bool {
+	if len(uuid) == 0 {
+		return true
+	}
+	return bytes.Equal([]byte(uuid), []byte(Empty()))
 }
 
 // IsV4 returns true iff uuid has version number 4, variant number 2, and length 16 bytes
