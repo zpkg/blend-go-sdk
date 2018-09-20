@@ -348,10 +348,10 @@ func TestInlineMeta(t *testing.T) {
 
 	assert.Len(objs, 2)
 	assert.Any(objs, func(v interface{}) bool {
-		return v.(embeddedTest).ID.Equals(id0)
+		return v.(embeddedTest).ID.Equal(id0)
 	})
 	assert.Any(objs, func(v interface{}) bool {
-		return v.(embeddedTest).ID.Equals(id1)
+		return v.(embeddedTest).ID.Equal(id1)
 	})
 	assert.Any(objs, func(v interface{}) bool {
 		return v.(embeddedTest).Name == "foo"

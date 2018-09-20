@@ -1,7 +1,10 @@
 package uuid
 
 import (
+	"bytes"
 	"database/sql/driver"
+	"encoding/hex"
+	"encoding/json"
 	"fmt"
 	"io"
 	"strings"
@@ -29,20 +32,14 @@ func Empty() UUID {
 // UUIDs are a fixed 128bit (16 byte) binary blob.
 type UUID []byte
 
-// Equals returns if a uuid equals another uuid.
-func (uuid UUID) Equals(other UUID) bool {
-	if uuid == nil || other == nil {
-		return false
-	}
-	if len(uuid) != len(other) {
-		return false
-	}
-	for index := 0; index < len(uuid); index++ {
-		if uuid[index] != other[index] {
-			return false
-		}
-	}
-	return true
+// Equal returns if a uuid is equal to another uuid.
+func (uuid UUID) Equal(other UUID) bool {
+	return bytes.Equal(uuid[0:], other[0:])
+}
+
+// Compare returns a comparison between the two uuids.
+func (uuid UUID) Compare(other UUID) int {
+	return bytes.Compare(uuid[0:], other[0:])
 }
 
 // ToFullString returns a "xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx" hex representation of a uuid.
@@ -59,8 +56,7 @@ func (uuid UUID) ToFullString() string {
 
 // ToShortString returns a hex representation of the uuid.
 func (uuid UUID) ToShortString() string {
-	b := []byte(uuid)
-	return fmt.Sprintf("%x", b[:])
+	return hex.EncodeToString([]byte(uuid))
 }
 
 // String is an alias for `ToShortString`.
@@ -103,9 +99,49 @@ func (uuid UUID) IsV4() bool {
 	return (uuid[8]&0xc0)^0x80 == 0
 }
 
+// Marshal implements bytes marshal.
+func (uuid UUID) Marshal() ([]byte, error) {
+	if len(uuid) == 0 {
+		return nil, nil
+	}
+	return []byte(uuid), nil
+}
+
+// MarshalTo marshals the uuid to a buffer.
+func (uuid UUID) MarshalTo(data []byte) (n int, err error) {
+	if len(uuid) == 0 {
+		return 0, nil
+	}
+	copy(data, uuid)
+	return 16, nil
+}
+
+// Unmarshal implements bytes unmarshal.
+func (uuid *UUID) Unmarshal(data []byte) error {
+	if len(data) == 0 {
+		uuid = nil
+		return nil
+	}
+	id := UUID(make([]byte, 16))
+	copy(id, data)
+	*uuid = id
+	return nil
+}
+
+// Size returns the size of the uuid.
+func (uuid *UUID) Size() int {
+	if uuid == nil {
+		return 0
+	}
+	if len(*uuid) == 0 {
+		return 0
+	}
+	return 16
+}
+
 // MarshalJSON marshals a uuid as json.
 func (uuid UUID) MarshalJSON() ([]byte, error) {
-	return []byte("\"" + uuid.ToFullString() + "\""), nil
+	return json.Marshal(hex.EncodeToString([]byte(uuid)))
 }
 
 // UnmarshalJSON unmarshals a uuid from json.
