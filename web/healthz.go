@@ -38,7 +38,7 @@ const (
 )
 
 // NewHealthz returns a new healthz.
-func NewHealthz(hosted *App) *Healthz {
+func NewHealthz(hosted Shutdowner) *Healthz {
 	return &Healthz{
 		hosted:         hosted,
 		bindAddr:       DefaultHealthzBindAddr,
@@ -59,7 +59,7 @@ It typically implements the following routes:
 */
 type Healthz struct {
 	self           *App
-	hosted         *App
+	hosted         Shutdowner
 	cfg            *HealthzConfig
 	bindAddr       string
 	log            *logger.Logger
@@ -106,7 +106,7 @@ func (hz *Healthz) GracePeriod() time.Duration {
 }
 
 // Hosted returns the underlying app.
-func (hz *Healthz) Hosted() *App {
+func (hz *Healthz) Hosted() Shutdowner {
 	return hz.hosted
 }
 
@@ -149,7 +149,6 @@ func (hz *Healthz) Start() error {
 	hz.latch.Starting()
 	hz.self = New().
 		WithHandler(hz).
-		WithConfig(hz.hosted.Config()).
 		WithBindAddr(hz.bindAddr).
 		WithLogger(hz.log)
 
@@ -171,7 +170,7 @@ func (hz *Healthz) Shutdown() error {
 
 	select {
 	// if the hosted app crashes
-	case <-hz.hosted.Latch().NotifyStopped():
+	case <-hz.hosted.NotifyShutdown():
 		return hz.self.Shutdown()
 	// if the shutdown grace period expires
 	case <-context.Done():
@@ -251,7 +250,7 @@ func (hz *Healthz) healthzHandler(w ResponseWriter, r *http.Request) {
 			hz.log.Debugf("healthz received probe while in process of shutdown")
 		}
 		hz.latch.Stopped()
-	} else if hz.hosted.Latch().IsRunning() {
+	} else if hz.hosted.IsRunning() {
 		w.WriteHeader(http.StatusOK)
 		w.Header().Set(HeaderContentType, ContentTypeText)
 		fmt.Fprintf(w, "OK!\n")

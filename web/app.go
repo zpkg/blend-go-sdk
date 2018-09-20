@@ -125,6 +125,11 @@ func (a *App) NotifyShutdown() <-chan struct{} {
 	return a.latch.NotifyStopped()
 }
 
+// IsRunning returns if the app is running.
+func (a *App) IsRunning() bool {
+	return a.latch.IsRunning()
+}
+
 // WithConfig sets the config and applies the config's setting.
 func (a *App) WithConfig(cfg *Config) *App {
 	a.cfg = cfg

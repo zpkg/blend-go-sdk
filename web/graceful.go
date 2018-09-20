@@ -6,12 +6,6 @@ import (
 	"syscall"
 )
 
-// Shutdowner is a server that can start and shutdown.
-type Shutdowner interface {
-	Start() error
-	Shutdown() error
-}
-
 // GracefulShutdown is an alias to StartWithGracefulShutdown.
 var GracefulShutdown = StartWithGracefulShutdown
 

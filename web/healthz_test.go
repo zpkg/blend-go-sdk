@@ -37,10 +37,9 @@ func TestHealthz(t *testing.T) {
 	<-hz.hosted.NotifyStarted()
 	<-hz.self.NotifyStarted()
 
-	assert.True(hz.hosted.Latch().IsRunning())
+	assert.True(hz.hosted.IsRunning())
 	assert.True(hz.self.Latch().IsRunning())
 
-	assert.NotNil(hz.hosted.Listener())
 	assert.NotNil(hz.self.Listener())
 
 	healthzRes, err := http.Get("http://" + hz.self.Listener().Addr().String() + "/healthz")
