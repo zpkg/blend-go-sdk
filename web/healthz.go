@@ -12,6 +12,11 @@ import (
 	"github.com/blend/go-sdk/logger"
 )
 
+// Verify interfaces.
+var (
+	_ Shutdowner = (*Healthz)(nil)
+)
+
 const (
 	// VarzStarted is a common variable.
 	VarzStarted = "startedUTC"
@@ -182,6 +187,21 @@ func (hz *Healthz) Shutdown() error {
 	case <-hz.latch.NotifyStopped():
 		return hz.shutdownServers()
 	}
+}
+
+// IsRunning returns if the healthz server is running.
+func (hz *Healthz) IsRunning() bool {
+	return hz.self.IsRunning()
+}
+
+// NotifyStarted returns the notify started signal.
+func (hz *Healthz) NotifyStarted() <-chan struct{} {
+	return hz.self.NotifyStarted()
+}
+
+// NotifyShutdown returns the notify shutdown signal.
+func (hz *Healthz) NotifyShutdown() <-chan struct{} {
+	return hz.self.NotifyShutdown()
 }
 
 func (hz *Healthz) shutdownServers() error {
