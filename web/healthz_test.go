@@ -110,6 +110,9 @@ func TestHealthzShutdown(t *testing.T) {
 	assert.Equal(http.StatusServiceUnavailable, res.StatusCode)
 
 	<-hz.NotifyShutdown()
+	<-hz.self.NotifyShutdown()
+	<-hz.hosted.NotifyShutdown()
+
 	assert.False(hz.IsRunning())
 	assert.False(hz.self.IsRunning())
 	assert.False(hz.hosted.IsRunning())
