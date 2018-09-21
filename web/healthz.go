@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"net/http"
 	"strings"
+	"sync/atomic"
 	"time"
 
 	"github.com/blend/go-sdk/async"
@@ -48,8 +49,11 @@ func NewHealthz(hosted Shutdowner) *Healthz {
 		hosted:         hosted,
 		bindAddr:       DefaultHealthzBindAddr,
 		gracePeriod:    DefaultShutdownGracePeriod,
+		readTimeout:    DefaultReadTimeout,
+		writeTimeout:   DefaultWriteTimeout,
 		latch:          &async.Latch{},
 		defaultHeaders: map[string]string{},
+		recoverPanics:  true,
 	}
 }
 
@@ -70,16 +74,31 @@ type Healthz struct {
 	log            *logger.Logger
 	latch          *async.Latch
 	defaultHeaders map[string]string
-	gracePeriod    time.Duration
 	recoverPanics  bool
+
+	maxHeaderBytes    int
+	readTimeout       time.Duration
+	readHeaderTimeout time.Duration
+	writeTimeout      time.Duration
+	idleTimeout       time.Duration
+	gracePeriod       time.Duration
+
+	failureThreshold int
+	failures         int32
 }
 
 // WithConfig sets the healthz config and relevant properties.
 func (hz *Healthz) WithConfig(cfg *HealthzConfig) *Healthz {
 	hz.cfg = cfg
 	hz.WithBindAddr(cfg.GetBindAddr())
-	hz.WithGracePeriodSeconds(cfg.GetGracePeriod())
+	hz.WithGracePeriod(cfg.GetGracePeriod())
+	hz.WithFailureThreshold(cfg.GetFailureThreshold())
 	hz.WithRecoverPanics(cfg.GetRecoverPanics())
+	hz.WithMaxHeaderBytes(cfg.GetMaxHeaderBytes())
+	hz.WithReadHeaderTimeout(cfg.GetReadHeaderTimeout())
+	hz.WithReadTimeout(cfg.GetReadTimeout())
+	hz.WithWriteTimeout(cfg.GetWriteTimeout())
+	hz.WithIdleTimeout(cfg.GetIdleTimeout())
 	return hz
 }
 
@@ -99,8 +118,8 @@ func (hz *Healthz) BindAddr() string {
 	return hz.bindAddr
 }
 
-// WithGracePeriodSeconds sets the grace period seconds
-func (hz *Healthz) WithGracePeriodSeconds(gracePeriod time.Duration) *Healthz {
+// WithGracePeriod sets the grace period seconds
+func (hz *Healthz) WithGracePeriod(gracePeriod time.Duration) *Healthz {
 	hz.gracePeriod = gracePeriod
 	return hz
 }
@@ -108,6 +127,17 @@ func (hz *Healthz) WithGracePeriodSeconds(gracePeriod time.Duration) *Healthz {
 // GracePeriod returns the grace period in seconds
 func (hz *Healthz) GracePeriod() time.Duration {
 	return hz.gracePeriod
+}
+
+// WithFailureThreshold sets the failure threshold.
+func (hz *Healthz) WithFailureThreshold(failureThreshold int) *Healthz {
+	hz.failureThreshold = failureThreshold
+	return hz
+}
+
+// FailureThreshold returns the failure threshold.
+func (hz *Healthz) FailureThreshold() int {
+	return hz.failureThreshold
 }
 
 // Hosted returns the underlying app.
@@ -149,6 +179,61 @@ func (hz *Healthz) DefaultHeaders() map[string]string {
 	return hz.defaultHeaders
 }
 
+// WithMaxHeaderBytes sets the max header bytes value and returns a reference.
+func (hz *Healthz) WithMaxHeaderBytes(byteCount int) *Healthz {
+	hz.maxHeaderBytes = byteCount
+	return hz
+}
+
+// MaxHeaderBytes returns the app max header bytes.
+func (hz *Healthz) MaxHeaderBytes() int {
+	return hz.maxHeaderBytes
+}
+
+// WithReadHeaderTimeout returns the read header timeout for the server.
+func (hz *Healthz) WithReadHeaderTimeout(timeout time.Duration) *Healthz {
+	hz.readHeaderTimeout = timeout
+	return hz
+}
+
+// ReadHeaderTimeout returns the read header timeout for the server.
+func (hz *Healthz) ReadHeaderTimeout() time.Duration {
+	return hz.readHeaderTimeout
+}
+
+// WithReadTimeout sets the read timeout for the server and returns a reference to the app for building apps with a fluent api.
+func (hz *Healthz) WithReadTimeout(timeout time.Duration) *Healthz {
+	hz.readTimeout = timeout
+	return hz
+}
+
+// ReadTimeout returns the read timeout for the server.
+func (hz *Healthz) ReadTimeout() time.Duration {
+	return hz.readTimeout
+}
+
+// WithIdleTimeout sets the idle timeout.
+func (hz *Healthz) WithIdleTimeout(timeout time.Duration) *Healthz {
+	hz.idleTimeout = timeout
+	return hz
+}
+
+// IdleTimeout is the time before we close a connection.
+func (hz *Healthz) IdleTimeout() time.Duration {
+	return hz.idleTimeout
+}
+
+// WithWriteTimeout sets the write timeout for the server and returns a reference to the app for building apps with a fluent api.
+func (hz *Healthz) WithWriteTimeout(timeout time.Duration) *Healthz {
+	hz.writeTimeout = timeout
+	return hz
+}
+
+// WriteTimeout returns the write timeout for the server.
+func (hz *Healthz) WriteTimeout() time.Duration {
+	return hz.writeTimeout
+}
+
 // Start implements shutdowner.
 func (hz *Healthz) Start() error {
 	hz.latch.Starting()
@@ -163,15 +248,17 @@ func (hz *Healthz) Start() error {
 
 // Shutdown implements shutdowner.
 func (hz *Healthz) Shutdown() error {
+	// set the next call to `/healtz` to
+	// finish the shutdown
+	hz.latch.Stopping()
+	defer func() { hz.latch.Stopped() }()
+
 	context, cancel := context.WithTimeout(context.Background(), hz.GracePeriod())
 	defer cancel()
 
 	if hz.log != nil {
 		hz.log.Infof("healthz is shutting down with (%s) grace period", hz.GracePeriod())
 	}
-	// set the next call to `/healtz` to
-	// finish the shutdown
-	hz.latch.Stopping()
 
 	select {
 	// if the hosted app crashes
@@ -199,9 +286,14 @@ func (hz *Healthz) NotifyStarted() <-chan struct{} {
 	return hz.self.NotifyStarted()
 }
 
+// NotifyShuttingDown returns the notify shutdown signal.
+func (hz *Healthz) NotifyShuttingDown() <-chan struct{} {
+	return hz.latch.NotifyStopping()
+}
+
 // NotifyShutdown returns the notify shutdown signal.
 func (hz *Healthz) NotifyShutdown() <-chan struct{} {
-	return hz.self.NotifyShutdown()
+	return hz.latch.NotifyStopped()
 }
 
 func (hz *Healthz) shutdownServers() error {
@@ -222,7 +314,6 @@ func (hz *Healthz) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 
 	if hz.log != nil {
 		hz.log.Trigger(logger.NewHTTPRequestEvent(r).WithRoute(route))
-
 		defer func() {
 			hz.log.Trigger(logger.NewHTTPResponseEvent(r).
 				WithStatusCode(res.StatusCode()).
@@ -261,21 +352,50 @@ func (hz *Healthz) recover(w http.ResponseWriter, req *http.Request) {
 	}
 }
 
+func (hz *Healthz) requiredFailures() int32 {
+	if hz.cfg != nil {
+		return int32(hz.cfg.GetFailureThreshold())
+	}
+	return DefaultHealthzFailureThreshold
+}
+
+// currentFailures returns the current failures.
+func (hz *Healthz) currentFailures() (output int32) {
+	output = atomic.LoadInt32(&hz.failures)
+	return
+}
+
+// incrementFailures increments failures.
+func (hz *Healthz) incrementFailures() {
+	atomic.AddInt32(&hz.failures, 1)
+}
+
+// resetFailures resets the failures count.
+func (hz *Healthz) resetFailures() {
+	atomic.StoreInt32(&hz.failures, 0)
+}
+
 func (hz *Healthz) healthzHandler(w ResponseWriter, r *http.Request) {
 	if hz.latch.IsStopping() {
-		w.WriteHeader(http.StatusInternalServerError)
+		hz.incrementFailures()
+
+		w.WriteHeader(http.StatusServiceUnavailable)
 		w.Header().Set(HeaderContentType, ContentTypeText)
 		fmt.Fprintf(w, "Shutting down.\n")
 		if hz.log != nil {
 			hz.log.Debugf("healthz received probe while in process of shutdown")
 		}
-		hz.latch.Stopped()
+
+		// handle max fails ...
+		if hz.currentFailures() >= int32(hz.FailureThreshold()) {
+			hz.latch.Stopped()
+		}
 	} else if hz.hosted.IsRunning() {
 		w.WriteHeader(http.StatusOK)
 		w.Header().Set(HeaderContentType, ContentTypeText)
 		fmt.Fprintf(w, "OK!\n")
 	} else {
-		w.WriteHeader(http.StatusInternalServerError)
+		w.WriteHeader(http.StatusServiceUnavailable)
 		w.Header().Set(HeaderContentType, ContentTypeText)
 		fmt.Fprintf(w, "Failure!\n")
 	}

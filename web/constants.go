@@ -242,6 +242,9 @@ const (
 	// DefaultShutdownGracePeriod is the default shutdown grace period.
 	DefaultShutdownGracePeriod = 30 * time.Second
 
+	// DefaultHealthzFailureThreshold is the default healthz failure threshold.
+	DefaultHealthzFailureThreshold = 3
+
 	// DefaultBufferPoolSize is the default buffer pool size.
 	DefaultViewBufferPoolSize = 256
 )
