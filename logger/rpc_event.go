@@ -176,8 +176,8 @@ func (e *RPCEvent) WriteText(tf TextFormatter, buf *bytes.Buffer) {
 		buf.WriteRune(RuneSpace)
 	}
 
-	buf.WriteRune(RuneSpace)
 	buf.WriteString(e.elapsed.String())
+	buf.WriteRune(RuneSpace)
 
 	if e.err != nil {
 		buf.WriteRune(RuneSpace)
