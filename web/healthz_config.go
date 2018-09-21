@@ -10,7 +10,7 @@ import (
 type HealthzConfig struct {
 	BindAddr         string        `json:"bindAddr" yaml:"bindAddr" env:"HEALTHZ_BIND_ADDR"`
 	GracePeriod      time.Duration `json:"gracePeriod" yaml:"gracePeriod"`
-	FailureThreshold int           `json:"failureThreshold" yaml:"failureThreshold"`
+	FailureThreshold int           `json:"failureThreshold" yaml:"failureThreshold" env:"READY_FAILURE_THRESHOLD"`
 	RecoverPanics    *bool         `json:"recoverPanics" yaml:"recoverPanics"`
 
 	MaxHeaderBytes    int           `json:"maxHeaderBytes,omitempty" yaml:"maxHeaderBytes,omitempty" env:"MAX_HEADER_BYTES"`
