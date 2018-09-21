@@ -159,17 +159,20 @@ func (e *RPCEvent) WriteText(tf TextFormatter, buf *bytes.Buffer) {
 		buf.WriteString("]")
 		buf.WriteRune(RuneSpace)
 	}
-
+	if e.method != "" {
+		buf.WriteString(tf.Colorize(e.method, ColorBlue))
+		buf.WriteRune(RuneSpace)
+	}
 	if e.authority != "" {
-		buf.WriteString(tf.Colorize(e.authority, ColorLightWhite))
+		buf.WriteString(e.authority)
 		buf.WriteRune(RuneSpace)
 	}
 	if e.userAgent != "" {
-		buf.WriteString(tf.Colorize(e.userAgent, ColorLightWhite))
+		buf.WriteString(e.userAgent)
 		buf.WriteRune(RuneSpace)
 	}
 	if e.contentType != "" {
-		buf.WriteString(tf.Colorize(e.contentType, ColorLightWhite))
+		buf.WriteString(e.contentType)
 		buf.WriteRune(RuneSpace)
 	}
 
