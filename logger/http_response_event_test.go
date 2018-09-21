@@ -11,7 +11,7 @@ import (
 	"github.com/blend/go-sdk/assert"
 )
 
-func TestHTTPRequestEventListener(t *testing.T) {
+func TestHTTPResponseEventListener(t *testing.T) {
 	assert := assert.New(t)
 
 	wg := sync.WaitGroup{}
@@ -24,20 +24,20 @@ func TestHTTPRequestEventListener(t *testing.T) {
 		WithWriter(NewJSONWriter(jsonBuffer))
 	defer all.Close()
 
-	all.Listen(HTTPRequest, "default", NewHTTPRequestEventListener(func(hre *HTTPRequestEvent) {
+	all.Listen(HTTPResponse, "default", NewHTTPResponseEventListener(func(hre *HTTPResponseEvent) {
 		defer wg.Done()
-		assert.Equal(HTTPRequest, hre.Flag())
+		assert.Equal(HTTPResponse, hre.Flag())
 		assert.NotNil(hre.Request())
 		assert.Equal("test.com", hre.Request().Host)
 	}))
 
 	go func() {
 		defer wg.Done()
-		all.Trigger(NewHTTPRequestEvent(&http.Request{Host: "test.com", URL: &url.URL{}}))
+		all.Trigger(NewHTTPResponseEvent(&http.Request{Host: "test.com", URL: &url.URL{}}))
 	}()
 	go func() {
 		defer wg.Done()
-		all.Trigger(NewHTTPRequestEvent(&http.Request{Host: "test.com", URL: &url.URL{}}))
+		all.Trigger(NewHTTPResponseEvent(&http.Request{Host: "test.com", URL: &url.URL{}}))
 	}()
 	wg.Wait()
 	all.Drain()
@@ -46,10 +46,10 @@ func TestHTTPRequestEventListener(t *testing.T) {
 	assert.NotEmpty(jsonBuffer.String())
 }
 
-func TestHTTPRequestEventProperties(t *testing.T) {
+func TestHTTPResponseEventProperties(t *testing.T) {
 	assert := assert.New(t)
 
-	e := NewHTTPRequestEvent(nil)
+	e := NewHTTPResponseEvent(nil)
 
 	assert.False(e.Timestamp().IsZero())
 	assert.True(e.WithTimestamp(time.Time{}).Timestamp().IsZero())
@@ -60,7 +60,7 @@ func TestHTTPRequestEventProperties(t *testing.T) {
 	assert.Empty(e.Annotations())
 	assert.Equal("zar", e.WithAnnotation("moo", "zar").Annotations()["moo"])
 
-	assert.Equal(HTTPRequest, e.Flag())
+	assert.Equal(HTTPResponse, e.Flag())
 	assert.Equal(Error, e.WithFlag(Error).Flag())
 
 	assert.Empty(e.Headings())
@@ -74,4 +74,19 @@ func TestHTTPRequestEventProperties(t *testing.T) {
 
 	assert.Empty(e.Route())
 	assert.Equal("Route", e.WithRoute("Route").Route())
+
+	assert.Zero(e.Elapsed())
+	assert.Equal(time.Millisecond, e.WithElapsed(time.Millisecond).Elapsed())
+
+	assert.Zero(e.StatusCode())
+	assert.Equal(http.StatusOK, e.WithStatusCode(http.StatusOK).StatusCode())
+
+	assert.Zero(e.ContentLength())
+	assert.Equal(1<<10, e.WithContentLength(1<<10).ContentLength())
+
+	assert.Empty(e.ContentType())
+	assert.Equal("content-type", e.WithContentType("content-type").ContentType())
+
+	assert.Empty(e.ContentEncoding())
+	assert.Equal("content-encoding", e.WithContentEncoding("content-encoding").ContentEncoding())
 }

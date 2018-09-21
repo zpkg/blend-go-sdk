@@ -29,6 +29,9 @@ const (
 
 	// Query is a logging flag.
 	Query Flag = "db.query"
+
+	// RPC is a logging flag.
+	RPC Flag = "rpc"
 )
 
 // Flag represents an event type that can be enabled or disabled.

@@ -2,8 +2,6 @@ package logger
 
 import (
 	"bytes"
-	"net/http"
-	"net/url"
 	"sync"
 	"testing"
 	"time"
@@ -11,7 +9,7 @@ import (
 	"github.com/blend/go-sdk/assert"
 )
 
-func TestHTTPRequestEventListener(t *testing.T) {
+func TestRPCEventListener(t *testing.T) {
 	assert := assert.New(t)
 
 	wg := sync.WaitGroup{}
@@ -24,20 +22,20 @@ func TestHTTPRequestEventListener(t *testing.T) {
 		WithWriter(NewJSONWriter(jsonBuffer))
 	defer all.Close()
 
-	all.Listen(HTTPRequest, "default", NewHTTPRequestEventListener(func(hre *HTTPRequestEvent) {
+	all.Listen(RPC, "default", NewRPCEventListener(func(re *RPCEvent) {
 		defer wg.Done()
-		assert.Equal(HTTPRequest, hre.Flag())
-		assert.NotNil(hre.Request())
-		assert.Equal("test.com", hre.Request().Host)
+		assert.Equal(RPC, re.Flag())
+		assert.Equal("/test", re.Method())
+		assert.NotZero(re.Elapsed())
 	}))
 
 	go func() {
 		defer wg.Done()
-		all.Trigger(NewHTTPRequestEvent(&http.Request{Host: "test.com", URL: &url.URL{}}))
+		all.Trigger(NewRPCEvent("/test", time.Millisecond))
 	}()
 	go func() {
 		defer wg.Done()
-		all.Trigger(NewHTTPRequestEvent(&http.Request{Host: "test.com", URL: &url.URL{}}))
+		all.Trigger(NewRPCEvent("/test", time.Millisecond))
 	}()
 	wg.Wait()
 	all.Drain()
@@ -46,10 +44,10 @@ func TestHTTPRequestEventListener(t *testing.T) {
 	assert.NotEmpty(jsonBuffer.String())
 }
 
-func TestHTTPRequestEventProperties(t *testing.T) {
+func TestRPCEventProperties(t *testing.T) {
 	assert := assert.New(t)
 
-	e := NewHTTPRequestEvent(nil)
+	e := NewRPCEvent("", 0)
 
 	assert.False(e.Timestamp().IsZero())
 	assert.True(e.WithTimestamp(time.Time{}).Timestamp().IsZero())
@@ -60,18 +58,25 @@ func TestHTTPRequestEventProperties(t *testing.T) {
 	assert.Empty(e.Annotations())
 	assert.Equal("zar", e.WithAnnotation("moo", "zar").Annotations()["moo"])
 
-	assert.Equal(HTTPRequest, e.Flag())
+	assert.Equal(RPC, e.Flag())
 	assert.Equal(Error, e.WithFlag(Error).Flag())
 
 	assert.Empty(e.Headings())
 	assert.Equal([]string{"Heading"}, e.WithHeadings("Heading").Headings())
 
-	assert.Nil(e.Request())
-	assert.NotNil(e.WithRequest(&http.Request{}).Request())
+	assert.Empty(e.Engine())
+	assert.Equal("grpc", e.WithEngine("grpc").Engine())
 
-	assert.Nil(e.State())
-	assert.Equal("foo", e.WithState(map[interface{}]interface{}{"bar": "foo"}).State()["bar"])
+	assert.Empty(e.Method())
+	assert.Equal("/test", e.WithMethod("/test").Method())
 
-	assert.Empty(e.Route())
-	assert.Equal("Route", e.WithRoute("Route").Route())
+	assert.Zero(e.Elapsed())
+	assert.Equal(time.Millisecond, e.WithElapsed(time.Millisecond).Elapsed())
+
+	assert.Empty(e.ContentType())
+	assert.Equal("content-type", e.WithContentType("content-type").ContentType())
+
+	assert.Empty(e.Authority())
+	assert.Equal("authority", e.WithAuthority("authority").Authority())
+
 }
