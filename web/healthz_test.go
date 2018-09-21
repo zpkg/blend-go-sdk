@@ -95,7 +95,7 @@ func TestHealthzShutdown(t *testing.T) {
 
 	res, err := http.Get("http://" + hz.self.Listener().Addr().String() + "/healthz")
 	assert.Nil(err)
-	assert.Equal(http.StatusOK, res.StatusCode)
+	assert.Equal(http.StatusServiceUnavailable, res.StatusCode)
 
 	assert.True(hz.IsRunning())
 
@@ -119,9 +119,9 @@ func TestHealthzProperties(t *testing.T) {
 	assert := assert.New(t)
 
 	hz := NewHealthz(nil)
-	assert.False(hz.RecoverPanics())
-	hz.WithRecoverPanics(true)
 	assert.True(hz.RecoverPanics())
+	hz.WithRecoverPanics(false)
+	assert.False(hz.RecoverPanics())
 
 	assert.Nil(hz.Logger())
 	hz.WithLogger(logger.None())
