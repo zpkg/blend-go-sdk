@@ -84,6 +84,7 @@ func TestHealthzShutdown(t *testing.T) {
 	go hz.Start()
 	<-hz.hosted.NotifyStarted()
 	<-hz.self.NotifyStarted()
+	<-hz.NotifyStarted()
 
 	assert.True(hz.IsRunning())
 
