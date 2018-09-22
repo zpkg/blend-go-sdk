@@ -19,23 +19,6 @@ var (
 )
 
 const (
-	// VarzStarted is a common variable.
-	VarzStarted = "startedUTC"
-	// VarzRequests is a common variable.
-	VarzRequests = "http_requests"
-	// VarzRequests2xx is a common variable.
-	VarzRequests2xx = "http_requests2xx"
-	// VarzRequests3xx is a common variable.
-	VarzRequests3xx = "http_requests3xx"
-	// VarzRequests4xx is a common variable.
-	VarzRequests4xx = "http_requests4xx"
-	// VarzRequests5xx is a common variable.
-	VarzRequests5xx = "http_requests5xx"
-	// VarzErrors is a common variable.
-	VarzErrors = "errors_total"
-	// VarzFatals is a common variable.
-	VarzFatals = "fatals_total"
-
 	// ListenerHealthz is the uid of the healthz logger listeners.
 	ListenerHealthz = "healthz"
 
