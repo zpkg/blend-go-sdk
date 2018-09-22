@@ -102,6 +102,16 @@ func (hz *Healthz) WithConfig(cfg *HealthzConfig) *Healthz {
 	return hz
 }
 
+// Self returns the inner web server.
+func (hz *Healthz) Self() *App {
+	return hz.self
+}
+
+// Hosted returns the hosted app.
+func (hz *Healthz) Hosted() Shutdowner {
+	return hz.hosted
+}
+
 // Config returns the healthz config.
 func (hz *Healthz) Config() *HealthzConfig {
 	return hz.cfg
@@ -140,9 +150,10 @@ func (hz *Healthz) FailureThreshold() int {
 	return hz.failureThreshold
 }
 
-// Hosted returns the underlying app.
-func (hz *Healthz) Hosted() Shutdowner {
-	return hz.hosted
+// WithRecoverPanics sets if the app should recover panics.
+func (hz *Healthz) WithRecoverPanics(value bool) *Healthz {
+	hz.recoverPanics = value
+	return hz
 }
 
 // RecoverPanics returns if the app recovers panics.
@@ -150,22 +161,16 @@ func (hz *Healthz) RecoverPanics() bool {
 	return hz.recoverPanics
 }
 
-// WithRecoverPanics sets if the app should recover panics.
-func (hz *Healthz) WithRecoverPanics(value bool) *Healthz {
-	hz.recoverPanics = value
+// WithLogger sets the app logger agent and returns a reference to the app.
+// It also sets underlying loggers in any child resources like providers and the auth manager.
+func (hz *Healthz) WithLogger(log *logger.Logger) *Healthz {
+	hz.log = log
 	return hz
 }
 
 // Logger returns the diagnostics agent for the app.
 func (hz *Healthz) Logger() *logger.Logger {
 	return hz.log
-}
-
-// WithLogger sets the app logger agent and returns a reference to the app.
-// It also sets underlying loggers in any child resources like providers and the auth manager.
-func (hz *Healthz) WithLogger(log *logger.Logger) *Healthz {
-	hz.log = log
-	return hz
 }
 
 // WithDefaultHeader adds a default header.
@@ -240,8 +245,12 @@ func (hz *Healthz) Start() error {
 	hz.self = New().
 		WithHandler(hz).
 		WithBindAddr(hz.bindAddr).
-		WithLogger(hz.log)
-
+		WithLogger(hz.log).
+		WithMaxHeaderBytes(hz.MaxHeaderBytes()).
+		WithReadHeaderTimeout(hz.ReadHeaderTimeout()).
+		WithReadTimeout(hz.ReadTimeout()).
+		WithIdleTimeout(hz.IdleTimeout()).
+		WithWriteTimeout(hz.WriteTimeout())
 	hz.latch.Started()
 	return async.RunToError(hz.self.Start, hz.hosted.Start)
 }
@@ -261,16 +270,13 @@ func (hz *Healthz) Shutdown() error {
 	}
 
 	select {
-	// if the hosted app crashes
 	case <-hz.hosted.NotifyShutdown():
 		return hz.self.Shutdown()
-	// if the shutdown grace period expires
 	case <-context.Done():
 		if hz.log != nil {
 			hz.log.Warningf("healthz shutdown grace period has expired")
 		}
 		return hz.shutdownServers()
-	// if we've received a final /healthz request
 	case <-hz.latch.NotifyStopped():
 		return hz.shutdownServers()
 	}
