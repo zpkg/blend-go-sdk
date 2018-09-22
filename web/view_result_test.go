@@ -8,6 +8,7 @@ import (
 	"testing"
 
 	"github.com/blend/go-sdk/assert"
+	"github.com/blend/go-sdk/env"
 	"github.com/blend/go-sdk/exception"
 	"github.com/blend/go-sdk/webutil"
 )
@@ -38,6 +39,31 @@ func TestViewResultRender(t *testing.T) {
 
 	assert.NotZero(buffer.Len())
 	assert.True(strings.Contains(buffer.String(), "bar"))
+
+	testView = template.New("testView")
+	testView.Parse("{{ .Env.String \"HELLO\" }}")
+
+	expected := "world"
+
+	curr := env.Env()
+	defer func() {
+		env.SetEnv(curr)
+	}()
+
+	env.SetEnv(env.NewVars())
+	env.Env().Set("HELLO", expected)
+
+	vr = &ViewResult{
+		StatusCode: http.StatusOK,
+		ViewModel:  nil,
+		Template:   testView,
+	}
+
+	err = vr.Render(rc)
+	assert.Nil(err)
+
+	assert.NotZero(buffer.Len())
+	assert.True(strings.Contains(buffer.String(), expected))
 }
 
 func TestViewResultRenderError(t *testing.T) {
