@@ -72,7 +72,7 @@ const (
 	// ColorLightWhite is the posix escape code fragment for white.
 	ColorLightWhite AnsiColor = "97m"
 
-	// ColorGray is an alias to ColorLightWhite to preserve backwards compatibility.
+	// ColorGray is an alias to ColorLightBlack to preserve backwards compatibility.
 	ColorGray AnsiColor = ColorLightBlack
 
 	// ColorReset is the posix escape code fragment to reset all formatting.

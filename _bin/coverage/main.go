@@ -97,7 +97,7 @@ func main() {
 		}
 
 		coverage := extractCoverage(string(output))
-		fmt.Fprintf(os.Stdout, "%s: %v%%\n", currentPath, coverage)
+		fmt.Fprintf(os.Stdout, "%s: %v%%\n", currentPath, colorCoverage(parseCoverage(coverage)))
 
 		if enforce != nil && *enforce {
 			err = enforceCoverage(currentPath, coverage)
@@ -132,9 +132,9 @@ func main() {
 	covered, total, err := parseFullCoverProfile(pwd, *temporaryOutputPath)
 	maybeFatal(err)
 	finalCoverage := (float64(covered) / float64(total)) * 100
-	maybeFatal(writeCoverage(pwd, fmt.Sprintf("%.2f", finalCoverage)))
-	fmt.Fprintf(os.Stdout, "final coverage: %.2f\n", finalCoverage)
-	fmt.Fprintf(os.Stdout, "merging coverage output: %s\n", *reportOutputPath)
+	maybeFatal(writeCoverage(pwd, formatCoverage(finalCoverage)))
+	fmt.Fprintf(os.Stdout, "final coverage: %s\n", colorCoverage(finalCoverage))
+	fmt.Fprintf(os.Stdout, "compiling coverage report: %s\n", *reportOutputPath)
 	maybeFatal(execCoverageReportCompile())
 	maybeFatal(removeIfExists(*temporaryOutputPath))
 	fmt.Fprintln(os.Stdout, "coverage complete")
@@ -223,8 +223,8 @@ func enforceCoverage(path, actualCoverage string) error {
 
 	if actual < expected {
 		return fmt.Errorf(
-			"%s fails coverage: %0.2f%% vs. %0.2f%%",
-			path, expected, actual,
+			"%s %s coverage: %0.2f%% vs. %0.2f%%",
+			path, colorRed.Apply("fails"), expected, actual,
 		)
 	}
 	return nil
@@ -258,6 +258,7 @@ func gobin() string {
 
 func execCoverage(path string) ([]byte, error) {
 	cmd := exec.Command(gobin(), "test", "-timeout", "10s", "-short", "-covermode=set", "-coverprofile=profile.cov")
+	cmd.Env = os.Environ()
 	cmd.Dir = path
 	return cmd.CombinedOutput()
 }
@@ -265,7 +266,6 @@ func execCoverage(path string) ([]byte, error) {
 func execCoverageReportCompile() error {
 	cmd := exec.Command(gobin(), "tool", "cover", fmt.Sprintf("-html=%s", *temporaryOutputPath), fmt.Sprintf("-o=%s", *reportOutputPath))
 	cmd.Env = os.Environ()
-	cmd.Env = append(cmd.Env, "GOCACHE=off")
 	return cmd.Run()
 }
 
@@ -391,4 +391,56 @@ func maybePrefix(root, prefix string) string {
 		return root
 	}
 	return prefix + root
+}
+
+// AnsiColor represents an ansi color code fragment.
+type ansiColor string
+
+func (acc ansiColor) escaped() string {
+	return "\033[" + string(acc)
+}
+
+// Apply returns a string with the color code applied.
+func (acc ansiColor) Apply(text string) string {
+	return acc.escaped() + text + colorReset.escaped()
+}
+
+const (
+	// ColorWhite is the posix escape code fragment for white.
+	colorWhite ansiColor = "97m"
+	// ColorBlack is the posix escape code fragment for black.
+	colorBlack ansiColor = "30m"
+	// ColorGray is the posix escape code fragment for black.
+	colorGray ansiColor = "90m"
+	// ColorRed is the posix escape code fragment for red.
+	colorRed ansiColor = "31m"
+	// ColorYellow is the posix escape code fragment for yellow.
+	colorYellow ansiColor = "33m"
+	// ColorGreen is the posix escape code fragment for green.
+	colorGreen ansiColor = "32m"
+	// ColorReset is the posix escape code fragment to reset all formatting.
+	colorReset ansiColor = "0m"
+)
+
+func parseCoverage(coverage string) float64 {
+	coverage = strings.TrimSpace(coverage)
+	coverage = strings.TrimSuffix(coverage, "%")
+	value, _ := strconv.ParseFloat(coverage, 64)
+	return value
+}
+
+func colorCoverage(coverage float64) string {
+	text := formatCoverage(coverage)
+	if coverage > 80.0 {
+		return colorGreen.Apply(text)
+	} else if coverage > 70 {
+		return colorYellow.Apply(text)
+	} else if coverage == 0 {
+		return colorGray.Apply(text)
+	}
+	return colorRed.Apply(text)
+}
+
+func formatCoverage(coverage float64) string {
+	return fmt.Sprintf("%.2f", coverage)
 }
