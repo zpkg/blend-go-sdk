@@ -5,7 +5,8 @@ import (
 	"fmt"
 	"html/template"
 	"net/http"
-
+	
+	"github.com/blend/go-sdk/env"
 	"github.com/blend/go-sdk/exception"
 )
 
@@ -45,6 +46,7 @@ func (vr *ViewResult) Render(ctx *Ctx) (err error) {
 	}
 
 	err = vr.Template.Execute(buffer, &ViewModel{
+		Env:       env.Env(),
 		Ctx:       ctx,
 		ViewModel: vr.ViewModel,
 	})
