@@ -27,7 +27,8 @@ func TestHealthz(t *testing.T) {
 	defer hzLog.Close()
 
 	hz := NewHealthz(app).WithLogger(hzLog).WithGracePeriod(0)
-	defer hz.Shutdown()
+	defer func() { hz.Shutdown() }()
+
 	hz.WithDefaultHeader("key", "secure")
 	assert.NotEmpty(hz.DefaultHeaders())
 

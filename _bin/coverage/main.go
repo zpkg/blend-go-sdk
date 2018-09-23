@@ -33,6 +33,7 @@ var update = flag.Bool("update", false, "if we should write the current coverage
 var enforce = flag.Bool("enforce", false, "if we should enforce coverage minimums defined in `COVERAGE` files")
 var include = flag.String("include", "", "the include file filter in glob form, can be a csv.")
 var exclude = flag.String("exclude", "", "the exclude file filter in glob form, can be a csv.")
+var timeout = flag.String("timeout", "", "the timeout to pass to the package tests.")
 
 func main() {
 	flag.Parse()
@@ -257,7 +258,12 @@ func gobin() string {
 }
 
 func execCoverage(path string) ([]byte, error) {
-	cmd := exec.Command(gobin(), "test", "-timeout", "10s", "-short", "-covermode=set", "-coverprofile=profile.cov")
+	var cmd *exec.Cmd
+	if *timeout != "" {
+		cmd = exec.Command(gobin(), "test", "-timeout", *timeout, "-short", "-covermode=set", "-coverprofile=profile.cov")
+	} else {
+		cmd = exec.Command(gobin(), "test", "-short", "-covermode=set", "-coverprofile=profile.cov")
+	}
 	cmd.Env = os.Environ()
 	cmd.Dir = path
 	return cmd.CombinedOutput()
