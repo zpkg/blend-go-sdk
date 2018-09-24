@@ -20,7 +20,8 @@ func GetRemoteAddr(r *http.Request) string {
 			if !strings.ContainsRune(headerVal, ',') {
 				return headerVal, true
 			}
-			return strings.SplitN(headerVal, ",", 2)[0], true
+			vals := strings.Split(headerVal, ",")
+			return vals[len(vals)-1], true
 		}
 		return "", false
 	}

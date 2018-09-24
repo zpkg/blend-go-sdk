@@ -29,7 +29,7 @@ func TestGetRemoteAddr(t *testing.T) {
 	r = http.Request{
 		Header: hdr,
 	}
-	assert.Equal("1", GetRemoteAddr(&r))
+	assert.Equal("3", GetRemoteAddr(&r))
 
 	hdr = http.Header{}
 	hdr.Set("X-Real-Ip", "1")
@@ -50,7 +50,7 @@ func TestGetRemoteAddr(t *testing.T) {
 	r = http.Request{
 		Header: hdr,
 	}
-	assert.Equal("1", GetRemoteAddr(&r))
+	assert.Equal("3", GetRemoteAddr(&r))
 
 	r = http.Request{
 		RemoteAddr: "1:1",

@@ -10,6 +10,7 @@ import (
 )
 
 func TestHealthz(t *testing.T) {
+	t.Skip()
 	assert := assert.New(t)
 
 	appLog := logger.New().WithFlags(logger.AllFlags())
@@ -57,6 +58,7 @@ func TestHealthz(t *testing.T) {
 }
 
 func TestHealthzShutdown(t *testing.T) {
+	t.Skip()
 	assert := assert.New(t)
 
 	appLog := logger.New().WithFlags(logger.AllFlags())
