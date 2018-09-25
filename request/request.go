@@ -360,6 +360,16 @@ func (r *Request) WithHeader(field string, value string) *Request {
 	return r
 }
 
+// WithHeaders adds a set of headers to the request.
+func (r *Request) WithHeaders(headers http.Header) *Request {
+	for key, values := range headers {
+		for _, value := range values {
+			r.header.Set(key, value)
+		}
+	}
+	return r
+}
+
 // Header returns the request headers.
 func (r *Request) Header() http.Header {
 	return r.header

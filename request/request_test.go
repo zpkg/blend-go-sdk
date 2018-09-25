@@ -533,3 +533,11 @@ func TestRequestTracer(t *testing.T) {
 	wg.Wait()
 	assert.True(hasValue)
 }
+
+func TestRequestWithHeaders(t *testing.T) {
+	assert := assert.New(t)
+
+	req := New().WithHeader("foo", "bar").WithHeaders(http.Header{"buzz": []string{"wuzz"}})
+	assert.Equal("bar", req.Header().Get("foo"))
+	assert.Equal("wuzz", req.Header().Get("buzz"))
+}
