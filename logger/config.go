@@ -106,7 +106,7 @@ func (c Config) GetListenerQueueDepth(defaults ...int) int {
 
 // GetWriters returns the configured writers
 func (c Config) GetWriters() []Writer {
-	switch c.GetOutputFormat() {
+	switch OutputFormat(strings.ToLower(string(c.GetOutputFormat()))) {
 	case OutputFormatJSON:
 		return []Writer{NewJSONWriterFromConfig(&c.JSON)}
 	case OutputFormatText:
