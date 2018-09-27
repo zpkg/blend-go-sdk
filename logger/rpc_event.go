@@ -35,6 +35,7 @@ func NewRPCEventListener(listener func(*RPCEvent)) Listener {
 type RPCEvent struct {
 	*EventMeta
 	engine      string
+	peer        string
 	method      string
 	userAgent   string
 	authority   string
@@ -82,6 +83,17 @@ func (e *RPCEvent) WithEngine(engine string) *RPCEvent {
 // Engine returns the engine.
 func (e RPCEvent) Engine() string {
 	return e.engine
+}
+
+// WithPeer sets the peer.
+func (e *RPCEvent) WithPeer(peer string) *RPCEvent {
+	e.peer = peer
+	return e
+}
+
+// Peer returns the peer.
+func (e RPCEvent) Peer() string {
+	return e.peer
 }
 
 // WithMethod sets the method.
@@ -164,6 +176,10 @@ func (e *RPCEvent) WriteText(tf TextFormatter, buf *bytes.Buffer) {
 		}
 		buf.WriteString(tf.Colorize(e.method, ColorBlue))
 	}
+	if e.peer != "" {
+		buf.WriteRune(RuneSpace)
+		buf.WriteString(e.peer)
+	}
 	if e.authority != "" {
 		buf.WriteRune(RuneSpace)
 		buf.WriteString(e.authority)
@@ -190,6 +206,7 @@ func (e *RPCEvent) WriteText(tf TextFormatter, buf *bytes.Buffer) {
 func (e *RPCEvent) WriteJSON() JSONObj {
 	return JSONObj{
 		"engine":         e.engine,
+		"peer":           e.peer,
 		"method":         e.method,
 		"authority":      e.authority,
 		"userAgent":      e.userAgent,
