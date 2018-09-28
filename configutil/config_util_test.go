@@ -105,8 +105,9 @@ func TestTryReadFromPathYAML(t *testing.T) {
 	assert := assert.New(t)
 
 	var cfg config
-	err := TryReadFromPaths(&cfg, "testdata/config.yaml")
+	path, err := TryReadFromPaths(&cfg, "testdata/config.yaml")
 	assert.Nil(err)
+	assert.Equal(path, "testdata/config.yaml")
 	assert.Equal("test_yaml", cfg.Environment)
 	assert.Equal("foo", cfg.Other)
 }
@@ -115,8 +116,9 @@ func TestTryReadFromPathYML(t *testing.T) {
 	assert := assert.New(t)
 
 	var cfg config
-	err := TryReadFromPaths(&cfg, "testdata/config.yml")
+	path, err := TryReadFromPaths(&cfg, "testdata/config.yml")
 	assert.Nil(err)
+	assert.Equal(path, "testdata/config.yml")
 	assert.Equal("test_yml", cfg.Environment)
 	assert.Equal("foo", cfg.Other)
 }
@@ -125,8 +127,9 @@ func TestTryReadFromPathJSON(t *testing.T) {
 	assert := assert.New(t)
 
 	var cfg config
-	err := TryReadFromPaths(&cfg, "testdata/config.json")
+	path, err := TryReadFromPaths(&cfg, "testdata/config.json")
 	assert.Nil(err)
+	assert.Equal(path, "testdata/config.json")
 	assert.Equal("test_json", cfg.Environment)
 	assert.Equal("moo", cfg.Other)
 }
@@ -137,8 +140,9 @@ func TestReadPathUnset(t *testing.T) {
 
 	env.Env().Set(env.VarServiceEnv, "dev")
 	var cfg config
-	err := TryReadFromPaths(&cfg, "")
+	path, err := TryReadFromPaths(&cfg, "")
 	assert.True(IsNotExist(err))
+	assert.Empty(path)
 	assert.NotEqual("dev", cfg.Environment)
 }
 
@@ -146,7 +150,7 @@ func TestReadPathNotFound(t *testing.T) {
 	assert := assert.New(t)
 
 	var cfg config
-	err := TryReadFromPaths(&cfg, filepath.Join("testdata", uuid.V4().String()))
+	_, err := TryReadFromPaths(&cfg, filepath.Join("testdata", uuid.V4().String()))
 	assert.True(IsNotExist(err))
 }
 
