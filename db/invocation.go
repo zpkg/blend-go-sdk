@@ -333,7 +333,7 @@ func (i *Invocation) Upsert(object DatabaseMapped) (err error) {
 	var queryBody string
 	var autos, writeCols *ColumnCollection
 	var stmt *sql.Stmt
-	//defer func() { err = i.finish(queryBody, recover(), err) }()
+	defer func() { err = i.finish(queryBody, recover(), err) }()
 
 	i.statementLabel, queryBody, autos, writeCols = i.generateUpsert(object)
 
