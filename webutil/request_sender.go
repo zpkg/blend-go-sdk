@@ -2,6 +2,7 @@ package webutil
 
 import (
 	"bytes"
+	"context"
 	"encoding/json"
 	"io/ioutil"
 	"net/http"
@@ -57,11 +58,23 @@ type RequestSender struct {
 	client    *http.Client
 	headers   http.Header
 	tracer    RequestTracer
+	ctx       context.Context
 }
 
 // Send sends a request to the destination without a payload.
 func (rs *RequestSender) Send() (*http.Response, error) {
 	return rs.send(rs.req())
+}
+
+// WithContext sets the request Context.
+func (rs *RequestSender) WithContext(ctx context.Context) *RequestSender {
+	rs.ctx = ctx
+	return rs
+}
+
+// Context returns the request Context.
+func (rs *RequestSender) Context() context.Context {
+	return rs.ctx
 }
 
 // SendBytes sends a message to the webhook with a given msg body as raw bytes.
@@ -162,6 +175,7 @@ func (rs *RequestSender) send(req *http.Request) (res *http.Response, err error)
 	if req.URL == nil {
 		return nil, ErrURLUnset
 	}
+	req.WithContext(rs.ctx)
 	if rs.tracer != nil {
 		tf := rs.tracer.Start(req)
 		if tf != nil {
