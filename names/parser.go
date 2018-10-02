@@ -16,60 +16,11 @@ var compoundLastNames = []string{
 	"vanden", "du", "st.", "st", "la", "lo", "ter", "bin", "ibn",
 }
 
-// Name is a structured/parsed name.
-type Name struct {
-	Salutation string
-	FirstName  string
-	MiddleName string
-	LastName   string
-	Suffix     string
-}
-
-// String returns the string representation of a name.
-func (n Name) String() string {
-	fullName := ""
-
-	if n.Salutation != "" {
-		fullName = fullName + n.Salutation
-	}
-
-	if n.FirstName != "" {
-		if fullName != "" {
-			fullName = fullName + " "
-		}
-		fullName = fullName + n.FirstName
-	}
-
-	if n.MiddleName != "" {
-		if fullName != "" {
-			fullName = fullName + " "
-		}
-		fullName = fullName + n.MiddleName
-	}
-
-	if n.LastName != "" {
-		if fullName != "" {
-			fullName = fullName + " "
-		}
-		fullName = fullName + n.LastName
-	}
-	if n.Suffix != "" {
-		if fullName != "" {
-			fullName = fullName + " "
-		}
-		fullName = fullName + n.Suffix
-	}
-
-	return fullName
-}
-
 // Parse parses a string into a name.
-func Parse(input string) *Name {
+func Parse(input string) (name Name) {
 	fullName := strings.TrimSpace(input)
 
 	rawNameParts := strings.Split(fullName, " ")
-
-	name := new(Name)
 
 	nameParts := []string{}
 
