@@ -41,116 +41,23 @@ func NewColumnCollectionWithPrefix(columnPrefix string) *ColumnCollection {
 	return &ColumnCollection{lookup: map[string]*Column{}, columnPrefix: columnPrefix}
 }
 
-// newColumnCollectionFromColumns creates a column lookup for a slice of columns.
-func newColumnCollectionFromColumns(columns []Column) *ColumnCollection {
-	cc := ColumnCollection{columns: columns}
-	lookup := make(map[string]*Column)
-	for i := 0; i < len(columns); i++ {
-		col := &columns[i]
-		lookup[col.ColumnName] = col
-	}
-	cc.lookup = lookup
-	return &cc
-}
-
-// newColumnCollectionWithPrefixFromColumns creates a column lookup for a slice of columns.
-func newColumnCollectionWithPrefixFromColumns(prefix string, columns []Column) *ColumnCollection {
-	cc := ColumnCollection{columns: columns, columnPrefix: prefix}
-	lookup := make(map[string]*Column)
-	for i := 0; i < len(columns); i++ {
-		col := &columns[i]
-		lookup[col.ColumnName] = col
-	}
-	cc.lookup = lookup
-	return &cc
-}
-
-// newColumnCacheKey creates a cache key for a type.
-func newColumnCacheKey(objectType reflect.Type) string {
-	typeName := objectType.String()
-	instance := reflect.New(objectType).Interface()
-	if typed, ok := instance.(ColumnMetaCacheKeyProvider); ok {
-		return typeName + "_" + typed.ColumnMetaCacheKey()
-	}
-	if typed, ok := instance.(TableNameProvider); ok {
-		return typeName + "_" + typed.TableName()
-	}
-	return typeName
-}
-
-// getCachedColumnCollectionFromInstance reflects an object instance into a new column collection.
-func getCachedColumnCollectionFromInstance(object interface{}) *ColumnCollection {
-	objectType := reflect.TypeOf(object)
-	return getCachedColumnCollectionFromType(newColumnCacheKey(objectType), objectType)
-}
-
-// getCachedColumnCollectionFromType reflects a reflect.Type into a column collection.
-// The results of this are cached for speed.
-func getCachedColumnCollectionFromType(identifier string, t reflect.Type) *ColumnCollection {
-	metaCacheLock.Lock()
-	defer metaCacheLock.Unlock()
-
-	if metaCache == nil {
-		metaCache = map[string]*ColumnCollection{}
-	}
-
-	cachedMeta, ok := metaCache[identifier]
-	if !ok {
-		metadata := newColumnCollectionFromColumns(generateColumnsForType(nil, t))
-		metaCache[identifier] = metadata
-		return metadata
-	}
-	return cachedMeta
-}
-
-// generateColumnsForType generates a column list for a given type.
-func generateColumnsForType(parent *Column, t reflect.Type) []Column {
-	for t.Kind() == reflect.Ptr {
-		t = t.Elem()
-	}
-
-	var tableName string
-	if parent != nil {
-		tableName = parent.TableName
-	} else {
-		tableName = TableNameByType(t)
-	}
-
-	numFields := t.NumField()
-
-	var cols []Column
-	for index := 0; index < numFields; index++ {
-		field := t.Field(index)
-		col := NewColumnFromFieldTag(field)
-		if col != nil {
-			col.Parent = parent
-			col.Index = index
-			col.TableName = tableName
-			if col.Inline && field.Anonymous { // if it's not anonymous, whatchu doin
-				cols = append(cols, generateColumnsForType(col, col.FieldType)...)
-			} else if !field.Anonymous {
-				cols = append(cols, *col)
-			}
-		}
-	}
-
-	return cols
-}
-
 // ColumnCollection represents the column metadata for a given struct.
 type ColumnCollection struct {
 	columns      []Column
 	lookup       map[string]*Column
 	columnPrefix string
 
-	autos          *ColumnCollection
-	notAutos       *ColumnCollection
-	readOnly       *ColumnCollection
-	notReadOnly    *ColumnCollection
-	primaryKeys    *ColumnCollection
-	notPrimaryKeys *ColumnCollection
-	writeColumns   *ColumnCollection
-	updateColumns  *ColumnCollection
+	autos           *ColumnCollection
+	notAutos        *ColumnCollection
+	readOnly        *ColumnCollection
+	notReadOnly     *ColumnCollection
+	primaryKeys     *ColumnCollection
+	notPrimaryKeys  *ColumnCollection
+	uniqueKeys      *ColumnCollection
+	notUniqueKeys   *ColumnCollection
+	writeColumns    *ColumnCollection
+	updateColumns   *ColumnCollection
+	conflictColumns *ColumnCollection
 }
 
 // Len returns the number of columns.
@@ -212,6 +119,16 @@ func (cc *ColumnCollection) UpdateColumns() *ColumnCollection {
 	return cc.updateColumns
 }
 
+// ConflictColumns are pks or uks.
+func (cc *ColumnCollection) ConflictColumns() *ColumnCollection {
+	if cc.conflictColumns != nil {
+		return cc.conflictColumns
+	}
+
+	cc.conflictColumns = cc.PrimaryKeys().ConcatWith(cc.UniqueKeys())
+	return cc.writeColumns
+}
+
 // PrimaryKeys are columns we use as where predicates and can't update.
 func (cc *ColumnCollection) PrimaryKeys() *ColumnCollection {
 	if cc.primaryKeys != nil {
@@ -245,6 +162,41 @@ func (cc *ColumnCollection) NotPrimaryKeys() *ColumnCollection {
 
 	cc.notPrimaryKeys = newCC
 	return cc.notPrimaryKeys
+}
+
+// UniqueKeys are columns we use as where predicates and can't update.
+func (cc *ColumnCollection) UniqueKeys() *ColumnCollection {
+	if cc.uniqueKeys != nil {
+		return cc.uniqueKeys
+	}
+
+	newCC := NewColumnCollectionWithPrefix(cc.columnPrefix)
+	for _, c := range cc.columns {
+		if c.IsUniqueKey {
+			newCC.Add(c)
+		}
+	}
+
+	cc.uniqueKeys = newCC
+	return cc.uniqueKeys
+}
+
+// NotUniqueKeys are columns we can update.
+func (cc *ColumnCollection) NotUniqueKeys() *ColumnCollection {
+	if cc.notUniqueKeys != nil {
+		return cc.notUniqueKeys
+	}
+
+	newCC := NewColumnCollectionWithPrefix(cc.columnPrefix)
+
+	for _, c := range cc.columns {
+		if !c.IsUniqueKey {
+			newCC.Add(c)
+		}
+	}
+
+	cc.notUniqueKeys = newCC
+	return cc.notUniqueKeys
 }
 
 // Autos are columns we have to return the id of.
@@ -427,4 +379,104 @@ func (cc ColumnCollection) String() string {
 // ColumnNamesCSV returns a csv of column names.
 func (cc ColumnCollection) ColumnNamesCSV() string {
 	return util.String.CSV(cc.ColumnNames())
+}
+
+//
+// helpers
+//
+
+// newColumnCollectionFromColumns creates a column lookup for a slice of columns.
+func newColumnCollectionFromColumns(columns []Column) *ColumnCollection {
+	cc := ColumnCollection{columns: columns}
+	lookup := make(map[string]*Column)
+	for i := 0; i < len(columns); i++ {
+		col := &columns[i]
+		lookup[col.ColumnName] = col
+	}
+	cc.lookup = lookup
+	return &cc
+}
+
+// newColumnCollectionWithPrefixFromColumns creates a column lookup for a slice of columns.
+func newColumnCollectionWithPrefixFromColumns(prefix string, columns []Column) *ColumnCollection {
+	cc := ColumnCollection{columns: columns, columnPrefix: prefix}
+	lookup := make(map[string]*Column)
+	for i := 0; i < len(columns); i++ {
+		col := &columns[i]
+		lookup[col.ColumnName] = col
+	}
+	cc.lookup = lookup
+	return &cc
+}
+
+// newColumnCacheKey creates a cache key for a type.
+func newColumnCacheKey(objectType reflect.Type) string {
+	typeName := objectType.String()
+	instance := reflect.New(objectType).Interface()
+	if typed, ok := instance.(ColumnMetaCacheKeyProvider); ok {
+		return typeName + "_" + typed.ColumnMetaCacheKey()
+	}
+	if typed, ok := instance.(TableNameProvider); ok {
+		return typeName + "_" + typed.TableName()
+	}
+	return typeName
+}
+
+// getCachedColumnCollectionFromInstance reflects an object instance into a new column collection.
+func getCachedColumnCollectionFromInstance(object interface{}) *ColumnCollection {
+	objectType := reflect.TypeOf(object)
+	return getCachedColumnCollectionFromType(newColumnCacheKey(objectType), objectType)
+}
+
+// getCachedColumnCollectionFromType reflects a reflect.Type into a column collection.
+// The results of this are cached for speed.
+func getCachedColumnCollectionFromType(identifier string, t reflect.Type) *ColumnCollection {
+	metaCacheLock.Lock()
+	defer metaCacheLock.Unlock()
+
+	if metaCache == nil {
+		metaCache = map[string]*ColumnCollection{}
+	}
+
+	cachedMeta, ok := metaCache[identifier]
+	if !ok {
+		metadata := newColumnCollectionFromColumns(generateColumnsForType(nil, t))
+		metaCache[identifier] = metadata
+		return metadata
+	}
+	return cachedMeta
+}
+
+// generateColumnsForType generates a column list for a given type.
+func generateColumnsForType(parent *Column, t reflect.Type) []Column {
+	for t.Kind() == reflect.Ptr {
+		t = t.Elem()
+	}
+
+	var tableName string
+	if parent != nil {
+		tableName = parent.TableName
+	} else {
+		tableName = TableNameByType(t)
+	}
+
+	numFields := t.NumField()
+
+	var cols []Column
+	for index := 0; index < numFields; index++ {
+		field := t.Field(index)
+		col := NewColumnFromFieldTag(field)
+		if col != nil {
+			col.Parent = parent
+			col.Index = index
+			col.TableName = tableName
+			if col.Inline && field.Anonymous { // if it's not anonymous, whatchu doin
+				cols = append(cols, generateColumnsForType(col, col.FieldType)...)
+			} else if !field.Anonymous {
+				cols = append(cols, *col)
+			}
+		}
+	}
+
+	return cols
 }
