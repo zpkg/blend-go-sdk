@@ -685,22 +685,24 @@ func (i *Invocation) generateUpdate(object DatabaseMapped) (statementLabel, quer
 func (i *Invocation) generateUpsert(object DatabaseMapped) (statementLabel, queryBody string, autos, writeCols *ColumnCollection) {
 	tableName := TableName(object)
 	cols := getCachedColumnCollectionFromInstance(object)
-	conflictUpdateCols := cols.NotReadOnly().NotAutos().NotPrimaryKeys()
+	updates := cols.NotReadOnly().NotAutos().NotPrimaryKeys().NotUniqueKeys()
+	updateCols := updates.Columns()
 
 	writeCols = cols.NotReadOnly().NotAutos()
+	writeColNames := writeCols.ColumnNames()
+
 	autos = cols.Autos()
 	pks := cols.PrimaryKeys()
-
-	colNames := writeCols.ColumnNames()
+	pkNames := pks.ColumnNames()
 
 	queryBodyBuffer := i.conn.bufferPool.Get()
 
 	queryBodyBuffer.WriteString("INSERT INTO ")
 	queryBodyBuffer.WriteString(tableName)
 	queryBodyBuffer.WriteString(" (")
-	for i, name := range colNames {
+	for i, name := range writeColNames {
 		queryBodyBuffer.WriteString(name)
-		if i < len(colNames)-1 {
+		if i < len(writeColNames)-1 {
 			queryBodyBuffer.WriteRune(runeComma)
 		}
 	}
@@ -722,19 +724,18 @@ func (i *Invocation) generateUpsert(object DatabaseMapped) (statementLabel, quer
 		}
 
 		queryBodyBuffer.WriteString(" ON CONFLICT (")
-		pkColumnNames := pks.ColumnNames()
-		for i, name := range pkColumnNames {
+
+		for i, name := range pkNames {
 			queryBodyBuffer.WriteString(name)
-			if i < len(pkColumnNames)-1 {
+			if i < len(pkNames)-1 {
 				queryBodyBuffer.WriteRune(runeComma)
 			}
 		}
 		queryBodyBuffer.WriteString(") DO UPDATE SET ")
 
-		conflictCols := conflictUpdateCols.Columns()
-		for i, col := range conflictCols {
+		for i, col := range updateCols {
 			queryBodyBuffer.WriteString(col.ColumnName + " = " + tokenMap[col.ColumnName])
-			if i < (len(conflictCols) - 1) {
+			if i < (len(updateCols) - 1) {
 				queryBodyBuffer.WriteRune(runeComma)
 			}
 		}
