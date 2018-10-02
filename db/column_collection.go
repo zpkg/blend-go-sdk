@@ -69,7 +69,10 @@ func newColumnCollectionWithPrefixFromColumns(prefix string, columns []Column) *
 func newColumnCacheKey(objectType reflect.Type) string {
 	typeName := objectType.String()
 	instance := reflect.New(objectType).Interface()
-	if typed, isTyped := instance.(TableNameProvider); isTyped {
+	if typed, ok := instance.(ColumnMetaCacheKeyProvider); ok {
+		return typeName + "_" + typed.ColumnMetaCacheKey()
+	}
+	if typed, ok := instance.(TableNameProvider); ok {
 		return typeName + "_" + typed.TableName()
 	}
 	return typeName

@@ -17,6 +17,11 @@ type TableNameProvider interface {
 	TableName() string
 }
 
+// ColumnMetaCacheKeyProvider is a provider for a column meta key.
+type ColumnMetaCacheKeyProvider interface {
+	ColumnMetaCacheKey() string
+}
+
 // Populatable is an interface that you can implement if your object is read often and is performance critical.
 type Populatable interface {
 	Populate(rows Scanner) error

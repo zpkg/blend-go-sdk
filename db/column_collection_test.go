@@ -1,6 +1,7 @@
 package db
 
 import (
+	"reflect"
 	"testing"
 
 	"github.com/blend/go-sdk/assert"
@@ -125,4 +126,25 @@ func TestColumnCollectionWriteColumns(t *testing.T) {
 	meta := getCachedColumnCollectionFromInstance(obj)
 	writeCols := meta.WriteColumns()
 	assert.NotZero(writeCols.Len())
+}
+
+type cacheKeyEmpty struct{}
+
+type cacheKeyWithTableName struct{}
+
+func (j cacheKeyWithTableName) TableName() string { return "with_table_name" }
+
+type cacheKeyWithColumMetaCacheKeyProvider struct{}
+
+func (j cacheKeyWithColumMetaCacheKeyProvider) ColumnMetaCacheKey() string {
+	return "with_column_meta_cache_key"
+}
+
+func TestNewColumnCacheKey(t *testing.T) {
+	assert := assert.New(t)
+
+	assert.Equal("db.cacheKeyEmpty", newColumnCacheKey(reflect.TypeOf(cacheKeyEmpty{})))
+	assert.Equal("db.cacheKeyWithTableName_with_table_name", newColumnCacheKey(reflect.TypeOf(cacheKeyWithTableName{})))
+	assert.Equal("db.cacheKeyWithColumMetaCacheKeyProvider_with_column_meta_cache_key", newColumnCacheKey(reflect.TypeOf(cacheKeyWithColumMetaCacheKeyProvider{})))
+
 }
