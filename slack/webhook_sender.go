@@ -1,6 +1,7 @@
 package slack
 
 import (
+	"context"
 	"io/ioutil"
 
 	"net/http"
@@ -47,8 +48,8 @@ func (whs WebhookSender) ApplyDefaults(message Message) Message {
 }
 
 // Send sends a slack hook.
-func (whs WebhookSender) Send(message Message) error {
-	res, err := whs.SendJSON(whs.ApplyDefaults(message))
+func (whs WebhookSender) Send(ctx context.Context, message Message) error {
+	res, err := whs.SendJSON(ctx, whs.ApplyDefaults(message))
 	if err != nil {
 		return err
 	}
