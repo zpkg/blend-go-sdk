@@ -1,6 +1,7 @@
 package slack
 
 import (
+	"context"
 	"net/http"
 	"net/http/httptest"
 	"testing"
@@ -21,7 +22,7 @@ func TestWebhookSender(t *testing.T) {
 	}
 
 	sender := NewWebhookSender(config)
-	assert.Nil(sender.Send(Message{
+	assert.Nil(sender.Send(context.TODO(), Message{
 		Text: "this is only a test",
 	}))
 }
@@ -39,7 +40,7 @@ func TestWebhookSenderStatusCode(t *testing.T) {
 	}
 
 	sender := NewWebhookSender(config)
-	assert.NotNil(sender.Send(Message{
+	assert.NotNil(sender.Send(context.TODO(), Message{
 		Text: "this is only a test",
 	}))
 }

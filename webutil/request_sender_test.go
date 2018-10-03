@@ -1,6 +1,7 @@
 package webutil
 
 import (
+	"context"
 	"fmt"
 	"io/ioutil"
 	"net/http"
@@ -112,7 +113,7 @@ func TestRequestSenderSendBytes(t *testing.T) {
 	defer ts.Close()
 
 	rs := NewRequestSender(MustParseURL(ts.URL))
-	res, err := rs.SendBytes([]byte("foo bar baz"))
+	res, err := rs.SendBytes(context.TODO(), []byte("foo bar baz"))
 	assert.Nil(err)
 	assert.NotNil(res)
 	assert.Equal(http.StatusOK, res.StatusCode)
@@ -137,7 +138,7 @@ func TestRequestSenderSendJSON(t *testing.T) {
 	defer ts.Close()
 
 	rs := NewRequestSender(MustParseURL(ts.URL))
-	res, err := rs.SendJSON(map[string]interface{}{"foo": "bar"})
+	res, err := rs.SendJSON(context.TODO(), map[string]interface{}{"foo": "bar"})
 	assert.Nil(err)
 	assert.NotNil(res)
 	assert.Equal(http.StatusOK, res.StatusCode)
