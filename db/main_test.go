@@ -103,7 +103,7 @@ func createUpserObjectTable(tx *sql.Tx) error {
 
 type benchObj struct {
 	ID        int       `db:"id,pk,auto"`
-	UUID      string    `db:"uuid,nullable"`
+	UUID      string    `db:"uuid,nullable,uk"`
 	Name      string    `db:"name"`
 	Timestamp time.Time `db:"timestamp_utc"`
 	Amount    float32   `db:"amount"`
@@ -120,7 +120,15 @@ func (b benchObj) TableName() string {
 }
 
 func createTable(tx *sql.Tx) error {
-	createSQL := `CREATE TABLE IF NOT EXISTS bench_object (id serial not null primary key, uuid uuid, name varchar(255), timestamp_utc timestamp, amount real, pending boolean, category varchar(255));`
+	createSQL := `CREATE TABLE IF NOT EXISTS bench_object (
+		id serial not null primary key
+		, uuid uuid not null
+		, name varchar(255)
+		, timestamp_utc timestamp
+		, amount real
+		, pending boolean
+		, category varchar(255)
+	);`
 	return Default().ExecInTx(createSQL, tx)
 }
 

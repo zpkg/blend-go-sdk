@@ -32,6 +32,7 @@ func NewColumnFromFieldTag(field reflect.StructField) *Column {
 				args := strings.ToLower(strings.Join(pieces[1:], ","))
 
 				col.IsPrimaryKey = strings.Contains(args, "pk")
+				col.IsUniqueKey = strings.Contains(args, "uk")
 				col.IsAuto = strings.Contains(args, "serial") || strings.Contains(args, "auto")
 				col.IsReadOnly = strings.Contains(args, "readonly")
 				col.Inline = strings.Contains(args, "inline")
@@ -53,6 +54,7 @@ type Column struct {
 	ColumnName   string
 	Index        int
 	IsPrimaryKey bool
+	IsUniqueKey  bool
 	IsAuto       bool
 	IsReadOnly   bool
 	IsJSON       bool

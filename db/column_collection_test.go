@@ -19,6 +19,7 @@ type subStruct struct {
 type myStruct struct {
 	EmbeddedMeta      `db:",inline"`
 	InferredName      string    `json:"normal"`
+	Unique            string    `db:",uk"`
 	Excluded          string    `json:"-" db:"-"`
 	NullableCol       string    `json:"not_nullable" db:"nullable,nullable"`
 	InferredWithFlags string    `db:",readonly"`
@@ -44,7 +45,7 @@ func TestGetCachedColumnCollectionFromInstance(t *testing.T) {
 	a.NotNil(meta.Columns())
 	a.NotEmpty(meta.Columns())
 
-	a.Equal(8, meta.Len())
+	a.Equal(9, meta.Len())
 
 	readOnlyColumns := meta.ReadOnly()
 	a.Len(readOnlyColumns.Columns(), 1)
@@ -73,16 +74,26 @@ func TestGetCachedColumnCollectionFromInstance(t *testing.T) {
 	a.False(thirdCol.IsReadOnly)
 
 	fourthCol := meta.Columns()[3]
-	a.Equal("nullable", fourthCol.ColumnName)
+	a.Equal("unique", fourthCol.ColumnName)
 	a.False(fourthCol.IsPrimaryKey)
+	a.True(fourthCol.IsUniqueKey)
 	a.False(fourthCol.IsAuto)
 	a.False(fourthCol.IsReadOnly)
 
 	fifthCol := meta.Columns()[4]
-	a.Equal("inferredwithflags", fifthCol.ColumnName)
+	a.Equal("nullable", fifthCol.ColumnName)
 	a.False(fifthCol.IsPrimaryKey)
 	a.False(fifthCol.IsAuto)
-	a.True(fifthCol.IsReadOnly)
+	a.False(fifthCol.IsReadOnly)
+
+	sixthCol := meta.Columns()[5]
+	a.Equal("inferredwithflags", sixthCol.ColumnName)
+	a.False(sixthCol.IsPrimaryKey)
+	a.False(sixthCol.IsAuto)
+	a.True(sixthCol.IsReadOnly)
+
+	uks := meta.UniqueKeys()
+	a.Equal(1, uks.Len())
 }
 
 func TestColumnCollectionCopy(t *testing.T) {

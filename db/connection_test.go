@@ -325,7 +325,7 @@ func TestConnectionUpsertWithSerial(t *testing.T) {
 		Category:  "category_0",
 	}
 	err = Default().UpsertInTx(obj, tx)
-	assert.Nil(err)
+	assert.Nil(err, fmt.Sprintf("%+v", err))
 	assert.NotZero(obj.ID)
 
 	var verify benchObj
