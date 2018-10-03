@@ -2,6 +2,7 @@ package webutil
 
 import (
 	"bytes"
+	"context"
 	"encoding/json"
 	"io/ioutil"
 	"net/http"
@@ -65,21 +66,21 @@ func (rs *RequestSender) Send() (*http.Response, error) {
 }
 
 // SendBytes sends a message to the webhook with a given msg body as raw bytes.
-func (rs *RequestSender) SendBytes(contents []byte) (*http.Response, error) {
+func (rs *RequestSender) SendBytes(ctx context.Context, contents []byte) (*http.Response, error) {
 	req, err := rs.reqBytes(contents)
 	if err != nil {
 		return nil, err
 	}
-	return rs.send(req)
+	return rs.send(req.WithContext(ctx))
 }
 
 // SendJSON sends a message to the webhook with a given msg body as json.
-func (rs *RequestSender) SendJSON(contents interface{}) (*http.Response, error) {
+func (rs *RequestSender) SendJSON(ctx context.Context, contents interface{}) (*http.Response, error) {
 	req, err := rs.reqJSON(contents)
 	if err != nil {
 		return nil, err
 	}
-	return rs.send(req)
+	return rs.send(req.WithContext(ctx))
 }
 
 // properties
