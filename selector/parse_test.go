@@ -4,7 +4,25 @@ import (
 	"testing"
 
 	"github.com/blend/go-sdk/assert"
+	"github.com/blend/go-sdk/exception"
 )
+
+func TestMustParse(t *testing.T) {
+	assert := assert.New(t)
+
+	assert.Equal("x == a", MustParse("x==a").String())
+
+	var err error
+	func() {
+	defer func() {
+		if r := recover(); r != nil {
+			err = exception.New(r)
+		}
+	}()
+		MustParse("x!!")
+	}()
+	assert.NotNil(err)
+}
 
 func TestParseInvalid(t *testing.T) {
 	assert := assert.New(t)
