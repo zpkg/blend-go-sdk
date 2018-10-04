@@ -1,6 +1,7 @@
 package web
 
 import (
+	"bytes"
 	"context"
 	"encoding/json"
 	"encoding/xml"
@@ -12,6 +13,7 @@ import (
 	"github.com/blend/go-sdk/exception"
 	"github.com/blend/go-sdk/logger"
 	"github.com/blend/go-sdk/util"
+	"github.com/blend/go-sdk/webutil"
 )
 
 // NewCtx returns a new ctx.
@@ -22,6 +24,12 @@ func NewCtx(w ResponseWriter, r *http.Request) *Ctx {
 		request:  r,
 		state:    &SyncState{},
 	}
+}
+
+// NewMockCtx returns a new mock ctx.
+// It is intended to be used in testing.
+func NewMockCtx(method, path string) *Ctx {
+	return NewCtx(webutil.NewMockResponse(new(bytes.Buffer)), webutil.NewMockRequest(method, path))
 }
 
 // Ctx is the struct that represents the context for an hc request.
