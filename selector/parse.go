@@ -37,3 +37,12 @@ func Parse(query string, opts ...Option) (Selector, error) {
 	}
 	return p.Parse()
 }
+
+// MustParse parses the selector but will panic if there is an issue.
+func MustParse(query string, opts ...Option) Selector {
+	sel, err := Parse(query, opts...)
+	if err != nil {
+		panic(err)
+	}
+	return sel
+}
