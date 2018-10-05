@@ -64,7 +64,7 @@ build:
 .PHONY: profanity
 profanity:
 	@echo "$(VERSION)/$(GIT_REF) >> profanity"
-	@go run _bin/profanity/main.go -rules PROFANITY --exclude="_bin/*"
+	@go run cmd/profanity/main.go -rules PROFANITY --exclude="_bin/*"
 
 test-circleci:
 	@echo "$(VERSION)/$(GIT_REF) >> tests"
@@ -80,31 +80,31 @@ test-verbose:
 
 cover:
 	@echo "$(VERSION)/$(GIT_REF) >> coverage"
-	@go run _bin/coverage/main.go
+	@go run cmd/coverage/main.go
 
 cover-enforce:
 	@echo "$(VERSION)/$(GIT_REF) >> coverage"
-	@go run _bin/coverage/main.go -enforce
+	@go run cmd/coverage/main.go -enforce
 	
 cover-update:
 	@echo "$(VERSION)/$(GIT_REF) >> coverage"
-	@go run _bin/coverage/main.go -update
+	@go run cmd/coverage/main.go -update
 
 increment-patch:
 	@echo "Current Version $(VERSION)"
-	@go run _bin/semver/main.go patch ./.version > ./NEW_VERSION
+	@go run cmd/semver/main.go patch ./.version > ./NEW_VERSION
 	@mv ./NEW_VERSION ./.version
 	@cat ./.version
 
 increment-minor:
 	@echo "Current Version $(VERSION)"
-	@go run _bin/semver/main.go minor ./.version > ./NEW_VERSION
+	@go run cmd/semver/main.go minor ./.version > ./NEW_VERSION
 	@mv ./NEW_VERSION ./.version
 	@cat ./.version
 
 increment-major:
 	@echo "Current Version $(VERSION)"
-	@go run _bin/semver/main.go major ./VERSION > ./NEW_VERSION
+	@go run cmd/semver/main.go major ./VERSION > ./NEW_VERSION
 	@mv ./NEW_VERSION ./VERSION
 	@cat ./VERSION
 
