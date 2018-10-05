@@ -143,7 +143,7 @@ func TestTemplateEnvMissing(t *testing.T) {
 func TestTemplateFile(t *testing.T) {
 	assert := assert.New(t)
 
-	test := `{{ .File "testdata/inline_file" }}`
+	test := `{{ file "testdata/inline_file" }}`
 	temp := New().WithBody(test)
 
 	buffer := bytes.NewBuffer(nil)
@@ -152,10 +152,10 @@ func TestTemplateFile(t *testing.T) {
 	assert.Equal("this is a test", buffer.String())
 }
 
-func TestTemplateHasFile(t *testing.T) {
+func TestTemplateFileExists(t *testing.T) {
 	assert := assert.New(t)
 
-	test := `{{ if .HasFile "testdata/inline_file" }}yep{{end}}`
+	test := `{{ if file_exists "testdata/inline_file" }}yep{{end}}`
 	temp := New().WithBody(test)
 
 	buffer := bytes.NewBuffer(nil)
@@ -164,12 +164,12 @@ func TestTemplateHasFile(t *testing.T) {
 	assert.Equal("yep", buffer.String())
 }
 
-func TestTemplateHasFileFalsey(t *testing.T) {
+func TestTemplateFileExistsFalsey(t *testing.T) {
 	assert := assert.New(t)
 
 	fileName := uuid.V4().String()
 
-	test := fmt.Sprintf(`{{ if .HasFile "testdata/%s" }}yep{{else}}nope{{end}}`, fileName)
+	test := fmt.Sprintf(`{{ if file_exists "testdata/%s" }}yep{{else}}nope{{end}}`, fileName)
 	temp := New().WithBody(test)
 
 	buffer := bytes.NewBuffer(nil)
@@ -287,10 +287,10 @@ func TestTemplateViewFuncInt64(t *testing.T) {
 	assert.Equal("8589934592", buffer.String())
 }
 
-func TestTemplateViewFuncFloat(t *testing.T) {
+func TestTemplateViewFuncFloat64(t *testing.T) {
 	assert := assert.New(t)
 
-	test := `{{ .Var "foo" | float }}`
+	test := `{{ .Var "foo" | float64 }}`
 	temp := New().WithBody(test).WithVar("foo", "3.14")
 
 	buffer := bytes.NewBuffer(nil)
@@ -302,7 +302,7 @@ func TestTemplateViewFuncFloat(t *testing.T) {
 func TestTemplateViewFuncMoney(t *testing.T) {
 	assert := assert.New(t)
 
-	test := `{{ .Var "foo" | float | money }}`
+	test := `{{ .Var "foo" | float64 | money }}`
 	temp := New().WithBody(test).WithVar("foo", "3.00")
 
 	buffer := bytes.NewBuffer(nil)
@@ -314,7 +314,7 @@ func TestTemplateViewFuncMoney(t *testing.T) {
 func TestTemplateViewFuncPct(t *testing.T) {
 	assert := assert.New(t)
 
-	test := `{{ .Var "foo" | float | pct }}`
+	test := `{{ .Var "foo" | float64 | pct }}`
 	temp := New().WithBody(test).WithVar("foo", "0.24")
 
 	buffer := bytes.NewBuffer(nil)
@@ -368,10 +368,10 @@ func TestTemplateViewFuncFirst(t *testing.T) {
 	assert.Nil(err)
 	assert.Equal("bar", buffer.String())
 }
-func TestTemplateViewFuncAt(t *testing.T) {
+func TestTemplateViewFuncIndex(t *testing.T) {
 	assert := assert.New(t)
 
-	test := `{{ .Var "foo" | split "," | at 1 }}`
+	test := `{{ .Var "foo" | split "," | index 1 }}`
 	temp := New().WithBody(test).WithVar("foo", "bar,baz,biz")
 	buffer := bytes.NewBuffer(nil)
 	err := temp.Process(buffer)
@@ -491,7 +491,7 @@ func TestTemplateViewFuncSha512(t *testing.T) {
 func TestTemplateViewFuncSemverMajor(t *testing.T) {
 	assert := assert.New(t)
 
-	test := `{{ .Var "foo" | semver | major }}`
+	test := `{{ .Var "foo" | parse_semver | semver_major }}`
 	temp := New().WithBody(test).WithVar("foo", "1.2.3-beta1")
 	buffer := bytes.NewBuffer(nil)
 	err := temp.Process(buffer)
@@ -502,7 +502,7 @@ func TestTemplateViewFuncSemverMajor(t *testing.T) {
 func TestTemplateViewFuncSemverMinor(t *testing.T) {
 	assert := assert.New(t)
 
-	test := `{{ .Var "foo" | semver | minor }}`
+	test := `{{ .Var "foo" | parse_semver | semver_minor }}`
 	temp := New().WithBody(test).WithVar("foo", "1.2.3-beta1")
 	buffer := bytes.NewBuffer(nil)
 	err := temp.Process(buffer)
@@ -513,7 +513,7 @@ func TestTemplateViewFuncSemverMinor(t *testing.T) {
 func TestTemplateViewFuncSemverPatch(t *testing.T) {
 	assert := assert.New(t)
 
-	test := `{{ .Var "foo" | semver | patch }}`
+	test := `{{ .Var "foo" | parse_semver | semver_patch }}`
 	temp := New().WithBody(test).WithVar("foo", "1.2.3-beta1")
 	buffer := bytes.NewBuffer(nil)
 	err := temp.Process(buffer)
@@ -534,7 +534,7 @@ type: foo
 meta: 
 	name:
 	labels:
-{{ .Var "labels" | yaml | indent 1 }}
+{{ .Var "labels" | yaml | indent_tabs 1 }}
 `
 	temp := New().WithBody(test).WithVar("labels", []label{
 		{"foo", "bar"},

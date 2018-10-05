@@ -54,7 +54,7 @@ spec:
   ports:
   - name: {{ .Var "name" }}
     port: {{ .Var "container-port" $defaultContainerPort }}
-    protocol: {{ .Var "container-protocol" "tcp" | upper }}
+    protocol: {{ .Var "container-protocol" "tcp" | to_upper }}
 {{- end }}
 {{- if .Var "accessibility" $defaultAccessibility | eq "external" }}
 ---

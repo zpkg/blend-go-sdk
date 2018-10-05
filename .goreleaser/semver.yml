@@ -1,6 +1,6 @@
 project_name: semver
 builds:
-- main: "./_bin/{{ .ProjectName }}/main.go"
+- main: "./cmd/{{ .ProjectName }}/main.go"
   binary: "{{ .ProjectName }}"
   env:
   - CGO_ENABLED=0
