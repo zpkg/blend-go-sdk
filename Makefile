@@ -117,3 +117,6 @@ tag:
 
 push-tags:
 	git push -f --tags
+
+clean-dist:
+	@rm -rf dist
