@@ -93,19 +93,19 @@ cover-update:
 
 increment-patch:
 	@echo "Current Version $(VERSION)"
-	@go run cmd/semver/main.go patch ./.version > ./NEW_VERSION
-	@mv ./NEW_VERSION ./.version
-	@cat ./.version
+	@go run cmd/semver/main.go increment patch ./VERSION > ./NEW_VERSION
+	@mv ./NEW_VERSION ./VERSION
+	@cat ./VERSION
 
 increment-minor:
 	@echo "Current Version $(VERSION)"
-	@go run cmd/semver/main.go minor ./.version > ./NEW_VERSION
-	@mv ./NEW_VERSION ./.version
-	@cat ./.version
+	@go run cmd/semver/main.go increment minor ./VERSION > ./NEW_VERSION
+	@mv ./NEW_VERSION ./VERSION
+	@cat ./VERSION
 
 increment-major:
 	@echo "Current Version $(VERSION)"
-	@go run cmd/semver/main.go major ./VERSION > ./NEW_VERSION
+	@go run cmd/semver/main.go increment major ./VERSION > ./NEW_VERSION
 	@mv ./NEW_VERSION ./VERSION
 	@cat ./VERSION
 

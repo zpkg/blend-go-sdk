@@ -20,6 +20,8 @@ import (
 	texttemplate "text/template"
 	"time"
 
+	"github.com/blend/go-sdk/util"
+
 	"github.com/blend/go-sdk/semver"
 	"github.com/blend/go-sdk/uuid"
 	"github.com/blend/go-sdk/yaml"
@@ -46,6 +48,18 @@ func (vf viewFuncs) ExpandEnv(corpus string) string {
 
 func (vf viewFuncs) ToString(v interface{}) string {
 	return fmt.Sprintf("%v", v)
+}
+
+func (vf viewFuncs) ToInt(v interface{}) (int, error) {
+	return strconv.Atoi(fmt.Sprintf("%v", v))
+}
+
+func (vf viewFuncs) ToInt64(v interface{}) (int64, error) {
+	return strconv.ParseInt(fmt.Sprintf("%v", v), 10, 64)
+}
+
+func (vf viewFuncs) ToFloat64(v string) (float64, error) {
+	return strconv.ParseFloat(v, 64)
 }
 
 func (vf viewFuncs) Unix(t time.Time) string {
@@ -135,20 +149,12 @@ func (vf viewFuncs) Bool(raw interface{}) (bool, error) {
 	}
 }
 
-func (vf viewFuncs) Int(v interface{}) (int, error) {
-	return strconv.Atoi(fmt.Sprintf("%v", v))
-}
-
-func (vf viewFuncs) Int64(v interface{}) (int64, error) {
-	return strconv.ParseInt(fmt.Sprintf("%v", v), 10, 64)
-}
-
-func (vf viewFuncs) Float64(v string) (float64, error) {
-	return strconv.ParseFloat(v, 64)
-}
-
 func (vf viewFuncs) Money(d float64) string {
 	return fmt.Sprintf("$%0.2f", d)
+}
+
+func (vf viewFuncs) Round(d float64, places int) float64 {
+	return util.Math.Round(d, places)
 }
 
 func (vf viewFuncs) Pct(d float64) string {
@@ -416,76 +422,86 @@ func (vf viewFuncs) IndentSpaces(spaceCount int, v interface{}) string {
 	return strings.Join(outputLines, "\n")
 }
 
+func (vf viewFuncs) GenerateOrdinalNames(format string, replicas int) []string {
+	output := make([]string, replicas)
+	for index := 0; index < replicas; index++ {
+		output[index] = fmt.Sprintf(format, index)
+	}
+	return output
+}
+
 func (vf viewFuncs) FuncMap() texttemplate.FuncMap {
 	return texttemplate.FuncMap{
-		"file_exists":       ViewFuncs.FileExists,
-		"file":              ViewFuncs.File,
-		"expand_env":        ViewFuncs.ExpandEnv,
-		"to_string":         ViewFuncs.ToString,
-		"unix":              ViewFuncs.Unix,
-		"rfc3339":           ViewFuncs.RFC3339,
-		"short":             ViewFuncs.Short,
-		"short_date":        ViewFuncs.ShortDate,
-		"medium":            ViewFuncs.Medium,
-		"kitchen":           ViewFuncs.Kitchen,
-		"month_day":         ViewFuncs.MonthDay,
-		"in_loc":            ViewFuncs.InLoc,
-		"time":              ViewFuncs.Time,
-		"time_unix":         ViewFuncs.TimeUnix,
-		"year":              ViewFuncs.Year,
-		"month":             ViewFuncs.Month,
-		"day":               ViewFuncs.Day,
-		"hour":              ViewFuncs.Hour,
-		"minute":            ViewFuncs.Minute,
-		"second":            ViewFuncs.Second,
-		"millisecond":       ViewFuncs.Millisecond,
-		"bool":              ViewFuncs.Bool,
-		"int":               ViewFuncs.Int,
-		"int64":             ViewFuncs.Int64,
-		"float64":           ViewFuncs.Float64,
-		"money":             ViewFuncs.Money,
-		"pct":               ViewFuncs.Pct,
-		"base64":            ViewFuncs.Base64,
-		"base64decode":      ViewFuncs.Base64Decode,
-		"createKey":         ViewFuncs.CreateKey,
-		"uuidv4":            ViewFuncs.UUIDv4,
-		"to_upper":          ViewFuncs.ToUpper,
-		"to_lower":          ViewFuncs.ToLower,
-		"to_title":          ViewFuncs.ToTitle,
-		"trim_space":        ViewFuncs.TrimSpace,
-		"prefix":            ViewFuncs.Prefix,
-		"suffix":            ViewFuncs.Suffix,
-		"split":             ViewFuncs.Split,
-		"splitn":            ViewFuncs.SplitN,
-		"slice":             ViewFuncs.Slice,
-		"first":             ViewFuncs.First,
-		"index":             ViewFuncs.Index,
-		"last":              ViewFuncs.Last,
-		"join":              ViewFuncs.Join,
-		"has_suffix":        ViewFuncs.HasSuffix,
-		"has_prefix":        ViewFuncs.HasPrefix,
-		"contains":          ViewFuncs.Contains,
-		"matches":           ViewFuncs.Matches,
-		"parse_url":         ViewFuncs.ParseURL,
-		"url_scheme":        ViewFuncs.URLScheme,
-		"url_host":          ViewFuncs.URLHost,
-		"url_port":          ViewFuncs.URLPort,
-		"url_path":          ViewFuncs.URLPath,
-		"url_rawquery":      ViewFuncs.URLRawQuery,
-		"url_query":         ViewFuncs.URLQuery,
-		"sha1":              ViewFuncs.SHA1,
-		"sha256":            ViewFuncs.SHA256,
-		"sha512":            ViewFuncs.SHA512,
-		"parse_semver":      ViewFuncs.ParseSemver,
-		"semver_major":      ViewFuncs.SemverMajor,
-		"semver_bump_major": ViewFuncs.SemverBumpMajor,
-		"semver_minor":      ViewFuncs.SemverMinor,
-		"semver_bump_minor": ViewFuncs.SemverBumpMinor,
-		"semver_patch":      ViewFuncs.SemverPatch,
-		"semver_bump_patch": ViewFuncs.SemverBumpPatch,
-		"yaml":              ViewFuncs.YAML,
-		"json":              ViewFuncs.JSON,
-		"indent_tabs":       ViewFuncs.IndentTabs,
-		"indent_spaces":     ViewFuncs.IndentSpaces,
+		"file_exists":            ViewFuncs.FileExists,
+		"file":                   ViewFuncs.File,
+		"expand_env":             ViewFuncs.ExpandEnv,
+		"to_string":              ViewFuncs.ToString,
+		"to_int":                 ViewFuncs.ToInt,
+		"to_int64":               ViewFuncs.ToInt64,
+		"to_float64":             ViewFuncs.ToFloat64,
+		"unix":                   ViewFuncs.Unix,
+		"rfc3339":                ViewFuncs.RFC3339,
+		"short":                  ViewFuncs.Short,
+		"short_date":             ViewFuncs.ShortDate,
+		"medium":                 ViewFuncs.Medium,
+		"kitchen":                ViewFuncs.Kitchen,
+		"month_day":              ViewFuncs.MonthDay,
+		"in_loc":                 ViewFuncs.InLoc,
+		"time":                   ViewFuncs.Time,
+		"time_unix":              ViewFuncs.TimeUnix,
+		"year":                   ViewFuncs.Year,
+		"month":                  ViewFuncs.Month,
+		"day":                    ViewFuncs.Day,
+		"hour":                   ViewFuncs.Hour,
+		"minute":                 ViewFuncs.Minute,
+		"second":                 ViewFuncs.Second,
+		"millisecond":            ViewFuncs.Millisecond,
+		"bool":                   ViewFuncs.Bool,
+		"money":                  ViewFuncs.Money,
+		"round":                  ViewFuncs.Round,
+		"pct":                    ViewFuncs.Pct,
+		"base64":                 ViewFuncs.Base64,
+		"base64decode":           ViewFuncs.Base64Decode,
+		"createKey":              ViewFuncs.CreateKey,
+		"uuidv4":                 ViewFuncs.UUIDv4,
+		"to_upper":               ViewFuncs.ToUpper,
+		"to_lower":               ViewFuncs.ToLower,
+		"to_title":               ViewFuncs.ToTitle,
+		"trim_space":             ViewFuncs.TrimSpace,
+		"prefix":                 ViewFuncs.Prefix,
+		"suffix":                 ViewFuncs.Suffix,
+		"split":                  ViewFuncs.Split,
+		"splitn":                 ViewFuncs.SplitN,
+		"slice":                  ViewFuncs.Slice,
+		"first":                  ViewFuncs.First,
+		"index":                  ViewFuncs.Index,
+		"last":                   ViewFuncs.Last,
+		"join":                   ViewFuncs.Join,
+		"has_suffix":             ViewFuncs.HasSuffix,
+		"has_prefix":             ViewFuncs.HasPrefix,
+		"contains":               ViewFuncs.Contains,
+		"matches":                ViewFuncs.Matches,
+		"parse_url":              ViewFuncs.ParseURL,
+		"url_scheme":             ViewFuncs.URLScheme,
+		"url_host":               ViewFuncs.URLHost,
+		"url_port":               ViewFuncs.URLPort,
+		"url_path":               ViewFuncs.URLPath,
+		"url_rawquery":           ViewFuncs.URLRawQuery,
+		"url_query":              ViewFuncs.URLQuery,
+		"sha1":                   ViewFuncs.SHA1,
+		"sha256":                 ViewFuncs.SHA256,
+		"sha512":                 ViewFuncs.SHA512,
+		"parse_semver":           ViewFuncs.ParseSemver,
+		"semver_major":           ViewFuncs.SemverMajor,
+		"semver_bump_major":      ViewFuncs.SemverBumpMajor,
+		"semver_minor":           ViewFuncs.SemverMinor,
+		"semver_bump_minor":      ViewFuncs.SemverBumpMinor,
+		"semver_patch":           ViewFuncs.SemverPatch,
+		"semver_bump_patch":      ViewFuncs.SemverBumpPatch,
+		"yaml":                   ViewFuncs.YAML,
+		"json":                   ViewFuncs.JSON,
+		"indent_tabs":            ViewFuncs.IndentTabs,
+		"indent_spaces":          ViewFuncs.IndentSpaces,
+		"generate_ordinal_names": ViewFuncs.GenerateOrdinalNames,
 	}
 }

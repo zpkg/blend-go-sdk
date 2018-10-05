@@ -242,7 +242,7 @@ func TestTemplateViewFuncTimeFromUnix(t *testing.T) {
 func TestTemplateViewFuncTimeFromUnixString(t *testing.T) {
 	assert := assert.New(t)
 
-	test := `{{ .Var "foo" | to_string | int64 | time_unix | year }}`
+	test := `{{ .Var "foo" | to_string | to_int64 | time_unix | year }}`
 	temp := New().WithBody(test).WithVar("foo", time.Date(2017, 05, 20, 21, 00, 00, 00, time.UTC).Unix())
 
 	buffer := bytes.NewBuffer(nil)
@@ -266,7 +266,7 @@ func TestTemplateViewFuncBool(t *testing.T) {
 func TestTemplateViewFuncInt(t *testing.T) {
 	assert := assert.New(t)
 
-	test := `{{ if .Var "foo" | int | eq 123 }}yep{{end}}`
+	test := `{{ if .Var "foo" | to_int | eq 123 }}yep{{end}}`
 	temp := New().WithBody(test).WithVar("foo", "123")
 
 	buffer := bytes.NewBuffer(nil)
@@ -278,7 +278,7 @@ func TestTemplateViewFuncInt(t *testing.T) {
 func TestTemplateViewFuncInt64(t *testing.T) {
 	assert := assert.New(t)
 
-	test := `{{ .Var "foo" | int64 }}`
+	test := `{{ .Var "foo" | to_int64 }}`
 	temp := New().WithBody(test).WithVar("foo", fmt.Sprintf("%d", (1<<33)))
 
 	buffer := bytes.NewBuffer(nil)
@@ -290,7 +290,7 @@ func TestTemplateViewFuncInt64(t *testing.T) {
 func TestTemplateViewFuncFloat64(t *testing.T) {
 	assert := assert.New(t)
 
-	test := `{{ .Var "foo" | float64 }}`
+	test := `{{ .Var "foo" | to_float64 }}`
 	temp := New().WithBody(test).WithVar("foo", "3.14")
 
 	buffer := bytes.NewBuffer(nil)
@@ -302,7 +302,7 @@ func TestTemplateViewFuncFloat64(t *testing.T) {
 func TestTemplateViewFuncMoney(t *testing.T) {
 	assert := assert.New(t)
 
-	test := `{{ .Var "foo" | float64 | money }}`
+	test := `{{ .Var "foo" | to_float64 | money }}`
 	temp := New().WithBody(test).WithVar("foo", "3.00")
 
 	buffer := bytes.NewBuffer(nil)
@@ -314,7 +314,7 @@ func TestTemplateViewFuncMoney(t *testing.T) {
 func TestTemplateViewFuncPct(t *testing.T) {
 	assert := assert.New(t)
 
-	test := `{{ .Var "foo" | float64 | pct }}`
+	test := `{{ .Var "foo" | to_float64 | pct }}`
 	temp := New().WithBody(test).WithVar("foo", "0.24")
 
 	buffer := bytes.NewBuffer(nil)
@@ -583,4 +583,13 @@ func TestTemplateWithDelims(t *testing.T) {
 	err = temp.Process(buffer)
 	assert.Nil(err)
 	assert.Equal("bar"+pointy, buffer.String())
+}
+
+func TestOrdinalNames(t *testing.T) {
+	assert := assert.New(t)
+	tmp := New().WithBody("{{ generate_ordinal_names \"cockroachdb-%d\" 5 | join \",\" }}")
+
+	buffer := new(bytes.Buffer)
+	assert.Nil(tmp.Process(buffer))
+	assert.Equal("cockroachdb-0,cockroachdb-1,cockroachdb-2,cockroachdb-3,cockroachdb-4", buffer.String())
 }
