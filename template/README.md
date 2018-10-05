@@ -59,7 +59,9 @@ The `-o` flag specifies an output path. If not present, output will be piped to 
 ### `-delims "<LEFT DELIMITER>,<RIGHT DELIMITER>`
 The `-delims` flag specifies the left and right delimiters for template action, defaults to `{{,}}`.
 
-## Template Function Reference
+## Template Viewmodel Function Reference
+
+The template view model (the state passed to the template) contains any variables passed into the template, and environment variables captured from the environment.
 
 ### `.Env`
 
@@ -91,17 +93,29 @@ With a default:
 
 Note: `Var` differs from `Env` in that var values can be any type, not just strings.
 
-### `.File`
+## Template Helper Function Reference
+
+In addition to functions found on the template viewmodel, there is a large suite of global functions you can invoke from your templates.
+
+### `file`
 
 File will return the contents of a given file and inline those contents into the config. Note; the contents of this file will *not* be processed by the template interpreter, they will appear in the final output as they did on disk.
 
 ```go
-{{ .File "<file path>" }}
+{{ file "<file path>" }}
 ```
 
-## Template pipeline helpers
+### `file_exists`
 
-Template ships with a number of pipeline helpers that can be used with the output of `.Var`, `.Env` and even `.File`.
+File will return the contents of a given file and inline those contents into the config. Note; the contents of this file will *not* be processed by the template interpreter, they will appear in the final output as they did on disk.
+
+```go
+{{ if file_exists "<file path>" }}
+yep
+{{else}}
+nope
+{{end}}
+```
 
 ## `text/template` Reference
 

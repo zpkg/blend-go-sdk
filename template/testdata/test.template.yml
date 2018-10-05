@@ -33,7 +33,7 @@ spec:
             value: {{ $var.value }}
         {{- end }}
         {{- end -}}
-        {{- if .Var "container-port" $defaultContainerPort | string | ne "disabled" }}
+        {{- if .Var "container-port" $defaultContainerPort | to_string | ne "disabled" }}
         ports:
         - containerPort: {{ .Var "container-port" $defaultContainerPort }} 
         {{- end }}

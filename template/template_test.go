@@ -203,10 +203,10 @@ func TestTemplateCreateKey(t *testing.T) {
 	assert.True(len(buffer.String()) > 64)
 }
 
-func TestTemplateViewFuncString(t *testing.T) {
+func TestTemplateViewFuncToString(t *testing.T) {
 	assert := assert.New(t)
 
-	test := `{{ .Var "foo" | string }}`
+	test := `{{ .Var "foo" | to_string }}`
 	temp := New().WithBody(test).WithVar("foo", 123)
 
 	buffer := bytes.NewBuffer(nil)
@@ -242,7 +242,7 @@ func TestTemplateViewFuncTimeFromUnix(t *testing.T) {
 func TestTemplateViewFuncTimeFromUnixString(t *testing.T) {
 	assert := assert.New(t)
 
-	test := `{{ .Var "foo" | string | int64 | time_unix | year }}`
+	test := `{{ .Var "foo" | to_string | int64 | time_unix | year }}`
 	temp := New().WithBody(test).WithVar("foo", time.Date(2017, 05, 20, 21, 00, 00, 00, time.UTC).Unix())
 
 	buffer := bytes.NewBuffer(nil)

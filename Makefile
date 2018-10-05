@@ -22,15 +22,27 @@ all: format vet profanity test
 
 ci: vet profanity cover 
 
-new-install:
-	@go get -u github.com/lib/pq
-	@go get -u github.com/airbrake/gobrake
-	@go get -u github.com/DataDog/datadog-go/statsd
-	@go get -u github.com/opentracing/opentracing-go
-	@go get -u golang.org/x/net/http2
-	@go get -u golang.org/x/oauth2
-	@go get -u golang.org/x/oauth2/google
-	@go get -u golang.org/x/lint/golint
+new-install: deps install
+
+deps:
+	@go get -u ./...
+
+install: install-coverage install-profanity install-proxy install-recover install-template
+
+install-coverage:
+	@go install github.com/blend/go-sdk/cmd/coverage
+
+install-profanity:
+	@go install github.com/blend/go-sdk/cmd/profanity
+
+install-proxy:
+	@go install github.com/blend/go-sdk/cmd/proxy
+
+install-recover:
+	@go install github.com/blend/go-sdk/cmd/recover
+
+install-template:
+	@go install github.com/blend/go-sdk/cmd/template
 
 format:
 	@echo "$(VERSION)/$(GIT_REF) >> formatting code"
@@ -105,12 +117,3 @@ tag:
 
 push-tags:
 	git push -f --tags
-
-install-profanity:
-	@go install github.com/blend/go-sdk/_bin/profanity
-
-install-coverage:
-	@go install github.com/blend/go-sdk/_bin/coverage
-
-install-recover:
-	@go install github.com/blend/go-sdk/_bin/recover

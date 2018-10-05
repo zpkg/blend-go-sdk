@@ -44,7 +44,7 @@ func (vf viewFuncs) ExpandEnv(corpus string) string {
 	return os.ExpandEnv(corpus)
 }
 
-func (vf viewFuncs) String(v interface{}) string {
+func (vf viewFuncs) ToString(v interface{}) string {
 	return fmt.Sprintf("%v", v)
 }
 
@@ -421,7 +421,7 @@ func (vf viewFuncs) FuncMap() texttemplate.FuncMap {
 		"file_exists":       ViewFuncs.FileExists,
 		"file":              ViewFuncs.File,
 		"expand_env":        ViewFuncs.ExpandEnv,
-		"string":            ViewFuncs.String,
+		"to_string":         ViewFuncs.ToString,
 		"unix":              ViewFuncs.Unix,
 		"rfc3339":           ViewFuncs.RFC3339,
 		"short":             ViewFuncs.Short,
