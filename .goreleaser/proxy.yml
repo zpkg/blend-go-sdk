@@ -1,7 +1,7 @@
 project_name: proxy 
 builds:
 - main: "./cmd/proxy/main.go"
-  binary_template: "proxy"
+  binary: "proxy"
   env:
   - CGO_ENABLED=0
   goos:
