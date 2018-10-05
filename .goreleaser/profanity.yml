@@ -1,7 +1,7 @@
 project_name: profanity
 builds:
-- main_template: "./cmd/{{ .ProjectName }}/main.go"
-  binary_template: "{{ .ProjectName }}"
+- main: "./cmd/profanity/main.go"
+  binary: profanity
   env:
   - CGO_ENABLED=0
   goos:
@@ -21,7 +21,7 @@ archive:
   archive:
   files:
   - none*
-dist_template: dist/{{ .ProjectName }}
+dist: dist/profanity
 checksum:
   name_template: '{{ .ProjectName }}_checksums.txt'
 snapshot:

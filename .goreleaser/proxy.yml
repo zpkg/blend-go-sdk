@@ -1,7 +1,7 @@
-project_name: template
+project_name: proxy 
 builds:
-- main_template: "./cmd/{{ .ProjectName }}/main.go"
-  binary_template: "{{ .ProjectName }}"
+- main: "./cmd/proxy/main.go"
+  binary_template: "proxy"
   env:
   - CGO_ENABLED=0
   goos:
@@ -21,7 +21,7 @@ archive:
   archive:
   files:
   - none*
-dist_template: dist/{{ .ProjectName }}
+dist: dist/proxy
 checksum:
   name_template: '{{ .ProjectName }}_checksums.txt'
 snapshot:
