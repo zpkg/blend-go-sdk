@@ -1,7 +1,7 @@
 project_name: recover
 builds:
-- main: "./cmd/{{ .ProjectName }}/main.go"
-  binary: "{{ .ProjectName }}"
+- main_template: "./cmd/{{ .ProjectName }}/main.go"
+  binary_template: "{{ .ProjectName }}"
   env:
   - CGO_ENABLED=0
   goos:
@@ -21,7 +21,7 @@ archive:
   archive:
   files:
   - none*
-dist: dist/{{ .ProjectName }}
+dist_template: dist/{{ .ProjectName }}
 checksum:
   name_template: '{{ .ProjectName }}_checksums.txt'
 snapshot:
