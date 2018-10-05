@@ -26,6 +26,7 @@ new-install: deps install
 
 deps:
 	@go get -u ./...
+	@go get -d github.com/goreleaser/goreleaser
 
 install: install-coverage install-profanity install-proxy install-recover install-template
 
@@ -108,9 +109,14 @@ increment-major:
 	@mv ./NEW_VERSION ./VERSION
 	@cat ./VERSION
 
-clean:
+clean: clean-dist clean-coverage clean-cache
+
+clean-coverage:
 	@echo "Cleaning COVERAGE files"
 	@find . -name "COVERAGE" -exec rm {} \;
+
+clean-cache:
+	@go clean ./...
 
 tag:
 	git tag -f $(VERSION)
@@ -120,3 +126,23 @@ push-tags:
 
 clean-dist:
 	@rm -rf dist
+
+release: clean-dist release-coverage release-profanity release-proxy release-recover release-semver release-template
+
+release-coverage:
+	@goreleaser release -f .goreleaser/coverage.yml
+
+release-profanity:
+	@goreleaser release -f .goreleaser/profanity.yml
+
+release-proxy:
+	@goreleaser release -f .goreleaser/proxy.yml
+
+release-recover:
+	@goreleaser release -f .goreleaser/recover.yml
+
+release-semver:
+	@goreleaser release -f .goreleaser/semver.yml
+
+release-template:
+	@goreleaser release -f .goreleaser/template.yml
