@@ -1,7 +1,7 @@
 project_name: profanity
 builds:
-- main: "./cmd/{{ .ProjectName }}/main.go"
-  binary: "{{ .ProjectName }}"
+- main: "./cmd/profanity/main.go"
+  binary: "profanity"
   env:
   - CGO_ENABLED=0
   goos:
@@ -13,7 +13,7 @@ builds:
   - arm
   - arm64
 archive:
-  name_template: "{{ .ProjectName }}_{{ .Version }}_{{ .Os }}_{{ .Arch }}"
+  name_template: "profanity_{{ .Version }}_{{ .Os }}_{{ .Arch }}"
   format: "tar.gz"
   format_overrides:
   - goos: windows
@@ -21,8 +21,8 @@ archive:
   archive:
   files:
   - none*
-dist: dist/{{ .ProjectName }}
+dist: dist/profanity
 checksum:
-  name_template: '{{ .ProjectName }}_checksums.txt'
+  name_template: 'profanity_checksums.txt'
 snapshot:
-  name_template: "{{ .ProjectName }}_SNAPSHOT_{{ .Commit }}"
+  name_template: "profanity_SNAPSHOT_{{ .Commit }}"
