@@ -12,6 +12,7 @@ builds:
   - amd64
   - arm
   - arm64
+
 archive:
   name_template: "{{ .ProjectName }}_{{ .Version }}_{{ .Os }}_{{ .Arch }}"
   format: "tar.gz"
@@ -20,8 +21,25 @@ archive:
     format: zip
   files:
   - none*
+
+brew:
+  name: coverage
+  github:
+    owner: blend
+    name: homebrew-tap
+  folder: Formula
+  commit_author:
+    name: baileydog
+    email: baileydog@blend.com
+  homepage: "https://github.com/blend/go-sdk/tree/master/cmd/coverage/README.md"
+  description: "Coordinate coverage enforcement for golang repos."
+  dependencies:
+    - go
+
 dist: dist/coverage
+
 checksum:
   name_template: '{{ .ProjectName }}_checksums.txt'
+
 snapshot:
   name_template: "{{ .ProjectName }}_SNAPSHOT_{{ .Commit }}"
