@@ -1,6 +1,8 @@
 package main
 
 import (
+	"bufio"
+	"bytes"
 	"flag"
 	"fmt"
 	"io/ioutil"
@@ -206,10 +208,16 @@ func deserializeRules(path string) (rules []Rule, err error) {
 }
 
 // Contains creates a simple contains rule.
+// It will also return the offending line number.
 func Contains(value string) RuleFunc {
 	return func(contents []byte) error {
-		if strings.Contains(string(contents), value) {
-			return fmt.Errorf("contains: \"%s\"", value)
+		scanner := bufio.NewScanner(bytes.NewBuffer(contents))
+		var line int
+		for scanner.Scan() {
+			line++
+			if strings.Contains(scanner.Text(), value) {
+				return fmt.Errorf("contains: \"%s\" (line: %d)", value, line)
+			}
 		}
 		return nil
 	}
@@ -248,8 +256,8 @@ type Rule struct {
 	Contains string `yaml:"contains,omitempty"`
 	// Contains implies we should fail if a file doesn't contains a given string.
 	NotContains string `yaml:"notContains,omitempty"`
-	// Regex implies we should fail if a file matches a given regex.
-	Regex string `yaml:"regex,omitempty"`
+	// Matches implies we should fail if a file matches a given regex.
+	Matches string `yaml:"matches,omitempty"`
 	// Include sets a glob filter for file inclusion by filename.
 	Include string `yaml:"include,omitempty"`
 	// Exclude sets a glob filter for file exclusion by filename.
@@ -282,8 +290,8 @@ func (r Rule) Apply(contents []byte) error {
 	if len(r.NotContains) > 0 {
 		return NotContains(r.NotContains)(contents)
 	}
-	if len(r.Regex) > 0 {
-		return Regex(r.Regex)(contents)
+	if len(r.Matches) > 0 {
+		return Regex(r.Matches)(contents)
 	}
 	return fmt.Errorf("no rule set")
 }
