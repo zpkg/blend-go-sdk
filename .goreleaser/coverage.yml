@@ -33,8 +33,6 @@ brew:
     email: baileydog@blend.com
   homepage: "https://github.com/blend/go-sdk/tree/master/cmd/coverage/README.md"
   description: "Coordinate coverage enforcement for golang repos."
-  dependencies:
-    - go
 
 dist: dist/coverage
 
