@@ -42,6 +42,9 @@ install-proxy:
 install-recover:
 	@go install github.com/blend/go-sdk/cmd/recover
 
+install-semver:
+	@go install github.com/blend/go-sdk/cmd/semver
+
 install-template:
 	@go install github.com/blend/go-sdk/cmd/template
 
