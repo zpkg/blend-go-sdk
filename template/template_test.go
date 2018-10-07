@@ -216,10 +216,10 @@ func TestTemplateViewFuncSinceUTC(t *testing.T) {
 	assert.NotEmpty(buffer.String())
 }
 
-func TestTemplateCreateKey(t *testing.T) {
+func TestTemplateGenerateKey(t *testing.T) {
 	assert := assert.New(t)
 
-	test := `{{ createKey 64 }}`
+	test := `{{ generate_key 64 }}`
 	temp := New().WithBody(test)
 
 	buffer := bytes.NewBuffer(nil)
@@ -568,7 +568,7 @@ func TestTemplateViewFuncYAML(t *testing.T) {
 
 	test := `
 type: foo
-meta: 
+meta:
 	name:
 	labels:
 {{ .Var "labels" | to_yaml | indent_tabs 1 }}
@@ -589,7 +589,7 @@ func TestTemplateViewFuncJSON(t *testing.T) {
 
 	test := `
 type: foo
-meta: 
+meta:
 	name:
 	labels:
 {{ .Var "labels" | to_json | indent_tabs 1 }}

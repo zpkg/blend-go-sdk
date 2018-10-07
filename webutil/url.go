@@ -1,6 +1,9 @@
 package webutil
 
-import "net/url"
+import (
+	"net/url"
+	"strings"
+)
 
 // MustParseURL parses a url and panics if there is an error.
 func MustParseURL(rawURL string) *url.URL {
@@ -25,6 +28,19 @@ func URLWithHost(u *url.URL, host string) *url.URL {
 	return copy
 }
 
+// URLWithPort returns a copy url with a given pprt attached to the host.
+func URLWithPort(u *url.URL, port string) *url.URL {
+	copy := &(*u)
+	host := copy.Host
+	if strings.Contains(host, ":") {
+		parts := strings.SplitN(host, ":", 2)
+		copy.Host = parts[0] + ":" + port
+	} else {
+		copy.Host = host + ":" + port
+	}
+	return copy
+}
+
 // URLWithPath returns a copy url with a given path.
 func URLWithPath(u *url.URL, path string) *url.URL {
 	copy := &(*u)
@@ -36,5 +52,14 @@ func URLWithPath(u *url.URL, path string) *url.URL {
 func URLWithRawQuery(u *url.URL, rawQuery string) *url.URL {
 	copy := &(*u)
 	copy.RawQuery = rawQuery
+	return copy
+}
+
+// URLWithQuery returns a copy url with a given raw query.
+func URLWithQuery(u *url.URL, key, value string) *url.URL {
+	copy := &(*u)
+	queryValues := copy.Query()
+	queryValues.Add(key, value)
+	copy.RawQuery = queryValues.Encode()
 	return copy
 }

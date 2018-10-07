@@ -43,6 +43,18 @@ func TestURLWithHost(t *testing.T) {
 	assert.Equal("blend.com", URLWithHost(original, "blend.com").Host)
 }
 
+func TestURLWithPort(t *testing.T) {
+	assert := assert.New(t)
+
+	original := MustParseURL("https://foo.bar.com/bailey?buzz=muzz")
+	assert.Equal("foo.bar.com:8443", URLWithPort(original, "8443").Host)
+	assert.Equal("8443", URLWithPort(original, "8443").Port())
+
+	originalWithPort := MustParseURL("https://foo.bar.com:5000/bailey?buzz=muzz")
+	assert.Equal("foo.bar.com:5001", URLWithPort(originalWithPort, "5001").Host)
+	assert.Equal("5001", URLWithPort(originalWithPort, "5001").Port())
+}
+
 func TestURLWithPath(t *testing.T) {
 	assert := assert.New(t)
 
@@ -55,4 +67,12 @@ func TestURLWithRawQuery(t *testing.T) {
 
 	original := MustParseURL("https://foo.bar.com/bailey?buzz=muzz")
 	assert.Equal("dog=cool", URLWithRawQuery(original, "dog=cool").RawQuery)
+}
+
+func TestURLWithQuery(t *testing.T) {
+	assert := assert.New(t)
+
+	original := MustParseURL("https://foo.bar.com/bailey?buzz=muzz")
+	assert.Equal("buzz=muzz", original.RawQuery)
+	assert.Equal("buzz=muzz&dog=cool", URLWithQuery(original, "dog", "cool").RawQuery)
 }
