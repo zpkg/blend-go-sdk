@@ -1,6 +1,7 @@
 package template
 
 import (
+	"crypto/hmac"
 	"crypto/md5"
 	"crypto/rand"
 	"crypto/sha1"
@@ -58,6 +59,11 @@ func (vf ViewFuncs) ExpandEnv(corpus string) string {
 // ToString attempts to return a string representation of a value.
 func (vf ViewFuncs) ToString(v interface{}) string {
 	return fmt.Sprintf("%v", v)
+}
+
+// ToBytes attempts to return a bytes representation of a value.
+func (vf ViewFuncs) ToBytes(v interface{}) []byte {
+	return []byte(fmt.Sprintf("%v", v))
 }
 
 // ToInt parses a value as an integer.
@@ -241,13 +247,6 @@ func (vf ViewFuncs) Base64Decode(v string) (string, error) {
 	return string(result), nil
 }
 
-// CreateKey creates a key of a given size base 64 encoded.
-func (vf ViewFuncs) CreateKey(keySize int) string {
-	key := make([]byte, keySize)
-	io.ReadFull(rand.Reader, key)
-	return base64.StdEncoding.EncodeToString(key)
-}
-
 // UUIDv4 generates a uuid v4.
 func (vf ViewFuncs) UUIDv4() uuid.UUID {
 	return uuid.V4()
@@ -292,6 +291,25 @@ func (vf ViewFuncs) Split(sep, v string) []string {
 func (vf ViewFuncs) SplitN(sep, v string, n int) []string {
 	return strings.SplitN(v, sep, n)
 }
+
+// RandomLetters returns a string of random letters.
+func (vf ViewFuncs) RandomLetters(length int) string {
+	return util.String.RandomLetters(length)
+}
+
+// RandomLettersWithNumbers returns a string of random letters.
+func (vf ViewFuncs) RandomLettersWithNumbers(count int) string {
+	return util.String.RandomStringWithNumbers(count)
+}
+
+// RandomLettersWithNumbersAndSymbols returns a string of random letters.
+func (vf ViewFuncs) RandomLettersWithNumbersAndSymbols(count int) string {
+	return util.String.RandomStringWithNumbersAndSymbols(count)
+}
+
+//
+// array functions
+//
 
 // Slice returns a subrange of a collection.
 func (vf ViewFuncs) Slice(from, to int, collection interface{}) (interface{}, error) {
@@ -455,6 +473,17 @@ func (vf ViewFuncs) SHA512(v string) string {
 	return hex.EncodeToString(h.Sum(nil))
 }
 
+// HMAC512 returns the hmac signed sha 512 sum of a string.
+func (vf ViewFuncs) HMAC512(key, v string) (string, error) {
+	keyBytes, err := base64.StdEncoding.DecodeString(key)
+	if err != nil {
+		return "", err
+	}
+	h := hmac.New(sha512.New, keyBytes)
+	io.WriteString(h, v)
+	return hex.EncodeToString(h.Sum(nil)), nil
+}
+
 // ParseSemver parses a semantic version string.
 func (vf ViewFuncs) ParseSemver(v string) (*semver.Version, error) {
 	return semver.NewVersion(v)
@@ -539,6 +568,13 @@ func (vf ViewFuncs) GenerateOrdinalNames(format string, replicas int) []string {
 	return output
 }
 
+// GenerateKey generates a key of a given size base 64 encoded.
+func (vf ViewFuncs) GenerateKey(keySize int) string {
+	key := make([]byte, keySize)
+	io.ReadFull(rand.Reader, key)
+	return base64.StdEncoding.EncodeToString(key)
+}
+
 // YAMLEncode returns an object encoded as yaml.
 func (vf ViewFuncs) YAMLEncode(v interface{}) (string, error) {
 	data, err := yaml.Marshal(v)
@@ -594,85 +630,90 @@ func (vf ViewFuncs) JMESPath(path string, v interface{}) (interface{}, error) {
 // FuncMap returns the name => func mapping.
 func (vf ViewFuncs) FuncMap() texttemplate.FuncMap {
 	return texttemplate.FuncMap{
-		"file_exists":            vf.FileExists,
-		"file":                   vf.File,
-		"expand_env":             vf.ExpandEnv,
-		"to_string":              vf.ToString,
-		"to_int":                 vf.ToInt,
-		"to_int64":               vf.ToInt64,
-		"to_float64":             vf.ToFloat64,
-		"date_short":             vf.DateShort,
-		"date_month_day":         vf.DateMonthDay,
-		"unix":                   vf.Unix,
-		"rfc3339":                vf.RFC3339,
-		"time_short":             vf.TimeShort,
-		"time_medium":            vf.TimeMedium,
-		"time_kitchen":           vf.TimeKitchen,
-		"time_in":                vf.TimeIn,
-		"parse_time":             vf.ParseTime,
-		"parse_unix":             vf.ParseUnix,
-		"since":                  vf.Since,
-		"since_utc":              vf.SinceUTC,
-		"year":                   vf.Year,
-		"month":                  vf.Month,
-		"day":                    vf.Day,
-		"hour":                   vf.Hour,
-		"minute":                 vf.Minute,
-		"second":                 vf.Second,
-		"millisecond":            vf.Millisecond,
-		"parse_bool":             vf.ParseBool,
-		"format_money":           vf.FormatMoney,
-		"format_pct":             vf.FormatPct,
-		"round":                  vf.Round,
-		"ceil":                   vf.Ceil,
-		"floor":                  vf.Floor,
-		"base64":                 vf.Base64,
-		"base64decode":           vf.Base64Decode,
-		"createKey":              vf.CreateKey,
-		"uuidv4":                 vf.UUIDv4,
-		"to_upper":               vf.ToUpper,
-		"to_lower":               vf.ToLower,
-		"to_title":               vf.ToTitle,
-		"trim_space":             vf.TrimSpace,
-		"prefix":                 vf.Prefix,
-		"suffix":                 vf.Suffix,
-		"split":                  vf.Split,
-		"splitn":                 vf.SplitN,
-		"slice":                  vf.Slice,
-		"first":                  vf.First,
-		"index":                  vf.Index,
-		"last":                   vf.Last,
-		"join":                   vf.Join,
-		"has_suffix":             vf.HasSuffix,
-		"has_prefix":             vf.HasPrefix,
-		"contains":               vf.Contains,
-		"matches":                vf.Matches,
-		"parse_url":              vf.ParseURL,
-		"url_scheme":             vf.URLScheme,
-		"url_host":               vf.URLHost,
-		"url_port":               vf.URLPort,
-		"url_path":               vf.URLPath,
-		"url_rawquery":           vf.URLRawQuery,
-		"url_query":              vf.URLQuery,
-		"md5":                    vf.MD5,
-		"sha1":                   vf.SHA1,
-		"sha256":                 vf.SHA256,
-		"sha512":                 vf.SHA512,
-		"parse_semver":           vf.ParseSemver,
-		"semver_major":           vf.SemverMajor,
-		"semver_bump_major":      vf.SemverBumpMajor,
-		"semver_minor":           vf.SemverMinor,
-		"semver_bump_minor":      vf.SemverBumpMinor,
-		"semver_patch":           vf.SemverPatch,
-		"semver_bump_patch":      vf.SemverBumpPatch,
-		"generate_ordinal_names": vf.GenerateOrdinalNames,
-		"to_json":                vf.JSONEncode,
-		"to_yaml":                vf.YAMLEncode,
-		"parse_json":             vf.ParseJSON,
-		"parse_yaml":             vf.ParseYAML,
-		"json_path":              vf.JSONPath,
-		"yaml_path":              vf.YAMLPath,
-		"indent_tabs":            vf.IndentTabs,
-		"indent_spaces":          vf.IndentSpaces,
+		"file_exists":                 vf.FileExists,
+		"file":                        vf.File,
+		"expand_env":                  vf.ExpandEnv,
+		"to_string":                   vf.ToString,
+		"to_bytes":                    vf.ToBytes,
+		"to_int":                      vf.ToInt,
+		"to_int64":                    vf.ToInt64,
+		"to_float64":                  vf.ToFloat64,
+		"date_short":                  vf.DateShort,
+		"date_month_day":              vf.DateMonthDay,
+		"unix":                        vf.Unix,
+		"rfc3339":                     vf.RFC3339,
+		"time_short":                  vf.TimeShort,
+		"time_medium":                 vf.TimeMedium,
+		"time_kitchen":                vf.TimeKitchen,
+		"time_in":                     vf.TimeIn,
+		"parse_time":                  vf.ParseTime,
+		"parse_unix":                  vf.ParseUnix,
+		"since":                       vf.Since,
+		"since_utc":                   vf.SinceUTC,
+		"year":                        vf.Year,
+		"month":                       vf.Month,
+		"day":                         vf.Day,
+		"hour":                        vf.Hour,
+		"minute":                      vf.Minute,
+		"second":                      vf.Second,
+		"millisecond":                 vf.Millisecond,
+		"parse_bool":                  vf.ParseBool,
+		"format_money":                vf.FormatMoney,
+		"format_pct":                  vf.FormatPct,
+		"round":                       vf.Round,
+		"ceil":                        vf.Ceil,
+		"floor":                       vf.Floor,
+		"base64":                      vf.Base64,
+		"base64decode":                vf.Base64Decode,
+		"uuidv4":                      vf.UUIDv4,
+		"to_upper":                    vf.ToUpper,
+		"to_lower":                    vf.ToLower,
+		"to_title":                    vf.ToTitle,
+		"random_letters":              vf.RandomLetters,
+		"random_letters_with_numbers": vf.RandomLettersWithNumbers,
+		"trim_space":                  vf.TrimSpace,
+		"prefix":                      vf.Prefix,
+		"suffix":                      vf.Suffix,
+		"split":                       vf.Split,
+		"splitn":                      vf.SplitN,
+		"slice":                       vf.Slice,
+		"first":                       vf.First,
+		"index":                       vf.Index,
+		"last":                        vf.Last,
+		"join":                        vf.Join,
+		"has_suffix":                  vf.HasSuffix,
+		"has_prefix":                  vf.HasPrefix,
+		"contains":                    vf.Contains,
+		"matches":                     vf.Matches,
+		"parse_url":                   vf.ParseURL,
+		"url_scheme":                  vf.URLScheme,
+		"url_host":                    vf.URLHost,
+		"url_port":                    vf.URLPort,
+		"url_path":                    vf.URLPath,
+		"url_rawquery":                vf.URLRawQuery,
+		"url_query":                   vf.URLQuery,
+		"md5":                         vf.MD5,
+		"sha1":                        vf.SHA1,
+		"sha256":                      vf.SHA256,
+		"sha512":                      vf.SHA512,
+		"hmac":                        vf.HMAC512,
+		"parse_semver":                vf.ParseSemver,
+		"semver_major":                vf.SemverMajor,
+		"semver_bump_major":           vf.SemverBumpMajor,
+		"semver_minor":                vf.SemverMinor,
+		"semver_bump_minor":           vf.SemverBumpMinor,
+		"semver_patch":                vf.SemverPatch,
+		"semver_bump_patch":           vf.SemverBumpPatch,
+		"generate_ordinal_names":      vf.GenerateOrdinalNames,
+		"generate_password":           vf.RandomLettersWithNumbersAndSymbols,
+		"generate_key":                vf.GenerateKey,
+		"to_json":                     vf.JSONEncode,
+		"to_yaml":                     vf.YAMLEncode,
+		"parse_json":                  vf.ParseJSON,
+		"parse_yaml":                  vf.ParseYAML,
+		"json_path":                   vf.JSONPath,
+		"yaml_path":                   vf.YAMLPath,
+		"indent_tabs":                 vf.IndentTabs,
+		"indent_spaces":               vf.IndentSpaces,
 	}
 }
