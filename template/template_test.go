@@ -190,6 +190,32 @@ func TestTemplateViewFuncTimeUnix(t *testing.T) {
 	assert.Equal("1495314000", buffer.String())
 }
 
+func TestTemplateViewFuncSince(t *testing.T) {
+	assert := assert.New(t)
+
+	test := `{{ .Var "ts" | since }}`
+	temp := New().WithBody(test).
+		WithVar("ts", time.Date(2018, 05, 20, 21, 00, 00, 00, time.UTC))
+
+	buffer := bytes.NewBuffer(nil)
+	err := temp.Process(buffer)
+	assert.Nil(err)
+	assert.NotEmpty(buffer.String())
+}
+
+func TestTemplateViewFuncSinceUTC(t *testing.T) {
+	assert := assert.New(t)
+
+	test := `{{ .Var "ts" | since_utc }}`
+	temp := New().WithBody(test).
+		WithVar("ts", time.Date(2018, 05, 20, 21, 00, 00, 00, time.UTC))
+
+	buffer := bytes.NewBuffer(nil)
+	err := temp.Process(buffer)
+	assert.Nil(err)
+	assert.NotEmpty(buffer.String())
+}
+
 func TestTemplateCreateKey(t *testing.T) {
 	assert := assert.New(t)
 
@@ -215,10 +241,10 @@ func TestTemplateViewFuncToString(t *testing.T) {
 	assert.Equal("123", buffer.String())
 }
 
-func TestTemplateViewFuncTime(t *testing.T) {
+func TestTemplateViewFuncParseTime(t *testing.T) {
 	assert := assert.New(t)
 
-	test := `{{ .Var "foo" | time "2006/01/02" | day }}`
+	test := `{{ .Var "foo" | parse_time "2006/01/02" | day }}`
 	temp := New().WithBody(test).WithVar("foo", "2017/05/30")
 
 	buffer := bytes.NewBuffer(nil)
@@ -230,7 +256,7 @@ func TestTemplateViewFuncTime(t *testing.T) {
 func TestTemplateViewFuncTimeFromUnix(t *testing.T) {
 	assert := assert.New(t)
 
-	test := `{{ .Var "foo" | time_unix | year }}`
+	test := `{{ .Var "foo" | parse_unix | year }}`
 	temp := New().WithBody(test).WithVar("foo", time.Date(2017, 05, 20, 21, 00, 00, 00, time.UTC).Unix())
 
 	buffer := bytes.NewBuffer(nil)
@@ -242,7 +268,7 @@ func TestTemplateViewFuncTimeFromUnix(t *testing.T) {
 func TestTemplateViewFuncTimeFromUnixString(t *testing.T) {
 	assert := assert.New(t)
 
-	test := `{{ .Var "foo" | to_string | to_int64 | time_unix | year }}`
+	test := `{{ .Var "foo" | to_string | to_int64 | parse_unix | year }}`
 	temp := New().WithBody(test).WithVar("foo", time.Date(2017, 05, 20, 21, 00, 00, 00, time.UTC).Unix())
 
 	buffer := bytes.NewBuffer(nil)
@@ -254,7 +280,7 @@ func TestTemplateViewFuncTimeFromUnixString(t *testing.T) {
 func TestTemplateViewFuncBool(t *testing.T) {
 	assert := assert.New(t)
 
-	test := `{{ if .Var "foo" | bool }}yep{{end}}`
+	test := `{{ if .Var "foo" | parse_bool }}yep{{end}}`
 	temp := New().WithBody(test).WithVar("foo", "true")
 
 	buffer := bytes.NewBuffer(nil)
@@ -302,7 +328,7 @@ func TestTemplateViewFuncFloat64(t *testing.T) {
 func TestTemplateViewFuncMoney(t *testing.T) {
 	assert := assert.New(t)
 
-	test := `{{ .Var "foo" | to_float64 | money }}`
+	test := `{{ .Var "foo" | to_float64 | format_money }}`
 	temp := New().WithBody(test).WithVar("foo", "3.00")
 
 	buffer := bytes.NewBuffer(nil)
@@ -314,7 +340,7 @@ func TestTemplateViewFuncMoney(t *testing.T) {
 func TestTemplateViewFuncPct(t *testing.T) {
 	assert := assert.New(t)
 
-	test := `{{ .Var "foo" | to_float64 | pct }}`
+	test := `{{ .Var "foo" | to_float64 | format_pct }}`
 	temp := New().WithBody(test).WithVar("foo", "0.24")
 
 	buffer := bytes.NewBuffer(nil)
@@ -466,6 +492,17 @@ func TestTemplateViewFuncSha1(t *testing.T) {
 	assert.Equal("e7ee879d16c08f616c32e5bbe2253bdba18cf003", buffer.String())
 }
 
+func TestTemplateViewFuncMD5(t *testing.T) {
+	assert := assert.New(t)
+
+	test := `{{ .Var "foo" | md5 }}`
+	temp := New().WithBody(test).WithVar("foo", "this is only a test")
+	buffer := bytes.NewBuffer(nil)
+	err := temp.Process(buffer)
+	assert.Nil(err)
+	assert.Equal("e668034188ba397a9b6ff95d2a8e7203", buffer.String())
+}
+
 func TestTemplateViewFuncSha256(t *testing.T) {
 	assert := assert.New(t)
 
@@ -534,7 +571,28 @@ type: foo
 meta: 
 	name:
 	labels:
-{{ .Var "labels" | yaml | indent_tabs 1 }}
+{{ .Var "labels" | to_yaml | indent_tabs 1 }}
+`
+	temp := New().WithBody(test).WithVar("labels", []label{
+		{"foo", "bar"},
+		{"bar", "baz"},
+		{"moobar", "zoobar"},
+	})
+	buffer := bytes.NewBuffer(nil)
+	err := temp.Process(buffer)
+	assert.Nil(err)
+	assert.NotEmpty(buffer.String())
+}
+
+func TestTemplateViewFuncJSON(t *testing.T) {
+	assert := assert.New(t)
+
+	test := `
+type: foo
+meta: 
+	name:
+	labels:
+{{ .Var "labels" | to_json | indent_tabs 1 }}
 `
 	temp := New().WithBody(test).WithVar("labels", []label{
 		{"foo", "bar"},
@@ -592,4 +650,26 @@ func TestOrdinalNames(t *testing.T) {
 	buffer := new(bytes.Buffer)
 	assert.Nil(tmp.Process(buffer))
 	assert.Equal("cockroachdb-0,cockroachdb-1,cockroachdb-2,cockroachdb-3,cockroachdb-4", buffer.String())
+}
+
+func TestYAMLPath(t *testing.T) {
+	assert := assert.New(t)
+
+	tmp := New().WithBody("{{ file \"testdata/variables.yml\" | yaml_path \"db.name\" }}")
+
+	buffer := new(bytes.Buffer)
+	err := tmp.Process(buffer)
+	assert.Nil(err, fmt.Sprintf("%+v", err))
+	assert.Equal("test-db", buffer.String())
+}
+
+func TestJSONPath(t *testing.T) {
+	assert := assert.New(t)
+
+	tmp := New().WithBody("{{ file \"testdata/variables.json\" | json_path \"db.name\" }}")
+
+	buffer := new(bytes.Buffer)
+	err := tmp.Process(buffer)
+	assert.Nil(err, fmt.Sprintf("%+v", err))
+	assert.Equal("test-db", buffer.String())
 }

@@ -1,6 +1,7 @@
 package template
 
 import (
+	"crypto/md5"
 	"crypto/rand"
 	"crypto/sha1"
 	"crypto/sha256"
@@ -11,6 +12,7 @@ import (
 	"fmt"
 	"io"
 	"io/ioutil"
+	"math"
 	"net/url"
 	"os"
 	"reflect"
@@ -20,6 +22,7 @@ import (
 	texttemplate "text/template"
 	"time"
 
+	jmespath "github.com/blend/go-jmespath"
 	"github.com/blend/go-sdk/util"
 
 	"github.com/blend/go-sdk/semver"
@@ -27,70 +30,94 @@ import (
 	"github.com/blend/go-sdk/yaml"
 )
 
-// ViewFuncs are common view func helpers.
-var ViewFuncs viewFuncs
+// Funcs are common view func helpers.
+var Funcs ViewFuncs
 
-type viewFuncs struct{}
+// ViewFuncs is the type stub for view functions.
+type ViewFuncs struct{}
 
-func (vf viewFuncs) FileExists(path string) bool {
+// FileExists returns if the file at a given path exists.
+func (vf ViewFuncs) FileExists(path string) bool {
 	_, err := os.Stat(path)
 	return err == nil
 }
 
-func (vf viewFuncs) File(path string) (string, error) {
+// File reads the contents of a file path as a string.
+func (vf ViewFuncs) File(path string) (string, error) {
 	contents, err := ioutil.ReadFile(path)
 	return string(contents), err
 }
 
-func (vf viewFuncs) ExpandEnv(corpus string) string {
+// ExpandEnv replaces ${var} or $var in the string according
+// to the current environment variables. References to undefined
+// variables are replaced with the empty string.
+func (vf ViewFuncs) ExpandEnv(corpus string) string {
 	return os.ExpandEnv(corpus)
 }
 
-func (vf viewFuncs) ToString(v interface{}) string {
+// ToString attempts to return a string representation of a value.
+func (vf ViewFuncs) ToString(v interface{}) string {
 	return fmt.Sprintf("%v", v)
 }
 
-func (vf viewFuncs) ToInt(v interface{}) (int, error) {
+// ToInt parses a value as an integer.
+func (vf ViewFuncs) ToInt(v interface{}) (int, error) {
 	return strconv.Atoi(fmt.Sprintf("%v", v))
 }
 
-func (vf viewFuncs) ToInt64(v interface{}) (int64, error) {
+// ToInt64 parses a value as an int64.
+func (vf ViewFuncs) ToInt64(v interface{}) (int64, error) {
 	return strconv.ParseInt(fmt.Sprintf("%v", v), 10, 64)
 }
 
-func (vf viewFuncs) ToFloat64(v string) (float64, error) {
+// ToFloat64 parses a value as a float64.
+func (vf ViewFuncs) ToFloat64(v string) (float64, error) {
 	return strconv.ParseFloat(v, 64)
 }
 
-func (vf viewFuncs) Unix(t time.Time) string {
+// Unix returns the unix format for a timestamp.
+func (vf ViewFuncs) Unix(t time.Time) string {
 	return fmt.Sprintf("%d", t.Unix())
 }
 
-func (vf viewFuncs) RFC3339(t time.Time) string {
+// RFC3339 returns the RFC3339 format for a timestamp.
+func (vf ViewFuncs) RFC3339(t time.Time) string {
 	return t.Format(time.RFC3339)
 }
 
-func (vf viewFuncs) Short(t time.Time) string {
+// TimeShort returns the short format for a timestamp.
+// The format string is "1/02/2006 3:04:05 PM".
+func (vf ViewFuncs) TimeShort(t time.Time) string {
 	return t.Format("1/02/2006 3:04:05 PM")
 }
 
-func (vf viewFuncs) ShortDate(t time.Time) string {
+// DateShort returns the short date for a timestamp.
+// The format string is "1/02/2006"
+func (vf ViewFuncs) DateShort(t time.Time) string {
 	return t.Format("1/02/2006")
 }
 
-func (vf viewFuncs) Medium(t time.Time) string {
+// TimeMedium returns the medium format for a timestamp.
+// The format string is "1/02/2006 3:04:05 PM".
+func (vf ViewFuncs) TimeMedium(t time.Time) string {
 	return t.Format("Jan 02, 2006 3:04:05 PM")
 }
 
-func (vf viewFuncs) Kitchen(t time.Time) string {
+// TimeKitchen returns the kitchen format for a timestamp.
+// The format string is "3:04PM".
+func (vf ViewFuncs) TimeKitchen(t time.Time) string {
 	return t.Format(time.Kitchen)
 }
 
-func (vf viewFuncs) MonthDay(t time.Time) string {
+// DateMonthDay returns the month dat format for a timestamp.
+// The format string is "1/2".
+func (vf ViewFuncs) DateMonthDay(t time.Time) string {
 	return t.Format("1/2")
 }
 
-func (vf viewFuncs) InLoc(loc string, t time.Time) (time.Time, error) {
+// TimeIn returns the time in a given location by string.
+// If the location is invalid, this will error.
+func (vf ViewFuncs) TimeIn(loc string, t time.Time) (time.Time, error) {
 	location, err := time.LoadLocation(loc)
 	if err != nil {
 		return time.Time{}, err
@@ -98,43 +125,67 @@ func (vf viewFuncs) InLoc(loc string, t time.Time) (time.Time, error) {
 	return t.In(location), err
 }
 
-func (vf viewFuncs) Time(format, v string) (time.Time, error) {
+// ParseTime parses a time string with a given format.
+func (vf ViewFuncs) ParseTime(format, v string) (time.Time, error) {
 	return time.Parse(format, v)
 }
 
-func (vf viewFuncs) TimeUnix(v int64) time.Time {
+// ParseUnix returns a timestamp from a unix format.
+func (vf ViewFuncs) ParseUnix(v int64) time.Time {
 	return time.Unix(v, 0)
 }
 
-func (vf viewFuncs) Year(t time.Time) int {
+// Year returns the year component of a timestamp.
+func (vf ViewFuncs) Year(t time.Time) int {
 	return t.Year()
 }
 
-func (vf viewFuncs) Month(t time.Time) int {
+// Month returns the month component of a timestamp.
+func (vf ViewFuncs) Month(t time.Time) int {
 	return int(t.Month())
 }
 
-func (vf viewFuncs) Day(t time.Time) int {
+// Day returns the day component of a timestamp.
+func (vf ViewFuncs) Day(t time.Time) int {
 	return t.Day()
 }
 
-func (vf viewFuncs) Hour(t time.Time) int {
+// Hour returns the hour component of a timestamp.
+func (vf ViewFuncs) Hour(t time.Time) int {
 	return t.Hour()
 }
 
-func (vf viewFuncs) Minute(t time.Time) int {
+// Minute returns the minute component of a timestamp.
+func (vf ViewFuncs) Minute(t time.Time) int {
 	return t.Minute()
 }
 
-func (vf viewFuncs) Second(t time.Time) int {
+// Second returns the seconds component of a timestamp.
+func (vf ViewFuncs) Second(t time.Time) int {
 	return t.Second()
 }
 
-func (vf viewFuncs) Millisecond(t time.Time) int {
+// Millisecond returns the millisecond component of a timestamp.
+func (vf ViewFuncs) Millisecond(t time.Time) int {
 	return int(time.Duration(t.Nanosecond()) / time.Millisecond)
 }
 
-func (vf viewFuncs) Bool(raw interface{}) (bool, error) {
+// Since returns the duration since a given timestamp.
+// It is relative, meaning the value returned can be negative.
+func (vf ViewFuncs) Since(t time.Time) time.Duration {
+	return time.Since(t)
+}
+
+// SinceUTC returns the duration since a given timestamp in UTC.
+// It is relative, meaning the value returned can be negative.
+func (vf ViewFuncs) SinceUTC(t time.Time) time.Duration {
+	return time.Now().UTC().Sub(t.UTC())
+}
+
+// ParseBool attempts to parse a value as a bool.
+// "truthy" values include "true", "1", "yes".
+// "falsey" values include "false", "0", "no".
+func (vf ViewFuncs) ParseBool(raw interface{}) (bool, error) {
 	v := fmt.Sprintf("%v", raw)
 	if len(v) == 0 {
 		return false, nil
@@ -149,23 +200,40 @@ func (vf viewFuncs) Bool(raw interface{}) (bool, error) {
 	}
 }
 
-func (vf viewFuncs) Money(d float64) string {
-	return fmt.Sprintf("$%0.2f", d)
-}
-
-func (vf viewFuncs) Round(d float64, places int) float64 {
+// Round returns the value rounded to a given set of places.
+// It uses midpoint rounding.
+func (vf ViewFuncs) Round(d float64, places int) float64 {
 	return util.Math.Round(d, places)
 }
 
-func (vf viewFuncs) Pct(d float64) string {
+// Ceil returns the value rounded up to the nearest integer.
+func (vf ViewFuncs) Ceil(d float64) float64 {
+	return math.Ceil(d)
+}
+
+// Floor returns the value rounded down to zero.
+func (vf ViewFuncs) Floor(d float64) float64 {
+	return math.Floor(d)
+}
+
+// FormatMoney returns a float as a formatted string rounded to two decimal places.
+func (vf ViewFuncs) FormatMoney(d float64) string {
+	return fmt.Sprintf("$%0.2f", util.Math.Round(d, 2))
+}
+
+// FormatPct formats a float as a percentage (it is multiplied by 100,
+// then suffixed with '%')
+func (vf ViewFuncs) FormatPct(d float64) string {
 	return fmt.Sprintf("%0.2f%%", d*100)
 }
 
-func (vf viewFuncs) Base64(v string) string {
+// Base64 encodes data as a string as a base6 string.
+func (vf ViewFuncs) Base64(v string) string {
 	return base64.StdEncoding.EncodeToString([]byte(v))
 }
 
-func (vf viewFuncs) Base64Decode(v string) (string, error) {
+//Base64Decode decodes a base 64 string.
+func (vf ViewFuncs) Base64Decode(v string) (string, error) {
 	result, err := base64.StdEncoding.DecodeString(v)
 	if err != nil {
 		return "", err
@@ -173,49 +241,60 @@ func (vf viewFuncs) Base64Decode(v string) (string, error) {
 	return string(result), nil
 }
 
-func (vf viewFuncs) CreateKey(keySize int) string {
+// CreateKey creates a key of a given size base 64 encoded.
+func (vf ViewFuncs) CreateKey(keySize int) string {
 	key := make([]byte, keySize)
 	io.ReadFull(rand.Reader, key)
 	return base64.StdEncoding.EncodeToString(key)
 }
 
-func (vf viewFuncs) UUIDv4() string {
-	return uuid.V4().String()
+// UUIDv4 generates a uuid v4.
+func (vf ViewFuncs) UUIDv4() uuid.UUID {
+	return uuid.V4()
 }
 
-func (vf viewFuncs) ToUpper(v string) string {
+// ToUpper returns a string case shifted to upper case.
+func (vf ViewFuncs) ToUpper(v string) string {
 	return strings.ToUpper(v)
 }
 
-func (vf viewFuncs) ToLower(v string) string {
+// ToLower returns a string case shifted to lower case.
+func (vf ViewFuncs) ToLower(v string) string {
 	return strings.ToLower(v)
 }
 
-func (vf viewFuncs) ToTitle(v string) string {
+// ToTitle returns a title cased string.
+func (vf ViewFuncs) ToTitle(v string) string {
 	return strings.ToTitle(v)
 }
 
-func (vf viewFuncs) TrimSpace(v string) string {
+// TrimSpace trims whitespace from the beginning and end of a string.
+func (vf ViewFuncs) TrimSpace(v string) string {
 	return strings.TrimSpace(v)
 }
 
-func (vf viewFuncs) Prefix(pref, v string) string {
+// Prefix appends a given string to a prefix.
+func (vf ViewFuncs) Prefix(pref, v string) string {
 	return pref + v
 }
 
-func (vf viewFuncs) Suffix(suf, v string) string {
+// Suffix appends a given prefix to a string.
+func (vf ViewFuncs) Suffix(suf, v string) string {
 	return v + suf
 }
 
-func (vf viewFuncs) Split(sep, v string) []string {
+// Split splits a string by a separator.
+func (vf ViewFuncs) Split(sep, v string) []string {
 	return strings.Split(v, sep)
 }
 
-func (vf viewFuncs) SplitN(sep, v string, n int) []string {
+// SplitN splits a string by a separator a given number of times.
+func (vf ViewFuncs) SplitN(sep, v string, n int) []string {
 	return strings.SplitN(v, sep, n)
 }
 
-func (vf viewFuncs) Slice(from, to int, collection interface{}) (interface{}, error) {
+// Slice returns a subrange of a collection.
+func (vf ViewFuncs) Slice(from, to int, collection interface{}) (interface{}, error) {
 	value := reflect.ValueOf(collection)
 
 	if value.Type().Kind() != reflect.Slice {
@@ -225,7 +304,8 @@ func (vf viewFuncs) Slice(from, to int, collection interface{}) (interface{}, er
 	return value.Slice(from, to).Interface(), nil
 }
 
-func (vf viewFuncs) First(collection interface{}) (interface{}, error) {
+// First returns the first element of a collection.
+func (vf ViewFuncs) First(collection interface{}) (interface{}, error) {
 	value := reflect.ValueOf(collection)
 	if value.Type().Kind() != reflect.Slice {
 		return nil, fmt.Errorf("input must be a slice")
@@ -236,7 +316,8 @@ func (vf viewFuncs) First(collection interface{}) (interface{}, error) {
 	return value.Index(0).Interface(), nil
 }
 
-func (vf viewFuncs) Index(index int, collection interface{}) (interface{}, error) {
+// Index returns an element at a given index.
+func (vf ViewFuncs) Index(index int, collection interface{}) (interface{}, error) {
 	value := reflect.ValueOf(collection)
 	if value.Type().Kind() != reflect.Slice {
 		return nil, fmt.Errorf("input must be a slice")
@@ -247,7 +328,8 @@ func (vf viewFuncs) Index(index int, collection interface{}) (interface{}, error
 	return value.Index(index).Interface(), nil
 }
 
-func (vf viewFuncs) Last(collection interface{}) (interface{}, error) {
+// Last returns the last element of a collection.
+func (vf ViewFuncs) Last(collection interface{}) (interface{}, error) {
 	value := reflect.ValueOf(collection)
 	if value.Type().Kind() != reflect.Slice {
 		return nil, fmt.Errorf("input must be a slice")
@@ -258,7 +340,8 @@ func (vf viewFuncs) Last(collection interface{}) (interface{}, error) {
 	return value.Index(value.Len() - 1).Interface(), nil
 }
 
-func (vf viewFuncs) Join(sep string, collection interface{}) (string, error) {
+// Join creates a string joined with a given separator.
+func (vf ViewFuncs) Join(sep string, collection interface{}) (string, error) {
 	value := reflect.ValueOf(collection)
 	if value.Type().Kind() != reflect.Slice {
 		return "", fmt.Errorf("input must be a slice")
@@ -273,35 +356,43 @@ func (vf viewFuncs) Join(sep string, collection interface{}) (string, error) {
 	return strings.Join(values, sep), nil
 }
 
-func (vf viewFuncs) HasSuffix(suffix, v string) bool {
+// HasSuffix returns if a string has a given suffix.
+func (vf ViewFuncs) HasSuffix(suffix, v string) bool {
 	return strings.HasSuffix(v, suffix)
 }
 
-func (vf viewFuncs) HasPrefix(prefix, v string) bool {
+// HasPrefix returns if a string has a given prefix.
+func (vf ViewFuncs) HasPrefix(prefix, v string) bool {
 	return strings.HasPrefix(v, prefix)
 }
 
-func (vf viewFuncs) Contains(substr, v string) bool {
+// Contains returns if a string contains a given substring.
+func (vf ViewFuncs) Contains(substr, v string) bool {
 	return strings.Contains(v, substr)
 }
 
-func (vf viewFuncs) Matches(expr, v string) (bool, error) {
+// Matches returns if a string matches a given regular expression.
+func (vf ViewFuncs) Matches(expr, v string) (bool, error) {
 	return regexp.MatchString(expr, v)
 }
 
-func (vf viewFuncs) ParseURL(v string) (*url.URL, error) {
+// ParseURL parses a url.
+func (vf ViewFuncs) ParseURL(v string) (*url.URL, error) {
 	return url.Parse(v)
 }
 
-func (vf viewFuncs) URLScheme(v *url.URL) string {
+// URLScheme returns the scheme of a url.
+func (vf ViewFuncs) URLScheme(v *url.URL) string {
 	return v.Scheme
 }
 
-func (vf viewFuncs) URLHost(v *url.URL) string {
+// URLHost returns the host of a url.
+func (vf ViewFuncs) URLHost(v *url.URL) string {
 	return v.Host
 }
 
-func (vf viewFuncs) URLPort(v *url.URL) string {
+// URLPort returns the url port or a default.
+func (vf ViewFuncs) URLPort(v *url.URL) string {
 	portValue := v.Port()
 	if len(portValue) > 0 {
 		return portValue
@@ -321,78 +412,89 @@ func (vf viewFuncs) URLPort(v *url.URL) string {
 	return ""
 }
 
-func (vf viewFuncs) URLPath(v *url.URL) string {
+// URLPath returns the url path.
+func (vf ViewFuncs) URLPath(v *url.URL) string {
 	return v.Path
 }
 
-func (vf viewFuncs) URLRawQuery(v *url.URL) string {
+// URLRawQuery returns the url raw query.
+func (vf ViewFuncs) URLRawQuery(v *url.URL) string {
 	return v.RawQuery
 }
 
-func (vf viewFuncs) URLQuery(name string, v *url.URL) string {
+// URLQuery returns a url query param.
+func (vf ViewFuncs) URLQuery(name string, v *url.URL) string {
 	return v.Query().Get(name)
 }
 
-func (vf viewFuncs) SHA1(v string) string {
+// MD5 returns the md5 sum of a string.
+func (vf ViewFuncs) MD5(v string) string {
+	h := md5.New()
+	io.WriteString(h, v)
+	return hex.EncodeToString(h.Sum(nil))
+}
+
+// SHA1 returns the sha1 sum of a string.
+func (vf ViewFuncs) SHA1(v string) string {
 	h := sha1.New()
 	io.WriteString(h, v)
 	return hex.EncodeToString(h.Sum(nil))
 }
 
-func (vf viewFuncs) SHA256(v string) string {
+// SHA256 returns the sha256 sum of a string.
+func (vf ViewFuncs) SHA256(v string) string {
 	h := sha256.New()
 	io.WriteString(h, v)
 	return hex.EncodeToString(h.Sum(nil))
 }
 
-func (vf viewFuncs) SHA512(v string) string {
+// SHA512 returns the sha512 sum of a string.
+func (vf ViewFuncs) SHA512(v string) string {
 	h := sha512.New()
 	io.WriteString(h, v)
 	return hex.EncodeToString(h.Sum(nil))
 }
 
-func (vf viewFuncs) ParseSemver(v string) (*semver.Version, error) {
+// ParseSemver parses a semantic version string.
+func (vf ViewFuncs) ParseSemver(v string) (*semver.Version, error) {
 	return semver.NewVersion(v)
 }
 
-func (vf viewFuncs) SemverMajor(v *semver.Version) int {
+// SemverMajor returns the major component of a semver.
+func (vf ViewFuncs) SemverMajor(v *semver.Version) int {
 	return int(v.Major())
 }
 
-func (vf viewFuncs) SemverBumpMajor(v *semver.Version) *semver.Version {
+// SemverBumpMajor returns a semver with an incremented major version.
+func (vf ViewFuncs) SemverBumpMajor(v *semver.Version) *semver.Version {
 	v.BumpMajor()
 	return v
 }
 
-func (vf viewFuncs) SemverMinor(v *semver.Version) int {
+// SemverMinor returns the minor component of a semver.
+func (vf ViewFuncs) SemverMinor(v *semver.Version) int {
 	return int(v.Minor())
 }
 
-func (vf viewFuncs) SemverBumpMinor(v *semver.Version) *semver.Version {
+// SemverBumpMinor returns a semver with an incremented minor version.
+func (vf ViewFuncs) SemverBumpMinor(v *semver.Version) *semver.Version {
 	v.BumpMinor()
 	return v
 }
 
-func (vf viewFuncs) SemverPatch(v *semver.Version) int {
+// SemverPatch returns the patch component of a semver.
+func (vf ViewFuncs) SemverPatch(v *semver.Version) int {
 	return int(v.Patch())
 }
 
-func (vf viewFuncs) SemverBumpPatch(v *semver.Version) *semver.Version {
+// SemverBumpPatch returns a semver with an incremented patch version.
+func (vf ViewFuncs) SemverBumpPatch(v *semver.Version) *semver.Version {
 	v.BumpPatch()
 	return v
 }
 
-func (vf viewFuncs) YAML(v interface{}) (string, error) {
-	data, err := yaml.Marshal(v)
-	return string(data), err
-}
-
-func (vf viewFuncs) JSON(v interface{}) (string, error) {
-	data, err := json.Marshal(v)
-	return string(data), err
-}
-
-func (vf viewFuncs) IndentTabs(tabCount int, v interface{}) string {
+// IndentTabs indents a string with a given number of tabs.
+func (vf ViewFuncs) IndentTabs(tabCount int, v interface{}) string {
 	lines := strings.Split(fmt.Sprintf("%v", v), "\n")
 	outputLines := make([]string, len(lines))
 
@@ -407,7 +509,8 @@ func (vf viewFuncs) IndentTabs(tabCount int, v interface{}) string {
 	return strings.Join(outputLines, "\n")
 }
 
-func (vf viewFuncs) IndentSpaces(spaceCount int, v interface{}) string {
+// IndentSpaces indents a string by a given set of spaces.
+func (vf ViewFuncs) IndentSpaces(spaceCount int, v interface{}) string {
 	lines := strings.Split(fmt.Sprintf("%v", v), "\n")
 	outputLines := make([]string, len(lines))
 
@@ -422,7 +525,13 @@ func (vf viewFuncs) IndentSpaces(spaceCount int, v interface{}) string {
 	return strings.Join(outputLines, "\n")
 }
 
-func (vf viewFuncs) GenerateOrdinalNames(format string, replicas int) []string {
+// GenerateOrdinalNames generates ordinal names by passing the index to a given formatter.
+// The formatter should be in Sprintf format (i.e. using a '%d' token for where the index should go).
+/*
+Example:
+    {{ generate_ordinal_names "worker-%d" 3 }} // [ worker-0, worker-1, worker-2 ]
+*/
+func (vf ViewFuncs) GenerateOrdinalNames(format string, replicas int) []string {
 	output := make([]string, replicas)
 	for index := 0; index < replicas; index++ {
 		output[index] = fmt.Sprintf(format, index)
@@ -430,78 +539,140 @@ func (vf viewFuncs) GenerateOrdinalNames(format string, replicas int) []string {
 	return output
 }
 
-func (vf viewFuncs) FuncMap() texttemplate.FuncMap {
+// YAMLEncode returns an object encoded as yaml.
+func (vf ViewFuncs) YAMLEncode(v interface{}) (string, error) {
+	data, err := yaml.Marshal(v)
+	return string(data), err
+}
+
+// JSONEncode returns an object encoded as json.
+func (vf ViewFuncs) JSONEncode(v interface{}) (string, error) {
+	data, err := json.Marshal(v)
+	return string(data), err
+}
+
+// ParseYAML decodes a corups as yaml.
+func (vf ViewFuncs) ParseYAML(v string) (interface{}, error) {
+	var data interface{}
+	err := yaml.Unmarshal([]byte(v), &data)
+	return data, err
+}
+
+// ParseJSON returns an object encoded as json.
+func (vf ViewFuncs) ParseJSON(v string) (interface{}, error) {
+	var data interface{}
+	err := json.Unmarshal([]byte(v), &data)
+	return data, err
+}
+
+// YAMLPath parses a yaml string and returns the value at a given path.
+// It uses JMESPath syntax.
+func (vf ViewFuncs) YAMLPath(path string, v string) (interface{}, error) {
+	var data interface{}
+	if err := yaml.Unmarshal([]byte(v), &data); err != nil {
+		return nil, err
+	}
+	return jmespath.Search(path, data)
+}
+
+// JSONPath parses a json string and returns the value at a given path.
+// It uses JMESPath syntax.
+func (vf ViewFuncs) JSONPath(path string, v string) (interface{}, error) {
+	var data interface{}
+	if err := json.Unmarshal([]byte(v), &data); err != nil {
+		return nil, err
+	}
+	return jmespath.Search(path, data)
+}
+
+// JMESPath applies the search query to the object.
+// More information can be found here: http://jmespath.org/specification.html
+func (vf ViewFuncs) JMESPath(path string, v interface{}) (interface{}, error) {
+	return jmespath.Search(path, v)
+}
+
+// FuncMap returns the name => func mapping.
+func (vf ViewFuncs) FuncMap() texttemplate.FuncMap {
 	return texttemplate.FuncMap{
-		"file_exists":            ViewFuncs.FileExists,
-		"file":                   ViewFuncs.File,
-		"expand_env":             ViewFuncs.ExpandEnv,
-		"to_string":              ViewFuncs.ToString,
-		"to_int":                 ViewFuncs.ToInt,
-		"to_int64":               ViewFuncs.ToInt64,
-		"to_float64":             ViewFuncs.ToFloat64,
-		"unix":                   ViewFuncs.Unix,
-		"rfc3339":                ViewFuncs.RFC3339,
-		"short":                  ViewFuncs.Short,
-		"short_date":             ViewFuncs.ShortDate,
-		"medium":                 ViewFuncs.Medium,
-		"kitchen":                ViewFuncs.Kitchen,
-		"month_day":              ViewFuncs.MonthDay,
-		"in_loc":                 ViewFuncs.InLoc,
-		"time":                   ViewFuncs.Time,
-		"time_unix":              ViewFuncs.TimeUnix,
-		"year":                   ViewFuncs.Year,
-		"month":                  ViewFuncs.Month,
-		"day":                    ViewFuncs.Day,
-		"hour":                   ViewFuncs.Hour,
-		"minute":                 ViewFuncs.Minute,
-		"second":                 ViewFuncs.Second,
-		"millisecond":            ViewFuncs.Millisecond,
-		"bool":                   ViewFuncs.Bool,
-		"money":                  ViewFuncs.Money,
-		"round":                  ViewFuncs.Round,
-		"pct":                    ViewFuncs.Pct,
-		"base64":                 ViewFuncs.Base64,
-		"base64decode":           ViewFuncs.Base64Decode,
-		"createKey":              ViewFuncs.CreateKey,
-		"uuidv4":                 ViewFuncs.UUIDv4,
-		"to_upper":               ViewFuncs.ToUpper,
-		"to_lower":               ViewFuncs.ToLower,
-		"to_title":               ViewFuncs.ToTitle,
-		"trim_space":             ViewFuncs.TrimSpace,
-		"prefix":                 ViewFuncs.Prefix,
-		"suffix":                 ViewFuncs.Suffix,
-		"split":                  ViewFuncs.Split,
-		"splitn":                 ViewFuncs.SplitN,
-		"slice":                  ViewFuncs.Slice,
-		"first":                  ViewFuncs.First,
-		"index":                  ViewFuncs.Index,
-		"last":                   ViewFuncs.Last,
-		"join":                   ViewFuncs.Join,
-		"has_suffix":             ViewFuncs.HasSuffix,
-		"has_prefix":             ViewFuncs.HasPrefix,
-		"contains":               ViewFuncs.Contains,
-		"matches":                ViewFuncs.Matches,
-		"parse_url":              ViewFuncs.ParseURL,
-		"url_scheme":             ViewFuncs.URLScheme,
-		"url_host":               ViewFuncs.URLHost,
-		"url_port":               ViewFuncs.URLPort,
-		"url_path":               ViewFuncs.URLPath,
-		"url_rawquery":           ViewFuncs.URLRawQuery,
-		"url_query":              ViewFuncs.URLQuery,
-		"sha1":                   ViewFuncs.SHA1,
-		"sha256":                 ViewFuncs.SHA256,
-		"sha512":                 ViewFuncs.SHA512,
-		"parse_semver":           ViewFuncs.ParseSemver,
-		"semver_major":           ViewFuncs.SemverMajor,
-		"semver_bump_major":      ViewFuncs.SemverBumpMajor,
-		"semver_minor":           ViewFuncs.SemverMinor,
-		"semver_bump_minor":      ViewFuncs.SemverBumpMinor,
-		"semver_patch":           ViewFuncs.SemverPatch,
-		"semver_bump_patch":      ViewFuncs.SemverBumpPatch,
-		"yaml":                   ViewFuncs.YAML,
-		"json":                   ViewFuncs.JSON,
-		"indent_tabs":            ViewFuncs.IndentTabs,
-		"indent_spaces":          ViewFuncs.IndentSpaces,
-		"generate_ordinal_names": ViewFuncs.GenerateOrdinalNames,
+		"file_exists":            vf.FileExists,
+		"file":                   vf.File,
+		"expand_env":             vf.ExpandEnv,
+		"to_string":              vf.ToString,
+		"to_int":                 vf.ToInt,
+		"to_int64":               vf.ToInt64,
+		"to_float64":             vf.ToFloat64,
+		"date_short":             vf.DateShort,
+		"date_month_day":         vf.DateMonthDay,
+		"unix":                   vf.Unix,
+		"rfc3339":                vf.RFC3339,
+		"time_short":             vf.TimeShort,
+		"time_medium":            vf.TimeMedium,
+		"time_kitchen":           vf.TimeKitchen,
+		"time_in":                vf.TimeIn,
+		"parse_time":             vf.ParseTime,
+		"parse_unix":             vf.ParseUnix,
+		"since":                  vf.Since,
+		"since_utc":              vf.SinceUTC,
+		"year":                   vf.Year,
+		"month":                  vf.Month,
+		"day":                    vf.Day,
+		"hour":                   vf.Hour,
+		"minute":                 vf.Minute,
+		"second":                 vf.Second,
+		"millisecond":            vf.Millisecond,
+		"parse_bool":             vf.ParseBool,
+		"format_money":           vf.FormatMoney,
+		"format_pct":             vf.FormatPct,
+		"round":                  vf.Round,
+		"ceil":                   vf.Ceil,
+		"floor":                  vf.Floor,
+		"base64":                 vf.Base64,
+		"base64decode":           vf.Base64Decode,
+		"createKey":              vf.CreateKey,
+		"uuidv4":                 vf.UUIDv4,
+		"to_upper":               vf.ToUpper,
+		"to_lower":               vf.ToLower,
+		"to_title":               vf.ToTitle,
+		"trim_space":             vf.TrimSpace,
+		"prefix":                 vf.Prefix,
+		"suffix":                 vf.Suffix,
+		"split":                  vf.Split,
+		"splitn":                 vf.SplitN,
+		"slice":                  vf.Slice,
+		"first":                  vf.First,
+		"index":                  vf.Index,
+		"last":                   vf.Last,
+		"join":                   vf.Join,
+		"has_suffix":             vf.HasSuffix,
+		"has_prefix":             vf.HasPrefix,
+		"contains":               vf.Contains,
+		"matches":                vf.Matches,
+		"parse_url":              vf.ParseURL,
+		"url_scheme":             vf.URLScheme,
+		"url_host":               vf.URLHost,
+		"url_port":               vf.URLPort,
+		"url_path":               vf.URLPath,
+		"url_rawquery":           vf.URLRawQuery,
+		"url_query":              vf.URLQuery,
+		"md5":                    vf.MD5,
+		"sha1":                   vf.SHA1,
+		"sha256":                 vf.SHA256,
+		"sha512":                 vf.SHA512,
+		"parse_semver":           vf.ParseSemver,
+		"semver_major":           vf.SemverMajor,
+		"semver_bump_major":      vf.SemverBumpMajor,
+		"semver_minor":           vf.SemverMinor,
+		"semver_bump_minor":      vf.SemverBumpMinor,
+		"semver_patch":           vf.SemverPatch,
+		"semver_bump_patch":      vf.SemverBumpPatch,
+		"generate_ordinal_names": vf.GenerateOrdinalNames,
+		"to_json":                vf.JSONEncode,
+		"to_yaml":                vf.YAMLEncode,
+		"parse_json":             vf.ParseJSON,
+		"parse_yaml":             vf.ParseYAML,
+		"json_path":              vf.JSONPath,
+		"yaml_path":              vf.YAMLPath,
+		"indent_tabs":            vf.IndentTabs,
+		"indent_spaces":          vf.IndentSpaces,
 	}
 }

@@ -18,7 +18,7 @@ func New() *Template {
 		vars: Vars{},
 		env:  ParseEnvVars(os.Environ()),
 	}
-	temp.funcs = ViewFuncs.FuncMap()
+	temp.funcs = Funcs.FuncMap()
 	return temp
 }
 
