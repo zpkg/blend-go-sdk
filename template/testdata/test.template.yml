@@ -27,15 +27,15 @@ spec:
       - name: {{ .Var "container-name" ( .Var "name" ) }}
         image: {{ .Var "container-image" ( $defaultRegistry | suffix ( .Var "name" ) ) }}
         {{- if .HasVar "env" }}
-        env: 
+        env:
         {{- range $index, $var := ( .Var "env" ) }}
           - name: {{ $var.name }}
             value: {{ $var.value }}
         {{- end }}
         {{- end -}}
-        {{- if .Var "container-port" $defaultContainerPort | to_string | ne "disabled" }}
+        {{- if .Var "container-port" $defaultContainerPort | as_string | ne "disabled" }}
         ports:
-        - containerPort: {{ .Var "container-port" $defaultContainerPort }} 
+        - containerPort: {{ .Var "container-port" $defaultContainerPort }}
         {{- end }}
 {{- if .Var "accessibility" $defaultAccessibility | ne "cluster" }}
 ---
@@ -43,14 +43,14 @@ apiVersion: v1
 kind: Service
 metadata:
   name: {{ .Var "name" }}
-  namespace: {{ .Var "namepsace" $defaultNamespace }} 
+  namespace: {{ .Var "namepsace" $defaultNamespace }}
   labels:
     service: {{ .Var "name" }}
     env: {{ .Env "SERVICE_ENV" $defaultServiceEnv }}
 spec:
   selector:
     service: {{ .Var "name" }}
-  type: NodePort 
+  type: NodePort
   ports:
   - name: {{ .Var "name" }}
     port: {{ .Var "container-port" $defaultContainerPort }}

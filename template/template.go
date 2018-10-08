@@ -18,7 +18,7 @@ func New() *Template {
 		vars: Vars{},
 		env:  ParseEnvVars(os.Environ()),
 	}
-	temp.funcs = Funcs.FuncMap()
+	temp.funcs = texttemplate.FuncMap(ViewFuncs{}.FuncMap())
 	return temp
 }
 
@@ -136,6 +136,16 @@ func (t *Template) Env(key string, defaults ...string) (string, error) {
 	}
 
 	return "", fmt.Errorf("template env variable `%s` is unset and no default is provided", key)
+}
+
+// ExpandEnv replaces $var or ${var} based on the configured environment variables.
+func (t *Template) ExpandEnv(s string) string {
+	return os.Expand(s, func(key string) string {
+		if value, ok := t.env[key]; ok {
+			return value
+		}
+		return ""
+	})
 }
 
 // HasEnv returns if an env var is set.

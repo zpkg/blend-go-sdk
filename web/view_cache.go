@@ -6,6 +6,7 @@ import (
 	"sync"
 
 	"github.com/blend/go-sdk/exception"
+	templatehelpers "github.com/blend/go-sdk/template"
 )
 
 const (
@@ -40,7 +41,7 @@ var (
 // NewViewCache returns a new view cache.
 func NewViewCache() *ViewCache {
 	return &ViewCache{
-		viewFuncMap:               ViewFuncs(),
+		viewFuncMap:               template.FuncMap(templatehelpers.ViewFuncs{}.FuncMap()),
 		viewCache:                 template.New(""), // an empty template tree.
 		bufferPool:                NewBufferPool(32),
 		cached:                    true,
@@ -55,7 +56,7 @@ func NewViewCache() *ViewCache {
 // NewViewCacheFromConfig returns a new view cache from a config.
 func NewViewCacheFromConfig(cfg *ViewCacheConfig) *ViewCache {
 	return &ViewCache{
-		viewFuncMap:               ViewFuncs(),
+		viewFuncMap:               template.FuncMap(templatehelpers.ViewFuncs{}.FuncMap()),
 		viewCache:                 template.New(""), // an empty template tree.
 		bufferPool:                NewBufferPool(cfg.GetBufferPoolSize()),
 		viewPaths:                 cfg.GetPaths(),

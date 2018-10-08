@@ -26,7 +26,7 @@ func TestViewResultRender(t *testing.T) {
 	assert.True(exception.Is((&ViewResult{}).Render(nil), ErrUnsetViewTemplate))
 
 	testView := template.New("testView")
-	testView.Parse("{{.ViewModel.Text}}")
+	testView.Parse("{{ .ViewModel.Text }}")
 
 	vr := &ViewResult{
 		StatusCode: http.StatusOK,

@@ -21,7 +21,6 @@ import (
 	"regexp"
 	"strconv"
 	"strings"
-	texttemplate "text/template"
 	"time"
 
 	jmespath "github.com/blend/go-jmespath"
@@ -33,9 +32,6 @@ import (
 	"github.com/blend/go-sdk/yaml"
 )
 
-// Funcs are common view func helpers.
-var Funcs ViewFuncs
-
 // ViewFuncs is the type stub for view functions.
 type ViewFuncs struct{}
 
@@ -45,17 +41,10 @@ func (vf ViewFuncs) FileExists(path string) bool {
 	return err == nil
 }
 
-// File reads the contents of a file path as a string.
-func (vf ViewFuncs) File(path string) (string, error) {
+// ReadFile reads the contents of a file path as a string.
+func (vf ViewFuncs) ReadFile(path string) (string, error) {
 	contents, err := ioutil.ReadFile(path)
 	return string(contents), err
-}
-
-// ExpandEnv replaces ${var} or $var in the string according
-// to the current environment variables. References to undefined
-// variables are replaced with the empty string.
-func (vf ViewFuncs) ExpandEnv(corpus string) string {
-	return os.ExpandEnv(corpus)
 }
 
 // ToString attempts to return a string representation of a value.
@@ -81,6 +70,16 @@ func (vf ViewFuncs) ToInt64(v interface{}) (int64, error) {
 // ToFloat64 parses a value as a float64.
 func (vf ViewFuncs) ToFloat64(v string) (float64, error) {
 	return strconv.ParseFloat(v, 64)
+}
+
+// Now returns the current time in the system timezone.
+func (vf ViewFuncs) Now() time.Time {
+	return time.Now()
+}
+
+// NowUTC returns the current time in the UTC timezone.
+func (vf ViewFuncs) NowUTC() time.Time {
+	return time.Now().UTC()
 }
 
 // Unix returns the unix format for a timestamp.
@@ -123,9 +122,9 @@ func (vf ViewFuncs) DateMonthDay(t time.Time) string {
 	return t.Format("1/2")
 }
 
-// TimeIn returns the time in a given location by string.
+// TimeInLocation returns the time in a given location by string.
 // If the location is invalid, this will error.
-func (vf ViewFuncs) TimeIn(loc string, t time.Time) (time.Time, error) {
+func (vf ViewFuncs) TimeInLocation(loc string, t time.Time) (time.Time, error) {
 	location, err := time.LoadLocation(loc)
 	if err != nil {
 		return time.Time{}, err
@@ -210,8 +209,8 @@ func (vf ViewFuncs) ParseBool(raw interface{}) (bool, error) {
 
 // Round returns the value rounded to a given set of places.
 // It uses midpoint rounding.
-func (vf ViewFuncs) Round(d float64, places int) float64 {
-	return util.Math.Round(d, places)
+func (vf ViewFuncs) Round(places, d float64) float64 {
+	return util.Math.Round(d, int(places))
 }
 
 // Ceil returns the value rounded up to the nearest integer.
@@ -247,6 +246,11 @@ func (vf ViewFuncs) Base64Decode(v string) (string, error) {
 		return "", err
 	}
 	return string(result), nil
+}
+
+// ParseUUID parses a uuid.
+func (vf ViewFuncs) ParseUUID(v string) (uuid.UUID, error) {
+	return uuid.Parse(v)
 }
 
 // UUIDv4 generates a uuid v4.
@@ -290,8 +294,8 @@ func (vf ViewFuncs) Split(sep, v string) []string {
 }
 
 // SplitN splits a string by a separator a given number of times.
-func (vf ViewFuncs) SplitN(sep, v string, n int) []string {
-	return strings.SplitN(v, sep, n)
+func (vf ViewFuncs) SplitN(sep string, n float64, v string) []string {
+	return strings.SplitN(v, sep, int(n))
 }
 
 // RandomLetters returns a string of random letters.
@@ -657,26 +661,27 @@ func (vf ViewFuncs) JMESPath(path string, v interface{}) (interface{}, error) {
 }
 
 // FuncMap returns the name => func mapping.
-func (vf ViewFuncs) FuncMap() texttemplate.FuncMap {
-	return texttemplate.FuncMap{
+func (vf ViewFuncs) FuncMap() map[string]interface{} {
+	return map[string]interface{}{
 		/* files */
 		"file_exists": vf.FileExists,
-		"file":        vf.File,
-		/* env */
-		"expand_env": vf.ExpandEnv,
+		"read_file":   vf.ReadFile,
 		/* conversion */
-		"to_string":  vf.ToString,
-		"to_bytes":   vf.ToBytes,
-		"to_int":     vf.ToInt,
-		"to_int64":   vf.ToInt64,
-		"to_float64": vf.ToFloat64,
+		"as_string": vf.ToString,
+		"as_bytes":  vf.ToBytes,
 		/* parsing */
-		"parse_bool":   vf.ParseBool,
-		"parse_time":   vf.ParseTime,
-		"parse_unix":   vf.ParseUnix,
-		"parse_semver": vf.ParseSemver,
-		"parse_url":    vf.ParseURL,
+		/* these are like to_ but can error */
+		"parse_bool":    vf.ParseBool,
+		"parse_int":     vf.ToInt,
+		"parse_int64":   vf.ToInt64,
+		"parse_float64": vf.ToFloat64,
+		"parse_time":    vf.ParseTime,
+		"parse_unix":    vf.ParseUnix,
+		"parse_semver":  vf.ParseSemver,
+		"parse_url":     vf.ParseURL,
 		/* time */
+		"now":            vf.Now,
+		"now_utc":        vf.NowUTC,
 		"date_short":     vf.DateShort,
 		"date_month_day": vf.DateMonthDay,
 		"unix":           vf.Unix,
@@ -684,7 +689,7 @@ func (vf ViewFuncs) FuncMap() texttemplate.FuncMap {
 		"time_short":     vf.TimeShort,
 		"time_medium":    vf.TimeMedium,
 		"time_kitchen":   vf.TimeKitchen,
-		"time_in":        vf.TimeIn,
+		"in_loc":         vf.TimeInLocation,
 		"since":          vf.Since,
 		"since_utc":      vf.SinceUTC,
 		"year":           vf.Year,
@@ -703,7 +708,10 @@ func (vf ViewFuncs) FuncMap() texttemplate.FuncMap {
 		/* base64 */
 		"base64":       vf.Base64,
 		"base64decode": vf.Base64Decode,
-		"uuidv4":       vf.UUIDv4,
+		/* uuid */
+		"parse_uuid": vf.ParseUUID,
+		"uuid":       vf.UUIDv4,
+		"uuidv4":     vf.UUIDv4,
 		/* strings */
 		"to_upper":                    vf.ToUpper,
 		"to_lower":                    vf.ToLower,
@@ -714,7 +722,7 @@ func (vf ViewFuncs) FuncMap() texttemplate.FuncMap {
 		"prefix":                      vf.Prefix,
 		"suffix":                      vf.Suffix,
 		"split":                       vf.Split,
-		"splitn":                      vf.SplitN,
+		"split_n":                     vf.SplitN,
 		"has_suffix":                  vf.HasSuffix,
 		"has_prefix":                  vf.HasPrefix,
 		"contains":                    vf.Contains,
@@ -726,18 +734,18 @@ func (vf ViewFuncs) FuncMap() texttemplate.FuncMap {
 		"last":  vf.Last,
 		"join":  vf.Join,
 		/* urls */
-		"url_scheme":        vf.URLScheme,
-		"with_url_scheme":   vf.WithURLScheme,
-		"url_host":          vf.URLHost,
-		"with_url_host":     vf.WithURLHost,
-		"url_port":          vf.URLPort,
-		"with_url_port":     vf.WithURLPort,
-		"url_path":          vf.URLPath,
-		"with_url_path":     vf.URLPath,
-		"url_rawquery":      vf.URLRawQuery,
-		"with_url_rawquery": vf.WithURLRawQuery,
-		"url_query":         vf.URLQuery,
-		"with_url_query":    vf.WithURLQuery,
+		"url_scheme":         vf.URLScheme,
+		"with_url_scheme":    vf.WithURLScheme,
+		"url_host":           vf.URLHost,
+		"with_url_host":      vf.WithURLHost,
+		"url_port":           vf.URLPort,
+		"with_url_port":      vf.WithURLPort,
+		"url_path":           vf.URLPath,
+		"with_url_path":      vf.URLPath,
+		"url_raw_query":      vf.URLRawQuery,
+		"with_url_raw_query": vf.WithURLRawQuery,
+		"url_query":          vf.URLQuery,
+		"with_url_query":     vf.WithURLQuery,
 		/* cryptography */
 		"md5":    vf.MD5,
 		"sha1":   vf.SHA1,
