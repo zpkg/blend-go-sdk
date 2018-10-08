@@ -125,7 +125,7 @@ tag:
 	git tag -f v$(VERSION)
 
 push-tags:
-	git push -f --tags
+	git push -f origin v$(VERSION)
 
 clean-dist:
 	@rm -rf dist
