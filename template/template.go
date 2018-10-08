@@ -1,22 +1,22 @@
 package template
 
 import (
-	"fmt"
 	"io"
 	"io/ioutil"
-	"os"
 
 	texttemplate "text/template"
-)
 
-// Vars is a loose type alias to map[string]interface{}
-type Vars = map[string]interface{}
+	"github.com/blend/go-sdk/env"
+	"github.com/blend/go-sdk/exception"
+)
 
 // New creates a new template.
 func New() *Template {
 	temp := &Template{
-		vars: Vars{},
-		env:  ParseEnvVars(os.Environ()),
+		Viewmodel: Viewmodel{
+			vars: Vars{},
+			env:  env.Env(),
+		},
 	}
 	temp.funcs = texttemplate.FuncMap(ViewFuncs{}.FuncMap())
 	return temp
@@ -24,14 +24,9 @@ func New() *Template {
 
 // NewFromFile creates a new template from a file.
 func NewFromFile(filepath string) (*Template, error) {
-	file, err := os.Open(filepath)
+	contents, err := ioutil.ReadFile(filepath)
 	if err != nil {
-		return nil, err
-	}
-
-	contents, err := ioutil.ReadAll(file)
-	if err != nil {
-		return nil, err
+		return nil, exception.New(err)
 	}
 
 	return New().WithName(filepath).WithBody(string(contents)), nil
@@ -39,10 +34,9 @@ func NewFromFile(filepath string) (*Template, error) {
 
 // Template is a wrapper for html.Template.
 type Template struct {
+	Viewmodel
 	name       string
 	body       string
-	vars       Vars
-	env        map[string]string
 	includes   []string
 	funcs      texttemplate.FuncMap
 	leftDelim  string
@@ -93,65 +87,27 @@ func (t *Template) WithVar(key string, value interface{}) *Template {
 	return t
 }
 
-// WithVars reads a map of variables into the template.
-func (t *Template) WithVars(vars Vars) *Template {
-	for key, value := range vars {
-		t.SetVar(key, value)
-	}
-	return t
-}
-
 // SetVar sets a var in the template.
 func (t *Template) SetVar(key string, value interface{}) {
 	t.vars[key] = value
 }
 
-// HasVar returns if a variable is set.
-func (t *Template) HasVar(key string) bool {
-	_, hasKey := t.vars[key]
-	return hasKey
+// WithVars reads a map of variables into the template.
+func (t *Template) WithVars(vars Vars) *Template {
+	t.vars = MergeVars(t.vars, vars)
+	return t
 }
 
-// Var returns the value of a variable, or panics if the variable is not set.
-func (t *Template) Var(key string, defaults ...interface{}) (interface{}, error) {
-	if value, hasVar := t.vars[key]; hasVar {
-		return value, nil
+// SetVarsFromFile reads vars from a file and merges them
+// with the current variables set.
+func (t *Template) SetVarsFromFile(path string) error {
+	fileVars, err := NewVarsFromPath(path)
+	if err != nil {
+		return err
 	}
 
-	if len(defaults) > 0 {
-		return defaults[0], nil
-	}
-
-	return nil, fmt.Errorf("template variable `%s` is unset and no default is provided", key)
-}
-
-// Env returns an environment variable.
-func (t *Template) Env(key string, defaults ...string) (string, error) {
-	if value, hasVar := t.env[key]; hasVar {
-		return value, nil
-	}
-
-	if len(defaults) > 0 {
-		return defaults[0], nil
-	}
-
-	return "", fmt.Errorf("template env variable `%s` is unset and no default is provided", key)
-}
-
-// ExpandEnv replaces $var or ${var} based on the configured environment variables.
-func (t *Template) ExpandEnv(s string) string {
-	return os.Expand(s, func(key string) string {
-		if value, ok := t.env[key]; ok {
-			return value
-		}
-		return ""
-	})
-}
-
-// HasEnv returns if an env var is set.
-func (t *Template) HasEnv(key string) bool {
-	_, hasKey := t.env[key]
-	return hasKey
+	t.vars = MergeVars(t.vars, fileVars)
+	return nil
 }
 
 // Process processes the template.
@@ -170,7 +126,7 @@ func (t *Template) Process(dst io.Writer) error {
 	if err != nil {
 		return err
 	}
-	return final.Execute(dst, t)
+	return final.Execute(dst, t.Viewmodel)
 }
 
 // ViewFuncs returns the view funcs.
