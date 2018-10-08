@@ -531,6 +531,38 @@ func TestTemplateViewFuncHasSuffix(t *testing.T) {
 	assert.Equal("yep", buffer.String())
 }
 
+func TestViewfuncConcat(t *testing.T) {
+	assert := assert.New(t)
+
+	test := `{{ concat "foo" "." "bar" "." "baz" }}`
+	temp := New().WithBody(test)
+	buffer := bytes.NewBuffer(nil)
+	err := temp.Process(buffer)
+	assert.Nil(err)
+	assert.Equal("foo.bar.baz", buffer.String())
+}
+
+func TestViewfuncPrefix(t *testing.T) {
+	assert := assert.New(t)
+
+	test := `{{ "foo" | prefix "bar." }}`
+	temp := New().WithBody(test)
+	buffer := bytes.NewBuffer(nil)
+	err := temp.Process(buffer)
+	assert.Nil(err)
+	assert.Equal("bar.foo", buffer.String())
+}
+
+func TestViewfuncSuffix(t *testing.T) {
+	assert := assert.New(t)
+
+	test := `{{ "foo" | suffix ".bar" }}`
+	temp := New().WithBody(test)
+	buffer := bytes.NewBuffer(nil)
+	err := temp.Process(buffer)
+	assert.Nil(err)
+	assert.Equal("foo.bar", buffer.String())
+}
 func TestTemplateViewFuncContains(t *testing.T) {
 	assert := assert.New(t)
 

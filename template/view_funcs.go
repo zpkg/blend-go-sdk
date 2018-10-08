@@ -283,6 +283,15 @@ func (vf ViewFuncs) Prefix(pref, v string) string {
 	return pref + v
 }
 
+// Concat concatenates a list of strings.
+func (vf ViewFuncs) Concat(strs ...string) string {
+	var output string
+	for index := 0; index < len(strs); index++ {
+		output = output + strs[index]
+	}
+	return output
+}
+
 // Suffix appends a given prefix to a string.
 func (vf ViewFuncs) Suffix(suf, v string) string {
 	return v + suf
@@ -579,7 +588,7 @@ func (vf ViewFuncs) IndentSpaces(spaceCount int, v interface{}) string {
 // The formatter should be in Sprintf format (i.e. using a '%d' token for where the index should go).
 /*
 Example:
-    {{ generate_ordinal_names "worker-%d" 3 }} // [ worker-0, worker-1, worker-2 ]
+    {{ generate_ordinal_names "worker-%d" 3 }} // [worker-0 worker-1 worker-2]
 */
 func (vf ViewFuncs) GenerateOrdinalNames(format string, replicas int) []string {
 	output := make([]string, replicas)
@@ -719,6 +728,7 @@ func (vf ViewFuncs) FuncMap() map[string]interface{} {
 		"random_letters":              vf.RandomLetters,
 		"random_letters_with_numbers": vf.RandomLettersWithNumbers,
 		"trim_space":                  vf.TrimSpace,
+		"concat":                      vf.Concat,
 		"prefix":                      vf.Prefix,
 		"suffix":                      vf.Suffix,
 		"split":                       vf.Split,
