@@ -144,11 +144,12 @@ func TestTemplateExpandEnv(t *testing.T) {
 	assert := assert.New(t)
 
 	varName := uuid.V4().String()
-	env.Env().Set(varName, "bar")
-	defer env.Restore()
 
-	templateBody := fmt.Sprintf(`{{ .ExpandEnv "$%s.foo" }}`, varName)
-	temp := New().WithBody(templateBody).WithEnvVars(env.Env())
+	envVars := env.Env()
+	envVars.Set(varName, "bar")
+
+	templateBody := fmt.Sprintf(`{{ .ExpandEnv "${%s}.foo" }}`, varName)
+	temp := New().WithBody(templateBody).WithEnvVars(envVars)
 
 	buffer := bytes.NewBuffer(nil)
 	err := temp.Process(buffer)
