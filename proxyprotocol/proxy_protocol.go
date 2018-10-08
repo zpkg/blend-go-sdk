@@ -1,4 +1,4 @@
-package net
+package proxyprotocol
 
 // Taken from https://github.com/armon/go-proxyproto
 // The MIT License (MIT)
