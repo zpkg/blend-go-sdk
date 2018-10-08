@@ -122,7 +122,7 @@ clean-cache:
 	@go clean ./...
 
 tag:
-	git tag -f $(VERSION)
+	git tag -f v$(VERSION)
 
 push-tags:
 	git push -f --tags
