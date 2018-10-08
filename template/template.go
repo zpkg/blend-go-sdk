@@ -98,6 +98,12 @@ func (t *Template) WithVars(vars Vars) *Template {
 	return t
 }
 
+// WithEnvVars sets the environment variables.
+func (t *Template) WithEnvVars(envVars env.Vars) *Template {
+	t.Viewmodel.env = env.MergeVars(t.Viewmodel.env, envVars)
+	return t
+}
+
 // SetVarsFromFile reads vars from a file and merges them
 // with the current variables set.
 func (t *Template) SetVarsFromFile(path string) error {

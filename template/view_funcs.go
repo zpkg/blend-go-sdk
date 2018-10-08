@@ -47,6 +47,16 @@ func (vf ViewFuncs) ReadFile(path string) (string, error) {
 	return string(contents), err
 }
 
+// Process processes the given contents using a given template viewmodel
+func (vf ViewFuncs) Process(vm Viewmodel, contents string) (string, error) {
+	tmp := New().WithBody(contents).WithVars(vm.vars).WithEnvVars(vm.env)
+	buffer := new(bytes.Buffer)
+	if err := tmp.Process(buffer); err != nil {
+		return "", err
+	}
+	return buffer.String(), nil
+}
+
 // ToString attempts to return a string representation of a value.
 func (vf ViewFuncs) ToString(v interface{}) string {
 	return fmt.Sprintf("%v", v)
@@ -675,6 +685,7 @@ func (vf ViewFuncs) FuncMap() map[string]interface{} {
 		/* files */
 		"file_exists": vf.FileExists,
 		"read_file":   vf.ReadFile,
+		"process":     vf.Process,
 		/* conversion */
 		"as_string": vf.ToString,
 		"as_bytes":  vf.ToBytes,

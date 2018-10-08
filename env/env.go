@@ -108,6 +108,17 @@ func NewVarsFromEnvironment() Vars {
 	return vars
 }
 
+// MergeVars merges a given set of environment variables.
+func MergeVars(sets ...Vars) Vars {
+	output := Vars{}
+	for _, set := range sets {
+		for key, value := range set {
+			output[key] = value
+		}
+	}
+	return output
+}
+
 // Vars is a set of environment variables.
 type Vars map[string]string
 

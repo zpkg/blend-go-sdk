@@ -42,7 +42,7 @@ func TestTemplateFromFile(t *testing.T) {
 	assert.True(strings.Contains(result, "port: 80"))
 }
 
-func TestTemplateInclude(t *testing.T) {
+func TestTemplateTemplate(t *testing.T) {
 	assert := assert.New(t)
 
 	main := `{{ template "test" . }}`
@@ -148,7 +148,7 @@ func TestTemplateExpandEnv(t *testing.T) {
 	defer env.Restore()
 
 	templateBody := fmt.Sprintf(`{{ .ExpandEnv "$%s.foo" }}`, varName)
-	temp := New().WithBody(templateBody)
+	temp := New().WithBody(templateBody).WithEnvVars(env.Env())
 
 	buffer := bytes.NewBuffer(nil)
 	err := temp.Process(buffer)
@@ -1009,4 +1009,18 @@ func TestViewfuncURLQuery(t *testing.T) {
 	buffer := new(bytes.Buffer)
 	assert.Nil(tmp.Process(buffer))
 	assert.Equal("down", buffer.String())
+}
+
+func TestTemplateProcess(t *testing.T) {
+	assert := assert.New(t)
+
+	tmp := New().WithBody(`{{ read_file "testdata/process.yml" | process . }}`).
+		WithVar("db.database", "postgres").
+		WithVar("db.username", "root").
+		WithVar("db.password", "password")
+
+	buffer := new(bytes.Buffer)
+	err := tmp.Process(buffer)
+	assert.Nil(err, fmt.Sprintf("%+v", err))
+	assert.NotEmpty(buffer.String())
 }
