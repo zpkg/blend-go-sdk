@@ -124,7 +124,7 @@ clean-cache:
 tag:
 	git tag -f v$(VERSION)
 
-push-tags:
+push-tag:
 	git push -f origin v$(VERSION)
 
 clean-dist:
