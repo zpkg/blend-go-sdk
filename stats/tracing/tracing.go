@@ -26,23 +26,28 @@ const (
 	TagKeyErrorMessage = "error.message"
 	// TagKeyErrorStack is the error stack tag key.
 	TagKeyErrorStack = "error.stack"
-
 	// TagKeyHTTPMethod is the verb on the request.
 	TagKeyHTTPMethod = "http.method"
 	// TagKeyHTTPCode is the result status code.
 	TagKeyHTTPCode = "http.status_code"
 	// TagKeyHTTPURL is the url of the request (typically the raw path).
 	TagKeyHTTPURL = "http.url"
-
 	// TagKeyDBApplication is the application that uses a database.
 	TagKeyDBApplication = "db.application"
 	// TagKeyDBName is the database name.
 	TagKeyDBName = "db.name"
 	// TagKeyDBUser is the user on the database connection.
 	TagKeyDBUser = "db.user"
-
 	// TagKeyJobName is the job name.
 	TagKeyJobName = "job.name"
+	// TagKeyGRPCMethod is the grpc method.
+	TagKeyGRPCMethod = "grpc.method"
+	// TagKeyGRPCCode is the grpc result code.
+	TagKeyGRPCCode = "grpc.code"
+	// TagKeyGRPCAuthority is the grpc authority.
+	TagKeyGRPCAuthority = "grpc.authority"
+	// TagKeyGRPCUserAgent is the grpc user-agent.
+	TagKeyGRPCUserAgent = "grpc.user_agent"
 )
 
 // Operations are actions represented by spans.
@@ -60,6 +65,8 @@ const (
 	OperationSQLQuery = "sql.query"
 	// OperationJob is a job operation.
 	OperationJob = "job"
+	// Operatation rpc is an rpc operation.
+	OperationRPC = "rpc"
 )
 
 // Span types have similar behaviour to "app types" and help categorize
@@ -89,6 +96,8 @@ const (
 	SpanTypeElasticSearch = "elasticsearch"
 	// SpanTypeJob is a span type used by cron jobs.
 	SpanTypeJob = "job"
+	// SpanTypeGRPC is a span type used by grpc services.
+	SpanTypeGRPC = "grpc"
 )
 
 // Priority is a hint given to the backend so that it knows which traces to reject or kept.
