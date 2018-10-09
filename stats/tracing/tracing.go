@@ -48,6 +48,8 @@ const (
 	TagKeyGRPCAuthority = "grpc.authority"
 	// TagKeyGRPCUserAgent is the grpc user-agent.
 	TagKeyGRPCUserAgent = "grpc.user_agent"
+	// TagKeyGRPCContentType is the grpc content type.
+	TagKeyGRPCContentType = "grpc.content_type"
 )
 
 // Operations are actions represented by spans.
