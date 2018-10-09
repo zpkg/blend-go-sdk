@@ -6,11 +6,11 @@ import (
 	"time"
 
 	"fmt"
-	"os"
 
 	"strings"
 
 	assert "github.com/blend/go-sdk/assert"
+	"github.com/blend/go-sdk/env"
 	"github.com/blend/go-sdk/uuid"
 )
 
@@ -42,7 +42,7 @@ func TestTemplateFromFile(t *testing.T) {
 	assert.True(strings.Contains(result, "port: 80"))
 }
 
-func TestTemplateInclude(t *testing.T) {
+func TestTemplateTemplate(t *testing.T) {
 	assert := assert.New(t)
 
 	main := `{{ template "test" . }}`
@@ -85,15 +85,15 @@ func TestTemplateEnv(t *testing.T) {
 	assert := assert.New(t)
 
 	varName := uuid.V4().String()
-	os.Setenv(varName, "bar")
-	defer os.Unsetenv(varName)
+	env.Env().Set(varName, "bar")
+	defer env.Restore()
 
 	test := fmt.Sprintf(`{{ .Env "%s" }}`, varName)
 	temp := New().WithBody(test)
 
 	buffer := bytes.NewBuffer(nil)
 	err := temp.Process(buffer)
-	assert.Nil(err)
+	assert.Nil(err, fmt.Sprintf("%+v", err))
 	assert.Equal("bar", buffer.String())
 }
 
@@ -101,10 +101,10 @@ func TestTemplateHasEnv(t *testing.T) {
 	assert := assert.New(t)
 
 	varName := uuid.V4().String()
-	os.Setenv(varName, "bar")
-	defer os.Unsetenv(varName)
+	env.Env().Set(varName, "bar")
+	defer env.Restore()
 
-	test := fmt.Sprintf(`{{ if .HasEnv "%s" }}yep{{end}}`, varName)
+	test := fmt.Sprintf(`{{ if .HasEnv "%s" }}yep{{else}}nope{{end}}`, varName)
 	temp := New().WithBody(test)
 
 	buffer := bytes.NewBuffer(nil)
@@ -138,6 +138,23 @@ func TestTemplateEnvMissing(t *testing.T) {
 	buffer := bytes.NewBuffer(nil)
 	err := temp.Process(buffer)
 	assert.NotNil(err)
+}
+
+func TestTemplateExpandEnv(t *testing.T) {
+	assert := assert.New(t)
+
+	varName := uuid.V4().String()
+
+	envVars := env.Env()
+	envVars.Set(varName, "bar")
+
+	templateBody := fmt.Sprintf(`{{ .ExpandEnv "${%s}.foo" }}`, varName)
+	temp := New().WithBody(templateBody).WithEnvVars(envVars)
+
+	buffer := bytes.NewBuffer(nil)
+	err := temp.Process(buffer)
+	assert.Nil(err)
+	assert.Equal("bar.foo", buffer.String())
 }
 
 func TestTemplateReadFile(t *testing.T) {
@@ -993,4 +1010,18 @@ func TestViewfuncURLQuery(t *testing.T) {
 	buffer := new(bytes.Buffer)
 	assert.Nil(tmp.Process(buffer))
 	assert.Equal("down", buffer.String())
+}
+
+func TestTemplateProcess(t *testing.T) {
+	assert := assert.New(t)
+
+	tmp := New().WithBody(`{{ read_file "testdata/process.yml" | process . }}`).
+		WithVar("db.database", "postgres").
+		WithVar("db.username", "root").
+		WithVar("db.password", "password")
+
+	buffer := new(bytes.Buffer)
+	err := tmp.Process(buffer)
+	assert.Nil(err, fmt.Sprintf("%+v", err))
+	assert.NotEmpty(buffer.String())
 }

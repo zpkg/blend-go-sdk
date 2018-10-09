@@ -2,7 +2,6 @@ package main
 
 import (
 	"bytes"
-	"encoding/json"
 	"flag"
 	"fmt"
 	"io/ioutil"
@@ -13,7 +12,6 @@ import (
 	"strings"
 
 	"github.com/blend/go-sdk/template"
-	"github.com/blend/go-sdk/yaml"
 )
 
 // linker metadata block
@@ -93,26 +91,6 @@ func (n *Numbers) Values() (values map[string]interface{}, err error) {
 		}
 	}
 	return
-}
-
-func loadVarsFile(path string) (map[string]interface{}, error) {
-	contents, err := ioutil.ReadFile(path)
-	if err != nil {
-		return nil, err
-	}
-	output := map[string]interface{}{}
-	if strings.HasSuffix(path, ".json") {
-		err = json.Unmarshal(contents, &output)
-		if err != nil {
-			return nil, err
-		}
-	} else {
-		err = yaml.Unmarshal(contents, &output)
-		if err != nil {
-			return nil, err
-		}
-	}
-	return output, nil
 }
 
 func main() {
@@ -202,7 +180,7 @@ func main() {
 	}
 
 	if len(varsFile) > 0 {
-		vars, err := loadVarsFile(varsFile)
+		vars, err := template.NewVarsFromPath(varsFile)
 		if err != nil {
 			log.Fatal(err)
 		}
