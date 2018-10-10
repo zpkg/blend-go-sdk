@@ -5,4 +5,6 @@ const (
 	DefaultPort = "8125"
 	// DefaultTracePort is the default trace port.
 	DefaultTracePort = "8126"
+	// DefaultTracingEnabled is the default value for tracing enabled.
+	DefaultTracingEnabled = true
 )
