@@ -8,6 +8,8 @@ const (
 	MetricNameHTTPRequestElapsed string = MetricNameHTTPRequest + ".elapsed"
 	MetricNameDBQuery            string = string(logger.Query)
 	MetricNameDBQueryElapsed     string = MetricNameDBQuery + ".elapsed"
+	MetricNameRPC                string = string(logger.RPC)
+	MetricNameRPCElapsed         string = MetricNameRPC + ".elapsed"
 
 	MetricNameError string = string(logger.Error)
 
@@ -27,7 +29,13 @@ const (
 	TagError    string = "error"
 	TagClass    string = "class"
 
-	RouteNotFound string = "not_found"
+	TagRPCMethod    string = "rpc_method"
+	TagRPCPeer      string = "rpc_peer"
+	TagRPCEngine    string = "rpc_peer"
+	TagRPCAuthority string = "rpc_authority"
+
+	RPCMethodUnknown string = "unknown"
+	RouteNotFound    string = "not_found"
 
 	ListenerNameStats string = "stats"
 )
