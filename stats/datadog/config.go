@@ -39,7 +39,7 @@ type Config struct {
 	// TracePort is the port of the datadog apm collector.
 	TracePort string `json:"tracePort,omitempty" yaml:"tracePort,omitempty" env:"DATADOG_TRACE_PORT"`
 	// TracingEnabled returns if we should use tracing or not.
-	TracingEnabled *bool `json:"useTracing" yaml:"useTracing" env:"DATADOG_APM_ENABLED"`
+	TracingEnabled *bool `json:"tracingEnabled" yaml:"tracingEnabled" env:"DATADOG_APM_ENABLED"`
 	// Buffered indicates if we should buffer statsd messages or not.
 	Buffered *bool `json:"buffered,omitempty" yaml:"buffered,omitempty" env:"DATADOG_BUFFERED"`
 	// BufferDepth is the depth of the buffer for datadog events.
