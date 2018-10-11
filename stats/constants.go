@@ -10,11 +10,14 @@ const (
 	MetricNameDBQueryElapsed     string = MetricNameDBQuery + ".elapsed"
 	MetricNameRPC                string = string(logger.RPC)
 	MetricNameRPCElapsed         string = MetricNameRPC + ".elapsed"
+	MetricNameError              string = string(logger.Error)
+)
 
-	MetricNameError string = string(logger.Error)
-
+// Tag names are names for tags, either on metrics or traces.
+const (
 	TagService   string = "service"
 	TagEnv       string = "env"
+	TagHostname  string = "hostname"
 	TagContainer string = "container"
 
 	TagRoute  string = "route"
@@ -33,10 +36,12 @@ const (
 	TagRPCPeer      string = "rpc_peer"
 	TagRPCEngine    string = "rpc_peer"
 	TagRPCAuthority string = "rpc_authority"
+)
 
-	RPCMethodUnknown string = "unknown"
-	RouteNotFound    string = "not_found"
-
+// Specialized / default values
+const (
+	RPCMethodUnknown  string = "unknown"
+	RouteNotFound     string = "not_found"
 	ListenerNameStats string = "stats"
 )
 
