@@ -37,6 +37,7 @@ func NewAuditEventListener(listener func(me *AuditEvent)) Listener {
 type AuditEvent struct {
 	*EventMeta
 
+	context       string
 	principal     string
 	verb          string
 	noun          string
@@ -75,6 +76,17 @@ func (e *AuditEvent) WithFlag(f Flag) *AuditEvent {
 func (e *AuditEvent) WithTimestamp(ts time.Time) *AuditEvent {
 	e.ts = ts
 	return e
+}
+
+// WithContext sets the context.
+func (e *AuditEvent) WithContext(context string) *AuditEvent {
+	e.context = context
+	return e
+}
+
+// Context returns the audit context.
+func (e *AuditEvent) Context() string {
+	return e.context
 }
 
 // WithPrincipal sets the principal.
@@ -167,6 +179,11 @@ func (e AuditEvent) Extra() map[string]string {
 
 // WriteText implements TextWritable.
 func (e AuditEvent) WriteText(formatter TextFormatter, buf *bytes.Buffer) {
+	if len(e.context) > 0 {
+		buf.WriteString(formatter.Colorize("Context:", ColorGray))
+		buf.WriteString(e.context)
+		buf.WriteRune(RuneSpace)
+	}
 	if len(e.principal) > 0 {
 		buf.WriteString(formatter.Colorize("Principal:", ColorGray))
 		buf.WriteString(e.principal)
@@ -214,6 +231,7 @@ func (e AuditEvent) WriteText(formatter TextFormatter, buf *bytes.Buffer) {
 // WriteJSON implements JSONWritable.
 func (e AuditEvent) WriteJSON() JSONObj {
 	return JSONObj{
+		"context":    e.context,
 		"principal":  e.principal,
 		"verb":       e.verb,
 		"noun":       e.noun,
