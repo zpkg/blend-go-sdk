@@ -20,10 +20,10 @@ const (
 	FlagStarted logger.Flag = "cron.started"
 	// FlagFailed is an event flag.
 	FlagFailed logger.Flag = "cron.failed"
-	// FlagComplete is an event flag.
-	FlagComplete logger.Flag = "cron.complete"
 	// FlagCancelled is an event flag.
 	FlagCancelled logger.Flag = "cron.cancelled"
+	// FlagComplete is an event flag.
+	FlagComplete logger.Flag = "cron.complete"
 )
 
 const (
