@@ -20,7 +20,7 @@ export DB_SSLMODE
 
 all: format vet profanity test
 
-ci: vet profanity cover 
+ci: vet profanity cover
 
 new-install: deps install
 
@@ -28,7 +28,10 @@ deps:
 	@go get -u ./...
 	@go get -d github.com/goreleaser/goreleaser
 
-install: install-coverage install-profanity install-proxy install-recover install-template
+install: install-ask install-coverage install-profanity install-proxy install-recover install-template
+
+install-ask:
+	@go install github.com/blend/go-sdk/cmd/ask
 
 install-coverage:
 	@go install github.com/blend/go-sdk/cmd/coverage
@@ -62,7 +65,7 @@ lint:
 
 build:
 	@echo "$(VERSION)/$(GIT_REF) >> linting code"
-	@docker build . -t go-sdk:$(GIT_REF) 
+	@docker build . -t go-sdk:$(GIT_REF)
 	@docker run go-sdk:$(GIT_REF)
 
 .PHONY: profanity
@@ -89,7 +92,7 @@ cover:
 cover-enforce:
 	@echo "$(VERSION)/$(GIT_REF) >> coverage"
 	@go run cmd/coverage/main.go -enforce
-	
+
 cover-update:
 	@echo "$(VERSION)/$(GIT_REF) >> coverage"
 	@go run cmd/coverage/main.go -update
@@ -130,7 +133,10 @@ push-tag:
 clean-dist:
 	@rm -rf dist
 
-release: clean-dist release-coverage release-profanity release-proxy release-recover release-semver release-template
+release: clean-dist release-ask release-coverage release-profanity release-proxy release-recover release-semver release-template
+
+release-ask:
+	@goreleaser release -f .goreleaser/ask.yml
 
 release-coverage:
 	@goreleaser release -f .goreleaser/coverage.yml
