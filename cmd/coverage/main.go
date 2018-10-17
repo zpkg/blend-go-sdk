@@ -5,6 +5,7 @@ import (
 	"bytes"
 	"flag"
 	"fmt"
+	"go/build"
 	"io/ioutil"
 	"os"
 	"os/exec"
@@ -37,6 +38,26 @@ var enforce = flag.Bool("enforce", false, "if we should enforce coverage minimum
 var include = flag.String("include", "", "the include file filter in glob form, can be a csv.")
 var exclude = flag.String("exclude", "", "the exclude file filter in glob form, can be a csv.")
 var timeout = flag.String("timeout", "", "the timeout to pass to the package tests.")
+var v = flag.Bool("v", false, "show verbose output")
+
+func verbose() bool {
+	if v != nil && *v {
+		return true
+	}
+	return false
+}
+
+func vf(format string, args ...interface{}) {
+	if verbose() {
+		fmt.Fprintf(os.Stdout, "coverage :: "+format+"\n", args...)
+	}
+}
+
+func verrf(format string, args ...interface{}) {
+	if verbose() {
+		fmt.Fprintf(os.Stderr, "coverage :: err :: "+format+"\n", args...)
+	}
+}
 
 func main() {
 	flag.Parse()
@@ -51,38 +72,59 @@ func main() {
 	}
 	fmt.Fprintln(fullCoverageData, "mode: set")
 
+	// fileTotals is a map from the "package" file path to it's total line count
+	fileTotals := map[string]int{}
+	var fileName string
 	maybeFatal(filepath.Walk("./", func(currentPath string, info os.FileInfo, err error) error {
+
 		if os.IsNotExist(err) {
 			return nil
 		}
 		if err != nil {
 			return err
 		}
+		fileName = info.Name()
+
+		if fileName == ".git" {
+			vf("`%s` skipping dir; .git", currentPath)
+			return filepath.SkipDir
+		}
+		if strings.HasPrefix(fileName, "_") {
+			vf("`%s` skipping dir; '_' prefix", currentPath)
+			return filepath.SkipDir
+		}
+		if fileName == "vendor" {
+			vf("`%s` skipping dir; vendor", currentPath)
+			return filepath.SkipDir
+		}
 
 		if !info.IsDir() {
+			if strings.HasSuffix(fileName, ".go") {
+				vf("`%s` counting file lines", currentPath)
+				fileTotal, err := countFileLines(currentPath)
+				if err != nil {
+					return err
+				}
+				fileTotals[packageFilename(pwd, currentPath)] = fileTotal
+			}
 			return nil
 		}
-		if info.Name() == ".git" {
-			return filepath.SkipDir
-		}
-		if strings.HasPrefix(info.Name(), "_") {
-			return filepath.SkipDir
-		}
-		if info.Name() == "vendor" {
-			return filepath.SkipDir
-		}
+
 		if !dirHasGlob(currentPath, "*.go") {
+			vf("`%s` skipping dir; no *.go files", currentPath)
 			return nil
 		}
 
 		if len(*include) > 0 {
 			if matches := globAnyMatch(*include, currentPath); !matches {
+				vf("`%s` skipping dir; include no match: %s", currentPath, *include)
 				return nil
 			}
 		}
 
 		if len(*exclude) > 0 {
 			if matches := globAnyMatch(*exclude, currentPath); matches {
+				vf("`%s` skipping dir; exclude match: %s", currentPath, *exclude)
 				return nil
 			}
 		}
@@ -96,6 +138,7 @@ func main() {
 		var output []byte
 		output, err = execCoverage(currentPath)
 		if err != nil {
+			verrf("error running coverage")
 			fmt.Fprintln(os.Stderr, string(output))
 			return err
 		}
@@ -104,6 +147,7 @@ func main() {
 		fmt.Fprintf(os.Stdout, "%s: %v%%\n", currentPath, colorCoverage(parseCoverage(coverage)))
 
 		if enforce != nil && *enforce {
+			vf("enforcing coverage minimums")
 			err = enforceCoverage(currentPath, coverage)
 			if err != nil {
 				return err
@@ -131,22 +175,36 @@ func main() {
 		return nil
 	}))
 
+	// close the coverage data handle
 	maybeFatal(fullCoverageData.Close())
 
-	covered, total, err := parseFullCoverProfile(pwd, *temporaryOutputPath)
+	// complete summary steps
+	covered, total, err := parseFullCoverProfile(pwd, *temporaryOutputPath, fileTotals)
 	maybeFatal(err)
 	finalCoverage := (float64(covered) / float64(total)) * 100
 	maybeFatal(writeCoverage(pwd, formatCoverage(finalCoverage)))
-	fmt.Fprintf(os.Stdout, "final coverage: %s\n", colorCoverage(finalCoverage))
+
+	fmt.Fprintf(os.Stdout, "final coverage: %s%%\n", colorCoverage(finalCoverage))
 	fmt.Fprintf(os.Stdout, "compiling coverage report: %s\n", *reportOutputPath)
+
+	// compile coverage.html
 	maybeFatal(execCoverageReportCompile())
 	maybeFatal(removeIfExists(*temporaryOutputPath))
+
 	fmt.Fprintln(os.Stdout, "coverage complete")
 }
 
 // --------------------------------------------------------------------------------
 // utilities
 // --------------------------------------------------------------------------------
+
+func gopath() string {
+	gopath := os.Getenv("GOPATH")
+	if gopath != "" {
+		return gopath
+	}
+	return build.Default.GOPATH
+}
 
 // globIncludeMatch tests if a file matches a (potentially) csv of glob filters.
 func globAnyMatch(filter, file string) bool {
@@ -357,27 +415,38 @@ func joinCoverPath(pwd, fileName string) string {
 	return filepath.Join(maybePrefix(strings.Join(pwdPath, "/"), "/"), fileName)
 }
 
+// pacakgeFilename returns the github.com/foo/bar/baz.go form of the filename.
+func packageFilename(pwd, relativePath string) string {
+	fullPath := filepath.Join(pwd, relativePath)
+	return strings.TrimPrefix(strings.TrimPrefix(fullPath, filepath.Join(gopath(), "src")), "/")
+}
+
 // parseFullCoverProfile parses the final / merged cover output.
-func parseFullCoverProfile(pwd string, path string) (covered, total int, err error) {
+func parseFullCoverProfile(pwd string, path string, fileTotals map[string]int) (covered, total int, err error) {
+	vf("parsing coverage profile: %s", path)
 	files, err := cover.ParseProfiles(path)
 	if err != nil {
 		return
 	}
 
-	var fileTotal int
-	for _, file := range files {
-		fileTotal, err = countFileLines(joinCoverPath(pwd, file.FileName))
-		if err != nil {
-			return
-		}
-		for _, block := range file.Blocks {
-			covered += (block.EndLine - block.StartLine) + 1
-		}
+	var fileCovered int
+	for _, fileTotal := range fileTotals {
 		total += fileTotal
+	}
+
+	for _, file := range files {
+		fileTotal := fileTotals[file.FileName]
+		fileCovered = 0
+		for _, block := range file.Blocks {
+			fileCovered += (block.EndLine - block.StartLine) + 1
+		}
+		vf("processing coverage profile: %s result: %s (%d/%d lines)", path, file.FileName, fileCovered, fileTotal)
+		covered += fileCovered
 	}
 
 	return
 }
+
 func lessEmpty(values []string) (output []string) {
 	for _, value := range values {
 		if len(value) > 0 {
