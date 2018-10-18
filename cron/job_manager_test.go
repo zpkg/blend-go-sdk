@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 	"sync"
+	"sync/atomic"
 	"testing"
 	"time"
 
@@ -172,30 +173,31 @@ func TestSerialTask(t *testing.T) {
 	assert := assert.New(t)
 
 	// test that serial execution actually blocks
-	runCount := new(AtomicCounter)
+	var runCount int32
 	jm := New()
 
 	task := NewSerialTaskWithName("test", func(ctx context.Context) error {
-		runCount.Increment()
+		atomic.AddInt32(&runCount, 1)
 		time.Sleep(10 * time.Millisecond)
 		return nil
 	})
 	jm.RunTask(task)
 	jm.RunTask(task)
 	time.Sleep(100 * time.Millisecond)
-	assert.Equal(1, runCount.Get())
+	assert.Equal(1, runCount)
 
 	// ensure parallel execution is still working as intended
 	task = NewTaskWithName("test1", func(ctx context.Context) error {
-		runCount.Increment()
+		atomic.AddInt32(&runCount, 1)
 		time.Sleep(10 * time.Millisecond)
 		return nil
 	})
-	runCount = new(AtomicCounter)
+
+	runCount = 0
 	jm.RunTask(task)
 	jm.RunTask(task)
 	time.Sleep(100 * time.Millisecond)
-	assert.Equal(2, runCount.Get())
+	assert.Equal(2, runCount)
 }
 
 func TestRunJobByScheduleRapid(t *testing.T) {
