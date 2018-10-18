@@ -393,24 +393,11 @@ func (ru reflectionUtil) DecomposeStrings(obj interface{}, tagName ...string) ma
 				output[dataField] = typed
 			}
 		} else {
-			output[dataField] = fmt.Sprintf("%v", ru.followValuePointer(fieldValue))
+			output[dataField] = fmt.Sprintf("%v", ru.FollowValuePointer(fieldValue))
 		}
 	}
 
 	return output
-}
-
-// followValuePointer derefs a reflectValue until it isn't a pointer, but will preseve it's nilness.
-func (ru reflectionUtil) followValuePointer(v reflect.Value) interface{} {
-	if v.Kind() == reflect.Ptr && v.IsNil() {
-		return nil
-	}
-
-	val := v
-	for val.Kind() == reflect.Ptr {
-		val = val.Elem()
-	}
-	return val.Interface()
 }
 
 // Patch updates an object based on a map of field names to values.
