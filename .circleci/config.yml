@@ -10,6 +10,10 @@ jobs:
           POSTGRES_DB: circleci
     steps:
       - checkout
+      - run:
+          name: Set the upstream
+          command: |
+            eval "git branch --set-upstream-to=origin/`git rev-parse --abbrev-ref HEAD` `git rev-parse --abbrev-ref HEAD`"
       - run: 
           name: new-install
           command: make new-install

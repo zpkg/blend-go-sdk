@@ -137,13 +137,43 @@ func (ru reflectionUtil) GetReflectFieldByName(target interface{}, fieldName str
 	return targetValue.FieldByName(fieldName)
 }
 
+func (ru reflectionUtil) getFieldByTag(objType reflect.Type, tagType string, tagName string) *reflect.StructField {
+	for index := 0; index < objType.NumField(); index++ {
+		field := objType.Field(index)
+
+		tag := field.Tag
+		fullTag := tag.Get(tagType)
+		if String.CaseInsensitiveEquals(strings.Split(fullTag, ",")[0], tagName) {
+			return &field
+		}
+	}
+	return nil
+}
+
 func (ru reflectionUtil) SetValueByName(target interface{}, fieldName string, fieldValue interface{}) error {
 	targetValue := ru.Value(target)
 	targetType := ru.Type(target)
 	return ru.SetValueByNameFromType(target, targetType, targetValue, fieldName, fieldValue)
 }
 
-// SetValueByName sets a value on an object by its field name.
+// SetValueByNameFromTag sets a value on an object by its tag type/name combination
+func (ru reflectionUtil) SetValueByNameFromTag(obj interface{}, objType reflect.Type, objValue reflect.Value, tagType string, tagName string, value interface{}) (err error) {
+	defer func() {
+		if r := recover(); r != nil {
+			err = exception.New("panic setting value by tag").WithMessagef("tagType: %s tagName: % panic: %v", tagType, tagName, r)
+		}
+	}()
+
+	relevantField := ru.getFieldByTag(objType, tagType, tagName)
+	if relevantField == nil {
+		err = exception.New("unknown tag").WithMessagef("%s %s `%s`", objType.Name(), tagType, tagName)
+		return
+	}
+
+	return ru.doSetValue(*relevantField, objType, objValue, fmt.Sprintf("%s:%s", tagType, tagName), value)
+}
+
+// SetValueByNameFromType sets a value on an object by its field name.
 func (ru reflectionUtil) SetValueByNameFromType(obj interface{}, objType reflect.Type, objValue reflect.Value, fieldName string, value interface{}) (err error) {
 	defer func() {
 		if r := recover(); r != nil {
@@ -157,15 +187,19 @@ func (ru reflectionUtil) SetValueByNameFromType(obj interface{}, objType reflect
 		return
 	}
 
+	return ru.doSetValue(relevantField, objType, objValue, fieldName, value)
+}
+
+func (ru reflectionUtil) doSetValue(relevantField reflect.StructField, objType reflect.Type, objValue reflect.Value, name string, value interface{}) (err error) {
 	field := objValue.FieldByName(relevantField.Name)
 	if !field.CanSet() {
-		err = exception.New("cannot set field").WithMessagef("%s `%s`", objType.Name(), fieldName)
+		err = exception.New("cannot set field").WithMessagef("%s `%s`", objType.Name(), name)
 		return
 	}
 
 	valueReflected := ru.Value(value)
 	if !valueReflected.IsValid() {
-		err = exception.New("invalid value").WithMessagef("%s `%s`", objType.Name(), fieldName)
+		err = exception.New("invalid value").WithMessagef("%s `%s`", objType.Name(), name)
 		return
 	}
 
@@ -175,7 +209,7 @@ func (ru reflectionUtil) SetValueByNameFromType(obj interface{}, objType reflect
 		return
 	}
 	if !assigned {
-		err = exception.New("cannot set field").WithMessagef("%s `%s`", objType.Name(), fieldName)
+		err = exception.New("cannot set field").WithMessagef("%s `%s`", objType.Name(), name)
 		return
 	}
 	return
@@ -389,6 +423,31 @@ func (ru reflectionUtil) Patch(obj interface{}, patchValues map[string]interface
 	}
 	return nil
 }
+
+// PatchByTag updates an object based on a map of tag names to values.
+func (ru reflectionUtil) PatchByTag(obj interface{}, tagType string, patchValues map[string]interface{}) (err error) {
+	defer func() {
+		if r := recover(); r != nil {
+			err = exception.New(r)
+		}
+	}()
+
+	if patchable, isPatchable := obj.(Patcher); isPatchable {
+		return patchable.Patch(patchValues)
+	}
+
+	targetValue := ru.Value(obj)
+	targetType := targetValue.Type()
+
+	for key, value := range patchValues {
+		err = ru.SetValueByNameFromTag(obj, targetType, targetValue, tagType, key, value)
+		if err != nil {
+			return err
+		}
+	}
+	return nil
+}
+
 
 // PatchStrings sets an object from a set of strings mapping field names to string values (to be parsed).
 func (ru reflectionUtil) PatchStrings(tagName string, data map[string]string, obj interface{}) (err error) {
