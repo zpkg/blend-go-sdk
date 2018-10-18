@@ -12,8 +12,14 @@ import (
 
 	"github.com/blend/go-sdk/assert"
 	"github.com/blend/go-sdk/env"
+	"github.com/blend/go-sdk/graceful"
 	"github.com/blend/go-sdk/logger"
 	"github.com/blend/go-sdk/util"
+)
+
+// assert an app is graceful
+var (
+	_ graceful.Graceful = (*App)(nil)
 )
 
 func controllerNoOp(_ *Ctx) Result { return nil }

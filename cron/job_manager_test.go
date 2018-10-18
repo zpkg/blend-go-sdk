@@ -9,7 +9,13 @@ import (
 
 	"github.com/blend/go-sdk/assert"
 	"github.com/blend/go-sdk/exception"
+	"github.com/blend/go-sdk/graceful"
 	logger "github.com/blend/go-sdk/logger"
+)
+
+// assert the job manager is graceful
+var (
+	_ graceful.Graceful = (*JobManager)(nil)
 )
 
 const (

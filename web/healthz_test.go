@@ -17,7 +17,7 @@ func TestHealthz(t *testing.T) {
 	defer appLog.Close()
 
 	app := New().WithBindAddr("127.0.0.1:0").WithLogger(appLog).WithConfig(MustNewConfigFromEnv())
-	defer app.Shutdown()
+	defer app.Stop()
 
 	appStarted := make(chan struct{})
 	appLog.Listen(AppStartComplete, "default", NewAppEventListener(func(aes *AppEvent) {
@@ -28,7 +28,7 @@ func TestHealthz(t *testing.T) {
 	defer hzLog.Close()
 
 	hz := NewHealthz(app).WithLogger(hzLog).WithGracePeriod(0)
-	defer func() { hz.Shutdown() }()
+	defer func() { hz.Stop() }()
 
 	hz.WithDefaultHeader("key", "secure")
 	assert.NotEmpty(hz.DefaultHeaders())
@@ -50,8 +50,8 @@ func TestHealthz(t *testing.T) {
 	assert.Equal(http.StatusOK, healthzRes.StatusCode)
 	assert.Equal("secure", healthzRes.Header.Get("key"))
 
-	app.Shutdown()
-	<-app.NotifyShutdown()
+	app.Stop()
+	<-app.NotifyStopped()
 
 	healthzRes, err = http.Get("http://" + hz.self.Listener().Addr().String() + "/healthz")
 	assert.Nil(err)
@@ -92,7 +92,7 @@ func TestHealthzShutdown(t *testing.T) {
 	assert.True(hz.IsRunning())
 
 	// shutdown the server
-	go hz.Shutdown()
+	go hz.Stop()
 	<-hz.NotifyShuttingDown()
 
 	assert.True(hz.latch.IsStopping())
@@ -114,8 +114,8 @@ func TestHealthzShutdown(t *testing.T) {
 	assert.Equal(http.StatusServiceUnavailable, res.StatusCode)
 
 	<-hz.NotifyShutdown()
-	<-hz.self.NotifyShutdown()
-	<-hz.hosted.NotifyShutdown()
+	<-hz.self.NotifyStopped()
+	<-hz.hosted.NotifyStopped()
 
 	assert.False(hz.IsRunning())
 	assert.False(hz.self.IsRunning())

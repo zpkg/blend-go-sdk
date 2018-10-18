@@ -10,12 +10,8 @@ import (
 
 	"github.com/blend/go-sdk/async"
 	"github.com/blend/go-sdk/exception"
+	"github.com/blend/go-sdk/graceful"
 	"github.com/blend/go-sdk/logger"
-)
-
-// Verify interfaces.
-var (
-	_ Shutdowner = (*Healthz)(nil)
 )
 
 const (
@@ -26,8 +22,14 @@ const (
 	ErrHealthzAppUnset exception.Class = "healthz app unset"
 )
 
+// HealthzHostable is a type that can be hosted by healthz.
+type HealthzHostable interface {
+	graceful.Graceful
+	IsRunning() bool
+}
+
 // NewHealthz returns a new healthz.
-func NewHealthz(hosted Shutdowner) *Healthz {
+func NewHealthz(hosted HealthzHostable) *Healthz {
 	return &Healthz{
 		hosted:         hosted,
 		bindAddr:       DefaultHealthzBindAddr,
@@ -51,7 +53,7 @@ It typically implements the following routes:
 */
 type Healthz struct {
 	self           *App
-	hosted         Shutdowner
+	hosted         HealthzHostable
 	cfg            *HealthzConfig
 	bindAddr       string
 	log            *logger.Logger
@@ -91,7 +93,7 @@ func (hz *Healthz) Self() *App {
 }
 
 // Hosted returns the hosted app.
-func (hz *Healthz) Hosted() Shutdowner {
+func (hz *Healthz) Hosted() graceful.Graceful {
 	return hz.hosted
 }
 
@@ -234,12 +236,13 @@ func (hz *Healthz) Start() error {
 		WithReadTimeout(hz.ReadTimeout()).
 		WithIdleTimeout(hz.IdleTimeout()).
 		WithWriteTimeout(hz.WriteTimeout())
+
 	hz.latch.Started()
 	return async.RunToError(hz.self.Start, hz.hosted.Start)
 }
 
-// Shutdown implements shutdowner.
-func (hz *Healthz) Shutdown() error {
+// Stop implements shutdowner.
+func (hz *Healthz) Stop() error {
 	// set the next call to `/healtz` to
 	// finish the shutdown
 	hz.latch.Stopping()
@@ -253,15 +256,15 @@ func (hz *Healthz) Shutdown() error {
 	}
 
 	select {
-	case <-hz.hosted.NotifyShutdown():
-		return hz.self.Shutdown()
+	case <-hz.hosted.NotifyStopped():
+		return hz.self.Stop()
 	case <-context.Done():
 		if hz.log != nil {
 			hz.log.Warningf("healthz shutdown grace period has expired")
 		}
-		return hz.shutdownServers()
+		return hz.stopAll()
 	case <-hz.latch.NotifyStopped():
-		return hz.shutdownServers()
+		return hz.stopAll()
 	}
 }
 
@@ -285,8 +288,8 @@ func (hz *Healthz) NotifyShutdown() <-chan struct{} {
 	return hz.latch.NotifyStopped()
 }
 
-func (hz *Healthz) shutdownServers() error {
-	return async.RunToError(hz.hosted.Shutdown, hz.self.Shutdown)
+func (hz *Healthz) stopAll() error {
+	return async.RunToError(hz.hosted.Stop, hz.self.Stop)
 }
 
 // ServeHTTP makes the router implement the http.Handler interface.

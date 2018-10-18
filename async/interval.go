@@ -1,6 +1,10 @@
 package async
 
-import "time"
+import (
+	"time"
+
+	"github.com/blend/go-sdk/exception"
+)
 
 // NewInterval returns a new worker that runs an action on an interval.
 func NewInterval(action func() error, interval time.Duration) *Interval {
@@ -74,10 +78,20 @@ func (i *Interval) Errors() chan error {
 	return i.errors
 }
 
+// NotifyStarted returns the notify started signal.
+func (i *Interval) NotifyStarted() <-chan struct{} {
+	return i.latch.NotifyStarted()
+}
+
+// NotifyStopped returns the notify stopped signal.
+func (i *Interval) NotifyStopped() <-chan struct{} {
+	return i.latch.NotifyStopped()
+}
+
 // Start starts the worker.
-func (i *Interval) Start() {
+func (i *Interval) Start() error {
 	if !i.latch.CanStart() {
-		return
+		return exception.New(ErrCannotStart)
 	}
 
 	i.latch.Starting()
@@ -104,13 +118,15 @@ func (i *Interval) Start() {
 		}
 	}()
 	<-i.latch.NotifyStarted()
+	return nil
 }
 
 // Stop stops the worker.
-func (i *Interval) Stop() {
+func (i *Interval) Stop() error {
 	if !i.latch.CanStop() {
-		return
+		return exception.New(ErrCannotStop)
 	}
 	i.latch.Stopping()
 	<-i.latch.NotifyStopped()
+	return nil
 }

@@ -5,6 +5,7 @@ import (
 	"time"
 
 	"github.com/blend/go-sdk/collections"
+	"github.com/blend/go-sdk/exception"
 )
 
 // NewAutoflushBuffer creates a new autoflush buffer.
@@ -29,7 +30,7 @@ type AutoflushBuffer struct {
 	contentsLock sync.Mutex
 
 	flushOnAbort bool
-	handler      func(obj []Any)
+	handler      func(obj []interface{})
 
 	latch *Latch
 }
@@ -57,15 +58,25 @@ func (ab *AutoflushBuffer) MaxLen() int {
 }
 
 // WithFlushHandler sets the buffer flush handler and returns a reference to the buffer.
-func (ab *AutoflushBuffer) WithFlushHandler(handler func(objs []Any)) *AutoflushBuffer {
+func (ab *AutoflushBuffer) WithFlushHandler(handler func(objs []interface{})) *AutoflushBuffer {
 	ab.handler = handler
 	return ab
 }
 
+// NotifyStarted returns the started signal.
+func (ab *AutoflushBuffer) NotifyStarted() <-chan struct{} {
+	return ab.latch.NotifyStarted()
+}
+
+// NotifyStopped returns the started stopped.
+func (ab *AutoflushBuffer) NotifyStopped() <-chan struct{} {
+	return ab.latch.NotifyStopped()
+}
+
 // Start starts the buffer flusher.
-func (ab *AutoflushBuffer) Start() {
+func (ab *AutoflushBuffer) Start() error {
 	if !ab.latch.CanStart() {
-		return
+		return exception.New(ErrCannotStart)
 	}
 	ab.latch.Starting()
 	go func() {
@@ -73,20 +84,22 @@ func (ab *AutoflushBuffer) Start() {
 		ab.runLoop()
 	}()
 	<-ab.latch.NotifyStarted()
+	return nil
 }
 
 // Stop stops the buffer flusher.
-func (ab *AutoflushBuffer) Stop() {
+func (ab *AutoflushBuffer) Stop() error {
 	if !ab.latch.CanStop() {
-		return
+		return exception.New(ErrCannotStop)
 	}
 	ab.latch.Stopping()
 	<-ab.latch.NotifyStopped()
+	return nil
 }
 
 // Add adds a new object to the buffer, blocking if it triggers a flush.
 // If the buffer is full, it will call the flush handler on a separate goroutine.
-func (ab *AutoflushBuffer) Add(obj Any) {
+func (ab *AutoflushBuffer) Add(obj interface{}) {
 	ab.contentsLock.Lock()
 	defer ab.contentsLock.Unlock()
 
@@ -97,7 +110,7 @@ func (ab *AutoflushBuffer) Add(obj Any) {
 }
 
 // AddMany adds many objects to the buffer at once.
-func (ab *AutoflushBuffer) AddMany(objs ...Any) {
+func (ab *AutoflushBuffer) AddMany(objs ...interface{}) {
 	ab.contentsLock.Lock()
 	defer ab.contentsLock.Unlock()
 

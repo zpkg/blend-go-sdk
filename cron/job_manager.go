@@ -4,6 +4,7 @@ package cron
 
 import (
 	"context"
+	"fmt"
 	"sync"
 	"time"
 
@@ -15,6 +16,7 @@ import (
 // New returns a new job manager.
 func New() *JobManager {
 	jm := JobManager{
+		latch:             &async.Latch{},
 		heartbeatInterval: DefaultHeartbeatInterval,
 		jobs:              map[string]*JobMeta{},
 		tasks:             map[string]*TaskMeta{},
@@ -50,6 +52,8 @@ func MustNewFromEnv() *JobManager {
 // JobManager is the main orchestration and job management object.
 type JobManager struct {
 	sync.Mutex
+
+	latch  *async.Latch
 	tracer Tracer
 
 	heartbeatInterval time.Duration
@@ -331,15 +335,37 @@ func (jm *JobManager) CancelTask(taskName string) (err error) {
 }
 
 // Start begins the schedule runner for a JobManager.
-func (jm *JobManager) Start() {
+func (jm *JobManager) Start() error {
+	if !jm.latch.CanStart() {
+		return fmt.Errorf("already started")
+	}
+	jm.latch.Starting()
 	jm.schedulerWorker.Start()
 	jm.killHangingTasksWorker.Start()
+	jm.latch.Started()
+	return nil
 }
 
 // Stop stops the schedule runner for a JobManager.
-func (jm *JobManager) Stop() {
+func (jm *JobManager) Stop() error {
+	if !jm.latch.CanStop() {
+		return fmt.Errorf("already stopped")
+	}
+	jm.latch.Stopping()
 	jm.schedulerWorker.Stop()
 	jm.killHangingTasksWorker.Stop()
+	jm.latch.Stopped()
+	return nil
+}
+
+// NotifyStarted returns the started notification channel.
+func (jm *JobManager) NotifyStarted() <-chan struct{} {
+	return jm.latch.NotifyStarted()
+}
+
+// NotifyStopped returns the stopped notification channel.
+func (jm *JobManager) NotifyStopped() <-chan struct{} {
+	return jm.latch.NotifyStopped()
 }
 
 // --------------------------------------------------------------------------------

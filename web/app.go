@@ -7,10 +7,9 @@ import (
 	"fmt"
 	"net"
 	"net/http"
+	"net/url"
 	"strings"
 	"time"
-
-	"net/url"
 
 	"github.com/blend/go-sdk/async"
 	"github.com/blend/go-sdk/exception"
@@ -120,8 +119,8 @@ func (a *App) NotifyStarted() <-chan struct{} {
 	return a.latch.NotifyStarted()
 }
 
-// NotifyShutdown returns the notify stopped chan.
-func (a *App) NotifyShutdown() <-chan struct{} {
+// NotifyStopped returns the notify stopped chan.
+func (a *App) NotifyStopped() <-chan struct{} {
 	return a.latch.NotifyStopped()
 }
 
@@ -545,8 +544,13 @@ func (a *App) Start() (err error) {
 	return
 }
 
-// Shutdown stops the server.
+// Shutdown is an alias to stop, and stops the server.
 func (a *App) Shutdown() error {
+	return a.Stop()
+}
+
+// Stop stops the server.
+func (a *App) Stop() error {
 	if !a.Latch().IsRunning() {
 		return nil
 	}

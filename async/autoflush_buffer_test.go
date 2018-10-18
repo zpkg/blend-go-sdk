@@ -7,6 +7,12 @@ import (
 	"time"
 
 	"github.com/blend/go-sdk/assert"
+	"github.com/blend/go-sdk/graceful"
+)
+
+// Assert a latch is graceful
+var (
+	_ graceful.Graceful = (*AutoflushBuffer)(nil)
 )
 
 func TestAutoflushBuffer(t *testing.T) {
@@ -14,7 +20,7 @@ func TestAutoflushBuffer(t *testing.T) {
 
 	wg := sync.WaitGroup{}
 	wg.Add(2)
-	buffer := NewAutoflushBuffer(10, time.Hour).WithFlushHandler(func(objects []Any) {
+	buffer := NewAutoflushBuffer(10, time.Hour).WithFlushHandler(func(objects []interface{}) {
 		defer wg.Done()
 		assert.Len(objects, 10)
 	})
@@ -36,7 +42,7 @@ func TestAutoflushBufferTicker(t *testing.T) {
 
 	wg := sync.WaitGroup{}
 	wg.Add(20)
-	buffer := NewAutoflushBuffer(100, time.Millisecond).WithFlushHandler(func(objects []Any) {
+	buffer := NewAutoflushBuffer(100, time.Millisecond).WithFlushHandler(func(objects []interface{}) {
 		for range objects {
 			wg.Done()
 		}
@@ -52,7 +58,7 @@ func TestAutoflushBufferTicker(t *testing.T) {
 }
 
 func BenchmarkAutoflushBuffer(b *testing.B) {
-	buffer := NewAutoflushBuffer(128, 500*time.Millisecond).WithFlushHandler(func(objects []Any) {
+	buffer := NewAutoflushBuffer(128, 500*time.Millisecond).WithFlushHandler(func(objects []interface{}) {
 		if len(objects) > 128 {
 			b.Fail()
 		}

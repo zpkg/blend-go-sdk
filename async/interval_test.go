@@ -5,6 +5,12 @@ import (
 	"time"
 
 	"github.com/blend/go-sdk/assert"
+	"github.com/blend/go-sdk/graceful"
+)
+
+// Assert a latch is graceful
+var (
+	_ graceful.Graceful = (*Interval)(nil)
 )
 
 func TestIntervalWorker(t *testing.T) {
