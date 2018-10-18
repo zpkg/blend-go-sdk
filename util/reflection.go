@@ -393,7 +393,7 @@ func (ru reflectionUtil) DecomposeStrings(obj interface{}, tagName ...string) ma
 				output[dataField] = typed
 			}
 		} else {
-			output[dataField] = fmt.Sprintf("%v", fieldValue.Interface())
+			output[dataField] = fmt.Sprintf("%v", ru.FollowValuePointer(fieldValue))
 		}
 	}
 
