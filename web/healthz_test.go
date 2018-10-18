@@ -6,7 +6,12 @@ import (
 	"time"
 
 	"github.com/blend/go-sdk/assert"
+	"github.com/blend/go-sdk/graceful"
 	"github.com/blend/go-sdk/logger"
+)
+
+var (
+	_ graceful.Graceful = (*Healthz)(nil)
 )
 
 func TestHealthz(t *testing.T) {
@@ -93,7 +98,7 @@ func TestHealthzShutdown(t *testing.T) {
 
 	// shutdown the server
 	go hz.Stop()
-	<-hz.NotifyShuttingDown()
+	<-hz.NotifyStopped()
 
 	assert.True(hz.latch.IsStopping())
 
@@ -113,7 +118,7 @@ func TestHealthzShutdown(t *testing.T) {
 	assert.Nil(err)
 	assert.Equal(http.StatusServiceUnavailable, res.StatusCode)
 
-	<-hz.NotifyShutdown()
+	<-hz.NotifyStopped()
 	<-hz.self.NotifyStopped()
 	<-hz.hosted.NotifyStopped()
 

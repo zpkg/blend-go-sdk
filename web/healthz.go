@@ -278,13 +278,13 @@ func (hz *Healthz) NotifyStarted() <-chan struct{} {
 	return hz.self.NotifyStarted()
 }
 
-// NotifyShuttingDown returns the notify shutdown signal.
-func (hz *Healthz) NotifyShuttingDown() <-chan struct{} {
+// NotifyStopping returns the notify shutdown signal.
+func (hz *Healthz) NotifyStopping() <-chan struct{} {
 	return hz.latch.NotifyStopping()
 }
 
-// NotifyShutdown returns the notify shutdown signal.
-func (hz *Healthz) NotifyShutdown() <-chan struct{} {
+// NotifyStopped returns the notify shutdown signal.
+func (hz *Healthz) NotifyStopped() <-chan struct{} {
 	return hz.latch.NotifyStopped()
 }
 
