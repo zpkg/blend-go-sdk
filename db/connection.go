@@ -83,7 +83,8 @@ func NewFromEnv() (*Connection, error) {
 // Connection is the basic wrapper for connection parameters and saves a reference to the created sql.Connection.
 type Connection struct {
 	sync.Mutex
-	tracer Tracer
+	tracer               Tracer
+	statementInterceptor StatementInterceptor
 
 	connection     *sql.DB
 	config         *Config
@@ -112,6 +113,17 @@ func (dbc *Connection) WithTracer(tracer Tracer) *Connection {
 // Tracer returns the tracer.
 func (dbc *Connection) Tracer() Tracer {
 	return dbc.tracer
+}
+
+// WithStatementInterceptor sets the connection statement interceptor.
+func (dbc *Connection) WithStatementInterceptor(interceptor StatementInterceptor) *Connection {
+	dbc.statementInterceptor = interceptor
+	return dbc
+}
+
+// StatementInterceptor returns the statement interceptor.
+func (dbc *Connection) StatementInterceptor() StatementInterceptor {
+	return dbc.statementInterceptor
 }
 
 // Connection returns the underlying driver connection.
@@ -203,6 +215,12 @@ func (dbc *Connection) BeginContext(context context.Context, opts ...*sql.TxOpti
 
 // PrepareContext prepares a statement potentially returning a cached version of the statement.
 func (dbc *Connection) PrepareContext(context context.Context, statementID, statement string, txs ...*sql.Tx) (stmt *sql.Stmt, err error) {
+	if dbc.statementInterceptor != nil {
+		statement, err = dbc.statementInterceptor(statementID, statement)
+		if err != nil {
+			return
+		}
+	}
 	if dbc.tracer != nil {
 		tf := dbc.tracer.Prepare(context, dbc, statement)
 		if tf != nil {

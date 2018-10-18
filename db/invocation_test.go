@@ -3,6 +3,7 @@ package db
 import (
 	"context"
 	"database/sql"
+	"fmt"
 	"testing"
 	"time"
 
@@ -362,4 +363,20 @@ func TestInlineMeta(t *testing.T) {
 	assert.All(objs, func(v interface{}) bool {
 		return !v.(embeddedTest).TimestampUTC.IsZero()
 	})
+}
+
+func TestInvocationStatementInterceptor(t *testing.T) {
+	assert := assert.New(t)
+	tx, err := Default().Begin()
+	assert.Nil(err)
+	defer tx.Rollback()
+
+	invocation := Default().Invoke(context.Background()).WithStatementInterceptor(func(statementID, statement string) (string, error) {
+		return "", fmt.Errorf("only a test")
+	})
+	assert.NotNil(invocation.StatementInterceptor())
+
+	err = invocation.Exec("select 'ok!'")
+	assert.NotNil(err)
+	assert.Equal("only a test", err.Error())
 }

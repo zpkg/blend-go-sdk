@@ -16,13 +16,14 @@ import (
 type Invocation struct {
 	statementLabel string
 
-	conn          *Connection
-	context       context.Context
-	cancel        func()
-	tracer        Tracer
-	traceFinisher TraceFinisher
-	startTime     time.Time
-	tx            *sql.Tx
+	conn                 *Connection
+	context              context.Context
+	cancel               func()
+	statementInterceptor StatementInterceptor
+	tracer               Tracer
+	traceFinisher        TraceFinisher
+	startTime            time.Time
+	tx                   *sql.Tx
 }
 
 // StartTime returns the invocation start time.
@@ -77,9 +78,27 @@ func (i *Invocation) Tx() *sql.Tx {
 	return i.tx
 }
 
+// WithStatementInterceptor sets the connection statement interceptor.
+func (i *Invocation) WithStatementInterceptor(interceptor StatementInterceptor) *Invocation {
+	i.statementInterceptor = interceptor
+	return i
+}
+
+// StatementInterceptor returns the statement interceptor.
+func (i *Invocation) StatementInterceptor() StatementInterceptor {
+	return i.statementInterceptor
+}
+
 // Prepare returns a cached or newly prepared statment plan for a given sql statement.
-func (i *Invocation) Prepare(statement string) (*sql.Stmt, error) {
-	return i.conn.PrepareContext(i.Context(), i.statementLabel, statement, i.tx)
+func (i *Invocation) Prepare(statement string) (stmt *sql.Stmt, err error) {
+	if i.statementInterceptor != nil {
+		statement, err = i.statementInterceptor(i.statementLabel, statement)
+		if err != nil {
+			return
+		}
+	}
+	stmt, err = i.conn.PrepareContext(i.Context(), i.statementLabel, statement, i.tx)
+	return
 }
 
 // Exec executes a sql statement with a given set of arguments.
