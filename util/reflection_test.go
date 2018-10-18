@@ -43,6 +43,13 @@ func TestDecompose(t *testing.T) {
 func TestDecomposeStrings(t *testing.T) {
 	assert := assert.New(t)
 
+	ti := 14
+	ts := "bar baz"
+	tsl := []string{"baz", "bin", "bop"}
+	tss := mapStringsTestSubObject{
+		Foo: "no this is Bar",
+	}
+
 	input := mapStringsTest{
 		Float64:  3.14,
 		String:   "foo",
@@ -53,6 +60,10 @@ func TestDecomposeStrings(t *testing.T) {
 		Sub: mapStringsTestSubObject{
 			Foo: "yes this is foo",
 		},
+		IntPtr:    &ti,
+		StringPtr: &ts,
+		SlicePtr:  &tsl,
+		StructPtr: &tss,
 	}
 
 	output := Reflection.DecomposeStrings(input)
@@ -65,10 +76,22 @@ func TestDecomposeStrings(t *testing.T) {
 	assert.Equal("[116 104 105 115 32 105 115 32 98 121 116 101 115]", output["Bytes"])
 	assert.Equal("10s", output["Duration"])
 	assert.Equal("yes this is foo", output["Foo"])
+
+	assert.Equal("14", output["IntPtr"])
+	assert.Equal("bar baz", output["StringPtr"])
+	assert.Equal("[baz bin bop]", output["SlicePtr"])
+	assert.Equal("{no this is Bar}", output["StructPtr"])
 }
 
 func TestDecomposeStringsWithTag(t *testing.T) {
 	assert := assert.New(t)
+
+	ti := 14
+	ts := "bar baz"
+	tsl := []string{"baz", "bin", "bop"}
+	tss := mapStringsTestSubObject{
+		Foo: "no this is Bar",
+	}
 
 	input := mapStringsTest{
 		Float64:  3.14,
@@ -80,6 +103,10 @@ func TestDecomposeStringsWithTag(t *testing.T) {
 		Sub: mapStringsTestSubObject{
 			Foo: "yes this is foo",
 		},
+		IntPtr:    &ti,
+		StringPtr: &ts,
+		SlicePtr:  &tsl,
+		StructPtr: &tss,
 	}
 
 	output := Reflection.DecomposeStrings(input, "secret")
@@ -92,6 +119,11 @@ func TestDecomposeStringsWithTag(t *testing.T) {
 	assert.Equal("this is bytes", output["bytesField"])
 	assert.Equal("10s", output["duration"])
 	assert.Equal("yes this is foo", output["foo"])
+
+	assert.Equal("14", output["intPointer"])
+	assert.Equal("bar baz", output["stringPointer"])
+	assert.Equal("[baz bin bop]", output["slicePointer"])
+	assert.Equal("{no this is Bar}", output["structPointer"])
 }
 
 func TestPatchObject(t *testing.T) {
@@ -407,14 +439,14 @@ func TestPatchByTag(t *testing.T) {
 	obj := mapStringsTest{}
 
 	// Update with secret tags
-	settings := map[string]interface{} {
-		"bool": true,
+	settings := map[string]interface{}{
+		"bool":    true,
 		"float32": float32(3.4),
 		"float64": float64(-103.2),
-		"uint8": uint8(8),
+		"uint8":   uint8(8),
 	}
 
-	err := Reflection.PatchByTag(&obj,secret,settings)
+	err := Reflection.PatchByTag(&obj, secret, settings)
 	assert.Nil(err)
 
 	// Validate updates
@@ -425,11 +457,11 @@ func TestPatchByTag(t *testing.T) {
 
 	// Update with json tags
 	settings = map[string]interface{}{
-		"int_32": 94,
+		"int_32":  94,
 		"s_tring": "hello world",
 	}
 
-	err = Reflection.PatchByTag(&obj,json,settings)
+	err = Reflection.PatchByTag(&obj, json, settings)
 	assert.Nil(err)
 
 	// New updates
@@ -444,21 +476,21 @@ func TestPatchByTag(t *testing.T) {
 
 	// Check that it errors on a missing tag
 	settings = map[string]interface{}{
-		"int_32": 14,
+		"int_32":    14,
 		"not_a_tag": "hello world",
-		"s_tring": "goodbye world",
+		"s_tring":   "goodbye world",
 	}
 
-	err = Reflection.PatchByTag(&obj,json,settings)
+	err = Reflection.PatchByTag(&obj, json, settings)
 	assert.NotNil(err)
 	assert.Contains(err.Error(), "unknown tag")
 
 	// Test Patching a slice and using a tag with commas
-	slice := []string {"Foo", "Bar", "Baz"}
+	slice := []string{"Foo", "Bar", "Baz"}
 	settings = map[string]interface{}{
 		"csvField": &slice,
 	}
-	err = Reflection.PatchByTag(&obj,secret,settings)
+	err = Reflection.PatchByTag(&obj, secret, settings)
 	assert.Nil(err)
 	assert.Equal(3, len(obj.CSV))
 	assert.Equal("Foo", obj.CSV[0])
@@ -472,15 +504,15 @@ func TestPatchByTag(t *testing.T) {
 	settings = map[string]interface{}{
 		"sub": inner,
 	}
-	err = Reflection.PatchByTag(&obj,json,settings)
+	err = Reflection.PatchByTag(&obj, json, settings)
 	assert.Nil(err)
 	assert.Equal("Bar", obj.Sub.Foo)
 
 	// Errors on unexported Field
-	settings = map[string]interface{} {
-		"unexported":"Lorem Ipsum",
+	settings = map[string]interface{}{
+		"unexported": "Lorem Ipsum",
 	}
-	err = Reflection.PatchByTag(&obj,secret,settings)
+	err = Reflection.PatchByTag(&obj, secret, settings)
 	assert.NotNil(err)
 	assert.Contains(err.Error(), "cannot set field")
 }
@@ -518,6 +550,11 @@ type mapStringsTest struct {
 	Uint64   uint32        `secret:"uint64"`
 	String   string        `secret:"string" json:"s_tring"`
 	Duration time.Duration `secret:"duration"`
+
+	IntPtr    *int                     `secret:"intPointer"`
+	StringPtr *string                  `secret:"stringPointer"`
+	SlicePtr  *[]string                `secret:"slicePointer"`
+	StructPtr *mapStringsTestSubObject `secret:"structPointer"`
 
 	CSV    []string `secret:"csvField,csv"`
 	Base64 []byte   `secret:"base64Field,base64"`
