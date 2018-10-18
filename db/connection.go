@@ -215,12 +215,6 @@ func (dbc *Connection) BeginContext(context context.Context, opts ...*sql.TxOpti
 
 // PrepareContext prepares a statement potentially returning a cached version of the statement.
 func (dbc *Connection) PrepareContext(context context.Context, statementID, statement string, txs ...*sql.Tx) (stmt *sql.Stmt, err error) {
-	if dbc.statementInterceptor != nil {
-		statement, err = dbc.statementInterceptor(statementID, statement)
-		if err != nil {
-			return
-		}
-	}
 	if dbc.tracer != nil {
 		tf := dbc.tracer.Prepare(context, dbc, statement)
 		if tf != nil {
@@ -246,11 +240,12 @@ func (dbc *Connection) PrepareContext(context context.Context, statementID, stat
 // Invoke returns a new invocation.
 func (dbc *Connection) Invoke(context context.Context, txs ...*sql.Tx) *Invocation {
 	return &Invocation{
-		context:   context,
-		tracer:    dbc.tracer,
-		conn:      dbc,
-		startTime: time.Now().UTC(),
-		tx:        OptionalTx(txs...),
+		context:              context,
+		tracer:               dbc.tracer,
+		statementInterceptor: dbc.statementInterceptor,
+		conn:                 dbc,
+		startTime:            time.Now().UTC(),
+		tx:                   OptionalTx(txs...),
 	}
 }
 

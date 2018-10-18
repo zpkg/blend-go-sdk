@@ -104,8 +104,11 @@ func (i *Invocation) Prepare(statement string) (stmt *sql.Stmt, err error) {
 // Exec executes a sql statement with a given set of arguments.
 func (i *Invocation) Exec(statement string, args ...interface{}) (err error) {
 	var stmt *sql.Stmt
-	i.start(statement)
+	statement, err = i.start(statement)
 	defer func() { err = i.finish(statement, recover(), err) }()
+	if err != nil {
+		return
+	}
 
 	stmt, err = i.Prepare(statement)
 	if err != nil {
@@ -123,7 +126,8 @@ func (i *Invocation) Exec(statement string, args ...interface{}) (err error) {
 
 // Query returns a new query object for a given sql query and arguments.
 func (i *Invocation) Query(statement string, args ...interface{}) *Query {
-	i.start(statement)
+	var err error
+	statement, err = i.start(statement)
 	return &Query{
 		context:        i.Context(),
 		statement:      statement,
@@ -132,6 +136,7 @@ func (i *Invocation) Query(statement string, args ...interface{}) *Query {
 		conn:           i.conn,
 		inv:            i,
 		tx:             i.tx,
+		err:            err,
 	}
 }
 
@@ -152,12 +157,15 @@ func (i *Invocation) Get(object DatabaseMapped, ids ...interface{}) (err error) 
 		return
 	}
 
+	queryBody, err = i.start(queryBody)
+	if err != nil {
+		return
+	}
 	if stmt, err = i.Prepare(queryBody); err != nil {
 		err = exception.New(err)
 		return
 	}
 	defer func() { err = i.closeStatement(stmt, err) }()
-	i.start(queryBody)
 
 	row := stmt.QueryRowContext(i.Context(), ids...)
 	var populateErr error
@@ -185,12 +193,15 @@ func (i *Invocation) GetAll(collection interface{}) (err error) {
 
 	i.statementLabel, queryBody, cols, collectionType = i.generateGetAll(collection)
 
+	queryBody, err = i.start(queryBody)
+	if err != nil {
+		return
+	}
 	if stmt, err = i.Prepare(queryBody); err != nil {
 		err = exception.New(err)
 		return
 	}
 	defer func() { err = i.closeStatement(stmt, err) }()
-	i.start(queryBody)
 
 	if rows, err = stmt.QueryContext(i.Context()); err != nil {
 		err = exception.New(err)
@@ -231,13 +242,15 @@ func (i *Invocation) Create(object DatabaseMapped) (err error) {
 
 	i.statementLabel, queryBody, writeCols, autos = i.generateCreate(object)
 
+	queryBody, err = i.start(queryBody)
+	if err != nil {
+		return
+	}
 	if stmt, err = i.Prepare(queryBody); err != nil {
 		err = exception.New(err)
 		return
 	}
 	defer func() { err = i.closeStatement(stmt, err) }()
-
-	i.start(queryBody)
 
 	if autos.Len() == 0 {
 		if _, err = stmt.ExecContext(i.Context(), writeCols.ColumnValues(object)...); err != nil {
@@ -269,12 +282,15 @@ func (i *Invocation) CreateIfNotExists(object DatabaseMapped) (err error) {
 
 	i.statementLabel, queryBody, autos, writeCols = i.generateCreateIfNotExists(object)
 
+	queryBody, err = i.start(queryBody)
+	if err != nil {
+		return
+	}
 	if stmt, err = i.Prepare(queryBody); err != nil {
 		err = exception.New(err)
 		return
 	}
 	defer func() { err = i.closeStatement(stmt, err) }()
-	i.start(queryBody)
 
 	if autos.Len() == 0 {
 		if _, err = stmt.ExecContext(i.context, writeCols.ColumnValues(object)...); err != nil {
@@ -307,6 +323,11 @@ func (i *Invocation) CreateMany(objects interface{}) (err error) {
 
 	queryBody, writeCols, sliceValue = i.generateCreateMany(objects)
 
+	queryBody, err = i.start(queryBody)
+	if err != nil {
+		return
+	}
+
 	var colValues []interface{}
 	for row := 0; row < sliceValue.Len(); row++ {
 		colValues = append(colValues, writeCols.ColumnValues(sliceValue.Index(row).Interface())...)
@@ -333,12 +354,15 @@ func (i *Invocation) Update(object DatabaseMapped) (err error) {
 
 	i.statementLabel, queryBody, pks, writeCols = i.generateUpdate(object)
 
+	queryBody, err = i.start(queryBody)
+	if err != nil {
+		return
+	}
 	if stmt, err = i.Prepare(queryBody); err != nil {
 		err = exception.New(err)
 		return
 	}
 	defer func() { err = i.closeStatement(stmt, err) }()
-	i.start(queryBody)
 
 	if _, err = stmt.ExecContext(i.Context(), append(writeCols.ColumnValues(object), pks.ColumnValues(object)...)...); err != nil {
 		err = exception.New(err)
@@ -356,12 +380,15 @@ func (i *Invocation) Upsert(object DatabaseMapped) (err error) {
 
 	i.statementLabel, queryBody, autos, writeCols = i.generateUpsert(object)
 
+	queryBody, err = i.start(queryBody)
+	if err != nil {
+		return
+	}
 	if stmt, err = i.Prepare(queryBody); err != nil {
 		err = exception.New(err)
 		return
 	}
 	defer func() { err = i.closeStatement(stmt, err) }()
-	i.start(queryBody)
 
 	if autos.Len() == 0 {
 		if _, err = stmt.ExecContext(i.Context(), writeCols.ColumnValues(object)...); err != nil {
@@ -395,12 +422,15 @@ func (i *Invocation) Exists(object DatabaseMapped) (exists bool, err error) {
 		err = exception.New(err)
 		return
 	}
+	queryBody, err = i.start(queryBody)
+	if err != nil {
+		return
+	}
 	if stmt, err = i.Prepare(queryBody); err != nil {
 		err = exception.New(err)
 		return
 	}
 	defer func() { err = i.closeStatement(stmt, err) }()
-	i.start(queryBody)
 
 	var value int
 	if err = stmt.QueryRowContext(i.Context(), pks.ColumnValues(object)...).Scan(&value); err != nil {
@@ -423,12 +453,15 @@ func (i *Invocation) Delete(object DatabaseMapped) (err error) {
 		return
 	}
 
+	queryBody, err = i.start(queryBody)
+	if err != nil {
+		return
+	}
 	if stmt, err = i.Prepare(queryBody); err != nil {
 		err = exception.New(err)
 		return
 	}
 	defer func() { err = i.closeStatement(stmt, err) }()
-	i.start(queryBody)
 
 	if _, err = stmt.ExecContext(i.Context(), pks.ColumnValues(object)...); err != nil {
 		err = exception.New(err)
@@ -445,12 +478,15 @@ func (i *Invocation) Truncate(object DatabaseMapped) (err error) {
 
 	i.statementLabel, queryBody = i.generateTruncate(object)
 
+	queryBody, err = i.start(queryBody)
+	if err != nil {
+		return
+	}
 	if stmt, err = i.Prepare(queryBody); err != nil {
 		err = exception.New(err)
 		return
 	}
 	defer func() { err = i.closeStatement(stmt, err) }()
-	i.start(queryBody)
 
 	if _, err = stmt.ExecContext(i.Context()); err != nil {
 		err = exception.New(err)
@@ -871,10 +907,18 @@ func (i *Invocation) closeStatement(stmt *sql.Stmt, err error) error {
 	return exception.Nest(err, stmt.Close())
 }
 
-func (i *Invocation) start(statement string) {
+func (i *Invocation) start(statement string) (string, error) {
+	if i.statementInterceptor != nil {
+		var err error
+		statement, err = i.statementInterceptor(i.statementLabel, statement)
+		if err != nil {
+			return "", err
+		}
+	}
 	if i.tracer != nil {
 		i.traceFinisher = i.tracer.Query(i.context, i.conn, i, statement)
 	}
+	return statement, nil
 }
 
 func (i *Invocation) finish(statement string, r interface{}, err error) error {
