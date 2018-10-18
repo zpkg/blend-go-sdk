@@ -399,6 +399,92 @@ func TestPatchStrings(t *testing.T) {
 	assert.Equal("this is foo", string(mule.Sub.Foo))
 }
 
+func TestPatchByTag(t *testing.T) {
+	assert := assert.New(t)
+	secret := "secret"
+	json := "json"
+
+	obj := mapStringsTest{}
+
+	// Update with secret tags
+	settings := map[string]interface{} {
+		"bool": true,
+		"float32": float32(3.4),
+		"float64": float64(-103.2),
+		"uint8": uint8(8),
+	}
+
+	err := Reflection.PatchByTag(&obj,secret,settings)
+	assert.Nil(err)
+
+	// Validate updates
+	assert.True(obj.Bool)
+	assert.Equal(3.4, obj.Float32)
+	assert.Equal(-103.2, obj.Float64)
+	assert.Equal(8, obj.Uint8)
+
+	// Update with json tags
+	settings = map[string]interface{}{
+		"int_32": 94,
+		"s_tring": "hello world",
+	}
+
+	err = Reflection.PatchByTag(&obj,json,settings)
+	assert.Nil(err)
+
+	// New updates
+	assert.Equal(94, obj.Int32)
+	assert.Equal("hello world", obj.String)
+
+	// No other changes
+	assert.True(obj.Bool)
+	assert.Equal(3.4, obj.Float32)
+	assert.Equal(-103.2, obj.Float64)
+	assert.Equal(8, obj.Uint8)
+
+	// Check that it errors on a missing tag
+	settings = map[string]interface{}{
+		"int_32": 14,
+		"not_a_tag": "hello world",
+		"s_tring": "goodbye world",
+	}
+
+	err = Reflection.PatchByTag(&obj,json,settings)
+	assert.NotNil(err)
+	assert.Contains(err.Error(), "unknown tag")
+
+	// Test Patching a slice and using a tag with commas
+	slice := []string {"Foo", "Bar", "Baz"}
+	settings = map[string]interface{}{
+		"csvField": &slice,
+	}
+	err = Reflection.PatchByTag(&obj,secret,settings)
+	assert.Nil(err)
+	assert.Equal(3, len(obj.CSV))
+	assert.Equal("Foo", obj.CSV[0])
+	assert.Equal("Bar", obj.CSV[1])
+	assert.Equal("Baz", obj.CSV[2])
+
+	// Test Patching a struct
+	inner := mapStringsTestSubObject{
+		Foo: "Bar",
+	}
+	settings = map[string]interface{}{
+		"sub": inner,
+	}
+	err = Reflection.PatchByTag(&obj,json,settings)
+	assert.Nil(err)
+	assert.Equal("Bar", obj.Sub.Foo)
+
+	// Errors on unexported Field
+	settings = map[string]interface{} {
+		"unexported":"Lorem Ipsum",
+	}
+	err = Reflection.PatchByTag(&obj,secret,settings)
+	assert.NotNil(err)
+	assert.Contains(err.Error(), "cannot set field")
+}
+
 type subType struct {
 	ID   int
 	Name string
@@ -423,21 +509,21 @@ type mapStringsTest struct {
 	Float64  float64       `secret:"float64"`
 	Int8     int8          `secret:"int8"`
 	Int16    int16         `secret:"int16"`
-	Int32    int32         `secret:"int32"`
+	Int32    int32         `secret:"int32" json:"int_32"`
 	Int      int           `secret:"int"`
 	Int64    int64         `secret:"int64"`
 	Uint8    uint8         `secret:"uint8"`
 	Uint16   uint16        `secret:"uint16"`
 	Uint32   uint32        `secret:"uint32"`
 	Uint64   uint32        `secret:"uint64"`
-	String   string        `secret:"string"`
+	String   string        `secret:"string" json:"s_tring"`
 	Duration time.Duration `secret:"duration"`
 
 	CSV    []string `secret:"csvField,csv"`
 	Base64 []byte   `secret:"base64Field,base64"`
 	Bytes  []byte   `secret:"bytesField,bytes"`
 
-	Sub mapStringsTestSubObject
+	Sub mapStringsTestSubObject `json:"sub"`
 
 	unexported string `secret:"unexported"`
 }
