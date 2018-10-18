@@ -86,7 +86,6 @@ func TestDecomposeStrings(t *testing.T) {
 func TestDecomposeStringsWithTag(t *testing.T) {
 	assert := assert.New(t)
 
-	ti := 14
 	ts := "bar baz"
 	tsl := []string{"baz", "bin", "bop"}
 	tss := mapStringsTestSubObject{
@@ -103,7 +102,6 @@ func TestDecomposeStringsWithTag(t *testing.T) {
 		Sub: mapStringsTestSubObject{
 			Foo: "yes this is foo",
 		},
-		IntPtr:    &ti,
 		StringPtr: &ts,
 		SlicePtr:  &tsl,
 		StructPtr: &tss,
@@ -120,7 +118,7 @@ func TestDecomposeStringsWithTag(t *testing.T) {
 	assert.Equal("10s", output["duration"])
 	assert.Equal("yes this is foo", output["foo"])
 
-	assert.Equal("14", output["intPointer"])
+	assert.Equal("<nil>", output["intPointer"])
 	assert.Equal("bar baz", output["stringPointer"])
 	assert.Equal("[baz bin bop]", output["slicePointer"])
 	assert.Equal("{no this is Bar}", output["structPointer"])
