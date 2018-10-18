@@ -446,7 +446,7 @@ func TestPatchByTag(t *testing.T) {
 	settings = map[string]interface{}{
 		"int_32": 14,
 		"not_a_tag": "hello world",
-		"s_tring": "goodbye",
+		"s_tring": "goodbye world",
 	}
 
 	err = Reflection.PatchByTag(&obj,json,settings)
