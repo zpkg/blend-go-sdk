@@ -382,7 +382,7 @@ func (jm *JobManager) runDueJobs() error {
 	for _, jobMeta := range jm.jobs {
 		nextRunTime = jobMeta.NextRunTime
 		if !jobMeta.Disabled && !nextRunTime.IsZero() && nextRunTime.Before(now) {
-			newNext := Deref(jobMeta.Schedule.GetNextRunTime(Optional(now)))
+			newNext := jm.scheduleNextRuntime(jobMeta.Schedule, Optional(now))
 			jobMeta.NextRunTime = newNext
 			jobMeta.LastRunTime = now
 			if err = jm.runTaskUnsafe(jobMeta.Job); err != nil {
@@ -517,7 +517,7 @@ func (jm *JobManager) loadJobUnsafe(j Job) error {
 	meta := &JobMeta{
 		Name:        jobName,
 		Job:         j,
-		NextRunTime: Deref(schedule.GetNextRunTime(nil)),
+		NextRunTime: jm.scheduleNextRuntime(schedule, nil),
 		Schedule:    schedule,
 	}
 
@@ -527,6 +527,13 @@ func (jm *JobManager) loadJobUnsafe(j Job) error {
 
 	jm.jobs[jobName] = meta
 	return nil
+}
+
+func (jm *JobManager) scheduleNextRuntime(schedule Schedule, after *time.Time) time.Time {
+	if schedule != nil {
+		return Deref(schedule.GetNextRunTime(after))
+	}
+	return time.Time{}
 }
 
 func (jm *JobManager) setJobDisabledUnsafe(jobName string, disabled bool) error {

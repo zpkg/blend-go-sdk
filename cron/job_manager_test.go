@@ -248,7 +248,7 @@ func (twe testWithEnabled) Name() string {
 }
 
 func (twe testWithEnabled) Schedule() Schedule {
-	return OnDemand()
+	return nil
 }
 
 func (twe testWithEnabled) Enabled() bool {

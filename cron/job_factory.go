@@ -8,8 +8,7 @@ import (
 // NewJob returns a new job factory.
 func NewJob(name string) *JobFactory {
 	return &JobFactory{
-		name:     name,
-		schedule: OnDemand(),
+		name: name,
 	}
 }
 

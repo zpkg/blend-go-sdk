@@ -11,7 +11,7 @@ import (
 func TestJobFactory(t *testing.T) {
 	assert := assert.New(t)
 
-	assert.NotNil(NewJob("test_job").Schedule())
+	assert.NotNil(NewJob("test_job"))
 	assert.True(NewJob("test_job").IsEnabled())
 	assert.True(NewJob("test_job").ShowMessages())
 	assert.Equal("test_job", NewJob("test_job").Name())

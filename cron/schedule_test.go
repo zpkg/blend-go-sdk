@@ -72,7 +72,7 @@ func TestOnTheHourAt(t *testing.T) {
 	assert := assert.New(t)
 
 	now := time.Now().UTC()
-	schedule := EveryHourAt(40)
+	schedule := EveryHourAt(40, 00)
 
 	fromNil := schedule.GetNextRunTime(nil)
 	assert.NotNil(fromNil)
