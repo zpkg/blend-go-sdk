@@ -4,12 +4,6 @@ import (
 	"time"
 )
 
-// Status is a status object
-type Status struct {
-	Jobs  []JobMeta
-	Tasks map[string]TaskMeta
-}
-
 // JobMeta is runtime metadata for a job.
 type JobMeta struct {
 	Name            string      `json:"name"`
@@ -18,5 +12,8 @@ type JobMeta struct {
 	Schedule        Schedule    `json:"-"`
 	EnabledProvider func() bool `json:"-"`
 	NextRunTime     time.Time   `json:"nextRunTime"`
-	LastRunTime     time.Time   `json:"lastRunTime"`
+
+	LastRunTime time.Time     `json:"lastRunTime"`
+	LastElapsed time.Duration `json:"lastElapsed"`
+	LastErr     error         `json:"lastErr"`
 }

@@ -2,8 +2,8 @@ package cron
 
 import "time"
 
-// WeeklyAt returns a schedule that fires on every of the given days at the given time by hour, minute and second in UTC.
-func WeeklyAt(hour, minute, second int, days ...time.Weekday) Schedule {
+// WeeklyAtUTC returns a schedule that fires on every of the given days at the given time by hour, minute and second in UTC.
+func WeeklyAtUTC(hour, minute, second int, days ...time.Weekday) Schedule {
 	dayOfWeekMask := uint(0)
 	for _, day := range days {
 		dayOfWeekMask = dayOfWeekMask | 1<<uint(day)
@@ -12,18 +12,18 @@ func WeeklyAt(hour, minute, second int, days ...time.Weekday) Schedule {
 	return &DailySchedule{DayOfWeekMask: dayOfWeekMask, TimeOfDayUTC: time.Date(0, 0, 0, hour, minute, second, 0, time.UTC)}
 }
 
-// DailyAt returns a schedule that fires every day at the given hour, minute and second in UTC.
-func DailyAt(hour, minute, second int) Schedule {
+// DailyAtUTC returns a schedule that fires every day at the given hour, minute and second in UTC.
+func DailyAtUTC(hour, minute, second int) Schedule {
 	return &DailySchedule{DayOfWeekMask: AllDaysMask, TimeOfDayUTC: time.Date(0, 0, 0, hour, minute, second, 0, time.UTC)}
 }
 
-// WeekdaysAt returns a schedule that fires every week day at the given hour, minute and second in UTC>
-func WeekdaysAt(hour, minute, second int) Schedule {
+// WeekdaysAtUTC returns a schedule that fires every week day at the given hour, minute and second in UTC>
+func WeekdaysAtUTC(hour, minute, second int) Schedule {
 	return &DailySchedule{DayOfWeekMask: WeekDaysMask, TimeOfDayUTC: time.Date(0, 0, 0, hour, minute, second, 0, time.UTC)}
 }
 
-// WeekendsAt returns a schedule that fires every weekend day at the given hour, minut and second.
-func WeekendsAt(hour, minute, second int) Schedule {
+// WeekendsAtUTC returns a schedule that fires every weekend day at the given hour, minut and second.
+func WeekendsAtUTC(hour, minute, second int) Schedule {
 	return &DailySchedule{DayOfWeekMask: WeekendDaysMask, TimeOfDayUTC: time.Date(0, 0, 0, hour, minute, second, 0, time.UTC)}
 }
 

@@ -2,19 +2,19 @@ package cron
 
 import "time"
 
-// OnceAt returns a schedule that fires once at a given time.
+// OnceAtUTC returns a schedule that fires once at a given time.
 // It will never fire again unless reloaded.
-func OnceAt(t time.Time) Schedule {
-	return OnceAtSchedule{Time: t}
+func OnceAtUTC(t time.Time) Schedule {
+	return OnceAtUTCSchedule{Time: t}
 }
 
-// OnceAtSchedule is a schedule.
-type OnceAtSchedule struct {
+// OnceAtUTCSchedule is a schedule.
+type OnceAtUTCSchedule struct {
 	Time time.Time
 }
 
 // GetNextRunTime returns the next runtime.
-func (oa OnceAtSchedule) GetNextRunTime(after *time.Time) *time.Time {
+func (oa OnceAtUTCSchedule) GetNextRunTime(after *time.Time) *time.Time {
 	if after == nil {
 		return &oa.Time
 	}

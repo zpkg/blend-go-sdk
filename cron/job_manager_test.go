@@ -12,6 +12,7 @@ import (
 	"github.com/blend/go-sdk/exception"
 	"github.com/blend/go-sdk/graceful"
 	logger "github.com/blend/go-sdk/logger"
+	"github.com/blend/go-sdk/uuid"
 )
 
 // assert the job manager is graceful
@@ -226,18 +227,18 @@ func TestRunJobByScheduleRapid(t *testing.T) {
 
 // The goal with this test is to see if panics take down the test process or not.
 func TestJobManagerTaskPanicHandling(t *testing.T) {
-	a := assert.New(t)
+	assert := assert.New(t)
 
 	manager := New()
 	waitGroup := sync.WaitGroup{}
 	waitGroup.Add(1)
-	err := manager.RunTask(NewTask(func(ctx context.Context) error {
+	manager.RunTask(NewTask(func(ctx context.Context) error {
 		defer waitGroup.Done()
 		panic("this is only a test")
 	}))
 
 	waitGroup.Wait()
-	a.Nil(err)
+	assert.True(true, "should complete")
 }
 
 type testWithEnabled struct {
@@ -369,11 +370,149 @@ func TestManagerTracer(t *testing.T) {
 			},
 		})
 
-	assert.Nil(manager.RunTask(&testTask{}))
+	manager.RunTask(&testTask{})
 	wg.Wait()
 	assert.True(didCallStart)
 	assert.True(didCallFinish)
 	assert.True(startTaskCorrect)
 	assert.True(finishTaskCorrect)
 	assert.True(errorUnset)
+}
+
+func TestJobManagerRunJobs(t *testing.T) {
+	assert := assert.New(t)
+
+	jm := New()
+	jm.Start()
+	defer jm.Stop()
+
+	job0 := uuid.V4().String()
+	job1 := uuid.V4().String()
+	job2 := uuid.V4().String()
+
+	var job0ran bool
+	var job1ran bool
+	var job2ran bool
+
+	wg := sync.WaitGroup{}
+	wg.Add(2)
+	assert.Nil(jm.LoadJob(NewJob(job0).WithAction(func(_ context.Context) error {
+		defer wg.Done()
+		job0ran = true
+		return nil
+	})))
+	assert.Nil(jm.LoadJob(NewJob(job1).WithAction(func(_ context.Context) error {
+		defer wg.Done()
+		job1ran = true
+		return nil
+	})))
+	assert.Nil(jm.LoadJob(NewJob(job2).WithAction(func(_ context.Context) error {
+		defer wg.Done()
+		job2ran = true
+		return nil
+	})))
+
+	assert.Nil(jm.RunJobs(job0, job2))
+	wg.Wait()
+
+	assert.True(job0ran)
+	assert.False(job1ran)
+	assert.True(job2ran)
+}
+
+func TestJobManagerRunAllJobs(t *testing.T) {
+	assert := assert.New(t)
+
+	jm := New()
+	jm.Start()
+	defer jm.Stop()
+
+	job0 := uuid.V4().String()
+	job1 := uuid.V4().String()
+	job2 := uuid.V4().String()
+
+	var job0ran bool
+	var job1ran bool
+	var job2ran bool
+
+	wg := sync.WaitGroup{}
+	wg.Add(3)
+	assert.Nil(jm.LoadJob(NewJob(job0).WithAction(func(_ context.Context) error {
+		defer wg.Done()
+		job0ran = true
+		return nil
+	})))
+	assert.Nil(jm.LoadJob(NewJob(job1).WithAction(func(_ context.Context) error {
+		defer wg.Done()
+		job1ran = true
+		return nil
+	})))
+	assert.Nil(jm.LoadJob(NewJob(job2).WithAction(func(_ context.Context) error {
+		defer wg.Done()
+		job2ran = true
+		return nil
+	})))
+
+	jm.RunAllJobs()
+	wg.Wait()
+
+	assert.True(job0ran)
+	assert.True(job1ran)
+	assert.True(job2ran)
+}
+
+func newBrokenFixedTest(action func(context.Context) error) *brokenFixedTest {
+	return &brokenFixedTest{
+		BrokenSignal: make(chan struct{}),
+		FixedSignal:  make(chan struct{}),
+		Action:       action,
+	}
+}
+
+type brokenFixedTest struct {
+	BrokenSignal chan struct{}
+	FixedSignal  chan struct{}
+	Action       func(context.Context) error
+}
+
+func (job brokenFixedTest) Name() string { return "broken-fixed" }
+
+func (job brokenFixedTest) Execute(ctx context.Context) error {
+	return job.Action(ctx)
+}
+
+func (job brokenFixedTest) Schedule() Schedule { return nil }
+
+func (job brokenFixedTest) OnBroken(_ error) {
+	close(job.BrokenSignal)
+}
+
+func (job brokenFixedTest) OnFixed() {
+	close(job.FixedSignal)
+}
+
+func TestJobManagerBrokenFixed(t *testing.T) {
+	assert := assert.New(t)
+
+	jm := New()
+	jm.Start()
+	defer jm.Stop()
+
+	var shouldFail bool
+	j := newBrokenFixedTest(func(_ context.Context) error {
+		defer func() {
+			shouldFail = !shouldFail
+		}()
+		if shouldFail {
+			return fmt.Errorf("only a test")
+		}
+		return nil
+	})
+	jm.LoadJob(j)
+
+	assert.Nil(jm.RunJob("broken-fixed"))
+	assert.Nil(jm.RunJob("broken-fixed"))
+	<-j.BrokenSignal
+	assert.Nil(jm.RunJob("broken-fixed"))
+	<-j.FixedSignal
 }

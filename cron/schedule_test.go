@@ -26,7 +26,7 @@ func TestIntervalSchedule(t *testing.T) {
 
 func TestDailyScheduleEveryDay(t *testing.T) {
 	a := assert.New(t)
-	schedule := DailyAt(12, 0, 0) //noon
+	schedule := DailyAtUTC(12, 0, 0) //noon
 	now := time.Now().UTC()
 	beforenoon := time.Date(now.Year(), now.Month(), now.Day(), 11, 0, 0, 0, time.UTC)
 	afternoon := time.Date(now.Year(), now.Month(), now.Day(), 13, 0, 0, 0, time.UTC)
@@ -39,7 +39,7 @@ func TestDailyScheduleEveryDay(t *testing.T) {
 
 func TestDailyScheduleSingleDay(t *testing.T) {
 	a := assert.New(t)
-	schedule := WeeklyAt(12, 0, 0, time.Monday)                  //every monday at noon
+	schedule := WeeklyAtUTC(12, 0, 0, time.Monday)               //every monday at noon
 	beforenoon := time.Date(2016, 01, 11, 11, 0, 0, 0, time.UTC) //these are both a monday
 	afternoon := time.Date(2016, 01, 11, 13, 0, 0, 0, time.UTC)  //these are both a monday
 
