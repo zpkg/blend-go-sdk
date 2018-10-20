@@ -546,3 +546,21 @@ func TestJobManagerJobLifecycle(t *testing.T) {
 	assert.Equal(1, j.Failures)
 	assert.Equal(2, j.Completes)
 }
+
+func TestJobManagerJob(t *testing.T) {
+	assert := assert.New(t)
+
+	jm := New()
+	j := newBrokenFixedTest(func(_ context.Context) error {
+		return nil
+	})
+	jm.LoadJob(j)
+
+	meta, err := jm.Job(j.Name())
+	assert.Nil(err)
+	assert.NotNil(meta)
+
+	meta, err = jm.Job(uuid.V4().String())
+	assert.NotNil(err)
+	assert.Nil(meta)
+}

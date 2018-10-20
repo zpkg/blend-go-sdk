@@ -127,13 +127,15 @@ func (jm *JobManager) HasJob(jobName string) (hasJob bool) {
 	return
 }
 
-// Job returns a job instance by name.
-func (jm *JobManager) Job(jobName string) (job Job) {
+// Job returns a job metadata by name.
+func (jm *JobManager) Job(jobName string) (job *JobMeta, err error) {
 	jm.Lock()
 	defer jm.Unlock()
 
 	if jobMeta, hasJob := jm.jobs[jobName]; hasJob {
-		job = jobMeta.Job
+		job = jobMeta
+	} else {
+		err = exception.New(ErrJobNotLoaded).WithMessagef("job: %s", jobName)
 	}
 	return
 }
