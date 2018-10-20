@@ -13,7 +13,5 @@ type JobMeta struct {
 	EnabledProvider func() bool `json:"-"`
 	NextRunTime     time.Time   `json:"nextRunTime"`
 
-	LastRunTime time.Time     `json:"lastRunTime"`
-	LastElapsed time.Duration `json:"lastElapsed"`
-	LastErr     error         `json:"lastErr"`
+	Last *TaskInvocation `json:"last"`
 }

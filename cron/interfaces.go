@@ -2,50 +2,39 @@ package cron
 
 import "time"
 
-// TaskResumeProvider is an interface that allows a task to be resumed.
-type TaskResumeProvider interface {
-	State() interface{}
-	Resume(state interface{}) error
-}
+/*
+A note on the naming conventions for these interfaces.
 
-// TaskTimeoutProvider is an interface that allows a task to be timed out.
-type TaskTimeoutProvider interface {
+MethodName[Receiver|Provider] is the general pattern.
+
+If possible, Recever indicates a method that will be called actively, provider is a value your type can give.
+
+They're mostly the same except
+*/
+
+// TimeoutProvider is an interface that allows a task to be timed out.
+type TimeoutProvider interface {
 	Timeout() time.Duration
 }
 
-// TaskStatusProvider is an interface that allows a task to report its status.
-type TaskStatusProvider interface {
+// StatusProvider is an interface that allows a task to report its status.
+type StatusProvider interface {
 	Status() string
 }
 
-// TaskOnStartReceiver is an interface that allows a task to be signaled when it has started.
-type TaskOnStartReceiver interface {
-	OnStart()
-}
-
-// TaskOnCancellationReceiver is an interface that allows a task to be signaled when it has been canceled.
-type TaskOnCancellationReceiver interface {
-	OnCancellation()
-}
-
-// TaskOnCompleteReceiver is an interface that allows a task to be signaled when it has been completed.
-type TaskOnCompleteReceiver interface {
-	OnComplete(error)
-}
-
-// TaskSerialProvider is an optional interface that prohibits
+// SerialProvider is an optional interface that prohibits
 // a task from running if another instance of the task is currently running.
-type TaskSerialProvider interface {
+type SerialProvider interface {
 	Serial()
 }
 
-// TaskShouldTriggerListenersProvider is a type that enables or disables logger listeners.
-type TaskShouldTriggerListenersProvider interface {
+// ShouldTriggerListenersProvider is a type that enables or disables logger listeners.
+type ShouldTriggerListenersProvider interface {
 	ShouldTriggerListeners() bool
 }
 
-// TaskShouldWriteOutputProvider is a type that enables or disables logger output for events.
-type TaskShouldWriteOutputProvider interface {
+// ShouldWriteOutputProvider is a type that enables or disables logger output for events.
+type ShouldWriteOutputProvider interface {
 	ShouldWriteOutput() bool
 }
 
@@ -54,14 +43,29 @@ type JobEnabledProvider interface {
 	Enabled() bool
 }
 
+// OnStartReceiver is an interface that allows a task to be signaled when it has started.
+type OnStartReceiver interface {
+	OnStart(*TaskInvocation)
+}
+
+// OnCancellationReceiver is an interface that allows a task to be signaled when it has been canceled.
+type OnCancellationReceiver interface {
+	OnCancellation(*TaskInvocation)
+}
+
+// OnCompleteReceiver is an interface that allows a task to be signaled when it has been completed.
+type OnCompleteReceiver interface {
+	OnComplete(*TaskInvocation)
+}
+
 // JobOnBrokenReceiver is an interface that allows a job to be signaled when it is a failure that followed
 // a previous success.
 type JobOnBrokenReceiver interface {
-	OnBroken(error)
+	OnBroken(*TaskInvocation)
 }
 
 // JobOnFixedReceiver is an interface that allows a jbo to be signaled when is a success that followed
 // a previous failure.
 type JobOnFixedReceiver interface {
-	OnFixed()
+	OnFixed(*TaskInvocation)
 }

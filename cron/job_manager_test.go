@@ -48,6 +48,10 @@ func (raj *runAtJob) Execute(ctx context.Context) error {
 	return raj.RunDelegate(ctx)
 }
 
+var (
+	_ OnCancellationReceiver = (*testJobWithTimeout)(nil)
+)
+
 type testJobWithTimeout struct {
 	RunAt                time.Time
 	TimeoutDuration      time.Duration
@@ -71,7 +75,7 @@ func (tj *testJobWithTimeout) Execute(ctx context.Context) error {
 	return tj.RunDelegate(ctx)
 }
 
-func (tj *testJobWithTimeout) OnCancellation() {
+func (tj *testJobWithTimeout) OnCancellation(t *TaskInvocation) {
 	tj.CancellationDelegate()
 }
 
@@ -461,6 +465,13 @@ func TestJobManagerRunAllJobs(t *testing.T) {
 	assert.True(job2ran)
 }
 
+var (
+	_ OnStartReceiver     = (*brokenFixedTest)(nil)
+	_ OnCompleteReceiver  = (*brokenFixedTest)(nil)
+	_ JobOnBrokenReceiver = (*brokenFixedTest)(nil)
+	_ JobOnFixedReceiver  = (*brokenFixedTest)(nil)
+)
+
 func newBrokenFixedTest(action func(context.Context) error) *brokenFixedTest {
 	return &brokenFixedTest{
 		BrokenSignal: make(chan struct{}),
@@ -470,6 +481,9 @@ func newBrokenFixedTest(action func(context.Context) error) *brokenFixedTest {
 }
 
 type brokenFixedTest struct {
+	Starts       int
+	Completes    int
+	Failures     int
 	BrokenSignal chan struct{}
 	FixedSignal  chan struct{}
 	Action       func(context.Context) error
@@ -483,15 +497,27 @@ func (job brokenFixedTest) Execute(ctx context.Context) error {
 
 func (job brokenFixedTest) Schedule() Schedule { return nil }
 
-func (job brokenFixedTest) OnBroken(_ error) {
+func (job *brokenFixedTest) OnStart(t *TaskInvocation) {
+	job.Starts++
+}
+
+func (job *brokenFixedTest) OnComplete(t *TaskInvocation) {
+	if t.Err != nil {
+		job.Failures++
+	} else {
+		job.Completes++
+	}
+}
+
+func (job *brokenFixedTest) OnBroken(t *TaskInvocation) {
 	close(job.BrokenSignal)
 }
 
-func (job brokenFixedTest) OnFixed() {
+func (job *brokenFixedTest) OnFixed(t *TaskInvocation) {
 	close(job.FixedSignal)
 }
 
-func TestJobManagerBrokenFixed(t *testing.T) {
+func TestJobManagerJobLifecycle(t *testing.T) {
 	assert := assert.New(t)
 
 	jm := New()
@@ -515,4 +541,8 @@ func TestJobManagerBrokenFixed(t *testing.T) {
 	<-j.BrokenSignal
 	assert.Nil(jm.RunJob("broken-fixed"))
 	<-j.FixedSignal
+
+	assert.Equal(3, j.Starts)
+	assert.Equal(1, j.Failures)
+	assert.Equal(2, j.Completes)
 }
