@@ -9,11 +9,11 @@ const (
 	// ErrJobAlreadyLoaded is a common error.
 	ErrJobAlreadyLoaded exception.Class = "job already loaded"
 
-	// ErrTaskNotFound is a common error.
-	ErrTaskNotFound exception.Class = "task not found"
+	// ErrJobNotFound is a common error.
+	ErrJobNotFound exception.Class = "job not found"
 
-	// ErrTaskCancelled is a common error.
-	ErrTaskCancelled exception.Class = "task cancelled"
+	// ErrJobCancelled is a common error.
+	ErrJobCancelled exception.Class = "job cancelled"
 )
 
 // IsJobNotLoaded returns if the error is a job not loaded error.
@@ -26,12 +26,12 @@ func IsJobAlreadyLoaded(err error) bool {
 	return exception.Is(err, ErrJobAlreadyLoaded)
 }
 
-// IsTaskNotFound returns if the error is a task not found error.
-func IsTaskNotFound(err error) bool {
-	return exception.Is(err, ErrTaskNotFound)
+// IsJobNotFound returns if the error is a task not found error.
+func IsJobNotFound(err error) bool {
+	return exception.Is(err, ErrJobNotFound)
 }
 
-// IsTaskCancelled returns if the error is a task not found error.
-func IsTaskCancelled(err error) bool {
-	return exception.Is(err, ErrTaskCancelled)
+// IsJobCancelled returns if the error is a task not found error.
+func IsJobCancelled(err error) bool {
+	return exception.Is(err, ErrJobCancelled)
 }

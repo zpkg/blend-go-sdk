@@ -16,19 +16,18 @@ import (
 // New returns a new job manager.
 func New() *JobManager {
 	jm := JobManager{
-		latch:             &async.Latch{},
-		heartbeatInterval: DefaultHeartbeatInterval,
-		jobs:              map[string]*JobMeta{},
-		tasks:             map[string]*JobInvocation{},
+		latch:   &async.Latch{},
+		jobs:    map[string]*JobMeta{},
+		running: map[string]*JobInvocation{},
 	}
 	jm.schedulerWorker = async.NewInterval(jm.runDueJobs, DefaultHeartbeatInterval)
-	jm.killHangingTasksWorker = async.NewInterval(jm.killHangingTasks, DefaultHeartbeatInterval)
+	jm.killHangingTasksWorker = async.NewInterval(jm.killHangingJobs, DefaultHeartbeatInterval)
 	return &jm
 }
 
 // NewFromConfig returns a new job manager from a given config.
 func NewFromConfig(cfg *Config) *JobManager {
-	return New().WithHeartbeatInterval(cfg.GetHeartbeatInterval())
+	return New()
 }
 
 // NewFromEnv returns a new job manager from the environment.
@@ -53,31 +52,27 @@ func MustNewFromEnv() *JobManager {
 type JobManager struct {
 	sync.Mutex
 
-	latch  *async.Latch
-	tracer Tracer
+	latch *async.Latch
 
-	heartbeatInterval time.Duration
-	log               *logger.Logger
+	tracer Tracer
+	log    *logger.Logger
 
 	schedulerWorker        *async.Interval
 	killHangingTasksWorker *async.Interval
 
-	jobs  map[string]*JobMeta
+	jobs    map[string]*JobMeta
 	running map[string]*JobInvocation
+}
+
+// WithLogger sets the logger and returns a reference to the job manager.
+func (jm *JobManager) WithLogger(log *logger.Logger) *JobManager {
+	jm.log = log
+	return jm
 }
 
 // Logger returns the diagnostics agent.
 func (jm *JobManager) Logger() *logger.Logger {
 	return jm.log
-}
-
-// WithLogger sets the logger and returns a reference to the job manager.
-func (jm *JobManager) WithLogger(log *logger.Logger) *JobManager {
-	jm.Lock()
-	defer jm.Unlock()
-
-	jm.log = log
-	return jm
 }
 
 // WithTracer sets the manager's tracer.
@@ -91,29 +86,6 @@ func (jm *JobManager) Tracer() Tracer {
 	return jm.tracer
 }
 
-// WithHighPrecisionHeartbeat sets the heartbeat interval to the high precision interval and returns the job manager.
-func (jm *JobManager) WithHighPrecisionHeartbeat() *JobManager {
-	return jm.WithHeartbeatInterval(DefaultHighPrecisionHeartbeatInterval)
-}
-
-// WithDefaultHeartbeat sets the heartbeat interval to the default interval and returns the job manager.
-func (jm *JobManager) WithDefaultHeartbeat() *JobManager {
-	return jm.WithHeartbeatInterval(DefaultHeartbeatInterval)
-}
-
-// WithHeartbeatInterval sets the heartbeat interval explicitly and returns the job manager.
-func (jm *JobManager) WithHeartbeatInterval(interval time.Duration) *JobManager {
-	jm.schedulerWorker.WithInterval(interval)
-	jm.killHangingTasksWorker.WithInterval(interval)
-	jm.heartbeatInterval = interval
-	return jm
-}
-
-// HeartbeatInterval returns the current heartbeat interval.
-func (jm *JobManager) HeartbeatInterval() time.Duration {
-	return jm.heartbeatInterval
-}
-
 // ----------------------------------------------------------------------------
 // Informational Methods
 // ----------------------------------------------------------------------------
@@ -122,7 +94,6 @@ func (jm *JobManager) HeartbeatInterval() time.Duration {
 func (jm *JobManager) HasJob(jobName string) (hasJob bool) {
 	jm.Lock()
 	defer jm.Unlock()
-
 	_, hasJob = jm.jobs[jobName]
 	return
 }
@@ -131,7 +102,6 @@ func (jm *JobManager) HasJob(jobName string) (hasJob bool) {
 func (jm *JobManager) Job(jobName string) (job *JobMeta, err error) {
 	jm.Lock()
 	defer jm.Unlock()
-
 	if jobMeta, hasJob := jm.jobs[jobName]; hasJob {
 		job = jobMeta
 	} else {
@@ -155,11 +125,10 @@ func (jm *JobManager) IsDisabled(jobName string) (value bool) {
 }
 
 // IsRunning returns if a task is currently running.
-func (jm *JobManager) IsRunning(taskName string) (isRunning bool) {
+func (jm *JobManager) IsRunning(jobName string) (isRunning bool) {
 	jm.Lock()
 	defer jm.Unlock()
-
-	_, isRunning = jm.tasks[taskName]
+	_, isRunning = jm.running[jobName]
 	return
 }
 
@@ -167,7 +136,6 @@ func (jm *JobManager) IsRunning(taskName string) (isRunning bool) {
 func (jm *JobManager) ReadAllJobs(action func(jobs map[string]*JobMeta)) {
 	jm.Lock()
 	defer jm.Unlock()
-
 	action(jm.jobs)
 }
 
@@ -175,15 +143,14 @@ func (jm *JobManager) ReadAllJobs(action func(jobs map[string]*JobMeta)) {
 func (jm *JobManager) Status() *Status {
 	jm.Lock()
 	defer jm.Unlock()
-
 	status := Status{
-		Tasks: map[string]TaskInvocation{},
+		Running: map[string]JobInvocation{},
 	}
 	for _, meta := range jm.jobs {
 		status.Jobs = append(status.Jobs, *meta)
 	}
-	for name, task := range jm.tasks {
-		status.Tasks[name] = *task
+	for name, job := range jm.running {
+		status.Running[name] = *job
 	}
 	return &status
 }
@@ -211,7 +178,6 @@ func (jm *JobManager) LoadJobs(jobs ...Job) error {
 func (jm *JobManager) LoadJob(job Job) error {
 	jm.Lock()
 	defer jm.Unlock()
-
 	return jm.loadJobUnsafe(job)
 }
 
@@ -293,19 +259,19 @@ func (jm *JobManager) RunAllJobs() {
 	}
 }
 
-// CancelTask cancels (sends the cancellation signal) to a running task.
+// CancelJob cancels (sends the cancellation signal) to a running job.
 func (jm *JobManager) CancelJob(jobName string) (err error) {
 	jm.Lock()
 	defer jm.Unlock()
 
 	job, ok := jm.running[jobName]
 	if !ok {
-		err = exception.New(ErrJobNotFound).WithMessagef("task: %s", taskName)
+		err = exception.New(ErrJobNotFound).WithMessagef("job: %s", jobName)
 		return
 	}
 
-	job.Elapsed = Since(task.StartTime)
-	job.Err = exception.New(ErrTaskCancelled)
+	job.Elapsed = Since(job.StartTime)
+	job.Err = exception.New(ErrJobCancelled)
 	job.Cancel()
 	jm.onCancelled(job)
 	return
@@ -369,21 +335,21 @@ func (jm *JobManager) killHangingJobs() (err error) {
 	var now time.Time
 	var t1, t2 time.Time
 
-	for taskName, taskMeta := range jm.tasks {
-		if taskMeta.Timeout.IsZero() {
+	for jobName, ji := range jm.running {
+		if ji.Timeout.IsZero() {
 			return
 		}
 		now = Now()
-		if jobMeta, hasJobMeta := jm.jobs[taskName]; hasJobMeta {
+		if jobMeta, hasJobMeta := jm.jobs[jobName]; hasJobMeta {
 			nextRuntime := jobMeta.NextRunTime
-			t1 = taskMeta.Timeout
+			t1 = ji.Timeout
 			t2 = nextRuntime
 			effectiveTimeout = Min(t1, t2)
 		} else {
-			effectiveTimeout = taskMeta.Timeout
+			effectiveTimeout = ji.Timeout
 		}
 		if effectiveTimeout.Before(now) {
-			jm.killHangingJob(taskMeta)
+			jm.killHangingJob(ji)
 		}
 	}
 	return nil
@@ -394,83 +360,75 @@ func (jm *JobManager) killHangingJobs() (err error) {
 //
 
 func (jm *JobManager) runJobUnsafe(jobMeta *JobMeta) {
-	now := Now()
-
-	if !jm.shouldRunTask(t) {
+	if !jm.jobCanRun(jobMeta) {
 		return
 	}
 
-	// merge the runtime disabled with the job provided enabled/disabled
-	disabled := jobMeta.Disabled
-	if jobMeta.EnabledProvider != nil {
-		disabled = disabled || !jobMeta.EnabledProvider()
-	}
+	now := Now()
+	jobMeta.NextRunTime = jm.scheduleNextRuntime(jobMeta.Schedule, Optional(now))
 
-	if !disabled {
-		jobMeta.NextRunTime = jm.scheduleNextRuntime(jobMeta.Schedule, Optional(now))
-		jm.runTaskUnsafe(jobMeta.Job)
-	}
-}
-
-func (jm *JobManager) runJobUnsafe(t Task) {
-
-	taskName := t.Name()
 	start := Now()
-	ctx, cancel := jm.createContext()
+	ctx, cancel := jm.createContextWithCancel()
 
-	tm := &TaskInvocation{
-		Name:      taskName,
+	ji := &JobInvocation{
+		Name:      jobMeta.Name,
 		StartTime: start,
-		Task:      t,
+		JobMeta:   jobMeta,
 		Context:   ctx,
 		Cancel:    cancel,
 	}
 
-	if typed, ok := t.(TimeoutProvider); ok {
-		tm.Timeout = start.Add(typed.Timeout())
-	}
-	jm.tasks[taskName] = tm
-
-	// run the actual task
-	go func() {
-		var err error
-		var tf TraceFinisher
-		defer func() {
-			if r := recover(); r != nil {
-				err = exception.New(r)
-			}
-			if tf != nil {
-				tf.Finish(ctx, t, err)
-			}
-
-			jm.Lock()
-			if _, hasTask := jm.tasks[taskName]; hasTask {
-				delete(jm.tasks, taskName)
-			}
-			jm.Unlock()
-
-			tm.Elapsed = Since(tm.StartTime)
-			tm.Err = err
-			jm.onTaskComplete(tm)
-		}()
-		if jm.tracer != nil {
-			ctx, tf = jm.tracer.Start(ctx, t)
+	if jobMeta.TimeoutProvider != nil {
+		if timeout := jobMeta.TimeoutProvider(); timeout > 0 {
+			ji.Timeout = start.Add(timeout)
 		}
+	}
 
-		// fire the on start listener if any
-		jm.onTaskStart(tm)
-		// run the task
-		err = t.Execute(ctx)
-	}()
-
-	return
+	jm.running[ji.Name] = ji
+	go jm.execute(ctx, ji)
 }
 
-func (jm *JobManager) killHangingTask(t *TaskInvocation) {
-	t.Cancel()
-	t.Elapsed = Since(t.StartTime)
-	jm.onTaskCancelled(t)
-	delete(jm.tasks, t.Task.Name())
+func (jm *JobManager) execute(ctx context.Context, ji *JobInvocation) {
+	var err error
+	var tf TraceFinisher
+	defer func() {
+		if r := recover(); r != nil {
+			err = exception.Nest(exception.New(r), err)
+		}
+		if tf != nil {
+			tf.Finish(ctx, ji)
+		}
+
+		jm.Lock()
+		if _, ok := jm.running[ji.Name]; ok {
+			delete(jm.running, ji.Name)
+		}
+		jm.Unlock()
+
+		ji.Elapsed = Since(ji.StartTime)
+		ji.Err = err
+
+		if ji.Err != nil {
+			jm.onFailure(ji)
+		} else {
+			jm.onComplete(ji)
+		}
+	}()
+	if jm.tracer != nil {
+		ctx, tf = jm.tracer.Start(ctx, ji)
+	}
+
+	// fire the on start listener if any
+	jm.onStart(ji)
+	// run the task
+	err = ji.JobMeta.Job.Execute(ctx)
+}
+
+func (jm *JobManager) killHangingJob(ji *JobInvocation) {
+	ji.Cancel()
+	ji.Elapsed = Since(ji.StartTime)
+	jm.onCancelled(ji)
+	delete(jm.running, ji.Name)
 }
 
 // --------------------------------------------------------------------------------
@@ -485,24 +443,38 @@ func (jm *JobManager) loadJobUnsafe(j Job) error {
 		return exception.New(ErrJobAlreadyLoaded).WithMessagef("job: %s", j.Name())
 	}
 
-	schedule := j.Schedule()
 	meta := &JobMeta{
-		Name:        jobName,
-		Job:         j,
-		NextRunTime: jm.scheduleNextRuntime(schedule, nil),
-		Schedule:    schedule,
+		Name: jobName,
+		Job:  j,
+	}
+
+	if typed, ok := j.(ScheduleProvider); ok {
+		meta.Schedule = typed.Schedule()
+		meta.NextRunTime = jm.scheduleNextRuntime(meta.Schedule, nil)
 	}
 
 	if typed, ok := j.(EnabledProvider); ok {
 		meta.EnabledProvider = typed.Enabled
 	} else {
-		meta.EnabledProvider = func() bool { return true }
+		meta.EnabledProvider = func() bool { return DefaultEnabled }
 	}
 
 	if typed, ok := j.(SerialProvider); ok {
 		meta.SerialProvider = typed.Serial
 	} else {
-		meta.SerialProvider = func() bool { return false }
+		meta.SerialProvider = func() bool { return DefaultSerial }
+	}
+
+	if typed, ok := j.(ShouldTriggerListenersProvider); ok {
+		meta.ShouldTriggerListenersProvider = typed.ShouldTriggerListeners
+	} else {
+		meta.ShouldTriggerListenersProvider = func() bool { return DefaultShouldTriggerListeners }
+	}
+
+	if typed, ok := j.(ShouldWriteOutputProvider); ok {
+		meta.ShouldWriteOutputProvider = typed.ShouldWriteOutput
+	} else {
+		meta.ShouldWriteOutputProvider = func() bool { return DefaultShouldWriteOutput }
 	}
 
 	jm.jobs[jobName] = meta
@@ -517,20 +489,19 @@ func (jm *JobManager) scheduleNextRuntime(schedule Schedule, after *time.Time) t
 }
 
 func (jm *JobManager) setJobDisabledUnsafe(jobName string, disabled bool) error {
-	if job, hasJob := jm.jobs[jobName]; !hasJob {
-		return exception.New(ErrJobNotLoaded).WithMessagef("job: %s", jobName)
-	} else {
+	if job, hasJob := jm.jobs[jobName]; hasJob {
 		job.Disabled = disabled
+		return nil
 	}
-	return nil
+	return exception.New(ErrJobNotLoaded).WithMessagef("job: %s", jobName)
 }
 
 func (jm *JobManager) createContextWithCancel() (context.Context, context.CancelFunc) {
 	return context.WithCancel(context.Background())
 }
 
-// shouldRunTask returns whether a task should be executed based on its status
-func (jm *JobManager) jobIsEnabled(job *JobMeta) bool {
+// jobCanRun returns whether a job can be executed
+func (jm *JobManager) jobCanRun(job *JobMeta) bool {
 	if job.Disabled {
 		return false
 	}
@@ -540,8 +511,8 @@ func (jm *JobManager) jobIsEnabled(job *JobMeta) bool {
 		}
 	}
 
-	if typed, ok := t.(SerialProvider); ok && typed.Serial() {
-		_, hasTask := jm.tasks[t.Name()]
+	if job.SerialProvider != nil && job.SerialProvider() {
+		_, hasTask := jm.running[job.Name]
 		if hasTask {
 			return false
 		}
@@ -550,85 +521,63 @@ func (jm *JobManager) jobIsEnabled(job *JobMeta) bool {
 }
 
 func (jm *JobManager) onStart(ji *JobInvocation) {
-	if jm.shouldTriggerListeners(t.Task) && jm.log != nil {
-		jm.log.Trigger(NewEvent(FlagStarted, ji.Name)).
-			WithIsWritable(jm.shouldWriteOutput(ji.Job)))
+	if jm.log != nil && ji.JobMeta.ShouldTriggerListenersProvider() {
+		jm.log.Trigger(NewEvent(FlagStarted, ji.Name).WithIsWritable(ji.JobMeta.ShouldWriteOutputProvider()))
 	}
-
-	if receiver, isReceiver := t.Task.(OnStartReceiver); isReceiver {
-		receiver.OnStart(t)
-	}
-}
-
-func (jm *JobManager) onComplete(t *TaskInvocation) {
-	if jm.shouldTriggerListeners(t.Task) && jm.log != nil {
-		jm.log.Trigger(NewEvent(FlagComplete, t.Task.Name()).
-			WithIsWritable(jm.shouldWriteOutput(t.Task)).
-			WithElapsed(t.Elapsed).
-			WithErr(t.Err))
-	}
-	if t.Err != nil {
-		jm.err(t.Err)
-	}
-
-	if typed, ok := t.Task.(OnCompleteReceiver); ok && t.Err == nil {
-		typed.OnComplete(t)
-	}
-
-	if jobMeta.Last != nil && jobMeta.Last.Err != nil{
-		if typed, ok := jobMeta.Job.(OnFixedReceiver); ok {
-			typed.OnFixed(t)
-		}
-	}
-}
-
-
-func (jm *JobManager) onFailure(ji *JobInvocation) {
-	if jm.shouldTriggerListeners(ji.Job) && jm.log != nil {
-		jm.log.Trigger(NewEvent(FlagFailed, t.Task.Name()).
-			WithIsWritable(jm.shouldWriteOutput(ji.Job)).
-			WithElapsed(t.Elapsed).
-			WithErr(t.Err))
-	}
-	jm.err(t.Err)
-
-	if typed, ok := t.Task.(OnFailureReceiver); ok && t.Err != nil {
-		typed.OnFailure(t)
-	}
-
-	if jobMeta.Last != nil && jobMeta.Last.Err == nil {
-		if typed, ok := jobMeta.Job.(OnBrokenReceiver); ok {
-			typed.OnBroken(t)
-		}
+	if typed, ok := ji.JobMeta.Job.(OnStartReceiver); ok {
+		typed.OnStart(ji)
 	}
 }
 
 func (jm *JobManager) onCancelled(ji *JobInvocation) {
-	if jm.shouldTriggerListeners(t.Task) && jm.log != nil {
-		jm.log.Trigger(NewEvent(FlagCancelled, t.Task.Name()).
-			WithIsWritable(jm.shouldWriteOutput(t.Task)).
-			WithElapsed(t.Elapsed))
+	if jm.log != nil && ji.JobMeta.ShouldTriggerListenersProvider() {
+		event := NewEvent(FlagCancelled, ji.Name).
+			WithIsWritable(ji.JobMeta.ShouldWriteOutputProvider()).
+			WithElapsed(ji.Elapsed)
+		jm.log.Trigger(event)
 	}
-
-	if receiver, ok := t.Task.(OnCancellationReceiver); ok {
-		receiver.OnCancellation(t)
+	if typed, ok := ji.JobMeta.Job.(OnCancellationReceiver); ok {
+		typed.OnCancellation(ji)
 	}
 }
 
-// ShouldTriggerListeners is a helper function to determine if we should trigger listeners for a given task.
-func (jm *JobManager) shouldTriggerListeners(j Job) bool {
-	if typed, ok := j.(ShouldTriggerListenersProvider); ok {
-		return typed.ShouldTriggerListeners()
+func (jm *JobManager) onComplete(ji *JobInvocation) {
+	if jm.log != nil && ji.JobMeta.ShouldTriggerListenersProvider() {
+		event := NewEvent(FlagComplete, ji.Name).
+			WithIsWritable(ji.JobMeta.ShouldWriteOutputProvider()).
+			WithElapsed(ji.Elapsed)
+
+		jm.log.Trigger(event)
 	}
-	return true
+	if typed, ok := ji.JobMeta.Job.(OnCompleteReceiver); ok {
+		typed.OnComplete(ji)
+	}
+	if ji.JobMeta.Last != nil && ji.JobMeta.Last.Err != nil {
+		if typed, ok := ji.JobMeta.Job.(OnFixedReceiver); ok {
+			typed.OnFixed(ji)
+		}
+	}
 }
 
-// ShouldWriteOutput is a helper function to determine if we should write logging output for a task.
-func (jm *JobManager) shouldWriteOutput(t Task) bool {
-	if typed, ok := j.(ShouldWriteOutputProvider); ok {
-		return typed.ShouldWriteOutput()
+func (jm *JobManager) onFailure(ji *JobInvocation) {
+	if jm.log != nil && ji.JobMeta.ShouldTriggerListenersProvider() {
+		event := NewEvent(FlagFailed, ji.Name).
+			WithIsWritable(ji.JobMeta.ShouldWriteOutputProvider()).
+			WithElapsed(ji.Elapsed).
+			WithErr(ji.Err)
+		jm.log.Trigger(event)
 	}
-	return true
+	if ji.Err != nil {
+		jm.err(ji.Err)
+	}
+	if typed, ok := ji.JobMeta.Job.(OnFailureReceiver); ok {
+		typed.OnFailure(ji)
+	}
+	if ji.JobMeta.Last != nil && ji.JobMeta.Last.Err == nil {
+		if typed, ok := ji.JobMeta.Job.(OnBrokenReceiver); ok {
+			typed.OnBroken(ji)
+		}
+	}
 }
 
 //

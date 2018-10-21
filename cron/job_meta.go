@@ -13,11 +13,11 @@ type JobMeta struct {
 
 	Schedule Schedule `json:"-"`
 
-	EnabledProvider             func() bool          `json:"-"`
-	SerialProvider              func() bool          `json:"-"`
-	TimeoutProvider             func() time.Duration `json:"-"`
-	ShouldTriggerEventsProvider func() bool          `json:"-"`
-	ShouldWriteOutputProvider   func() bool          `json:"-"`
+	EnabledProvider                func() bool          `json:"-"`
+	SerialProvider                 func() bool          `json:"-"`
+	TimeoutProvider                func() time.Duration `json:"-"`
+	ShouldTriggerListenersProvider func() bool          `json:"-"`
+	ShouldWriteOutputProvider      func() bool          `json:"-"`
 
 	Last *JobInvocation `json:"last"`
 }

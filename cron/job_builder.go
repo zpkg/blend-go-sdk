@@ -28,19 +28,20 @@ func NewJob(name string) *JobBuilder {
 
 // JobBuilder allows for job creation w/o a fully formed struct.
 type JobBuilder struct {
-	name                 string
-	timeoutProvider      func() time.Duration
-	enabledProvider      func() bool
-	showMessagesProvider func() bool
-	schedule             Schedule
-	action               TaskAction
+	name                           string
+	timeoutProvider                func() time.Duration
+	enabledProvider                func() bool
+	shouldTriggerListenersProvider func() bool
+	shouldWriteOutputProvider      func() bool
+	schedule                       Schedule
+	action                         Action
 
-	onStart     func(*TaskInvocation)
-	onCancelled func(*TaskInvocation)
-	onComplete  func(*TaskInvocation)
-	onFailure   func(*TaskInvocation)
-	onBroken    func(*TaskInvocation)
-	onFixed     func(*TaskInvocation)
+	onStart        func(*JobInvocation)
+	onCancellation func(*JobInvocation)
+	onComplete     func(*JobInvocation)
+	onFailure      func(*JobInvocation)
+	onBroken       func(*JobInvocation)
+	onFixed        func(*JobInvocation)
 }
 
 // WithName sets the job name.
@@ -67,13 +68,13 @@ func (jb *JobBuilder) WithTimeoutProvider(timeoutProvider func() time.Duration) 
 }
 
 // WithAction sets the job action.
-func (jb *JobBuilder) WithAction(action TaskAction) *JobBuilder {
+func (jb *JobBuilder) WithAction(action Action) *JobBuilder {
 	jb.action = action
 	return jb
 }
 
 // Action returns the job action.
-func (jb *JobBuilder) Action() TaskAction {
+func (jb *JobBuilder) Action() Action {
 	return jb.action
 }
 
@@ -83,9 +84,51 @@ func (jb *JobBuilder) WithEnabledProvider(enabledProvider func() bool) *JobBuild
 	return jb
 }
 
-// WithShowMessagesProvider sets the enabled provider for the job.
-func (jb *JobBuilder) WithShowMessagesProvider(provider func() bool) *JobBuilder {
-	jb.showMessagesProvider = provider
+// WithShouldTriggerListenersProvider sets the enabled provider for the job.
+func (jb *JobBuilder) WithShouldTriggerListenersProvider(provider func() bool) *JobBuilder {
+	jb.shouldTriggerListenersProvider = provider
+	return jb
+}
+
+// WithShouldWriteOutputProvider sets the enabled provider for the job.
+func (jb *JobBuilder) WithShouldWriteOutputProvider(provider func() bool) *JobBuilder {
+	jb.shouldWriteOutputProvider = provider
+	return jb
+}
+
+// WithOnStart sets a lifecycle handler.
+func (jb *JobBuilder) WithOnStart(receiver func(*JobInvocation)) *JobBuilder {
+	jb.onStart = receiver
+	return jb
+}
+
+// WithOnCancellation sets a lifecycle handler.
+func (jb *JobBuilder) WithOnCancellation(receiver func(*JobInvocation)) *JobBuilder {
+	jb.onCancellation = receiver
+	return jb
+}
+
+// WithOnComplete sets a lifecycle handler.
+func (jb *JobBuilder) WithOnComplete(receiver func(*JobInvocation)) *JobBuilder {
+	jb.onComplete = receiver
+	return jb
+}
+
+// WithOnFailure sets a lifecycle handler.
+func (jb *JobBuilder) WithOnFailure(receiver func(*JobInvocation)) *JobBuilder {
+	jb.onFailure = receiver
+	return jb
+}
+
+// WithOnFixed sets a lifecycle handler.
+func (jb *JobBuilder) WithOnFixed(receiver func(*JobInvocation)) *JobBuilder {
+	jb.onFixed = receiver
+	return jb
+}
+
+// WithOnBroken sets a lifecycle handler.
+func (jb *JobBuilder) WithOnBroken(receiver func(*JobInvocation)) *JobBuilder {
+	jb.onBroken = receiver
 	return jb
 }
 
@@ -103,6 +146,14 @@ func (jb *JobBuilder) Schedule() Schedule {
 	return jb.schedule
 }
 
+// Timeout returns the job timeout.
+func (jb *JobBuilder) Timeout() (timeout time.Duration) {
+	if jb.timeoutProvider != nil {
+		return jb.timeoutProvider()
+	}
+	return
+}
+
 // Enabled returns if the job is enabled.
 func (jb *JobBuilder) Enabled() bool {
 	if jb.enabledProvider != nil {
@@ -111,18 +162,68 @@ func (jb *JobBuilder) Enabled() bool {
 	return true
 }
 
+// ShouldWriteOutput implements the should write output provider.
+func (jb *JobBuilder) ShouldWriteOutput() bool {
+	if jb.shouldWriteOutputProvider != nil {
+		return jb.shouldWriteOutputProvider()
+	}
+	return true
+}
+
+// ShouldTriggerListeners implements the should trigger listeners provider.
+func (jb *JobBuilder) ShouldTriggerListeners() bool {
+	if jb.shouldTriggerListenersProvider != nil {
+		return jb.shouldTriggerListenersProvider()
+	}
+	return true
+}
+
+// OnStart is a lifecycle hook.
+func (jb *JobBuilder) OnStart(ji *JobInvocation) {
+	if jb.onStart != nil {
+		jb.onStart(ji)
+	}
+}
+
+// OnCancellation is a lifecycle hook.
+func (jb *JobBuilder) OnCancellation(ji *JobInvocation) {
+	if jb.onCancellation != nil {
+		jb.onCancellation(ji)
+	}
+}
+
+// OnComplete is a lifecycle hook.
+func (jb *JobBuilder) OnComplete(ji *JobInvocation) {
+	if jb.onComplete != nil {
+		jb.onComplete(ji)
+	}
+}
+
+// OnFailure is a lifecycle hook.
+func (jb *JobBuilder) OnFailure(ji *JobInvocation) {
+	if jb.onFailure != nil {
+		jb.onFailure(ji)
+	}
+}
+
+// OnFixed is a lifecycle hook.
+func (jb *JobBuilder) OnFixed(ji *JobInvocation) {
+	if jb.onFixed != nil {
+		jb.onFixed(ji)
+	}
+}
+
+// OnBroken is a lifecycle hook.
+func (jb *JobBuilder) OnBroken(ji *JobInvocation) {
+	if jb.onBroken != nil {
+		jb.onBroken(ji)
+	}
+}
+
 // Execute runs the job action if it's set.
 func (jb *JobBuilder) Execute(ctx context.Context) error {
 	if jb.action != nil {
 		return jb.action(ctx)
 	}
 	return nil
-}
-
-// ShowMessages returns if the job should trigger logging events.
-func (jb *JobBuilder) ShowMessages() bool {
-	if jb.showMessagesProvider != nil {
-		return jb.showMessagesProvider()
-	}
-	return true
 }

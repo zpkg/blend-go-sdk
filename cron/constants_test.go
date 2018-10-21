@@ -20,8 +20,8 @@ func TestErrors(t *testing.T) {
 	assert.False(IsJobAlreadyLoaded(ErrJobNotLoaded))
 	assert.False(IsJobAlreadyLoaded(exception.New(ErrJobNotLoaded)))
 
-	assert.True(IsTaskNotFound(ErrTaskNotFound))
-	assert.True(IsTaskNotFound(exception.New(ErrTaskNotFound)))
-	assert.False(IsTaskNotFound(ErrJobNotLoaded))
-	assert.False(IsTaskNotFound(exception.New(ErrJobNotLoaded)))
+	assert.True(IsJobNotFound(ErrJobNotFound))
+	assert.True(IsJobNotFound(exception.New(ErrJobNotFound)))
+	assert.False(IsJobNotFound(ErrJobNotLoaded))
+	assert.False(IsJobNotFound(exception.New(ErrJobNotLoaded)))
 }

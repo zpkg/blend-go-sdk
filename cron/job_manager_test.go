@@ -4,12 +4,10 @@ import (
 	"context"
 	"fmt"
 	"sync"
-	"sync/atomic"
 	"testing"
 	"time"
 
 	"github.com/blend/go-sdk/assert"
-	"github.com/blend/go-sdk/exception"
 	"github.com/blend/go-sdk/graceful"
 	logger "github.com/blend/go-sdk/logger"
 	"github.com/blend/go-sdk/uuid"
@@ -75,7 +73,7 @@ func (tj *testJobWithTimeout) Execute(ctx context.Context) error {
 	return tj.RunDelegate(ctx)
 }
 
-func (tj *testJobWithTimeout) OnCancellation(t *TaskInvocation) {
+func (tj *testJobWithTimeout) OnCancellation(ji *JobInvocation) {
 	tj.CancellationDelegate()
 }
 
@@ -96,55 +94,13 @@ func (tj *testJobInterval) Execute(ctx context.Context) error {
 	return tj.RunDelegate(ctx)
 }
 
-func TestRunTask(t *testing.T) {
-	a := assert.New(t)
-	a.StartTimeout(2000 * time.Millisecond)
-	defer a.EndTimeout()
-
-	didRun := make(chan struct{})
-	New().RunTask(NewTask(func(ctx context.Context) error {
-		close(didRun)
-		return nil
-	}))
-
-	<-didRun
-}
-
-func TestRunTaskAndCancel(t *testing.T) {
-	a := assert.New(t)
-
-	jm := New()
-
-	didRun := sync.WaitGroup{}
-	didRun.Add(1)
-
-	didFinish := sync.WaitGroup{}
-	didFinish.Add(1)
-	jm.RunTask(NewTaskWithName("taskToCancel", func(ctx context.Context) error {
-		defer didFinish.Done()
-		didRun.Done()
-
-		alarm := time.After(time.Second)
-		select {
-		case <-ctx.Done():
-			return nil
-		case <-alarm:
-			return exception.New("timed out")
-		}
-	}))
-
-	didRun.Wait()
-	a.Nil(jm.CancelTask("taskToCancel"))
-	didFinish.Wait()
-}
-
 func TestRunJobBySchedule(t *testing.T) {
 	a := assert.New(t)
 
 	didRun := make(chan struct{})
 
-	jm := New().WithHighPrecisionHeartbeat()
-	runAt := Now().Add(jm.HeartbeatInterval())
+	jm := New()
+	runAt := Now().Add(DefaultHeartbeatInterval)
 	err := jm.LoadJob(&runAtJob{
 		RunAt: runAt,
 		RunDelegate: func(ctx context.Context) error {
@@ -160,7 +116,7 @@ func TestRunJobBySchedule(t *testing.T) {
 	before := Now()
 	<-didRun
 
-	a.True(Since(before) < 2*jm.HeartbeatInterval())
+	a.True(Since(before) < 2*DefaultHeartbeatInterval)
 }
 
 func TestDisableJob(t *testing.T) {
@@ -174,73 +130,20 @@ func TestDisableJob(t *testing.T) {
 	a.True(jm.IsDisabled(runAtJobName))
 }
 
-func TestSerialTask(t *testing.T) {
-	assert := assert.New(t)
-
-	// test that serial execution actually blocks
-	var runCount int32
-	jm := New()
-
-	task := NewSerialTaskWithName("test", func(ctx context.Context) error {
-		atomic.AddInt32(&runCount, 1)
-		time.Sleep(10 * time.Millisecond)
-		return nil
-	})
-	jm.RunTask(task)
-	jm.RunTask(task)
-	time.Sleep(100 * time.Millisecond)
-	assert.Equal(1, runCount)
-
-	// ensure parallel execution is still working as intended
-	task = NewTaskWithName("test1", func(ctx context.Context) error {
-		atomic.AddInt32(&runCount, 1)
-		time.Sleep(10 * time.Millisecond)
-		return nil
-	})
-
-	runCount = 0
-	jm.RunTask(task)
-	jm.RunTask(task)
-	time.Sleep(100 * time.Millisecond)
-	assert.Equal(2, runCount)
-}
-
-func TestRunJobByScheduleRapid(t *testing.T) {
-	a := assert.New(t)
-
-	didRun := make(chan struct{})
-	// high precision heartbeat is somewhere around 5ms
-	jm := New().WithHighPrecisionHeartbeat()
-	err := jm.LoadJob(&testJobInterval{RunEvery: time.Millisecond, RunDelegate: func(ctx context.Context) error {
-		close(didRun)
-		return nil
-	}})
-	a.Nil(err)
-
-	jm.Start()
-	defer jm.Stop()
-
-	alarm := time.After(2 * DefaultHighPrecisionHeartbeatInterval)
-	select {
-	case <-didRun:
-		break
-	case <-alarm:
-		a.FailNow("timed out")
-	}
-}
-
 // The goal with this test is to see if panics take down the test process or not.
-func TestJobManagerTaskPanicHandling(t *testing.T) {
+func TestJobManagerJobPanicHandling(t *testing.T) {
 	assert := assert.New(t)
 
 	manager := New()
 	waitGroup := sync.WaitGroup{}
 	waitGroup.Add(1)
-	manager.RunTask(NewTask(func(ctx context.Context) error {
+
+	action := func(ctx context.Context) error {
 		defer waitGroup.Done()
 		panic("this is only a test")
-	}))
-
+	}
+	manager.LoadJob(NewJob("panic-test").WithAction(action))
+	manager.RunJob("panic-test")
 	waitGroup.Wait()
 	assert.True(true, "should complete")
 }
@@ -326,13 +229,13 @@ func TestFiresErrorOnTaskError(t *testing.T) {
 }
 
 type mockTracer struct {
-	OnStart  func(Task)
-	OnFinish func(Task, error)
+	OnStart  func(*JobInvocation)
+	OnFinish func(*JobInvocation)
 }
 
-func (mt mockTracer) Start(ctx context.Context, t Task) (context.Context, TraceFinisher) {
+func (mt mockTracer) Start(ctx context.Context, ji *JobInvocation) (context.Context, TraceFinisher) {
 	if mt.OnStart != nil {
-		mt.OnStart(t)
+		mt.OnStart(ji)
 	}
 	return ctx, &mockTraceFinisher{Parent: &mt}
 }
@@ -341,9 +244,9 @@ type mockTraceFinisher struct {
 	Parent *mockTracer
 }
 
-func (mtf mockTraceFinisher) Finish(ctx context.Context, t Task, err error) {
+func (mtf mockTraceFinisher) Finish(ctx context.Context, ji *JobInvocation) {
 	if mtf.Parent != nil && mtf.Parent.OnFinish != nil {
-		mtf.Parent.OnFinish(t, err)
+		mtf.Parent.OnFinish(ji)
 	}
 }
 
@@ -361,20 +264,21 @@ func TestManagerTracer(t *testing.T) {
 	var startTaskCorrect, finishTaskCorrect, errorUnset bool
 	manager := New().
 		WithTracer(&mockTracer{
-			OnStart: func(t Task) {
+			OnStart: func(ji *JobInvocation) {
 				defer wg.Done()
 				didCallStart = true
-				startTaskCorrect = t.Name() == "test_task"
+				startTaskCorrect = ji.Name == "test_task"
 			},
-			OnFinish: func(t Task, err error) {
+			OnFinish: func(ji *JobInvocation) {
 				defer wg.Done()
 				didCallFinish = true
-				finishTaskCorrect = t.Name() == "test_task"
-				errorUnset = err == nil
+				finishTaskCorrect = ji.Name == "test_task"
+				errorUnset = ji.Err == nil
 			},
 		})
 
-	manager.RunTask(&testTask{})
+	manager.LoadJob(NewJob("tracer-test"))
+	manager.RunJob("tracer-test")
 	wg.Wait()
 	assert.True(didCallStart)
 	assert.True(didCallFinish)
@@ -497,11 +401,11 @@ func (job brokenFixedTest) Execute(ctx context.Context) error {
 
 func (job brokenFixedTest) Schedule() Schedule { return nil }
 
-func (job *brokenFixedTest) OnStart(t *TaskInvocation) {
+func (job *brokenFixedTest) OnStart(t *JobInvocation) {
 	job.Starts++
 }
 
-func (job *brokenFixedTest) OnComplete(t *TaskInvocation) {
+func (job *brokenFixedTest) OnComplete(t *JobInvocation) {
 	if t.Err != nil {
 		job.Failures++
 	} else {
@@ -509,11 +413,11 @@ func (job *brokenFixedTest) OnComplete(t *TaskInvocation) {
 	}
 }
 
-func (job *brokenFixedTest) OnBroken(t *TaskInvocation) {
+func (job *brokenFixedTest) OnBroken(t *JobInvocation) {
 	close(job.BrokenSignal)
 }
 
-func (job *brokenFixedTest) OnFixed(t *TaskInvocation) {
+func (job *brokenFixedTest) OnFixed(t *JobInvocation) {
 	close(job.FixedSignal)
 }
 
@@ -563,4 +467,31 @@ func TestJobManagerJob(t *testing.T) {
 	meta, err = jm.Job(uuid.V4().String())
 	assert.NotNil(err)
 	assert.Nil(meta)
+}
+
+type loadJobTestMinimum struct{}
+
+func (job loadJobTestMinimum) Name() string                    { return "load-job-test-minimum" }
+func (job loadJobTestMinimum) Execute(_ context.Context) error { return nil }
+func TestJobManagerLoadJob(t *testing.T) {
+	assert := assert.New(t)
+
+	jm := New()
+	jm.LoadJob(&loadJobTestMinimum{})
+
+	meta, err := jm.Job("load-job-test-minimum")
+	assert.Nil(err)
+	assert.NotNil(meta)
+
+	assert.Equal("load-job-test-minimum", meta.Name)
+	assert.NotNil(meta.Job)
+
+	assert.NotNil(meta.EnabledProvider)
+	assert.Equal(DefaultEnabled, meta.EnabledProvider())
+	assert.NotNil(meta.SerialProvider)
+	assert.Equal(DefaultSerial, meta.SerialProvider())
+	assert.NotNil(meta.ShouldTriggerListenersProvider)
+	assert.Equal(DefaultShouldTriggerListeners, meta.ShouldTriggerListenersProvider())
+	assert.NotNil(meta.ShouldWriteOutputProvider)
+	assert.Equal(DefaultShouldWriteOutput, meta.ShouldWriteOutputProvider())
 }

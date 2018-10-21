@@ -8,17 +8,17 @@ import (
 	"github.com/blend/go-sdk/assert"
 )
 
-func TestIsJobCanceled(t *testing.T) {
+func TestIsContextCanceled(t *testing.T) {
 	assert := assert.New(t)
 
 	ctx, cancel := context.WithCancel(context.Background())
-	assert.False(IsJobCancelled(ctx))
+	assert.False(IsContextCancelled(ctx))
 
 	wg := sync.WaitGroup{}
 	wg.Add(1)
 	go func() {
 		defer wg.Done()
-		assert.True(IsJobCancelled(ctx))
+		assert.True(IsContextCancelled(ctx))
 	}()
 	cancel()
 	wg.Wait()

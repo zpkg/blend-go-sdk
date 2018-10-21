@@ -54,32 +54,32 @@ type EnabledProvider interface {
 
 // OnStartReceiver is an interface that allows a task to be signaled when it has started.
 type OnStartReceiver interface {
-	OnStart(*TaskInvocation)
+	OnStart(*JobInvocation)
 }
 
 // OnCancellationReceiver is an interface that allows a task to be signaled when it has been canceled.
 type OnCancellationReceiver interface {
-	OnCancellation(*TaskInvocation)
+	OnCancellation(*JobInvocation)
 }
 
 // OnCompleteReceiver is an interface that allows a task to be signaled when it has been completed.
 type OnCompleteReceiver interface {
-	OnComplete(*TaskInvocation)
+	OnComplete(*JobInvocation)
 }
 
 // OnFailureReceiver is an interface that allows a task to be signaled when it has been completed.
 type OnFailureReceiver interface {
-	OnFailure(*TaskInvocation)
+	OnFailure(*JobInvocation)
 }
 
 // OnBrokenReceiver is an interface that allows a job to be signaled when it is a failure that followed
 // a previous success.
 type OnBrokenReceiver interface {
-	OnBroken(*TaskInvocation)
+	OnBroken(*JobInvocation)
 }
 
 // OnFixedReceiver is an interface that allows a jbo to be signaled when is a success that followed
 // a previous failure.
 type OnFixedReceiver interface {
-	OnFixed(*TaskInvocation)
+	OnFixed(*JobInvocation)
 }

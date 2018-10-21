@@ -13,10 +13,18 @@ const (
 
 const (
 	// DefaultHeartbeatInterval is the interval between schedule next run checks.
-	DefaultHeartbeatInterval = 100 * time.Millisecond
+	DefaultHeartbeatInterval = 50 * time.Millisecond
+)
 
-	// DefaultHighPrecisionHeartbeatInterval is the high precision interval between schedule next run checks.
-	DefaultHighPrecisionHeartbeatInterval = 10 * time.Millisecond
+const (
+	// DefaultEnabled is a default.
+	DefaultEnabled = true
+	// DefaultSerial is a default.
+	DefaultSerial = true
+	// DefaultShouldWriteOutput is a default.
+	DefaultShouldWriteOutput = true
+	// DefaultShouldTriggerListeners is a default.
+	DefaultShouldTriggerListeners = true
 )
 
 const (

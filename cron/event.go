@@ -26,10 +26,10 @@ func NewEventListener(listener func(e *Event)) logger.Listener {
 }
 
 // NewEvent creates a new event.
-func NewEvent(flag logger.Flag, taskName string) *Event {
+func NewEvent(flag logger.Flag, jobName string) *Event {
 	return &Event{
 		EventMeta: logger.NewEventMeta(flag),
-		taskName:  taskName,
+		jobName:   jobName,
 		enabled:   true,
 		writable:  true,
 	}
@@ -42,9 +42,9 @@ type Event struct {
 	enabled  bool
 	writable bool
 
-	taskName string
-	err      error
-	elapsed  time.Duration
+	jobName string
+	err     error
+	elapsed time.Duration
 }
 
 // WithHeadings sets the headings.
@@ -99,15 +99,15 @@ func (e Event) IsWritable() bool {
 	return e.writable
 }
 
-// WithTaskName sets the task name.
-func (e *Event) WithTaskName(taskName string) *Event {
-	e.taskName = taskName
+// WithJobName sets the task name.
+func (e *Event) WithJobName(jobName string) *Event {
+	e.jobName = jobName
 	return e
 }
 
-// TaskName returns the event task name.
-func (e Event) TaskName() string {
-	return e.taskName
+// JobName returns the event task name.
+func (e Event) JobName() string {
+	return e.jobName
 }
 
 // WithErr sets the error on the event.
@@ -140,16 +140,16 @@ func (e Event) Elapsed() time.Duration {
 // WriteText implements logger.TextWritable.
 func (e Event) WriteText(tf logger.TextFormatter, buf *bytes.Buffer) {
 	if e.elapsed > 0 {
-		buf.WriteString(fmt.Sprintf("[%s] (%v)", tf.Colorize(e.taskName, logger.ColorBlue), e.elapsed))
+		buf.WriteString(fmt.Sprintf("[%s] (%v)", tf.Colorize(e.jobName, logger.ColorBlue), e.elapsed))
 	} else {
-		buf.WriteString(fmt.Sprintf("[%s]", tf.Colorize(e.taskName, logger.ColorBlue)))
+		buf.WriteString(fmt.Sprintf("[%s]", tf.Colorize(e.jobName, logger.ColorBlue)))
 	}
 }
 
 // WriteJSON implements logger.JSONWritable.
 func (e Event) WriteJSON() logger.JSONObj {
 	obj := logger.JSONObj{
-		"taskName": e.taskName,
+		"jobName": e.jobName,
 	}
 	if e.err != nil {
 		obj[logger.JSONFieldErr] = e.err

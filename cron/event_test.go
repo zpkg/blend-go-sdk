@@ -70,7 +70,7 @@ func TestNewEvent(t *testing.T) {
 
 	e := NewEvent(FlagComplete, "test_task")
 	assert.Equal(FlagComplete, e.Flag())
-	assert.Equal("test_task", e.TaskName())
+	assert.Equal("test_task", e.JobName())
 	assert.False(e.Timestamp().IsZero())
 	assert.True(e.IsEnabled())
 	assert.True(e.IsWritable())
@@ -98,8 +98,8 @@ func TestEventProperties(t *testing.T) {
 	assert.Empty(e.Headings())
 	assert.Equal([]string{"Heading"}, e.WithHeadings("Heading").Headings())
 
-	assert.Empty(e.TaskName())
-	assert.Equal("test_task", e.WithTaskName("test_task").TaskName())
+	assert.Empty(e.JobName())
+	assert.Equal("test_task", e.WithJobName("test_task").JobName())
 
 	assert.Zero(e.Elapsed())
 	assert.Equal(time.Second, e.WithElapsed(time.Second).Elapsed())
