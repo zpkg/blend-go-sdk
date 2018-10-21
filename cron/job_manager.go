@@ -19,7 +19,7 @@ func New() *JobManager {
 		latch:             &async.Latch{},
 		heartbeatInterval: DefaultHeartbeatInterval,
 		jobs:              map[string]*JobMeta{},
-		tasks:             map[string]*TaskInvocation{},
+		tasks:             map[string]*JobInvocation{},
 	}
 	jm.schedulerWorker = async.NewInterval(jm.runDueJobs, DefaultHeartbeatInterval)
 	jm.killHangingTasksWorker = async.NewInterval(jm.killHangingTasks, DefaultHeartbeatInterval)
@@ -63,7 +63,7 @@ type JobManager struct {
 	killHangingTasksWorker *async.Interval
 
 	jobs  map[string]*JobMeta
-	tasks map[string]*TaskInvocation
+	running map[string]*JobInvocation
 }
 
 // Logger returns the diagnostics agent.
@@ -293,27 +293,21 @@ func (jm *JobManager) RunAllJobs() {
 	}
 }
 
-// RunTask runs a task.
-func (jm *JobManager) RunTask(task Task) {
-	jm.Lock()
-	defer jm.Unlock()
-	jm.runTaskUnsafe(task)
-}
-
 // CancelTask cancels (sends the cancellation signal) to a running task.
-func (jm *JobManager) CancelTask(taskName string) (err error) {
+func (jm *JobManager) CancelJob(jobName string) (err error) {
 	jm.Lock()
 	defer jm.Unlock()
 
-	task, hasTask := jm.tasks[taskName]
-	if !hasTask {
-		err = exception.New(ErrTaskNotFound).WithMessagef("task: %s", taskName)
+	job, ok := jm.running[jobName]
+	if !ok {
+		err = exception.New(ErrJobNotFound).WithMessagef("task: %s", taskName)
 		return
 	}
-	task.Elapsed = Since(task.StartTime)
-	task.Err = exception.New(ErrTaskCancelled)
-	task.Cancel()
-	jm.onTaskCancelled(task)
+
+	job.Elapsed = Since(task.StartTime)
+	job.Err = exception.New(ErrTaskCancelled)
+	job.Cancel()
+	jm.onCancelled(job)
 	return
 }
 
@@ -367,7 +361,7 @@ func (jm *JobManager) runDueJobs() error {
 	return nil
 }
 
-func (jm *JobManager) killHangingTasks() (err error) {
+func (jm *JobManager) killHangingJobs() (err error) {
 	jm.Lock()
 	defer jm.Unlock()
 
@@ -389,7 +383,7 @@ func (jm *JobManager) killHangingTasks() (err error) {
 			effectiveTimeout = taskMeta.Timeout
 		}
 		if effectiveTimeout.Before(now) {
-			jm.killHangingTask(taskMeta)
+			jm.killHangingJob(taskMeta)
 		}
 	}
 	return nil
@@ -401,6 +395,10 @@ func (jm *JobManager) killHangingTasks() (err error) {
 
 func (jm *JobManager) runJobUnsafe(jobMeta *JobMeta) {
 	now := Now()
+
+	if !jm.shouldRunTask(t) {
+		return
+	}
 
 	// merge the runtime disabled with the job provided enabled/disabled
 	disabled := jobMeta.Disabled
@@ -414,10 +412,7 @@ func (jm *JobManager) runJobUnsafe(jobMeta *JobMeta) {
 	}
 }
 
-func (jm *JobManager) runTaskUnsafe(t Task) {
-	if !jm.shouldRunTask(t) {
-		return
-	}
+func (jm *JobManager) runJobUnsafe(t Task) {
 
 	taskName := t.Name()
 	start := Now()
@@ -498,10 +493,16 @@ func (jm *JobManager) loadJobUnsafe(j Job) error {
 		Schedule:    schedule,
 	}
 
-	if typed, ok := j.(JobEnabledProvider); ok {
+	if typed, ok := j.(EnabledProvider); ok {
 		meta.EnabledProvider = typed.Enabled
 	} else {
 		meta.EnabledProvider = func() bool { return true }
+	}
+
+	if typed, ok := j.(SerialProvider); ok {
+		meta.SerialProvider = typed.Serial
+	} else {
+		meta.SerialProvider = func() bool { return false }
 	}
 
 	jm.jobs[jobName] = meta
@@ -516,41 +517,42 @@ func (jm *JobManager) scheduleNextRuntime(schedule Schedule, after *time.Time) t
 }
 
 func (jm *JobManager) setJobDisabledUnsafe(jobName string, disabled bool) error {
-	if _, hasJob := jm.jobs[jobName]; !hasJob {
+	if job, hasJob := jm.jobs[jobName]; !hasJob {
 		return exception.New(ErrJobNotLoaded).WithMessagef("job: %s", jobName)
+	} else {
+		job.Disabled = disabled
 	}
-
-	jm.jobs[jobName].Disabled = disabled
 	return nil
 }
 
-func (jm *JobManager) createContext() (context.Context, context.CancelFunc) {
+func (jm *JobManager) createContextWithCancel() (context.Context, context.CancelFunc) {
 	return context.WithCancel(context.Background())
 }
 
-// shouldRunJob returns whether it is legal to run a job based off of a job's attributes and status.
-// Use this function to set logic for whether a job should run
-func (jm *JobManager) shouldRunJob(job Job) bool {
-	if meta, ok := jm.jobs[job.Name()]; ok {
-		return !meta.Disabled
-	}
-	return false
-}
-
 // shouldRunTask returns whether a task should be executed based on its status
-func (jm *JobManager) shouldRunTask(t Task) bool {
-	_, isSerial := t.(SerialProvider)
-	if isSerial {
+func (jm *JobManager) jobIsEnabled(job *JobMeta) bool {
+	if job.Disabled {
+		return false
+	}
+	if job.EnabledProvider != nil {
+		if !job.EnabledProvider() {
+			return false
+		}
+	}
+
+	if typed, ok := t.(SerialProvider); ok && typed.Serial() {
 		_, hasTask := jm.tasks[t.Name()]
-		return !hasTask
+		if hasTask {
+			return false
+		}
 	}
 	return true
 }
 
-func (jm *JobManager) onTaskStart(t *TaskInvocation) {
+func (jm *JobManager) onStart(ji *JobInvocation) {
 	if jm.shouldTriggerListeners(t.Task) && jm.log != nil {
-		jm.log.Trigger(NewEvent(FlagStarted, t.Task.Name()).
-			WithIsWritable(jm.shouldWriteOutput(t.Task)))
+		jm.log.Trigger(NewEvent(FlagStarted, ji.Name)).
+			WithIsWritable(jm.shouldWriteOutput(ji.Job)))
 	}
 
 	if receiver, isReceiver := t.Task.(OnStartReceiver); isReceiver {
@@ -558,14 +560,9 @@ func (jm *JobManager) onTaskStart(t *TaskInvocation) {
 	}
 }
 
-func (jm *JobManager) onTaskComplete(t *TaskInvocation) {
+func (jm *JobManager) onComplete(t *TaskInvocation) {
 	if jm.shouldTriggerListeners(t.Task) && jm.log != nil {
-		flag := FlagComplete
-		if t.Err != nil {
-			flag = FlagFailed
-		}
-
-		jm.log.Trigger(NewEvent(flag, t.Task.Name()).
+		jm.log.Trigger(NewEvent(FlagComplete, t.Task.Name()).
 			WithIsWritable(jm.shouldWriteOutput(t.Task)).
 			WithElapsed(t.Elapsed).
 			WithErr(t.Err))
@@ -574,44 +571,53 @@ func (jm *JobManager) onTaskComplete(t *TaskInvocation) {
 		jm.err(t.Err)
 	}
 
-	if typed, ok := t.Task.(OnCompleteReceiver); ok {
+	if typed, ok := t.Task.(OnCompleteReceiver); ok && t.Err == nil {
 		typed.OnComplete(t)
 	}
 
-	// test if this needs to have job lifecycle events fired
-	if _, ok := t.Task.(Job); ok {
-		if jobMeta, ok := jm.jobs[t.Task.Name()]; ok {
-			if jobMeta.Last != nil {
-				if t.Err != nil && jobMeta.Last.Err == nil {
-					if typed, ok := jobMeta.Job.(JobOnBrokenReceiver); ok {
-						typed.OnBroken(t)
-					}
-				}
-				if t.Err == nil && jobMeta.Last.Err != nil {
-					if typed, ok := jobMeta.Job.(JobOnFixedReceiver); ok {
-						typed.OnFixed(t)
-					}
-				}
-			}
-			jobMeta.Last = t
+	if jobMeta.Last != nil && jobMeta.Last.Err != nil{
+		if typed, ok := jobMeta.Job.(OnFixedReceiver); ok {
+			typed.OnFixed(t)
 		}
 	}
 }
 
-func (jm *JobManager) onTaskCancelled(t *TaskInvocation) {
+
+func (jm *JobManager) onFailure(ji *JobInvocation) {
+	if jm.shouldTriggerListeners(ji.Job) && jm.log != nil {
+		jm.log.Trigger(NewEvent(FlagFailed, t.Task.Name()).
+			WithIsWritable(jm.shouldWriteOutput(ji.Job)).
+			WithElapsed(t.Elapsed).
+			WithErr(t.Err))
+	}
+	jm.err(t.Err)
+
+	if typed, ok := t.Task.(OnFailureReceiver); ok && t.Err != nil {
+		typed.OnFailure(t)
+	}
+
+	if jobMeta.Last != nil && jobMeta.Last.Err == nil {
+		if typed, ok := jobMeta.Job.(OnBrokenReceiver); ok {
+			typed.OnBroken(t)
+		}
+	}
+}
+
+func (jm *JobManager) onCancelled(ji *JobInvocation) {
 	if jm.shouldTriggerListeners(t.Task) && jm.log != nil {
 		jm.log.Trigger(NewEvent(FlagCancelled, t.Task.Name()).
 			WithIsWritable(jm.shouldWriteOutput(t.Task)).
 			WithElapsed(t.Elapsed))
 	}
+
 	if receiver, ok := t.Task.(OnCancellationReceiver); ok {
 		receiver.OnCancellation(t)
 	}
 }
 
 // ShouldTriggerListeners is a helper function to determine if we should trigger listeners for a given task.
-func (jm *JobManager) shouldTriggerListeners(t Task) bool {
-	if typed, ok := t.(ShouldTriggerListenersProvider); ok {
+func (jm *JobManager) shouldTriggerListeners(j Job) bool {
+	if typed, ok := j.(ShouldTriggerListenersProvider); ok {
 		return typed.ShouldTriggerListeners()
 	}
 	return true
@@ -619,7 +625,7 @@ func (jm *JobManager) shouldTriggerListeners(t Task) bool {
 
 // ShouldWriteOutput is a helper function to determine if we should write logging output for a task.
 func (jm *JobManager) shouldWriteOutput(t Task) bool {
-	if typed, ok := t.(ShouldWriteOutputProvider); ok {
+	if typed, ok := j.(ShouldWriteOutputProvider); ok {
 		return typed.ShouldWriteOutput()
 	}
 	return true

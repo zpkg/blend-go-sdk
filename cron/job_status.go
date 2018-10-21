@@ -4,8 +4,8 @@ package cron
 // task status
 // --------------------------------------------------------------------------------
 
-// TaskStatus is the basic format of a status of a task.
-type TaskStatus struct {
+// JobStatus is the basic format of a status of a task.
+type JobStatus struct {
 	Name        string `json:"name"`
 	State       State  `json:"state"`
 	Status      string `json:"status,omitempty"`

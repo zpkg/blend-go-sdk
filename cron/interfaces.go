@@ -1,16 +1,25 @@
 package cron
 
-import "time"
+import (
+	"time"
+)
 
 /*
-A note on the naming conventions for these interfaces.
+A note on the naming conventions for the below interfaces.
 
 MethodName[Receiver|Provider] is the general pattern.
 
-If possible, Recever indicates a method that will be called actively, provider is a value your type can give.
+"Receiver" indicates the function will be called by the manager.
+
+"Proivder" indicates the function will be called and is expected to return a specific value.
 
 They're mostly the same except
 */
+
+// ScheduleProvider returns a schedule for the job.
+type ScheduleProvider interface {
+	Schedule() Schedule
+}
 
 // TimeoutProvider is an interface that allows a task to be timed out.
 type TimeoutProvider interface {
@@ -25,7 +34,7 @@ type StatusProvider interface {
 // SerialProvider is an optional interface that prohibits
 // a task from running if another instance of the task is currently running.
 type SerialProvider interface {
-	Serial()
+	Serial() bool
 }
 
 // ShouldTriggerListenersProvider is a type that enables or disables logger listeners.
@@ -38,8 +47,8 @@ type ShouldWriteOutputProvider interface {
 	ShouldWriteOutput() bool
 }
 
-// JobEnabledProvider is an optional interface that will allow jobs to control if they're enabled.
-type JobEnabledProvider interface {
+// EnabledProvider is an optional interface that will allow jobs to control if they're enabled.
+type EnabledProvider interface {
 	Enabled() bool
 }
 
@@ -58,14 +67,19 @@ type OnCompleteReceiver interface {
 	OnComplete(*TaskInvocation)
 }
 
-// JobOnBrokenReceiver is an interface that allows a job to be signaled when it is a failure that followed
+// OnFailureReceiver is an interface that allows a task to be signaled when it has been completed.
+type OnFailureReceiver interface {
+	OnFailure(*TaskInvocation)
+}
+
+// OnBrokenReceiver is an interface that allows a job to be signaled when it is a failure that followed
 // a previous success.
-type JobOnBrokenReceiver interface {
+type OnBrokenReceiver interface {
 	OnBroken(*TaskInvocation)
 }
 
-// JobOnFixedReceiver is an interface that allows a jbo to be signaled when is a success that followed
+// OnFixedReceiver is an interface that allows a jbo to be signaled when is a success that followed
 // a previous failure.
-type JobOnFixedReceiver interface {
+type OnFixedReceiver interface {
 	OnFixed(*TaskInvocation)
 }

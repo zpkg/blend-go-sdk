@@ -6,12 +6,18 @@ import (
 
 // JobMeta is runtime metadata for a job.
 type JobMeta struct {
-	Name            string      `json:"name"`
-	Job             Job         `json:"-"`
-	Disabled        bool        `json:"disabled"`
-	Schedule        Schedule    `json:"-"`
-	EnabledProvider func() bool `json:"-"`
-	NextRunTime     time.Time   `json:"nextRunTime"`
+	Name        string    `json:"name"`
+	Job         Job       `json:"job"`
+	Disabled    bool      `json:"disabled"`
+	NextRunTime time.Time `json:"nextRunTime"`
 
-	Last *TaskInvocation `json:"last"`
+	Schedule Schedule `json:"-"`
+
+	EnabledProvider             func() bool          `json:"-"`
+	SerialProvider              func() bool          `json:"-"`
+	TimeoutProvider             func() time.Duration `json:"-"`
+	ShouldTriggerEventsProvider func() bool          `json:"-"`
+	ShouldWriteOutputProvider   func() bool          `json:"-"`
+
+	Last *JobInvocation `json:"last"`
 }

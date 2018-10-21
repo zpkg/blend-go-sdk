@@ -5,10 +5,10 @@ import (
 	"time"
 )
 
-// TaskInvocation is metadata for a running task.
-type TaskInvocation struct {
+// JobInvocation is metadata for a job invocation (or instance of a job running).
+type JobInvocation struct {
 	Name      string             `json:"name"`
-	Task      Task               `json:"-"`
+	Job       Job                `json:"job"`
 	StartTime time.Time          `json:"startTime"`
 	Timeout   time.Time          `json:"timeout"`
 	Context   context.Context    `json:"-"`

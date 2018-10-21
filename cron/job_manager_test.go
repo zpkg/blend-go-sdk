@@ -466,10 +466,10 @@ func TestJobManagerRunAllJobs(t *testing.T) {
 }
 
 var (
-	_ OnStartReceiver     = (*brokenFixedTest)(nil)
-	_ OnCompleteReceiver  = (*brokenFixedTest)(nil)
-	_ JobOnBrokenReceiver = (*brokenFixedTest)(nil)
-	_ JobOnFixedReceiver  = (*brokenFixedTest)(nil)
+	_ OnStartReceiver    = (*brokenFixedTest)(nil)
+	_ OnCompleteReceiver = (*brokenFixedTest)(nil)
+	_ OnBrokenReceiver   = (*brokenFixedTest)(nil)
+	_ OnFixedReceiver    = (*brokenFixedTest)(nil)
 )
 
 func newBrokenFixedTest(action func(context.Context) error) *brokenFixedTest {
