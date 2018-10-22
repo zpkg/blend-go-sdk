@@ -435,9 +435,6 @@ func (jm *JobManager) safeExec(ctx context.Context, ji *JobInvocation) chan erro
 
 func (jm *JobManager) killHangingJob(ji *JobInvocation) {
 	ji.Cancel()
-	ji.Elapsed = Since(ji.StartTime)
-	jm.onCancelled(ji)
-	delete(jm.running, ji.Name)
 }
 
 // --------------------------------------------------------------------------------
