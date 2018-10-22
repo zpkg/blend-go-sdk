@@ -39,7 +39,7 @@ func (j *emptyJob) Execute(ctx context.Context) error {
 	}
 }
 
-func (j *emptyJob) OnCancellation() {
+func (j *emptyJob) OnCancellation(_ *cron.JobInvocation) {
 	j.running = false
 }
 
@@ -62,8 +62,8 @@ func main() {
 	for {
 		status := jm.Status()
 		for _, job := range status.Jobs {
-			if task, hasTask := status.Tasks[job.Name]; hasTask {
-				jm.Logger().Infof("job: %s state: running elapsed: %v", job.Name, cron.Since(task.StartTime))
+			if runningJob, ok := status.Running[job.Name]; ok {
+				jm.Logger().Infof("job: %s state: running elapsed: %v", job.Name, cron.Since(runningJob.StartTime))
 			} else {
 				jm.Logger().Infof("job: %s state: stopped", job.Name)
 			}
