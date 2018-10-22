@@ -7,7 +7,7 @@ import (
 // JobMeta is runtime metadata for a job.
 type JobMeta struct {
 	Name        string         `json:"name"`
-	Job         Job            `json:"job"`
+	Job         Job            `json:"-"`
 	Disabled    bool           `json:"disabled"`
 	NextRunTime time.Time      `json:"nextRunTime"`
 	Last        *JobInvocation `json:"last"`
