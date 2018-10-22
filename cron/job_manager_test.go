@@ -348,6 +348,16 @@ func TestJobManagerLoadJob(t *testing.T) {
 	assert.Equal(DefaultShouldWriteOutput, meta.ShouldWriteOutputProvider())
 }
 
+func TestJobManagerLoadJobs(t *testing.T) {
+	assert := assert.New(t)
+
+	jm := New()
+	assert.Nil(jm.LoadJobs(NewJob("test-0"), NewJob("test-1")))
+	assert.Len(jm.jobs, 2)
+
+	assert.NotNil(jm.LoadJobs(NewJob("test-0"), NewJob("test-0")))
+}
+
 func TestJobManagerIsRunning(t *testing.T) {
 	assert := assert.New(t)
 
