@@ -332,7 +332,7 @@ func (jm *JobManager) killHangingJobs() (err error) {
 			return
 		}
 		now = Now()
-		if jobMeta, hasJobMeta := jm.jobs[jobName]; hasJobMeta {
+		if jobMeta, ok := jm.jobs[jobName]; ok {
 			nextRuntime := jobMeta.NextRunTime
 			t1 = ji.Timeout
 			t2 = nextRuntime
@@ -345,6 +345,10 @@ func (jm *JobManager) killHangingJobs() (err error) {
 		}
 	}
 	return nil
+}
+
+func (jm *JobManager) killHangingJob(ji *JobInvocation) {
+	ji.Cancel()
 }
 
 //
@@ -433,10 +437,6 @@ func (jm *JobManager) safeExec(ctx context.Context, ji *JobInvocation) chan erro
 	return errors
 }
 
-func (jm *JobManager) killHangingJob(ji *JobInvocation) {
-	ji.Cancel()
-}
-
 // --------------------------------------------------------------------------------
 // Utility Methods
 // --------------------------------------------------------------------------------
@@ -457,6 +457,12 @@ func (jm *JobManager) loadJobUnsafe(j Job) error {
 	if typed, ok := j.(ScheduleProvider); ok {
 		meta.Schedule = typed.Schedule()
 		meta.NextRunTime = jm.scheduleNextRuntime(meta.Schedule, nil)
+	}
+
+	if typed, ok := j.(TimeoutProvider); ok {
+		meta.TimeoutProvider = typed.Timeout
+	} else {
+		meta.TimeoutProvider = func() time.Duration { return 0 }
 	}
 
 	if typed, ok := j.(EnabledProvider); ok {

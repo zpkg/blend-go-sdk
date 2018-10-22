@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"math/rand"
 	"os"
+	"sync/atomic"
 	"time"
 
 	"github.com/blend/go-sdk/cron"
@@ -30,9 +31,17 @@ const (
 	JobLongRunTime = 8 * time.Second
 )
 
-var startedCount = new(cron.AtomicCounter)
-var completeCount = new(cron.AtomicCounter)
-var timeoutCount = new(cron.AtomicCounter)
+var startedCount int32
+var completeCount int32
+var expectedTimeoutCount int32
+var timeoutCount int32
+
+var (
+	_ cron.Job                    = (*loadTestJob)(nil)
+	_ cron.ScheduleProvider       = (*loadTestJob)(nil)
+	_ cron.TimeoutProvider        = (*loadTestJob)(nil)
+	_ cron.OnCancellationReceiver = (*loadTestJob)(nil)
+)
 
 type loadTestJob struct {
 	id      int
@@ -49,7 +58,7 @@ func (j *loadTestJob) Name() string {
 }
 
 func (j *loadTestJob) Execute(ctx context.Context) error {
-	startedCount.Increment()
+	atomic.AddInt32(&startedCount, 1)
 	j.running = true
 
 	var runFor time.Duration
@@ -57,6 +66,7 @@ func (j *loadTestJob) Execute(ctx context.Context) error {
 	if randValue <= 0.5 { // 50% split between short vs. long.
 		runFor = JobShortRunTime
 	} else {
+		atomic.AddInt32(&expectedTimeoutCount, 1)
 		runFor = JobLongRunTime
 	}
 
@@ -64,7 +74,7 @@ func (j *loadTestJob) Execute(ctx context.Context) error {
 	select {
 	case <-alarm:
 		j.running = false
-		completeCount.Increment()
+		atomic.AddInt32(&completeCount, 1)
 		return nil
 	case <-ctx.Done():
 		j.running = false
@@ -72,8 +82,8 @@ func (j *loadTestJob) Execute(ctx context.Context) error {
 	}
 }
 
-func (j *loadTestJob) OnCancellation() {
-	timeoutCount.Increment()
+func (j *loadTestJob) OnCancellation(_ *cron.JobInvocation) {
+	atomic.AddInt32(&timeoutCount, 1)
 	j.running = false
 }
 
@@ -114,14 +124,13 @@ func main() {
 
 	expectedStarted := N * ((int64(Q) / int64(JobRunEvery)) - 1)
 	expectedCompleted := expectedStarted >> 1
-	expectedTimedOut := expectedStarted >> 1
 
 	fmt.Printf("\nExpected Jobs Started:   %d\n", expectedStarted)
-	fmt.Printf("Actual Jobs Started:     %d\n\n", startedCount.Get())
+	fmt.Printf("Actual Jobs Started:     %d\n\n", startedCount)
 
 	fmt.Printf("Expected Jobs Completed: %d\n", expectedCompleted)
-	fmt.Printf("Actual Jobs Completed:   %d\n\n", completeCount.Get())
+	fmt.Printf("Actual Jobs Completed:   %d\n\n", completeCount)
 
-	fmt.Printf("Expected Jobs Timed Out: %d\n", expectedTimedOut)
-	fmt.Printf("Actual Jobs Timed Out:   %d\n", timeoutCount.Get())
+	fmt.Printf("Expected Jobs Timed Out: %d\n", expectedTimeoutCount)
+	fmt.Printf("Actual Jobs Timed Out:   %d\n", timeoutCount)
 }
