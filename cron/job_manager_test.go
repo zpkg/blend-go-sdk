@@ -18,82 +18,6 @@ var (
 	_ graceful.Graceful = (*JobManager)(nil)
 )
 
-const (
-	runAtJobName = "runAt"
-)
-
-type runAtJob struct {
-	RunAt       time.Time
-	RunDelegate func(ctx context.Context) error
-}
-
-type runAt time.Time
-
-func (ra runAt) GetNextRunTime(after *time.Time) *time.Time {
-	typed := time.Time(ra)
-	return &typed
-}
-
-func (raj *runAtJob) Name() string {
-	return "runAt"
-}
-
-func (raj *runAtJob) Schedule() Schedule {
-	return runAt(raj.RunAt)
-}
-
-func (raj *runAtJob) Execute(ctx context.Context) error {
-	return raj.RunDelegate(ctx)
-}
-
-var (
-	_ OnCancellationReceiver = (*testJobWithTimeout)(nil)
-)
-
-type testJobWithTimeout struct {
-	RunAt                time.Time
-	TimeoutDuration      time.Duration
-	RunDelegate          func(ctx context.Context) error
-	CancellationDelegate func()
-}
-
-func (tj *testJobWithTimeout) Name() string {
-	return "testJobWithTimeout"
-}
-
-func (tj *testJobWithTimeout) Timeout() time.Duration {
-	return tj.TimeoutDuration
-}
-
-func (tj *testJobWithTimeout) Schedule() Schedule {
-	return Immediately()
-}
-
-func (tj *testJobWithTimeout) Execute(ctx context.Context) error {
-	return tj.RunDelegate(ctx)
-}
-
-func (tj *testJobWithTimeout) OnCancellation(ji *JobInvocation) {
-	tj.CancellationDelegate()
-}
-
-type testJobInterval struct {
-	RunEvery    time.Duration
-	RunDelegate func(ctx context.Context) error
-}
-
-func (tj *testJobInterval) Name() string {
-	return "testJobInterval"
-}
-
-func (tj *testJobInterval) Schedule() Schedule {
-	return Every(tj.RunEvery)
-}
-
-func (tj *testJobInterval) Execute(ctx context.Context) error {
-	return tj.RunDelegate(ctx)
-}
-
 func TestRunJobBySchedule(t *testing.T) {
 	a := assert.New(t)
 
@@ -146,28 +70,6 @@ func TestJobManagerJobPanicHandling(t *testing.T) {
 	manager.RunJob("panic-test")
 	waitGroup.Wait()
 	assert.True(true, "should complete")
-}
-
-type testWithEnabled struct {
-	isEnabled bool
-	action    func()
-}
-
-func (twe testWithEnabled) Name() string {
-	return "testWithEnabled"
-}
-
-func (twe testWithEnabled) Schedule() Schedule {
-	return nil
-}
-
-func (twe testWithEnabled) Enabled() bool {
-	return twe.isEnabled
-}
-
-func (twe testWithEnabled) Execute(ctx context.Context) error {
-	twe.action()
-	return nil
 }
 
 func TestEnabledProvider(t *testing.T) {
@@ -228,33 +130,6 @@ func TestFiresErrorOnTaskError(t *testing.T) {
 	a.True(errorMatched)
 }
 
-type mockTracer struct {
-	OnStart  func(*JobInvocation)
-	OnFinish func(*JobInvocation)
-}
-
-func (mt mockTracer) Start(ctx context.Context, ji *JobInvocation) (context.Context, TraceFinisher) {
-	if mt.OnStart != nil {
-		mt.OnStart(ji)
-	}
-	return ctx, &mockTraceFinisher{Parent: &mt}
-}
-
-type mockTraceFinisher struct {
-	Parent *mockTracer
-}
-
-func (mtf mockTraceFinisher) Finish(ctx context.Context, ji *JobInvocation) {
-	if mtf.Parent != nil && mtf.Parent.OnFinish != nil {
-		mtf.Parent.OnFinish(ji)
-	}
-}
-
-type testTask struct{}
-
-func (tt testTask) Name() string                    { return "test_task" }
-func (tt testTask) Execute(_ context.Context) error { return nil }
-
 func TestManagerTracer(t *testing.T) {
 	assert := assert.New(t)
 
@@ -267,12 +142,12 @@ func TestManagerTracer(t *testing.T) {
 			OnStart: func(ji *JobInvocation) {
 				defer wg.Done()
 				didCallStart = true
-				startTaskCorrect = ji.Name == "test_task"
+				startTaskCorrect = ji.Name == "tracer-test"
 			},
 			OnFinish: func(ji *JobInvocation) {
 				defer wg.Done()
 				didCallFinish = true
-				finishTaskCorrect = ji.Name == "test_task"
+				finishTaskCorrect = ji.Name == "tracer-test"
 				errorUnset = ji.Err == nil
 			},
 		})
@@ -369,58 +244,6 @@ func TestJobManagerRunAllJobs(t *testing.T) {
 	assert.True(job2ran)
 }
 
-var (
-	_ OnStartReceiver    = (*brokenFixedTest)(nil)
-	_ OnCompleteReceiver = (*brokenFixedTest)(nil)
-	_ OnBrokenReceiver   = (*brokenFixedTest)(nil)
-	_ OnFixedReceiver    = (*brokenFixedTest)(nil)
-)
-
-func newBrokenFixedTest(action func(context.Context) error) *brokenFixedTest {
-	return &brokenFixedTest{
-		BrokenSignal: make(chan struct{}),
-		FixedSignal:  make(chan struct{}),
-		Action:       action,
-	}
-}
-
-type brokenFixedTest struct {
-	Starts       int
-	Completes    int
-	Failures     int
-	BrokenSignal chan struct{}
-	FixedSignal  chan struct{}
-	Action       func(context.Context) error
-}
-
-func (job brokenFixedTest) Name() string { return "broken-fixed" }
-
-func (job brokenFixedTest) Execute(ctx context.Context) error {
-	return job.Action(ctx)
-}
-
-func (job brokenFixedTest) Schedule() Schedule { return nil }
-
-func (job *brokenFixedTest) OnStart(t *JobInvocation) {
-	job.Starts++
-}
-
-func (job *brokenFixedTest) OnComplete(t *JobInvocation) {
-	if t.Err != nil {
-		job.Failures++
-	} else {
-		job.Completes++
-	}
-}
-
-func (job *brokenFixedTest) OnBroken(t *JobInvocation) {
-	close(job.BrokenSignal)
-}
-
-func (job *brokenFixedTest) OnFixed(t *JobInvocation) {
-	close(job.FixedSignal)
-}
-
 func TestJobManagerJobLifecycle(t *testing.T) {
 	assert := assert.New(t)
 
@@ -469,10 +292,6 @@ func TestJobManagerJob(t *testing.T) {
 	assert.Nil(meta)
 }
 
-type loadJobTestMinimum struct{}
-
-func (job loadJobTestMinimum) Name() string                    { return "load-job-test-minimum" }
-func (job loadJobTestMinimum) Execute(_ context.Context) error { return nil }
 func TestJobManagerLoadJob(t *testing.T) {
 	assert := assert.New(t)
 

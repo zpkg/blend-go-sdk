@@ -413,14 +413,14 @@ func (jm *JobManager) execute(ctx context.Context, ji *JobInvocation) {
 		} else {
 			jm.onComplete(ji)
 		}
+		// set the last result.
+		ji.JobMeta.Last = ji
 	}()
 	if jm.tracer != nil {
 		ctx, tf = jm.tracer.Start(ctx, ji)
 	}
 
-	// fire the on start listener if any
 	jm.onStart(ji)
-	// run the task
 	err = ji.JobMeta.Job.Execute(ctx)
 }
 

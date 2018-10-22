@@ -20,7 +20,7 @@ const (
 	// DefaultEnabled is a default.
 	DefaultEnabled = true
 	// DefaultSerial is a default.
-	DefaultSerial = true
+	DefaultSerial = false
 	// DefaultShouldWriteOutput is a default.
 	DefaultShouldWriteOutput = true
 	// DefaultShouldTriggerListeners is a default.
