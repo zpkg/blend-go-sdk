@@ -56,11 +56,6 @@ func (jb *JobBuilder) WithSchedule(schedule Schedule) *JobBuilder {
 	return jb
 }
 
-// TimeoutProvider returns the job timeout.
-func (jb *JobBuilder) TimeoutProvider() func() time.Duration {
-	return jb.timeoutProvider
-}
-
 // WithTimeoutProvider sets the timeout provider.
 func (jb *JobBuilder) WithTimeoutProvider(timeoutProvider func() time.Duration) *JobBuilder {
 	jb.timeoutProvider = timeoutProvider
@@ -71,11 +66,6 @@ func (jb *JobBuilder) WithTimeoutProvider(timeoutProvider func() time.Duration) 
 func (jb *JobBuilder) WithAction(action Action) *JobBuilder {
 	jb.action = action
 	return jb
-}
-
-// Action returns the job action.
-func (jb *JobBuilder) Action() Action {
-	return jb.action
 }
 
 // WithEnabledProvider sets the enabled provider for the job.

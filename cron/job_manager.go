@@ -266,7 +266,6 @@ func (jm *JobManager) CancelJob(jobName string) (err error) {
 	job.Elapsed = Since(job.StartTime)
 	job.Err = exception.New(ErrJobCancelled)
 	job.Cancel()
-	jm.onCancelled(job)
 	return
 }
 
@@ -385,9 +384,6 @@ func (jm *JobManager) execute(ctx context.Context, ji *JobInvocation) {
 	var err error
 	var tf TraceFinisher
 	defer func() {
-		if r := recover(); r != nil {
-			err = exception.Nest(exception.New(r), err)
-		}
 		if tf != nil {
 			tf.Finish(ctx, ji)
 		}
@@ -401,12 +397,13 @@ func (jm *JobManager) execute(ctx context.Context, ji *JobInvocation) {
 		ji.Elapsed = Since(ji.StartTime)
 		ji.Err = err
 
-		if ji.Err != nil {
+		if err != nil && IsJobCancelled(err) {
+			jm.onCancelled(ji)
+		} else if ji.Err != nil {
 			jm.onFailure(ji)
 		} else {
 			jm.onComplete(ji)
 		}
-		// set the last result.
 		ji.JobMeta.Last = ji
 	}()
 	if jm.tracer != nil {
@@ -414,7 +411,26 @@ func (jm *JobManager) execute(ctx context.Context, ji *JobInvocation) {
 	}
 
 	jm.onStart(ji)
-	err = ji.JobMeta.Job.Execute(ctx)
+
+	select {
+	case <-ctx.Done():
+		err = ErrJobCancelled
+	case err = <-jm.safeExec(ctx, ji):
+		return
+	}
+}
+
+func (jm *JobManager) safeExec(ctx context.Context, ji *JobInvocation) chan error {
+	errors := make(chan error)
+	go func() {
+		defer func() {
+			if r := recover(); r != nil {
+				errors <- exception.New(r)
+			}
+		}()
+		errors <- ji.JobMeta.Job.Execute(ctx)
+	}()
+	return errors
 }
 
 func (jm *JobManager) killHangingJob(ji *JobInvocation) {

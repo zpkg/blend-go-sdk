@@ -18,6 +18,37 @@ var (
 	_ graceful.Graceful = (*JobManager)(nil)
 )
 
+func TestJobManagerNew(t *testing.T) {
+	assert := assert.New(t)
+
+	jm := New()
+	assert.NotNil(jm.jobs)
+	assert.NotNil(jm.running)
+	assert.NotNil(jm.schedulerWorker)
+	assert.NotNil(jm.killHangingTasksWorker)
+}
+
+func TestJobManagerNewFromEnv(t *testing.T) {
+	assert := assert.New(t)
+
+	jm, err := NewFromEnv()
+	assert.Nil(err)
+	assert.NotNil(jm.jobs)
+	assert.NotNil(jm.running)
+	assert.NotNil(jm.schedulerWorker)
+	assert.NotNil(jm.killHangingTasksWorker)
+}
+
+func TestJobManagerMustNewFromEnv(t *testing.T) {
+	assert := assert.New(t)
+
+	jm := MustNewFromEnv()
+	assert.NotNil(jm.jobs)
+	assert.NotNil(jm.running)
+	assert.NotNil(jm.schedulerWorker)
+	assert.NotNil(jm.killHangingTasksWorker)
+}
+
 func TestRunJobBySchedule(t *testing.T) {
 	a := assert.New(t)
 
@@ -298,6 +329,8 @@ func TestJobManagerLoadJob(t *testing.T) {
 	jm := New()
 	jm.LoadJob(&loadJobTestMinimum{})
 
+	assert.True(jm.HasJob("load-job-test-minimum"))
+
 	meta, err := jm.Job("load-job-test-minimum")
 	assert.Nil(err)
 	assert.NotNil(meta)
@@ -313,4 +346,75 @@ func TestJobManagerLoadJob(t *testing.T) {
 	assert.Equal(DefaultShouldTriggerListeners, meta.ShouldTriggerListenersProvider())
 	assert.NotNil(meta.ShouldWriteOutputProvider)
 	assert.Equal(DefaultShouldWriteOutput, meta.ShouldWriteOutputProvider())
+}
+
+func TestJobManagerIsRunning(t *testing.T) {
+	assert := assert.New(t)
+
+	jm := New()
+
+	checked := make(chan struct{})
+	proceed := make(chan struct{})
+	jm.LoadJob(NewJob("is-running-test").WithAction(func(_ context.Context) error {
+		close(proceed)
+		<-checked
+		return nil
+	}))
+
+	jm.RunJob("is-running-test")
+	<-proceed
+	assert.True(jm.IsRunning("is-running-test"))
+	close(checked)
+
+	assert.False(jm.IsRunning(uuid.V4().String()))
+}
+
+func TestJobManagerStatus(t *testing.T) {
+	assert := assert.New(t)
+
+	jm := New()
+
+	jm.LoadJob(NewJob("test-0"))
+	jm.LoadJob(NewJob("test-1"))
+
+	checked := make(chan struct{})
+	proceed := make(chan struct{})
+	jm.LoadJob(NewJob("is-running-test").WithAction(func(_ context.Context) error {
+		close(proceed)
+		<-checked
+		return nil
+	}))
+
+	jm.RunJob("is-running-test")
+	<-proceed
+	status := jm.Status()
+	close(checked)
+
+	assert.NotNil(status)
+	assert.Len(status.Jobs, 3)
+	assert.Len(status.Running, 1)
+}
+
+func TestJobManagerCancelJob(t *testing.T) {
+	assert := assert.New(t)
+
+	jm := New()
+
+	proceed := make(chan struct{})
+	cancelled := make(chan struct{})
+	jm.LoadJob(NewJob("is-running-test").WithAction(func(ctx context.Context) error {
+		close(proceed)
+		select {
+		case <-ctx.Done():
+			return nil
+		}
+	}).WithOnCancellation(func(_ *JobInvocation) {
+		close(cancelled)
+	}))
+
+	jm.RunJob("is-running-test")
+	<-proceed
+	assert.Nil(jm.CancelJob("is-running-test"))
+	<-cancelled
+	assert.False(jm.IsRunning("is-running-test"))
 }

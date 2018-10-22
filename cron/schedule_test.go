@@ -102,3 +102,18 @@ func TestImmediatelyThen(t *testing.T) {
 	assert.True(next.Sub(now) > time.Minute, fmt.Sprintf("%v", next.Sub(now)))
 	assert.True(next.Sub(now) < (2 * time.Hour))
 }
+
+func TestOnceAt(t *testing.T) {
+	assert := assert.New(t)
+
+	fireAt := time.Date(2018, 10, 21, 12, 00, 00, 00, time.UTC)
+	before := fireAt.Add(-time.Minute)
+	after := fireAt.Add(time.Minute)
+
+	s := OnceAtUTC(fireAt)
+	result := s.GetNextRunTime(&before)
+	assert.Equal(*result, fireAt)
+
+	result = s.GetNextRunTime(&after)
+	assert.Nil(result)
+}
