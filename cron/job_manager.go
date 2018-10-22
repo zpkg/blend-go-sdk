@@ -132,13 +132,6 @@ func (jm *JobManager) IsRunning(jobName string) (isRunning bool) {
 	return
 }
 
-// ReadAllJobs allows the consumer to do something with the full job list, using a read lock.
-func (jm *JobManager) ReadAllJobs(action func(jobs map[string]*JobMeta)) {
-	jm.Lock()
-	defer jm.Unlock()
-	action(jm.jobs)
-}
-
 // Status returns a status object.
 func (jm *JobManager) Status() *Status {
 	jm.Lock()
