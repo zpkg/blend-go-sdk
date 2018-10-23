@@ -127,10 +127,19 @@ func uppercaseFirstAll(input string, seperator string) string {
 	parts := strings.Split(input, seperator)
 	for _, thisWord := range parts {
 		toAppend := ""
-		if isCamelCase(thisWord) {
+		if isCompoundLastName(strings.ToLower(thisWord)) {
+			// preserve first letter case, but to lower the rest for compound last names
+			if unicode.IsUpper([]rune(thisWord)[0]) {
+				toAppend = strings.Title(strings.ToLower(thisWord))
+			} else {
+				toAppend = strings.ToLower(thisWord)
+			}
+		} else if isCamelCase(thisWord) {
+			// Preserve case for Camel-cased strings
 			toAppend = thisWord
 		} else {
-			toAppend = strings.ToLower(upperCaseFirst(thisWord))
+			// For everything else, force to title case
+			toAppend = upperCaseFirst(strings.ToLower(thisWord))
 		}
 		words = append(words, toAppend)
 	}
@@ -152,21 +161,21 @@ func cleanString(input string) string {
 }
 
 // isCamelCase returns if a string is CamelCased.
-// CamelCased in this sense is if a string has both upper and lower characters.
+// CamelCased in this sense is if a string has both inner-upper and lower characters.
 func isCamelCase(input string) bool {
 	hasLowers := false
-	hasUppers := false
+	hasInnerUppers := false
 
-	for _, c := range input {
-		if unicode.IsUpper(c) {
-			hasUppers = true
+	for i, c := range input {
+		if i != 0 && unicode.IsUpper(c) {
+			hasInnerUppers = true
 		}
 		if unicode.IsLower(c) {
 			hasLowers = true
 		}
 	}
 
-	return hasLowers && hasUppers
+	return hasLowers && hasInnerUppers
 }
 
 // containsLower returns true if the `elem` is in the StringArray, false otherwise.

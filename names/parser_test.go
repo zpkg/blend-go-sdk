@@ -20,8 +20,18 @@ func TestNames(t *testing.T) {
 	names["Mr John Doe"] = Name{"Mr.", "John", "", "Doe", ""}
 	names["Justin White Phd"] = Name{"", "Justin", "", "White", "PhD"}
 	names["Mark P Williams"] = Name{"", "Mark", "P", "Williams", ""}
+	// Preserves the case of compound last name words
 	names["Aaron bin Omar"] = Name{"", "Aaron", "", "bin Omar", ""}
+	names["AARON BIN OMAR"] = Name{"", "Aaron", "", "Bin Omar", ""}
 	names["Aaron ibn Omar"] = Name{"", "Aaron", "", "ibn Omar", ""}
+	// Title case all caps
+	names["MICHAEL J SPOLARICH JR"] = Name{"", "Michael", "J", "Spolarich", "Jr"}
+	// Title case lowers
+	names["michael j spolarich jr"] = Name{"", "Michael", "J", "Spolarich", "Jr"}
+	// Preserve camel if provided
+	names["LaTosha McMichaels"] = Name{"", "LaTosha", "", "McMichaels", ""}
+	// Can't camel if we get consistent case
+	names["LATOSHA MCMICHAELS"] = Name{"", "Latosha", "", "Mcmichaels", ""}
 	names[""] = Name{"", "", "", "", ""}
 	names["Dr"] = Name{"Dr.", "", "", "", ""}
 
