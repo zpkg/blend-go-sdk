@@ -1,6 +1,7 @@
 package template
 
 import (
+	"bytes"
 	"io"
 	"io/ioutil"
 
@@ -133,6 +134,16 @@ func (t *Template) Process(dst io.Writer) error {
 		return err
 	}
 	return final.Execute(dst, t.Viewmodel)
+}
+
+// ProcessString is a helper to process the template as a string.
+func (t *Template) ProcessString() (string, error) {
+	buffer := new(bytes.Buffer)
+	err := t.Process(buffer)
+	if err != nil {
+		return "", err
+	}
+	return buffer.String(), nil
 }
 
 // ViewFuncs returns the view funcs.
