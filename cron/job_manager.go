@@ -86,66 +86,9 @@ func (jm *JobManager) Tracer() Tracer {
 	return jm.tracer
 }
 
-// ----------------------------------------------------------------------------
-// Informational Methods
-// ----------------------------------------------------------------------------
-
-// HasJob returns if a jobName is loaded or not.
-func (jm *JobManager) HasJob(jobName string) (hasJob bool) {
-	jm.Lock()
-	defer jm.Unlock()
-	_, hasJob = jm.jobs[jobName]
-	return
-}
-
-// Job returns a job metadata by name.
-func (jm *JobManager) Job(jobName string) (job *JobMeta, err error) {
-	jm.Lock()
-	defer jm.Unlock()
-	if jobMeta, hasJob := jm.jobs[jobName]; hasJob {
-		job = jobMeta
-	} else {
-		err = exception.New(ErrJobNotLoaded).WithMessagef("job: %s", jobName)
-	}
-	return
-}
-
-// IsDisabled returns if a job is disabled.
-func (jm *JobManager) IsDisabled(jobName string) (value bool) {
-	jm.Lock()
-	defer jm.Unlock()
-
-	if job, hasJob := jm.jobs[jobName]; hasJob {
-		value = job.Disabled
-		if job.EnabledProvider != nil {
-			value = value || !job.EnabledProvider()
-		}
-	}
-	return
-}
-
-// IsRunning returns if a task is currently running.
-func (jm *JobManager) IsRunning(jobName string) (isRunning bool) {
-	jm.Lock()
-	defer jm.Unlock()
-	_, isRunning = jm.running[jobName]
-	return
-}
-
-// Status returns a status object.
-func (jm *JobManager) Status() *Status {
-	jm.Lock()
-	defer jm.Unlock()
-	status := Status{
-		Running: map[string]JobInvocation{},
-	}
-	for _, meta := range jm.jobs {
-		status.Jobs = append(status.Jobs, *meta)
-	}
-	for name, job := range jm.running {
-		status.Running[name] = *job
-	}
-	return &status
+// Latch returns the internal latch.
+func (jm *JobManager) Latch() *async.Latch {
+	return jm.latch
 }
 
 // --------------------------------------------------------------------------------
@@ -217,6 +160,48 @@ func (jm *JobManager) EnableJob(jobName string) error {
 	return jm.setJobDisabledUnsafe(jobName, false)
 }
 
+// HasJob returns if a jobName is loaded or not.
+func (jm *JobManager) HasJob(jobName string) (hasJob bool) {
+	jm.Lock()
+	defer jm.Unlock()
+	_, hasJob = jm.jobs[jobName]
+	return
+}
+
+// Job returns a job metadata by name.
+func (jm *JobManager) Job(jobName string) (job *JobMeta, err error) {
+	jm.Lock()
+	defer jm.Unlock()
+	if jobMeta, hasJob := jm.jobs[jobName]; hasJob {
+		job = jobMeta
+	} else {
+		err = exception.New(ErrJobNotLoaded).WithMessagef("job: %s", jobName)
+	}
+	return
+}
+
+// IsJobDisabled returns if a job is disabled.
+func (jm *JobManager) IsJobDisabled(jobName string) (value bool) {
+	jm.Lock()
+	defer jm.Unlock()
+
+	if job, hasJob := jm.jobs[jobName]; hasJob {
+		value = job.Disabled
+		if job.EnabledProvider != nil {
+			value = value || !job.EnabledProvider()
+		}
+	}
+	return
+}
+
+// IsJobRunning returns if a task is currently running.
+func (jm *JobManager) IsJobRunning(jobName string) (isRunning bool) {
+	jm.Lock()
+	defer jm.Unlock()
+	_, isRunning = jm.running[jobName]
+	return
+}
+
 // RunJobs runs a variadic list of job names.
 func (jm *JobManager) RunJobs(jobNames ...string) error {
 	jm.Lock()
@@ -269,6 +254,26 @@ func (jm *JobManager) CancelJob(jobName string) (err error) {
 	return
 }
 
+// Status returns a status object.
+func (jm *JobManager) Status() *Status {
+	jm.Lock()
+	defer jm.Unlock()
+	status := Status{
+		Running: map[string]JobInvocation{},
+	}
+	for _, meta := range jm.jobs {
+		status.Jobs = append(status.Jobs, *meta)
+	}
+	for name, job := range jm.running {
+		status.Running[name] = *job
+	}
+	return &status
+}
+
+//
+// Life Cycle
+//
+
 // Start begins the schedule runner for a JobManager.
 func (jm *JobManager) Start() error {
 	if !jm.latch.CanStart() {
@@ -301,6 +306,12 @@ func (jm *JobManager) NotifyStarted() <-chan struct{} {
 // NotifyStopped returns the stopped notification channel.
 func (jm *JobManager) NotifyStopped() <-chan struct{} {
 	return jm.latch.NotifyStopped()
+}
+
+// IsRunning returns if the job manager is running.
+// It serves as an authoritative healthcheck.
+func (jm *JobManager) IsRunning() bool {
+	return jm.latch.IsRunning() && jm.schedulerWorker.IsRunning() && jm.killHangingTasksWorker.IsRunning()
 }
 
 // --------------------------------------------------------------------------------

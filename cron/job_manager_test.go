@@ -82,7 +82,7 @@ func TestDisableJob(t *testing.T) {
 		return nil
 	}}))
 	a.Nil(jm.DisableJob(runAtJobName))
-	a.True(jm.IsDisabled(runAtJobName))
+	a.True(jm.IsJobDisabled(runAtJobName))
 }
 
 // The goal with this test is to see if panics take down the test process or not.
@@ -115,13 +115,13 @@ func TestEnabledProvider(t *testing.T) {
 	}
 
 	manager.LoadJob(job)
-	a.False(manager.IsDisabled("testWithEnabled"))
+	a.False(manager.IsJobDisabled("testWithEnabled"))
 	manager.DisableJob("testWithEnabled")
-	a.True(manager.IsDisabled("testWithEnabled"))
+	a.True(manager.IsJobDisabled("testWithEnabled"))
 	job.isEnabled = false
-	a.True(manager.IsDisabled("testWithEnabled"))
+	a.True(manager.IsJobDisabled("testWithEnabled"))
 	manager.EnableJob("testWithEnabled")
-	a.True(manager.IsDisabled("testWithEnabled"))
+	a.True(manager.IsJobDisabled("testWithEnabled"))
 }
 
 func TestFiresErrorOnTaskError(t *testing.T) {
@@ -382,10 +382,10 @@ func TestJobManagerIsRunning(t *testing.T) {
 
 	jm.RunJob("is-running-test")
 	<-proceed
-	assert.True(jm.IsRunning("is-running-test"))
+	assert.True(jm.IsJobRunning("is-running-test"))
 	close(checked)
 
-	assert.False(jm.IsRunning(uuid.V4().String()))
+	assert.False(jm.IsJobRunning(uuid.V4().String()))
 }
 
 func TestJobManagerStatus(t *testing.T) {
@@ -435,5 +435,5 @@ func TestJobManagerCancelJob(t *testing.T) {
 	<-proceed
 	assert.Nil(jm.CancelJob("is-running-test"))
 	<-cancelled
-	assert.False(jm.IsRunning("is-running-test"))
+	assert.False(jm.IsJobRunning("is-running-test"))
 }
