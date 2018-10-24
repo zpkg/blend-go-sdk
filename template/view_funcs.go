@@ -35,6 +35,127 @@ import (
 // ViewFuncs is the type stub for view functions.
 type ViewFuncs struct{}
 
+// FuncMap returns the name => func mapping.
+func (vf ViewFuncs) FuncMap() map[string]interface{} {
+	return map[string]interface{}{
+		/* files */
+		"file_exists": vf.FileExists,
+		"read_file":   vf.ReadFile,
+		"process":     vf.Process,
+		/* conversion */
+		"as_string": vf.ToString,
+		"as_bytes":  vf.ToBytes,
+		/* parsing */
+		/* these are like to_ but can error */
+		"parse_bool":    vf.ParseBool,
+		"parse_int":     vf.ToInt,
+		"parse_int64":   vf.ToInt64,
+		"parse_float64": vf.ToFloat64,
+		"parse_time":    vf.ParseTime,
+		"parse_unix":    vf.ParseUnix,
+		"parse_semver":  vf.ParseSemver,
+		"parse_url":     vf.ParseURL,
+		/* time */
+		"now":            vf.Now,
+		"now_utc":        vf.NowUTC,
+		"date_short":     vf.DateShort,
+		"date_month_day": vf.DateMonthDay,
+		"unix":           vf.Unix,
+		"rfc3339":        vf.RFC3339,
+		"time_short":     vf.TimeShort,
+		"time_medium":    vf.TimeMedium,
+		"time_kitchen":   vf.TimeKitchen,
+		"in_loc":         vf.TimeInLocation,
+		"since":          vf.Since,
+		"since_utc":      vf.SinceUTC,
+		"year":           vf.Year,
+		"month":          vf.Month,
+		"day":            vf.Day,
+		"hour":           vf.Hour,
+		"minute":         vf.Minute,
+		"second":         vf.Second,
+		"millisecond":    vf.Millisecond,
+		/* numbers */
+		"format_money": vf.FormatMoney,
+		"format_pct":   vf.FormatPct,
+		"round":        vf.Round,
+		"ceil":         vf.Ceil,
+		"floor":        vf.Floor,
+		/* base64 */
+		"base64":       vf.Base64,
+		"base64decode": vf.Base64Decode,
+		/* uuid */
+		"parse_uuid": vf.ParseUUID,
+		"uuid":       vf.UUIDv4,
+		"uuidv4":     vf.UUIDv4,
+		/* strings */
+		"to_upper":                    vf.ToUpper,
+		"to_lower":                    vf.ToLower,
+		"to_title":                    vf.ToTitle,
+		"random_letters":              vf.RandomLetters,
+		"random_letters_with_numbers": vf.RandomLettersWithNumbers,
+		"trim_space":                  vf.TrimSpace,
+		"concat":                      vf.Concat,
+		"prefix":                      vf.Prefix,
+		"suffix":                      vf.Suffix,
+		"split":                       vf.Split,
+		"split_n":                     vf.SplitN,
+		"has_suffix":                  vf.HasSuffix,
+		"has_prefix":                  vf.HasPrefix,
+		"contains":                    vf.Contains,
+		"matches":                     vf.Matches,
+		/* arrays */
+		"slice": vf.Slice,
+		"first": vf.First,
+		"index": vf.Index,
+		"last":  vf.Last,
+		"join":  vf.Join,
+		"csv":   vf.CSV,
+		"tsv":   vf.TSV,
+		/* urls */
+		"url_scheme":         vf.URLScheme,
+		"with_url_scheme":    vf.WithURLScheme,
+		"url_host":           vf.URLHost,
+		"with_url_host":      vf.WithURLHost,
+		"url_port":           vf.URLPort,
+		"with_url_port":      vf.WithURLPort,
+		"url_path":           vf.URLPath,
+		"with_url_path":      vf.URLPath,
+		"url_raw_query":      vf.URLRawQuery,
+		"with_url_raw_query": vf.WithURLRawQuery,
+		"url_query":          vf.URLQuery,
+		"with_url_query":     vf.WithURLQuery,
+		/* cryptography */
+		"md5":    vf.MD5,
+		"sha1":   vf.SHA1,
+		"sha256": vf.SHA256,
+		"sha512": vf.SHA512,
+		"hmac":   vf.HMAC512,
+		/* semantic versions */
+		"semver_major":      vf.SemverMajor,
+		"semver_bump_major": vf.SemverBumpMajor,
+		"semver_minor":      vf.SemverMinor,
+		"semver_bump_minor": vf.SemverBumpMinor,
+		"semver_patch":      vf.SemverPatch,
+		"semver_bump_patch": vf.SemverBumpPatch,
+		/* generators */
+		"generate_ordinal_names": vf.GenerateOrdinalNames,
+		"generate_password":      vf.RandomLettersWithNumbersAndSymbols,
+		"generate_key":           vf.GenerateKey,
+		/* json + yaml */
+		"to_json":        vf.JSONEncode,
+		"to_json_pretty": vf.JSONEncodePretty,
+		"to_yaml":        vf.YAMLEncode,
+		"parse_json":     vf.ParseJSON,
+		"parse_yaml":     vf.ParseYAML,
+		"json_path":      vf.JSONPath,
+		"yaml_path":      vf.YAMLPath,
+		/* indentation */
+		"indent_tabs":   vf.IndentTabs,
+		"indent_spaces": vf.IndentSpaces,
+	}
+}
+
 // FileExists returns if the file at a given path exists.
 func (vf ViewFuncs) FileExists(path string) bool {
 	_, err := os.Stat(path)
@@ -399,6 +520,16 @@ func (vf ViewFuncs) Join(sep string, collection interface{}) (string, error) {
 	return strings.Join(values, sep), nil
 }
 
+// CSV returns a csv of a given collection.
+func (vf ViewFuncs) CSV(collection interface{}) (string, error) {
+	return vf.Join(",", collection)
+}
+
+// TSV returns a tab separated values of a given collection.
+func (vf ViewFuncs) TSV(collection interface{}) (string, error) {
+	return vf.Join("\t", collection)
+}
+
 // HasSuffix returns if a string has a given suffix.
 func (vf ViewFuncs) HasSuffix(suffix, v string) bool {
 	return strings.HasSuffix(v, suffix)
@@ -677,123 +808,4 @@ func (vf ViewFuncs) JSONPath(path string, v string) (interface{}, error) {
 // More information can be found here: http://jmespath.org/specification.html
 func (vf ViewFuncs) JMESPath(path string, v interface{}) (interface{}, error) {
 	return jmespath.Search(path, v)
-}
-
-// FuncMap returns the name => func mapping.
-func (vf ViewFuncs) FuncMap() map[string]interface{} {
-	return map[string]interface{}{
-		/* files */
-		"file_exists": vf.FileExists,
-		"read_file":   vf.ReadFile,
-		"process":     vf.Process,
-		/* conversion */
-		"as_string": vf.ToString,
-		"as_bytes":  vf.ToBytes,
-		/* parsing */
-		/* these are like to_ but can error */
-		"parse_bool":    vf.ParseBool,
-		"parse_int":     vf.ToInt,
-		"parse_int64":   vf.ToInt64,
-		"parse_float64": vf.ToFloat64,
-		"parse_time":    vf.ParseTime,
-		"parse_unix":    vf.ParseUnix,
-		"parse_semver":  vf.ParseSemver,
-		"parse_url":     vf.ParseURL,
-		/* time */
-		"now":            vf.Now,
-		"now_utc":        vf.NowUTC,
-		"date_short":     vf.DateShort,
-		"date_month_day": vf.DateMonthDay,
-		"unix":           vf.Unix,
-		"rfc3339":        vf.RFC3339,
-		"time_short":     vf.TimeShort,
-		"time_medium":    vf.TimeMedium,
-		"time_kitchen":   vf.TimeKitchen,
-		"in_loc":         vf.TimeInLocation,
-		"since":          vf.Since,
-		"since_utc":      vf.SinceUTC,
-		"year":           vf.Year,
-		"month":          vf.Month,
-		"day":            vf.Day,
-		"hour":           vf.Hour,
-		"minute":         vf.Minute,
-		"second":         vf.Second,
-		"millisecond":    vf.Millisecond,
-		/* numbers */
-		"format_money": vf.FormatMoney,
-		"format_pct":   vf.FormatPct,
-		"round":        vf.Round,
-		"ceil":         vf.Ceil,
-		"floor":        vf.Floor,
-		/* base64 */
-		"base64":       vf.Base64,
-		"base64decode": vf.Base64Decode,
-		/* uuid */
-		"parse_uuid": vf.ParseUUID,
-		"uuid":       vf.UUIDv4,
-		"uuidv4":     vf.UUIDv4,
-		/* strings */
-		"to_upper":                    vf.ToUpper,
-		"to_lower":                    vf.ToLower,
-		"to_title":                    vf.ToTitle,
-		"random_letters":              vf.RandomLetters,
-		"random_letters_with_numbers": vf.RandomLettersWithNumbers,
-		"trim_space":                  vf.TrimSpace,
-		"concat":                      vf.Concat,
-		"prefix":                      vf.Prefix,
-		"suffix":                      vf.Suffix,
-		"split":                       vf.Split,
-		"split_n":                     vf.SplitN,
-		"has_suffix":                  vf.HasSuffix,
-		"has_prefix":                  vf.HasPrefix,
-		"contains":                    vf.Contains,
-		"matches":                     vf.Matches,
-		/* arrays */
-		"slice": vf.Slice,
-		"first": vf.First,
-		"index": vf.Index,
-		"last":  vf.Last,
-		"join":  vf.Join,
-		/* urls */
-		"url_scheme":         vf.URLScheme,
-		"with_url_scheme":    vf.WithURLScheme,
-		"url_host":           vf.URLHost,
-		"with_url_host":      vf.WithURLHost,
-		"url_port":           vf.URLPort,
-		"with_url_port":      vf.WithURLPort,
-		"url_path":           vf.URLPath,
-		"with_url_path":      vf.URLPath,
-		"url_raw_query":      vf.URLRawQuery,
-		"with_url_raw_query": vf.WithURLRawQuery,
-		"url_query":          vf.URLQuery,
-		"with_url_query":     vf.WithURLQuery,
-		/* cryptography */
-		"md5":    vf.MD5,
-		"sha1":   vf.SHA1,
-		"sha256": vf.SHA256,
-		"sha512": vf.SHA512,
-		"hmac":   vf.HMAC512,
-		/* semantic versions */
-		"semver_major":      vf.SemverMajor,
-		"semver_bump_major": vf.SemverBumpMajor,
-		"semver_minor":      vf.SemverMinor,
-		"semver_bump_minor": vf.SemverBumpMinor,
-		"semver_patch":      vf.SemverPatch,
-		"semver_bump_patch": vf.SemverBumpPatch,
-		/* generators */
-		"generate_ordinal_names": vf.GenerateOrdinalNames,
-		"generate_password":      vf.RandomLettersWithNumbersAndSymbols,
-		"generate_key":           vf.GenerateKey,
-		/* json + yaml */
-		"to_json":        vf.JSONEncode,
-		"to_json_pretty": vf.JSONEncodePretty,
-		"to_yaml":        vf.YAMLEncode,
-		"parse_json":     vf.ParseJSON,
-		"parse_yaml":     vf.ParseYAML,
-		"json_path":      vf.JSONPath,
-		"yaml_path":      vf.YAMLPath,
-		/* indentation */
-		"indent_tabs":   vf.IndentTabs,
-		"indent_spaces": vf.IndentSpaces,
-	}
 }

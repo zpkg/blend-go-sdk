@@ -1025,3 +1025,21 @@ func TestTemplateProcess(t *testing.T) {
 	assert.Nil(err, fmt.Sprintf("%+v", err))
 	assert.NotEmpty(buffer.String())
 }
+
+func TestViewfuncCSV(t *testing.T) {
+	assert := assert.New(t)
+
+	tmp := New().WithBody(`{{ .Var "things" | csv}}`).WithVar("things", []string{"a", "b", "c"})
+	buffer := new(bytes.Buffer)
+	assert.Nil(tmp.Process(buffer))
+	assert.Equal("a,b,c", buffer.String())
+}
+
+func TestViewfuncTSV(t *testing.T) {
+	assert := assert.New(t)
+
+	tmp := New().WithBody(`{{ .Var "things" | tsv}}`).WithVar("things", []string{"a", "b", "c"})
+	buffer := new(bytes.Buffer)
+	assert.Nil(tmp.Process(buffer))
+	assert.Equal("a\tb\tc", buffer.String())
+}
