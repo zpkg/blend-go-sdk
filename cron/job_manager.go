@@ -547,8 +547,7 @@ func (jm *JobManager) jobCanRun(job *JobMeta) bool {
 func (jm *JobManager) onStart(ctx context.Context, ji *JobInvocation) {
 	if jm.log != nil && ji.JobMeta.ShouldTriggerListenersProvider() {
 		event := NewEvent(FlagStarted, ji.Name).WithIsWritable(ji.JobMeta.ShouldWriteOutputProvider())
-		event.SetEntity(ji.ID)
-		jm.log.Trigger(event)
+		jm.log.SubContext(ji.ID).Trigger(event)
 	}
 	if typed, ok := ji.JobMeta.Job.(OnStartReceiver); ok {
 		typed.OnStart(ctx)
@@ -560,8 +559,7 @@ func (jm *JobManager) onCancelled(ctx context.Context, ji *JobInvocation) {
 		event := NewEvent(FlagCancelled, ji.Name).
 			WithIsWritable(ji.JobMeta.ShouldWriteOutputProvider()).
 			WithElapsed(ji.Elapsed)
-		event.SetEntity(ji.ID)
-		jm.log.Trigger(event)
+		jm.log.SubContext(ji.ID).Trigger(event)
 	}
 	if typed, ok := ji.JobMeta.Job.(OnCancellationReceiver); ok {
 		typed.OnCancellation(ctx)
@@ -573,14 +571,20 @@ func (jm *JobManager) onComplete(ctx context.Context, ji *JobInvocation) {
 		event := NewEvent(FlagComplete, ji.Name).
 			WithIsWritable(ji.JobMeta.ShouldWriteOutputProvider()).
 			WithElapsed(ji.Elapsed)
-
-		event.SetEntity(ji.ID)
-		jm.log.Trigger(event)
+		jm.log.SubContext(ji.ID).Trigger(event)
 	}
 	if typed, ok := ji.JobMeta.Job.(OnCompleteReceiver); ok {
 		typed.OnComplete(ctx)
 	}
+
 	if ji.JobMeta.Last != nil && ji.JobMeta.Last.Err != nil {
+		if jm.log != nil {
+			event := NewEvent(FlagFixed, ji.Name).
+				WithIsWritable(ji.JobMeta.ShouldWriteOutputProvider()).
+				WithElapsed(ji.Elapsed)
+			jm.log.SubContext(ji.ID).Trigger(event)
+		}
+
 		if typed, ok := ji.JobMeta.Job.(OnFixedReceiver); ok {
 			typed.OnFixed(ctx)
 		}
@@ -593,8 +597,8 @@ func (jm *JobManager) onFailure(ctx context.Context, ji *JobInvocation) {
 			WithIsWritable(ji.JobMeta.ShouldWriteOutputProvider()).
 			WithElapsed(ji.Elapsed).
 			WithErr(ji.Err)
-		event.SetEntity(ji.ID)
-		jm.log.Trigger(event)
+
+		jm.log.SubContext(ji.ID).Trigger(event)
 	}
 	if ji.Err != nil {
 		jm.err(ji.Err)
@@ -603,6 +607,13 @@ func (jm *JobManager) onFailure(ctx context.Context, ji *JobInvocation) {
 		typed.OnFailure(ctx)
 	}
 	if ji.JobMeta.Last != nil && ji.JobMeta.Last.Err == nil {
+		if jm.log != nil {
+			event := NewEvent(FlagBroken, ji.Name).
+				WithIsWritable(ji.JobMeta.ShouldWriteOutputProvider()).
+				WithElapsed(ji.Elapsed)
+			jm.log.SubContext(ji.ID).Trigger(event)
+		}
+
 		if typed, ok := ji.JobMeta.Job.(OnBrokenReceiver); ok {
 			typed.OnBroken(ctx)
 		}

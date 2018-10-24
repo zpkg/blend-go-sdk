@@ -36,6 +36,10 @@ const (
 	FlagCancelled logger.Flag = "cron.cancelled"
 	// FlagComplete is an event flag.
 	FlagComplete logger.Flag = "cron.complete"
+	// FlagBroken is an event flag.
+	FlagBroken logger.Flag = "cron.broken"
+	// FlagFixed is an event flag.
+	FlagFixed logger.Flag = "cron.fixed"
 )
 
 // State is a job state.
