@@ -170,16 +170,16 @@ func TestManagerTracer(t *testing.T) {
 	var startTaskCorrect, finishTaskCorrect, errorUnset bool
 	manager := New().
 		WithTracer(&mockTracer{
-			OnStart: func(ji *JobInvocation) {
+			OnStart: func(ctx context.Context) {
 				defer wg.Done()
 				didCallStart = true
-				startTaskCorrect = ji.Name == "tracer-test"
+				startTaskCorrect = GetJobInvocation(ctx).Name == "tracer-test"
 			},
-			OnFinish: func(ji *JobInvocation) {
+			OnFinish: func(ctx context.Context) {
 				defer wg.Done()
 				didCallFinish = true
-				finishTaskCorrect = ji.Name == "tracer-test"
-				errorUnset = ji.Err == nil
+				finishTaskCorrect = GetJobInvocation(ctx).Name == "tracer-test"
+				errorUnset = GetJobInvocation(ctx).Err == nil
 			},
 		})
 

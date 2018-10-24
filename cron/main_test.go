@@ -68,7 +68,7 @@ func (tj *testJobWithTimeout) Execute(ctx context.Context) error {
 	return tj.RunDelegate(ctx)
 }
 
-func (tj *testJobWithTimeout) OnCancellation(ji *JobInvocation) {
+func (tj *testJobWithTimeout) OnCancellation(ctx context.Context) {
 	tj.CancellationDelegate()
 }
 
@@ -112,13 +112,13 @@ func (twe testWithEnabled) Execute(ctx context.Context) error {
 }
 
 type mockTracer struct {
-	OnStart  func(*JobInvocation)
-	OnFinish func(*JobInvocation)
+	OnStart  func(context.Context)
+	OnFinish func(context.Context)
 }
 
-func (mt mockTracer) Start(ctx context.Context, ji *JobInvocation) (context.Context, TraceFinisher) {
+func (mt mockTracer) Start(ctx context.Context) (context.Context, TraceFinisher) {
 	if mt.OnStart != nil {
-		mt.OnStart(ji)
+		mt.OnStart(ctx)
 	}
 	return ctx, &mockTraceFinisher{Parent: &mt}
 }
@@ -127,9 +127,9 @@ type mockTraceFinisher struct {
 	Parent *mockTracer
 }
 
-func (mtf mockTraceFinisher) Finish(ctx context.Context, ji *JobInvocation) {
+func (mtf mockTraceFinisher) Finish(ctx context.Context) {
 	if mtf.Parent != nil && mtf.Parent.OnFinish != nil {
-		mtf.Parent.OnFinish(ji)
+		mtf.Parent.OnFinish(ctx)
 	}
 }
 
@@ -166,23 +166,23 @@ func (job brokenFixedTest) Execute(ctx context.Context) error {
 
 func (job brokenFixedTest) Schedule() Schedule { return nil }
 
-func (job *brokenFixedTest) OnStart(t *JobInvocation) {
+func (job *brokenFixedTest) OnStart(ctx context.Context) {
 	job.Starts++
 }
 
-func (job *brokenFixedTest) OnFailure(t *JobInvocation) {
+func (job *brokenFixedTest) OnFailure(ctx context.Context) {
 	job.Failures++
 }
 
-func (job *brokenFixedTest) OnComplete(t *JobInvocation) {
+func (job *brokenFixedTest) OnComplete(ctx context.Context) {
 	job.Completes++
 }
 
-func (job *brokenFixedTest) OnBroken(t *JobInvocation) {
+func (job *brokenFixedTest) OnBroken(ctx context.Context) {
 	close(job.BrokenSignal)
 }
 
-func (job *brokenFixedTest) OnFixed(t *JobInvocation) {
+func (job *brokenFixedTest) OnFixed(ctx context.Context) {
 	close(job.FixedSignal)
 }
 

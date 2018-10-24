@@ -16,10 +16,15 @@ import (
 	"github.com/blend/go-sdk/webutil"
 )
 
+// NewCtxID returns a pseudo-unique key for a context.
+func NewCtxID() string {
+	return util.String.RandomLetters(12)
+}
+
 // NewCtx returns a new ctx.
 func NewCtx(w ResponseWriter, r *http.Request) *Ctx {
 	return &Ctx{
-		id:       util.String.RandomLetters(12),
+		id:       NewCtxID(),
 		response: w,
 		request:  r,
 		state:    &SyncState{},

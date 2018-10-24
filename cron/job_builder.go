@@ -169,44 +169,44 @@ func (jb *JobBuilder) ShouldTriggerListeners() bool {
 }
 
 // OnStart is a lifecycle hook.
-func (jb *JobBuilder) OnStart(ji *JobInvocation) {
+func (jb *JobBuilder) OnStart(ctx context.Context) {
 	if jb.onStart != nil {
-		jb.onStart(ji)
+		jb.onStart(GetJobInvocation(ctx))
 	}
 }
 
 // OnCancellation is a lifecycle hook.
-func (jb *JobBuilder) OnCancellation(ji *JobInvocation) {
+func (jb *JobBuilder) OnCancellation(ctx context.Context) {
 	if jb.onCancellation != nil {
-		jb.onCancellation(ji)
+		jb.onCancellation(GetJobInvocation(ctx))
 	}
 }
 
 // OnComplete is a lifecycle hook.
-func (jb *JobBuilder) OnComplete(ji *JobInvocation) {
+func (jb *JobBuilder) OnComplete(ctx context.Context) {
 	if jb.onComplete != nil {
-		jb.onComplete(ji)
+		jb.onComplete(GetJobInvocation(ctx))
 	}
 }
 
 // OnFailure is a lifecycle hook.
-func (jb *JobBuilder) OnFailure(ji *JobInvocation) {
+func (jb *JobBuilder) OnFailure(ctx context.Context) {
 	if jb.onFailure != nil {
-		jb.onFailure(ji)
+		jb.onFailure(GetJobInvocation(ctx))
 	}
 }
 
 // OnFixed is a lifecycle hook.
-func (jb *JobBuilder) OnFixed(ji *JobInvocation) {
+func (jb *JobBuilder) OnFixed(ctx context.Context) {
 	if jb.onFixed != nil {
-		jb.onFixed(ji)
+		jb.onFixed(GetJobInvocation(ctx))
 	}
 }
 
 // OnBroken is a lifecycle hook.
-func (jb *JobBuilder) OnBroken(ji *JobInvocation) {
+func (jb *JobBuilder) OnBroken(ctx context.Context) {
 	if jb.onBroken != nil {
-		jb.onBroken(ji)
+		jb.onBroken(GetJobInvocation(ctx))
 	}
 }
 

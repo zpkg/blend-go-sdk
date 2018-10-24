@@ -1,6 +1,7 @@
 package cron
 
 import (
+	"context"
 	"time"
 )
 
@@ -54,32 +55,32 @@ type EnabledProvider interface {
 
 // OnStartReceiver is an interface that allows a task to be signaled when it has started.
 type OnStartReceiver interface {
-	OnStart(*JobInvocation)
+	OnStart(context.Context)
 }
 
 // OnCancellationReceiver is an interface that allows a task to be signaled when it has been canceled.
 type OnCancellationReceiver interface {
-	OnCancellation(*JobInvocation)
+	OnCancellation(context.Context)
 }
 
 // OnCompleteReceiver is an interface that allows a task to be signaled when it has been completed.
 type OnCompleteReceiver interface {
-	OnComplete(*JobInvocation)
+	OnComplete(context.Context)
 }
 
 // OnFailureReceiver is an interface that allows a task to be signaled when it has been completed.
 type OnFailureReceiver interface {
-	OnFailure(*JobInvocation)
+	OnFailure(context.Context)
 }
 
 // OnBrokenReceiver is an interface that allows a job to be signaled when it is a failure that followed
 // a previous success.
 type OnBrokenReceiver interface {
-	OnBroken(*JobInvocation)
+	OnBroken(context.Context)
 }
 
 // OnFixedReceiver is an interface that allows a jbo to be signaled when is a success that followed
 // a previous failure.
 type OnFixedReceiver interface {
-	OnFixed(*JobInvocation)
+	OnFixed(context.Context)
 }

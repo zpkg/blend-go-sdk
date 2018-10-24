@@ -7,6 +7,7 @@ import (
 
 // JobInvocation is metadata for a job invocation (or instance of a job running).
 type JobInvocation struct {
+	ID        string        `json:"id"`
 	Name      string        `json:"name"`
 	JobMeta   *JobMeta      `json:"-"`
 	StartTime time.Time     `json:"startTime"`

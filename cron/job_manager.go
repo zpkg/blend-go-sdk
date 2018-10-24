@@ -377,7 +377,8 @@ func (jm *JobManager) runJobUnsafe(jobMeta *JobMeta) {
 	start := Now()
 	ctx, cancel := jm.createContextWithCancel()
 
-	ji := &JobInvocation{
+	ji := JobInvocation{
+		ID:        NewJobInvocationID(),
 		Name:      jobMeta.Name,
 		StartTime: start,
 		JobMeta:   jobMeta,
@@ -391,8 +392,8 @@ func (jm *JobManager) runJobUnsafe(jobMeta *JobMeta) {
 		}
 	}
 
-	jm.running[ji.Name] = ji
-	go jm.execute(ctx, ji)
+	jm.running[ji.Name] = &ji
+	go jm.execute(WithJobInvocation(ctx, &ji), &ji)
 }
 
 func (jm *JobManager) execute(ctx context.Context, ji *JobInvocation) {
@@ -400,7 +401,7 @@ func (jm *JobManager) execute(ctx context.Context, ji *JobInvocation) {
 	var tf TraceFinisher
 	defer func() {
 		if tf != nil {
-			tf.Finish(ctx, ji)
+			tf.Finish(ctx)
 		}
 
 		jm.Lock()
@@ -413,29 +414,29 @@ func (jm *JobManager) execute(ctx context.Context, ji *JobInvocation) {
 		ji.Err = err
 
 		if err != nil && IsJobCancelled(err) {
-			jm.onCancelled(ji)
+			jm.onCancelled(ctx, ji)
 		} else if ji.Err != nil {
-			jm.onFailure(ji)
+			jm.onFailure(ctx, ji)
 		} else {
-			jm.onComplete(ji)
+			jm.onComplete(ctx, ji)
 		}
 		ji.JobMeta.Last = ji
 	}()
 	if jm.tracer != nil {
-		ctx, tf = jm.tracer.Start(ctx, ji)
+		ctx, tf = jm.tracer.Start(ctx)
 	}
 
-	jm.onStart(ji)
+	jm.onStart(ctx, ji)
 
 	select {
 	case <-ctx.Done():
 		err = ErrJobCancelled
-	case err = <-jm.safeExec(ctx, ji):
+	case err = <-jm.safeAsyncExec(ctx, ji.JobMeta.Job):
 		return
 	}
 }
 
-func (jm *JobManager) safeExec(ctx context.Context, ji *JobInvocation) chan error {
+func (jm *JobManager) safeAsyncExec(ctx context.Context, job Job) chan error {
 	errors := make(chan error)
 	go func() {
 		defer func() {
@@ -443,7 +444,7 @@ func (jm *JobManager) safeExec(ctx context.Context, ji *JobInvocation) chan erro
 				errors <- exception.New(r)
 			}
 		}()
-		errors <- ji.JobMeta.Job.Execute(ctx)
+		errors <- job.Execute(ctx)
 	}()
 	return errors
 }
@@ -543,16 +544,16 @@ func (jm *JobManager) jobCanRun(job *JobMeta) bool {
 	return true
 }
 
-func (jm *JobManager) onStart(ji *JobInvocation) {
+func (jm *JobManager) onStart(ctx context.Context, ji *JobInvocation) {
 	if jm.log != nil && ji.JobMeta.ShouldTriggerListenersProvider() {
 		jm.log.Trigger(NewEvent(FlagStarted, ji.Name).WithIsWritable(ji.JobMeta.ShouldWriteOutputProvider()))
 	}
 	if typed, ok := ji.JobMeta.Job.(OnStartReceiver); ok {
-		typed.OnStart(ji)
+		typed.OnStart(ctx)
 	}
 }
 
-func (jm *JobManager) onCancelled(ji *JobInvocation) {
+func (jm *JobManager) onCancelled(ctx context.Context, ji *JobInvocation) {
 	if jm.log != nil && ji.JobMeta.ShouldTriggerListenersProvider() {
 		event := NewEvent(FlagCancelled, ji.Name).
 			WithIsWritable(ji.JobMeta.ShouldWriteOutputProvider()).
@@ -560,11 +561,11 @@ func (jm *JobManager) onCancelled(ji *JobInvocation) {
 		jm.log.Trigger(event)
 	}
 	if typed, ok := ji.JobMeta.Job.(OnCancellationReceiver); ok {
-		typed.OnCancellation(ji)
+		typed.OnCancellation(ctx)
 	}
 }
 
-func (jm *JobManager) onComplete(ji *JobInvocation) {
+func (jm *JobManager) onComplete(ctx context.Context, ji *JobInvocation) {
 	if jm.log != nil && ji.JobMeta.ShouldTriggerListenersProvider() {
 		event := NewEvent(FlagComplete, ji.Name).
 			WithIsWritable(ji.JobMeta.ShouldWriteOutputProvider()).
@@ -573,16 +574,16 @@ func (jm *JobManager) onComplete(ji *JobInvocation) {
 		jm.log.Trigger(event)
 	}
 	if typed, ok := ji.JobMeta.Job.(OnCompleteReceiver); ok {
-		typed.OnComplete(ji)
+		typed.OnComplete(ctx)
 	}
 	if ji.JobMeta.Last != nil && ji.JobMeta.Last.Err != nil {
 		if typed, ok := ji.JobMeta.Job.(OnFixedReceiver); ok {
-			typed.OnFixed(ji)
+			typed.OnFixed(ctx)
 		}
 	}
 }
 
-func (jm *JobManager) onFailure(ji *JobInvocation) {
+func (jm *JobManager) onFailure(ctx context.Context, ji *JobInvocation) {
 	if jm.log != nil && ji.JobMeta.ShouldTriggerListenersProvider() {
 		event := NewEvent(FlagFailed, ji.Name).
 			WithIsWritable(ji.JobMeta.ShouldWriteOutputProvider()).
@@ -594,11 +595,11 @@ func (jm *JobManager) onFailure(ji *JobInvocation) {
 		jm.err(ji.Err)
 	}
 	if typed, ok := ji.JobMeta.Job.(OnFailureReceiver); ok {
-		typed.OnFailure(ji)
+		typed.OnFailure(ctx)
 	}
 	if ji.JobMeta.Last != nil && ji.JobMeta.Last.Err == nil {
 		if typed, ok := ji.JobMeta.Job.(OnBrokenReceiver); ok {
-			typed.OnBroken(ji)
+			typed.OnBroken(ctx)
 		}
 	}
 }

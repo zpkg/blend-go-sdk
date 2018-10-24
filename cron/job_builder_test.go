@@ -38,7 +38,7 @@ func TestJobBuilderLifecycle(t *testing.T) {
 		onStart = true
 	})
 	assert.NotNil(job.onStart)
-	job.OnStart(nil)
+	job.OnStart(nil) // this will break context handling code if not nil checked.
 	assert.True(onStart)
 
 	assert.Nil(job.onCancellation)

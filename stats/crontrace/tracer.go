@@ -18,9 +18,9 @@ type tracer struct {
 	tracer opentracing.Tracer
 }
 
-func (t tracer) Start(ctx context.Context, ji *cron.JobInvocation) (context.Context, cron.TraceFinisher) {
+func (t tracer) Start(ctx context.Context) (context.Context, cron.TraceFinisher) {
 	startOptions := []opentracing.StartSpanOption{
-		opentracing.Tag{Key: tracing.TagKeyResourceName, Value: ji.Name},
+		opentracing.Tag{Key: tracing.TagKeyResourceName, Value: cron.GetJobInvocation(ctx).Name},
 		opentracing.Tag{Key: tracing.TagKeySpanType, Value: tracing.SpanTypeJob},
 		opentracing.StartTime(time.Now().UTC()),
 	}
@@ -32,10 +32,10 @@ type traceFinisher struct {
 	span opentracing.Span
 }
 
-func (tf traceFinisher) Finish(ctx context.Context, ji *cron.JobInvocation) {
+func (tf traceFinisher) Finish(ctx context.Context) {
 	if tf.span == nil {
 		return
 	}
-	tracing.SpanError(tf.span, ji.Err)
+	tracing.SpanError(tf.span, cron.GetJobInvocation(ctx).Err)
 	tf.span.Finish()
 }
