@@ -546,7 +546,9 @@ func (jm *JobManager) jobCanRun(job *JobMeta) bool {
 
 func (jm *JobManager) onStart(ctx context.Context, ji *JobInvocation) {
 	if jm.log != nil && ji.JobMeta.ShouldTriggerListenersProvider() {
-		jm.log.Trigger(NewEvent(FlagStarted, ji.Name).WithIsWritable(ji.JobMeta.ShouldWriteOutputProvider()))
+		event := NewEvent(FlagStarted, ji.Name).WithIsWritable(ji.JobMeta.ShouldWriteOutputProvider())
+		event.SetEntity(ji.ID)
+		jm.log.Trigger(event)
 	}
 	if typed, ok := ji.JobMeta.Job.(OnStartReceiver); ok {
 		typed.OnStart(ctx)
@@ -558,6 +560,7 @@ func (jm *JobManager) onCancelled(ctx context.Context, ji *JobInvocation) {
 		event := NewEvent(FlagCancelled, ji.Name).
 			WithIsWritable(ji.JobMeta.ShouldWriteOutputProvider()).
 			WithElapsed(ji.Elapsed)
+		event.SetEntity(ji.ID)
 		jm.log.Trigger(event)
 	}
 	if typed, ok := ji.JobMeta.Job.(OnCancellationReceiver); ok {
@@ -571,6 +574,7 @@ func (jm *JobManager) onComplete(ctx context.Context, ji *JobInvocation) {
 			WithIsWritable(ji.JobMeta.ShouldWriteOutputProvider()).
 			WithElapsed(ji.Elapsed)
 
+		event.SetEntity(ji.ID)
 		jm.log.Trigger(event)
 	}
 	if typed, ok := ji.JobMeta.Job.(OnCompleteReceiver); ok {
@@ -589,6 +593,7 @@ func (jm *JobManager) onFailure(ctx context.Context, ji *JobInvocation) {
 			WithIsWritable(ji.JobMeta.ShouldWriteOutputProvider()).
 			WithElapsed(ji.Elapsed).
 			WithErr(ji.Err)
+		event.SetEntity(ji.ID)
 		jm.log.Trigger(event)
 	}
 	if ji.Err != nil {

@@ -99,13 +99,13 @@ func (e Event) IsWritable() bool {
 	return e.writable
 }
 
-// WithJobName sets the task name.
+// WithJobName sets the job name.
 func (e *Event) WithJobName(jobName string) *Event {
 	e.jobName = jobName
 	return e
 }
 
-// JobName returns the event task name.
+// JobName returns the event job name.
 func (e Event) JobName() string {
 	return e.jobName
 }
@@ -139,10 +139,11 @@ func (e Event) Elapsed() time.Duration {
 
 // WriteText implements logger.TextWritable.
 func (e Event) WriteText(tf logger.TextFormatter, buf *bytes.Buffer) {
+	buf.WriteString(fmt.Sprintf("[%s]", tf.Colorize(e.jobName, logger.ColorBlue)))
+
 	if e.elapsed > 0 {
-		buf.WriteString(fmt.Sprintf("[%s] (%v)", tf.Colorize(e.jobName, logger.ColorBlue), e.elapsed))
-	} else {
-		buf.WriteString(fmt.Sprintf("[%s]", tf.Colorize(e.jobName, logger.ColorBlue)))
+		buf.WriteRune(logger.RuneSpace)
+		buf.WriteString(fmt.Sprintf("(%v)", e.elapsed))
 	}
 }
 
