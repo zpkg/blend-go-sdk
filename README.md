@@ -7,41 +7,14 @@ go-sdk
 
 The general philosophy is to provide loosely coupled libraries that can be composed as a suite of tools, vs. a `do it all` framework.
 
-# Packages
-
-The main packages are as follows:
-
-- `assert` : helpers for writing tests; wraps `*testing.T` with more useful assertions.
-- `collections` : common collections like ringbuffers and sets. 
-- `configutil` : helpers for reading config files.
-- `cron` : time triggered job management.
-- `db` : our postgres orm.
-- `db/migration` : helpers for writing postgres migrations.
-- `env` : helpers for reading / writing / testing environment variables.
-- `exception` : wraps error types with stack traces. 
-- `logger` : our performance oriented event bus; event triggering is supported in most major packages.
-- `oauth` : a wrapper on `golang.org/x/oauth2` that automates fetching profiles for google oauth.
-- `proxy` : an http/https reverse proxy.
-- `proxy/proxy` : a cli server the proxy.
-- `request` : wrappers for `http.Client` with support for testing and a fluent api.
-- `selector` : a portable implementation of kubernetes selectors.
-- `semver` : semantic versioning helpers.
-- `template` : text-template helpers.
-- `template/template` : a cli for reading templates and outputting results.
-- `util` : the junk drawer of random stuff. 
-- `uuid` : generate and parse uuid v4's.
-- `web` : our web framework; useful for both rest api's and view based apps.
-- `workqueue` : a background work queue when you need to have a fixed number of workers.
-- `yaml` : a yaml marshaller / unmarshaller. based on `go-yaml`.
-
 # Addtional CLI Tools
 
-We also provide the following CLI tools to help with development:
+We also provide the following CLI tools to help with development that leverage some of these packages:
 
-- `_bin/cover` : allows for project level coverage reporting and enforcement.
-- `_bin/profanity` : profanity rules checking (i.e. fail on grep match).
-- `_bin/recover` : recover crashed processes (to be used when debugging panics).
-- `_bin/semver` : semver maniuplation and validation. 
+- `cmd/cover` : allows for project level coverage reporting and enforcement.
+- `cmd/profanity` : profanity rules checking (i.e. fail on grep match).
+- `cmd/recover` : recover crashed processes (to be used when debugging panics).
+- `cmd/semver` : semver maniuplation and validation. 
 
 # Code Style Notes
 

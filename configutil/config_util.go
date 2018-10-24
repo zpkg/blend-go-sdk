@@ -76,7 +76,7 @@ func TryReadFromPaths(ref Any, paths ...string) (path string, err error) {
 		err = ReadFromReader(ref, f, filepath.Ext(path))
 		return
 	}
-	err = exception.New(os.ErrNotExist).WithMessagef("no provided paths exist")
+	err = exception.New(os.ErrNotExist).WithMessagef("no provided paths exist: %#v", paths)
 	return
 }
 
