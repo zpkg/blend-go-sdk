@@ -58,7 +58,7 @@ func (q *Query) None() (hasRows bool, err error) {
 		err = q.err
 		return
 	}
-	defer func() { err = exception.Nest(err, q.rows.Close()) }()
+	defer func() { err = exception.Nest(err, Error(q.rows.Close())) }()
 	hasRows = !q.rows.Next()
 	return
 }
@@ -72,11 +72,11 @@ func (q *Query) Scan(args ...interface{}) (err error) {
 		err = q.err
 		return
 	}
-	defer func() { err = exception.Nest(err, q.rows.Close()) }()
+	defer func() { err = exception.Nest(err, Error(q.rows.Close())) }()
 
 	if q.rows.Next() {
 		if err = q.rows.Scan(args...); err != nil {
-			err = exception.New(err)
+			err = Error(err)
 			return
 		}
 	}
@@ -93,11 +93,11 @@ func (q *Query) Out(object interface{}) (err error) {
 		err = q.err
 		return
 	}
-	defer func() { err = exception.Nest(err, q.rows.Close()) }()
+	defer func() { err = exception.Nest(err, Error(q.rows.Close())) }()
 
 	sliceType := reflectType(object)
 	if sliceType.Kind() != reflect.Struct {
-		err = exception.New("destination object is not a struct")
+		err = Error(ErrDestinationNotStruct)
 		return
 	}
 
@@ -129,7 +129,7 @@ func (q *Query) OutMany(collection interface{}) (err error) {
 
 	sliceType := reflectType(collection)
 	if sliceType.Kind() != reflect.Slice {
-		err = exception.New(ErrCollectionNotSlice)
+		err = Error(ErrCollectionNotSlice)
 		return
 	}
 
@@ -193,7 +193,7 @@ func (q *Query) First(consumer RowsConsumer) (err error) {
 		err = q.err
 		return
 	}
-	defer func() { err = exception.Nest(err, q.rows.Close()) }()
+	defer func() { err = exception.Nest(err, Error(q.rows.Close())) }()
 
 	if q.rows.Next() {
 		if err = consumer(q.rows); err != nil {
@@ -215,14 +215,14 @@ func (q *Query) query() (rows *sql.Rows, err error) {
 
 	stmt, stmtErr := q.inv.Prepare(q.statement)
 	if stmtErr != nil {
-		err = exception.New(stmtErr)
+		err = Error(stmtErr)
 		return
 	}
 	defer func() { err = q.inv.closeStatement(stmt, err) }()
 
 	rows, err = stmt.QueryContext(q.context, q.args...)
-	if err != nil {
-		err = exception.New(err)
+	if err != nil && !exception.Is(err, sql.ErrNoRows) {
+		err = Error(err)
 	}
 	return
 }

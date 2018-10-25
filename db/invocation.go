@@ -112,13 +112,13 @@ func (i *Invocation) Exec(statement string, args ...interface{}) (err error) {
 
 	stmt, err = i.Prepare(statement)
 	if err != nil {
-		err = exception.New(err)
+		err = Error(err)
 		return
 	}
 	defer func() { err = i.closeStatement(stmt, err) }()
 
 	if _, err = stmt.ExecContext(i.Context(), args...); err != nil {
-		err = exception.New(err)
+		err = Error(err)
 		return
 	}
 	return
@@ -143,7 +143,7 @@ func (i *Invocation) Query(statement string, args ...interface{}) *Query {
 // Get returns a given object based on a group of primary key ids within a transaction.
 func (i *Invocation) Get(object DatabaseMapped, ids ...interface{}) (err error) {
 	if len(ids) == 0 {
-		err = exception.New(ErrInvalidIDs)
+		err = Error(ErrInvalidIDs)
 		return
 	}
 
@@ -153,7 +153,7 @@ func (i *Invocation) Get(object DatabaseMapped, ids ...interface{}) (err error) 
 	defer func() { err = i.finish(queryBody, recover(), err) }()
 
 	if i.statementLabel, queryBody, cols, err = i.generateGet(object); err != nil {
-		err = exception.New(err)
+		err = Error(err)
 		return
 	}
 
@@ -175,7 +175,7 @@ func (i *Invocation) Get(object DatabaseMapped, ids ...interface{}) (err error) 
 		populateErr = PopulateInOrder(object, row, cols)
 	}
 	if populateErr != nil && !exception.Is(populateErr, sql.ErrNoRows) {
-		err = exception.New(populateErr)
+		err = Error(populateErr)
 		return
 	}
 
@@ -198,13 +198,13 @@ func (i *Invocation) GetAll(collection interface{}) (err error) {
 		return
 	}
 	if stmt, err = i.Prepare(queryBody); err != nil {
-		err = exception.New(err)
+		err = Error(err)
 		return
 	}
 	defer func() { err = i.closeStatement(stmt, err) }()
 
 	if rows, err = stmt.QueryContext(i.Context()); err != nil {
-		err = exception.New(err)
+		err = Error(err)
 		return
 	}
 	defer func() { err = exception.Nest(err, rows.Close()) }()
@@ -223,7 +223,7 @@ func (i *Invocation) GetAll(collection interface{}) (err error) {
 			err = PopulateInOrder(obj, rows, cols)
 		}
 		if err != nil {
-			err = exception.New(err)
+			err = Error(err)
 			return
 		}
 
@@ -247,14 +247,14 @@ func (i *Invocation) Create(object DatabaseMapped) (err error) {
 		return
 	}
 	if stmt, err = i.Prepare(queryBody); err != nil {
-		err = exception.New(err)
+		err = Error(err)
 		return
 	}
 	defer func() { err = i.closeStatement(stmt, err) }()
 
 	if autos.Len() == 0 {
 		if _, err = stmt.ExecContext(i.Context(), writeCols.ColumnValues(object)...); err != nil {
-			err = exception.New(err)
+			err = Error(err)
 			return
 		}
 		return
@@ -262,11 +262,11 @@ func (i *Invocation) Create(object DatabaseMapped) (err error) {
 
 	autoValues := i.autoValues(autos)
 	if err = stmt.QueryRowContext(i.Context(), writeCols.ColumnValues(object)...).Scan(autoValues...); err != nil {
-		err = exception.New(err)
+		err = Error(err)
 		return
 	}
 	if err = i.setAutos(object, autos, autoValues); err != nil {
-		err = exception.New(err)
+		err = Error(err)
 		return
 	}
 
@@ -287,25 +287,25 @@ func (i *Invocation) CreateIfNotExists(object DatabaseMapped) (err error) {
 		return
 	}
 	if stmt, err = i.Prepare(queryBody); err != nil {
-		err = exception.New(err)
+		err = Error(err)
 		return
 	}
 	defer func() { err = i.closeStatement(stmt, err) }()
 
 	if autos.Len() == 0 {
 		if _, err = stmt.ExecContext(i.context, writeCols.ColumnValues(object)...); err != nil {
-			err = exception.New(err)
+			err = Error(err)
 		}
 		return
 	}
 
 	autoValues := i.autoValues(autos)
 	if err = stmt.QueryRowContext(i.Context(), writeCols.ColumnValues(object)...).Scan(autoValues...); err != nil {
-		err = exception.New(err)
+		err = Error(err)
 		return
 	}
 	if err = i.setAutos(object, autos, autoValues); err != nil {
-		err = exception.New(err)
+		err = Error(err)
 		return
 	}
 
@@ -339,7 +339,7 @@ func (i *Invocation) CreateMany(objects interface{}) (err error) {
 		_, err = i.conn.connection.ExecContext(i.Context(), queryBody, colValues...)
 	}
 	if err != nil {
-		err = exception.New(err)
+		err = Error(err)
 		return
 	}
 	return
@@ -359,13 +359,13 @@ func (i *Invocation) Update(object DatabaseMapped) (err error) {
 		return
 	}
 	if stmt, err = i.Prepare(queryBody); err != nil {
-		err = exception.New(err)
+		err = Error(err)
 		return
 	}
 	defer func() { err = i.closeStatement(stmt, err) }()
 
 	if _, err = stmt.ExecContext(i.Context(), append(writeCols.ColumnValues(object), pks.ColumnValues(object)...)...); err != nil {
-		err = exception.New(err)
+		err = Error(err)
 		return
 	}
 	return
@@ -385,14 +385,14 @@ func (i *Invocation) Upsert(object DatabaseMapped) (err error) {
 		return
 	}
 	if stmt, err = i.Prepare(queryBody); err != nil {
-		err = exception.New(err)
+		err = Error(err)
 		return
 	}
 	defer func() { err = i.closeStatement(stmt, err) }()
 
 	if autos.Len() == 0 {
 		if _, err = stmt.ExecContext(i.Context(), writeCols.ColumnValues(object)...); err != nil {
-			err = exception.New(err)
+			err = Error(err)
 			return
 		}
 		return
@@ -400,11 +400,11 @@ func (i *Invocation) Upsert(object DatabaseMapped) (err error) {
 
 	autoValues := i.autoValues(autos)
 	if err = stmt.QueryRowContext(i.Context(), writeCols.ColumnValues(object)...).Scan(autoValues...); err != nil {
-		err = exception.New(err)
+		err = Error(err)
 		return
 	}
 	if err = i.setAutos(object, autos, autoValues); err != nil {
-		err = exception.New(err)
+		err = Error(err)
 		return
 	}
 
@@ -419,7 +419,7 @@ func (i *Invocation) Exists(object DatabaseMapped) (exists bool, err error) {
 	defer func() { err = i.finish(queryBody, recover(), err) }()
 
 	if i.statementLabel, queryBody, pks, err = i.generateExists(object); err != nil {
-		err = exception.New(err)
+		err = Error(err)
 		return
 	}
 	queryBody, err = i.start(queryBody)
@@ -433,8 +433,8 @@ func (i *Invocation) Exists(object DatabaseMapped) (exists bool, err error) {
 	defer func() { err = i.closeStatement(stmt, err) }()
 
 	var value int
-	if err = stmt.QueryRowContext(i.Context(), pks.ColumnValues(object)...).Scan(&value); err != nil {
-		err = exception.New(err)
+	if queryErr := stmt.QueryRowContext(i.Context(), pks.ColumnValues(object)...).Scan(&value); queryErr != nil && !exception.Is(queryErr, sql.ErrNoRows) {
+		err = Error(queryErr)
 		return
 	}
 
@@ -458,13 +458,13 @@ func (i *Invocation) Delete(object DatabaseMapped) (err error) {
 		return
 	}
 	if stmt, err = i.Prepare(queryBody); err != nil {
-		err = exception.New(err)
+		err = Error(err)
 		return
 	}
 	defer func() { err = i.closeStatement(stmt, err) }()
 
 	if _, err = stmt.ExecContext(i.Context(), pks.ColumnValues(object)...); err != nil {
-		err = exception.New(err)
+		err = Error(err)
 		return
 	}
 	return
@@ -483,13 +483,13 @@ func (i *Invocation) Truncate(object DatabaseMapped) (err error) {
 		return
 	}
 	if stmt, err = i.Prepare(queryBody); err != nil {
-		err = exception.New(err)
+		err = Error(err)
 		return
 	}
 	defer func() { err = i.closeStatement(stmt, err) }()
 
 	if _, err = stmt.ExecContext(i.Context()); err != nil {
-		err = exception.New(err)
+		err = Error(err)
 		return
 	}
 	return
@@ -505,7 +505,7 @@ func (i *Invocation) generateGet(object DatabaseMapped) (statementLabel, queryBo
 	cols = getCachedColumnCollectionFromInstance(object)
 	pks := cols.PrimaryKeys()
 	if pks.Len() == 0 {
-		err = exception.New(ErrNoPrimaryKey)
+		err = Error(ErrNoPrimaryKey)
 		return
 	}
 
@@ -810,7 +810,7 @@ func (i *Invocation) generateExists(object DatabaseMapped) (statementLabel, quer
 	tableName := TableName(object)
 	pks = getCachedColumnCollectionFromInstance(object).PrimaryKeys()
 	if pks.Len() == 0 {
-		err = exception.New(ErrNoPrimaryKey)
+		err = Error(ErrNoPrimaryKey)
 		return
 	}
 	queryBodyBuffer := i.conn.bufferPool.Get()
@@ -836,7 +836,7 @@ func (i *Invocation) generateDelete(object DatabaseMapped) (statementLabel, quer
 	tableName := TableName(object)
 	pks = getCachedColumnCollectionFromInstance(object).PrimaryKeys()
 	if len(pks.Columns()) == 0 {
-		err = exception.New(ErrNoPrimaryKey)
+		err = Error(ErrNoPrimaryKey)
 		return
 	}
 	queryBodyBuffer := i.conn.bufferPool.Get()
@@ -887,7 +887,7 @@ func (i *Invocation) setAutos(object DatabaseMapped, autos *ColumnCollection, au
 	for index := 0; index < len(autoValues); index++ {
 		err = autos.Columns()[index].SetValue(object, autoValues[index])
 		if err != nil {
-			err = exception.New(err)
+			err = Error(err)
 			return
 		}
 	}
@@ -904,7 +904,7 @@ func (i *Invocation) closeStatement(stmt *sql.Stmt, err error) error {
 		return err
 	}
 	// close the statement.
-	return exception.Nest(err, stmt.Close())
+	return exception.Nest(err, Error(stmt.Close()))
 }
 
 func (i *Invocation) start(statement string) (string, error) {
@@ -942,7 +942,7 @@ func (i *Invocation) finish(statement string, r interface{}, err error) error {
 		i.traceFinisher.Finish(err)
 	}
 	if err != nil {
-		err = exception.New(err)
+		err = Error(err)
 	}
 	return err
 }

@@ -8,7 +8,6 @@ import (
 
 	"github.com/lib/pq"
 
-	"github.com/blend/go-sdk/exception"
 	"github.com/blend/go-sdk/logger"
 
 	// PQ is the postgres driver
@@ -164,10 +163,10 @@ func (dbc *Connection) Open() error {
 
 	// bail if we've already opened the connection.
 	if dbc.connection != nil {
-		return exception.New(ErrConnectionAlreadyOpen)
+		return Error(ErrConnectionAlreadyOpen)
 	}
 	if dbc.config == nil {
-		return exception.New(ErrConfigUnset)
+		return Error(ErrConfigUnset)
 	}
 	if dbc.bufferPool == nil {
 		dbc.bufferPool = NewBufferPool(dbc.config.GetBufferPoolSize())
@@ -185,7 +184,7 @@ func (dbc *Connection) Open() error {
 	// open the connection
 	dbConn, err := sql.Open(dbc.config.GetEngine(), namedValues)
 	if err != nil {
-		return exception.New(err)
+		return Error(err)
 	}
 
 	dbc.statementCache.WithConnection(dbConn)
@@ -207,10 +206,10 @@ func (dbc *Connection) Begin(opts ...*sql.TxOptions) (*sql.Tx, error) {
 func (dbc *Connection) BeginContext(context context.Context, opts ...*sql.TxOptions) (*sql.Tx, error) {
 	if len(opts) > 0 {
 		tx, err := dbc.connection.BeginTx(context, opts[0])
-		return tx, exception.New(err)
+		return tx, Error(err)
 	}
 	tx, err := dbc.connection.BeginTx(context, nil)
-	return tx, exception.New(err)
+	return tx, Error(err)
 }
 
 // PrepareContext prepares a statement potentially returning a cached version of the statement.
@@ -256,7 +255,7 @@ func (dbc *Connection) Background() context.Context {
 
 // Ping checks the db connection.
 func (dbc *Connection) Ping() error {
-	return exception.New(dbc.connection.Ping())
+	return Error(dbc.connection.Ping())
 }
 
 // PingContext checks the db connection.
@@ -270,7 +269,7 @@ func (dbc *Connection) PingContext(context context.Context) (err error) {
 		}
 	}
 
-	err = exception.New(dbc.connection.PingContext(context))
+	err = Error(dbc.connection.PingContext(context))
 	return
 }
 

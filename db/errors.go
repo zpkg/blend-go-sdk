@@ -1,8 +1,13 @@
 package db
 
-import "github.com/blend/go-sdk/exception"
+import (
+	"github.com/blend/go-sdk/exception"
+	"github.com/lib/pq"
+)
 
 const (
+	// ErrDestinationNotStruct is an exception class.
+	ErrDestinationNotStruct exception.Class = "db: destination object is not a struct"
 	// ErrConfigUnset is an exception class.
 	ErrConfigUnset exception.Class = "db: config is unset"
 	// ErrUnsafeSSLMode is an error indicating unsafe ssl mode in production.
@@ -57,4 +62,19 @@ func IsConnectionClosed(err error) bool {
 // IsStatementCacheUnset returns if the error is an `ErrConnectionClosed`.
 func IsStatementCacheUnset(err error) bool {
 	return exception.Is(err, ErrStatementCacheUnset)
+}
+
+// Error returns a new exception by parsing (potentially)
+// a driver error into relevant pieces.
+func Error(err error) error {
+	if err == nil {
+		return nil
+	}
+	if ex := exception.As(err); ex != nil {
+		return ex
+	}
+	if typed, ok := err.(*pq.Error); ok {
+		return exception.New(typed.Code.Class()).WithMessage(typed.Detail).WithInner(err)
+	}
+	return exception.New(err)
 }

@@ -220,3 +220,26 @@ func TestQueryFirst(t *testing.T) {
 	a.Nil(err)
 	a.Equal(1, first.ID)
 }
+
+func TestQueryExists(t *testing.T) {
+	assert := assert.New(t)
+	tx, err := Default().Begin()
+	assert.Nil(err)
+	defer tx.Rollback()
+
+	var first benchObj
+	err = Default().QueryInTx("select * from bench_object", tx).First(func(r Rows) error {
+		return first.Populate(r)
+	})
+	assert.Nil(err)
+	assert.Equal(1, first.ID)
+
+	exists, err := Default().ExistsInTx(&first, tx)
+	assert.Nil(err)
+	assert.True(exists)
+
+	var invalid benchObj
+	exists, err = Default().ExistsInTx(&invalid, tx)
+	assert.Nil(err)
+	assert.False(exists)
+}

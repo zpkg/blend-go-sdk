@@ -11,7 +11,7 @@ import (
 func PopulateByName(object interface{}, row Rows, cols *ColumnCollection) error {
 	rowColumns, err := row.Columns()
 	if err != nil {
-		return exception.New(err)
+		return Error(err)
 	}
 
 	var values = make([]interface{}, len(rowColumns))
@@ -27,7 +27,7 @@ func PopulateByName(object interface{}, row Rows, cols *ColumnCollection) error 
 
 	err = row.Scan(values...)
 	if err != nil {
-		return exception.New(err)
+		return Error(err)
 	}
 
 	var colName string
@@ -38,7 +38,7 @@ func PopulateByName(object interface{}, row Rows, cols *ColumnCollection) error 
 		if field, ok = columnLookup[colName]; ok {
 			err = field.SetValue(object, v)
 			if err != nil {
-				return exception.New(err)
+				return Error(err)
 			}
 		}
 	}
