@@ -4,8 +4,6 @@ import (
 	"bytes"
 	"fmt"
 	"time"
-
-	"github.com/blend/go-sdk/util"
 )
 
 // these are compile time assertions
@@ -183,7 +181,7 @@ func (e QueryEvent) WriteText(tf TextFormatter, buf *bytes.Buffer) {
 
 	if len(e.body) > 0 {
 		buf.WriteRune(RuneSpace)
-		buf.WriteString(util.String.CompressWhitespace(e.body))
+		buf.WriteString(CompressWhitespace(e.body))
 	}
 }
 
