@@ -243,3 +243,18 @@ func TestQueryExists(t *testing.T) {
 	assert.Nil(err)
 	assert.False(exists)
 }
+
+func TestQueryQueryPopulateByname(t *testing.T) {
+	assert := assert.New(t)
+	tx, err := Default().Begin()
+	assert.Nil(err)
+	defer tx.Rollback()
+
+	var first benchObj
+	cols := Columns(first)
+	err = Default().QueryInTx("select * from bench_object", tx).First(func(r Rows) error {
+		return PopulateByName(&first, r, cols)
+	})
+	assert.Nil(err)
+	assert.Equal(1, first.ID)
+}

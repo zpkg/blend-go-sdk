@@ -173,11 +173,11 @@ func (q *Query) Each(consumer RowsConsumer) (err error) {
 		err = q.err
 		return
 	}
-	defer func() { err = exception.Nest(err, q.rows.Close()) }()
+	defer func() { err = exception.Nest(err, Error(q.rows.Close())) }()
 
 	for q.rows.Next() {
 		if err = consumer(q.rows); err != nil {
-			err = exception.New(err)
+			err = Error(err)
 			return
 		}
 	}
