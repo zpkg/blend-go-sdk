@@ -72,7 +72,7 @@ func NewConfigFromDSN(dsn string) (*Config, error) {
 	}
 
 	var config Config
-	pieces := util.String.SplitOnSpace(parsed)
+	pieces := util.String.SplitOnWhitespace(parsed)
 	for _, piece := range pieces {
 		if strings.HasPrefix(piece, "host=") {
 			config.Host = strings.TrimPrefix(piece, "host=")

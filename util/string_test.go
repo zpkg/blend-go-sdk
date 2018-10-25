@@ -274,42 +274,42 @@ func TestTrimSuffixCaseInsensitive(t *testing.T) {
 	assert.Equal("abc", String.TrimSuffixCaseInsensitive("abc", "abcdef"))
 }
 
-func TestSplitOnSpace(t *testing.T) {
+func TestSplitOnWhitespace(t *testing.T) {
 	assert := assert.New(t)
 
-	values := String.SplitOnSpace("")
+	values := String.SplitOnWhitespace("")
 	assert.Len(values, 0)
 
-	values = String.SplitOnSpace("foo")
+	values = String.SplitOnWhitespace("foo")
 	assert.Len(values, 1)
 	assert.Equal("foo", values[0])
 
-	values = String.SplitOnSpace("foo bar")
+	values = String.SplitOnWhitespace("foo bar")
 	assert.Len(values, 2)
 	assert.Equal("foo", values[0])
 	assert.Equal("bar", values[1])
 
-	values = String.SplitOnSpace("foo  bar")
+	values = String.SplitOnWhitespace("foo  bar")
 	assert.Len(values, 2)
 	assert.Equal("foo", values[0])
 	assert.Equal("bar", values[1])
 
-	values = String.SplitOnSpace("foo\tbar")
+	values = String.SplitOnWhitespace("foo\tbar")
 	assert.Len(values, 2)
 	assert.Equal("foo", values[0])
 	assert.Equal("bar", values[1])
 
-	values = String.SplitOnSpace("foo \tbar")
+	values = String.SplitOnWhitespace("foo \tbar")
 	assert.Len(values, 2)
 	assert.Equal("foo", values[0])
 	assert.Equal("bar", values[1])
 
-	values = String.SplitOnSpace("foo bar  ")
+	values = String.SplitOnWhitespace("foo bar  ")
 	assert.Len(values, 2)
 	assert.Equal("foo", values[0])
 	assert.Equal("bar", values[1])
 
-	values = String.SplitOnSpace("foo bar baz")
+	values = String.SplitOnWhitespace("foo bar baz")
 	assert.Len(values, 3)
 	assert.Equal("foo", values[0])
 	assert.Equal("bar", values[1])
@@ -337,4 +337,29 @@ func TestStringReplaceAny(t *testing.T) {
 	for _, testCase := range testCases {
 		assert.Equal(testCase.expected, String.ReplaceAny(testCase.corpus, testCase.with, testCase.toReplace...))
 	}
+}
+
+func TestCompressWhitespace(t *testing.T) {
+	assert := assert.New(t)
+
+	assert.Equal("", String.CompressWhitespace(""))
+	assert.Equal("", String.CompressWhitespace(" "))
+	assert.Equal("", String.CompressWhitespace("\n"))
+	assert.Equal("", String.CompressWhitespace("\t"))
+
+	assert.Equal("foo", String.CompressWhitespace(" foo"))
+	assert.Equal("foo", String.CompressWhitespace("foo "))
+	assert.Equal("foo", String.CompressWhitespace("foo\n"))
+
+	assert.Equal("foo bar", String.CompressWhitespace("foo bar"))
+	assert.Equal("foo bar", String.CompressWhitespace("foo\tbar"))
+	assert.Equal("foo bar", String.CompressWhitespace("foo\nbar"))
+
+	assert.Equal("foo bar", String.CompressWhitespace("foo  bar"))
+	assert.Equal("foo bar", String.CompressWhitespace("foo\t\tbar"))
+	assert.Equal("foo bar", String.CompressWhitespace("foo\n\nbar"))
+
+	assert.Equal("foo bar baz", String.CompressWhitespace("foo  bar   baz"))
+	assert.Equal("foo bar baz", String.CompressWhitespace("foo\t\t\tbar baz\n"))
+	assert.Equal("foo bar baz", String.CompressWhitespace("foo\n\n\nbar\tbaz"))
 }
