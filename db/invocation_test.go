@@ -237,6 +237,17 @@ func TestInvocationExistsError(t *testing.T) {
 	assert.NotNil(boolErr(conn.Invoke(context.Background()).WithLabel("exists_error_test").Exists(mustError)))
 }
 
+func TestInvocationCreateManyEmpty(t *testing.T) {
+	assert := assert.New(t)
+
+	var objs []uniqueObj
+
+	conn := MustNewFromEnv()
+	conn.StatementCache().WithEnabled(false)
+	assert.Nil(conn.Open())
+	assert.Nil(conn.Invoke(context.Background()).CreateMany(objs))
+}
+
 func TestInvocationCreateManyError(t *testing.T) {
 	assert := assert.New(t)
 
