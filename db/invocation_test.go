@@ -240,7 +240,7 @@ func TestInvocationExistsError(t *testing.T) {
 func TestInvocationCreateManyEmpty(t *testing.T) {
 	assert := assert.New(t)
 
-	var objs []uniqueObj = nil
+	var objs []uniqueObj
 
 	conn := MustNewFromEnv()
 	conn.StatementCache().WithEnabled(false)
