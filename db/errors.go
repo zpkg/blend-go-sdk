@@ -74,7 +74,7 @@ func Error(err error) error {
 		return ex
 	}
 	if typed, ok := err.(*pq.Error); ok {
-		return exception.New(typed.Code.Class()).WithMessage(typed.Detail).WithInner(err)
+		return exception.New(typed.Code.Name()).WithMessage(typed.Message).WithInner(err)
 	}
 	return exception.New(err)
 }
