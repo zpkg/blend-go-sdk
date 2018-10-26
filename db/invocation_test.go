@@ -401,3 +401,18 @@ func TestGenerateGet(t *testing.T) {
 	assert.NotEmpty(queryBody)
 	assert.Equal("generategettest_get", label)
 }
+
+func TestGenerateGetAll(t *testing.T) {
+	assert := assert.New(t)
+
+	conn := New()
+	conn.bufferPool = NewBufferPool(1)
+	conn.statementCache = NewStatementCache()
+
+	objs := []generateGetTest{}
+	label, queryBody, cols, err := conn.Invoke(context.Background()).generateGetAll(&objs)
+	assert.Nil(err)
+	assert.Equal(cols.Len(), 2)
+	assert.NotEmpty(queryBody)
+	assert.Equal("generategettest_get_all", label)
+}
