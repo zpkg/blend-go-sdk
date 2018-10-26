@@ -410,8 +410,8 @@ func TestGenerateGetAll(t *testing.T) {
 	conn.statementCache = NewStatementCache()
 
 	objs := []generateGetTest{}
-	label, queryBody, cols, err := conn.Invoke(context.Background()).generateGetAll(&objs)
-	assert.Nil(err)
+	label, queryBody, cols, ct := conn.Invoke(context.Background()).generateGetAll(&objs)
+	assert.NotNil(ct)
 	assert.Equal(cols.Len(), 2)
 	assert.NotEmpty(queryBody)
 	assert.Equal("generategettest_get_all", label)
