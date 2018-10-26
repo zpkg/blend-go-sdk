@@ -502,7 +502,7 @@ func (i *Invocation) Truncate(object DatabaseMapped) (err error) {
 func (i *Invocation) generateGet(object DatabaseMapped) (statementLabel, queryBody string, cols *ColumnCollection, err error) {
 	tableName := TableName(object)
 
-	cols = getCachedColumnCollectionFromInstance(object)
+	cols = getCachedColumnCollectionFromInstance(object).NotReadOnly()
 	pks := cols.PrimaryKeys()
 	if pks.Len() == 0 {
 		err = Error(ErrNoPrimaryKey)

@@ -380,3 +380,24 @@ func TestInvocationStatementInterceptor(t *testing.T) {
 	assert.NotNil(err)
 	assert.Equal("only a test", err.Error())
 }
+
+type generateGetTest struct {
+	ID       int    `db:"id,pk,serial"`
+	Name     string `db:"name"`
+	ReadOnly string `db:"bad,readonly"`
+}
+
+func TestGenerateGet(t *testing.T) {
+	assert := assert.New(t)
+
+	conn := New()
+	conn.bufferPool = NewBufferPool(1)
+	conn.statementCache = NewStatementCache()
+
+	var obj generateGetTest
+	label, queryBody, cols, err := conn.Invoke(context.Background()).generateGet(&obj)
+	assert.Nil(err)
+	assert.Equal(cols.Len(), 2)
+	assert.NotEmpty(queryBody)
+	assert.Equal("generategettest_get", label)
+}
