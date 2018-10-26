@@ -322,6 +322,10 @@ func (i *Invocation) CreateMany(objects interface{}) (err error) {
 	defer func() { err = i.finish(queryBody, recover(), err) }()
 
 	queryBody, writeCols, sliceValue = i.generateCreateMany(objects)
+	if sliceValue.Len() == 0 {
+		// If there is nothing to create, then we're done here
+		return
+	}
 
 	queryBody, err = i.start(queryBody)
 	if err != nil {
