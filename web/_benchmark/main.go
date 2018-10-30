@@ -3,10 +3,9 @@ package main
 import (
 	"encoding/json"
 	"os"
-	"os/signal"
 	"time"
 
-	"github.com/blend/go-sdk/logger"
+	"github.com/blend/go-sdk/graceful"
 	"github.com/blend/go-sdk/web"
 )
 
@@ -59,7 +58,7 @@ func timeoutHandler(ctx *web.Ctx) web.Result {
 }
 
 func main() {
-	app := web.New().WithPortFromEnv()
+	app, _ := web.NewFromEnv()
 
 	app.GET("/json", jsonHandler)
 	app.GET("/json_result", jsonResultHandler)
@@ -68,23 +67,5 @@ func main() {
 	})
 	app.GET("/timeout", timeoutHandler, web.WithTimeout(time.Second))
 
-	done := make(chan struct{})
-	quit := make(chan os.Signal, 1)
-	signal.Notify(quit, os.Interrupt)
-
-	go func() {
-		logger.All().SyncFatalExit(app.Start())
-	}()
-
-	go func() {
-		<-quit
-		err := app.Shutdown()
-		if err != nil {
-			logger.All().SyncFatalExit(err)
-		}
-
-		logger.All().Infof("quitting")
-		close(done)
-	}()
-	<-done
+	graceful.Shutdown(app)
 }
