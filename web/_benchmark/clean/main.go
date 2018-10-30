@@ -23,10 +23,14 @@ type Message struct {
 	Message string `json:"message"`
 }
 
+var msg = &Message{
+	Message: MessageText,
+}
+
 func jsonHandler(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set(HeaderContentType, ContentTypeApplicationJSON)
 	w.Header().Set(HeaderServer, ServerName)
-	json.NewEncoder(w).Encode(&Message{Message: MessageText})
+	json.NewEncoder(w).Encode(msg)
 }
 
 func port() string {
