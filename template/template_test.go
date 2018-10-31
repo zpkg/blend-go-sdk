@@ -486,11 +486,11 @@ func TestTemplateViewFuncFirst(t *testing.T) {
 func TestTemplateViewFuncIndex(t *testing.T) {
 	assert := assert.New(t)
 
-	test := `{{ .Var "foo" | split "," | index 1 }}`
+	test := `{{ .Var "foo" | split "," | at_index 1 }}`
 	temp := New().WithBody(test).WithVar("foo", "bar,baz,biz")
 	buffer := bytes.NewBuffer(nil)
 	err := temp.Process(buffer)
-	assert.Nil(err)
+	assert.Nil(err, fmt.Sprintf("%+v", err))
 	assert.Equal("baz", buffer.String())
 }
 

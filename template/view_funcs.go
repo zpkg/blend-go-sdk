@@ -106,13 +106,13 @@ func (vf ViewFuncs) FuncMap() map[string]interface{} {
 		"matches":                     vf.Matches,
 		"quote":                       vf.Quote,
 		/* arrays */
-		"slice": vf.Slice,
-		"first": vf.First,
-		"index": vf.Index,
-		"last":  vf.Last,
-		"join":  vf.Join,
-		"csv":   vf.CSV,
-		"tsv":   vf.TSV,
+		"slice":    vf.Slice,
+		"first":    vf.First,
+		"at_index": vf.AtIndex,
+		"last":     vf.Last,
+		"join":     vf.Join,
+		"csv":      vf.CSV,
+		"tsv":      vf.TSV,
 		/* urls */
 		"url_scheme":         vf.URLScheme,
 		"with_url_scheme":    vf.WithURLScheme,
@@ -481,8 +481,8 @@ func (vf ViewFuncs) First(collection interface{}) (interface{}, error) {
 	return value.Index(0).Interface(), nil
 }
 
-// Index returns an element at a given index.
-func (vf ViewFuncs) Index(index int, collection interface{}) (interface{}, error) {
+// AtIndex returns an element at a given index.
+func (vf ViewFuncs) AtIndex(index int, collection interface{}) (interface{}, error) {
 	value := reflect.ValueOf(collection)
 	if value.Type().Kind() != reflect.Slice {
 		return nil, fmt.Errorf("input must be a slice")
