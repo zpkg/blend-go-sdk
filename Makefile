@@ -124,16 +124,19 @@ clean-coverage:
 clean-cache:
 	@go clean ./...
 
-tag:
-	git tag -f v$(VERSION)
-
-push-tag:
-	git push -f origin v$(VERSION)
 
 clean-dist:
 	@rm -rf dist
 
-release: clean-dist release-ask release-coverage release-profanity release-proxy release-recover release-semver release-template
+release: clean-dist tag push-tag release-ask release-coverage release-profanity release-proxy release-recover release-semver release-template
+
+tag:
+	@echo "Tagging v$(VERSION)"
+	@git tag v$(VERSION)
+
+push-tag:
+	@echo "Pushing v$(VERSION) tag to remote"
+	@git push origin v$(VERSION)
 
 release-ask:
 	@goreleaser release -f .goreleaser/ask.yml
