@@ -1043,3 +1043,16 @@ func TestViewfuncTSV(t *testing.T) {
 	assert.Nil(tmp.Process(buffer))
 	assert.Equal("a\tb\tc", buffer.String())
 }
+
+func TestViewfuncQuote(t *testing.T) {
+	assert := assert.New(t)
+
+	tmp := New().WithBody("{{ .Vars.foo | quote }}").WithVar("foo", "foo")
+	assert.Equal(`"foo"`, tmp.MustProcessString())
+
+	tmp = New().WithBody("{{ .Vars.foo | quote }}").WithVar("foo", "\"foo\"")
+	assert.Equal(`"foo"`, tmp.MustProcessString())
+
+	tmp = New().WithBody("{{ .Vars.foo | quote }}").WithVar("foo", "\n\"foo\"\t")
+	assert.Equal(`"foo"`, tmp.MustProcessString())
+}

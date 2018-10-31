@@ -146,6 +146,16 @@ func (t *Template) ProcessString() (string, error) {
 	return buffer.String(), nil
 }
 
+// MustProcessString is a helper to process a template as a string
+// and panic on error.
+func (t *Template) MustProcessString() string {
+	output, err := t.ProcessString()
+	if err != nil {
+		panic(err)
+	}
+	return output
+}
+
 // ViewFuncs returns the view funcs.
 func (t *Template) ViewFuncs() texttemplate.FuncMap {
 	return t.funcs

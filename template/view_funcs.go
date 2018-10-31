@@ -104,6 +104,7 @@ func (vf ViewFuncs) FuncMap() map[string]interface{} {
 		"has_prefix":                  vf.HasPrefix,
 		"contains":                    vf.Contains,
 		"matches":                     vf.Matches,
+		"quote":                       vf.Quote,
 		/* arrays */
 		"slice": vf.Slice,
 		"first": vf.First,
@@ -548,6 +549,20 @@ func (vf ViewFuncs) Contains(substr, v string) bool {
 // Matches returns if a string matches a given regular expression.
 func (vf ViewFuncs) Matches(expr, v string) (bool, error) {
 	return regexp.MatchString(expr, v)
+}
+
+// Quote returns a string wrapped in " characters.
+// It will trim space before and after, and only add quotes
+// if they don't already exist.
+func (vf ViewFuncs) Quote(v string) string {
+	v = strings.TrimSpace(v)
+	if !strings.HasPrefix(v, "\"") {
+		v = "\"" + v
+	}
+	if !strings.HasSuffix(v, "\"") {
+		v = v + "\""
+	}
+	return v
 }
 
 // ParseURL parses a url.

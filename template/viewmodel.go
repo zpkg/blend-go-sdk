@@ -15,6 +15,11 @@ type Viewmodel struct {
 	env  env.Vars
 }
 
+// Vars returns the vars collection.
+func (vm Viewmodel) Vars() Vars {
+	return vm.vars
+}
+
 // Var returns the value of a variable, or panics if the variable is not set.
 func (vm Viewmodel) Var(key string, defaults ...interface{}) (interface{}, error) {
 	if value, hasVar := vm.vars[key]; hasVar {
