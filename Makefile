@@ -132,11 +132,11 @@ release: clean-dist tag push-tag release-ask release-coverage release-profanity 
 
 tag:
 	@echo "Tagging v$(VERSION)"
-	@git tag v$(VERSION)
+	@git tag -f v$(VERSION)
 
 push-tag:
 	@echo "Pushing v$(VERSION) tag to remote"
-	@git push origin v$(VERSION)
+	@git push -f origin v$(VERSION)
 
 release-ask:
 	@goreleaser release -f .goreleaser/ask.yml
