@@ -124,7 +124,6 @@ clean-coverage:
 clean-cache:
 	@go clean ./...
 
-
 clean-dist:
 	@rm -rf dist
 

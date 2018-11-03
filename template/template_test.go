@@ -773,28 +773,6 @@ func TestOrdinalNames(t *testing.T) {
 	assert.Equal("cockroachdb-0,cockroachdb-1,cockroachdb-2,cockroachdb-3,cockroachdb-4", buffer.String())
 }
 
-func TestYAMLPath(t *testing.T) {
-	assert := assert.New(t)
-
-	tmp := New().WithBody("{{ read_file \"testdata/variables.yml\" | yaml_path \"db.name\" }}")
-
-	buffer := new(bytes.Buffer)
-	err := tmp.Process(buffer)
-	assert.Nil(err, fmt.Sprintf("%+v", err))
-	assert.Equal("test-db", buffer.String())
-}
-
-func TestJSONPath(t *testing.T) {
-	assert := assert.New(t)
-
-	tmp := New().WithBody("{{ read_file \"testdata/variables.json\" | json_path \"db.name\" }}")
-
-	buffer := new(bytes.Buffer)
-	err := tmp.Process(buffer)
-	assert.Nil(err, fmt.Sprintf("%+v", err))
-	assert.Equal("test-db", buffer.String())
-}
-
 func TestViewfuncNow(t *testing.T) {
 	assert := assert.New(t)
 

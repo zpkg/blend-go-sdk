@@ -23,7 +23,6 @@ import (
 	"strings"
 	"time"
 
-	jmespath "github.com/blend/go-jmespath"
 	"github.com/blend/go-sdk/util"
 	"github.com/blend/go-sdk/webutil"
 
@@ -149,8 +148,6 @@ func (vf ViewFuncs) FuncMap() map[string]interface{} {
 		"to_yaml":        vf.YAMLEncode,
 		"parse_json":     vf.ParseJSON,
 		"parse_yaml":     vf.ParseYAML,
-		"json_path":      vf.JSONPath,
-		"yaml_path":      vf.YAMLPath,
 		/* indentation */
 		"indent_tabs":   vf.IndentTabs,
 		"indent_spaces": vf.IndentSpaces,
@@ -797,30 +794,4 @@ func (vf ViewFuncs) ParseJSON(v string) (interface{}, error) {
 	var data interface{}
 	err := json.Unmarshal([]byte(v), &data)
 	return data, err
-}
-
-// YAMLPath parses a yaml string and returns the value at a given path.
-// It uses JMESPath syntax.
-func (vf ViewFuncs) YAMLPath(path string, v string) (interface{}, error) {
-	var data interface{}
-	if err := yaml.Unmarshal([]byte(v), &data); err != nil {
-		return nil, err
-	}
-	return jmespath.Search(path, data)
-}
-
-// JSONPath parses a json string and returns the value at a given path.
-// It uses JMESPath syntax.
-func (vf ViewFuncs) JSONPath(path string, v string) (interface{}, error) {
-	var data interface{}
-	if err := json.Unmarshal([]byte(v), &data); err != nil {
-		return nil, err
-	}
-	return jmespath.Search(path, data)
-}
-
-// JMESPath applies the search query to the object.
-// More information can be found here: http://jmespath.org/specification.html
-func (vf ViewFuncs) JMESPath(path string, v interface{}) (interface{}, error) {
-	return jmespath.Search(path, v)
 }
