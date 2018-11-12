@@ -48,12 +48,6 @@ func (re Event) Request() *Meta {
 // WriteText writes an outgoing request as text to a given buffer.
 func (re Event) WriteText(tf logger.TextFormatter, buf *bytes.Buffer) {
 	buf.WriteString(fmt.Sprintf("%s %s", re.req.Method, re.req.URL.String()))
-	if len(re.req.Body) > 0 {
-		buf.WriteRune(logger.RuneNewline)
-		buf.WriteString("request body")
-		buf.WriteRune(logger.RuneNewline)
-		buf.Write(re.req.Body)
-	}
 }
 
 // WriteJSON implements logger.JSONWritable.

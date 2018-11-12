@@ -11,6 +11,7 @@ import (
 	"hash/fnv"
 	"io"
 	"io/ioutil"
+	"mime/multipart"
 	"net"
 	"net/http"
 	"net/http/httptrace"
@@ -577,7 +578,6 @@ func (r *Request) Meta() *Meta {
 	return &Meta{
 		Method:  r.Method(),
 		URL:     r.URL(),
-		Body:    r.PostBody(),
 		Headers: r.Headers(),
 	}
 }
@@ -607,13 +607,30 @@ func (r *Request) RequiresTransport() bool {
 }
 
 // PostBody returns the current post body.
-func (r *Request) PostBody() []byte {
+func (r *Request) PostBody() (io.Reader, error) {
 	if len(r.body) > 0 {
-		return r.body
+		return bytes.NewBuffer(r.body), nil
 	} else if len(r.postData) > 0 {
-		return []byte(r.postData.Encode())
+		return bytes.NewBufferString(r.postData.Encode()), nil
+	} else if len(r.postedFiles) > 0 {
+		body := bytes.NewBuffer(nil)
+		writer := multipart.NewWriter(body)
+		for _, postedFile := range r.postedFiles {
+			partWriter, err := writer.CreateFormFile(postedFile.Key, postedFile.FileName)
+			if err != nil {
+				return nil, err
+			}
+			_, err = io.Copy(partWriter, postedFile.FileContents)
+			if err != nil {
+				return nil, err
+			}
+		}
+		if err := writer.Close(); err != nil {
+			return nil, err
+		}
+		return body, nil
 	}
-	return nil
+	return nil, nil
 }
 
 // Headers returns the headers on the request.
@@ -636,11 +653,11 @@ func (r *Request) Headers() http.Header {
 
 // Request returns a http.Request for the HTTPRequest.
 func (r *Request) Request() (*http.Request, error) {
-	if len(r.body) > 0 && len(r.postData) > 0 {
-		return nil, exception.New(ErrMultipleBodySources)
+	body, err := r.PostBody()
+	if err != nil {
+		return nil, err
 	}
-
-	req, err := http.NewRequest(r.Method(), r.URL().String(), bytes.NewBuffer(r.PostBody()))
+	req, err := http.NewRequest(r.Method(), r.URL().String(), body)
 	if err != nil {
 		return nil, exception.New(err)
 	}

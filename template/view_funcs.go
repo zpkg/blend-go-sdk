@@ -23,11 +23,10 @@ import (
 	"strings"
 	"time"
 
-	"github.com/blend/go-sdk/util"
-	"github.com/blend/go-sdk/webutil"
-
 	"github.com/blend/go-sdk/semver"
+	"github.com/blend/go-sdk/util"
 	"github.com/blend/go-sdk/uuid"
+	"github.com/blend/go-sdk/webutil"
 	"github.com/blend/go-sdk/yaml"
 )
 

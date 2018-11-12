@@ -541,3 +541,21 @@ func TestRequestWithHeaders(t *testing.T) {
 	assert.Equal("bar", req.Header().Get("foo"))
 	assert.Equal("wuzz", req.Header().Get("buzz"))
 }
+
+func TestRequestWithPostedFile(t *testing.T) {
+	assert := assert.New(t)
+
+	fileContents := bytes.NewBuffer([]byte(`this is only a test`))
+
+	r := New().MustWithRawURL("http://foo.bar.com/hello").WithPostedFile("testFile", "testFile.txt", fileContents)
+
+	assert.NotEmpty(r.postedFiles)
+
+	postBody, err := r.PostBody()
+	assert.Nil(err)
+	assert.NotNil(postBody)
+
+	contents, err := ioutil.ReadAll(postBody)
+	assert.Nil(err)
+	assert.NotEmpty(contents)
+}
