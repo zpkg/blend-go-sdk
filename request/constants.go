@@ -55,4 +55,6 @@ const (
 	ContentTypeApplicationXML = "application/xml"
 	// ContentTypeApplicationFormEncoded is a content type header value.
 	ContentTypeApplicationFormEncoded = "application/x-www-form-urlencoded"
+	// ContentTypeApplicationOctetStream is a content type header value.
+	ContentTypeApplicationOctetStream = "application/octet-stream"
 )

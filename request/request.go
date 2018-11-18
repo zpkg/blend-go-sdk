@@ -625,6 +625,7 @@ func (r *Request) PostBody() (io.Reader, error) {
 				return nil, err
 			}
 		}
+		r.header.Set(HeaderContentType, writer.FormDataContentType())
 		if err := writer.Close(); err != nil {
 			return nil, err
 		}
@@ -641,13 +642,11 @@ func (r *Request) Headers() http.Header {
 			headers.Set(key, value)
 		}
 	}
-
 	if len(r.contentType) > 0 {
 		headers.Set(HeaderContentType, r.contentType)
 	} else if len(r.postData) > 0 {
 		headers.Set(HeaderContentType, ContentTypeApplicationFormEncoded)
 	}
-
 	return headers
 }
 
@@ -681,6 +680,7 @@ func (r *Request) Request() (*http.Request, error) {
 			req.Header.Set(key, value)
 		}
 	}
+
 	return req, nil
 }
 

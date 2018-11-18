@@ -559,3 +559,43 @@ func TestRequestWithPostedFile(t *testing.T) {
 	assert.Nil(err)
 	assert.NotEmpty(contents)
 }
+
+func TestRequestWithPostedFileIntegration(t *testing.T) {
+	assert := assert.New(t)
+
+	server := getMockServer(func(w http.ResponseWriter, req *http.Request) {
+		// assert posted files exist on request
+		file, _, err := req.FormFile("testFile")
+		if err != nil {
+			println(err.Error())
+			http.Error(w, err.Error(), http.StatusBadRequest)
+			return
+		}
+		if file == nil {
+			println("file not found")
+			http.Error(w, "file not found", http.StatusBadRequest)
+			return
+		}
+
+		contents, err := ioutil.ReadAll(file)
+		if err != nil {
+			println(err.Error())
+			http.Error(w, err.Error(), http.StatusBadRequest)
+			return
+		}
+		if string(contents) != `this is only a test` {
+			println("wrong contents")
+			http.Error(w, "wrong contents", http.StatusBadRequest)
+			return
+		}
+		w.WriteHeader(http.StatusOK)
+		return
+	})
+	defer server.Close()
+
+	fileContents := bytes.NewBuffer([]byte(`this is only a test`))
+	r := New().MustWithRawURL(server.URL).WithPostedFile("testFile", "testFile.txt", fileContents)
+	meta, err := r.ExecuteWithMeta()
+	assert.Nil(err)
+	assert.Equal(http.StatusOK, meta.StatusCode)
+}
