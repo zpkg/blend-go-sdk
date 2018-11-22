@@ -100,6 +100,8 @@ func (vf ViewFuncs) FuncMap() map[string]interface{} {
 		"split_n":                     vf.SplitN,
 		"has_suffix":                  vf.HasSuffix,
 		"has_prefix":                  vf.HasPrefix,
+		"trim_suffix":                 vf.TrimSuffix,
+		"trim_prefix":                 vf.TrimPrefix,
 		"contains":                    vf.Contains,
 		"matches":                     vf.Matches,
 		"quote":                       vf.Quote,
@@ -536,6 +538,16 @@ func (vf ViewFuncs) HasSuffix(suffix, v string) bool {
 // HasPrefix returns if a string has a given prefix.
 func (vf ViewFuncs) HasPrefix(prefix, v string) bool {
 	return strings.HasPrefix(v, prefix)
+}
+
+// TrimSuffix returns if a string has a given suffix.
+func (vf ViewFuncs) TrimSuffix(suffix, v string) string {
+	return strings.TrimSuffix(v, suffix)
+}
+
+// TrimPrefix returns if a string has a given prefix.
+func (vf ViewFuncs) TrimPrefix(prefix, v string) string {
+	return strings.TrimPrefix(v, prefix)
 }
 
 // Contains returns if a string contains a given substring.
