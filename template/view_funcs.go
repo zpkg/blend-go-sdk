@@ -103,6 +103,7 @@ func (vf ViewFuncs) FuncMap() map[string]interface{} {
 		"contains":                    vf.Contains,
 		"matches":                     vf.Matches,
 		"quote":                       vf.Quote,
+		"strip_quotes":                vf.StripQuotes,
 		/* arrays */
 		"slice":    vf.Slice,
 		"first":    vf.First,
@@ -558,6 +559,14 @@ func (vf ViewFuncs) Quote(v string) string {
 	if !strings.HasSuffix(v, "\"") {
 		v = v + "\""
 	}
+	return v
+}
+
+// StripQuotes strips leading and trailing quotes.
+func (vf ViewFuncs) StripQuotes(v string) string {
+	v = strings.TrimSpace(v)
+	v = strings.TrimPrefix(v, "\"")
+	v = strings.TrimSuffix(v, "\"")
 	return v
 }
 
