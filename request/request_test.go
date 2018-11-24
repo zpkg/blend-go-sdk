@@ -567,24 +567,20 @@ func TestRequestWithPostedFileIntegration(t *testing.T) {
 		// assert posted files exist on request
 		file, _, err := req.FormFile("testFile")
 		if err != nil {
-			println(err.Error())
 			http.Error(w, err.Error(), http.StatusBadRequest)
 			return
 		}
 		if file == nil {
-			println("file not found")
 			http.Error(w, "file not found", http.StatusBadRequest)
 			return
 		}
 
 		contents, err := ioutil.ReadAll(file)
 		if err != nil {
-			println(err.Error())
 			http.Error(w, err.Error(), http.StatusBadRequest)
 			return
 		}
 		if string(contents) != `this is only a test` {
-			println("wrong contents")
 			http.Error(w, "wrong contents", http.StatusBadRequest)
 			return
 		}
