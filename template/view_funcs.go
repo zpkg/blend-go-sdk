@@ -64,6 +64,7 @@ func (vf ViewFuncs) FuncMap() map[string]interface{} {
 		"time_short":     vf.TimeShort,
 		"time_medium":    vf.TimeMedium,
 		"time_kitchen":   vf.TimeKitchen,
+		"in_utc":         vf.TimeInUTC,
 		"in_loc":         vf.TimeInLocation,
 		"since":          vf.Since,
 		"since_utc":      vf.SinceUTC,
@@ -257,6 +258,12 @@ func (vf ViewFuncs) TimeKitchen(t time.Time) string {
 // The format string is "1/2".
 func (vf ViewFuncs) DateMonthDay(t time.Time) string {
 	return t.Format("1/2")
+}
+
+// TimeInUTC returns the time in a given location by string.
+// If the location is invalid, this will error.
+func (vf ViewFuncs) TimeInUTC(t time.Time) time.Time {
+	return t.UTC()
 }
 
 // TimeInLocation returns the time in a given location by string.
