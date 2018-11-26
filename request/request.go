@@ -448,6 +448,13 @@ func (r *Request) TLSSkipVerify() bool {
 	return r.tlsSkipVerify
 }
 
+// WithTLSClientCertPair sets a tls cert on the transport for the request.
+func (r *Request) WithTLSClientCertPair(cert, key []byte) *Request {
+	r.tlsClientCert = cert
+	r.tlsClientKey = key
+	return r
+}
+
 // WithTLSClientCert sets a tls cert on the transport for the request.
 func (r *Request) WithTLSClientCert(cert []byte) *Request {
 	r.tlsClientCert = cert
