@@ -394,10 +394,10 @@ func (r *Request) WithPostData(field string, value string) *Request {
 	return r
 }
 
-// LookupPostData gets the first value set on the request via the WithPostData func associated with the given key.
-// If there are no values associated with the key, LookupPostData returns the empty string. This is a useful retrieval
+// GetPostData gets the first value set on the request via the WithPostData func associated with the given key.
+// If there are no values associated with the key, GetPostData returns the empty string. This is a useful retrieval
 // mechanism for mocks
-func (r *Request) LookupPostData(field string) string {
+func (r *Request) GetPostData(field string) string {
 	return r.postData.Get(field)
 }
 
