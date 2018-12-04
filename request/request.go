@@ -394,6 +394,13 @@ func (r *Request) WithPostData(field string, value string) *Request {
 	return r
 }
 
+// GetPostData gets the first value set on the request via the WithPostData func associated with the given key.
+// If there are no values associated with the key, GetPostData returns the empty string. This is a useful retrieval
+// mechanism for mocks
+func (r *Request) GetPostData(field string) string {
+	return r.postData.Get(field)
+}
+
 // WithPostedFile adds a posted file to the multipart form elements of the request.
 func (r *Request) WithPostedFile(key, fileName string, fileContents io.Reader) *Request {
 	r.postedFiles = append(r.postedFiles, PostedFile{Key: key, FileName: fileName, FileContents: fileContents})
@@ -900,9 +907,13 @@ func (r *Request) deserialize(handler Deserializer) (*ResponseMeta, error) {
 func (r *Request) deserializeWithError(okHandler Deserializer, errorHandler Deserializer) (*ResponseMeta, error) {
 	res, err := r.Response()
 	if err != nil {
+		if res != nil {
+			// If there is both an error and a response, we make an attempt to build a ResponseMeta
+			return safeNewResponseMeta(res), err
+		}
 		return nil, exception.New(err)
 	}
-	// do not move this above the error or else risk a nil ref from the response
+
 	meta := NewResponseMeta(res)
 
 	defer res.Body.Close()
@@ -924,6 +935,16 @@ func (r *Request) deserializeWithError(okHandler Deserializer, errorHandler Dese
 		}
 	}
 	return meta, exception.New(err)
+}
+
+func safeNewResponseMeta(res *http.Response) (meta *ResponseMeta) {
+	defer func() {
+		if r := recover(); r != nil {
+			meta = nil
+		}
+	}()
+	meta = NewResponseMeta(res)
+	return
 }
 
 func (r *Request) logRequest() {

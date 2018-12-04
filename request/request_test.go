@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"context"
 	"encoding/json"
+	"errors"
 	"fmt"
 	"io/ioutil"
 	"math/rand"
@@ -186,6 +187,24 @@ func TestHttpGetWithErrorHandler(t *testing.T) {
 	assert.Nil(err)
 	assert.Equal(http.StatusInternalServerError, meta.StatusCode)
 	assert.Equal(returnedObject, errorObject)
+}
+
+func TestHttpGetWithFullMockedError(t *testing.T) {
+	assert := assert.New(t)
+	url := "http://localhost:5001/api/v2/err"
+	req := New().WithMethod("GET").MustWithRawURL(url).WithMockProvider(
+		func(_ *Request) *MockedResponse {
+			return &MockedResponse{
+				Meta: ResponseMeta{StatusCode: http.StatusInternalServerError},
+				Err:  errors.New("this is a test error"),
+			}
+		})
+	testObject := testObject{}
+	errorObject := errorObject{}
+	meta, err := req.JSONWithErrorHandler(&testObject, &errorObject)
+	assert.NotNil(err)
+	assert.Equal("this is a test error", err.Error())
+	assert.Equal(http.StatusInternalServerError, meta.StatusCode)
 }
 
 func TestHttpGetWithExpiringTimeout(t *testing.T) {

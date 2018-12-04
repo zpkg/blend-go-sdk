@@ -26,6 +26,8 @@ const (
 	VarServiceSecret = "SERVICE_SECRET"
 	// VarPort is a common env var name.
 	VarPort = "PORT"
+	// VarHostname is a common env var name.
+	VarHostname = "HOSTNAME"
 	// VarSecurePort is a common env var name.
 	VarSecurePort = "SECURE_PORT"
 	// VarTLSCertPath is a common env var name.

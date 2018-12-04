@@ -7,6 +7,7 @@ import (
 
 	"github.com/DataDog/datadog-go/statsd"
 
+	"github.com/blend/go-sdk/env"
 	"github.com/blend/go-sdk/stats"
 	"github.com/blend/go-sdk/util"
 )
@@ -32,10 +33,16 @@ func NewCollector(cfg *Config) (*Collector, error) {
 	if len(cfg.GetNamespace()) > 0 {
 		client.Namespace = strings.ToLower(cfg.GetNamespace()) + "."
 	}
-	return &Collector{
+	collector := &Collector{
 		client:      client,
 		defaultTags: cfg.GetDefaultTags(),
-	}, nil
+	}
+
+	collector.AddDefaultTag("service", env.Env().String(env.VarServiceEnv))
+	collector.AddDefaultTag("env", env.Env().String(env.VarServiceEnv))
+	collector.AddDefaultTag("hostname", env.Env().String(env.VarHostname))
+
+	return collector, nil
 }
 
 // NewCollectorFromEnv returns a new Collector from a config.
