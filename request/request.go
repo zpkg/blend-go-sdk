@@ -718,6 +718,7 @@ func (r *Request) Response() (res *http.Response, err error) {
 		}
 	}
 
+	r.requestStarted = time.Now().UTC()
 	r.logRequest()
 	if r.mockProvider != nil {
 		mockedRes := r.mockProvider(r)
@@ -950,7 +951,6 @@ func safeNewResponseMeta(res *http.Response) (meta *ResponseMeta) {
 }
 
 func (r *Request) logRequest() {
-	r.requestStarted = time.Now().UTC()
 	if r.requestHandler != nil {
 		r.requestHandler(r)
 	}
