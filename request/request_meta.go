@@ -21,6 +21,7 @@ func NewRequestMeta(req *http.Request) *Meta {
 
 // Meta is a summary of the request meta useful for logging.
 type Meta struct {
+	// StartTime will be 0 if the request has not been started yet
 	StartTime time.Time
 	Method    string
 	URL       *url.URL

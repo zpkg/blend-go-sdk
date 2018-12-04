@@ -177,6 +177,20 @@ func TestHttpGet(t *testing.T) {
 	assert.Equal(returnedObject, testObject)
 }
 
+func TestHttpGetSetsRequestStartTime(t *testing.T) {
+	assert := assert.New(t)
+	testStart := time.Now().UTC()
+	returnedObject := newTestObject()
+	ts := mockEndpoint(okMeta(), returnedObject, nil)
+	testObject := testObject{}
+	req := New().AsGet().MustWithRawURL(ts.URL)
+	meta, err := req.JSONWithMeta(&testObject)
+	assert.Nil(err)
+	assert.Equal(http.StatusOK, meta.StatusCode)
+	assert.Equal(returnedObject, testObject)
+	assert.True(req.Meta().StartTime.Equal(testStart) || req.Meta().StartTime.After(testStart))
+}
+
 func TestHttpGetWithErrorHandler(t *testing.T) {
 	assert := assert.New(t)
 	returnedObject := newErrorObject()
