@@ -242,6 +242,11 @@ func (vc *ViewCache) Status(statusCode int, response ...interface{}) Result {
 
 // View returns a view result.
 func (vc *ViewCache) View(viewName string, viewModel interface{}) Result {
+	return vc.ViewStatus(http.StatusOK, viewName, viewModel)
+}
+
+// ViewStatus returns a view result with a given status code..
+func (vc *ViewCache) ViewStatus(statusCode int, viewName string, viewModel interface{}) Result {
 	t, err := vc.Lookup(viewName)
 	if err != nil {
 		return vc.viewError(err)
@@ -252,7 +257,7 @@ func (vc *ViewCache) View(viewName string, viewModel interface{}) Result {
 
 	return &ViewResult{
 		ViewName:   viewName,
-		StatusCode: http.StatusOK,
+		StatusCode: statusCode,
 		ViewModel:  viewModel,
 		Template:   t,
 		Views:      vc,
