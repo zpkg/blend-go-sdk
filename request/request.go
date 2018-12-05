@@ -88,6 +88,7 @@ type Request struct {
 
 	state interface{}
 
+	requestStarted  time.Time
 	requestHandler  Handler
 	responseHandler ResponseHandler
 	mockProvider    MockedResponseProvider
@@ -593,6 +594,7 @@ func (r *Request) Meta() *Meta {
 		Method:  r.Method(),
 		URL:     r.URL(),
 		Headers: r.Headers(),
+		StartTime: r.requestStarted,
 	}
 }
 
@@ -716,6 +718,7 @@ func (r *Request) Response() (res *http.Response, err error) {
 		}
 	}
 
+	r.requestStarted = time.Now().UTC()
 	r.logRequest()
 	if r.mockProvider != nil {
 		mockedRes := r.mockProvider(r)
