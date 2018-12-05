@@ -38,7 +38,7 @@ func NewCollector(cfg *Config) (*Collector, error) {
 		defaultTags: cfg.GetDefaultTags(),
 	}
 
-	collector.AddDefaultTag("service", env.Env().String(env.VarServiceEnv))
+	collector.AddDefaultTag("service", env.Env().String(env.VarServiceName))
 	collector.AddDefaultTag("env", env.Env().String(env.VarServiceEnv))
 	collector.AddDefaultTag("hostname", env.Env().String(env.VarHostname))
 
