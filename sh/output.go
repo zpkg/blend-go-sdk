@@ -19,6 +19,7 @@ func Output(command string, args ...string) ([]byte, error) {
 	cmd.Env = os.Environ()
 	cmd.Stdout = output
 	cmd.Stderr = output
+	cmd.Stdin = os.Stdin
 	if err := cmd.Run(); err != nil {
 		return nil, err
 	}
