@@ -8,16 +8,20 @@ import (
 )
 
 func main() {
-	log := logger.NewFromEnv()
-	app := web.NewFromEnv().WithLogger(log)
+	log := logger.MustNewFromEnv()
+	app := web.MustNewFromEnv().WithLogger(log)
 	app.Views().AddPaths(
 		"_views/header.html",
 		"_views/footer.html",
 		"_views/index.html",
 	)
 
+	app.Views().FuncMap()["foo"] = func() string {
+		return "hello!"
+	}
+
 	if len(os.Getenv("LIVE_RELOAD")) > 0 {
-		app.Views().SetCached(false)
+		app.Views().WithCached(false)
 	}
 
 	app.GET("/", func(r *web.Ctx) web.Result {
