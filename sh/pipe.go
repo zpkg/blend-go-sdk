@@ -36,24 +36,16 @@ func Pipe(commands ...*exec.Cmd) error {
 
 		go func(index int, cmd *exec.Cmd) {
 			defer wg.Done()
-			defer func() {
-				if err := readers[index].(*io.PipeReader).Close(); err != nil {
-					errors <- err
-				}
-				writers[index] = nil
-			}()
-			defer func() {
-				if err := writers[index].(*io.PipeWriter).Close(); err != nil {
-					errors <- err
-				}
-				writers[index] = nil
-			}()
-			if index == 1 {
+			if index > 0 {
 				defer func() {
-					if closer, ok := cmd.Stdin.(io.Closer); ok {
-						if err := closer.Close(); err != nil {
-							errors <- err
-						}
+					if typed, ok := cmd.Stdout.(*io.PipeWriter); ok {
+						typed.Close()
+					}
+					if typed, ok := cmd.Stderr.(*io.PipeWriter); ok {
+						typed.Close()
+					}
+					if typed, ok := cmd.Stdin.(*io.PipeReader); ok {
+						typed.Close()
 					}
 				}()
 			}
