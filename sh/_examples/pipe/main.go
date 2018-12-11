@@ -9,12 +9,12 @@ import (
 
 func main() {
 
-	if err := sh.Pipe(sh.C("yes", "head -n 5")...); err != nil {
+	if err := sh.Pipe(sh.MustCmds("yes", "head -n 5")...); err != nil {
 		fmt.Fprintf(os.Stderr, "%+v\n", err)
 		os.Exit(1)
 	}
 
-	if err := sh.Pipe(sh.C("cat /dev/urandom", "head -c 32", "base64")...); err != nil {
+	if err := sh.Pipe(sh.MustCmds("cat /dev/urandom", "head -c 32", "base64")...); err != nil {
 		fmt.Fprintf(os.Stderr, "%+v\n", err)
 		os.Exit(1)
 	}

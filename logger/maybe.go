@@ -1,5 +1,21 @@
 package logger
 
+// MaybeTrigger triggers an event if the logger is set.
+func MaybeTrigger(log *Logger, e Event) {
+	if log == nil {
+		return
+	}
+	log.Trigger(e)
+}
+
+// MaybeSyncTrigger triggers an event if the logger is set.
+func MaybeSyncTrigger(log *Logger, e Event) {
+	if log == nil {
+		return
+	}
+	log.Trigger(e)
+}
+
 // MaybeInfof triggers Infof if the logger is set.
 func MaybeInfof(log *Logger, format string, args ...interface{}) {
 	if log == nil {

@@ -33,7 +33,6 @@ func Pipe(commands ...*exec.Cmd) error {
 			commands[index].Stdout = writers[index]
 			commands[index].Stderr = writers[index]
 		}
-
 		go func(index int, cmd *exec.Cmd) {
 			defer wg.Done()
 			if index > 0 {
@@ -54,10 +53,8 @@ func Pipe(commands ...*exec.Cmd) error {
 					errors <- err
 				}
 			}
-
 		}(index, commands[index])
 	}
-
 	wg.Wait()
 	if len(errors) > 0 {
 		return <-errors

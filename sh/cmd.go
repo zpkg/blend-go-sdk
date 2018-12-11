@@ -6,8 +6,8 @@ import (
 	"strings"
 )
 
-// C returns a command for a full comamnd statement.
-func C(statements ...string) []*exec.Cmd {
+// MustCmds returns a command for a full comamnd statement.
+func MustCmds(statements ...string) []*exec.Cmd {
 	var output []*exec.Cmd
 	for _, statement := range statements {
 		output = append(output, MustCmdParsed(statement))
