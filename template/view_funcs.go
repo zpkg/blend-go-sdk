@@ -30,6 +30,11 @@ import (
 	"github.com/blend/go-sdk/yaml"
 )
 
+// DefaultViewFuncs is a singleton for viewfuncs.
+var (
+	Funcs ViewFuncs
+)
+
 // ViewFuncs is the type stub for view functions.
 type ViewFuncs struct{}
 
