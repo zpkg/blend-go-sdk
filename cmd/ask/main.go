@@ -107,13 +107,9 @@ func prompt(cv *configVar) {
 	} else {
 		prompt = fmt.Sprintf("%s: ", cv.Field)
 	}
-	v, err := sh.Prompt(prompt)
-	if err == nil {
-		cv.Value = v
-	} else if err.Error() == "unexpected newline" {
+	cv.Value = sh.MustPrompt(prompt)
+	if cv.Value == "" {
 		cv.Value = cv.Default
-	} else {
-		panic(err)
 	}
 }
 
