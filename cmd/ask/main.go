@@ -108,9 +108,6 @@ func prompt(cv *configVar) {
 		prompt = fmt.Sprintf("%s: ", cv.Field)
 	}
 	cv.Value = sh.MustPrompt(prompt)
-	if len(cv.Value) == 0 && len(cv.Default) > 0 {
-		cv.Value = cv.Default
-	}
 }
 
 func secure(cv *configVar) {
