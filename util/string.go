@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"encoding/base64"
 	"fmt"
+	"net/url"
 	"regexp"
 	"strconv"
 	"strings"
@@ -555,4 +556,12 @@ func (su stringUtil) ReplaceAny(corpus string, with rune, toReplace ...rune) str
 		}
 	}
 	return string(output)
+}
+
+// Slugify replaces whitespace with '-' and url escapes.
+func (su stringUtil) Slugify(v string) string {
+	v = strings.Replace(v, " ", "-", -1)
+	v = strings.Replace(v, "\t", "-", -1)
+	v = strings.Replace(v, "\n", "-", -1)
+	return url.PathEscape(v)
 }

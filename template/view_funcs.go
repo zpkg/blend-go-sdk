@@ -92,6 +92,7 @@ func (vf ViewFuncs) FuncMap() map[string]interface{} {
 		"to_upper":                    vf.ToUpper,
 		"to_lower":                    vf.ToLower,
 		"to_title":                    vf.ToTitle,
+		"slugify":                     vf.Slugify,
 		"random_letters":              vf.RandomLetters,
 		"random_letters_with_numbers": vf.RandomLettersWithNumbers,
 		"trim_space":                  vf.TrimSpace,
@@ -415,6 +416,13 @@ func (vf ViewFuncs) ToLower(v string) string {
 // ToTitle returns a title cased string.
 func (vf ViewFuncs) ToTitle(v string) string {
 	return strings.ToTitle(v)
+}
+
+// Slugify returns a slug format string.
+// It replaces whitespace with `-`
+// It path escapes any other characters.
+func (vf ViewFuncs) Slugify(v string) string {
+	return util.String.Slugify(v)
 }
 
 // TrimSpace trims whitespace from the beginning and end of a string.
