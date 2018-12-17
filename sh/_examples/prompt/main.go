@@ -7,9 +7,9 @@ import (
 )
 
 func main() {
-	value, err := sh.Prompt("first? ")
-	if err != nil {
-		sh.Fatal(err)
-	}
+	value := sh.Prompt("first? ")
+	fmt.Println("entered", value)
+
+	value = sh.Promptf("%s? ", "second")
 	fmt.Println("entered", value)
 }

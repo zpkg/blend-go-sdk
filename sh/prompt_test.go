@@ -12,19 +12,5 @@ func TestPromptFrom(t *testing.T) {
 
 	input := bytes.NewBufferString("test\n")
 	output := bytes.NewBuffer(nil)
-
-	value, err := PromptFrom(output, input, "value: ")
-	assert.Nil(err)
-	assert.Equal("test", value)
-}
-
-func TestPromptFromEmpty(t *testing.T) {
-	assert := assert.New(t)
-
-	input := bytes.NewBufferString("\n")
-	output := bytes.NewBuffer(nil)
-
-	value, err := PromptFrom(output, input, "value: ")
-	assert.Nil(err)
-	assert.Equal("", value)
+	assert.Equal("test", PromptFrom(output, input, "value: "))
 }
