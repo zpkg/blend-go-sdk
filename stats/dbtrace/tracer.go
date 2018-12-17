@@ -47,7 +47,7 @@ func (dbt dbTracer) Prepare(ctx context.Context, conn *db.Connection, statement 
 
 func (dbt dbTracer) Query(ctx context.Context, conn *db.Connection, inv *db.Invocation, statement string) db.TraceFinisher {
 	startOptions := []opentracing.StartSpanOption{
-		opentracing.Tag{Key: tracing.TagKeyResourceName, Value: inv.Label()},
+		opentracing.Tag{Key: tracing.TagKeyResourceName, Value: inv.CachedPlanKey()},
 		opentracing.Tag{Key: tracing.TagKeySpanType, Value: tracing.SpanTypeSQL},
 		opentracing.Tag{Key: tracing.TagKeyDBName, Value: conn.Config().GetDatabase()},
 		opentracing.Tag{Key: tracing.TagKeyDBUser, Value: conn.Config().GetUsername()},
