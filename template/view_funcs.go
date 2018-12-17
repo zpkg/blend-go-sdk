@@ -62,6 +62,7 @@ func (vf ViewFuncs) FuncMap() map[string]interface{} {
 		"now":            vf.Now,
 		"now_utc":        vf.NowUTC,
 		"time_format":    vf.TimeFormat,
+		"date_long":      vf.DateLong,
 		"date_short":     vf.DateShort,
 		"date_month_day": vf.DateMonthDay,
 		"date_short_rev": vf.DateShortRev,
@@ -241,6 +242,11 @@ func (vf ViewFuncs) TimeShort(t time.Time) string {
 // TimeFormat returns the time with a given format string.
 func (vf ViewFuncs) TimeFormat(format string, t time.Time) string {
 	return t.Format(format)
+}
+
+// DateLong returns the short date for a timestamp.
+func (vf ViewFuncs) DateLong(t time.Time) string {
+	return t.Format("Jan _2, 2006")
 }
 
 // DateShort returns the short date for a timestamp.
