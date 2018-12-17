@@ -101,13 +101,11 @@ func main() {
 }
 
 func prompt(cv *configVar) {
-	var prompt string
 	if len(cv.Default) > 0 {
-		prompt = fmt.Sprintf("%s[%s]: ", cv.Field, cv.Default)
+		cv.Value = sh.Promptf("%s[%s]: ", cv.Field, cv.Default)
 	} else {
-		prompt = fmt.Sprintf("%s: ", cv.Field)
+		cv.Value = sh.Promptf("%s: ", cv.Field)
 	}
-	cv.Value = sh.MustPrompt(prompt)
 }
 
 func secure(cv *configVar) {
