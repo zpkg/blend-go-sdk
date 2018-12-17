@@ -14,7 +14,7 @@ import (
 
 // Invocation is a specific operation against a context.
 type Invocation struct {
-	statementLabel string
+	cachedPlanKey string
 
 	conn                 *Connection
 	context              context.Context
@@ -56,15 +56,15 @@ func (i *Invocation) Cancel() func() {
 	return i.cancel
 }
 
-// WithLabel instructs the query generator to get or create a cached prepared statement.
-func (i *Invocation) WithLabel(label string) *Invocation {
-	i.statementLabel = label
+// WithCachedPlan instructs the query generator to get or create a cached prepared statement.
+func (i *Invocation) WithCachedPlan(cacheKey string) *Invocation {
+	i.cachedPlanKey = cacheKey
 	return i
 }
 
-// Label returns the statement / plan cache label for the context.
-func (i *Invocation) Label() string {
-	return i.statementLabel
+// CachedPlanKey returns the statement / plan cache label for the context.
+func (i *Invocation) CachedPlanKey() string {
+	return i.cachedPlanKey
 }
 
 // WithTx sets the tx
@@ -92,12 +92,12 @@ func (i *Invocation) StatementInterceptor() StatementInterceptor {
 // Prepare returns a cached or newly prepared statment plan for a given sql statement.
 func (i *Invocation) Prepare(statement string) (stmt *sql.Stmt, err error) {
 	if i.statementInterceptor != nil {
-		statement, err = i.statementInterceptor(i.statementLabel, statement)
+		statement, err = i.statementInterceptor(i.cachedPlanKey, statement)
 		if err != nil {
 			return
 		}
 	}
-	stmt, err = i.conn.PrepareContext(i.Context(), i.statementLabel, statement, i.tx)
+	stmt, err = i.conn.PrepareContext(i.Context(), i.cachedPlanKey, statement, i.tx)
 	return
 }
 
@@ -129,14 +129,14 @@ func (i *Invocation) Query(statement string, args ...interface{}) *Query {
 	var err error
 	statement, err = i.start(statement)
 	return &Query{
-		context:        i.Context(),
-		statement:      statement,
-		statementLabel: i.statementLabel,
-		args:           args,
-		conn:           i.conn,
-		inv:            i,
-		tx:             i.tx,
-		err:            err,
+		context:       i.Context(),
+		statement:     statement,
+		cachedPlanKey: i.cachedPlanKey,
+		args:          args,
+		conn:          i.conn,
+		inv:           i,
+		tx:            i.tx,
+		err:           err,
 	}
 }
 
@@ -152,7 +152,7 @@ func (i *Invocation) Get(object DatabaseMapped, ids ...interface{}) (err error) 
 	var cols *ColumnCollection
 	defer func() { err = i.finish(queryBody, recover(), err) }()
 
-	if i.statementLabel, queryBody, cols, err = i.generateGet(object); err != nil {
+	if i.cachedPlanKey, queryBody, cols, err = i.generateGet(object); err != nil {
 		err = Error(err)
 		return
 	}
@@ -191,7 +191,7 @@ func (i *Invocation) GetAll(collection interface{}) (err error) {
 	var collectionType reflect.Type
 	defer func() { err = i.finish(queryBody, recover(), err) }()
 
-	i.statementLabel, queryBody, cols, collectionType = i.generateGetAll(collection)
+	i.cachedPlanKey, queryBody, cols, collectionType = i.generateGetAll(collection)
 
 	queryBody, err = i.start(queryBody)
 	if err != nil {
@@ -240,7 +240,7 @@ func (i *Invocation) Create(object DatabaseMapped) (err error) {
 	var writeCols, autos *ColumnCollection
 	defer func() { err = i.finish(queryBody, recover(), err) }()
 
-	i.statementLabel, queryBody, writeCols, autos = i.generateCreate(object)
+	i.cachedPlanKey, queryBody, writeCols, autos = i.generateCreate(object)
 
 	queryBody, err = i.start(queryBody)
 	if err != nil {
@@ -280,7 +280,7 @@ func (i *Invocation) CreateIfNotExists(object DatabaseMapped) (err error) {
 	var autos, writeCols *ColumnCollection
 	defer func() { err = i.finish(queryBody, recover(), err) }()
 
-	i.statementLabel, queryBody, autos, writeCols = i.generateCreateIfNotExists(object)
+	i.cachedPlanKey, queryBody, autos, writeCols = i.generateCreateIfNotExists(object)
 
 	queryBody, err = i.start(queryBody)
 	if err != nil {
@@ -356,7 +356,7 @@ func (i *Invocation) Update(object DatabaseMapped) (err error) {
 	var pks, writeCols *ColumnCollection
 	defer func() { err = i.finish(queryBody, recover(), err) }()
 
-	i.statementLabel, queryBody, pks, writeCols = i.generateUpdate(object)
+	i.cachedPlanKey, queryBody, pks, writeCols = i.generateUpdate(object)
 
 	queryBody, err = i.start(queryBody)
 	if err != nil {
@@ -382,7 +382,7 @@ func (i *Invocation) Upsert(object DatabaseMapped) (err error) {
 	var stmt *sql.Stmt
 	defer func() { err = i.finish(queryBody, recover(), err) }()
 
-	i.statementLabel, queryBody, autos, writeCols = i.generateUpsert(object)
+	i.cachedPlanKey, queryBody, autos, writeCols = i.generateUpsert(object)
 
 	queryBody, err = i.start(queryBody)
 	if err != nil {
@@ -422,7 +422,7 @@ func (i *Invocation) Exists(object DatabaseMapped) (exists bool, err error) {
 	var stmt *sql.Stmt
 	defer func() { err = i.finish(queryBody, recover(), err) }()
 
-	if i.statementLabel, queryBody, pks, err = i.generateExists(object); err != nil {
+	if i.cachedPlanKey, queryBody, pks, err = i.generateExists(object); err != nil {
 		err = Error(err)
 		return
 	}
@@ -453,7 +453,7 @@ func (i *Invocation) Delete(object DatabaseMapped) (err error) {
 	var pks *ColumnCollection
 	defer func() { err = i.finish(queryBody, recover(), err) }()
 
-	if i.statementLabel, queryBody, pks, err = i.generateDelete(object); err != nil {
+	if i.cachedPlanKey, queryBody, pks, err = i.generateDelete(object); err != nil {
 		return
 	}
 
@@ -480,7 +480,7 @@ func (i *Invocation) Truncate(object DatabaseMapped) (err error) {
 	var stmt *sql.Stmt
 	defer func() { err = i.finish(queryBody, recover(), err) }()
 
-	i.statementLabel, queryBody = i.generateTruncate(object)
+	i.cachedPlanKey, queryBody = i.generateTruncate(object)
 
 	queryBody, err = i.start(queryBody)
 	if err != nil {
@@ -904,7 +904,7 @@ func (i *Invocation) closeStatement(stmt *sql.Stmt, err error) error {
 		return err
 	}
 	// if the statement is cached, DO NOT CLOSE THE STATEMENT.
-	if i.conn.statementCache != nil && i.conn.statementCache.Enabled() && i.statementLabel != "" {
+	if i.conn.planCache != nil && i.conn.planCache.Enabled() && i.cachedPlanKey != "" {
 		return err
 	}
 	// close the statement.
@@ -914,7 +914,7 @@ func (i *Invocation) closeStatement(stmt *sql.Stmt, err error) error {
 func (i *Invocation) start(statement string) (string, error) {
 	if i.statementInterceptor != nil {
 		var err error
-		statement, err = i.statementInterceptor(i.statementLabel, statement)
+		statement, err = i.statementInterceptor(i.cachedPlanKey, statement)
 		if err != nil {
 			return "", err
 		}
@@ -937,7 +937,7 @@ func (i *Invocation) finish(statement string, r interface{}, err error) error {
 			logger.NewQueryEvent(statement, time.Now().UTC().Sub(i.startTime)).
 				WithUsername(i.conn.config.GetUsername()).
 				WithDatabase(i.conn.config.GetDatabase()).
-				WithQueryLabel(i.statementLabel).
+				WithQueryLabel(i.cachedPlanKey).
 				WithEngine(i.conn.config.GetEngine()).
 				WithErr(err),
 		)

@@ -71,15 +71,15 @@ func TestConnectionStatementCacheExecute(t *testing.T) {
 	a.Nil(err)
 	a.Nil(conn.Open())
 	defer conn.Close()
-	conn.StatementCache().WithEnabled(true)
+	conn.PlanCache().WithEnabled(true)
 
 	a.Nil(conn.Exec("select 'ok!'"))
 	a.Nil(conn.Exec("select 'ok!'"))
-	a.False(conn.StatementCache().HasStatement("select 'ok!'"))
+	a.False(conn.PlanCache().HasStatement("select 'ok!'"))
 
-	a.Nil(conn.ExecWithLabel("select 'ok!'", "ping"))
-	a.Nil(conn.ExecWithLabel("select 'ok!'", "ping"))
-	a.True(conn.StatementCache().HasStatement("ping"))
+	a.Nil(conn.ExecWithCachedPlan("select 'ok!'", "ping"))
+	a.Nil(conn.ExecWithCachedPlan("select 'ok!'", "ping"))
+	a.True(conn.PlanCache().HasStatement("ping"))
 }
 
 func TestConnectionStatementCacheQuery(t *testing.T) {
@@ -90,16 +90,16 @@ func TestConnectionStatementCacheQuery(t *testing.T) {
 	a.Nil(conn.Open())
 	defer conn.Close()
 
-	conn.StatementCache().WithEnabled(true)
+	conn.PlanCache().WithEnabled(true)
 
 	var ok string
-	a.Nil(conn.Invoke(context.TODO()).WithLabel("status").Query("select 'ok!'").Scan(&ok))
+	a.Nil(conn.Invoke(context.TODO()).WithCachedPlan("status").Query("select 'ok!'").Scan(&ok))
 	a.Equal("ok!", ok)
 
-	a.Nil(conn.Invoke(context.TODO()).WithLabel("status").Query("select 'ok!'").Scan(&ok))
+	a.Nil(conn.Invoke(context.TODO()).WithCachedPlan("status").Query("select 'ok!'").Scan(&ok))
 	a.Equal("ok!", ok)
 
-	a.True(conn.StatementCache().HasStatement("status"))
+	a.True(conn.PlanCache().HasStatement("status"))
 }
 
 func TestCRUDMethods(t *testing.T) {
@@ -156,7 +156,7 @@ func TestCRUDMethodsCached(t *testing.T) {
 	a := assert.New(t)
 
 	conn, err := NewFromEnv()
-	conn.StatementCache().WithEnabled(true)
+	conn.PlanCache().WithEnabled(true)
 	a.Nil(err)
 	a.Nil(conn.Open())
 	defer conn.Close()
@@ -214,7 +214,7 @@ func TestConnectionOpen(t *testing.T) {
 
 	a.NotNil(conn.bufferPool)
 	a.NotNil(conn.connection)
-	a.NotNil(conn.statementCache)
+	a.NotNil(conn.planCache)
 }
 
 func TestExec(t *testing.T) {
@@ -452,7 +452,7 @@ func TestConnectionInvalidatesBadCachedStatements(t *testing.T) {
 	assert.Nil(conn.Open())
 	defer conn.Close()
 
-	conn.StatementCache().WithEnabled(true)
+	conn.PlanCache().WithEnabled(true)
 
 	createTableStatement := `CREATE TABLE state_invalidation (id int not null, name varchar(64))`
 	insertStatement := `INSERT INTO state_invalidation (id, name) VALUES ($1, $2)`

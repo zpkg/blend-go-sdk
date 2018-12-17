@@ -14,10 +14,10 @@ import (
 
 // Query is the intermediate result of a query.
 type Query struct {
-	context        context.Context
-	statement      string
-	statementLabel string
-	args           []interface{}
+	context       context.Context
+	statement     string
+	cachedPlanKey string
+	args          []interface{}
 
 	rows *sql.Rows
 	err  error

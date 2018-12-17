@@ -34,8 +34,8 @@ const (
 // It will use very bare bones defaults for the config.
 func New() *Connection {
 	return &Connection{
-		config:         &Config{},
-		statementCache: NewStatementCache(),
+		config:    &Config{},
+		planCache: NewPlanCache(),
 	}
 }
 
@@ -85,11 +85,11 @@ type Connection struct {
 	tracer               Tracer
 	statementInterceptor StatementInterceptor
 
-	connection     *sql.DB
-	config         *Config
-	bufferPool     *BufferPool
-	log            *logger.Logger
-	statementCache *StatementCache
+	connection *sql.DB
+	config     *Config
+	bufferPool *BufferPool
+	log        *logger.Logger
+	planCache  *PlanCache
 }
 
 // WithConfig sets the config.
@@ -132,8 +132,8 @@ func (dbc *Connection) Connection() *sql.DB {
 
 // Close implements a closer.
 func (dbc *Connection) Close() error {
-	if dbc.statementCache != nil {
-		if err := dbc.statementCache.Close(); err != nil {
+	if dbc.planCache != nil {
+		if err := dbc.planCache.Close(); err != nil {
 			return err
 		}
 	}
@@ -151,9 +151,9 @@ func (dbc *Connection) Logger() *logger.Logger {
 	return dbc.log
 }
 
-// StatementCache returns the statement cache.
-func (dbc *Connection) StatementCache() *StatementCache {
-	return dbc.statementCache
+// PlanCache returns the statement cache.
+func (dbc *Connection) PlanCache() *PlanCache {
+	return dbc.planCache
 }
 
 // Open returns a connection object, either a cached connection object or creating a new one in the process.
@@ -171,8 +171,8 @@ func (dbc *Connection) Open() error {
 	if dbc.bufferPool == nil {
 		dbc.bufferPool = NewBufferPool(dbc.config.GetBufferPoolSize())
 	}
-	if dbc.statementCache == nil {
-		dbc.statementCache = NewStatementCache()
+	if dbc.planCache == nil {
+		dbc.planCache = NewPlanCache()
 	}
 
 	dsn := dbc.config.CreateDSN()
@@ -187,8 +187,8 @@ func (dbc *Connection) Open() error {
 		return Error(err)
 	}
 
-	dbc.statementCache.WithConnection(dbConn)
-	dbc.statementCache.WithEnabled(dbc.config.GetUseStatementCache())
+	dbc.planCache.WithConnection(dbConn)
+	dbc.planCache.WithEnabled(!dbc.config.GetPlanCacheDisabled())
 
 	dbc.connection = dbConn
 	dbc.connection.SetConnMaxLifetime(dbc.config.GetMaxLifetime())
@@ -213,7 +213,7 @@ func (dbc *Connection) BeginContext(context context.Context, opts ...*sql.TxOpti
 }
 
 // PrepareContext prepares a statement potentially returning a cached version of the statement.
-func (dbc *Connection) PrepareContext(context context.Context, statementID, statement string, txs ...*sql.Tx) (stmt *sql.Stmt, err error) {
+func (dbc *Connection) PrepareContext(context context.Context, cachedPlanKey, statement string, txs ...*sql.Tx) (stmt *sql.Stmt, err error) {
 	if dbc.tracer != nil {
 		tf := dbc.tracer.Prepare(context, dbc, statement)
 		if tf != nil {
@@ -224,8 +224,8 @@ func (dbc *Connection) PrepareContext(context context.Context, statementID, stat
 		stmt, err = tx.PrepareContext(context, statement)
 		return
 	}
-	if dbc.statementCache != nil && dbc.statementCache.Enabled() && statementID != "" {
-		stmt, err = dbc.statementCache.PrepareContext(context, statementID, statement)
+	if dbc.planCache != nil && dbc.planCache.Enabled() && cachedPlanKey != "" {
+		stmt, err = dbc.planCache.PrepareContext(context, cachedPlanKey, statement)
 		return
 	}
 	stmt, err = dbc.connection.PrepareContext(context, statement)
@@ -291,14 +291,14 @@ func (dbc *Connection) ExecContext(context context.Context, statement string, ar
 	return dbc.Invoke(context).Exec(statement, args...)
 }
 
-// ExecWithLabel runs the statement without creating a QueryResult.
-func (dbc *Connection) ExecWithLabel(statement, label string, args ...interface{}) error {
-	return dbc.Invoke(context.Background()).WithLabel(label).Exec(statement, args...)
+// ExecWithCachedPlan runs the statement without creating a QueryResult.
+func (dbc *Connection) ExecWithCachedPlan(statement, cachedPlanKey string, args ...interface{}) error {
+	return dbc.Invoke(context.Background()).WithCachedPlan(cachedPlanKey).Exec(statement, args...)
 }
 
-// ExecContextWithLabel runs the statement without creating a QueryResult.
-func (dbc *Connection) ExecContextWithLabel(context context.Context, statement, label string, args ...interface{}) error {
-	return dbc.Invoke(context).WithLabel(label).Exec(statement, args...)
+// ExecContextWithCachedPlan runs the statement without creating a QueryResult.
+func (dbc *Connection) ExecContextWithCachedPlan(context context.Context, statement, cachedPlanKey string, args ...interface{}) error {
+	return dbc.Invoke(context).WithCachedPlan(cachedPlanKey).Exec(statement, args...)
 }
 
 // ExecInTx runs a statement within a transaction.
@@ -312,8 +312,8 @@ func (dbc *Connection) ExecInTxContext(context context.Context, statement string
 }
 
 // ExecInTxContextWithLabel runs a statement within a transaction with a label and a context.
-func (dbc *Connection) ExecInTxContextWithLabel(context context.Context, statement, label string, tx *sql.Tx, args ...interface{}) (err error) {
-	return dbc.Invoke(context, tx).WithLabel(label).Exec(statement, args...)
+func (dbc *Connection) ExecInTxContextWithLabel(context context.Context, statement, cachedPlanKey string, tx *sql.Tx, args ...interface{}) (err error) {
+	return dbc.Invoke(context, tx).WithCachedPlan(cachedPlanKey).Exec(statement, args...)
 }
 
 // Query runs the selected statement and returns a Query.
@@ -326,14 +326,14 @@ func (dbc *Connection) QueryContext(context context.Context, statement string, a
 	return dbc.Invoke(context).Query(statement, args...)
 }
 
-// QueryWithLabel runs the selected statement and returns a Query.
-func (dbc *Connection) QueryWithLabel(statement, label string, args ...interface{}) *Query {
-	return dbc.Invoke(dbc.Background()).WithLabel(label).Query(statement, args...)
+// QueryWithCachedPlan runs the selected statement and returns a Query.
+func (dbc *Connection) QueryWithCachedPlan(statement, cachedPlanKey string, args ...interface{}) *Query {
+	return dbc.Invoke(dbc.Background()).WithCachedPlan(cachedPlanKey).Query(statement, args...)
 }
 
-// QueryContextWithLabel runs the selected statement and returns a Query.
-func (dbc *Connection) QueryContextWithLabel(context context.Context, statement, label string, args ...interface{}) *Query {
-	return dbc.Invoke(context).WithLabel(label).Query(statement, args...)
+// QueryContextWithCachedPlan runs the selected statement and returns a Query.
+func (dbc *Connection) QueryContextWithCachedPlan(context context.Context, statement, cachedPlanKey string, args ...interface{}) *Query {
+	return dbc.Invoke(context).WithCachedPlan(cachedPlanKey).Query(statement, args...)
 }
 
 // QueryInTx runs the selected statement in a transaction and returns a Query.
@@ -346,14 +346,14 @@ func (dbc *Connection) QueryInTxContext(context context.Context, statement strin
 	return dbc.Invoke(context, tx).Query(statement, args...)
 }
 
-// QueryInTxWithLabel runs the selected statement in a transaction and returns a Query.
-func (dbc *Connection) QueryInTxWithLabel(statement, label string, tx *sql.Tx, args ...interface{}) (result *Query) {
-	return dbc.Invoke(dbc.Background(), tx).WithLabel(label).Query(statement, args...)
+// QueryInTxWithCachedPlan runs the selected statement in a transaction and returns a Query.
+func (dbc *Connection) QueryInTxWithCachedPlan(statement, cachedPlanKey string, tx *sql.Tx, args ...interface{}) (result *Query) {
+	return dbc.Invoke(dbc.Background(), tx).WithCachedPlan(cachedPlanKey).Query(statement, args...)
 }
 
-// QueryInTxContextWithLabel runs the selected statement in a transaction and returns a Query.
-func (dbc *Connection) QueryInTxContextWithLabel(context context.Context, statement, label string, tx *sql.Tx, args ...interface{}) (result *Query) {
-	return dbc.Invoke(context, tx).WithLabel(label).Query(statement, args...)
+// QueryInTxContextWithCachedPlan runs the selected statement in a transaction and returns a Query.
+func (dbc *Connection) QueryInTxContextWithCachedPlan(context context.Context, statement, QueryInTxWithCachedPlan string, tx *sql.Tx, args ...interface{}) (result *Query) {
+	return dbc.Invoke(context, tx).WithCachedPlan(QueryInTxWithCachedPlan).Query(statement, args...)
 }
 
 // Get returns a given object based on a group of primary key ids.

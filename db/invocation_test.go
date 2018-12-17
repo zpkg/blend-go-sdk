@@ -15,8 +15,8 @@ func TestInvocationLabels(t *testing.T) {
 	assert := assert.New(t)
 
 	inv := &Invocation{}
-	inv = inv.WithLabel("test")
-	assert.NotEmpty(inv.Label())
+	inv = inv.WithCachedPlan("test")
+	assert.NotEmpty(inv.CachedPlanKey())
 }
 
 type jsonTestChild struct {
@@ -126,12 +126,12 @@ func TestInvocationExecError(t *testing.T) {
 	assert := assert.New(t)
 
 	conn := MustNewFromEnv()
-	conn.StatementCache().WithEnabled(false)
+	conn.PlanCache().WithEnabled(false)
 	assert.Nil(conn.Open())
 	assert.NotNil(conn.Invoke(context.Background()).Exec("not a select"))
-	conn.StatementCache().WithEnabled(true)
+	conn.PlanCache().WithEnabled(true)
 	assert.NotNil(conn.Invoke(context.Background()).Exec("not a select"))
-	assert.NotNil(conn.Invoke(context.Background()).WithLabel("exec_error_test").Exec("not a select"))
+	assert.NotNil(conn.Invoke(context.Background()).WithCachedPlan("exec_error_test").Exec("not a select"))
 }
 
 type modelTableNameError struct {
@@ -147,12 +147,12 @@ func TestInvocationGetError(t *testing.T) {
 
 	var getError modelTableNameError
 	conn := MustNewFromEnv()
-	conn.StatementCache().WithEnabled(false)
+	conn.PlanCache().WithEnabled(false)
 	assert.Nil(conn.Open())
 	assert.NotNil(conn.Invoke(context.Background()).Get(&getError, uuid.V4().String()))
-	conn.StatementCache().WithEnabled(true)
+	conn.PlanCache().WithEnabled(true)
 	assert.NotNil(conn.Invoke(context.Background()).Get(&getError, uuid.V4().String()))
-	assert.NotNil(conn.Invoke(context.Background()).WithLabel("get_error_test").Get(&getError, uuid.V4().String()))
+	assert.NotNil(conn.Invoke(context.Background()).WithCachedPlan("get_error_test").Get(&getError, uuid.V4().String()))
 }
 
 func TestInvocationGetAllError(t *testing.T) {
@@ -160,12 +160,12 @@ func TestInvocationGetAllError(t *testing.T) {
 
 	var mustError []modelTableNameError
 	conn := MustNewFromEnv()
-	conn.StatementCache().WithEnabled(false)
+	conn.PlanCache().WithEnabled(false)
 	assert.Nil(conn.Open())
 	assert.NotNil(conn.Invoke(context.Background()).GetAll(&mustError))
-	conn.StatementCache().WithEnabled(true)
+	conn.PlanCache().WithEnabled(true)
 	assert.NotNil(conn.Invoke(context.Background()).GetAll(&mustError))
-	assert.NotNil(conn.Invoke(context.Background()).WithLabel("get_all_error_test").GetAll(&mustError))
+	assert.NotNil(conn.Invoke(context.Background()).WithCachedPlan("get_all_error_test").GetAll(&mustError))
 }
 
 func TestInvocationCreateError(t *testing.T) {
@@ -173,12 +173,12 @@ func TestInvocationCreateError(t *testing.T) {
 
 	var mustError modelTableNameError
 	conn := MustNewFromEnv()
-	conn.StatementCache().WithEnabled(false)
+	conn.PlanCache().WithEnabled(false)
 	assert.Nil(conn.Open())
 	assert.NotNil(conn.Invoke(context.Background()).Create(&mustError))
-	conn.StatementCache().WithEnabled(true)
+	conn.PlanCache().WithEnabled(true)
 	assert.NotNil(conn.Invoke(context.Background()).Create(&mustError))
-	assert.NotNil(conn.Invoke(context.Background()).WithLabel("create_error_test").Create(&mustError))
+	assert.NotNil(conn.Invoke(context.Background()).WithCachedPlan("create_error_test").Create(&mustError))
 }
 
 func TestInvocationCreateIfNotExistsError(t *testing.T) {
@@ -186,12 +186,12 @@ func TestInvocationCreateIfNotExistsError(t *testing.T) {
 
 	var mustError modelTableNameError
 	conn := MustNewFromEnv()
-	conn.StatementCache().WithEnabled(false)
+	conn.PlanCache().WithEnabled(false)
 	assert.Nil(conn.Open())
 	assert.NotNil(conn.Invoke(context.Background()).CreateIfNotExists(&mustError))
-	conn.StatementCache().WithEnabled(true)
+	conn.PlanCache().WithEnabled(true)
 	assert.NotNil(conn.Invoke(context.Background()).CreateIfNotExists(&mustError))
-	assert.NotNil(conn.Invoke(context.Background()).WithLabel("cne_error_test").CreateIfNotExists(&mustError))
+	assert.NotNil(conn.Invoke(context.Background()).WithCachedPlan("cne_error_test").CreateIfNotExists(&mustError))
 }
 
 func TestInvocationUpdateError(t *testing.T) {
@@ -199,12 +199,12 @@ func TestInvocationUpdateError(t *testing.T) {
 
 	var mustError modelTableNameError
 	conn := MustNewFromEnv()
-	conn.StatementCache().WithEnabled(false)
+	conn.PlanCache().WithEnabled(false)
 	assert.Nil(conn.Open())
 	assert.NotNil(conn.Invoke(context.Background()).Update(&mustError))
-	conn.StatementCache().WithEnabled(true)
+	conn.PlanCache().WithEnabled(true)
 	assert.NotNil(conn.Invoke(context.Background()).Update(&mustError))
-	assert.NotNil(conn.Invoke(context.Background()).WithLabel("update_error_test").Update(&mustError))
+	assert.NotNil(conn.Invoke(context.Background()).WithCachedPlan("update_error_test").Update(&mustError))
 }
 
 func TestInvocationUpsertError(t *testing.T) {
@@ -212,12 +212,12 @@ func TestInvocationUpsertError(t *testing.T) {
 
 	var mustError modelTableNameError
 	conn := MustNewFromEnv()
-	conn.StatementCache().WithEnabled(false)
+	conn.PlanCache().WithEnabled(false)
 	assert.Nil(conn.Open())
 	assert.NotNil(conn.Invoke(context.Background()).Upsert(&mustError))
-	conn.StatementCache().WithEnabled(true)
+	conn.PlanCache().WithEnabled(true)
 	assert.NotNil(conn.Invoke(context.Background()).Upsert(&mustError))
-	assert.NotNil(conn.Invoke(context.Background()).WithLabel("upsert_error_test").Upsert(&mustError))
+	assert.NotNil(conn.Invoke(context.Background()).WithCachedPlan("upsert_error_test").Upsert(&mustError))
 }
 
 func boolErr(_ bool, err error) error {
@@ -229,12 +229,12 @@ func TestInvocationExistsError(t *testing.T) {
 
 	var mustError modelTableNameError
 	conn := MustNewFromEnv()
-	conn.StatementCache().WithEnabled(false)
+	conn.PlanCache().WithEnabled(false)
 	assert.Nil(conn.Open())
 	assert.NotNil(boolErr(conn.Invoke(context.Background()).Exists(mustError)))
-	conn.StatementCache().WithEnabled(true)
+	conn.PlanCache().WithEnabled(true)
 	assert.NotNil(boolErr(conn.Invoke(context.Background()).Exists(mustError)))
-	assert.NotNil(boolErr(conn.Invoke(context.Background()).WithLabel("exists_error_test").Exists(mustError)))
+	assert.NotNil(boolErr(conn.Invoke(context.Background()).WithCachedPlan("exists_error_test").Exists(mustError)))
 }
 
 func TestInvocationCreateManyEmpty(t *testing.T) {
@@ -243,7 +243,7 @@ func TestInvocationCreateManyEmpty(t *testing.T) {
 	var objs []uniqueObj
 
 	conn := MustNewFromEnv()
-	conn.StatementCache().WithEnabled(false)
+	conn.PlanCache().WithEnabled(false)
 	assert.Nil(conn.Open())
 	assert.Nil(conn.Invoke(context.Background()).CreateMany(objs))
 }
@@ -256,12 +256,12 @@ func TestInvocationCreateManyError(t *testing.T) {
 		{uuid.V4().String()},
 	}
 	conn := MustNewFromEnv()
-	conn.StatementCache().WithEnabled(false)
+	conn.PlanCache().WithEnabled(false)
 	assert.Nil(conn.Open())
 	assert.NotNil(conn.Invoke(context.Background()).CreateMany(mustError))
-	conn.StatementCache().WithEnabled(true)
+	conn.PlanCache().WithEnabled(true)
 	assert.NotNil(conn.Invoke(context.Background()).CreateMany(mustError))
-	assert.NotNil(conn.Invoke(context.Background()).WithLabel("cm_error_test").CreateMany(mustError))
+	assert.NotNil(conn.Invoke(context.Background()).WithCachedPlan("cm_error_test").CreateMany(mustError))
 }
 
 func TestInvocationDeleteError(t *testing.T) {
@@ -269,12 +269,12 @@ func TestInvocationDeleteError(t *testing.T) {
 
 	var mustError modelTableNameError
 	conn := MustNewFromEnv()
-	conn.StatementCache().WithEnabled(false)
+	conn.PlanCache().WithEnabled(false)
 	assert.Nil(conn.Open())
 	assert.NotNil(conn.Invoke(context.Background()).Delete(&mustError))
-	conn.StatementCache().WithEnabled(true)
+	conn.PlanCache().WithEnabled(true)
 	assert.NotNil(conn.Invoke(context.Background()).Delete(&mustError))
-	assert.NotNil(conn.Invoke(context.Background()).WithLabel("delete_error_test").Delete(&mustError))
+	assert.NotNil(conn.Invoke(context.Background()).WithCachedPlan("delete_error_test").Delete(&mustError))
 }
 
 func TestTruncateError(t *testing.T) {
@@ -282,12 +282,12 @@ func TestTruncateError(t *testing.T) {
 
 	var mustError modelTableNameError
 	conn := MustNewFromEnv()
-	conn.StatementCache().WithEnabled(false)
+	conn.PlanCache().WithEnabled(false)
 	assert.Nil(conn.Open())
 	assert.NotNil(conn.Invoke(context.Background()).Truncate(&mustError))
-	conn.StatementCache().WithEnabled(true)
+	conn.PlanCache().WithEnabled(true)
 	assert.NotNil(conn.Invoke(context.Background()).Truncate(&mustError))
-	assert.NotNil(conn.Invoke(context.Background()).WithLabel("truncate_error_test").Truncate(&mustError))
+	assert.NotNil(conn.Invoke(context.Background()).WithCachedPlan("truncate_error_test").Truncate(&mustError))
 }
 
 type uuidTest struct {
@@ -403,7 +403,7 @@ func TestGenerateGet(t *testing.T) {
 
 	conn := New()
 	conn.bufferPool = NewBufferPool(1)
-	conn.statementCache = NewStatementCache()
+	conn.planCache = NewPlanCache()
 
 	var obj generateGetTest
 	label, queryBody, cols, err := conn.Invoke(context.Background()).generateGet(&obj)
@@ -418,7 +418,7 @@ func TestGenerateGetAll(t *testing.T) {
 
 	conn := New()
 	conn.bufferPool = NewBufferPool(1)
-	conn.statementCache = NewStatementCache()
+	conn.planCache = NewPlanCache()
 
 	objs := []generateGetTest{}
 	label, queryBody, cols, ct := conn.Invoke(context.Background()).generateGetAll(&objs)
