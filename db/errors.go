@@ -20,10 +20,10 @@ const (
 	ErrConnectionAlreadyOpen exception.Class = "db: the connection is already opened"
 	// ErrConnectionClosed is an error indicating the db connection hasn't been opened.
 	ErrConnectionClosed exception.Class = "db: the connection is closed"
-	// ErrStatementCacheUnset is an error indicating the statement cache is unset.
-	ErrStatementCacheUnset exception.Class = "db: the statement cache is unset"
-	// ErrStatementLabelUnset is an error indicating the statement cache is unset.
-	ErrStatementLabelUnset exception.Class = "db: the statement label is unset"
+	// ErrPlanCacheUnset is an error indicating the statement cache is unset.
+	ErrPlanCacheUnset exception.Class = "db: the plan cache is unset"
+	// ErrPlanCacheKeyUnset is an error indicating the plan cache key is unset.
+	ErrPlanCacheKeyUnset exception.Class = "db: the plan cache key is unset"
 	// ErrCollectionNotSlice is an error returned by OutMany if the destination is not a slice.
 	ErrCollectionNotSlice exception.Class = "db: outmany destination collection is not a slice"
 	// ErrInvalidIDs is an error returned by Get if the ids aren't provided.
@@ -59,9 +59,14 @@ func IsConnectionClosed(err error) bool {
 	return exception.Is(err, ErrConnectionClosed)
 }
 
-// IsStatementCacheUnset returns if the error is an `ErrConnectionClosed`.
-func IsStatementCacheUnset(err error) bool {
-	return exception.Is(err, ErrStatementCacheUnset)
+// IsPlanCacheUnset returns if the error is an `ErrConnectionClosed`.
+func IsPlanCacheUnset(err error) bool {
+	return exception.Is(err, ErrPlanCacheUnset)
+}
+
+// IsPlanCacheKeyUnset returns if the error is an `ErrPlanCacheKeyUnset`.
+func IsPlanCacheKeyUnset(err error) bool {
+	return exception.Is(err, ErrPlanCacheKeyUnset)
 }
 
 // Error returns a new exception by parsing (potentially)

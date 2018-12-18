@@ -55,28 +55,28 @@ func (pc *PlanCache) Close() (err error) {
 }
 
 // HasStatement returns if the cache contains a statement.
-func (pc *PlanCache) HasStatement(statementID string) bool {
-	_, hasStmt := pc.cache.Load(statementID)
+func (pc *PlanCache) HasStatement(planCacheKey string) bool {
+	_, hasStmt := pc.cache.Load(planCacheKey)
 	return hasStmt
 }
 
 // InvalidateStatement removes a statement from the cache.
-func (pc *PlanCache) InvalidateStatement(statementID string) (err error) {
-	stmt, ok := pc.cache.Load(statementID)
+func (pc *PlanCache) InvalidateStatement(planCacheKey string) (err error) {
+	stmt, ok := pc.cache.Load(planCacheKey)
 	if !ok {
 		return
 	}
-	pc.cache.Delete(statementID)
+	pc.cache.Delete(planCacheKey)
 	return stmt.(*sql.Stmt).Close()
 }
 
 // PrepareContext returns a cached expression for a statement, or creates and caches a new one.
-func (pc *PlanCache) PrepareContext(context context.Context, statementID, statement string) (*sql.Stmt, error) {
-	if len(statementID) == 0 {
-		return nil, exception.New(ErrStatementLabelUnset)
+func (pc *PlanCache) PrepareContext(context context.Context, planCacheKey, statement string) (*sql.Stmt, error) {
+	if len(planCacheKey) == 0 {
+		return nil, exception.New(ErrPlanCacheKeyUnset)
 	}
 
-	if stmt, hasStmt := pc.cache.Load(statementID); hasStmt {
+	if stmt, hasStmt := pc.cache.Load(planCacheKey); hasStmt {
 		return stmt.(*sql.Stmt), nil
 	}
 
@@ -85,6 +85,6 @@ func (pc *PlanCache) PrepareContext(context context.Context, statementID, statem
 		return nil, err
 	}
 
-	pc.cache.Store(statementID, stmt)
+	pc.cache.Store(planCacheKey, stmt)
 	return stmt, nil
 }
