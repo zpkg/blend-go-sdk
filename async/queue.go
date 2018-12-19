@@ -24,6 +24,9 @@ type QueueWorker struct {
 }
 
 // WithMaxWork sets the worker max work.
+// If set to zero, the worker will block on new work until the last item has processed.
+// If set to > 0, the worker will block once the queue reaches the max work length.
+// MaxWork will allocate one of each work item to memory.
 func (qw *QueueWorker) WithMaxWork(maxWork int) *QueueWorker {
 	qw.maxWork = maxWork
 	return qw
@@ -39,14 +42,14 @@ func (qw *QueueWorker) Latch() *Latch {
 	return qw.latch
 }
 
-// WithErrorCollector returns the error channel.
-func (qw *QueueWorker) WithErrorCollector(errors chan error) *QueueWorker {
+// WithErrors returns the error channel.
+func (qw *QueueWorker) WithErrors(errors chan error) *QueueWorker {
 	qw.errors = errors
 	return qw
 }
 
-// ErrorCollector returns a channel to read action errors from.
-func (qw *QueueWorker) ErrorCollector() chan error {
+// Errors returns a channel to read action errors from.
+func (qw *QueueWorker) Errors() chan error {
 	return qw.errors
 }
 
