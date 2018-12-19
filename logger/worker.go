@@ -70,8 +70,10 @@ func (w *Worker) Drain() {
 	w.Lock()
 	defer w.Unlock()
 
-	close(w.Abort)
-	<-w.Aborted
+	if w.Abort != nil {
+		close(w.Abort)
+		<-w.Aborted
+	}
 
 	workLeft := len(w.Work)
 	for index := 0; index < workLeft; index++ {
