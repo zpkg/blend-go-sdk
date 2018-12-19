@@ -1,6 +1,7 @@
 package web
 
 import (
+	"crypto/rand"
 	"encoding/base64"
 	"fmt"
 	"net/http"
@@ -8,8 +9,6 @@ import (
 	"strconv"
 	"strings"
 	"time"
-
-	"github.com/blend/go-sdk/util"
 )
 
 // PathRedirectHandler returns a handler for AuthManager.RedirectHandler based on a path.
@@ -47,7 +46,9 @@ func NestMiddleware(action Action, middleware ...Middleware) Action {
 // It is not a uuid; session ids are generated using a secure random source.
 // SessionIDs are generally 64 bytes.
 func NewSessionID() string {
-	return util.String.MustSecureRandom(32)
+	b := make([]byte, 32)
+	rand.Read(b)
+	return base64.URLEncoding.EncodeToString(b)
 }
 
 // Base64URLDecode decodes a base64 string.
@@ -145,3 +146,6 @@ func CSVValue(value string, err error) ([]string, error) {
 	}
 	return strings.Split(value, ","), nil
 }
+
+// RefBool returns a reference to a value.
+func RefBool(v bool) *bool { return &v }

@@ -3,7 +3,7 @@ package web
 import (
 	"time"
 
-	"github.com/blend/go-sdk/util"
+	"github.com/blend/go-sdk/configutil"
 )
 
 // HealthzConfig is the healthz config.
@@ -22,45 +22,45 @@ type HealthzConfig struct {
 
 // GetBindAddr gets the bind address.
 func (hzc HealthzConfig) GetBindAddr(defaults ...string) string {
-	return util.Coalesce.String(hzc.BindAddr, DefaultHealthzBindAddr, defaults...)
+	return configutil.CoalesceString(hzc.BindAddr, DefaultHealthzBindAddr, defaults...)
 }
 
 // GetGracePeriod gets a grace period or a default.
 func (hzc HealthzConfig) GetGracePeriod(defaults ...time.Duration) time.Duration {
-	return util.Coalesce.Duration(hzc.GracePeriod, DefaultShutdownGracePeriod, defaults...)
+	return configutil.CoalesceDuration(hzc.GracePeriod, DefaultShutdownGracePeriod, defaults...)
 }
 
 // GetRecoverPanics gets recover panics or a default.
 func (hzc HealthzConfig) GetRecoverPanics(defaults ...bool) bool {
-	return util.Coalesce.Bool(hzc.RecoverPanics, DefaultRecoverPanics, defaults...)
+	return configutil.CoalesceBool(hzc.RecoverPanics, DefaultRecoverPanics, defaults...)
 }
 
 // GetFailureThreshold gets the failure threshold or a default.
 func (hzc HealthzConfig) GetFailureThreshold(defaults ...int) int {
-	return util.Coalesce.Int(hzc.FailureThreshold, DefaultHealthzFailureThreshold, defaults...)
+	return configutil.CoalesceInt(hzc.FailureThreshold, DefaultHealthzFailureThreshold, defaults...)
 }
 
 // GetMaxHeaderBytes returns the maximum header size in bytes or a default.
 func (hzc HealthzConfig) GetMaxHeaderBytes(defaults ...int) int {
-	return util.Coalesce.Int(hzc.MaxHeaderBytes, DefaultMaxHeaderBytes, defaults...)
+	return configutil.CoalesceInt(hzc.MaxHeaderBytes, DefaultMaxHeaderBytes, defaults...)
 }
 
 // GetReadTimeout gets a property.
 func (hzc HealthzConfig) GetReadTimeout(defaults ...time.Duration) time.Duration {
-	return util.Coalesce.Duration(hzc.ReadTimeout, DefaultReadTimeout, defaults...)
+	return configutil.CoalesceDuration(hzc.ReadTimeout, DefaultReadTimeout, defaults...)
 }
 
 // GetReadHeaderTimeout gets a property.
 func (hzc HealthzConfig) GetReadHeaderTimeout(defaults ...time.Duration) time.Duration {
-	return util.Coalesce.Duration(hzc.ReadHeaderTimeout, DefaultReadHeaderTimeout, defaults...)
+	return configutil.CoalesceDuration(hzc.ReadHeaderTimeout, DefaultReadHeaderTimeout, defaults...)
 }
 
 // GetWriteTimeout gets a property.
 func (hzc HealthzConfig) GetWriteTimeout(defaults ...time.Duration) time.Duration {
-	return util.Coalesce.Duration(hzc.WriteTimeout, DefaultWriteTimeout, defaults...)
+	return configutil.CoalesceDuration(hzc.WriteTimeout, DefaultWriteTimeout, defaults...)
 }
 
 // GetIdleTimeout gets a property.
 func (hzc HealthzConfig) GetIdleTimeout(defaults ...time.Duration) time.Duration {
-	return util.Coalesce.Duration(hzc.IdleTimeout, DefaultIdleTimeout, defaults...)
+	return configutil.CoalesceDuration(hzc.IdleTimeout, DefaultIdleTimeout, defaults...)
 }

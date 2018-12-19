@@ -10,7 +10,7 @@ const (
 	// JSONFieldFlag is a common json field.
 	JSONFieldFlag = "flag"
 	// JSONFieldTimestamp is a common json field.
-	JSONFieldTimestamp = "ts"
+	JSONFieldTimestamp = "_timestamp"
 	// JSONFieldMessage is a common json field.
 	JSONFieldMessage = "message"
 	// JSONFieldElapsed is a common json field.

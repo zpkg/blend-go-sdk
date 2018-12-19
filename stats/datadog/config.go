@@ -3,8 +3,8 @@ package datadog
 import (
 	"fmt"
 
+	"github.com/blend/go-sdk/configutil"
 	"github.com/blend/go-sdk/env"
-	"github.com/blend/go-sdk/util"
 )
 
 const (
@@ -58,22 +58,22 @@ func (c Config) IsZero() bool {
 
 // GetHostname returns the datadog hostname.
 func (c Config) GetHostname(defaults ...string) string {
-	return util.Coalesce.String(c.Hostname, "", defaults...)
+	return configutil.CoalesceString(c.Hostname, "", defaults...)
 }
 
 // GetPort returns the datadog port.
 func (c Config) GetPort(defaults ...string) string {
-	return util.Coalesce.String(c.Port, DefaultPort, defaults...)
+	return configutil.CoalesceString(c.Port, DefaultPort, defaults...)
 }
 
 // GetTracePort returns the datadog trace port.
 func (c Config) GetTracePort(defaults ...string) string {
-	return util.Coalesce.String(c.TracePort, DefaultTracePort, defaults...)
+	return configutil.CoalesceString(c.TracePort, DefaultTracePort, defaults...)
 }
 
 // GetTracingEnabled returns if tracing is enabled.
 func (c Config) GetTracingEnabled() bool {
-	return util.Coalesce.Bool(c.TracingEnabled, DefaultTracingEnabled)
+	return configutil.CoalesceBool(c.TracingEnabled, DefaultTracingEnabled)
 }
 
 // GetHost returns the datadog collector host:port string.
@@ -88,20 +88,20 @@ func (c Config) GetTraceHost() string {
 
 // GetBuffered returns if the client should buffer messages or not.
 func (c Config) GetBuffered(defaults ...bool) bool {
-	return util.Coalesce.Bool(c.Buffered, false, defaults...)
+	return configutil.CoalesceBool(c.Buffered, false, defaults...)
 }
 
 // GetBufferDepth returns the buffer depth.
 func (c Config) GetBufferDepth(defaults ...int) int {
-	return util.Coalesce.Int(c.BufferDepth, DefaultDatadogBufferDepth, defaults...)
+	return configutil.CoalesceInt(c.BufferDepth, DefaultDatadogBufferDepth, defaults...)
 }
 
 // GetNamespace returns the default prefix for metric names.
 func (c Config) GetNamespace(defaults ...string) string {
-	return util.Coalesce.String(c.Namespace, "", defaults...)
+	return configutil.CoalesceString(c.Namespace, "", defaults...)
 }
 
 // GetDefaultTags returns default tags for the client.
 func (c Config) GetDefaultTags(defaults ...[]string) []string {
-	return util.Coalesce.Strings(c.DefaultTags, nil, defaults...)
+	return configutil.CoalesceStrings(c.DefaultTags, nil, defaults...)
 }

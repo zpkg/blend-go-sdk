@@ -6,7 +6,6 @@ import (
 	"testing"
 
 	"github.com/blend/go-sdk/assert"
-	"github.com/blend/go-sdk/util"
 )
 
 func TestStringArray(t *testing.T) {
@@ -27,7 +26,7 @@ func TestStringArray(t *testing.T) {
 	foo := sa.GetByLower("foo")
 	a.Equal("Foo", foo)
 	notFoo := sa.GetByLower("will")
-	a.Equal(util.StringEmpty, notFoo)
+	a.Equal("", notFoo)
 }
 
 func TestStringArrayReverse(t *testing.T) {

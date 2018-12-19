@@ -1,6 +1,6 @@
 package slack
 
-import "github.com/blend/go-sdk/util"
+import "github.com/blend/go-sdk/configutil"
 
 // Config represents the required fields for the config.
 type Config struct {
@@ -18,25 +18,25 @@ func (c Config) IsZero() bool {
 
 // GetUsername returns a property or a default.
 func (c Config) GetUsername(inherited ...string) string {
-	return util.Coalesce.String(c.Username, "", inherited...)
+	return configutil.CoalesceString(c.Username, "", inherited...)
 }
 
 // GetChannel returns a property or default.
 func (c Config) GetChannel(inherited ...string) string {
-	return util.Coalesce.String(c.Channel, "", inherited...)
+	return configutil.CoalesceString(c.Channel, "", inherited...)
 }
 
 // GetIconURL returns a property or default.
 func (c Config) GetIconURL(inherited ...string) string {
-	return util.Coalesce.String(c.IconURL, "", inherited...)
+	return configutil.CoalesceString(c.IconURL, "", inherited...)
 }
 
 // GetIconEmoji returns a property or default.
 func (c Config) GetIconEmoji(inherited ...string) string {
-	return util.Coalesce.String(c.IconEmoji, "", inherited...)
+	return configutil.CoalesceString(c.IconEmoji, "", inherited...)
 }
 
 // GetWebhook returns the webhook url.
 func (c Config) GetWebhook(defaults ...string) string {
-	return util.Coalesce.String(c.Webhook, "", defaults...)
+	return configutil.CoalesceString(c.Webhook, "", defaults...)
 }

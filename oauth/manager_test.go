@@ -7,7 +7,7 @@ import (
 	"testing"
 
 	"github.com/blend/go-sdk/assert"
-	"github.com/blend/go-sdk/util"
+	"github.com/blend/go-sdk/crypto"
 )
 
 func TestNew(t *testing.T) {
@@ -198,6 +198,6 @@ func TestManagerValidateState(t *testing.T) {
 	insecure := New()
 	assert.Nil(insecure.ValidateState(insecure.CreateState()))
 
-	secure := New().WithSecret(util.Crypto.MustCreateKey(32))
+	secure := New().WithSecret(crypto.MustCreateKey(32))
 	assert.Nil(secure.ValidateState(secure.CreateState()))
 }

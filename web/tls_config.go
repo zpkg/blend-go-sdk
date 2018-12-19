@@ -5,8 +5,8 @@ import (
 	"crypto/x509"
 	"io/ioutil"
 
+	"github.com/blend/go-sdk/configutil"
 	"github.com/blend/go-sdk/exception"
-	"github.com/blend/go-sdk/util"
 )
 
 // TLSConfig is a config for app tls settings.
@@ -21,27 +21,27 @@ type TLSConfig struct {
 
 // GetCert returns a tls cert.
 func (tc TLSConfig) GetCert(defaults ...[]byte) []byte {
-	return util.Coalesce.Bytes(tc.Cert, nil, defaults...)
+	return configutil.CoalesceBytes(tc.Cert, nil, defaults...)
 }
 
 // GetCertPath returns a tls cert path.
 func (tc TLSConfig) GetCertPath(defaults ...string) string {
-	return util.Coalesce.String(tc.CertPath, "", defaults...)
+	return configutil.CoalesceString(tc.CertPath, "", defaults...)
 }
 
 // GetKey returns a tls key.
 func (tc TLSConfig) GetKey(defaults ...[]byte) []byte {
-	return util.Coalesce.Bytes(tc.Key, nil, defaults...)
+	return configutil.CoalesceBytes(tc.Key, nil, defaults...)
 }
 
 // GetKeyPath returns a tls key path.
 func (tc TLSConfig) GetKeyPath(defaults ...string) string {
-	return util.Coalesce.String(tc.KeyPath, "", defaults...)
+	return configutil.CoalesceString(tc.KeyPath, "", defaults...)
 }
 
 // GetCAPaths returns a list of ca paths to add.
 func (tc TLSConfig) GetCAPaths(defaults ...[]string) []string {
-	return util.Coalesce.Strings(tc.CAPaths, nil, defaults...)
+	return configutil.CoalesceStrings(tc.CAPaths, nil, defaults...)
 }
 
 // GetConfig returns a stdlib tls config for the config.
@@ -87,7 +87,7 @@ func (tc TLSConfig) GetConfig() (*tls.Config, error) {
 	return &tls.Config{
 		Certificates: []tls.Certificate{cert},
 		RootCAs:      certPool,
-		MinVersion: tls.VersionTLS11,
+		MinVersion:   tls.VersionTLS11,
 	}, nil
 }
 

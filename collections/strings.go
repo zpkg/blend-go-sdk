@@ -2,8 +2,6 @@ package collections
 
 import (
 	"strings"
-
-	"github.com/blend/go-sdk/util"
 )
 
 // Strings is a type alias for []string with some helper methods.
@@ -78,5 +76,5 @@ func (sa Strings) GetByLower(elem string) string {
 			return arrayElem
 		}
 	}
-	return util.StringEmpty
+	return ""
 }

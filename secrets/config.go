@@ -4,8 +4,8 @@ import (
 	"net/url"
 	"time"
 
+	"github.com/blend/go-sdk/configutil"
 	"github.com/blend/go-sdk/env"
-	"github.com/blend/go-sdk/util"
 )
 
 // MustNewConfigFromEnv returns a config set from the env, and panics on error.
@@ -49,7 +49,7 @@ func (c Config) IsZero() bool {
 
 // GetAddr returns the client addr.
 func (c Config) GetAddr(inherited ...string) string {
-	return util.Coalesce.String(c.Addr, DefaultAddr, inherited...)
+	return configutil.CoalesceString(c.Addr, DefaultAddr, inherited...)
 }
 
 // MustAddr returns the addr as a url.
@@ -63,25 +63,25 @@ func (c Config) MustAddr() *url.URL {
 
 // GetToken returns the client token.
 func (c Config) GetToken() string {
-	return util.Coalesce.String(c.Token, "")
+	return configutil.CoalesceString(c.Token, "")
 }
 
 // GetMount returns the client token.
 func (c Config) GetMount() string {
-	return util.Coalesce.String(c.Mount, DefaultMount)
+	return configutil.CoalesceString(c.Mount, DefaultMount)
 }
 
 // GetTimeout returns the client timeout.
 func (c Config) GetTimeout() time.Duration {
-	return util.Coalesce.Duration(c.Timeout, DefaultTimeout)
+	return configutil.CoalesceDuration(c.Timeout, DefaultTimeout)
 }
 
 // GetRootCAs returns root ca paths.
 func (c Config) GetRootCAs() []string {
-	return util.Coalesce.Strings(c.RootCAs, nil)
+	return configutil.CoalesceStrings(c.RootCAs, nil)
 }
 
 // GetServicePath returns the service path
 func (c Config) GetServicePath() string {
-	return util.Coalesce.String(c.ServicePath, "")
+	return configutil.CoalesceString(c.ServicePath, "")
 }

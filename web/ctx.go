@@ -12,13 +12,13 @@ import (
 
 	"github.com/blend/go-sdk/exception"
 	"github.com/blend/go-sdk/logger"
-	"github.com/blend/go-sdk/util"
+	"github.com/blend/go-sdk/stringutil"
 	"github.com/blend/go-sdk/webutil"
 )
 
 // NewCtxID returns a pseudo-unique key for a context.
 func NewCtxID() string {
-	return util.String.RandomLetters(12)
+	return stringutil.Random(stringutil.Letters, 12)
 }
 
 // NewCtx returns a new ctx.

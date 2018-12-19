@@ -4,7 +4,7 @@ import (
 	"testing"
 
 	"github.com/blend/go-sdk/assert"
-	"github.com/blend/go-sdk/util"
+	"github.com/blend/go-sdk/stringutil"
 )
 
 func TestSerializeState(t *testing.T) {
@@ -12,8 +12,8 @@ func TestSerializeState(t *testing.T) {
 
 	state := State{
 		RedirectURL: "https://foo.com/bar",
-		Token:       util.String.RandomLetters(32),
-		SecureToken: util.String.RandomLetters(64),
+		Token:       stringutil.Random(stringutil.Letters, 32),
+		SecureToken: stringutil.Random(stringutil.Letters, 64),
 	}
 
 	contents, err := SerializeState(state)

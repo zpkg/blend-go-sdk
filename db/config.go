@@ -6,9 +6,10 @@ import (
 	"strings"
 	"time"
 
+	"github.com/blend/go-sdk/configutil"
 	"github.com/blend/go-sdk/env"
 	"github.com/blend/go-sdk/exception"
-	"github.com/blend/go-sdk/util"
+	"github.com/blend/go-sdk/stringutil"
 	"github.com/lib/pq"
 )
 
@@ -25,7 +26,7 @@ func NewConfigFromDSN(dsn string) (*Config, error) {
 	}
 
 	var config Config
-	pieces := util.String.SplitOnWhitespace(parsed)
+	pieces := stringutil.SplitSpace(parsed)
 	for _, piece := range pieces {
 		if strings.HasPrefix(piece, "host=") {
 			config.Host = strings.TrimPrefix(piece, "host=")
@@ -160,74 +161,74 @@ func (c *Config) WithSSLMode(sslMode string) *Config {
 
 // GetEngine returns the database engine.
 func (c Config) GetEngine(inherited ...string) string {
-	return util.Coalesce.String(c.Engine, DefaultEngine, inherited...)
+	return configutil.CoalesceString(c.Engine, DefaultEngine, inherited...)
 }
 
 // GetDSN returns the postgres dsn (fully quallified url) for the config.
 // If unset, it's generated from the host, port and database.
 func (c Config) GetDSN(inherited ...string) string {
-	return util.Coalesce.String(c.DSN, "", inherited...)
+	return configutil.CoalesceString(c.DSN, "", inherited...)
 }
 
 // GetHost returns the postgres host for the connection or a default.
 func (c Config) GetHost(inherited ...string) string {
-	return util.Coalesce.String(c.Host, DefaultHost, inherited...)
+	return configutil.CoalesceString(c.Host, DefaultHost, inherited...)
 }
 
 // GetPort returns the port for a connection if it is not the standard postgres port.
 func (c Config) GetPort(inherited ...string) string {
-	return util.Coalesce.String(c.Port, DefaultPort, inherited...)
+	return configutil.CoalesceString(c.Port, DefaultPort, inherited...)
 }
 
 // GetDatabase returns the connection database or a default.
 func (c Config) GetDatabase(inherited ...string) string {
-	return util.Coalesce.String(c.Database, DefaultDatabase, inherited...)
+	return configutil.CoalesceString(c.Database, DefaultDatabase, inherited...)
 }
 
 // GetSchema returns the connection schema or a default.
 func (c Config) GetSchema(inherited ...string) string {
-	return util.Coalesce.String(c.Schema, "", inherited...)
+	return configutil.CoalesceString(c.Schema, "", inherited...)
 }
 
 // GetUsername returns the connection username or a default.
 func (c Config) GetUsername(inherited ...string) string {
-	return util.Coalesce.String(c.Username, "", inherited...)
+	return configutil.CoalesceString(c.Username, "", inherited...)
 }
 
 // GetPassword returns the connection password or a default.
 func (c Config) GetPassword(inherited ...string) string {
-	return util.Coalesce.String(c.Password, "", inherited...)
+	return configutil.CoalesceString(c.Password, "", inherited...)
 }
 
 // GetSSLMode returns the connection ssl mode.
 // It defaults to unset, which will then use the lib/pq defaults.
 func (c Config) GetSSLMode(inherited ...string) string {
-	return util.Coalesce.String(c.SSLMode, "", inherited...)
+	return configutil.CoalesceString(c.SSLMode, "", inherited...)
 }
 
 // GetPlanCacheDisabled returns if we should disable the statement plan cache or a default.
 func (c Config) GetPlanCacheDisabled(inherited ...bool) bool {
-	return util.Coalesce.Bool(c.PlanCacheDisabled, DefaultPlanCacheDisabled, inherited...)
+	return configutil.CoalesceBool(c.PlanCacheDisabled, DefaultPlanCacheDisabled, inherited...)
 }
 
 // GetIdleConnections returns the number of idle connections or a default.
 func (c Config) GetIdleConnections(inherited ...int) int {
-	return util.Coalesce.Int(c.IdleConnections, DefaultIdleConnections, inherited...)
+	return configutil.CoalesceInt(c.IdleConnections, DefaultIdleConnections, inherited...)
 }
 
 // GetMaxConnections returns the maximum number of connections or a default.
 func (c Config) GetMaxConnections(inherited ...int) int {
-	return util.Coalesce.Int(c.MaxConnections, DefaultMaxConnections, inherited...)
+	return configutil.CoalesceInt(c.MaxConnections, DefaultMaxConnections, inherited...)
 }
 
 // GetMaxLifetime returns the maximum lifetime of a driver connection.
 func (c Config) GetMaxLifetime(inherited ...time.Duration) time.Duration {
-	return util.Coalesce.Duration(c.MaxLifetime, DefaultMaxLifetime, inherited...)
+	return configutil.CoalesceDuration(c.MaxLifetime, DefaultMaxLifetime, inherited...)
 }
 
 // GetBufferPoolSize returns the number of query buffers to maintain or a default.
 func (c Config) GetBufferPoolSize(inherited ...int) int {
-	return util.Coalesce.Int(c.BufferPoolSize, DefaultBufferPoolSize, inherited...)
+	return configutil.CoalesceInt(c.BufferPoolSize, DefaultBufferPoolSize, inherited...)
 }
 
 // CreateDSN creates a postgres connection string from the config.
@@ -273,9 +274,9 @@ func (c Config) MustResolve() *Config {
 // ValidateProduction validates production configuration for the config.
 func (c Config) ValidateProduction() error {
 	if !(len(c.GetSSLMode()) == 0 ||
-		util.String.CaseInsensitiveEquals(c.GetSSLMode(), SSLModeRequire) ||
-		util.String.CaseInsensitiveEquals(c.GetSSLMode(), SSLModeVerifyCA) ||
-		util.String.CaseInsensitiveEquals(c.GetSSLMode(), SSLModeVerifyFull)) {
+		stringutil.EqualsCaseless(c.GetSSLMode(), SSLModeRequire) ||
+		stringutil.EqualsCaseless(c.GetSSLMode(), SSLModeVerifyCA) ||
+		stringutil.EqualsCaseless(c.GetSSLMode(), SSLModeVerifyFull)) {
 		return exception.New(ErrUnsafeSSLMode).WithMessagef("sslmode: %s", c.GetSSLMode())
 	}
 

@@ -6,7 +6,7 @@ import (
 	"strings"
 
 	"github.com/blend/go-sdk/db"
-	"github.com/blend/go-sdk/util"
+	"github.com/blend/go-sdk/stringutil"
 )
 
 const (
@@ -188,7 +188,7 @@ func roleExists(c *db.Connection, tx *sql.Tx, roleName string) (bool, error) {
 
 // exists returns if a statement has results.
 func exists(c *db.Connection, tx *sql.Tx, selectStatement string) (bool, error) {
-	if !util.String.HasPrefixCaseInsensitive(selectStatement, "select") {
+	if !stringutil.HasPrefixCaseless(selectStatement, "select") {
 		return false, fmt.Errorf("statement must be a `SELECT`")
 	}
 	return c.QueryInTx(selectStatement, tx).Any()
@@ -196,7 +196,7 @@ func exists(c *db.Connection, tx *sql.Tx, selectStatement string) (bool, error) 
 
 // notExists returns if a statement doesnt have results.
 func notExists(c *db.Connection, tx *sql.Tx, selectStatement string) (bool, error) {
-	if !util.String.HasPrefixCaseInsensitive(selectStatement, "select") {
+	if !stringutil.HasPrefixCaseless(selectStatement, "select") {
 		return false, fmt.Errorf("statement must be a `SELECT`")
 	}
 	return c.QueryInTx(selectStatement, tx).None()

@@ -6,7 +6,7 @@ import (
 	"testing"
 
 	"github.com/blend/go-sdk/assert"
-	"github.com/blend/go-sdk/util"
+	"github.com/blend/go-sdk/stringutil"
 )
 
 func TestSessionAware(t *testing.T) {
@@ -42,7 +42,7 @@ func TestSessionAware(t *testing.T) {
 func TestSessionRequired(t *testing.T) {
 	assert := assert.New(t)
 
-	sessionID := util.String.MustSecureRandom(64)
+	sessionID := stringutil.Random(stringutil.LettersAndNumbers, 64)
 
 	var sessionWasSet bool
 	app := New().WithAuth(NewLocalAuthManager())
@@ -67,7 +67,7 @@ func TestSessionRequired(t *testing.T) {
 func TestSessionRequiredCustomParamName(t *testing.T) {
 	assert := assert.New(t)
 
-	sessionID := util.String.MustSecureRandom(64)
+	sessionID := stringutil.Random(stringutil.LettersAndNumbers, 64)
 
 	var sessionWasSet bool
 	app := New().WithAuth(NewLocalAuthManager())
@@ -98,7 +98,7 @@ func TestSessionRequiredCustomParamName(t *testing.T) {
 func TestSessionMiddleware(t *testing.T) {
 	assert := assert.New(t)
 
-	sessionID := util.String.MustSecureRandom(64)
+	sessionID := stringutil.Random(stringutil.LettersAndNumbers, 64)
 
 	var sessionWasSet bool
 	app := New().WithAuth(NewLocalAuthManager())

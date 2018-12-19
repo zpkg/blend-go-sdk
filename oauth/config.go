@@ -3,8 +3,8 @@ package oauth
 import (
 	"encoding/base64"
 
+	"github.com/blend/go-sdk/configutil"
 	"github.com/blend/go-sdk/env"
-	"github.com/blend/go-sdk/util"
 )
 
 // NewConfigFromEnv creates a new config from the environment.
@@ -66,25 +66,25 @@ func (c Config) GetSecret(defaults ...[]byte) ([]byte, error) {
 
 // GetRedirectURI returns a property or a default.
 func (c Config) GetRedirectURI(inherited ...string) string {
-	return util.Coalesce.String(c.RedirectURI, "", inherited...)
+	return configutil.CoalesceString(c.RedirectURI, "", inherited...)
 }
 
 // GetHostedDomain returns a property or a default.
 func (c Config) GetHostedDomain(inherited ...string) string {
-	return util.Coalesce.String(c.HostedDomain, "", inherited...)
+	return configutil.CoalesceString(c.HostedDomain, "", inherited...)
 }
 
 // GetScopes gets oauth scopes to authenticate with.
 func (c Config) GetScopes(inherited ...[]string) []string {
-	return util.Coalesce.Strings(c.Scopes, DefaultScopes, inherited...)
+	return configutil.CoalesceStrings(c.Scopes, DefaultScopes, inherited...)
 }
 
 // GetClientID returns a property or a default.
 func (c Config) GetClientID(inherited ...string) string {
-	return util.Coalesce.String(c.ClientID, "", inherited...)
+	return configutil.CoalesceString(c.ClientID, "", inherited...)
 }
 
 // GetClientSecret returns a property or a default.
 func (c Config) GetClientSecret(inherited ...string) string {
-	return util.Coalesce.String(c.ClientSecret, "", inherited...)
+	return configutil.CoalesceString(c.ClientSecret, "", inherited...)
 }

@@ -7,7 +7,7 @@ import (
 	"time"
 
 	"github.com/blend/go-sdk/assert"
-	"github.com/blend/go-sdk/util"
+	"github.com/blend/go-sdk/crypto"
 	"github.com/blend/go-sdk/uuid"
 	"github.com/blend/go-sdk/webutil"
 )
@@ -15,7 +15,7 @@ import (
 func TestNewJWTAuthManager(t *testing.T) {
 	assert := assert.New(t)
 
-	am := NewJWTAuthManager(util.Crypto.MustCreateKey(64))
+	am := NewJWTAuthManager(crypto.MustCreateKey(64))
 	assert.NotNil(am.SessionTimeoutProvider(), "must set a session timeout provider for a jwt manager")
 }
 

@@ -13,7 +13,7 @@ import (
 
 	"github.com/blend/go-sdk/exception"
 	"github.com/blend/go-sdk/request"
-	"github.com/blend/go-sdk/util"
+	"github.com/blend/go-sdk/stringutil"
 	"github.com/blend/go-sdk/uuid"
 	"github.com/blend/go-sdk/webutil"
 	"golang.org/x/oauth2"
@@ -219,7 +219,7 @@ func (m *Manager) ValidateProfile(p *Profile) error {
 	if !strings.HasPrefix(workingDomain, "@") {
 		workingDomain = fmt.Sprintf("@%s", workingDomain)
 	}
-	if !util.String.HasSuffixCaseInsensitive(p.Email, workingDomain) {
+	if !stringutil.HasSuffixCaseless(p.Email, workingDomain) {
 		return ErrInvalidHostedDomain
 	}
 	return nil
@@ -326,9 +326,9 @@ func (m *Manager) conf(r *http.Request) *oauth2.Config {
 }
 
 func (m *Manager) getRedirectURI(r *http.Request) string {
-	if util.String.HasPrefixCaseInsensitive(m.redirectURI, "https://") ||
-		util.String.HasPrefixCaseInsensitive(m.redirectURI, "http://") ||
-		util.String.HasPrefixCaseInsensitive(m.redirectURI, "spdy://") {
+	if stringutil.HasPrefixCaseless(m.redirectURI, "https://") ||
+		stringutil.HasPrefixCaseless(m.redirectURI, "http://") ||
+		stringutil.HasPrefixCaseless(m.redirectURI, "spdy://") {
 		return m.redirectURI
 	}
 

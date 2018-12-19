@@ -5,16 +5,16 @@ import (
 	"time"
 
 	"github.com/blend/go-sdk/assert"
+	"github.com/blend/go-sdk/crypto"
 	"github.com/blend/go-sdk/exception"
 	"github.com/blend/go-sdk/jwt"
-	"github.com/blend/go-sdk/util"
 	"github.com/blend/go-sdk/uuid"
 )
 
 func TestNewJWTManager(t *testing.T) {
 	assert := assert.New(t)
 
-	key := util.Crypto.MustCreateKey(32)
+	key := crypto.MustCreateKey(32)
 	m := NewJWTManager(key)
 	assert.NotNil(m.KeyProvider)
 
@@ -26,7 +26,7 @@ func TestNewJWTManager(t *testing.T) {
 func TestNewJWTManagerClaims(t *testing.T) {
 	assert := assert.New(t)
 
-	key := util.Crypto.MustCreateKey(32)
+	key := crypto.MustCreateKey(32)
 	m := NewJWTManager(key)
 
 	session := &Session{
@@ -49,7 +49,7 @@ func TestNewJWTManagerClaims(t *testing.T) {
 func TestNewJWTManagerFromClaims(t *testing.T) {
 	assert := assert.New(t)
 
-	key := util.Crypto.MustCreateKey(32)
+	key := crypto.MustCreateKey(32)
 	m := NewJWTManager(key)
 
 	claims := &jwt.StandardClaims{
@@ -72,7 +72,7 @@ func TestNewJWTManagerFromClaims(t *testing.T) {
 func TestNewJWTManagerKeyFunc(t *testing.T) {
 	assert := assert.New(t)
 
-	key := util.Crypto.MustCreateKey(32)
+	key := crypto.MustCreateKey(32)
 	m := NewJWTManager(key)
 
 	_, err := m.KeyFunc(&jwt.Token{
@@ -99,7 +99,7 @@ func TestNewJWTManagerKeyFunc(t *testing.T) {
 func TestNewJWTManagerSerialization(t *testing.T) {
 	assert := assert.New(t)
 
-	key := util.Crypto.MustCreateKey(32)
+	key := crypto.MustCreateKey(32)
 	m := NewJWTManager(key)
 
 	session := &Session{

@@ -23,8 +23,9 @@ import (
 	"strings"
 	"time"
 
+	"github.com/blend/go-sdk/mathutil"
 	"github.com/blend/go-sdk/semver"
-	"github.com/blend/go-sdk/util"
+	"github.com/blend/go-sdk/stringutil"
 	"github.com/blend/go-sdk/uuid"
 	"github.com/blend/go-sdk/webutil"
 	"github.com/blend/go-sdk/yaml"
@@ -372,7 +373,7 @@ func (vf ViewFuncs) ParseBool(raw interface{}) (bool, error) {
 // Round returns the value rounded to a given set of places.
 // It uses midpoint rounding.
 func (vf ViewFuncs) Round(places, d float64) float64 {
-	return util.Math.Round(d, int(places))
+	return mathutil.RoundPlaces(d, int(places))
 }
 
 // Ceil returns the value rounded up to the nearest integer.
@@ -387,7 +388,7 @@ func (vf ViewFuncs) Floor(d float64) float64 {
 
 // FormatMoney returns a float as a formatted string rounded to two decimal places.
 func (vf ViewFuncs) FormatMoney(d float64) string {
-	return fmt.Sprintf("$%0.2f", util.Math.Round(d, 2))
+	return fmt.Sprintf("$%0.2f", mathutil.RoundPlaces(d, 2))
 }
 
 // FormatPct formats a float as a percentage (it is multiplied by 100,
@@ -439,7 +440,7 @@ func (vf ViewFuncs) ToTitle(v string) string {
 // It replaces whitespace with `-`
 // It path escapes any other characters.
 func (vf ViewFuncs) Slugify(v string) string {
-	return util.String.Slugify(v)
+	return stringutil.Slugify(v)
 }
 
 // TrimSpace trims whitespace from the beginning and end of a string.
@@ -478,17 +479,17 @@ func (vf ViewFuncs) SplitN(sep string, n float64, v string) []string {
 
 // RandomLetters returns a string of random letters.
 func (vf ViewFuncs) RandomLetters(length int) string {
-	return util.String.RandomLetters(length)
+	return stringutil.Random(stringutil.Letters, length)
 }
 
 // RandomLettersWithNumbers returns a string of random letters.
 func (vf ViewFuncs) RandomLettersWithNumbers(count int) string {
-	return util.String.RandomStringWithNumbers(count)
+	return stringutil.Random(stringutil.LettersAndNumbers, count)
 }
 
 // RandomLettersWithNumbersAndSymbols returns a string of random letters.
 func (vf ViewFuncs) RandomLettersWithNumbersAndSymbols(count int) string {
-	return util.String.RandomStringWithNumbersAndSymbols(count)
+	return stringutil.Random(stringutil.LettersNumbersAndSymbols, count)
 }
 
 //

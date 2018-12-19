@@ -1,11 +1,11 @@
 package env
 
 import (
+	"encoding/base64"
 	"testing"
 	"time"
 
 	"github.com/blend/go-sdk/assert"
-	"github.com/blend/go-sdk/util"
 )
 
 func TestNewVarsFromEnvironment(t *testing.T) {
@@ -102,7 +102,7 @@ func TestEnvBytes(t *testing.T) {
 func TestEnvBase64(t *testing.T) {
 	assert := assert.New(t)
 
-	testValue := util.Base64.Encode([]byte("this is a test"))
+	testValue := base64.StdEncoding.EncodeToString([]byte("this is a test"))
 	vars := Vars{
 		"Foo": string(testValue),
 		"Bar": "not_base64",
@@ -230,7 +230,7 @@ func TestEnvReadInto(t *testing.T) {
 		"test4": "bar",
 		"dur":   "4s",
 		"test5": "bar0,bar1,bar2",
-		"test6": string(util.Base64.Encode([]byte("base64encoded"))),
+		"test6": string(base64.StdEncoding.EncodeToString([]byte("base64encoded"))),
 		"test7": "alsoBytes",
 		"test8": "true",
 		"alias": "hello",

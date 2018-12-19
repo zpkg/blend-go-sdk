@@ -39,7 +39,7 @@ func NewAuthManagerFromConfig(cfg *Config) (manager *AuthManager) {
 		WithSessionTimeoutProvider(SessionTimeoutProvider(cfg.GetSessionTimeoutIsAbsolute(), cfg.GetSessionTimeout()))
 }
 
-// NewLocalAuthManager returns a new locally cached session manager that saves sessions to the cache provided
+// NewLocalAuthManagerFromCache returns a new locally cached session manager that saves sessions to the cache provided
 func NewLocalAuthManagerFromCache(cache *LocalSessionCache) *AuthManager {
 	return &AuthManager{
 		persistHandler: cache.PersistHandler,

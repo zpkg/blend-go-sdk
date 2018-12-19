@@ -1,6 +1,6 @@
 package web
 
-import "github.com/blend/go-sdk/util"
+import "github.com/blend/go-sdk/configutil"
 
 // ViewCacheConfig is a config for the view cache.
 type ViewCacheConfig struct {
@@ -16,40 +16,40 @@ type ViewCacheConfig struct {
 
 // GetCached returns if the viewcache should store templates in memory or read from disk.
 func (vcc ViewCacheConfig) GetCached(defaults ...bool) bool {
-	return util.Coalesce.Bool(vcc.Cached, true, defaults...)
+	return configutil.CoalesceBool(vcc.Cached, true, defaults...)
 }
 
 // GetPaths returns default view paths.
 func (vcc ViewCacheConfig) GetPaths(defaults ...[]string) []string {
-	return util.Coalesce.Strings(vcc.Paths, nil, defaults...)
+	return configutil.CoalesceStrings(vcc.Paths, nil, defaults...)
 }
 
 // GetBufferPoolSize gets the buffer pool size or a default.
 func (vcc ViewCacheConfig) GetBufferPoolSize(defaults ...int) int {
-	return util.Coalesce.Int(vcc.BufferPoolSize, DefaultViewBufferPoolSize, defaults...)
+	return configutil.CoalesceInt(vcc.BufferPoolSize, DefaultViewBufferPoolSize, defaults...)
 }
 
 // GetInternalErrorTemplateName returns the internal error template name for the app.
 func (vcc ViewCacheConfig) GetInternalErrorTemplateName(defaults ...string) string {
-	return util.Coalesce.String(vcc.InternalErrorTemplateName, DefaultTemplateNameInternalError, defaults...)
+	return configutil.CoalesceString(vcc.InternalErrorTemplateName, DefaultTemplateNameInternalError, defaults...)
 }
 
 // GetBadRequestTemplateName returns the bad request template name for the app.
 func (vcc ViewCacheConfig) GetBadRequestTemplateName(defaults ...string) string {
-	return util.Coalesce.String(vcc.BadRequestTemplateName, DefaultTemplateNameBadRequest, defaults...)
+	return configutil.CoalesceString(vcc.BadRequestTemplateName, DefaultTemplateNameBadRequest, defaults...)
 }
 
 // GetNotFoundTemplateName returns the not found template name for the app.
 func (vcc ViewCacheConfig) GetNotFoundTemplateName(defaults ...string) string {
-	return util.Coalesce.String(vcc.NotFoundTemplateName, DefaultTemplateNameNotFound, defaults...)
+	return configutil.CoalesceString(vcc.NotFoundTemplateName, DefaultTemplateNameNotFound, defaults...)
 }
 
 // GetNotAuthorizedTemplateName returns the not authorized template name for the app.
 func (vcc ViewCacheConfig) GetNotAuthorizedTemplateName(defaults ...string) string {
-	return util.Coalesce.String(vcc.NotAuthorizedTemplateName, DefaultTemplateNameNotAuthorized, defaults...)
+	return configutil.CoalesceString(vcc.NotAuthorizedTemplateName, DefaultTemplateNameNotAuthorized, defaults...)
 }
 
 // GetStatusTemplateName returns the not authorized template name for the app.
 func (vcc ViewCacheConfig) GetStatusTemplateName(defaults ...string) string {
-	return util.Coalesce.String(vcc.StatusTemplateName, DefaultTemplateNameStatus, defaults...)
+	return configutil.CoalesceString(vcc.StatusTemplateName, DefaultTemplateNameStatus, defaults...)
 }

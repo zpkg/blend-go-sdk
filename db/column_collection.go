@@ -7,7 +7,7 @@ import (
 	"strings"
 	"sync"
 
-	"github.com/blend/go-sdk/util"
+	"github.com/blend/go-sdk/stringutil"
 )
 
 var (
@@ -316,7 +316,7 @@ func (cc *ColumnCollection) ColumnNamesCSVFromAlias(tableAlias string) string {
 			names[x] = fmt.Sprintf("%s.%s", tableAlias, c.ColumnName)
 		}
 	}
-	return util.String.CSV(names)
+	return stringutil.CSV(names)
 }
 
 // ColumnValues returns the reflected value for all the columns on a given instance.
@@ -368,7 +368,7 @@ func (cc *ColumnCollection) String() string {
 
 // ColumnNamesCSV returns a csv of column names.
 func (cc *ColumnCollection) ColumnNamesCSV() string {
-	return util.String.CSV(cc.ColumnNames())
+	return stringutil.CSV(cc.ColumnNames())
 }
 
 //

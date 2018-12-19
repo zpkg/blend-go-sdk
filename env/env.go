@@ -1,6 +1,7 @@
 package env
 
 import (
+	"encoding/base64"
 	"fmt"
 	"os"
 	"strconv"
@@ -8,7 +9,8 @@ import (
 	"sync"
 	"time"
 
-	"github.com/blend/go-sdk/util"
+	"github.com/blend/go-sdk/fileutil"
+	"github.com/blend/go-sdk/reflectutil"
 )
 
 var (
@@ -160,7 +162,7 @@ func (ev Vars) CSV(envVar string, defaults ...string) []string {
 
 // ReadFile reads a file from the env.
 func (ev Vars) ReadFile(path string) error {
-	return util.File.ReadByLines(path, func(line string) error {
+	return fileutil.ReadLines(path, func(line string) error {
 		if len(line) == 0 {
 			return nil
 		}
@@ -178,7 +180,7 @@ func (ev Vars) ReadFile(path string) error {
 // Everything else is false, including `REEEEEEEEEEEEEEE`.
 func (ev Vars) Bool(envVar string, defaults ...bool) bool {
 	if value, hasValue := ev[envVar]; hasValue {
-		return util.Parse.Bool(value)
+		return mustParseBool(value)
 	}
 	if len(defaults) > 0 {
 		return defaults[0]
@@ -342,7 +344,7 @@ func (ev Vars) Bytes(envVar string, defaults ...[]byte) []byte {
 // Base64 returns a []byte value for a given key whose value is encoded in base64.
 func (ev Vars) Base64(envVar string, defaults ...[]byte) ([]byte, error) {
 	if value, hasValue := ev[envVar]; hasValue && len(value) > 0 {
-		return util.Base64.Decode(value)
+		return base64.StdEncoding.DecodeString(value)
 	}
 	if len(defaults) > 0 {
 		return defaults[0], nil
@@ -473,5 +475,5 @@ func (ev Vars) ReadInto(obj interface{}) error {
 	if typed, isTyped := obj.(Unmarshaler); isTyped {
 		return typed.UnmarshalEnv(ev)
 	}
-	return util.Reflection.PatchStrings(TagName, ev, obj)
+	return reflectutil.PatchStrings(TagName, ev, obj)
 }

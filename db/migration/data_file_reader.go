@@ -11,7 +11,7 @@ import (
 
 	"github.com/blend/go-sdk/db"
 	"github.com/blend/go-sdk/exception"
-	"github.com/blend/go-sdk/util"
+	"github.com/blend/go-sdk/stringutil"
 	"github.com/lib/pq"
 )
 
@@ -92,16 +92,16 @@ func (dfr *DataFileReader) Apply(c *db.Connection, tx *sql.Tx) (err error) {
 			}
 			line = lineBuffer.String()
 
-			if util.String.HasPrefixCaseInsensitive(line, "--") {
+			if stringutil.HasPrefixCaseless(line, "--") {
 				continue
 			}
 
-			if util.String.HasPrefixCaseInsensitive(line, "set") {
+			if stringutil.HasPrefixCaseless(line, "set") {
 				continue
 			}
 
-			if util.String.HasPrefixCaseInsensitive(line, "copy") {
-				if !util.String.HasSuffixCaseInsensitive(line, "from stdin;") {
+			if stringutil.HasPrefixCaseless(line, "copy") {
+				if !stringutil.HasSuffixCaseless(line, "from stdin;") {
 					err = fmt.Errorf("only `stdin` from clauses supported at this time, cannot continue")
 					return
 				}
@@ -129,7 +129,7 @@ func (dfr *DataFileReader) Apply(c *db.Connection, tx *sql.Tx) (err error) {
 				return
 			}
 
-			if len(pieces) == 1 && util.String.HasPrefixCaseInsensitive(pieces[0].(string), `\.`) {
+			if len(pieces) == 1 && stringutil.HasPrefixCaseless(pieces[0].(string), `\.`) {
 				err = stmt.Close()
 				if err != nil {
 					return

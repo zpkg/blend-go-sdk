@@ -6,8 +6,8 @@ import (
 	"strings"
 	"time"
 
+	"github.com/blend/go-sdk/configutil"
 	"github.com/blend/go-sdk/env"
-	"github.com/blend/go-sdk/util"
 	"github.com/blend/go-sdk/webutil"
 )
 
@@ -75,7 +75,7 @@ type Config struct {
 	Healthz HealthzConfig `json:"healthz,omitempty" yaml:"healthz,omitempty"`
 }
 
-// GetBindAddr util.Coalesces the bind addr, the port, or the default.
+// GetBindAddr configutil.Coalesces the bind addr, the port, or the default.
 func (c Config) GetBindAddr(defaults ...string) string {
 	if len(c.BindAddr) > 0 {
 		return c.BindAddr
@@ -108,27 +108,27 @@ func (c Config) GetPort(defaults ...int32) int32 {
 
 // GetBaseURL gets a property.
 func (c Config) GetBaseURL(defaults ...string) string {
-	return util.Coalesce.String(c.BaseURL, "", defaults...)
+	return configutil.CoalesceString(c.BaseURL, "", defaults...)
 }
 
 // GetRedirectTrailingSlash returns if we automatically redirect for a missing trailing slash.
 func (c Config) GetRedirectTrailingSlash(defaults ...bool) bool {
-	return util.Coalesce.Bool(c.RedirectTrailingSlash, DefaultRedirectTrailingSlash, defaults...)
+	return configutil.CoalesceBool(c.RedirectTrailingSlash, DefaultRedirectTrailingSlash, defaults...)
 }
 
 // GetHandleOptions returns if we should handle OPTIONS verb requests.
 func (c Config) GetHandleOptions(defaults ...bool) bool {
-	return util.Coalesce.Bool(c.HandleOptions, DefaultHandleOptions, defaults...)
+	return configutil.CoalesceBool(c.HandleOptions, DefaultHandleOptions, defaults...)
 }
 
 // GetHandleMethodNotAllowed returns if we should handle method not allowed results.
 func (c Config) GetHandleMethodNotAllowed(defaults ...bool) bool {
-	return util.Coalesce.Bool(c.HandleMethodNotAllowed, DefaultHandleMethodNotAllowed, defaults...)
+	return configutil.CoalesceBool(c.HandleMethodNotAllowed, DefaultHandleMethodNotAllowed, defaults...)
 }
 
 // GetRecoverPanics returns if we should recover panics or not.
 func (c Config) GetRecoverPanics(defaults ...bool) bool {
-	return util.Coalesce.Bool(c.RecoverPanics, DefaultRecoverPanics, defaults...)
+	return configutil.CoalesceBool(c.RecoverPanics, DefaultRecoverPanics, defaults...)
 }
 
 // GetDefaultHeaders returns the default headers from the config.
@@ -168,7 +168,7 @@ func (c Config) IsSecure() bool {
 
 // GetAuthManagerMode returns the auth manager mode.
 func (c Config) GetAuthManagerMode(inherited ...string) AuthManagerMode {
-	return AuthManagerMode(util.Coalesce.String(c.AuthManagerMode, string(AuthManagerModeServer), inherited...))
+	return AuthManagerMode(configutil.CoalesceString(c.AuthManagerMode, string(AuthManagerModeServer), inherited...))
 }
 
 // GetAuthSecret returns a property or a default.
@@ -182,55 +182,55 @@ func (c Config) GetAuthSecret(defaults ...[]byte) []byte {
 
 // GetSessionTimeout returns a property or a default.
 func (c Config) GetSessionTimeout(defaults ...time.Duration) time.Duration {
-	return util.Coalesce.Duration(c.SessionTimeout, DefaultSessionTimeout, defaults...)
+	return configutil.CoalesceDuration(c.SessionTimeout, DefaultSessionTimeout, defaults...)
 }
 
 // GetSessionTimeoutIsAbsolute returns a property or a default.
 func (c Config) GetSessionTimeoutIsAbsolute(defaults ...bool) bool {
-	return util.Coalesce.Bool(c.SessionTimeoutIsAbsolute, DefaultSessionTimeoutIsAbsolute, defaults...)
+	return configutil.CoalesceBool(c.SessionTimeoutIsAbsolute, DefaultSessionTimeoutIsAbsolute, defaults...)
 }
 
 // GetCookieHTTPSOnly returns a property or a default.
 func (c Config) GetCookieHTTPSOnly(defaults ...bool) bool {
-	return util.Coalesce.Bool(c.CookieHTTPSOnly, c.IsSecure(), defaults...)
+	return configutil.CoalesceBool(c.CookieHTTPSOnly, c.IsSecure(), defaults...)
 }
 
 // GetCookieName returns a property or a default.
 func (c Config) GetCookieName(defaults ...string) string {
-	return util.Coalesce.String(c.CookieName, DefaultCookieName, defaults...)
+	return configutil.CoalesceString(c.CookieName, DefaultCookieName, defaults...)
 }
 
 // GetCookiePath returns a property or a default.
 func (c Config) GetCookiePath(defaults ...string) string {
-	return util.Coalesce.String(c.CookiePath, DefaultCookiePath, defaults...)
+	return configutil.CoalesceString(c.CookiePath, DefaultCookiePath, defaults...)
 }
 
 // GetMaxHeaderBytes returns the maximum header size in bytes or a default.
 func (c Config) GetMaxHeaderBytes(defaults ...int) int {
-	return util.Coalesce.Int(c.MaxHeaderBytes, DefaultMaxHeaderBytes, defaults...)
+	return configutil.CoalesceInt(c.MaxHeaderBytes, DefaultMaxHeaderBytes, defaults...)
 }
 
 // GetReadTimeout gets a property.
 func (c Config) GetReadTimeout(defaults ...time.Duration) time.Duration {
-	return util.Coalesce.Duration(c.ReadTimeout, DefaultReadTimeout, defaults...)
+	return configutil.CoalesceDuration(c.ReadTimeout, DefaultReadTimeout, defaults...)
 }
 
 // GetReadHeaderTimeout gets a property.
 func (c Config) GetReadHeaderTimeout(defaults ...time.Duration) time.Duration {
-	return util.Coalesce.Duration(c.ReadHeaderTimeout, DefaultReadHeaderTimeout, defaults...)
+	return configutil.CoalesceDuration(c.ReadHeaderTimeout, DefaultReadHeaderTimeout, defaults...)
 }
 
 // GetWriteTimeout gets a property.
 func (c Config) GetWriteTimeout(defaults ...time.Duration) time.Duration {
-	return util.Coalesce.Duration(c.WriteTimeout, DefaultWriteTimeout, defaults...)
+	return configutil.CoalesceDuration(c.WriteTimeout, DefaultWriteTimeout, defaults...)
 }
 
 // GetIdleTimeout gets a property.
 func (c Config) GetIdleTimeout(defaults ...time.Duration) time.Duration {
-	return util.Coalesce.Duration(c.IdleTimeout, DefaultIdleTimeout, defaults...)
+	return configutil.CoalesceDuration(c.IdleTimeout, DefaultIdleTimeout, defaults...)
 }
 
 // GetShutdownGracePeriod gets the shutdown grace period.
 func (c Config) GetShutdownGracePeriod(defaults ...time.Duration) time.Duration {
-	return util.Coalesce.Duration(c.ShutdownGracePeriod, DefaultShutdownGracePeriod, defaults...)
+	return configutil.CoalesceDuration(c.ShutdownGracePeriod, DefaultShutdownGracePeriod, defaults...)
 }
