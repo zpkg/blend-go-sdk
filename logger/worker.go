@@ -73,7 +73,8 @@ func (w *Worker) Drain() {
 	close(w.Abort)
 	<-w.Aborted
 
-	for len(w.Work) > 0 {
+	workLeft := len(w.Work)
+	for index := 0; index < workLeft; index++ {
 		w.Process(<-w.Work)
 	}
 
