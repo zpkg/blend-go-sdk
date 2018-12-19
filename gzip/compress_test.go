@@ -4,12 +4,13 @@ import (
 	"testing"
 
 	"github.com/blend/go-sdk/assert"
+	"github.com/blend/go-sdk/stringutil"
 )
 
 func TestCompress(t *testing.T) {
 	assert := assert.New(t)
 
-	contents := []byte(String.Random(1024))
+	contents := []byte(stringutil.Random(stringutil.Letters, 1024))
 	compressed, err := Compress(contents)
 	assert.Nil(err)
 	assert.NotEmpty(compressed)
