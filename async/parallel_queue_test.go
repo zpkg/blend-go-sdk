@@ -7,24 +7,23 @@ import (
 	"github.com/blend/go-sdk/assert"
 )
 
-func TestQueue(t *testing.T) {
+func TestParallelQueue(t *testing.T) {
 	assert := assert.New(t)
 
-	var didWork bool
 	wg := sync.WaitGroup{}
-	wg.Add(1)
-	w := NewQueue(func(obj interface{}) error {
+	wg.Add(8)
+	w := NewParallelQueue(4, func(obj interface{}) error {
 		defer wg.Done()
-		didWork = true
-		assert.Equal("hello", obj)
 		return nil
 	})
-
 	w.Start()
 	assert.True(w.Latch().IsRunning())
-	w.Enqueue("hello")
+
+	for x := 0; x < 8; x++ {
+		w.Enqueue("hello")
+	}
+
 	wg.Wait()
 	w.Close()
 	assert.False(w.Latch().IsRunning())
-	assert.True(didWork)
 }

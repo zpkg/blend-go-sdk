@@ -13,5 +13,5 @@ func TestSlugify(t *testing.T) {
 	assert.Equal("foo-bar", Slugify("foo bar"))
 	assert.Equal("foo-bar", Slugify("foo\tbar"))
 	assert.Equal("foo-bar", Slugify("foo\nbar"))
-	assert.Equal("foo-bar-ba%2F", Slugify("foo bar ba/"))
+	assert.Equal("foo-bar-ba-", Slugify("foo bar ba/"))
 }

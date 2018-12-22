@@ -1,97 +1,118 @@
 package async
 
+import (
+	"sync"
+
+	"github.com/blend/go-sdk/exception"
+)
+
 const (
-	// DefaultQueueWorkerMaxWork is the maximum number of work items before queueing blocks.
-	DefaultQueueWorkerMaxWork = 1 << 10
+	// DefaultQueueMaxWork is the maximum number of work items before queueing blocks.
+	DefaultQueueMaxWork = 1 << 10
 )
 
 // NewQueue returns a new queue worker.
-func NewQueue(action func(interface{}) error) *QueueWorker {
-	return &QueueWorker{
-		action:  action,
-		latch:   &Latch{},
-		maxWork: DefaultQueueWorkerMaxWork,
+func NewQueue(action func(interface{}) error) *Queue {
+	return &Queue{
+		action: action,
+		latch:  &Latch{},
+		work:   make(chan interface{}, DefaultQueueMaxWork),
 	}
 }
 
-// QueueWorker is a worker that is pushed work over a channel.
-type QueueWorker struct {
-	action  func(interface{}) error
-	latch   *Latch
-	errors  chan error
-	work    chan interface{}
-	maxWork int
+// Queue is a worker that is pushed work over a channel.
+type Queue struct {
+	latch  *Latch
+	action func(interface{}) error
+	errors chan error
+	work   chan interface{}
 }
 
-// WithMaxWork sets the worker max work.
-// If set to zero, the worker will block on new work until the last item has processed.
-// If set to > 0, the worker will block once the queue reaches the max work length.
-// MaxWork will allocate one of each work item to memory.
-func (qw *QueueWorker) WithMaxWork(maxWork int) *QueueWorker {
-	qw.maxWork = maxWork
-	return qw
+// WithWork sets the work channel.
+func (q *Queue) WithWork(work chan interface{}) *Queue {
+	q.work = work
+	return q
 }
 
-// MaxWork returns the maximum work.
-func (qw *QueueWorker) MaxWork() int {
-	return qw.maxWork
+// Work returns the work channel.
+func (q *Queue) Work() chan interface{} {
+	return q.work
 }
 
 // Latch returns the worker latch.
-func (qw *QueueWorker) Latch() *Latch {
-	return qw.latch
+func (q *Queue) Latch() *Latch {
+	return q.latch
 }
 
 // WithErrors returns the error channel.
-func (qw *QueueWorker) WithErrors(errors chan error) *QueueWorker {
-	qw.errors = errors
-	return qw
+func (q *Queue) WithErrors(errors chan error) *Queue {
+	q.errors = errors
+	return q
 }
 
 // Errors returns a channel to read action errors from.
-func (qw *QueueWorker) Errors() chan error {
-	return qw.errors
+func (q *Queue) Errors() chan error {
+	return q.errors
 }
 
 // Enqueue adds an item to the work queue.
-func (qw *QueueWorker) Enqueue(obj interface{}) {
-	if qw.work == nil {
-		return
-	}
-	qw.work <- obj
+func (q *Queue) Enqueue(obj interface{}) {
+	q.work <- obj
 }
 
 // Start starts the worker.
-func (qw *QueueWorker) Start() {
-	qw.latch.Starting()
-	if qw.maxWork > 0 {
-		qw.work = make(chan interface{}, qw.maxWork)
-	} else {
-		qw.work = make(chan interface{})
-	}
-
+func (q *Queue) Start() {
+	q.latch.Starting()
 	go func() {
-		qw.latch.Started()
+		q.latch.Started()
 		var err error
 		var workItem interface{}
 		for {
 			select {
-			case workItem = <-qw.work:
-				err = qw.action(workItem)
-				if err != nil && qw.errors != nil {
-					qw.errors <- err
+			case workItem = <-q.work:
+				err = q.action(workItem)
+				if err != nil && q.errors != nil {
+					q.errors <- err
 				}
-			case <-qw.latch.NotifyStopping():
-				qw.latch.Stopped()
+			case <-q.latch.NotifyStopping():
+				q.latch.Stopped()
 				return
 			}
 		}
 	}()
-	<-qw.latch.NotifyStarted()
+	<-q.latch.NotifyStarted()
 }
 
-// Stop stops the worker.
-func (qw *QueueWorker) Stop() {
-	qw.latch.Stopping()
-	<-qw.latch.NotifyStopped()
+// SafeAction invokes the action and recovers panics.
+func (q *Queue) SafeAction(workItem interface{}) {
+	defer func() {
+		if r := recover(); r != nil {
+			if q.errors != nil {
+				q.errors <- exception.New(r)
+			}
+		}
+	}()
+	if err := q.action(workItem); err != nil {
+		if q.errors != nil {
+			q.errors <- exception.New(err)
+		}
+	}
+}
+
+// Close stops the queue.
+func (q *Queue) Close() error {
+	q.latch.Stopping()
+	<-q.latch.NotifyStopped()
+
+	remaining := len(q.work)
+	wg := sync.WaitGroup{}
+	wg.Add(1)
+	go func() {
+		defer wg.Done()
+		for x := 0; x < remaining; x++ {
+			q.SafeAction(<-q.work)
+		}
+	}()
+	wg.Wait()
+	return nil
 }
