@@ -1,5 +1,9 @@
 package async
 
+import (
+	"sync"
+)
+
 // NewParallelQueue returns a new parallel queue worker.
 func NewParallelQueue(numWorkers int, action func(interface{}) error) *ParallelQueue {
 	return &ParallelQueue{
@@ -13,12 +17,15 @@ func NewParallelQueue(numWorkers int, action func(interface{}) error) *ParallelQ
 
 // ParallelQueue is a queude with multiple workers..
 type ParallelQueue struct {
+	sync.Mutex
+
 	latch      *Latch
 	numWorkers int
 	workers    chan *Queue
 	action     func(interface{}) error
 	errors     chan error
 	work       chan interface{}
+	draining   *sync.WaitGroup
 }
 
 // WithWork sets the work channel.
@@ -37,20 +44,26 @@ func (pq *ParallelQueue) Latch() *Latch {
 	return pq.latch
 }
 
-// WithErrors returns the error channel.
+// WithErrors sets the error channel.
 func (pq *ParallelQueue) WithErrors(errors chan error) *ParallelQueue {
 	pq.errors = errors
 	return pq
 }
 
 // Errors returns a channel to read action errors from.
+// You must provide it with `WithErrors`.
 func (pq *ParallelQueue) Errors() chan error {
 	return pq.errors
 }
 
 // Enqueue adds an item to the work queue.
 func (pq *ParallelQueue) Enqueue(obj interface{}) {
+	pq.Lock()
+	if pq.draining != nil {
+		pq.draining.Wait()
+	}
 	pq.work <- obj
+	pq.Unlock()
 }
 
 // Start starts the worker.
@@ -93,16 +106,34 @@ func (pq *ParallelQueue) Dispatch() {
 }
 
 // AndReturn creates an action handler that returns a given worker to the worker queue.
+// It wraps any action provided to the queue.
 func (pq *ParallelQueue) AndReturn(worker *Queue, action func(interface{}) error) func(interface{}) error {
 	return func(workItem interface{}) error {
 		defer func() {
+			if pq.draining != nil {
+				pq.draining.Done()
+			}
 			pq.workers <- worker
 		}()
 		return action(workItem)
 	}
 }
 
+// Drain drains the queue.
+func (pq *ParallelQueue) Drain() error {
+	pq.Lock()
+	defer pq.Unlock()
+
+	pq.draining = &sync.WaitGroup{}
+	pq.draining.Add(len(pq.work))
+	pq.draining.Wait()
+	pq.draining = nil
+
+	return nil
+}
+
 // Close stops the queue.
+// Any work left in the queue will be discarded.
 func (pq *ParallelQueue) Close() error {
 	pq.latch.Stopping()
 	<-pq.latch.NotifyStopped()
