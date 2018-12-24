@@ -91,8 +91,10 @@ func (pq *ParallelQueue) Dispatch() {
 	for {
 		select {
 		case workItem = <-pq.work:
+			println("got work item")
 			select {
 			case worker = <-pq.workers:
+				println("assigned work item")
 				worker.work <- workItem
 			case <-pq.latch.NotifyStopping():
 				pq.latch.Stopped()
@@ -111,6 +113,7 @@ func (pq *ParallelQueue) AndReturn(worker *Queue, action func(interface{}) error
 	return func(workItem interface{}) error {
 		defer func() {
 			if pq.draining != nil {
+				println("completing drained work item")
 				pq.draining.Done()
 			}
 			pq.workers <- worker
@@ -123,6 +126,8 @@ func (pq *ParallelQueue) AndReturn(worker *Queue, action func(interface{}) error
 func (pq *ParallelQueue) Drain() error {
 	pq.Lock()
 	defer pq.Unlock()
+
+	println("draining")
 
 	pq.draining = &sync.WaitGroup{}
 	pq.draining.Add(len(pq.work))
