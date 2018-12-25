@@ -77,7 +77,6 @@ func (pq *ParallelQueue) Enqueue(obj interface{}) {
 
 // InitializeWorkers initializes the workers.
 func (pq *ParallelQueue) InitializeWorkers() {
-	println("initializing with", pq.numWorkers, "workers")
 	pq.workers = make(chan *Queue, pq.numWorkers)
 	for x := 0; x < pq.numWorkers; x++ {
 		worker := &Queue{
@@ -97,10 +96,13 @@ func (pq *ParallelQueue) Start() {
 	if pq.workers == nil {
 		pq.InitializeWorkers()
 	}
+
 	// start workers
-	for worker := range pq.workers {
+	for x := 0; x < pq.numWorkers; x++ {
+		worker := <-pq.workers
 		worker.Start()
 	}
+
 	go pq.Dispatch()
 	<-pq.latch.NotifyStarted()
 }
@@ -121,7 +123,6 @@ func (pq *ParallelQueue) Dispatch() {
 				return
 			}
 		case <-pq.latch.NotifyStopping():
-			println("dispatch stopping")
 			pq.latch.Stopped()
 			return
 		}
@@ -159,10 +160,13 @@ func (pq *ParallelQueue) Drain() error {
 	println(len(pq.work), "items left")
 	pq.draining.Add(len(pq.work))
 
+	println("restarting")
 	pq.latch.Starting()
 	go pq.Dispatch()
+	println("waiting for started")
 	<-pq.latch.NotifyStarted()
 
+	println("waiting")
 	pq.draining.Wait()
 	pq.draining = nil
 
