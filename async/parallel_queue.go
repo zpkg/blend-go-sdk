@@ -8,17 +8,16 @@ import (
 // NewParallelQueue returns a new parallel queue worker.
 func NewParallelQueue(action func(interface{}) error) *ParallelQueue {
 	return &ParallelQueue{
-		action:     action,
-		numWorkers: runtime.NumCPU(),
 		latch:      &Latch{},
 		work:       make(chan interface{}, DefaultQueueMaxWork),
+		action:     action,
+		numWorkers: runtime.NumCPU(),
 	}
 }
 
 // ParallelQueue is a queude with multiple workers..
 type ParallelQueue struct {
 	sync.Mutex
-
 	latch      *Latch
 	numWorkers int
 	workers    chan *Queue
@@ -72,11 +71,33 @@ func (pq *ParallelQueue) Errors() chan error {
 func (pq *ParallelQueue) Enqueue(obj interface{}) {
 	pq.Lock()
 	defer pq.Unlock()
+	println("queueing item", obj)
 	pq.work <- obj
+}
+
+// StartWorkers starts all workers.
+func (pq *ParallelQueue) StartWorkers() {
+	for x := 0; x < pq.numWorkers; x++ {
+		worker := <-pq.workers
+		println("starting worker", x)
+		worker.Start()
+		pq.workers <- worker
+	}
+}
+
+// StopWorkers closes all workers.
+func (pq *ParallelQueue) StopWorkers() {
+	for x := 0; x < pq.numWorkers; x++ {
+		worker := <-pq.workers
+		println("stopping worker", x)
+		worker.Stop()
+		pq.workers <- worker
+	}
 }
 
 // InitializeWorkers initializes the workers.
 func (pq *ParallelQueue) InitializeWorkers() {
+	println("initializing parallel queue workers")
 	pq.workers = make(chan *Queue, pq.numWorkers)
 	for x := 0; x < pq.numWorkers; x++ {
 		worker := &Queue{
@@ -91,24 +112,20 @@ func (pq *ParallelQueue) InitializeWorkers() {
 
 // Start starts the worker.
 func (pq *ParallelQueue) Start() {
+	println("starting parallel queue")
 	pq.latch.Starting()
 	// if not initialized, initialize workers
 	if pq.workers == nil {
 		pq.InitializeWorkers()
 	}
-
-	// start workers
-	for x := 0; x < pq.numWorkers; x++ {
-		worker := <-pq.workers
-		worker.Start()
-	}
-
+	pq.StartWorkers()
 	go pq.Dispatch()
 	<-pq.latch.NotifyStarted()
 }
 
 // Dispatch processes work items in a loop.
 func (pq *ParallelQueue) Dispatch() {
+	println("dispatch started")
 	pq.latch.Started()
 	var workItem interface{}
 	var worker *Queue
@@ -124,6 +141,7 @@ func (pq *ParallelQueue) Dispatch() {
 			}
 		case <-pq.latch.NotifyStopping():
 			pq.latch.Stopped()
+			println("dispatch stopping")
 			return
 		}
 	}
@@ -148,30 +166,35 @@ func (pq *ParallelQueue) AndReturn(worker *Queue, action func(interface{}) error
 
 // Drain drains the queue.
 func (pq *ParallelQueue) Drain() error {
+	println("draining")
+
 	pq.Lock()
 	defer pq.Unlock()
 
-	println("pausing")
+	println("stopping workers")
+	pq.StopWorkers()
+
+	println("stopping dispatch")
 	pq.latch.Stopping()
 	<-pq.latch.NotifyStopped()
 
-	println("draining")
-	pq.draining = &sync.WaitGroup{}
 	println(len(pq.work), "items left")
+	pq.draining = &sync.WaitGroup{}
 	pq.draining.Add(len(pq.work))
 
-	println("restarting")
+	println("restarting workers")
+	pq.StartWorkers()
+
+	println("restarting dispatch loop")
 	pq.latch.Starting()
 	go pq.Dispatch()
-	println("waiting for started")
 	<-pq.latch.NotifyStarted()
 
-	println("waiting")
+	println("waiting for work to complete")
 	pq.draining.Wait()
 	pq.draining = nil
 
-	println("restarted")
-
+	println("restarted, draining complete")
 	return nil
 }
 

@@ -102,6 +102,13 @@ func (q *Queue) SafeAction(workItem interface{}) {
 	}
 }
 
+// Stop stop the worker.
+// The work left in the queue will remain.
+func (q *Queue) Stop() {
+	q.latch.Stopping()
+	<-q.latch.NotifyStopped()
+}
+
 // Close stops the queue.
 func (q *Queue) Close() error {
 	q.latch.Stopping()
