@@ -15,7 +15,7 @@ func TestParallelQueue(t *testing.T) {
 
 	wg := sync.WaitGroup{}
 	wg.Add(8)
-	w := NewParallelQueue(4, func(obj interface{}) error {
+	w := NewParallelQueue(func(obj interface{}) error {
 		defer wg.Done()
 		return nil
 	})
@@ -35,8 +35,8 @@ func TestParallelQueueDrain(t *testing.T) {
 	assert := assert.New(t)
 
 	var finished int32
-	errors := make(chan error, 8)
-	w := NewParallelQueue(4, func(obj interface{}) error {
+	errors := make(chan error, 9)
+	w := NewParallelQueue(func(obj interface{}) error {
 		atomic.AddInt32(&finished, 1)
 		return fmt.Errorf("only a test %d", finished)
 	}).WithErrors(errors)

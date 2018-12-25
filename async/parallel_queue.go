@@ -1,16 +1,16 @@
 package async
 
 import (
+	"runtime"
 	"sync"
 )
 
 // NewParallelQueue returns a new parallel queue worker.
-func NewParallelQueue(numWorkers int, action func(interface{}) error) *ParallelQueue {
+func NewParallelQueue(action func(interface{}) error) *ParallelQueue {
 	return &ParallelQueue{
 		action:     action,
-		numWorkers: numWorkers,
+		numWorkers: runtime.NumCPU(),
 		latch:      &Latch{},
-		workers:    make(chan *Queue, numWorkers),
 		work:       make(chan interface{}, DefaultQueueMaxWork),
 	}
 }
@@ -26,6 +26,18 @@ type ParallelQueue struct {
 	errors     chan error
 	work       chan interface{}
 	draining   *sync.WaitGroup
+}
+
+// WithWorkers sets the number of workers.
+// It defaults to `runtime.NumCPU()`
+func (pq *ParallelQueue) WithWorkers(numWorkers int) *ParallelQueue {
+	pq.numWorkers = numWorkers
+	return pq
+}
+
+// Workers returns the number of worker route
+func (pq *ParallelQueue) Workers() int {
+	return pq.numWorkers
 }
 
 // WithWork sets the work channel.
@@ -59,16 +71,14 @@ func (pq *ParallelQueue) Errors() chan error {
 // Enqueue adds an item to the work queue.
 func (pq *ParallelQueue) Enqueue(obj interface{}) {
 	pq.Lock()
-	if pq.draining != nil {
-		pq.draining.Wait()
-	}
+	defer pq.Unlock()
 	pq.work <- obj
-	pq.Unlock()
 }
 
-// Start starts the worker.
-func (pq *ParallelQueue) Start() {
-	pq.latch.Starting()
+// InitializeWorkers initializes the workers.
+func (pq *ParallelQueue) InitializeWorkers() {
+	println("initializing with", pq.numWorkers, "workers")
+	pq.workers = make(chan *Queue, pq.numWorkers)
 	for x := 0; x < pq.numWorkers; x++ {
 		worker := &Queue{
 			latch:  &Latch{},
@@ -76,8 +86,20 @@ func (pq *ParallelQueue) Start() {
 			work:   make(chan interface{}),
 		}
 		worker.action = pq.AndReturn(worker, pq.action)
-		worker.Start()
 		pq.workers <- worker
+	}
+}
+
+// Start starts the worker.
+func (pq *ParallelQueue) Start() {
+	pq.latch.Starting()
+	// if not initialized, initialize workers
+	if pq.workers == nil {
+		pq.InitializeWorkers()
+	}
+	// start workers
+	for worker := range pq.workers {
+		worker.Start()
 	}
 	go pq.Dispatch()
 	<-pq.latch.NotifyStarted()
@@ -91,16 +113,15 @@ func (pq *ParallelQueue) Dispatch() {
 	for {
 		select {
 		case workItem = <-pq.work:
-			println("got work item")
 			select {
 			case worker = <-pq.workers:
-				println("assigned work item")
 				worker.work <- workItem
 			case <-pq.latch.NotifyStopping():
 				pq.latch.Stopped()
 				return
 			}
 		case <-pq.latch.NotifyStopping():
+			println("dispatch stopping")
 			pq.latch.Stopped()
 			return
 		}
@@ -115,6 +136,8 @@ func (pq *ParallelQueue) AndReturn(worker *Queue, action func(interface{}) error
 			if pq.draining != nil {
 				println("completing drained work item")
 				pq.draining.Done()
+			} else {
+				println("completing work item")
 			}
 			pq.workers <- worker
 		}()
@@ -127,12 +150,23 @@ func (pq *ParallelQueue) Drain() error {
 	pq.Lock()
 	defer pq.Unlock()
 
-	println("draining")
+	println("pausing")
+	pq.latch.Stopping()
+	<-pq.latch.NotifyStopped()
 
+	println("draining")
 	pq.draining = &sync.WaitGroup{}
+	println(len(pq.work), "items left")
 	pq.draining.Add(len(pq.work))
+
+	pq.latch.Starting()
+	go pq.Dispatch()
+	<-pq.latch.NotifyStarted()
+
 	pq.draining.Wait()
 	pq.draining = nil
+
+	println("restarted")
 
 	return nil
 }

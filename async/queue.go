@@ -63,24 +63,27 @@ func (q *Queue) Enqueue(obj interface{}) {
 // Start starts the worker.
 func (q *Queue) Start() {
 	q.latch.Starting()
-	go func() {
-		q.latch.Started()
-		var err error
-		var workItem interface{}
-		for {
-			select {
-			case workItem = <-q.work:
-				err = q.action(workItem)
-				if err != nil && q.errors != nil {
-					q.errors <- err
-				}
-			case <-q.latch.NotifyStopping():
-				q.latch.Stopped()
-				return
-			}
-		}
-	}()
+	go q.Dispatch()
 	<-q.latch.NotifyStarted()
+}
+
+// Dispatch starts the listen loop for work.
+func (q *Queue) Dispatch() {
+	q.latch.Started()
+	var err error
+	var workItem interface{}
+	for {
+		select {
+		case workItem = <-q.work:
+			err = q.action(workItem)
+			if err != nil && q.errors != nil {
+				q.errors <- err
+			}
+		case <-q.latch.NotifyStopping():
+			q.latch.Stopped()
+			return
+		}
+	}
 }
 
 // SafeAction invokes the action and recovers panics.
