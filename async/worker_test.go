@@ -1,6 +1,7 @@
 package async
 
 import (
+	"context"
 	"sync"
 	"testing"
 
@@ -13,7 +14,7 @@ func TestQueue(t *testing.T) {
 	var didWork bool
 	wg := sync.WaitGroup{}
 	wg.Add(1)
-	w := NewWorker(func(obj interface{}) error {
+	w := NewWorker(func(_ context.Context, obj interface{}) error {
 		defer wg.Done()
 		didWork = true
 		assert.Equal("hello", obj)

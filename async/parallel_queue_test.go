@@ -1,6 +1,7 @@
 package async
 
 import (
+	"context"
 	"sync"
 	"testing"
 
@@ -12,7 +13,7 @@ func TestParallelQueue(t *testing.T) {
 
 	wg := sync.WaitGroup{}
 	wg.Add(8)
-	w := NewParallelQueue(func(obj interface{}) error {
+	w := NewParallelQueue(func(_ context.Context, obj interface{}) error {
 		defer wg.Done()
 		return nil
 	})

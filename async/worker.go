@@ -1,6 +1,7 @@
 package async
 
 import (
+	"context"
 	"sync"
 
 	"github.com/blend/go-sdk/exception"
@@ -18,7 +19,7 @@ func NewWorker(action QueueAction) *Worker {
 // Worker is a worker that is pushed work over a channel.
 type Worker struct {
 	latch  *Latch
-	action func(interface{}) error
+	action QueueAction
 	errors chan error
 	work   chan interface{}
 }
@@ -57,19 +58,24 @@ func (w *Worker) Enqueue(obj interface{}) {
 
 // Start starts the worker.
 func (w *Worker) Start() {
+	w.StartContext(context.Background())
+}
+
+// StartContext starts the worker with a given context.
+func (w *Worker) StartContext(ctx context.Context) {
 	w.latch.Starting()
-	go w.Dispatch()
+	go w.Dispatch(ctx)
 	<-w.latch.NotifyStarted()
 }
 
 // Dispatch starts the listen loop for work.
-func (w *Worker) Dispatch() {
+func (w *Worker) Dispatch(ctx context.Context) {
 	w.latch.Started()
 	var workItem interface{}
 	for {
 		select {
 		case workItem = <-w.work:
-			w.Execute(workItem)
+			w.Execute(ctx, workItem)
 		case <-w.latch.NotifyStopping():
 			w.latch.Stopped()
 			return
@@ -78,7 +84,7 @@ func (w *Worker) Dispatch() {
 }
 
 // Execute invokes the action and recovers panics.
-func (w *Worker) Execute(workItem interface{}) {
+func (w *Worker) Execute(ctx context.Context, workItem interface{}) {
 	defer func() {
 		if r := recover(); r != nil {
 			if w.errors != nil {
@@ -86,7 +92,7 @@ func (w *Worker) Execute(workItem interface{}) {
 			}
 		}
 	}()
-	if err := w.action(workItem); err != nil {
+	if err := w.action(ctx, workItem); err != nil {
 		if w.errors != nil {
 			w.errors <- exception.New(err)
 		}
@@ -102,6 +108,12 @@ func (w *Worker) Stop() {
 
 // Drain stops the worker and synchronously finishes work.
 func (w *Worker) Drain() {
+	w.DrainContext(context.Background())
+}
+
+// DrainContext stops the worker and synchronously drains the the remaining work
+// with a given context.
+func (w *Worker) DrainContext(ctx context.Context) {
 	w.latch.Stopping()
 	<-w.latch.NotifyStopped()
 	remaining := len(w.work)
@@ -110,7 +122,7 @@ func (w *Worker) Drain() {
 	go func() {
 		defer wg.Done()
 		for x := 0; x < remaining; x++ {
-			w.Execute(<-w.work)
+			w.Execute(ctx, <-w.work)
 		}
 	}()
 	wg.Wait()

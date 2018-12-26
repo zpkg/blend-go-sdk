@@ -1,9 +1,12 @@
 package async
 
-import "runtime"
+import (
+	"context"
+	"runtime"
+)
 
 // NewBatch creates a new batch processor.
-func NewBatch(action func(interface{}) error) *Batch {
+func NewBatch(action QueueAction) *Batch {
 	return &Batch{
 		latch:      &Latch{},
 		action:     action,
@@ -15,7 +18,7 @@ func NewBatch(action func(interface{}) error) *Batch {
 type Batch struct {
 	latch      *Latch
 	numWorkers int
-	action     func(interface{}) error
+	action     QueueAction
 	work       chan interface{}
 	errors     chan error
 	workers    chan *Worker
@@ -67,6 +70,11 @@ func (b *Batch) Errors() chan error {
 
 // Process exeuctes the action for all the work items.
 func (b *Batch) Process() {
+	b.ProcessContext(context.Background())
+}
+
+// ProcessContext exeuctes the action for all the work items.
+func (b *Batch) ProcessContext(ctx context.Context) {
 	// initialize the workers
 	b.workers = make(chan *Worker, b.numWorkers)
 	for x := 0; x < b.numWorkers; x++ {
@@ -80,6 +88,13 @@ func (b *Batch) Process() {
 		b.workers <- worker
 	}
 
+	defer func() {
+		for x := 0; x < b.numWorkers; x++ {
+			worker := <-b.workers
+			worker.Stop()
+		}
+	}()
+
 	numWorkItems := len(b.work)
 	var worker *Worker
 	var workItem interface{}
@@ -88,25 +103,29 @@ func (b *Batch) Process() {
 		select {
 		case worker = <-b.workers:
 			worker.Enqueue(workItem)
+		case <-ctx.Done():
+			b.latch.Stopped()
+			return
 		case <-b.latch.NotifyStopping():
 			b.latch.Stopped()
 			return
 		}
 	}
+}
 
-	for x := 0; x < b.numWorkers; x++ {
-		worker := <-b.workers
-		worker.Stop()
-	}
+// Abort aborts the work in progress.
+func (b *Batch) Abort() {
+	b.latch.Stopping()
+	<-b.latch.NotifyStopped()
 }
 
 // AndReturn creates an action handler that returns a given worker to the worker queue.
 // It wraps any action provided to the queue.
 func (b *Batch) andReturn(worker *Worker, action QueueAction) QueueAction {
-	return func(workItem interface{}) error {
+	return func(ctx context.Context, workItem interface{}) error {
 		defer func() {
 			b.workers <- worker
 		}()
-		return action(workItem)
+		return action(ctx, workItem)
 	}
 }

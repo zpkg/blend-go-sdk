@@ -1,6 +1,7 @@
 package async
 
 import (
+	"context"
 	"runtime"
 )
 
@@ -15,7 +16,7 @@ func NewParallelQueue(action QueueAction) *ParallelQueue {
 }
 
 // QueueAction is an action handler for a queue.
-type QueueAction func(interface{}) error
+type QueueAction func(context.Context, interface{}) error
 
 // ParallelQueue is a queude with multiple workers..
 type ParallelQueue struct {
@@ -151,10 +152,10 @@ func (pq *ParallelQueue) dispatch() {
 // AndReturn creates an action handler that returns a given worker to the worker queue.
 // It wraps any action provided to the queue.
 func (pq *ParallelQueue) andReturn(worker *Worker, action QueueAction) QueueAction {
-	return func(workItem interface{}) error {
+	return func(ctx context.Context, workItem interface{}) error {
 		defer func() {
 			pq.workers <- worker
 		}()
-		return action(workItem)
+		return action(ctx, workItem)
 	}
 }
