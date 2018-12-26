@@ -3,10 +3,9 @@ package async
 import "runtime"
 
 // NewBatch creates a new batch processor.
-func NewBatch(action func(interface{}) error, workItems ...interface{}) *Batch {
+func NewBatch(action func(interface{}) error) *Batch {
 	return &Batch{
 		latch:      &Latch{},
-		workItems:  workItems,
 		action:     action,
 		numWorkers: runtime.NumCPU(),
 	}
@@ -17,9 +16,25 @@ type Batch struct {
 	latch      *Latch
 	numWorkers int
 	action     func(interface{}) error
-	workItems  []interface{}
+	work       chan interface{}
 	errors     chan error
 	workers    chan *Worker
+}
+
+// WithWork sets the work channel.
+func (b *Batch) WithWork(work chan interface{}) *Batch {
+	b.work = work
+	return b
+}
+
+// Work returns the work channel.
+func (b *Batch) Work() chan interface{} {
+	return b.work
+}
+
+// Add adds an item.
+func (b *Batch) Add(item interface{}) {
+	b.work <- item
 }
 
 // WithNumWorkers sets the number of workers.
@@ -65,11 +80,11 @@ func (b *Batch) Process() {
 		b.workers <- worker
 	}
 
-	numWorkItems := len(b.workItems)
+	numWorkItems := len(b.work)
 	var worker *Worker
 	var workItem interface{}
 	for x := 0; x < numWorkItems; x++ {
-		workItem = b.workItems[x]
+		workItem = <-b.work
 		select {
 		case worker = <-b.workers:
 			worker.Enqueue(workItem)
