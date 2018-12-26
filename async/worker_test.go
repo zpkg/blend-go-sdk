@@ -13,7 +13,7 @@ func TestQueue(t *testing.T) {
 	var didWork bool
 	wg := sync.WaitGroup{}
 	wg.Add(1)
-	w := NewQueue(func(obj interface{}) error {
+	w := NewWorker(func(obj interface{}) error {
 		defer wg.Done()
 		didWork = true
 		assert.Equal("hello", obj)
