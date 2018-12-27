@@ -1,8 +1,13 @@
 package cron
 
 import (
-	"sync"
+	"sync/atomic"
 	"time"
+)
+
+// Interface assertions.
+var (
+	_ Schedule = (*ImmediateSchedule)(nil)
 )
 
 // Immediately Returns a schedule that casues a job to run immediately on start,
@@ -13,9 +18,7 @@ func Immediately() *ImmediateSchedule {
 
 // ImmediateSchedule fires immediately with an optional continuation schedule.
 type ImmediateSchedule struct {
-	sync.Mutex
-
-	didRun bool
+	didRun int32
 	then   Schedule
 }
 
@@ -25,17 +28,14 @@ func (i *ImmediateSchedule) Then(then Schedule) Schedule {
 	return i
 }
 
-// GetNextRunTime implements Schedule.
-func (i *ImmediateSchedule) GetNextRunTime(after *time.Time) *time.Time {
-	i.Lock()
-	defer i.Unlock()
-
-	if !i.didRun {
-		i.didRun = true
+// Next implements Schedule.
+func (i *ImmediateSchedule) Next(after *time.Time) *time.Time {
+	if atomic.LoadInt32(&i.didRun) == 0 {
+		i.didRun = 1
 		return Optional(Now())
 	}
 	if i.then != nil {
-		return i.then.GetNextRunTime(after)
+		return i.then.Next(after)
 	}
 	return nil
 }

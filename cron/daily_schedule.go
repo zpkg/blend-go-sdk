@@ -2,6 +2,10 @@ package cron
 
 import "time"
 
+var (
+	_ Schedule = (*DailySchedule)(nil)
+)
+
 // WeeklyAtUTC returns a schedule that fires on every of the given days at the given time by hour, minute and second in UTC.
 func WeeklyAtUTC(hour, minute, second int, days ...time.Weekday) Schedule {
 	dayOfWeekMask := uint(0)
@@ -39,8 +43,8 @@ func (ds DailySchedule) checkDayOfWeekMask(day time.Weekday) bool {
 	return bitwiseResult > uint(0)
 }
 
-// GetNextRunTime implements Schedule.
-func (ds DailySchedule) GetNextRunTime(after *time.Time) *time.Time {
+// Next implements Schedule.
+func (ds DailySchedule) Next(after *time.Time) *time.Time {
 	if after == nil {
 		after = Optional(Now())
 	}

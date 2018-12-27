@@ -507,7 +507,7 @@ func (jm *JobManager) loadJobUnsafe(j Job) error {
 
 func (jm *JobManager) scheduleNextRuntime(schedule Schedule, after *time.Time) time.Time {
 	if schedule != nil {
-		return Deref(schedule.GetNextRunTime(after))
+		return Deref(schedule.Next(after))
 	}
 	return time.Time{}
 }

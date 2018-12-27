@@ -22,9 +22,13 @@ type runAtJob struct {
 	RunDelegate func(ctx context.Context) error
 }
 
+var (
+	_ Schedule = (*runAt)(nil)
+)
+
 type runAt time.Time
 
-func (ra runAt) GetNextRunTime(after *time.Time) *time.Time {
+func (ra runAt) Next(after *time.Time) *time.Time {
 	typed := time.Time(ra)
 	return &typed
 }
