@@ -256,6 +256,7 @@ func mapKeysToArray(values map[int]bool) []int {
 	var index int
 	for key := range values {
 		output[index] = key
+		index++
 	}
 	sort.Ints(output)
 	return output

@@ -37,6 +37,18 @@ func TestParseString(t *testing.T) {
 	}
 }
 
+func TestMapKeysToArray(t *testing.T) {
+	assert := assert.New(t)
+
+	assert.Equal([]int{1, 2, 3}, mapKeysToArray(map[int]bool{
+		3: true,
+		1: true,
+		2: true,
+	}))
+	assert.Empty(mapKeysToArray(nil))
+	assert.Empty(mapKeysToArray(map[int]bool{}))
+}
+
 func TestFindNext(t *testing.T) {
 	assert := assert.New(t)
 
