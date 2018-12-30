@@ -16,12 +16,9 @@ import (
 // New returns a new job manager.
 func New() *JobManager {
 	jm := JobManager{
-		latch:   &async.Latch{},
-		jobs:    map[string]*JobMeta{},
-		running: map[string]*JobInvocation{},
+		latch: &async.Latch{},
+		jobs:  map[string]*JobScheduler{},
 	}
-	jm.schedulerWorker = async.NewInterval(jm.runDueJobs, DefaultHeartbeatInterval)
-	jm.killHangingTasksWorker = async.NewInterval(jm.killHangingJobs, DefaultHeartbeatInterval)
 	return &jm
 }
 
@@ -51,17 +48,10 @@ func MustNewFromEnv() *JobManager {
 // JobManager is the main orchestration and job management object.
 type JobManager struct {
 	sync.Mutex
-
-	latch *async.Latch
-
+	latch  *async.Latch
 	tracer Tracer
 	log    *logger.Logger
-
-	schedulerWorker        *async.Interval
-	killHangingTasksWorker *async.Interval
-
-	jobs    map[string]*JobMeta
-	running map[string]*JobInvocation
+	jobs   map[string]*JobScheduler
 }
 
 // WithLogger sets the logger and returns a reference to the job manager.
@@ -169,7 +159,7 @@ func (jm *JobManager) HasJob(jobName string) (hasJob bool) {
 }
 
 // Job returns a job metadata by name.
-func (jm *JobManager) Job(jobName string) (job *JobMeta, err error) {
+func (jm *JobManager) Job(jobName string) (job *JobScheduler, err error) {
 	jm.Lock()
 	defer jm.Unlock()
 	if jobMeta, hasJob := jm.jobs[jobName]; hasJob {
@@ -456,68 +446,22 @@ func (jm *JobManager) safeAsyncExec(ctx context.Context, job Job) chan error {
 // LoadJob adds a job to the manager.
 func (jm *JobManager) loadJobUnsafe(j Job) error {
 	jobName := j.Name()
-
 	if _, hasJob := jm.jobs[jobName]; hasJob {
 		return exception.New(ErrJobAlreadyLoaded).WithMessagef("job: %s", j.Name())
 	}
-
-	meta := &JobMeta{
-		Name: jobName,
-		Job:  j,
-	}
-
-	if typed, ok := j.(ScheduleProvider); ok {
-		meta.Schedule = typed.Schedule()
-		meta.NextRunTime = jm.scheduleNextRuntime(meta.Schedule, nil)
-	}
-
-	if typed, ok := j.(TimeoutProvider); ok {
-		meta.TimeoutProvider = typed.Timeout
-	} else {
-		meta.TimeoutProvider = func() time.Duration { return 0 }
-	}
-
-	if typed, ok := j.(EnabledProvider); ok {
-		meta.EnabledProvider = typed.Enabled
-	} else {
-		meta.EnabledProvider = func() bool { return DefaultEnabled }
-	}
-
-	if typed, ok := j.(SerialProvider); ok {
-		meta.SerialProvider = typed.Serial
-	} else {
-		meta.SerialProvider = func() bool { return DefaultSerial }
-	}
-
-	if typed, ok := j.(ShouldTriggerListenersProvider); ok {
-		meta.ShouldTriggerListenersProvider = typed.ShouldTriggerListeners
-	} else {
-		meta.ShouldTriggerListenersProvider = func() bool { return DefaultShouldTriggerListeners }
-	}
-
-	if typed, ok := j.(ShouldWriteOutputProvider); ok {
-		meta.ShouldWriteOutputProvider = typed.ShouldWriteOutput
-	} else {
-		meta.ShouldWriteOutputProvider = func() bool { return DefaultShouldWriteOutput }
-	}
-
-	jm.jobs[jobName] = meta
+	jm.jobs[jobName] = NewJobScheduler(j)
 	return nil
 }
 
-func (jm *JobManager) scheduleNextRuntime(schedule Schedule, after *time.Time) time.Time {
-	if schedule != nil {
-		return Deref(schedule.Next(after))
-	}
-	return time.Time{}
-}
-
 func (jm *JobManager) setJobDisabledUnsafe(jobName string, disabled bool) error {
-	if job, hasJob := jm.jobs[jobName]; hasJob {
-		job.Disabled = disabled
-		return nil
+	job, hasJob := jm.jobs[jobName]
+
+	if !hasJob {
+		return exception.New(ErrJobNotLoaded).WithMessagef("job: %s", jobName)
 	}
-	return exception.New(ErrJobNotLoaded).WithMessagef("job: %s", jobName)
+
+	job.Disable()
+	return nil
 }
 
 func (jm *JobManager) createContextWithCancel() (context.Context, context.CancelFunc) {
