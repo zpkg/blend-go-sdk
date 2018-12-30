@@ -85,7 +85,7 @@ func TestOnTheHourAt(t *testing.T) {
 	fromHalfStart := time.Date(now.Year(), now.Month(), now.Day(), now.Hour(), 45, 0, 0, time.UTC)
 	fromHalfExpected := time.Date(now.Year(), now.Month(), now.Day(), now.Hour()+1, 40, 0, 0, time.UTC)
 
-	fromHalf := schedule.Next(Optional(fromHalfStart))
+	fromHalf := schedule.Next(Ref(fromHalfStart))
 
 	assert.NotNil(fromHalf)
 	assert.InTimeDelta(fromHalfExpected, *fromHalf, time.Second)
@@ -97,7 +97,7 @@ func TestImmediatelyThen(t *testing.T) {
 	s := Immediately().Then(EveryHour())
 	assert.NotNil(s.Next(nil))
 	now := Now()
-	next := Deref(s.Next(Optional(Now())))
+	next := Deref(s.Next(Ref(Now())))
 	assert.True(next.Sub(now) > time.Minute, fmt.Sprintf("%v", next.Sub(now)))
 	assert.True(next.Sub(now) < (2 * time.Hour))
 }

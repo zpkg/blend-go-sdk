@@ -372,7 +372,7 @@ func (jm *JobManager) runJobUnsafe(jobMeta *JobMeta) {
 	}
 
 	now := Now()
-	jobMeta.NextRunTime = jm.scheduleNextRuntime(jobMeta.Schedule, Optional(now))
+	jobMeta.NextRunTime = jm.scheduleNextRuntime(jobMeta.Schedule, Ref(now))
 
 	start := Now()
 	ctx, cancel := jm.createContextWithCancel()

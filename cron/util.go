@@ -20,8 +20,9 @@ func Deref(t *time.Time) time.Time {
 	return *t
 }
 
-// Optional returns an optional time.
-func Optional(t time.Time) *time.Time {
+// Ref returns a reference for a given time.
+// If the time is zero, nil is returned.
+func Ref(t time.Time) *time.Time {
 	if t.IsZero() {
 		return nil
 	}

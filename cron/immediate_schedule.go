@@ -32,7 +32,7 @@ func (i *ImmediateSchedule) Then(then Schedule) Schedule {
 func (i *ImmediateSchedule) Next(after *time.Time) *time.Time {
 	if atomic.LoadInt32(&i.didRun) == 0 {
 		i.didRun = 1
-		return Optional(Now())
+		return Ref(Now())
 	}
 	if i.then != nil {
 		return i.then.Next(after)

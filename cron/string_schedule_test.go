@@ -22,6 +22,7 @@ func TestParseString(t *testing.T) {
 	testCases := []stringScheduleTestCase{
 		{Input: "", ExpectedErr: ErrStringScheduleInvalid},
 		{Input: stringutil.Random(stringutil.Letters, 10), ExpectedErr: ErrStringScheduleInvalid},
+		{Input: "*/5 * * * * * *", After: Ref(time.Date(2018, 12, 29, 13, 12, 11, 0, time.UTC)), Expected: Ref(time.Date(2018, 12, 29, 13, 12, 16, 0, time.UTC))},
 	}
 
 	for _, tc := range testCases {
