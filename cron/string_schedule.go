@@ -111,12 +111,12 @@ func (ss *StringSchedule) Next(after *time.Time) *time.Time {
 	}
 
 	// figure out the next year
-	year := findNext(working.Year(), ss.Years...)
-	month := findNext(int(working.Month()), ss.Months...)
-	day := findNext(int(working.Day()), ss.DaysOfMonth...)
-	hour := findNext(working.Hour(), ss.Hours...)
-	minute := findNext(working.Minute(), ss.Minutes...)
-	second := findNext(working.Second(), ss.Seconds...)
+	year := findNext(working.Year(), ss.Years)
+	month := findNext(int(working.Month()), ss.Months)
+	day := findNext(int(working.Day()), ss.DaysOfMonth)
+	hour := findNext(working.Hour(), ss.Hours)
+	minute := findNext(working.Minute(), ss.Minutes)
+	second := findNext(working.Second(), ss.Seconds)
 	return Ref(time.Date(year, time.Month(month), day, hour, minute, second, 0, time.UTC))
 }
 
@@ -261,7 +261,7 @@ func mapKeysToArray(values map[int]bool) []int {
 	return output
 }
 
-func findNext(basis int, values ...int) int {
+func findNext(basis int, values []int) int {
 	for _, value := range values {
 		if value >= basis {
 			return value

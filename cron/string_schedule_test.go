@@ -31,7 +31,16 @@ func TestParseString(t *testing.T) {
 			assert.NotNil(err)
 			assert.True(exception.Is(err, tc.ExpectedErr))
 		} else {
-			assert.Equal(tc.Expected, parsed.Next(tc.After))
+			assert.Nil(err)
+			assert.Equal(*tc.Expected, Deref(parsed.Next(tc.After)))
 		}
 	}
+}
+
+func TestFindNext(t *testing.T) {
+	assert := assert.New(t)
+
+	assert.Equal(4, findNext(4, nil))
+	assert.Equal(5, findNext(4, []int{1, 3, 5, 7, 9}))
+	assert.Equal(10, findNext(10, []int{1, 2, 3, 4, 5}))
 }
