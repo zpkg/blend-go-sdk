@@ -362,7 +362,7 @@ func (jm *JobManager) runJobUnsafe(jobMeta *JobMeta) {
 	}
 
 	now := Now()
-	jobMeta.NextRunTime = jm.scheduleNextRuntime(jobMeta.Schedule, Optional(now))
+	jobMeta.NextRunTime = jm.scheduleNextRuntime(jobMeta.Schedule, Ref(now))
 
 	start := Now()
 	ctx, cancel := jm.createContextWithCancel()
@@ -545,7 +545,7 @@ func (jm *JobManager) onFailure(ctx context.Context, ji *JobInvocation) {
 		jm.log.SubContext(ji.ID).Trigger(event)
 	}
 	if ji.Err != nil {
-		jm.err(ji.Err)
+		logger.MaybeError(jm.log, ji.Err)
 	}
 	if typed, ok := ji.JobMeta.Job.(OnFailureReceiver); ok {
 		typed.OnFailure(ctx)
@@ -561,33 +561,5 @@ func (jm *JobManager) onFailure(ctx context.Context, ji *JobInvocation) {
 		if typed, ok := ji.JobMeta.Job.(OnBrokenReceiver); ok {
 			typed.OnBroken(ctx)
 		}
-	}
-}
-
-//
-// logging helpers
-//
-
-func (jm *JobManager) err(err error) {
-	if err != nil && jm.log != nil {
-		jm.log.Error(err)
-	}
-}
-
-func (jm *JobManager) fatal(err error) {
-	if err != nil && jm.log != nil {
-		jm.log.Fatal(err)
-	}
-}
-
-func (jm *JobManager) errorf(format string, args ...interface{}) {
-	if jm.log != nil {
-		jm.log.SyncErrorf(format, args...)
-	}
-}
-
-func (jm *JobManager) debugf(format string, args ...interface{}) {
-	if jm.log != nil {
-		jm.log.SyncDebugf(format, args...)
 	}
 }

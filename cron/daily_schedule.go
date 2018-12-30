@@ -46,7 +46,7 @@ func (ds DailySchedule) checkDayOfWeekMask(day time.Weekday) bool {
 // Next implements Schedule.
 func (ds DailySchedule) Next(after *time.Time) *time.Time {
 	if after == nil {
-		after = Optional(Now())
+		after = Ref(Now())
 	}
 
 	todayInstance := time.Date(after.Year(), after.Month(), after.Day(), ds.TimeOfDayUTC.Hour(), ds.TimeOfDayUTC.Minute(), ds.TimeOfDayUTC.Second(), 0, time.UTC)

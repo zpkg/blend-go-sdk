@@ -1,14 +1,17 @@
 package cron
 
 import (
+	"sort"
 	"strconv"
 	"strings"
 	"time"
 
 	"github.com/blend/go-sdk/exception"
+	"github.com/blend/go-sdk/stringutil"
 )
 
 // ParseString parses a cron formatted string into a schedule.
+// The string must be 7 components, whitespace separated.
 /*
 Field name     Mandatory?   Allowed values    Allowed special characters
 ----------     ----------   --------------    --------------------------
@@ -21,44 +24,44 @@ Day of week    Yes          0-6 or SUN-SAT    * / , - L #
 Year           No           1970–2099         * / , -
 */
 func ParseString(cronString string) (*StringSchedule, error) {
-	parts := strings.Split(cronString, " ")
+	parts := stringutil.SplitSpace(cronString)
 	if len(parts) != 7 {
 		return nil, exception.New(ErrStringScheduleInvalid).WithInner(ErrStringScheduleComponents).WithMessagef("provided string; %s", cronString)
 	}
 
 	seconds, err := parsePart(parts[0], parseInt, below(60))
 	if err != nil {
-		return nil, err
+		return nil, exception.New(ErrStringScheduleInvalid).WithInner(err).WithMessage("seconds invalid")
 	}
 
 	minutes, err := parsePart(parts[1], parseInt, below(60))
 	if err != nil {
-		return nil, err
+		return nil, exception.New(ErrStringScheduleInvalid).WithInner(err).WithMessage("minutes invalid")
 	}
 
 	hours, err := parsePart(parts[2], parseInt, below(24))
 	if err != nil {
-		return nil, err
+		return nil, exception.New(ErrStringScheduleInvalid).WithInner(err).WithMessage("hours invalid")
 	}
 
 	days, err := parsePart(parts[3], parseInt, between(1, 32))
 	if err != nil {
-		return nil, err
+		return nil, exception.New(ErrStringScheduleInvalid).WithInner(err).WithMessage("days invalid")
 	}
 
 	months, err := parsePart(parts[4], parseMonth, between(1, 13))
 	if err != nil {
-		return nil, err
+		return nil, exception.New(ErrStringScheduleInvalid).WithInner(err).WithMessage("months invalid")
 	}
 
 	daysOfWeek, err := parsePart(parts[5], parseDayOfWeek, between(0, 7))
 	if err != nil {
-		return nil, err
+		return nil, exception.New(ErrStringScheduleInvalid).WithInner(err).WithMessage("days of week invalid")
 	}
 
-	years, err := parsePart(parts[6], parseInt, nil)
+	years, err := parsePart(parts[6], parseInt, between(1970, 2100))
 	if err != nil {
-		return nil, err
+		return nil, exception.New(ErrStringScheduleInvalid).WithInner(err).WithMessage("years invalid")
 	}
 
 	schedule := &StringSchedule{
@@ -79,6 +82,7 @@ const (
 	ErrStringScheduleInvalid         exception.Class = "cron: schedule string invalid"
 	ErrStringScheduleComponents      exception.Class = "cron: must have (7) components space delimited"
 	ErrStringScheduleValueOutOfRange exception.Class = "cron: string schedule part out of range"
+	ErrStringScheduleInvalidRange    exception.Class = "cron: range (from-to) invalid"
 )
 
 // Interface assertions.
@@ -101,77 +105,62 @@ type StringSchedule struct {
 
 // Next implements cron.Schedule.
 func (ss *StringSchedule) Next(after *time.Time) *time.Time {
-	return nil
+	working := Now()
+	if after != nil {
+		working = *after
+	}
+
+	// figure out the next year
+	year := findNext(working.Year(), ss.Years)
+	month := findNext(int(working.Month()), ss.Months)
+	day := findNext(int(working.Day()), ss.DaysOfMonth)
+	hour := findNext(working.Hour(), ss.Hours)
+	minute := findNext(working.Minute(), ss.Minutes)
+	second := findNext(working.Second(), ss.Seconds)
+	return Ref(time.Date(year, time.Month(month), day, hour, minute, second, 0, time.UTC))
 }
 
-// these are special characters
-const (
-	cronSpecialComma    = ',' //
-	cronSpecialDash     = '-'
-	cronSpecialStar     = '*'
-	cronSpecialSlash    = '/'
-	cronSpecialQuestion = '?' // sometimes used as the startup time, sometimes as a *
-
-	cronSpecialLast       = 'L'
-	cronSpecialWeekday    = 'W' // nearest weekday to the given day of the month
-	cronSpecialDayOfMonth = '#' //
-)
-
-var (
-	validMonths = map[string]int{
-		"JAN": 1,
-		"FEB": 2,
-		"MAR": 3,
-		"APR": 4,
-		"MAY": 5,
-		"JUN": 6,
-		"JUL": 7,
-		"AUG": 8,
-		"SEP": 9,
-		"OCT": 10,
-		"NOV": 11,
-		"DEC": 12,
-	}
-
-	validDaysOfWeek = map[string]int{
-		"SUN": 0,
-		"MON": 1,
-		"TUE": 2,
-		"WED": 3,
-		"THU": 4,
-		"FRI": 5,
-		"SAT": 6,
-	}
-)
-
 func parsePart(values string, parser func(string) (int, error), validator func(int) bool) ([]int, error) {
-	if values == "*" {
+	if values == string(cronSpecialStar) {
 		return nil, nil
 	}
 
 	// check if we need to expand an "every" pattern
-	if strings.HasPrefix(values, "*/") {
-		return parseEvery(values, validator)
+	if strings.HasPrefix(values, cronSpecialEvery) {
+		return parseEvery(values, parseInt, validator)
 	}
 
 	components := strings.Split(values, string(cronSpecialComma))
 
-	output := make([]int, len(components))
+	output := map[int]bool{}
+	var component string
 	for x := 0; x < len(components); x++ {
-		part, err := strconv.Atoi(components[x])
+		component = components[x]
+		if strings.Contains(component, string(cronSpecialDash)) {
+			rangeValues, err := parseRange(values, parser, validator)
+			if err != nil {
+				return nil, err
+			}
+
+			for _, value := range rangeValues {
+				output[value] = true
+			}
+		}
+
+		part, err := parser(component)
 		if err != nil {
 			return nil, exception.New(err)
 		}
 		if validator != nil && !validator(part) {
 			return nil, exception.New(err)
 		}
-		output[x] = part
+		output[part] = true
 	}
-	return output, nil
+	return mapKeysToArray(output), nil
 }
 
-func parseEvery(values string, validator func(int) bool) ([]int, error) {
-	every, err := strconv.Atoi(strings.TrimPrefix(values, "*/"))
+func parseEvery(values string, parser func(string) (int, error), validator func(int) bool) ([]int, error) {
+	every, err := parser(strings.TrimPrefix(values, "*/"))
 	if err != nil {
 		return nil, exception.New(err)
 	}
@@ -181,6 +170,40 @@ func parseEvery(values string, validator func(int) bool) ([]int, error) {
 
 	var output []int
 	for x := 0; x < 60; x = x + every {
+		output = append(output, x)
+	}
+	return output, nil
+}
+
+func parseRange(values string, parser func(string) (int, error), validator func(int) bool) ([]int, error) {
+	parts := strings.Split(values, string(cronSpecialDash))
+
+	if len(parts) != 2 {
+		return nil, exception.New(ErrStringScheduleInvalidRange).WithMessagef("invalid range: %s")
+	}
+
+	from, err := parser(parts[0])
+	if err != nil {
+		return nil, exception.New(err)
+	}
+	to, err := parser(parts[1])
+	if err != nil {
+		return nil, exception.New(err)
+	}
+
+	if validator != nil && !validator(from) {
+		return nil, exception.New(ErrStringScheduleValueOutOfRange).WithMessage("invalid range from")
+	}
+	if validator != nil && !validator(to) {
+		return nil, exception.New(ErrStringScheduleValueOutOfRange).WithMessage("invalid range to")
+	}
+
+	if from >= to {
+		return nil, exception.New(ErrStringScheduleInvalidRange).WithMessage("invalid range; from greater than to")
+	}
+
+	var output []int
+	for x := from; x <= to; x++ {
 		output = append(output, x)
 	}
 	return output, nil
@@ -227,3 +250,65 @@ func between(min, max int) func(int) bool {
 		return value >= min && value < max
 	}
 }
+
+func mapKeysToArray(values map[int]bool) []int {
+	output := make([]int, len(values))
+	var index int
+	for key := range values {
+		output[index] = key
+		index++
+	}
+	sort.Ints(output)
+	return output
+}
+
+func findNext(basis int, values []int) int {
+	for _, value := range values {
+		if value >= basis {
+			return value
+		}
+	}
+	return basis
+}
+
+// these are special characters
+const (
+	cronSpecialComma    = ',' //
+	cronSpecialDash     = '-'
+	cronSpecialStar     = '*'
+	cronSpecialSlash    = '/'
+	cronSpecialQuestion = '?' // sometimes used as the startup time, sometimes as a *
+
+	cronSpecialLast       = 'L'
+	cronSpecialWeekday    = 'W' // nearest weekday to the given day of the month
+	cronSpecialDayOfMonth = '#' //
+
+	cronSpecialEvery = "*/"
+)
+
+var (
+	validMonths = map[string]int{
+		"JAN": 1,
+		"FEB": 2,
+		"MAR": 3,
+		"APR": 4,
+		"MAY": 5,
+		"JUN": 6,
+		"JUL": 7,
+		"AUG": 8,
+		"SEP": 9,
+		"OCT": 10,
+		"NOV": 11,
+		"DEC": 12,
+	}
+
+	validDaysOfWeek = map[string]int{
+		"SUN": 0,
+		"MON": 1,
+		"TUE": 2,
+		"WED": 3,
+		"THU": 4,
+		"FRI": 5,
+		"SAT": 6,
+	}
+)
