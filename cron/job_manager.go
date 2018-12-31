@@ -3,10 +3,8 @@ package cron
 // NOTE: ALL TIMES ARE IN UTC. JUST USE UTC.
 
 import (
-	"context"
 	"fmt"
 	"sync"
-	"time"
 
 	"github.com/blend/go-sdk/async"
 	"github.com/blend/go-sdk/exception"
@@ -89,13 +87,12 @@ func (jm *JobManager) Latch() *async.Latch {
 func (jm *JobManager) LoadJobs(jobs ...Job) error {
 	jm.Lock()
 	defer jm.Unlock()
-
-	var err error
 	for _, job := range jobs {
-		err = jm.loadJobUnsafe(job)
-		if err != nil {
-			return err
+		jobName := job.Name()
+		if _, hasJob := jm.jobs[jobName]; hasJob {
+			return exception.New(ErrJobAlreadyLoaded).WithMessagef("job: %s", job.Name())
 		}
+		jm.jobs[jobName] = NewJobScheduler(job).WithTracer(jm.tracer).WithLogger(jm.log)
 	}
 	return nil
 }
@@ -104,7 +101,13 @@ func (jm *JobManager) LoadJobs(jobs ...Job) error {
 func (jm *JobManager) LoadJob(job Job) error {
 	jm.Lock()
 	defer jm.Unlock()
-	return jm.loadJobUnsafe(job)
+
+	jobName := job.Name()
+	if _, hasJob := jm.jobs[jobName]; hasJob {
+		return exception.New(ErrJobAlreadyLoaded).WithMessagef("job: %s", job.Name())
+	}
+	jm.jobs[jobName] = NewJobScheduler(job).WithTracer(jm.tracer).WithLogger(jm.log)
+	return nil
 }
 
 // DisableJobs disables a variadic list of job names.
@@ -112,11 +115,11 @@ func (jm *JobManager) DisableJobs(jobNames ...string) error {
 	jm.Lock()
 	defer jm.Unlock()
 
-	var err error
 	for _, jobName := range jobNames {
-		err = jm.setJobDisabledUnsafe(jobName, true)
-		if err != nil {
-			return err
+		if job, ok := jm.jobs[jobName]; ok {
+			job.Disable()
+		} else {
+			return exception.New(ErrJobNotFound).WithMessagef("job: %s", jobName)
 		}
 	}
 	return nil
@@ -127,16 +130,24 @@ func (jm *JobManager) DisableJob(jobName string) error {
 	jm.Lock()
 	defer jm.Unlock()
 
-	return jm.setJobDisabledUnsafe(jobName, true)
+	job, ok := jm.jobs[jobName]
+	if !ok {
+		return exception.New(ErrJobNotFound).WithMessagef("job: %s", jobName)
+	}
+	job.Enable()
+	return nil
 }
 
 // EnableJobs enables a variadic list of job names.
 func (jm *JobManager) EnableJobs(jobNames ...string) error {
-	var err error
+	jm.Lock()
+	defer jm.Unlock()
+
 	for _, jobName := range jobNames {
-		err = jm.setJobDisabledUnsafe(jobName, false)
-		if err != nil {
-			return err
+		if job, ok := jm.jobs[jobName]; ok {
+			job.Enable()
+		} else {
+			return exception.New(ErrJobNotFound).WithMessagef("job: %s", jobName)
 		}
 	}
 	return nil
@@ -146,8 +157,12 @@ func (jm *JobManager) EnableJobs(jobNames ...string) error {
 func (jm *JobManager) EnableJob(jobName string) error {
 	jm.Lock()
 	defer jm.Unlock()
-
-	return jm.setJobDisabledUnsafe(jobName, false)
+	job, ok := jm.jobs[jobName]
+	if !ok {
+		return exception.New(ErrJobNotFound).WithMessagef("job: %s", jobName)
+	}
+	job.Disable()
+	return nil
 }
 
 // HasJob returns if a jobName is loaded or not.
@@ -162,8 +177,8 @@ func (jm *JobManager) HasJob(jobName string) (hasJob bool) {
 func (jm *JobManager) Job(jobName string) (job *JobScheduler, err error) {
 	jm.Lock()
 	defer jm.Unlock()
-	if jobMeta, hasJob := jm.jobs[jobName]; hasJob {
-		job = jobMeta
+	if jobScheduler, hasJob := jm.jobs[jobName]; hasJob {
+		job = jobScheduler
 	} else {
 		err = exception.New(ErrJobNotLoaded).WithMessagef("job: %s", jobName)
 	}
@@ -188,7 +203,10 @@ func (jm *JobManager) IsJobDisabled(jobName string) (value bool) {
 func (jm *JobManager) IsJobRunning(jobName string) (isRunning bool) {
 	jm.Lock()
 	defer jm.Unlock()
-	_, isRunning = jm.running[jobName]
+
+	if job, ok := jm.jobs[jobName]; ok {
+		isRunning = job.Current != nil
+	}
 	return
 }
 
@@ -196,9 +214,10 @@ func (jm *JobManager) IsJobRunning(jobName string) (isRunning bool) {
 func (jm *JobManager) RunJobs(jobNames ...string) error {
 	jm.Lock()
 	defer jm.Unlock()
+
 	for _, jobName := range jobNames {
-		if jobMeta, ok := jm.jobs[jobName]; ok {
-			jm.runJobUnsafe(jobMeta)
+		if job, ok := jm.jobs[jobName]; ok {
+			job.Run()
 		} else {
 			return exception.New(ErrJobNotLoaded).WithMessagef("job: %s", jobName)
 		}
@@ -211,19 +230,21 @@ func (jm *JobManager) RunJob(jobName string) error {
 	jm.Lock()
 	defer jm.Unlock()
 
-	if job, ok := jm.jobs[jobName]; ok {
-		jm.runJobUnsafe(job)
-		return nil
+	job, ok := jm.jobs[jobName]
+	if !ok {
+		return exception.New(ErrJobNotLoaded).WithMessagef("job: %s", jobName)
 	}
-	return exception.New(ErrJobNotLoaded).WithMessagef("job: %s", jobName)
+	job.Run()
+	return nil
 }
 
 // RunAllJobs runs every job that has been loaded in the JobManager at once.
 func (jm *JobManager) RunAllJobs() {
 	jm.Lock()
 	defer jm.Unlock()
-	for _, jobMeta := range jm.jobs {
-		jm.runJobUnsafe(jobMeta)
+
+	for _, job := range jm.jobs {
+		job.Run()
 	}
 }
 
@@ -232,14 +253,11 @@ func (jm *JobManager) CancelJob(jobName string) (err error) {
 	jm.Lock()
 	defer jm.Unlock()
 
-	job, ok := jm.running[jobName]
+	job, ok := jm.jobs[jobName]
 	if !ok {
 		err = exception.New(ErrJobNotFound).WithMessagef("job: %s", jobName)
 		return
 	}
-
-	job.Elapsed = Since(job.StartTime)
-	job.Err = exception.New(ErrJobCancelled)
 	job.Cancel()
 	return
 }
@@ -251,12 +269,7 @@ func (jm *JobManager) Status() *Status {
 	status := Status{
 		Running: map[string]JobInvocation{},
 	}
-	for _, meta := range jm.jobs {
-		status.Jobs = append(status.Jobs, *meta)
-	}
-	for name, job := range jm.running {
-		status.Running[name] = *job
-	}
+	// TODO: add job statuses and running statuses.
 	return &status
 }
 
@@ -270,8 +283,9 @@ func (jm *JobManager) Start() error {
 		return fmt.Errorf("already started")
 	}
 	jm.latch.Starting()
-	jm.schedulerWorker.Start()
-	jm.killHangingTasksWorker.Start()
+	for _, job := range jm.jobs {
+		job.Start()
+	}
 	jm.latch.Started()
 	return nil
 }
@@ -282,8 +296,9 @@ func (jm *JobManager) Stop() error {
 		return fmt.Errorf("already stopped")
 	}
 	jm.latch.Stopping()
-	jm.schedulerWorker.Stop()
-	jm.killHangingTasksWorker.Stop()
+	for _, job := range jm.jobs {
+		job.Stop()
+	}
 	jm.latch.Stopped()
 	return nil
 }
@@ -301,265 +316,5 @@ func (jm *JobManager) NotifyStopped() <-chan struct{} {
 // IsRunning returns if the job manager is running.
 // It serves as an authoritative healthcheck.
 func (jm *JobManager) IsRunning() bool {
-	return jm.latch.IsRunning() && jm.schedulerWorker.IsRunning() && jm.killHangingTasksWorker.IsRunning()
-}
-
-// --------------------------------------------------------------------------------
-// lifecycle methods
-// --------------------------------------------------------------------------------
-
-func (jm *JobManager) runDueJobs() error {
-	jm.Lock()
-	defer jm.Unlock()
-	now := Now()
-	for _, jobMeta := range jm.jobs {
-		if !jobMeta.NextRunTime.IsZero() && jobMeta.NextRunTime.Before(now) {
-			jm.runJobUnsafe(jobMeta)
-		}
-	}
-	return nil
-}
-
-func (jm *JobManager) killHangingJobs() (err error) {
-	jm.Lock()
-	defer jm.Unlock()
-
-	var effectiveTimeout time.Time
-	var now time.Time
-	var t1, t2 time.Time
-
-	for jobName, ji := range jm.running {
-		if ji.Timeout.IsZero() {
-			return
-		}
-		now = Now()
-		if jobMeta, ok := jm.jobs[jobName]; ok {
-			nextRuntime := jobMeta.NextRunTime
-			t1 = ji.Timeout
-			t2 = nextRuntime
-			effectiveTimeout = Min(t1, t2)
-		} else {
-			effectiveTimeout = ji.Timeout
-		}
-		if effectiveTimeout.Before(now) {
-			jm.killHangingJob(ji)
-		}
-	}
-	return nil
-}
-
-func (jm *JobManager) killHangingJob(ji *JobInvocation) {
-	ji.Cancel()
-}
-
-//
-// these assume a lock is held
-//
-
-func (jm *JobManager) runJobUnsafe(jobMeta *JobMeta) {
-	if !jm.jobCanRun(jobMeta) {
-		return
-	}
-
-	now := Now()
-	jobMeta.NextRunTime = jm.scheduleNextRuntime(jobMeta.Schedule, Ref(now))
-
-	start := Now()
-	ctx, cancel := jm.createContextWithCancel()
-
-	ji := JobInvocation{
-		ID:        NewJobInvocationID(),
-		Name:      jobMeta.Name,
-		StartTime: start,
-		JobMeta:   jobMeta,
-		Context:   ctx,
-		Cancel:    cancel,
-	}
-
-	if jobMeta.TimeoutProvider != nil {
-		if timeout := jobMeta.TimeoutProvider(); timeout > 0 {
-			ji.Timeout = start.Add(timeout)
-		}
-	}
-
-	jm.running[ji.Name] = &ji
-	go jm.execute(WithJobInvocation(ctx, &ji), &ji)
-}
-
-func (jm *JobManager) execute(ctx context.Context, ji *JobInvocation) {
-	var err error
-	var tf TraceFinisher
-	defer func() {
-		if tf != nil {
-			tf.Finish(ctx)
-		}
-
-		jm.Lock()
-		if _, ok := jm.running[ji.Name]; ok {
-			delete(jm.running, ji.Name)
-		}
-		jm.Unlock()
-
-		ji.Elapsed = Since(ji.StartTime)
-		ji.Err = err
-
-		if err != nil && IsJobCancelled(err) {
-			jm.onCancelled(ctx, ji)
-		} else if ji.Err != nil {
-			jm.onFailure(ctx, ji)
-		} else {
-			jm.onComplete(ctx, ji)
-		}
-		ji.JobMeta.Last = ji
-	}()
-	if jm.tracer != nil {
-		ctx, tf = jm.tracer.Start(ctx)
-	}
-
-	jm.onStart(ctx, ji)
-
-	select {
-	case <-ctx.Done():
-		err = ErrJobCancelled
-	case err = <-jm.safeAsyncExec(ctx, ji.JobMeta.Job):
-		return
-	}
-}
-
-func (jm *JobManager) safeAsyncExec(ctx context.Context, job Job) chan error {
-	errors := make(chan error)
-	go func() {
-		defer func() {
-			if r := recover(); r != nil {
-				errors <- exception.New(r)
-			}
-		}()
-		errors <- job.Execute(ctx)
-	}()
-	return errors
-}
-
-// --------------------------------------------------------------------------------
-// Utility Methods
-// --------------------------------------------------------------------------------
-
-// LoadJob adds a job to the manager.
-func (jm *JobManager) loadJobUnsafe(j Job) error {
-	jobName := j.Name()
-	if _, hasJob := jm.jobs[jobName]; hasJob {
-		return exception.New(ErrJobAlreadyLoaded).WithMessagef("job: %s", j.Name())
-	}
-	jm.jobs[jobName] = NewJobScheduler(j)
-	return nil
-}
-
-func (jm *JobManager) setJobDisabledUnsafe(jobName string, disabled bool) error {
-	job, hasJob := jm.jobs[jobName]
-
-	if !hasJob {
-		return exception.New(ErrJobNotLoaded).WithMessagef("job: %s", jobName)
-	}
-
-	job.Disable()
-	return nil
-}
-
-func (jm *JobManager) createContextWithCancel() (context.Context, context.CancelFunc) {
-	return context.WithCancel(context.Background())
-}
-
-// jobCanRun returns whether a job can be executed
-func (jm *JobManager) jobCanRun(job *JobMeta) bool {
-	if job.Disabled {
-		return false
-	}
-	if job.EnabledProvider != nil {
-		if !job.EnabledProvider() {
-			return false
-		}
-	}
-
-	if job.SerialProvider != nil && job.SerialProvider() {
-		_, hasTask := jm.running[job.Name]
-		if hasTask {
-			return false
-		}
-	}
-	return true
-}
-
-func (jm *JobManager) onStart(ctx context.Context, ji *JobInvocation) {
-	if jm.log != nil && ji.JobMeta.ShouldTriggerListenersProvider() {
-		event := NewEvent(FlagStarted, ji.Name).WithIsWritable(ji.JobMeta.ShouldWriteOutputProvider())
-		jm.log.SubContext(ji.ID).Trigger(event)
-	}
-	if typed, ok := ji.JobMeta.Job.(OnStartReceiver); ok {
-		typed.OnStart(ctx)
-	}
-}
-
-func (jm *JobManager) onCancelled(ctx context.Context, ji *JobInvocation) {
-	if jm.log != nil && ji.JobMeta.ShouldTriggerListenersProvider() {
-		event := NewEvent(FlagCancelled, ji.Name).
-			WithIsWritable(ji.JobMeta.ShouldWriteOutputProvider()).
-			WithElapsed(ji.Elapsed)
-		jm.log.SubContext(ji.ID).Trigger(event)
-	}
-	if typed, ok := ji.JobMeta.Job.(OnCancellationReceiver); ok {
-		typed.OnCancellation(ctx)
-	}
-}
-
-func (jm *JobManager) onComplete(ctx context.Context, ji *JobInvocation) {
-	if jm.log != nil && ji.JobMeta.ShouldTriggerListenersProvider() {
-		event := NewEvent(FlagComplete, ji.Name).
-			WithIsWritable(ji.JobMeta.ShouldWriteOutputProvider()).
-			WithElapsed(ji.Elapsed)
-		jm.log.SubContext(ji.ID).Trigger(event)
-	}
-	if typed, ok := ji.JobMeta.Job.(OnCompleteReceiver); ok {
-		typed.OnComplete(ctx)
-	}
-
-	if ji.JobMeta.Last != nil && ji.JobMeta.Last.Err != nil {
-		if jm.log != nil {
-			event := NewEvent(FlagFixed, ji.Name).
-				WithIsWritable(ji.JobMeta.ShouldWriteOutputProvider()).
-				WithElapsed(ji.Elapsed)
-			jm.log.SubContext(ji.ID).Trigger(event)
-		}
-
-		if typed, ok := ji.JobMeta.Job.(OnFixedReceiver); ok {
-			typed.OnFixed(ctx)
-		}
-	}
-}
-
-func (jm *JobManager) onFailure(ctx context.Context, ji *JobInvocation) {
-	if jm.log != nil && ji.JobMeta.ShouldTriggerListenersProvider() {
-		event := NewEvent(FlagFailed, ji.Name).
-			WithIsWritable(ji.JobMeta.ShouldWriteOutputProvider()).
-			WithElapsed(ji.Elapsed).
-			WithErr(ji.Err)
-
-		jm.log.SubContext(ji.ID).Trigger(event)
-	}
-	if ji.Err != nil {
-		logger.MaybeError(jm.log, ji.Err)
-	}
-	if typed, ok := ji.JobMeta.Job.(OnFailureReceiver); ok {
-		typed.OnFailure(ctx)
-	}
-	if ji.JobMeta.Last != nil && ji.JobMeta.Last.Err == nil {
-		if jm.log != nil {
-			event := NewEvent(FlagBroken, ji.Name).
-				WithIsWritable(ji.JobMeta.ShouldWriteOutputProvider()).
-				WithElapsed(ji.Elapsed)
-			jm.log.SubContext(ji.ID).Trigger(event)
-		}
-
-		if typed, ok := ji.JobMeta.Job.(OnBrokenReceiver); ok {
-			typed.OnBroken(ctx)
-		}
-	}
+	return jm.latch.IsRunning()
 }

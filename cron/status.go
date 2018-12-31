@@ -2,6 +2,6 @@ package cron
 
 // Status is a status object
 type Status struct {
-	Jobs    []JobMeta
+	Jobs    []JobScheduler
 	Running map[string]JobInvocation
 }
