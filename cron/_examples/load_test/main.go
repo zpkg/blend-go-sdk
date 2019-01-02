@@ -13,22 +13,22 @@ import (
 
 const (
 	// N is the number of jobs to load.
-	N = 4096
+	N = 2048
 
 	// Q is the total simulation time.
 	Q = 30 * time.Second
 
 	// JobRunEvery is the job interval.
-	JobRunEvery = 1 * time.Second
+	JobRunEvery = 5 * time.Second
 
 	// JobTimeout is the timeout for the jobs.
-	JobTimeout = 500 * time.Millisecond
+	JobTimeout = 3 * time.Second
 
 	// JobShortRunTime is the short run time.
-	JobShortRunTime = 250 * time.Millisecond
+	JobShortRunTime = 2 * time.Second
 
 	// JobLongRunTime is the long run time (will induce a timeout.)
-	JobLongRunTime = 750 * time.Millisecond
+	JobLongRunTime = 8 * time.Second
 )
 
 var startedCount int32
