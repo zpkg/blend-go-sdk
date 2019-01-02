@@ -146,6 +146,10 @@ func (js *JobScheduler) RunLoop() {
 	}
 
 	for {
+		if js.NextRuntime.IsZero() {
+			js.Latch.Stopped()
+			return
+		}
 		runAt := time.After(js.NextRuntime.UTC().Sub(Now()))
 		select {
 		case <-runAt:
