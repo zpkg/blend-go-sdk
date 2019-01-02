@@ -340,6 +340,7 @@ func (js *JobScheduler) onComplete(ctx context.Context, ji *JobInvocation) {
 			event := NewEvent(FlagFixed, ji.Name).
 				WithIsWritable(js.ShouldWriteOutputProvider()).
 				WithElapsed(ji.Elapsed)
+
 			js.Log.SubContext(ji.ID).Trigger(event)
 		}
 
