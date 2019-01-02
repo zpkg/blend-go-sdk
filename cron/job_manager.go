@@ -229,12 +229,11 @@ func (jm *JobManager) RunJobs(jobNames ...string) error {
 func (jm *JobManager) RunJob(jobName string) error {
 	jm.Lock()
 	defer jm.Unlock()
-
 	job, ok := jm.jobs[jobName]
 	if !ok {
 		return exception.New(ErrJobNotLoaded).WithMessagef("job: %s", jobName)
 	}
-	job.Run()
+	go job.Run()
 	return nil
 }
 
@@ -244,7 +243,7 @@ func (jm *JobManager) RunAllJobs() {
 	defer jm.Unlock()
 
 	for _, job := range jm.jobs {
-		job.Run()
+		go job.Run()
 	}
 }
 
@@ -267,9 +266,14 @@ func (jm *JobManager) Status() *Status {
 	jm.Lock()
 	defer jm.Unlock()
 	status := Status{
-		Running: map[string]JobInvocation{},
+		Running: map[string]*JobInvocation{},
 	}
-	// TODO: add job statuses and running statuses.
+	for _, job := range jm.jobs {
+		status.Jobs = append(status.Jobs, job)
+		if job.Current != nil {
+			status.Running[job.Current.ID] = job.Current
+		}
+	}
 	return &status
 }
 
