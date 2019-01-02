@@ -284,7 +284,7 @@ func (jm *JobManager) Start() error {
 	}
 	jm.latch.Starting()
 	for _, job := range jm.jobs {
-		job.Start()
+		job.WithTracer(jm.tracer).WithLogger(jm.log).Start()
 	}
 	jm.latch.Started()
 	return nil

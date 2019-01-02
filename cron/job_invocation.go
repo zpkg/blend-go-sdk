@@ -15,5 +15,4 @@ type JobInvocation struct {
 	Elapsed   time.Duration      `json:"elapsed"`
 	Context   context.Context    `json:"-"`
 	Cancel    context.CancelFunc `json:"-"`
-	Finished  chan struct{}      `json:"-"`
 }

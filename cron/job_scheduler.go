@@ -15,6 +15,7 @@ func NewJobScheduler(job Job) *JobScheduler {
 	js := &JobScheduler{
 		Latch: &async.Latch{},
 		Name:  job.Name(),
+		Job:   job,
 	}
 
 	if typed, ok := job.(ScheduleProvider); ok {
@@ -93,6 +94,9 @@ func (js *JobScheduler) WithLogger(log *logger.Logger) *JobScheduler {
 
 // Start starts the scheduler.
 func (js *JobScheduler) Start() {
+	if !js.Latch.CanStart() {
+		return
+	}
 	js.Latch.Starting()
 	go js.runLoop()
 	<-js.Latch.NotifyStarted()
@@ -100,6 +104,9 @@ func (js *JobScheduler) Start() {
 
 // Stop stops the scheduler.
 func (js *JobScheduler) Stop() {
+	if !js.Latch.CanStop() {
+		return
+	}
 	js.Latch.Stopping()
 	<-js.Latch.NotifyStopped()
 }
@@ -130,11 +137,11 @@ func (js *JobScheduler) Cancel() {
 // It blocks on the job execution to enforce or clear timeouts.
 func (js *JobScheduler) Run() {
 	// check if the job is disabled.
+	// check if the enabled provider is preventing the job from running.
+	// check if the job is serial and currently executing.
 	if !js.canRun() {
 		return
 	}
-
-	// check if the enabled provider is preventing the job from running.
 
 	// mark the start time
 	start := Now()
@@ -150,24 +157,16 @@ func (js *JobScheduler) Run() {
 		StartTime: start,
 		Context:   ctx,
 		Cancel:    cancel,
-		Finished:  make(chan struct{}),
 	}
 
-	// set the current job invocation.
-	js.Lock()
 	js.Current = &ji
-	js.Unlock()
-
-	// defer the rotation of the current invocation
-	// to the last invocation
 	defer func() {
-		js.Lock()
 		js.Current = nil
 		js.Last = &ji
-		js.Unlock()
 	}()
 
-	go js.execute(WithJobInvocation(ctx, &ji), &ji)
+	finished := make(chan struct{})
+	go js.execute(WithJobInvocation(ctx, &ji), &ji, finished)
 
 	// check if we have to respect a timeout.
 	if js.TimeoutProvider != nil {
@@ -178,16 +177,13 @@ func (js *JobScheduler) Run() {
 			case <-timeoutAlarm:
 				cancel()
 				return
-			case <-ji.Finished:
+			case <-finished:
 				return
 			}
 		}
 	}
 
-	select {
-	case <-ji.Finished:
-		return
-	}
+	<-finished
 }
 
 //
@@ -198,13 +194,23 @@ func (js *JobScheduler) Run() {
 // it alarms on the next runtime and forks a new routine to run the job.
 // It can be aborted with the scheduler's async.Latch.
 func (js *JobScheduler) runLoop() {
-	for {
-		js.NextRuntime = Deref(js.Schedule.Next(Ref(js.NextRuntime)))
-		runAt := time.After(js.NextRuntime.UTC().Sub(Now()))
+	js.Latch.Started()
 
+	// sniff the schedule, see if a next runtime is called for (or if the job is on demand).
+	js.NextRuntime = Deref(js.Schedule.Next(Ref(js.NextRuntime)))
+	if js.NextRuntime.IsZero() {
+		js.Latch.Stopped()
+		return
+	}
+
+	for {
+		runAt := time.After(js.NextRuntime.UTC().Sub(Now()))
 		select {
 		case <-runAt:
+			// start the job
 			go js.Run()
+			// set up the next runtime.
+			js.NextRuntime = Deref(js.Schedule.Next(Ref(js.NextRuntime)))
 		case <-js.Latch.NotifyStopping():
 			js.Latch.Stopped()
 			return
@@ -214,7 +220,7 @@ func (js *JobScheduler) runLoop() {
 
 // execute runs a given job invocation.
 // it will signal lifecycle hooks.
-func (js *JobScheduler) execute(ctx context.Context, ji *JobInvocation) {
+func (js *JobScheduler) execute(ctx context.Context, ji *JobInvocation, finished chan struct{}) {
 	var err error
 	var tf TraceFinisher
 
@@ -235,9 +241,7 @@ func (js *JobScheduler) execute(ctx context.Context, ji *JobInvocation) {
 	case <-ctx.Done():
 		err = ErrJobCancelled
 	case err = <-js.safeAsyncExec(ctx):
-		return
 	}
-
 	if tf != nil {
 		tf.Finish(ctx)
 	}
@@ -254,12 +258,12 @@ func (js *JobScheduler) execute(ctx context.Context, ji *JobInvocation) {
 	}
 
 	// signal to the waiters that the job is done executing.
-	close(ji.Finished)
+	close(finished)
 }
 
 // safeAsyncExec runs a given job's body and recovers panics.
 func (js *JobScheduler) safeAsyncExec(ctx context.Context) chan error {
-	errors := make(chan error)
+	errors := make(chan error, 2)
 	go func() {
 		defer func() {
 			if r := recover(); r != nil {
