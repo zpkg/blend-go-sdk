@@ -98,7 +98,7 @@ func (js *JobScheduler) Start() {
 		return
 	}
 	js.Latch.Starting()
-	go js.runLoop()
+	go js.RunLoop()
 	<-js.Latch.NotifyStarted()
 }
 
@@ -164,9 +164,7 @@ func (js *JobScheduler) RunLoop() {
 // It checks if the job should be allowed to execute.
 // It blocks on the job execution to enforce or clear timeouts.
 func (js *JobScheduler) Run() {
-	// check if the job is disabled.
-	// check if the enabled provider is preventing the job from running.
-	// check if the job is serial and currently executing.
+	// check if the job can run
 	if !js.canRun() {
 		return
 	}
@@ -175,7 +173,7 @@ func (js *JobScheduler) Run() {
 	start := Now()
 
 	// create the root context.
-	ctx, cancel := js.createContextWithCancel()
+	ctx, cancel := js.createContextWithTimeout()
 
 	// create a job invocation, or a record of each
 	// individual execution of a job.
@@ -186,84 +184,83 @@ func (js *JobScheduler) Run() {
 		Context:   ctx,
 		Cancel:    cancel,
 	}
+	js.setCurrent(&ji)
 
-	js.Current = &ji
+	var err error
+	var tf TraceFinisher
+	// load the job invocation into the context
+	ctx = WithJobInvocation(ctx, &ji)
+
+	// this defer runs all cleanup actions
+	// it recovers panics
+	// it cancels the timeout (if relevant)
+	// it rotates the current and last references
+	// it fires lifecycle events
 	defer func() {
-		js.Current = nil
-		js.Last = &ji
+		if r := recover(); r != nil {
+			err = exception.New(err)
+		}
+		cancel()
+		if tf != nil {
+			tf.Finish(ctx)
+		}
+
+		ji.Elapsed = Since(ji.StartTime)
+		ji.Err = err
+
+		if err != nil && IsJobCancelled(err) {
+			js.onCancelled(ctx, &ji)
+		} else if ji.Err != nil {
+			js.onFailure(ctx, &ji)
+		} else {
+			js.onComplete(ctx, &ji)
+		}
+
+		js.setCurrent(nil)
+		js.setLast(&ji)
 	}()
 
-	finished := make(chan struct{})
-	go js.execute(WithJobInvocation(ctx, &ji), &ji, finished)
-
-	// check if we have to respect a timeout.
-	if js.TimeoutProvider != nil {
-		if timeout := js.TimeoutProvider(); timeout > 0 {
-			ji.Timeout = start.Add(timeout)
-			timeoutAlarm := time.After(timeout)
-			for {
-				select {
-				case <-timeoutAlarm:
-					cancel()
-				case <-finished:
-					return
-				}
-			}
-		}
+	// if the tracer is set, create a trace context
+	if js.Tracer != nil {
+		ctx, tf = js.Tracer.Start(ctx)
 	}
-	<-finished
+	// fire the on start event
+	js.onStart(ctx, &ji)
+
+	// check if the job has been canceled
+	// or if it's finished.
+	select {
+	case <-ctx.Done():
+		err = ErrJobCancelled
+	case err = <-js.safeAsyncExec(ctx):
+	}
 }
 
 //
 // utility functions
 //
 
+func (js *JobScheduler) setCurrent(ji *JobInvocation) {
+	js.Lock()
+	js.Current = ji
+	js.Unlock()
+}
+
+func (js *JobScheduler) setLast(ji *JobInvocation) {
+	js.Lock()
+	js.Last = ji
+	js.Unlock()
+}
+
 // execute runs a given job invocation.
 // it will signal lifecycle hooks.
-func (js *JobScheduler) execute(ctx context.Context, ji *JobInvocation, finished chan struct{}) {
-	var err error
-	var tf TraceFinisher
+func (js *JobScheduler) execute(ji *JobInvocation) {
 
-	defer func() {
-		if r := recover(); r != nil {
-			err = exception.New(err)
-		}
-	}()
-
-	if js.Tracer != nil {
-		ctx, tf = js.Tracer.Start(ctx)
-	}
-
-	js.onStart(ctx, ji)
-
-	// check if the job has been canceled.
-	select {
-	case <-ctx.Done():
-		err = ErrJobCancelled
-	case err = <-js.safeAsyncExec(ctx):
-	}
-	if tf != nil {
-		tf.Finish(ctx)
-	}
-
-	ji.Elapsed = Since(ji.StartTime)
-	ji.Err = err
-
-	if err != nil && IsJobCancelled(err) {
-		js.onCancelled(ctx, ji)
-	} else if ji.Err != nil {
-		js.onFailure(ctx, ji)
-	} else {
-		js.onComplete(ctx, ji)
-	}
-
-	// signal to the waiters that the job is done executing.
-	close(finished)
 }
 
 // safeAsyncExec runs a given job's body and recovers panics.
 func (js *JobScheduler) safeAsyncExec(ctx context.Context) chan error {
-	errors := make(chan error, 2)
+	errors := make(chan error)
 	go func() {
 		defer func() {
 			if r := recover(); r != nil {
@@ -275,7 +272,10 @@ func (js *JobScheduler) safeAsyncExec(ctx context.Context) chan error {
 	return errors
 }
 
-func (js *JobScheduler) createContextWithCancel() (context.Context, context.CancelFunc) {
+func (js *JobScheduler) createContextWithTimeout() (context.Context, context.CancelFunc) {
+	if timeout := js.TimeoutProvider(); timeout > 0 {
+		return context.WithTimeout(context.Background(), timeout)
+	}
 	return context.WithCancel(context.Background())
 }
 

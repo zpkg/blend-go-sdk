@@ -13,22 +13,22 @@ import (
 
 const (
 	// N is the number of jobs to load.
-	N = 2048
+	N = 4096
 
 	// Q is the total simulation time.
 	Q = 30 * time.Second
 
 	// JobRunEvery is the job interval.
-	JobRunEvery = 5 * time.Second
+	JobRunEvery = 1 * time.Second
 
 	// JobTimeout is the timeout for the jobs.
-	JobTimeout = 3 * time.Second
+	JobTimeout = 500 * time.Millisecond
 
 	// JobShortRunTime is the short run time.
-	JobShortRunTime = 2 * time.Second
+	JobShortRunTime = 250 * time.Millisecond
 
 	// JobLongRunTime is the long run time (will induce a timeout.)
-	JobLongRunTime = 8 * time.Second
+	JobLongRunTime = 750 * time.Millisecond
 )
 
 var startedCount int32
@@ -82,7 +82,7 @@ func (j *loadTestJob) Execute(ctx context.Context) error {
 	}
 }
 
-func (j *loadTestJob) OnCancellation(_ *cron.JobInvocation) {
+func (j *loadTestJob) OnCancellation(ctx context.Context) {
 	atomic.AddInt32(&timeoutCount, 1)
 	j.running = false
 }
