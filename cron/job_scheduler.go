@@ -132,6 +132,34 @@ func (js *JobScheduler) Cancel() {
 	}
 }
 
+// RunLoop is the main scheduler loop.
+// it alarms on the next runtime and forks a new routine to run the job.
+// It can be aborted with the scheduler's async.Latch.
+func (js *JobScheduler) RunLoop() {
+	js.Latch.Started()
+
+	// sniff the schedule, see if a next runtime is called for (or if the job is on demand).
+	js.NextRuntime = Deref(js.Schedule.Next(Ref(js.NextRuntime)))
+	if js.NextRuntime.IsZero() {
+		js.Latch.Stopped()
+		return
+	}
+
+	for {
+		runAt := time.After(js.NextRuntime.UTC().Sub(Now()))
+		select {
+		case <-runAt:
+			// start the job
+			go js.Run()
+			// set up the next runtime.
+			js.NextRuntime = Deref(js.Schedule.Next(Ref(js.NextRuntime)))
+		case <-js.Latch.NotifyStopping():
+			js.Latch.Stopped()
+			return
+		}
+	}
+}
+
 // Run forces the job to run.
 // It checks if the job should be allowed to execute.
 // It blocks on the job execution to enforce or clear timeouts.
@@ -173,50 +201,22 @@ func (js *JobScheduler) Run() {
 		if timeout := js.TimeoutProvider(); timeout > 0 {
 			ji.Timeout = start.Add(timeout)
 			timeoutAlarm := time.After(timeout)
-			select {
-			case <-timeoutAlarm:
-				cancel()
-				return
-			case <-finished:
-				return
+			for {
+				select {
+				case <-timeoutAlarm:
+					cancel()
+				case <-finished:
+					return
+				}
 			}
 		}
 	}
-
 	<-finished
 }
 
 //
 // utility functions
 //
-
-// runLoop is the main scheduler loop.
-// it alarms on the next runtime and forks a new routine to run the job.
-// It can be aborted with the scheduler's async.Latch.
-func (js *JobScheduler) runLoop() {
-	js.Latch.Started()
-
-	// sniff the schedule, see if a next runtime is called for (or if the job is on demand).
-	js.NextRuntime = Deref(js.Schedule.Next(Ref(js.NextRuntime)))
-	if js.NextRuntime.IsZero() {
-		js.Latch.Stopped()
-		return
-	}
-
-	for {
-		runAt := time.After(js.NextRuntime.UTC().Sub(Now()))
-		select {
-		case <-runAt:
-			// start the job
-			go js.Run()
-			// set up the next runtime.
-			js.NextRuntime = Deref(js.Schedule.Next(Ref(js.NextRuntime)))
-		case <-js.Latch.NotifyStopping():
-			js.Latch.Stopped()
-			return
-		}
-	}
-}
 
 // execute runs a given job invocation.
 // it will signal lifecycle hooks.
