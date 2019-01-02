@@ -82,7 +82,7 @@ func (j *loadTestJob) Execute(ctx context.Context) error {
 	}
 }
 
-func (j *loadTestJob) OnCancellation(_ *cron.JobInvocation) {
+func (j *loadTestJob) OnCancellation(_ context.Context) {
 	atomic.AddInt32(&timeoutCount, 1)
 	j.running = false
 }
