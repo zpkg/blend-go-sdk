@@ -15,11 +15,11 @@ func TestIntervalSchedule(t *testing.T) {
 
 	now := time.Now().UTC()
 
-	firstRun := schedule.Next(nil)
+	firstRun := schedule.Next(Zero)
 	firstRunDiff := firstRun.Sub(now)
 	a.InDelta(float64(firstRunDiff), float64(1*time.Hour), float64(1*time.Second))
 
-	next := schedule.Next(&now)
+	next := schedule.Next(now)
 	a.True(next.After(now))
 }
 
@@ -29,8 +29,8 @@ func TestDailyScheduleEveryDay(t *testing.T) {
 	now := time.Now().UTC()
 	beforenoon := time.Date(now.Year(), now.Month(), now.Day(), 11, 0, 0, 0, time.UTC)
 	afternoon := time.Date(now.Year(), now.Month(), now.Day(), 13, 0, 0, 0, time.UTC)
-	todayAtNoon := schedule.Next(&beforenoon)
-	tomorrowAtNoon := schedule.Next(&afternoon)
+	todayAtNoon := schedule.Next(beforenoon)
+	tomorrowAtNoon := schedule.Next(afternoon)
 
 	a.True(todayAtNoon.Before(afternoon))
 	a.True(tomorrowAtNoon.After(afternoon))
@@ -44,8 +44,8 @@ func TestDailyScheduleSingleDay(t *testing.T) {
 
 	sundayBeforeNoon := time.Date(2016, 01, 17, 11, 0, 0, 0, time.UTC) //to gut check that it's monday
 
-	todayAtNoon := schedule.Next(&beforenoon)
-	nextWeekAtNoon := schedule.Next(&afternoon)
+	todayAtNoon := schedule.Next(beforenoon)
+	nextWeekAtNoon := schedule.Next(afternoon)
 
 	a.NonFatal().True(todayAtNoon.Before(afternoon))
 	a.NonFatal().True(nextWeekAtNoon.After(afternoon))
@@ -73,31 +73,31 @@ func TestOnTheHourAt(t *testing.T) {
 	now := time.Now().UTC()
 	schedule := EveryHourAtUTC(40, 00)
 
-	fromNil := schedule.Next(nil)
+	fromNil := schedule.Next(Zero)
 	assert.NotNil(fromNil)
 
 	fromNilExpected := time.Date(now.Year(), now.Month(), now.Day(), now.Hour(), 40, 0, 0, time.UTC)
 	if fromNilExpected.Before(now) {
 		fromNilExpected = fromNilExpected.Add(time.Hour)
 	}
-	assert.InTimeDelta(fromNilExpected, *fromNil, time.Second)
+	assert.InTimeDelta(fromNilExpected, fromNil, time.Second)
 
 	fromHalfStart := time.Date(now.Year(), now.Month(), now.Day(), now.Hour(), 45, 0, 0, time.UTC)
 	fromHalfExpected := time.Date(now.Year(), now.Month(), now.Day(), now.Hour()+1, 40, 0, 0, time.UTC)
 
-	fromHalf := schedule.Next(Ref(fromHalfStart))
+	fromHalf := schedule.Next(fromHalfStart)
 
 	assert.NotNil(fromHalf)
-	assert.InTimeDelta(fromHalfExpected, *fromHalf, time.Second)
+	assert.InTimeDelta(fromHalfExpected, fromHalf, time.Second)
 }
 
 func TestImmediatelyThen(t *testing.T) {
 	assert := assert.New(t)
 
 	s := Immediately().Then(EveryHour())
-	assert.NotNil(s.Next(nil))
+	assert.NotNil(s.Next(Zero))
 	now := Now()
-	next := Deref(s.Next(Ref(Now())))
+	next := s.Next(Now())
 	assert.True(next.Sub(now) > time.Minute, fmt.Sprintf("%v", next.Sub(now)))
 	assert.True(next.Sub(now) < (2 * time.Hour))
 }
@@ -110,9 +110,9 @@ func TestOnceAt(t *testing.T) {
 	after := fireAt.Add(time.Minute)
 
 	s := OnceAtUTC(fireAt)
-	result := s.Next(&before)
-	assert.Equal(*result, fireAt)
+	result := s.Next(before)
+	assert.Equal(result, fireAt)
 
-	result = s.Next(&after)
-	assert.Nil(result)
+	result = s.Next(after)
+	assert.True(result.IsZero())
 }

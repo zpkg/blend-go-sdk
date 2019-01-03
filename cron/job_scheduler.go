@@ -139,7 +139,7 @@ func (js *JobScheduler) RunLoop() {
 	js.Latch.Started()
 
 	// sniff the schedule, see if a next runtime is called for (or if the job is on demand).
-	js.NextRuntime = Deref(js.Schedule.Next(Ref(js.NextRuntime)))
+	js.NextRuntime = js.Schedule.Next(js.NextRuntime)
 	if js.NextRuntime.IsZero() {
 		js.Latch.Stopped()
 		return
@@ -156,7 +156,7 @@ func (js *JobScheduler) RunLoop() {
 			// start the job
 			go js.Run()
 			// set up the next runtime.
-			js.NextRuntime = Deref(js.Schedule.Next(Ref(js.NextRuntime)))
+			js.NextRuntime = js.Schedule.Next(js.NextRuntime)
 		case <-js.Latch.NotifyStopping():
 			js.Latch.Stopped()
 			return

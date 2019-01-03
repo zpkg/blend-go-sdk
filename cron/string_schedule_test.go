@@ -12,8 +12,8 @@ import (
 type stringScheduleTestCase struct {
 	Input       string
 	ExpectedErr error
-	Expected    *time.Time
-	After       *time.Time
+	Expected    time.Time
+	After       time.Time
 }
 
 func TestParseString(t *testing.T) {
@@ -22,7 +22,8 @@ func TestParseString(t *testing.T) {
 	testCases := []stringScheduleTestCase{
 		{Input: "", ExpectedErr: ErrStringScheduleInvalid},
 		{Input: stringutil.Random(stringutil.Letters, 10), ExpectedErr: ErrStringScheduleInvalid},
-		{Input: "*/5 * * * * * *", After: Ref(time.Date(2018, 12, 29, 13, 12, 11, 0, time.UTC)), Expected: Ref(time.Date(2018, 12, 29, 13, 12, 15, 0, time.UTC))},
+		{Input: "*/5 * * * * * *", After: time.Date(2018, 12, 29, 13, 12, 11, 0, time.UTC), Expected: time.Date(2018, 12, 29, 13, 12, 15, 0, time.UTC)},
+		{Input: "*/5 * * * * * *", After: time.Date(2018, 12, 29, 13, 12, 11, 0, time.UTC), Expected: time.Date(2018, 12, 29, 13, 12, 15, 0, time.UTC)},
 	}
 
 	for _, tc := range testCases {
@@ -32,7 +33,7 @@ func TestParseString(t *testing.T) {
 			assert.True(exception.Is(err, tc.ExpectedErr))
 		} else {
 			assert.Nil(err)
-			assert.Equal(*tc.Expected, Deref(parsed.Next(tc.After)))
+			assert.Equal(tc.Expected, parsed.Next(tc.After))
 		}
 	}
 }

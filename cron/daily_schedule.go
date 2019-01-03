@@ -44,19 +44,19 @@ func (ds DailySchedule) checkDayOfWeekMask(day time.Weekday) bool {
 }
 
 // Next implements Schedule.
-func (ds DailySchedule) Next(after *time.Time) *time.Time {
-	if after == nil {
-		after = Ref(Now())
+func (ds DailySchedule) Next(after time.Time) time.Time {
+	if after.IsZero() {
+		after = Now()
 	}
 
 	todayInstance := time.Date(after.Year(), after.Month(), after.Day(), ds.TimeOfDayUTC.Hour(), ds.TimeOfDayUTC.Minute(), ds.TimeOfDayUTC.Second(), 0, time.UTC)
 	for day := 0; day < 8; day++ {
 		next := todayInstance.AddDate(0, 0, day) //the first run here it should be adding nothing, i.e. returning todayInstance ...
 
-		if ds.checkDayOfWeekMask(next.Weekday()) && next.After(*after) { //we're on a day ...
-			return &next
+		if ds.checkDayOfWeekMask(next.Weekday()) && next.After(after) { //we're on a day ...
+			return next
 		}
 	}
 
-	return &Epoch
+	return Zero
 }

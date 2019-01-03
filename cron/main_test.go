@@ -28,9 +28,8 @@ var (
 
 type runAt time.Time
 
-func (ra runAt) Next(after *time.Time) *time.Time {
-	typed := time.Time(ra)
-	return &typed
+func (ra runAt) Next(after time.Time) time.Time {
+	return time.Time(ra)
 }
 
 func (raj *runAtJob) Name() string {

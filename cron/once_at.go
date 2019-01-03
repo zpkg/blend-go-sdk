@@ -19,12 +19,12 @@ type OnceAtUTCSchedule struct {
 }
 
 // Next returns the next runtime.
-func (oa OnceAtUTCSchedule) Next(after *time.Time) *time.Time {
-	if after == nil {
-		return &oa.Time
+func (oa OnceAtUTCSchedule) Next(after time.Time) time.Time {
+	if after.IsZero() {
+		return oa.Time
 	}
-	if oa.Time.After(*after) {
-		return &oa.Time
+	if oa.Time.After(after) {
+		return oa.Time
 	}
-	return nil
+	return Zero
 }

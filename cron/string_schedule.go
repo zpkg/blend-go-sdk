@@ -97,27 +97,29 @@ type StringSchedule struct {
 	Seconds     []int
 	Minutes     []int
 	Hours       []int
+	DaysOfWeek  []int
 	DaysOfMonth []int
 	Months      []int
-	DaysOfWeek  []int
 	Years       []int
 }
 
 // Next implements cron.Schedule.
-func (ss *StringSchedule) Next(after *time.Time) *time.Time {
+func (ss *StringSchedule) Next(after time.Time) time.Time {
 	working := Now()
-	if after != nil {
-		working = *after
+	if !after.IsZero() {
+		working = after
 	}
 
 	// figure out the next year
 	year := findNext(working.Year(), ss.Years)
 	month := findNext(int(working.Month()), ss.Months)
+
 	day := findNext(int(working.Day()), ss.DaysOfMonth)
+	year, month, day = findNextDayOfWeek(time.Date(year, time.Month(month), day, 0, 0, 0, 0, time.UTC), ss.DaysOfWeek)
 	hour := findNext(working.Hour(), ss.Hours)
 	minute := findNext(working.Minute(), ss.Minutes)
 	second := findNext(working.Second(), ss.Seconds)
-	return Ref(time.Date(year, time.Month(month), day, hour, minute, second, 0, time.UTC))
+	return time.Date(year, time.Month(month), day, hour, minute, second, 0, time.UTC)
 }
 
 func parsePart(values string, parser func(string) (int, error), validator func(int) bool) ([]int, error) {
@@ -269,6 +271,26 @@ func findNext(basis int, values []int) int {
 		}
 	}
 	return basis
+}
+
+func findNextDayOfWeek(t time.Time, daysOfWeek []int) (year, month, day int) {
+	for index := 0; index < 7; index++ {
+		trial := t.AddDate(0, 0, 1)
+		for _, dow := range daysOfWeek {
+			if dow == int(trial.Weekday()) {
+				year = trial.Year()
+				month = int(trial.Month())
+				day = trial.Day()
+				return
+			}
+		}
+	}
+
+	year = t.Year()
+	month = int(t.Month())
+	day = t.Day()
+	return
+
 }
 
 // these are special characters

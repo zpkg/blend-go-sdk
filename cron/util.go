@@ -12,23 +12,6 @@ func Since(t time.Time) time.Duration {
 	return Now().Sub(t)
 }
 
-// Deref derefs a time safely.
-func Deref(t *time.Time) time.Time {
-	if t == nil {
-		return time.Time{}
-	}
-	return *t
-}
-
-// Ref returns a reference for a given time.
-// If the time is zero, nil is returned.
-func Ref(t time.Time) *time.Time {
-	if t.IsZero() {
-		return nil
-	}
-	return &t
-}
-
 // Min returns the minimum of two times.
 func Min(t1, t2 time.Time) time.Time {
 	if t1.IsZero() && t2.IsZero() {
@@ -89,6 +72,8 @@ var (
 
 	// Epoch is unix epoch saved for utility purposes.
 	Epoch = time.Unix(0, 0)
+	// Zero is basically epoch but if you want to be super duper sure.
+	Zero = time.Time{}
 )
 
 // NOTE: we have to use shifts here because in their infinite wisdom google didn't make these values powers of two for masking

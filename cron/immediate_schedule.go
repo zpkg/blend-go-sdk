@@ -29,13 +29,13 @@ func (i *ImmediateSchedule) Then(then Schedule) Schedule {
 }
 
 // Next implements Schedule.
-func (i *ImmediateSchedule) Next(after *time.Time) *time.Time {
+func (i *ImmediateSchedule) Next(after time.Time) time.Time {
 	if atomic.LoadInt32(&i.didRun) == 0 {
 		i.didRun = 1
-		return Ref(Now())
+		return Now()
 	}
 	if i.then != nil {
 		return i.then.Next(after)
 	}
-	return nil
+	return Zero
 }
