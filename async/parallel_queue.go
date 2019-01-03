@@ -15,9 +15,6 @@ func NewParallelQueue(action QueueAction) *ParallelQueue {
 	}
 }
 
-// QueueAction is an action handler for a queue.
-type QueueAction func(context.Context, interface{}) error
-
 // ParallelQueue is a queude with multiple workers..
 type ParallelQueue struct {
 	latch      *Latch

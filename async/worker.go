@@ -2,7 +2,6 @@ package async
 
 import (
 	"context"
-	"sync"
 
 	"github.com/blend/go-sdk/exception"
 )
@@ -30,6 +29,8 @@ func (w *Worker) Latch() *Latch {
 }
 
 // WithWork sets the work channel.
+// It allows you to override the default (non-buffered) channel with
+// a buffer of your chosing.
 func (w *Worker) WithWork(work chan interface{}) *Worker {
 	w.work = work
 	return w
@@ -117,15 +118,16 @@ func (w *Worker) DrainContext(ctx context.Context) {
 	w.latch.Stopping()
 	<-w.latch.NotifyStopped()
 	remaining := len(w.work)
-	wg := sync.WaitGroup{}
-	wg.Add(1)
+	stopped := make(chan struct{})
 	go func() {
-		defer wg.Done()
+		defer func() {
+			close(stopped)
+		}()
 		for x := 0; x < remaining; x++ {
 			w.Execute(ctx, <-w.work)
 		}
 	}()
-	wg.Wait()
+	<-stopped
 }
 
 // Close stops the worker.

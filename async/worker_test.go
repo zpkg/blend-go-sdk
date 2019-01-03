@@ -8,7 +8,7 @@ import (
 	"github.com/blend/go-sdk/assert"
 )
 
-func TestQueue(t *testing.T) {
+func TestWorker(t *testing.T) {
 	assert := assert.New(t)
 
 	var didWork bool
