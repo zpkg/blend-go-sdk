@@ -23,9 +23,6 @@ func TestJobManagerNew(t *testing.T) {
 
 	jm := New()
 	assert.NotNil(jm.jobs)
-	assert.NotNil(jm.running)
-	assert.NotNil(jm.schedulerWorker)
-	assert.NotNil(jm.killHangingTasksWorker)
 }
 
 func TestJobManagerNewFromEnv(t *testing.T) {
@@ -34,9 +31,6 @@ func TestJobManagerNewFromEnv(t *testing.T) {
 	jm, err := NewFromEnv()
 	assert.Nil(err)
 	assert.NotNil(jm.jobs)
-	assert.NotNil(jm.running)
-	assert.NotNil(jm.schedulerWorker)
-	assert.NotNil(jm.killHangingTasksWorker)
 }
 
 func TestJobManagerMustNewFromEnv(t *testing.T) {
@@ -44,9 +38,6 @@ func TestJobManagerMustNewFromEnv(t *testing.T) {
 
 	jm := MustNewFromEnv()
 	assert.NotNil(jm.jobs)
-	assert.NotNil(jm.running)
-	assert.NotNil(jm.schedulerWorker)
-	assert.NotNil(jm.killHangingTasksWorker)
 }
 
 func TestRunJobBySchedule(t *testing.T) {

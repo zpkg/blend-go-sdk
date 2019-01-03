@@ -28,17 +28,17 @@ type IntervalSchedule struct {
 	StartDelay *time.Duration
 }
 
-// GetNextRunTime implements Schedule.
-func (i IntervalSchedule) GetNextRunTime(after *time.Time) *time.Time {
-	if after == nil {
+// Next implements Schedule.
+func (i IntervalSchedule) Next(after time.Time) time.Time {
+	if after.IsZero() {
 		if i.StartDelay == nil {
 			next := Now().Add(i.Every)
-			return &next
+			return next
 		}
 		next := Now().Add(*i.StartDelay).Add(i.Every)
-		return &next
+		return next
 	}
-	last := *after
+	last := after
 	last = last.Add(i.Every)
-	return &last
+	return last
 }

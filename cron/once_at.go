@@ -2,6 +2,11 @@ package cron
 
 import "time"
 
+// Interface assertions.
+var (
+	_ Schedule = (*OnceAtUTCSchedule)(nil)
+)
+
 // OnceAtUTC returns a schedule that fires once at a given time.
 // It will never fire again unless reloaded.
 func OnceAtUTC(t time.Time) Schedule {
@@ -13,13 +18,13 @@ type OnceAtUTCSchedule struct {
 	Time time.Time
 }
 
-// GetNextRunTime returns the next runtime.
-func (oa OnceAtUTCSchedule) GetNextRunTime(after *time.Time) *time.Time {
-	if after == nil {
-		return &oa.Time
+// Next returns the next runtime.
+func (oa OnceAtUTCSchedule) Next(after time.Time) time.Time {
+	if after.IsZero() {
+		return oa.Time
 	}
-	if oa.Time.After(*after) {
-		return &oa.Time
+	if oa.Time.After(after) {
+		return oa.Time
 	}
-	return nil
+	return Zero
 }

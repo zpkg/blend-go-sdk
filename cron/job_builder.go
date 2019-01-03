@@ -5,6 +5,7 @@ import (
 	"time"
 )
 
+// Interface assertions.
 var (
 	_ ScheduleProvider               = (*JobBuilder)(nil)
 	_ TimeoutProvider                = (*JobBuilder)(nil)
