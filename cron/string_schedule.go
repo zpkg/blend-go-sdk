@@ -178,7 +178,7 @@ func (ss *StringSchedule) Next(after time.Time) time.Time {
 		var didSet bool
 		for x := 0; x < 7; x++ {
 			for _, dow := range ss.DaysOfWeek {
-				if int(working.Weekday()) >= dow {
+				if int(working.Weekday()) == dow {
 					didSet = true
 					break
 				}
@@ -186,7 +186,12 @@ func (ss *StringSchedule) Next(after time.Time) time.Time {
 			if didSet {
 				break
 			}
+
 			working = working.AddDate(0, 0, 1)
+			working = setHour(working, 0)
+			working = setMinute(working, 0)
+			working = setSecond(working, 0)
+			working = setNanosecond(working, 0)
 		}
 	}
 
@@ -205,7 +210,7 @@ func (ss *StringSchedule) Next(after time.Time) time.Time {
 		}
 		working = setMinute(working, 0)
 		working = setSecond(working, 0)
-		working = setNanoSecond(working, 0)
+		working = setNanosecond(working, 0)
 	}
 
 	if len(ss.Minutes) > 0 {
@@ -222,7 +227,7 @@ func (ss *StringSchedule) Next(after time.Time) time.Time {
 			working = setMinute(working, ss.Minutes[0])
 		}
 		working = setSecond(working, 0)
-		working = setNanoSecond(working, 0)
+		working = setNanosecond(working, 0)
 	}
 
 	if len(ss.Seconds) > 0 {
@@ -238,7 +243,7 @@ func (ss *StringSchedule) Next(after time.Time) time.Time {
 			working = working.Add(time.Minute)
 			working = setSecond(working, ss.Seconds[0])
 		}
-		working = setNanoSecond(working, 0)
+		working = setNanosecond(working, 0)
 	}
 
 	return working
@@ -411,7 +416,7 @@ func setSecond(t time.Time, second int) time.Time {
 	return time.Date(t.Year(), t.Month(), t.Day(), t.Hour(), t.Minute(), second, t.Nanosecond(), t.Location())
 }
 
-func setNanoSecond(t time.Time, nanosecond int) time.Time {
+func setNanosecond(t time.Time, nanosecond int) time.Time {
 	return time.Date(t.Year(), t.Month(), t.Day(), t.Hour(), t.Minute(), t.Second(), nanosecond, t.Location())
 }
 
