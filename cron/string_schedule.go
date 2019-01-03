@@ -97,29 +97,151 @@ type StringSchedule struct {
 	Seconds     []int
 	Minutes     []int
 	Hours       []int
-	DaysOfWeek  []int
 	DaysOfMonth []int
 	Months      []int
+	DaysOfWeek  []int
 	Years       []int
+}
+
+// String returns a fully formed string representation of the schedule's components.
+// It shows fields as expanded.
+func (ss *StringSchedule) String() string {
+	fields := []string{
+		csvOfInts(ss.Seconds, "*"),
+		csvOfInts(ss.Minutes, "*"),
+		csvOfInts(ss.Hours, "*"),
+		csvOfInts(ss.DaysOfMonth, "*"),
+		csvOfInts(ss.Months, "*"),
+		csvOfInts(ss.DaysOfWeek, "*"),
+		csvOfInts(ss.Years, "*"),
+	}
+	return strings.Join(fields, " ")
 }
 
 // Next implements cron.Schedule.
 func (ss *StringSchedule) Next(after time.Time) time.Time {
-	working := Now()
-	if !after.IsZero() {
-		working = after
+	working := after
+	if after.IsZero() {
+		working = Now()
 	}
 
-	// figure out the next year
-	year := findNext(working.Year(), ss.Years)
-	month := findNext(int(working.Month()), ss.Months)
+	if len(ss.Years) > 0 {
+		for _, year := range ss.Years {
+			if year >= working.Year() {
+				working = setYear(working, year)
+				break
+			}
+		}
+	}
 
-	day := findNext(int(working.Day()), ss.DaysOfMonth)
-	year, month, day = findNextDayOfWeek(time.Date(year, time.Month(month), day, 0, 0, 0, 0, time.UTC), ss.DaysOfWeek)
-	hour := findNext(working.Hour(), ss.Hours)
-	minute := findNext(working.Minute(), ss.Minutes)
-	second := findNext(working.Second(), ss.Seconds)
-	return time.Date(year, time.Month(month), day, hour, minute, second, 0, time.UTC)
+	if len(ss.Months) > 0 {
+		var didSet bool
+		for _, month := range ss.Months {
+			if time.Month(month) >= working.Month() {
+				working = setMonth(working, time.Month(month))
+				didSet = true
+				break
+			}
+		}
+		if !didSet {
+			working = working.AddDate(1, 0, 0)
+			for _, month := range ss.Months {
+				if time.Month(month) >= working.Month() {
+					working = setMonth(working, time.Month(month))
+					break
+				}
+			}
+		}
+	}
+
+	if len(ss.DaysOfMonth) > 0 {
+		var didSet bool
+		for _, day := range ss.DaysOfMonth {
+			if day >= working.Day() {
+				working = setDay(working, day)
+				didSet = true
+				break
+			}
+		}
+		if !didSet {
+			working = working.AddDate(0, 1, 0)
+			for _, day := range ss.DaysOfMonth {
+				if day >= working.Day() {
+					working = setDay(working, day)
+					break
+				}
+			}
+		}
+	}
+
+	if len(ss.DaysOfWeek) > 0 {
+		var didSet bool
+		for x := 0; x < 7; x++ {
+			for _, dow := range ss.DaysOfWeek {
+				if int(working.Weekday()) >= dow {
+					didSet = true
+					break
+				}
+			}
+			if didSet {
+				break
+			}
+			working = working.AddDate(0, 0, 1)
+		}
+	}
+
+	if len(ss.Hours) > 0 {
+		var didSet bool
+		for _, hour := range ss.Hours {
+			if hour >= working.Hour() {
+				working = setHour(working, hour)
+				didSet = true
+				break
+			}
+		}
+		if !didSet {
+			working = working.AddDate(0, 0, 1)
+			working = setHour(working, ss.Hours[0])
+		}
+		working = setMinute(working, 0)
+		working = setSecond(working, 0)
+		working = setNanoSecond(working, 0)
+	}
+
+	if len(ss.Minutes) > 0 {
+		var didSet bool
+		for _, minute := range ss.Minutes {
+			if minute >= working.Minute() {
+				working = setMinute(working, minute)
+				didSet = true
+				break
+			}
+		}
+		if !didSet {
+			working = working.Add(time.Hour)
+			working = setMinute(working, ss.Minutes[0])
+		}
+		working = setSecond(working, 0)
+		working = setNanoSecond(working, 0)
+	}
+
+	if len(ss.Seconds) > 0 {
+		var didSet bool
+		for _, second := range ss.Seconds {
+			if second >= working.Second() {
+				working = setSecond(working, second)
+				didSet = true
+				break
+			}
+		}
+		if !didSet {
+			working = working.Add(time.Minute)
+			working = setSecond(working, ss.Seconds[0])
+		}
+		working = setNanoSecond(working, 0)
+	}
+
+	return working
 }
 
 func parsePart(values string, parser func(string) (int, error), validator func(int) bool) ([]int, error) {
@@ -147,6 +269,7 @@ func parsePart(values string, parser func(string) (int, error), validator func(i
 			for _, value := range rangeValues {
 				output[value] = true
 			}
+			continue
 		}
 
 		part, err := parser(component)
@@ -264,33 +387,43 @@ func mapKeysToArray(values map[int]bool) []int {
 	return output
 }
 
-func findNext(basis int, values []int) int {
-	for _, value := range values {
-		if value >= basis {
-			return value
-		}
-	}
-	return basis
+func setYear(t time.Time, year int) time.Time {
+	return time.Date(year, t.Month(), t.Day(), t.Hour(), t.Minute(), t.Second(), t.Nanosecond(), t.Location())
 }
 
-func findNextDayOfWeek(t time.Time, daysOfWeek []int) (year, month, day int) {
-	for index := 0; index < 7; index++ {
-		trial := t.AddDate(0, 0, 1)
-		for _, dow := range daysOfWeek {
-			if dow == int(trial.Weekday()) {
-				year = trial.Year()
-				month = int(trial.Month())
-				day = trial.Day()
-				return
-			}
-		}
+func setMonth(t time.Time, month time.Month) time.Time {
+	return time.Date(t.Year(), month, t.Day(), t.Hour(), t.Minute(), t.Second(), t.Nanosecond(), t.Location())
+}
+
+func setDay(t time.Time, day int) time.Time {
+	return time.Date(t.Year(), t.Month(), day, t.Hour(), t.Minute(), t.Second(), t.Nanosecond(), t.Location())
+}
+
+func setHour(t time.Time, hour int) time.Time {
+	return time.Date(t.Year(), t.Month(), t.Day(), hour, t.Minute(), t.Second(), t.Nanosecond(), t.Location())
+}
+
+func setMinute(t time.Time, minute int) time.Time {
+	return time.Date(t.Year(), t.Month(), t.Day(), t.Hour(), minute, t.Second(), t.Nanosecond(), t.Location())
+}
+
+func setSecond(t time.Time, second int) time.Time {
+	return time.Date(t.Year(), t.Month(), t.Day(), t.Hour(), t.Minute(), second, t.Nanosecond(), t.Location())
+}
+
+func setNanoSecond(t time.Time, nanosecond int) time.Time {
+	return time.Date(t.Year(), t.Month(), t.Day(), t.Hour(), t.Minute(), t.Second(), nanosecond, t.Location())
+}
+
+func csvOfInts(values []int, placeholder string) string {
+	if len(values) == 0 {
+		return placeholder
 	}
-
-	year = t.Year()
-	month = int(t.Month())
-	day = t.Day()
-	return
-
+	valueStrings := make([]string, len(values))
+	for x := 0; x < len(values); x++ {
+		valueStrings[x] = strconv.Itoa(values[x])
+	}
+	return strings.Join(valueStrings, ",")
 }
 
 // these are special characters

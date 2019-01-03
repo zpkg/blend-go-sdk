@@ -1,6 +1,7 @@
 package cron
 
 import (
+	"fmt"
 	"testing"
 	"time"
 
@@ -23,7 +24,8 @@ func TestParseString(t *testing.T) {
 		{Input: "", ExpectedErr: ErrStringScheduleInvalid},
 		{Input: stringutil.Random(stringutil.Letters, 10), ExpectedErr: ErrStringScheduleInvalid},
 		{Input: "*/5 * * * * * *", After: time.Date(2018, 12, 29, 13, 12, 11, 0, time.UTC), Expected: time.Date(2018, 12, 29, 13, 12, 15, 0, time.UTC)},
-		{Input: "*/5 * * * * * *", After: time.Date(2018, 12, 29, 13, 12, 11, 0, time.UTC), Expected: time.Date(2018, 12, 29, 13, 12, 15, 0, time.UTC)},
+		{Input: "* 2 1 * * 1-6 *", After: time.Date(2019, 01, 01, 12, 0, 0, 0, time.UTC), Expected: time.Date(2019, 01, 02, 01, 02, 0, 0, time.UTC)},
+		{Input: "* 2 1 * * MON-FRI *", After: time.Date(2019, 01, 01, 12, 0, 0, 0, time.UTC), Expected: time.Date(2019, 01, 02, 01, 02, 0, 0, time.UTC)},
 	}
 
 	for _, tc := range testCases {
@@ -32,8 +34,9 @@ func TestParseString(t *testing.T) {
 			assert.NotNil(err)
 			assert.True(exception.Is(err, tc.ExpectedErr))
 		} else {
+			next := parsed.Next(tc.After)
 			assert.Nil(err)
-			assert.Equal(tc.Expected, parsed.Next(tc.After))
+			assert.Equal(tc.Expected, next, fmt.Sprintf("%s vs. %s %v vs. %v", tc.Input, parsed.String(), tc.Expected.Format(time.RFC3339), next.Format(time.RFC3339)))
 		}
 	}
 }
@@ -48,12 +51,4 @@ func TestMapKeysToArray(t *testing.T) {
 	}))
 	assert.Empty(mapKeysToArray(nil))
 	assert.Empty(mapKeysToArray(map[int]bool{}))
-}
-
-func TestFindNext(t *testing.T) {
-	assert := assert.New(t)
-
-	assert.Equal(4, findNext(4, nil))
-	assert.Equal(5, findNext(4, []int{1, 3, 5, 7, 9}))
-	assert.Equal(10, findNext(10, []int{1, 2, 3, 4, 5}))
 }
