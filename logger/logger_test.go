@@ -466,8 +466,8 @@ func TestLoggerJSONErrors(t *testing.T) {
 	log.Drain()
 
 	var jsonErr struct {
-		Err  Any  `json:"err"`
-		Flag Flag `json:"flag"`
+		Err  interface{} `json:"err"`
+		Flag Flag        `json:"flag"`
 	}
 	err := json.Unmarshal(buffer.Bytes(), &jsonErr)
 	assert.Nil(err)
@@ -478,8 +478,8 @@ func TestLoggerJSONErrors(t *testing.T) {
 	log.Error(exception.New("bar foo"))
 	log.Drain()
 	var jsonEx struct {
-		Err  map[string]Any `json:"err"`
-		Flag Flag           `json:"flag"`
+		Err  map[string]interface{} `json:"err"`
+		Flag Flag                   `json:"flag"`
 	}
 	assert.NotEmpty(buffer.Bytes())
 	err = json.Unmarshal(buffer.Bytes(), &jsonEx)

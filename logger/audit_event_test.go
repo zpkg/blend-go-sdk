@@ -39,7 +39,7 @@ func TestAuditEventListener(t *testing.T) {
 			WithProperty("property").
 			WithUserAgent("user-agent").
 			WithRemoteAddress("remote-address").
-			WithExtra(Labels{"foo": "bar"}))
+			WithExtra(map[string]string{"foo": "bar"}))
 	}()
 	go func() {
 		defer wg.Done()
@@ -49,7 +49,7 @@ func TestAuditEventListener(t *testing.T) {
 			WithProperty("property").
 			WithUserAgent("user-agent").
 			WithRemoteAddress("remote-address").
-			WithExtra(Labels{"foo": "bar"}))
+			WithExtra(map[string]string{"foo": "bar"}))
 	}()
 	wg.Wait()
 	all.Drain()

@@ -1,7 +1,6 @@
 package logger
 
 import (
-	"fmt"
 	"net/http"
 	"os"
 	"runtime"
@@ -113,6 +112,11 @@ func Sync() *Logger {
 		writers:       []Writer{NewWriterFromEnv()},
 	}
 }
+
+// Assertions
+var (
+	_ FullLogger = (*Logger)(nil)
+)
 
 // Logger is a handler for various logging events with descendent handlers.
 type Logger struct {
@@ -561,8 +565,8 @@ func (l *Logger) SyncDebugf(format string, args ...interface{}) {
 }
 
 // Warningf logs a debug message to the output stream.
-func (l *Logger) Warningf(format string, args ...interface{}) error {
-	return l.Warning(fmt.Errorf(format, args...))
+func (l *Logger) Warningf(format string, args ...interface{}) {
+	l.trigger(false, Errorf(Warning, format, args...))
 }
 
 // SyncWarningf logs an warning message to the output stream synchronously.
@@ -589,8 +593,8 @@ func (l *Logger) WarningWithReq(err error, req *http.Request) error {
 }
 
 // Errorf writes an event to the log and triggers event listeners.
-func (l *Logger) Errorf(format string, args ...interface{}) error {
-	return l.Error(fmt.Errorf(format, args...))
+func (l *Logger) Errorf(format string, args ...interface{}) {
+	l.trigger(true, Errorf(Error, format, args...))
 }
 
 // SyncErrorf synchronously triggers a error.
@@ -617,8 +621,8 @@ func (l *Logger) ErrorWithReq(err error, req *http.Request) error {
 }
 
 // Fatalf writes an event to the log and triggers event listeners.
-func (l *Logger) Fatalf(format string, args ...interface{}) error {
-	return l.Fatal(fmt.Errorf(format, args...))
+func (l *Logger) Fatalf(format string, args ...interface{}) {
+	l.trigger(true, Errorf(Fatal, format, args...))
 }
 
 // SyncFatalf synchronously triggers a fatal.
@@ -647,6 +651,7 @@ func (l *Logger) FatalWithReq(err error, req *http.Request) error {
 // SyncFatalExit logs the result of a fatal error to std err and calls `exit(1)`
 func (l *Logger) SyncFatalExit(err error) {
 	l.SyncFatal(err)
+	l.Drain()
 	os.Exit(1)
 }
 
