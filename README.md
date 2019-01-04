@@ -1,7 +1,8 @@
 go-sdk
 ======
 
-![Build Status](https://circleci.com/gh/blend/go-sdk.svg?style=shield&circle-token=:circle-token)
+[![Build Status](https://circleci.com/gh/blend/go-sdk.svg?style=shield)](https://circleci.com/gh/blend/go-sdk)
+[![GoDoc](https://godoc.org/github.com/blend/go-sdk?status.svg)](https://godoc.org/github.com/blend/go-sdk)
 
 `go-sdk` is our core library of packages. These packages can be composed to create anything from CLIs to fully featured web apps.
 
