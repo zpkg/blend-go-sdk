@@ -28,7 +28,7 @@ func New(groups ...*Group) *Suite {
 
 // Suite is a migration suite.
 type Suite struct {
-	log    *logger.Logger
+	log    logger.Log
 	groups []*Group
 
 	applied int
@@ -38,13 +38,13 @@ type Suite struct {
 }
 
 // WithLogger sets the suite logger.
-func (s *Suite) WithLogger(log *logger.Logger) *Suite {
+func (s *Suite) WithLogger(log logger.Log) *Suite {
 	s.log = log
 	return s
 }
 
 // Logger returns the underlying logger.
-func (s *Suite) Logger() *logger.Logger {
+func (s *Suite) Logger() logger.Log {
 	return s.log
 }
 

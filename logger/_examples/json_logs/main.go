@@ -14,7 +14,7 @@ import (
 
 var pool = logger.NewBufferPool(16)
 
-func logged(log *logger.Logger, handler http.HandlerFunc) http.HandlerFunc {
+func logged(log logger.Log, handler http.HandlerFunc) http.HandlerFunc {
 	return func(res http.ResponseWriter, req *http.Request) {
 		start := time.Now()
 		log.Trigger(logger.NewHTTPRequestEvent(req))

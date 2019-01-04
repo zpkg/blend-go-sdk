@@ -162,7 +162,6 @@ func TestAppSetLogger(t *testing.T) {
 	defer log.Close()
 	app := New().WithLogger(log)
 	assert.NotNil(app.Logger())
-	assert.True(app.Logger().Flags().All())
 }
 
 func TestAppCtx(t *testing.T) {

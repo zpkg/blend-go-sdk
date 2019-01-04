@@ -7,7 +7,7 @@ import (
 )
 
 // AddWebListeners adds web listeners.
-func AddWebListeners(log *logger.Logger, stats Collector) {
+func AddWebListeners(log logger.Log, stats Collector) {
 	if log == nil || stats == nil {
 		return
 	}

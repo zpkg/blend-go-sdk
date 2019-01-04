@@ -48,18 +48,18 @@ type JobManager struct {
 	sync.Mutex
 	latch  *async.Latch
 	tracer Tracer
-	log    *logger.Logger
+	log    logger.Log
 	jobs   map[string]*JobScheduler
 }
 
 // WithLogger sets the logger and returns a reference to the job manager.
-func (jm *JobManager) WithLogger(log *logger.Logger) *JobManager {
+func (jm *JobManager) WithLogger(log logger.Log) *JobManager {
 	jm.log = log
 	return jm
 }
 
 // Logger returns the diagnostics agent.
-func (jm *JobManager) Logger() *logger.Logger {
+func (jm *JobManager) Logger() logger.Log {
 	return jm.log
 }
 

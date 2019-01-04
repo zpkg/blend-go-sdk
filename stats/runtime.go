@@ -3,29 +3,27 @@ package stats
 import (
 	"runtime"
 	"time"
-
-	"github.com/blend/go-sdk/logger"
 )
 
 // Runtime reports golang vm runtime stats.
-func Runtime(log *logger.Logger, collector Collector) {
+func Runtime(collector Collector) {
 	if collector == nil {
 		return
 	}
 
 	go func() {
 		var previous, current runtime.MemStats
-		runtimeCollect(log, collector, &previous, &current)
+		runtimeCollect(collector, &previous, &current)
 		for {
 			select {
 			case <-time.After(250 * time.Millisecond):
-				runtimeCollect(log, collector, &previous, &current)
+				runtimeCollect(collector, &previous, &current)
 			}
 		}
 	}()
 }
 
-func runtimeCollect(log *logger.Logger, collector Collector, previous, current *runtime.MemStats) {
+func runtimeCollect(collector Collector, previous, current *runtime.MemStats) {
 	runtime.ReadMemStats(current)
 
 	// these depend on the previous values

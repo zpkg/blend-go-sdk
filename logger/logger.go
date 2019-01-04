@@ -95,11 +95,13 @@ func None() *Logger {
 }
 
 // NewText returns a new text logger.
+// It is a shortcut for `New().WithWriter(NewTextWriterFromEnv())`
 func NewText() *Logger {
 	return New().WithFlagsFromEnv().WithWriter(NewTextWriterFromEnv())
 }
 
 // NewJSON returns a new json logger.
+// It is a shortcut for `New().WithWriter(NewJSONWriterFromEnv())`
 func NewJSON() *Logger {
 	return New().WithFlagsFromEnv().WithWriter(NewJSONWriterFromEnv())
 }
@@ -639,12 +641,6 @@ func (l *Logger) Fatal(err error) error {
 // SyncFatal synchronously logs a fatal to std err.
 func (l *Logger) SyncFatal(err error) error {
 	l.trigger(false, NewErrorEvent(Fatal, err))
-	return err
-}
-
-// FatalWithReq logs the result of a fatal error to std err with a request.
-func (l *Logger) FatalWithReq(err error, req *http.Request) error {
-	l.trigger(true, NewErrorEventWithState(Fatal, err, req))
 	return err
 }
 

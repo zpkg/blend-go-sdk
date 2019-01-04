@@ -88,7 +88,7 @@ type Connection struct {
 	connection *sql.DB
 	config     *Config
 	bufferPool *BufferPool
-	log        *logger.Logger
+	log        logger.Log
 	planCache  *PlanCache
 }
 
@@ -141,13 +141,13 @@ func (dbc *Connection) Close() error {
 }
 
 // WithLogger sets the connection's diagnostic agent.
-func (dbc *Connection) WithLogger(log *logger.Logger) *Connection {
+func (dbc *Connection) WithLogger(log logger.Log) *Connection {
 	dbc.log = log
 	return dbc
 }
 
 // Logger returns the diagnostics agent.
-func (dbc *Connection) Logger() *logger.Logger {
+func (dbc *Connection) Logger() logger.Log {
 	return dbc.log
 }
 

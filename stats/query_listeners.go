@@ -6,7 +6,7 @@ import (
 )
 
 // AddQueryListeners adds db listeners.
-func AddQueryListeners(log *logger.Logger, stats Collector) {
+func AddQueryListeners(log logger.Listenable, stats Collector) {
 	if log == nil || stats == nil {
 		return
 	}

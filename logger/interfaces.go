@@ -117,6 +117,11 @@ type SyncErrorReceiver interface {
 	SyncFatal(error) error
 }
 
+// SubContextable is a type that can spawn subcontexts.
+type SubContextable interface {
+	SubContext(string) *SubContext
+}
+
 // SyncLogger is a logger that implements syncronous methods.
 type SyncLogger interface {
 	Listenable
@@ -150,6 +155,7 @@ type FullReceiver interface {
 // FullLogger is every possible interface, including listenable.
 type FullLogger interface {
 	Listenable
+	SubContextable
 	SyncTriggerable
 	SyncOutputReceiver
 	SyncErrorOutputReceiver
@@ -160,7 +166,8 @@ type FullLogger interface {
 	ErrorReceiver
 }
 
-// Maybe going to use this.
+// Log is an alias to full logger.
+// It is speculative as useful.
 type Log = FullLogger
 
 // Writer is a type that can consume events.

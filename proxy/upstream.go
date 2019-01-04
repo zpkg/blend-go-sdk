@@ -22,7 +22,7 @@ type Upstream struct {
 	// Name is the name of the upstream.
 	Name string
 	// Log is a logger agent.
-	Log *logger.Logger
+	Log logger.Log
 	// URL represents the target of the upstream.
 	URL *url.URL
 	// ReverseProxy is what actually forwards requests.
@@ -36,7 +36,7 @@ func (u *Upstream) WithName(name string) *Upstream {
 }
 
 // WithLogger sets the logger agent for the upstream.
-func (u *Upstream) WithLogger(log *logger.Logger) *Upstream {
+func (u *Upstream) WithLogger(log logger.Log) *Upstream {
 	u.Log = log
 	return u
 }

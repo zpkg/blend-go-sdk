@@ -30,7 +30,7 @@ const (
 )
 
 // AddListeners adds airbrake listeners.
-func AddListeners(log *logger.Logger, cfg *Config) {
+func AddListeners(log logger.Listenable, cfg *Config) {
 	if log == nil || cfg == nil || cfg.IsZero() {
 		return
 	}
