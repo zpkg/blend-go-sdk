@@ -20,13 +20,13 @@ func New() *Proxy {
 
 // Proxy is a factory for a simple reverse proxy.
 type Proxy struct {
-	log       *logger.Logger
+	log       logger.Log
 	upstreams []*Upstream
 	resolver  Resolver
 }
 
 // WithLogger sets a property and returns the proxy reference.
-func (p *Proxy) WithLogger(log *logger.Logger) *Proxy {
+func (p *Proxy) WithLogger(log logger.Log) *Proxy {
 	p.log = log
 	return p
 }

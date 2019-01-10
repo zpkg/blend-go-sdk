@@ -46,7 +46,7 @@ func New() *Request {
 
 // Request makes http requests.
 type Request struct {
-	log *logger.Logger
+	log logger.Log
 
 	method string
 	scheme string
@@ -172,13 +172,13 @@ func (r *Request) State() interface{} {
 }
 
 // WithLogger enables logging with HTTPRequestLogLevelErrors.
-func (r *Request) WithLogger(log *logger.Logger) *Request {
+func (r *Request) WithLogger(log logger.Log) *Request {
 	r.log = log
 	return r
 }
 
 // Logger returns the request diagnostics agent.
-func (r *Request) Logger() *logger.Logger {
+func (r *Request) Logger() logger.Log {
 	return r.log
 }
 
@@ -591,9 +591,9 @@ func (r *Request) ApplyTransport(transport *http.Transport) error {
 // Meta returns the request as a HTTPRequestMeta.
 func (r *Request) Meta() *Meta {
 	return &Meta{
-		Method:  r.Method(),
-		URL:     r.URL(),
-		Headers: r.Headers(),
+		Method:    r.Method(),
+		URL:       r.URL(),
+		Headers:   r.Headers(),
 		StartTime: r.requestStarted,
 	}
 }

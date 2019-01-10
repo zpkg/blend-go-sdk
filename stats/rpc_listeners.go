@@ -5,7 +5,7 @@ import (
 )
 
 // AddRPCListeners adds rpc listeners.
-func AddRPCListeners(log *logger.Logger, stats Collector) {
+func AddRPCListeners(log logger.Listenable, stats Collector) {
 	if log == nil || stats == nil {
 		return
 	}

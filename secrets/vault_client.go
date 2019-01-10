@@ -88,7 +88,7 @@ type VaultClient struct {
 	remote *url.URL
 	token  string
 	mount  string
-	log    *logger.Logger
+	log    logger.Log
 
 	kv1 *kv1
 	kv2 *kv2
@@ -148,13 +148,13 @@ func (c *VaultClient) CertPool() *CertPool {
 }
 
 // WithLogger sets the logger.
-func (c *VaultClient) WithLogger(log *logger.Logger) *VaultClient {
+func (c *VaultClient) WithLogger(log logger.Log) *VaultClient {
 	c.log = log
 	return c
 }
 
 // Logger returns the logger.
-func (c *VaultClient) Logger() *logger.Logger {
+func (c *VaultClient) Logger() logger.Log {
 	return c.log
 }
 

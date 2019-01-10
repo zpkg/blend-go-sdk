@@ -107,22 +107,22 @@ func TestNewConfigFromEnv(t *testing.T) {
 	cfg, err := NewConfigFromEnv()
 	assert.Nil(err)
 
-	assert.Any(cfg.GetFlags(), func(v Any) bool {
+	assert.Any(cfg.GetFlags(), func(v interface{}) bool {
 		return v.(string) == "http.response"
 	})
-	assert.Any(cfg.GetFlags(), func(v Any) bool {
+	assert.Any(cfg.GetFlags(), func(v interface{}) bool {
 		return v.(string) == "info"
 	})
-	assert.Any(cfg.GetFlags(), func(v Any) bool {
+	assert.Any(cfg.GetFlags(), func(v interface{}) bool {
 		return v.(string) == "warning"
 	})
-	assert.Any(cfg.GetFlags(), func(v Any) bool {
+	assert.Any(cfg.GetFlags(), func(v interface{}) bool {
 		return v.(string) == "error"
 	})
-	assert.Any(cfg.GetFlags(), func(v Any) bool {
+	assert.Any(cfg.GetFlags(), func(v interface{}) bool {
 		return v.(string) == "fatal"
 	})
-	assert.None(cfg.GetFlags(), func(v Any) bool {
+	assert.None(cfg.GetFlags(), func(v interface{}) bool {
 		return v.(string) == "debug"
 	})
 }
@@ -140,19 +140,19 @@ func TestNewConfigFromEnvWithVars(t *testing.T) {
 	assert.Nil(err)
 
 	assert.NotEmpty(cfg.GetFlags())
-	assert.Any(cfg.GetFlags(), func(v Any) bool {
+	assert.Any(cfg.GetFlags(), func(v interface{}) bool {
 		return v.(string) == "info"
 	})
-	assert.Any(cfg.GetFlags(), func(v Any) bool {
+	assert.Any(cfg.GetFlags(), func(v interface{}) bool {
 		return v.(string) == "debug"
 	})
-	assert.Any(cfg.GetFlags(), func(v Any) bool {
+	assert.Any(cfg.GetFlags(), func(v interface{}) bool {
 		return v.(string) == "error"
 	})
-	assert.Any(cfg.GetFlags(), func(v Any) bool {
+	assert.Any(cfg.GetFlags(), func(v interface{}) bool {
 		return v.(string) == "test"
 	})
-	assert.None(cfg.GetFlags(), func(v Any) bool {
+	assert.None(cfg.GetFlags(), func(v interface{}) bool {
 		return v.(string) == "fatal"
 	})
 

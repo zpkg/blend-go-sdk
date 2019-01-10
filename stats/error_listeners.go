@@ -6,7 +6,7 @@ import (
 )
 
 // AddErrorListeners adds error listeners.
-func AddErrorListeners(log *logger.Logger, stats Collector) {
+func AddErrorListeners(log logger.Listenable, stats Collector) {
 	if log == nil || stats == nil {
 		return
 	}

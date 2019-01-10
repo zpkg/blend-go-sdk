@@ -12,7 +12,7 @@ func NewFactory() *Factory {
 // Factory is a helper to create requests with common metadata.
 // It is generally for creating requests to *any* host.
 type Factory struct {
-	Log                    *logger.Logger
+	Log                    logger.Log
 	MockedResponseProvider MockedResponseProvider
 	OnRequest              Handler
 	OnResponse             ResponseHandler
@@ -20,7 +20,7 @@ type Factory struct {
 }
 
 // WithLogger sets the logger.
-func (m *Factory) WithLogger(log *logger.Logger) *Factory {
+func (m *Factory) WithLogger(log logger.Log) *Factory {
 	m.Log = log
 	return m
 }

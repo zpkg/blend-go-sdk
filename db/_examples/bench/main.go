@@ -20,7 +20,7 @@ type benchObject struct {
 	Name string `db:"name"`
 }
 
-func createTable(tableName string, log *logger.Logger, conn *db.Connection) error {
+func createTable(tableName string, log logger.Log, conn *db.Connection) error {
 	log.SyncInfof("creating %s", tableName)
 	return migration.New(
 		migration.NewGroup(
@@ -34,7 +34,7 @@ func createTable(tableName string, log *logger.Logger, conn *db.Connection) erro
 	).WithLogger(log).Apply(conn)
 }
 
-func dropTable(tableName string, log *logger.Logger, conn *db.Connection) error {
+func dropTable(tableName string, log logger.Log, conn *db.Connection) error {
 	log.SyncInfof("dropping %s", tableName)
 	return migration.New(
 		migration.NewGroup(
@@ -55,7 +55,7 @@ func maybeFatal(err error) {
 	}
 }
 
-func reportStats(log *logger.Logger, conn *db.Connection) {
+func reportStats(log logger.Log, conn *db.Connection) {
 	ticker := time.Tick(500 * time.Millisecond)
 	for {
 		select {
