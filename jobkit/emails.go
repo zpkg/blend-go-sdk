@@ -4,10 +4,9 @@ import (
 	"context"
 	"time"
 
+	"git.blendlabs.com/blend/warden/pkg/aws/ses"
 	"github.com/blend/go-sdk/cron"
 	"github.com/blend/go-sdk/template"
-
-	"git.blendlabs.com/blend/warden/pkg/aws/ses"
 )
 
 // SendEmail sends a job status email.
