@@ -3,6 +3,7 @@ package jobkit
 import (
 	"time"
 
+	"github.com/blend/go-sdk/aws/ses"
 	"github.com/blend/go-sdk/slack"
 	"github.com/blend/go-sdk/webutil"
 )
@@ -32,4 +33,6 @@ type JobConfig struct {
 	Slack slack.Config `json:"slack" yaml:"slack"`
 	// Webhook governs webhook notification options.
 	Webhook webutil.Webhook `json:"webhook" yaml:"webhook"`
+	// Email controls email notification defaults.
+	Email ses.Message `json:"email" yaml:"email"`
 }
