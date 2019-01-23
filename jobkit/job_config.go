@@ -3,6 +3,8 @@ package jobkit
 import (
 	"time"
 
+	"github.com/blend/go-sdk/configutil"
+
 	"github.com/blend/go-sdk/aws/ses"
 	"github.com/blend/go-sdk/slack"
 	"github.com/blend/go-sdk/webutil"
@@ -35,4 +37,24 @@ type JobConfig struct {
 	Webhook webutil.Webhook `json:"webhook" yaml:"webhook"`
 	// Email controls email notification defaults.
 	Email ses.Message `json:"email" yaml:"email"`
+}
+
+// NotifyOnBrokenOrDefault returns a value or a default.
+func (jc JobConfig) NotifyOnBrokenOrDefault() bool {
+	return configutil.CoalesceBool(jc.NotifyOnBroken, true)
+}
+
+// NotifyOnFixedOrDefault returns a value or a default.
+func (jc JobConfig) NotifyOnFixedOrDefault() bool {
+	return configutil.CoalesceBool(jc.NotifyOnFixed, true)
+}
+
+// NotifyOnSuccessOrDefault returns a value or a default.
+func (jc JobConfig) NotifyOnSuccessOrDefault() bool {
+	return configutil.CoalesceBool(jc.NotifyOnSuccess, false)
+}
+
+// NotifyOnFailureOrDefault returns a value or a default.
+func (jc JobConfig) NotifyOnFailureOrDefault() bool {
+	return configutil.CoalesceBool(jc.NotifyOnFailure, false)
 }
