@@ -58,29 +58,29 @@ func NewJobScheduler(cfg *Config, job Job) *JobScheduler {
 
 // JobScheduler is a job instance.
 type JobScheduler struct {
-	sync.Mutex
-	Latch *async.Latch
+	sync.Mutex `json:"-"`
+	Latch      *async.Latch `json:"-"`
 
-	Name string
-	Job  Job
+	Name string `json:"name"`
+	Job  Job    `json:"-"`
 
 	Tracer Tracer
-	Log    logger.Log
-	Config *Config
+	Log    logger.Log `json:"-"`
+	Config *Config    `json:"-"`
 
 	// Meta Fields
-	Disabled    bool
-	NextRuntime time.Time
-	Current     *JobInvocation
-	Last        *JobInvocation
-	History     []JobInvocation
+	Disabled    bool            `json:"disabled"`
+	NextRuntime time.Time       `json:"nextRuntime"`
+	Current     *JobInvocation  `json:"current"`
+	Last        *JobInvocation  `json:"last"`
+	History     []JobInvocation `json:"history"`
 
-	Schedule                       Schedule
-	EnabledProvider                func() bool
-	SerialProvider                 func() bool
-	TimeoutProvider                func() time.Duration
-	ShouldTriggerListenersProvider func() bool
-	ShouldWriteOutputProvider      func() bool
+	Schedule                       Schedule             `json:"-"`
+	EnabledProvider                func() bool          `json:"-"`
+	SerialProvider                 func() bool          `json:"-"`
+	TimeoutProvider                func() time.Duration `json:"-"`
+	ShouldTriggerListenersProvider func() bool          `json:"-"`
+	ShouldWriteOutputProvider      func() bool          `json:"-"`
 }
 
 // WithTracer sets the scheduler tracer.
