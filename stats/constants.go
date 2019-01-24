@@ -16,6 +16,7 @@ const (
 // Tag names are names for tags, either on metrics or traces.
 const (
 	TagService   string = "service"
+	TagJob       string = "job"
 	TagEnv       string = "env"
 	TagHostname  string = "hostname"
 	TagContainer string = "container"

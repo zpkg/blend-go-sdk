@@ -13,30 +13,30 @@ type Config struct {
 
 // IsZero returns if the config is set or not.
 func (c Config) IsZero() bool {
-	return len(c.Webhook) == 0
+	return len(c.Channel) == 0 && len(c.Webhook) == 0
 }
 
-// GetUsername returns a property or a default.
-func (c Config) GetUsername(inherited ...string) string {
+// UsernameOrDefault returns a property or a default.
+func (c Config) UsernameOrDefault(inherited ...string) string {
 	return configutil.CoalesceString(c.Username, "", inherited...)
 }
 
-// GetChannel returns a property or default.
-func (c Config) GetChannel(inherited ...string) string {
+// ChannelOrDefault returns a property or default.
+func (c Config) ChannelOrDefault(inherited ...string) string {
 	return configutil.CoalesceString(c.Channel, "", inherited...)
 }
 
-// GetIconURL returns a property or default.
-func (c Config) GetIconURL(inherited ...string) string {
+// IconURLOrDefault returns a property or default.
+func (c Config) IconURLOrDefault(inherited ...string) string {
 	return configutil.CoalesceString(c.IconURL, "", inherited...)
 }
 
-// GetIconEmoji returns a property or default.
-func (c Config) GetIconEmoji(inherited ...string) string {
+// IconEmojiOrDefault returns a property or default.
+func (c Config) IconEmojiOrDefault(inherited ...string) string {
 	return configutil.CoalesceString(c.IconEmoji, "", inherited...)
 }
 
-// GetWebhook returns the webhook url.
-func (c Config) GetWebhook(defaults ...string) string {
+// WebhookOrDefault returns the webhook url.
+func (c Config) WebhookOrDefault(defaults ...string) string {
 	return configutil.CoalesceString(c.Webhook, "", defaults...)
 }

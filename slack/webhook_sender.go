@@ -15,10 +15,10 @@ const (
 	ErrNon200 = "slack; non-200 status code returned from remote"
 )
 
-// NewWebhookSender creates a new webhook sender.
-func NewWebhookSender(cfg *Config) *WebhookSender {
+// New creates a new webhook sender.
+func New(cfg *Config) *WebhookSender {
 	return &WebhookSender{
-		RequestSender: webutil.NewRequestSender(webutil.MustParseURL(cfg.GetWebhook())),
+		RequestSender: webutil.NewRequestSender(webutil.MustParseURL(cfg.WebhookOrDefault())),
 		Config:        cfg,
 	}
 }
@@ -32,16 +32,16 @@ type WebhookSender struct {
 // ApplyDefaults applies defaults.
 func (whs WebhookSender) ApplyDefaults(message Message) Message {
 	if len(message.Username) == 0 && whs.Config != nil {
-		message.Username = whs.Config.GetUsername()
+		message.Username = whs.Config.UsernameOrDefault()
 	}
 	if len(message.Channel) == 0 && whs.Config != nil {
-		message.Channel = whs.Config.GetChannel()
+		message.Channel = whs.Config.ChannelOrDefault()
 	}
 	if len(message.IconURL) == 0 && whs.Config != nil {
-		message.IconURL = whs.Config.GetIconURL()
+		message.IconURL = whs.Config.IconURLOrDefault()
 	}
 	if len(message.IconEmoji) == 0 && whs.Config != nil {
-		message.IconEmoji = whs.Config.GetIconEmoji()
+		message.IconEmoji = whs.Config.IconEmojiOrDefault()
 	}
 
 	return message

@@ -8,3 +8,10 @@ const (
 	// DefaultTracingEnabled is the default value for tracing enabled.
 	DefaultTracingEnabled = true
 )
+
+// Default Tags
+const (
+	TagService  = "service"
+	TagEnv      = "env"
+	TagHostname = "hostname"
+)

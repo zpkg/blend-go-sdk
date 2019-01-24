@@ -1,35 +1,20 @@
 package jobkit
 
 import (
-	"context"
-	"time"
-
 	"github.com/blend/go-sdk/cron"
 	"github.com/blend/go-sdk/email"
 	"github.com/blend/go-sdk/template"
 )
 
-// SendEmail sends a job status email.
-func SendEmail(ctx context.Context, sender email.Sender, jobStatus JobStatus, ji *cron.JobInvocation, options ...email.MessageOption) error {
-	if sender == nil {
-		return nil
-	}
-	message, err := NewEmailMessage(ji.Name, jobStatus, ji.Err, ji.Elapsed, options...)
-	if err != nil {
-		return err
-	}
-	return sender.Send(ctx, message)
-}
-
 // NewEmailMessage returns a new email message.
-func NewEmailMessage(jobName string, jobStatus JobStatus, jobErr error, elapsed time.Duration, options ...email.MessageOption) (email.Message, error) {
+func NewEmailMessage(status string, ji *cron.JobInvocation, options ...email.MessageOption) (email.Message, error) {
 	message := email.Message{}
 
 	vars := map[string]interface{}{
-		"jobName":   jobName,
-		"jobStatus": string(jobStatus),
-		"elapsed":   elapsed,
-		"err":       jobErr,
+		"jobName":   ji.Name,
+		"jobStatus": string(status),
+		"elapsed":   ji.Elapsed,
+		"err":       ji.Err,
 	}
 	var err error
 	message.Subject, err = template.New().WithBody(DefaultEmailSubjectTemplate).WithVars(vars).ProcessString()
