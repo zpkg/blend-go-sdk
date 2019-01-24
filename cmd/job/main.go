@@ -21,6 +21,7 @@ import (
 
 var name = flag.String("name", stringutil.Letters.Random(8), "The name of the job")
 var exec = flag.String("exec", "", "The command to execute")
+var bind = flag.String("bind", "", "The address and port to bind the management server to")
 var schedule = flag.String("schedule", "*/1 * * * * * *", "The job schedule as a cron string (i.e. 7 space delimited components)")
 var configPath = flag.String("config", "config.yml", "The job config path")
 var timeout = flag.Duration("timeout", 0, "The timeout")
@@ -69,8 +70,12 @@ func main() {
 			logger.FatalExit(err)
 		}
 	}()
+
 	ws := jobkit.NewManagementServer(jm, &config)
 	ws.WithLogger(log)
+	if *bind != "" {
+		ws.WithBindAddr(*bind)
+	}
 	if err := graceful.Shutdown(ws); err != nil {
 		logger.FatalExit(err)
 	}
