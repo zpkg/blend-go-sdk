@@ -97,6 +97,16 @@ func NewExecJob(exec string, args ...string) *ExecJob {
 	}
 }
 
+var (
+	_ cron.Job                    = (*ExecJob)(nil)
+	_ cron.OnStartReceiver        = (*ExecJob)(nil)
+	_ cron.OnCompleteReceiver     = (*ExecJob)(nil)
+	_ cron.OnFailureReceiver      = (*ExecJob)(nil)
+	_ cron.OnCancellationReceiver = (*ExecJob)(nil)
+	_ cron.OnBrokenReceiver       = (*ExecJob)(nil)
+	_ cron.OnFixedReceiver        = (*ExecJob)(nil)
+)
+
 // ExecJob is the main job body.
 type ExecJob struct {
 	schedule cron.Schedule
@@ -138,6 +148,36 @@ func (job ExecJob) Timeout() time.Duration {
 func (job *ExecJob) WithTimeout(d time.Duration) *ExecJob {
 	job.timeout = d
 	return job
+}
+
+// OnStart is a lifecycle event handler.
+func (job ExecJob) OnStart(ctx context.Context) {
+	//
+}
+
+// OnComplete is a lifecycle event handler.
+func (job ExecJob) OnComplete(ctx context.Context) {
+	//
+}
+
+// OnFailure is a lifecycle event handler.
+func (job ExecJob) OnFailure(ctx context.Context) {
+	//
+}
+
+// OnBroken is a lifecycle event handler.
+func (job ExecJob) OnBroken(ctx context.Context) {
+	//
+}
+
+// OnFixed is a lifecycle event handler.
+func (job ExecJob) OnFixed(ctx context.Context) {
+	//
+}
+
+// OnCancellation is a lifecycle event handler.
+func (job ExecJob) OnCancellation(ctx context.Context) {
+	//
 }
 
 // Exec returns the job command.
