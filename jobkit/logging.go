@@ -8,7 +8,7 @@ import (
 )
 
 // Debugf prints an info message if the logger is set.
-func Debugf(ctx context.Context, log *logger.Logger, format string, args ...interface{}) {
+func Debugf(ctx context.Context, log logger.Log, format string, args ...interface{}) {
 	if log == nil {
 		return
 	}
@@ -17,7 +17,7 @@ func Debugf(ctx context.Context, log *logger.Logger, format string, args ...inte
 }
 
 // Infof prints an info message if the logger is set.
-func Infof(ctx context.Context, log *logger.Logger, format string, args ...interface{}) {
+func Infof(ctx context.Context, log logger.Log, format string, args ...interface{}) {
 	if log == nil {
 		return
 	}
@@ -26,7 +26,7 @@ func Infof(ctx context.Context, log *logger.Logger, format string, args ...inter
 }
 
 // Warningf prints a warning message if the logger is set.
-func Warningf(ctx context.Context, log *logger.Logger, format string, args ...interface{}) {
+func Warningf(ctx context.Context, log logger.Log, format string, args ...interface{}) {
 	if log == nil {
 		return
 	}
@@ -35,7 +35,7 @@ func Warningf(ctx context.Context, log *logger.Logger, format string, args ...in
 }
 
 // Warning prints an warning if the logger is set.
-func Warning(ctx context.Context, log *logger.Logger, err error) {
+func Warning(ctx context.Context, log logger.Log, err error) {
 	if log == nil {
 		return
 	}
@@ -44,7 +44,7 @@ func Warning(ctx context.Context, log *logger.Logger, err error) {
 }
 
 // Errorf prints an error message if the logger is set.
-func Errorf(ctx context.Context, log *logger.Logger, format string, args ...interface{}) {
+func Errorf(ctx context.Context, log logger.Log, format string, args ...interface{}) {
 	if log == nil {
 		return
 	}
@@ -53,7 +53,7 @@ func Errorf(ctx context.Context, log *logger.Logger, format string, args ...inte
 }
 
 // Error prints an error if the logger is set.
-func Error(ctx context.Context, log *logger.Logger, err error) {
+func Error(ctx context.Context, log logger.Log, err error) {
 	if log == nil {
 		return
 	}
@@ -62,7 +62,7 @@ func Error(ctx context.Context, log *logger.Logger, err error) {
 }
 
 // Fatalf prints a fatal error message if the logger is set.
-func Fatalf(ctx context.Context, log *logger.Logger, format string, args ...interface{}) {
+func Fatalf(ctx context.Context, log logger.Log, format string, args ...interface{}) {
 	if log == nil {
 		return
 	}
@@ -71,7 +71,7 @@ func Fatalf(ctx context.Context, log *logger.Logger, format string, args ...inte
 }
 
 // Fatal prints a fatal error if the logger is set.
-func Fatal(ctx context.Context, log *logger.Logger, err error) {
+func Fatal(ctx context.Context, log logger.Log, err error) {
 	if log == nil {
 		return
 	}
