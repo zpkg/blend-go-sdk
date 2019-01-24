@@ -44,6 +44,8 @@ func main() {
 		}
 	}
 
+	log.SyncInfof("starting job running against command `%v`", command)
+
 	jm := cron.New().WithLogger(log)
 	jm.LoadJob(&Job{
 		schedule: schedule,

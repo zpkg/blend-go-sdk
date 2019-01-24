@@ -64,7 +64,7 @@ type JobScheduler struct {
 	Name string `json:"name"`
 	Job  Job    `json:"-"`
 
-	Tracer Tracer
+	Tracer Tracer     `json:"-"`
 	Log    logger.Log `json:"-"`
 	Config *Config    `json:"-"`
 

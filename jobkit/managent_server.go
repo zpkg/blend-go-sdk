@@ -20,6 +20,10 @@ func NewManagementServer(jm *cron.JobManager, cfg *Config) *web.App {
 		}
 		return web.JSON.InternalError(fmt.Errorf("job manager is stopped or in an inconsistent state"))
 	})
+	app.GET("/api/jobs", func(_ *web.Ctx) web.Result {
+		status := jm.Status()
+		return web.JSON.Result(status)
+	})
 	app.GET("/api/job.status/:jobName", func(r *web.Ctx) web.Result {
 		jobName, err := r.RouteParam("jobName")
 		if err != nil {
@@ -31,7 +35,7 @@ func NewManagementServer(jm *cron.JobManager, cfg *Config) *web.App {
 		}
 		return web.JSON.Result(status)
 	})
-	app.POST("/api/job.start/:jobName", func(r *web.Ctx) web.Result {
+	app.POST("/api/job.run/:jobName", func(r *web.Ctx) web.Result {
 		jobName, err := r.RouteParam("jobName")
 		if err != nil {
 			return web.JSON.BadRequest(err)
