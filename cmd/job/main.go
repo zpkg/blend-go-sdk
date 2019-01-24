@@ -3,9 +3,13 @@ package main
 import (
 	"context"
 	"flag"
+	"fmt"
 	"os"
+	"strings"
+	"time"
 
 	"github.com/blend/go-sdk/configutil"
+	"github.com/blend/go-sdk/uuid"
 
 	"github.com/blend/go-sdk/cron"
 	"github.com/blend/go-sdk/graceful"
@@ -19,6 +23,7 @@ var name = flag.String("name", stringutil.Letters.Random(8), "The name of the jo
 var exec = flag.String("exec", "", "The command to execute")
 var schedule = flag.String("schedule", "*/1 * * * * * *", "The job schedule as a cron string (i.e. 7 space delimited components)")
 var configPath = flag.String("config", "config.yml", "The job config path")
+var timeout = flag.Duration("timeout", 0, "The timeout")
 
 func main() {
 	flag.Parse()
@@ -36,21 +41,27 @@ func main() {
 	log := logger.NewFromConfig(&config.Logger)
 	log.WithEnabled(cron.FlagStarted, cron.FlagComplete, cron.FlagFixed, cron.FlagBroken, cron.FlagFailed, cron.FlagCancelled)
 
-	command := *exec
-	if command == "" {
+	var command []string
+	if *exec != "" {
+		command = strings.Split(*exec, " ")
+	} else {
 		command, err = sh.ParseFlagsTrailer(os.Args...)
 		if err != nil {
 			logger.FatalExit(err)
 		}
 	}
 
-	log.SyncInfof("starting job running against command `%v`", command)
+	if len(command) == 0 {
+		logger.FatalExit(fmt.Errorf("must supply a command to run with `--exec=...` or `-- command`)"))
+	}
 
 	jm := cron.New().WithLogger(log)
-	jm.LoadJob(&Job{
+	jm.LoadJob(&ExecJob{
 		schedule: schedule,
 		name:     *name,
-		exec:     command,
+		exec:     command[0],
+		args:     args(command...),
+		timeout:  *timeout,
 	})
 
 	go func() {
@@ -65,25 +76,76 @@ func main() {
 	}
 }
 
-// Job is the main job body.
-type Job struct {
-	schedule *cron.StringSchedule
+func args(all ...string) []string {
+	if len(all) < 2 {
+		return nil
+	}
+	return all[1:]
+}
+
+// NewExecJob creates a new exec job.
+func NewExecJob(exec string, args ...string) *ExecJob {
+	return &ExecJob{
+		name: uuid.V4().String(),
+		exec: exec,
+		args: args,
+	}
+}
+
+// ExecJob is the main job body.
+type ExecJob struct {
+	schedule cron.Schedule
 	config   *jobkit.Config
 	name     string
 	exec     string
+	args     []string
+	timeout  time.Duration
 }
 
 // Name returns the job name.
-func (job Job) Name() string {
+func (job ExecJob) Name() string {
 	return job.name
 }
 
+// WithName sets the name.
+func (job *ExecJob) WithName(name string) *ExecJob {
+	job.name = name
+	return job
+}
+
 // Schedule returns the job schedule.
-func (job Job) Schedule() cron.Schedule {
+func (job ExecJob) Schedule() cron.Schedule {
 	return job.schedule
 }
 
+// WithSchedule sets the schedule.
+func (job *ExecJob) WithSchedule(schedule cron.Schedule) *ExecJob {
+	job.schedule = schedule
+	return job
+}
+
+// Timeout returns the timeout.
+func (job ExecJob) Timeout() time.Duration {
+	return job.timeout
+}
+
+// WithTimeout sets the job timeout.
+func (job *ExecJob) WithTimeout(d time.Duration) *ExecJob {
+	job.timeout = d
+	return job
+}
+
+// Exec returns the job command.
+func (job ExecJob) Exec() string {
+	return job.exec
+}
+
+// Args returns the job command args.
+func (job ExecJob) Args() []string {
+	return job.args
+}
+
 // Execute is the job body.
-func (job Job) Execute(ctx context.Context) error {
-	return sh.ForkParsed(job.exec)
+func (job ExecJob) Execute(ctx context.Context) error {
+	return sh.ForkContext(ctx, job.exec, job.args...)
 }
