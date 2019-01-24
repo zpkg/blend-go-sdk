@@ -4,6 +4,8 @@ import (
 	"context"
 	"flag"
 
+	"github.com/blend/go-sdk/configutil"
+
 	"github.com/blend/go-sdk/cron"
 	"github.com/blend/go-sdk/graceful"
 	"github.com/blend/go-sdk/jobkit"
@@ -13,9 +15,9 @@ import (
 )
 
 var exec = flag.String("exec", "", "The command to execute")
-var name = flag.String("exec", stringutil.Letters.Random(8), "The command to execute")
-var schedule = flag.String("schedule", "* */5 * * *", "The job schedule")
-var config = flag.String("config", "config.yml", "The job manager config")
+var name = flag.String("name", stringutil.Letters.Random(8), "The command to execute")
+var schedule = flag.String("schedule", "*/1 * * * * * *", "The job schedule")
+var configPath = flag.String("config", "config.yml", "The job manager config")
 
 func main() {
 	flag.Parse()
@@ -25,14 +27,26 @@ func main() {
 		logger.FatalExit(err)
 	}
 
-	jm := cron.New()
+	var config jobkit.Config
+	if err := configutil.Read(&config, *configPath); !configutil.IsIgnored(err) {
+		logger.FatalExit(err)
+	}
+
+	log := logger.NewFromConfig(&config.Logger)
+
+	jm := cron.New().WithLogger(log)
 	jm.LoadJob(&Job{
 		schedule: schedule,
 		name:     *name,
 		exec:     *exec,
 	})
 
-	if err := graceful.Shutdown(jm); err != nil {
+	if err := jm.Start(); err != nil {
+		logger.FatalExit(err)
+	}
+
+	ws := jobkit.NewManagementServer(jm, &config)
+	if err := graceful.Shutdown(ws); err != nil {
 		logger.FatalExit(err)
 	}
 }
@@ -57,5 +71,5 @@ func (job Job) Schedule() cron.Schedule {
 
 // Execute is the job body.
 func (job Job) Execute(ctx context.Context) error {
-	return sh.Exec(job.exec)
+	return sh.ForkParsed(job.exec)
 }

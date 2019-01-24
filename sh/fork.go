@@ -5,6 +5,25 @@ import (
 	"os/exec"
 )
 
+// ForkParsed parses a command into binary and arguments.
+// It resolves the command name in your $PATH list for you.
+// It shows output and allows input.
+// It is intended to be used in scripting.
+func ForkParsed(command string) error {
+	cmd, err := CmdParsed(command)
+	if err != nil {
+		return err
+	}
+	cmd.Env = os.Environ()
+	cmd.Stdout = os.Stdout
+	cmd.Stderr = os.Stderr
+	cmd.Stdin = os.Stdin
+	if err := cmd.Run(); err != nil {
+		return err
+	}
+	return nil
+}
+
 // Fork runs a command with a given list of arguments.
 // It resolves the command name in your $PATH list for you.
 // It shows output and allows input.

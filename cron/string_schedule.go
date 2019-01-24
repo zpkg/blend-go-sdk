@@ -233,7 +233,7 @@ func (ss *StringSchedule) Next(after time.Time) time.Time {
 	if len(ss.Seconds) > 0 {
 		var didSet bool
 		for _, second := range ss.Seconds {
-			if second >= working.Second() {
+			if second > working.Second() {
 				working = setSecond(working, second)
 				didSet = true
 				break
