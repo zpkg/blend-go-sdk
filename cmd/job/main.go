@@ -3,7 +3,6 @@ package main
 import (
 	"context"
 	"flag"
-	"fmt"
 	"os"
 
 	"github.com/blend/go-sdk/configutil"
@@ -24,8 +23,6 @@ var configPath = flag.String("config", "config.yml", "The job config path")
 func main() {
 	flag.Parse()
 
-	fmt.Printf("%#v\n", os.Args)
-
 	schedule, err := cron.ParseString(*schedule)
 	if err != nil {
 		logger.FatalExit(err)
@@ -39,11 +36,19 @@ func main() {
 	log := logger.NewFromConfig(&config.Logger)
 	log.WithEnabled(cron.FlagStarted, cron.FlagComplete, cron.FlagFixed, cron.FlagBroken, cron.FlagFailed, cron.FlagCancelled)
 
+	command := *exec
+	if command == "" {
+		command, err = sh.ParseFlagsTrailer(os.Args...)
+		if err != nil {
+			logger.FatalExit(err)
+		}
+	}
+
 	jm := cron.New().WithLogger(log)
 	jm.LoadJob(&Job{
 		schedule: schedule,
 		name:     *name,
-		exec:     "echo 'fuuuuck'",
+		exec:     command,
 	})
 
 	go func() {

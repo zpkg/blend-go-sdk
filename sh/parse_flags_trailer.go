@@ -16,7 +16,6 @@ const (
 func ParseFlagsTrailer(args ...string) (string, error) {
 	var foundIndex int
 	for index, arg := range args {
-		println(arg)
 		if strings.TrimSpace(arg) == "--" {
 			foundIndex = index
 			break
