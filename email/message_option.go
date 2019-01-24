@@ -1,4 +1,4 @@
-package ses
+package email
 
 // ApplyMessageOptions applies options to a message and returns
 // the mutated copy.

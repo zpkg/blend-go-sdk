@@ -11,11 +11,12 @@ import (
 )
 
 // NewJobScheduler returns a job scheduler for a given job.
-func NewJobScheduler(job Job) *JobScheduler {
+func NewJobScheduler(cfg *Config, job Job) *JobScheduler {
 	js := &JobScheduler{
-		Latch: &async.Latch{},
-		Name:  job.Name(),
-		Job:   job,
+		Latch:  &async.Latch{},
+		Name:   job.Name(),
+		Job:    job,
+		Config: cfg,
 	}
 
 	if typed, ok := job.(ScheduleProvider); ok {
@@ -65,12 +66,14 @@ type JobScheduler struct {
 
 	Tracer Tracer
 	Log    logger.Log
+	Config *Config
 
 	// Meta Fields
 	Disabled    bool
 	NextRuntime time.Time
 	Current     *JobInvocation
 	Last        *JobInvocation
+	History     []JobInvocation
 
 	Schedule                       Schedule
 	EnabledProvider                func() bool
@@ -220,6 +223,7 @@ func (js *JobScheduler) Run() {
 			js.onComplete(ctx, &ji)
 		}
 
+		js.addHistory(ji)
 		js.setCurrent(nil)
 		js.setLast(&ji)
 	}()
@@ -381,4 +385,35 @@ func (js *JobScheduler) onFailure(ctx context.Context, ji *JobInvocation) {
 			typed.OnBroken(ctx)
 		}
 	}
+}
+
+func (js *JobScheduler) addHistory(ji JobInvocation) {
+	js.Lock()
+	defer js.Unlock()
+	if js.Config != nil {
+		js.History = js.cullHistory()
+	}
+	js.History = append(js.History, ji)
+}
+
+func (js *JobScheduler) cullHistory() []JobInvocation {
+	count := len(js.History)
+	maxCount := js.Config.History.MaxCountOrDefault()
+	maxAge := js.Config.History.MaxAgeOrDefault()
+	now := time.Now().UTC()
+	var filtered []JobInvocation
+	for index, h := range js.History {
+		if maxCount > 0 {
+			if index < (count - maxCount) {
+				continue
+			}
+		}
+		if maxAge > 0 {
+			if now.Sub(h.StartTime) > maxAge {
+				continue
+			}
+		}
+		filtered = append(filtered, h)
+	}
+	return filtered
 }

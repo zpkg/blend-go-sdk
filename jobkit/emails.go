@@ -4,13 +4,13 @@ import (
 	"context"
 	"time"
 
-	"github.com/blend/go-sdk/aws/ses"
 	"github.com/blend/go-sdk/cron"
+	"github.com/blend/go-sdk/email"
 	"github.com/blend/go-sdk/template"
 )
 
 // SendEmail sends a job status email.
-func SendEmail(ctx context.Context, sender ses.Sender, jobStatus JobStatus, ji *cron.JobInvocation, options ...ses.MessageOption) error {
+func SendEmail(ctx context.Context, sender email.Sender, jobStatus JobStatus, ji *cron.JobInvocation, options ...email.MessageOption) error {
 	if sender == nil {
 		return nil
 	}
@@ -22,10 +22,8 @@ func SendEmail(ctx context.Context, sender ses.Sender, jobStatus JobStatus, ji *
 }
 
 // NewEmailMessage returns a new email message.
-func NewEmailMessage(jobName string, jobStatus JobStatus, jobErr error, elapsed time.Duration, options ...ses.MessageOption) (ses.Message, error) {
-	message := ses.Message{
-		From: "baileydog@blend.com",
-	}
+func NewEmailMessage(jobName string, jobStatus JobStatus, jobErr error, elapsed time.Duration, options ...email.MessageOption) (email.Message, error) {
+	message := email.Message{}
 
 	vars := map[string]interface{}{
 		"jobName":   jobName,
@@ -47,7 +45,7 @@ func NewEmailMessage(jobName string, jobStatus JobStatus, jobErr error, elapsed 
 		return message, err
 	}
 
-	return ses.ApplyMessageOptions(message, options...), nil
+	return email.ApplyMessageOptions(message, options...), nil
 }
 
 const (

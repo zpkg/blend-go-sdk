@@ -4,8 +4,7 @@ import (
 	"time"
 
 	"github.com/blend/go-sdk/configutil"
-
-	"github.com/blend/go-sdk/aws/ses"
+	"github.com/blend/go-sdk/email"
 	"github.com/blend/go-sdk/slack"
 	"github.com/blend/go-sdk/webutil"
 )
@@ -36,7 +35,7 @@ type JobConfig struct {
 	// Webhook governs webhook notification options.
 	Webhook webutil.Webhook `json:"webhook" yaml:"webhook"`
 	// Email controls email notification defaults.
-	Email ses.Message `json:"email" yaml:"email"`
+	Email email.Message `json:"email" yaml:"email"`
 }
 
 // NotifyOnBrokenOrDefault returns a value or a default.

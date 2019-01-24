@@ -5,8 +5,17 @@ import (
 
 	"github.com/aws/aws-sdk-go/aws/session"
 	awsSes "github.com/aws/aws-sdk-go/service/ses"
+	"github.com/blend/go-sdk/aws"
+	"github.com/blend/go-sdk/email"
 	"github.com/blend/go-sdk/exception"
 )
+
+// New returns a new sender.
+func New(cfg *aws.Config) email.Sender {
+	return &APISender{
+		client: awsSes.New(aws.NewSession(cfg)),
+	}
+}
 
 // APISender is an aws ses email sender.
 type APISender struct {
@@ -15,7 +24,7 @@ type APISender struct {
 }
 
 // Send sends a message.
-func (s *APISender) Send(ctx context.Context, m Message) error {
+func (s *APISender) Send(ctx context.Context, m email.Message) error {
 	if s.client == nil {
 		return nil
 	}

@@ -22,7 +22,7 @@ func New() *JobManager {
 
 // NewFromConfig returns a new job manager from a given config.
 func NewFromConfig(cfg *Config) *JobManager {
-	return New()
+	return New().WithConfig(cfg)
 }
 
 // NewFromEnv returns a new job manager from the environment.
@@ -47,6 +47,7 @@ func MustNewFromEnv() *JobManager {
 type JobManager struct {
 	sync.Mutex
 	latch  *async.Latch
+	cfg    *Config
 	tracer Tracer
 	log    logger.Log
 	jobs   map[string]*JobScheduler
@@ -61,6 +62,17 @@ func (jm *JobManager) WithLogger(log logger.Log) *JobManager {
 // Logger returns the diagnostics agent.
 func (jm *JobManager) Logger() logger.Log {
 	return jm.log
+}
+
+// Config returns the job manager config.
+func (jm *JobManager) Config() *Config {
+	return jm.cfg
+}
+
+// WithConfig sets the job manager config.
+func (jm *JobManager) WithConfig(cfg *Config) *JobManager {
+	jm.cfg = cfg
+	return jm
 }
 
 // WithTracer sets the manager's tracer.
@@ -92,7 +104,7 @@ func (jm *JobManager) LoadJobs(jobs ...Job) error {
 		if _, hasJob := jm.jobs[jobName]; hasJob {
 			return exception.New(ErrJobAlreadyLoaded).WithMessagef("job: %s", job.Name())
 		}
-		jm.jobs[jobName] = NewJobScheduler(job).WithTracer(jm.tracer).WithLogger(jm.log)
+		jm.jobs[jobName] = NewJobScheduler(jm.cfg, job).WithTracer(jm.tracer).WithLogger(jm.log)
 	}
 	return nil
 }
@@ -106,7 +118,7 @@ func (jm *JobManager) LoadJob(job Job) error {
 	if _, hasJob := jm.jobs[jobName]; hasJob {
 		return exception.New(ErrJobAlreadyLoaded).WithMessagef("job: %s", job.Name())
 	}
-	jm.jobs[jobName] = NewJobScheduler(job).WithTracer(jm.tracer).WithLogger(jm.log)
+	jm.jobs[jobName] = NewJobScheduler(jm.cfg, job).WithTracer(jm.tracer).WithLogger(jm.log)
 	return nil
 }
 

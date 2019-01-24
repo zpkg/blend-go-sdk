@@ -11,6 +11,12 @@ const (
 	EnvVarHeartbeatInterval = "CRON_HEARTBEAT_INTERVAL"
 )
 
+// Retention defaults
+const (
+	DefaultMaxCount = 10
+	DefaultMaxAge   = 6 * time.Hour
+)
+
 const (
 	// DefaultHeartbeatInterval is the interval between schedule next run checks.
 	DefaultHeartbeatInterval = 50 * time.Millisecond
@@ -48,10 +54,8 @@ type State string
 const (
 	//StateRunning is the running state.
 	StateRunning State = "running"
-
 	// StateEnabled is the enabled state.
 	StateEnabled State = "enabled"
-
 	// StateDisabled is the disabled state.
 	StateDisabled State = "disabled"
 )

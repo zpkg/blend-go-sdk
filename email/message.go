@@ -1,4 +1,4 @@
-package ses
+package email
 
 // Message is a message to send via. ses.
 type Message struct {
