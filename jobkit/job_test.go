@@ -17,7 +17,7 @@ func TestJobProperties(t *testing.T) {
 	})
 	assert.NotNil(job.action)
 
-	assert.Empty(job.Name())
+	assert.NotEmpty(job.Name())
 	job.WithName("foo")
 	assert.Equal("foo", job.Name())
 
