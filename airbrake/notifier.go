@@ -4,6 +4,7 @@ import (
 	"net/http"
 	"os"
 	"runtime"
+	"strconv"
 	"sync"
 
 	"github.com/airbrake/gobrake"
@@ -21,11 +22,24 @@ var (
 	defaultContext     map[string]interface{}
 )
 
+// MustNew returns a new notifier and panics on error.
+func MustNew(cfg *Config) *Notifier {
+	notifier, err := New(cfg)
+	if err != nil {
+		panic(err)
+	}
+	return notifier
+}
+
 // New returns a new notifier.
-func New(cfg *Config) *Notifier {
+func New(cfg *Config) (*Notifier, error) {
+	parsedProjectID, err := strconv.ParseInt(cfg.ProjectID, 10, 64)
+	if err != nil {
+		return nil, exception.New(err)
+	}
 	// create a new reporter
 	client := gobrake.NewNotifierWithOptions(&gobrake.NotifierOptions{
-		ProjectId:   mustInt(cfg.ProjectID),
+		ProjectId:   parsedProjectID,
 		ProjectKey:  cfg.ProjectKey,
 		Environment: cfg.Environment,
 	})
@@ -42,7 +56,7 @@ func New(cfg *Config) *Notifier {
 
 	return &Notifier{
 		Client: client,
-	}
+	}, nil
 }
 
 // Notifier implements diagnostics.Notifier.

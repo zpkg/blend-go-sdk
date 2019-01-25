@@ -390,13 +390,14 @@ func (js *JobScheduler) onFailure(ctx context.Context, ji *JobInvocation) {
 func (js *JobScheduler) addHistory(ji JobInvocation) {
 	js.Lock()
 	defer js.Unlock()
-	if js.Config != nil {
-		js.History = js.cullHistory()
-	}
+	js.History = js.cullHistory()
 	js.History = append(js.History, ji)
 }
 
 func (js *JobScheduler) cullHistory() []JobInvocation {
+	if js.Config == nil {
+		return js.History
+	}
 	count := len(js.History)
 	maxCount := js.Config.History.MaxCountOrDefault()
 	maxAge := js.Config.History.MaxAgeOrDefault()

@@ -8,6 +8,7 @@ import (
 	"strings"
 
 	"github.com/blend/go-sdk/airbrake"
+	"github.com/blend/go-sdk/aws"
 	"github.com/blend/go-sdk/aws/ses"
 	"github.com/blend/go-sdk/configutil"
 	"github.com/blend/go-sdk/cron"
@@ -50,7 +51,7 @@ func main() {
 	var emailClient email.Sender
 	if !config.AWS.IsZero() {
 		log.SyncInfof("email notifications: %s", logger.ColorBlue.Apply("enabled"))
-		emailClient = ses.New(&config.AWS)
+		emailClient = ses.New(aws.MustNewSession(&config.AWS))
 	}
 	var slackClient slack.Sender
 	if !config.Slack.IsZero() {
@@ -60,7 +61,7 @@ func main() {
 	var statsClient stats.Collector
 	if !config.Datadog.IsZero() {
 		log.SyncInfof("datadog: %s", logger.ColorBlue.Apply("enabled"))
-		statsClient, err = datadog.New(&config.Datadog)
+		statsClient, err = datadog.NewCollector(&config.Datadog)
 		if err != nil {
 			logger.FatalExit(err)
 		}
@@ -68,7 +69,7 @@ func main() {
 	var errorClient diagnostics.Notifier
 	if !config.Airbrake.IsZero() {
 		log.SyncInfof("airbrake: %s", logger.ColorBlue.Apply("enabled"))
-		errorClient = airbrake.New(&config.Airbrake)
+		errorClient = airbrake.MustNew(&config.Airbrake)
 	}
 
 	var command []string

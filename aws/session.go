@@ -6,8 +6,8 @@ import (
 	"github.com/aws/aws-sdk-go/aws/session"
 )
 
-// NewSession creates a new aws session from a config.
-func NewSession(cfg *Config) *session.Session {
+// MustNewSession creates a new aws session from a config.
+func MustNewSession(cfg *Config) *session.Session {
 	if cfg.IsZero() {
 		return session.Must(session.NewSession())
 	}

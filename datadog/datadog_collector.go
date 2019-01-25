@@ -17,46 +17,40 @@ var (
 	_ stats.EventCollector = (*Collector)(nil)
 )
 
-// New returns a new stats collector from a config.
-func New(cfg *Config) (*Collector, error) {
+// NewCollector returns a new stats collector from a config.
+func NewCollector(cfg *Config) (*Collector, error) {
 	var client *statsd.Client
 	var err error
-	if cfg.BufferedOrDefault() {
-		client, err = statsd.NewBuffered(cfg.Host(), cfg.BufferDepthOrDefault())
+	if cfg.GetBuffered() {
+		client, err = statsd.NewBuffered(cfg.GetHost(), cfg.GetBufferDepth())
 	} else {
-		client, err = statsd.New(cfg.Host())
+		client, err = statsd.New(cfg.GetHost())
 	}
 	if err != nil {
 		return nil, err
 	}
-	if len(cfg.NamespaceOrDefault()) > 0 {
-		client.Namespace = strings.ToLower(cfg.NamespaceOrDefault()) + "."
+	if len(cfg.GetNamespace()) > 0 {
+		client.Namespace = strings.ToLower(cfg.GetNamespace()) + "."
 	}
 	collector := &Collector{
 		client:      client,
-		defaultTags: cfg.DefaultTagsOrDefault(),
+		defaultTags: cfg.GetDefaultTags(),
 	}
 
-	if serviceName := env.Env().String(env.VarServiceName); len(serviceName) > 0 {
-		collector.AddDefaultTag(TagService, serviceName)
-	}
-	if serviceEnv := env.Env().String(env.VarServiceEnv); len(serviceEnv) > 0 {
-		collector.AddDefaultTag(TagEnv, serviceEnv)
-	}
-	if hostname := env.Env().String(env.VarHostname); len(hostname) > 0 {
-		collector.AddDefaultTag(TagHostname, hostname)
-	}
+	collector.AddDefaultTag("service", env.Env().String(env.VarServiceName))
+	collector.AddDefaultTag("env", env.Env().String(env.VarServiceEnv))
+	collector.AddDefaultTag("hostname", env.Env().String(env.VarHostname))
 
 	return collector, nil
 }
 
-// NewFromEnv returns a new Collector from a config.
-func NewFromEnv() (*Collector, error) {
+// NewCollectorFromEnv returns a new Collector from a config.
+func NewCollectorFromEnv() (*Collector, error) {
 	cfg, err := NewConfigFromEnv()
 	if err != nil {
 		return nil, err
 	}
-	return New(cfg)
+	return NewCollector(cfg)
 }
 
 // Collector is a class that wraps the statsd collector we're using.

@@ -16,7 +16,7 @@ func AddListeners(log logger.Listenable, cfg *Config) {
 	if log == nil || cfg == nil || cfg.IsZero() {
 		return
 	}
-	client := New(cfg)
+	client := MustNew(cfg)
 	listener := logger.NewErrorEventListener(func(ee *logger.ErrorEvent) {
 		if req, ok := ee.State().(*http.Request); ok {
 			client.NotifyWithRequest(ee.Err(), req)

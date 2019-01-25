@@ -3,17 +3,18 @@ package ses
 import (
 	"context"
 
+	awsutil "github.com/aws/aws-sdk-go/aws"
 	"github.com/aws/aws-sdk-go/aws/session"
 	awsSes "github.com/aws/aws-sdk-go/service/ses"
-	"github.com/blend/go-sdk/aws"
 	"github.com/blend/go-sdk/email"
 	"github.com/blend/go-sdk/exception"
 )
 
 // New returns a new sender.
-func New(cfg *aws.Config) email.Sender {
+func New(session *session.Session) email.Sender {
 	return &APISender{
-		client: awsSes.New(aws.NewSession(cfg)),
+		session: session,
+		client:  awsSes.New(session),
 	}
 }
 
@@ -31,9 +32,9 @@ func (s *APISender) Send(ctx context.Context, m email.Message) error {
 	input := &awsSes.SendEmailInput{
 		Source: &m.From,
 		Destination: &awsSes.Destination{
-			ToAddresses:  strPtrs(m.To),
-			CcAddresses:  strPtrs(m.CC),
-			BccAddresses: strPtrs(m.BCC),
+			ToAddresses:  awsutil.StringSlice(m.To),
+			CcAddresses:  awsutil.StringSlice(m.CC),
+			BccAddresses: awsutil.StringSlice(m.BCC),
 		},
 		Message: &awsSes.Message{
 			Subject: &awsSes.Content{
@@ -60,12 +61,4 @@ func (s *APISender) Send(ctx context.Context, m email.Message) error {
 
 	_, err := s.client.SendEmailWithContext(ctx, input)
 	return exception.New(err)
-}
-
-func strPtrs(values []string) []*string {
-	output := make([]*string, len(values))
-	for i := 0; i < len(values); i++ {
-		output[i] = &values[i]
-	}
-	return output
 }

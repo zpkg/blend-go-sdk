@@ -24,7 +24,7 @@ func NewNotice(err interface{}, req *http.Request) *gobrake.Notice {
 		for inner := exception.As(ex.Inner()); inner != nil; inner = exception.As(inner.Inner()) {
 			errors = append(errors, gobrake.Error{
 				Type:      exception.ErrClass(inner),
-				Message:   fmt.Sprintf("%+v", ex),
+				Message:   fmt.Sprintf("%+v", inner),
 				Backtrace: frames(inner.Stack()),
 			})
 		}

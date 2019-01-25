@@ -38,7 +38,7 @@ const (
 	DefaultEmailMimeType = "text/plain"
 
 	// DefaultEmailSubjectTemplate is the default subject template.
-	DefaultEmailSubjectTemplate = `({{ .Var "environment" }}) {{.Var "jobName" }} :: {{ .Var "jobStatus" }}`
+	DefaultEmailSubjectTemplate = `{{.Var "jobName" }} :: {{ .Var "jobStatus" }}`
 
 	// DefaultEmailHTMLBodyTemplate is the default email html body template.
 	DefaultEmailHTMLBodyTemplate = `
@@ -70,6 +70,6 @@ const (
 
 	// DefaultEmailTextBodyTemplate is the default body template.
 	DefaultEmailTextBodyTemplate = `{{ .Var "jobName" }} {{ .Var "jobStatus" }}
-Elapsed: {{ .Var "result.elapsed" }}
+Elapsed: {{ .Var "elapsed" }}
 {{ if .HasVar "err" }}Error: {{ .Var "err" }}{{end}}`
 )
