@@ -20,5 +20,5 @@ func TestParseFlagsTrailer(t *testing.T) {
 
 	parsed, err = ParseFlagsTrailer("foo", "bar", "--", "echo", "'things'")
 	assert.Nil(err)
-	assert.Equal("echo 'things'", parsed)
+	assert.Equal([]string{"echo", "'things'"}, parsed)
 }
