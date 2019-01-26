@@ -67,4 +67,11 @@ func TestSplitSpaceQuoted(t *testing.T) {
 	assert.Len(values, 2)
 	assert.Equal("foo", values[0])
 	assert.Equal(`--config="bar baz='hi'"`, values[1])
+
+	values = SplitSpaceQuoted(`“what is 500 pine’s best kept secret?” “1st floor bathrooms” “pine street side exit” “other (please explain)”`)
+	assert.Len(values, 4)
+	assert.Equal(`“what is 500 pine’s best kept secret?”`, values[0])
+	assert.Equal(`“1st floor bathrooms”`, values[1])
+	assert.Equal(`“pine street side exit”`, values[2])
+	assert.Equal(`“other (please explain)”`, values[3])
 }

@@ -14,7 +14,7 @@ func SplitSpaceQuoted(text string) (output []string) {
 	for _, r := range text {
 		switch state {
 		case 0: // word
-			if r == '"' || r == '\'' {
+			if isQuote(r) {
 				opened = r
 				word = append(word, r)
 				state = 2
@@ -29,17 +29,16 @@ func SplitSpaceQuoted(text string) (output []string) {
 			}
 		case 1: // we've seen a space
 			if !unicode.IsSpace(r) {
-				if r == '"' || r == '\'' {
+				if isQuote(r) {
 					opened = r
 					state = 2
 				} else {
 					state = 0
 				}
 				word = append(word, r)
-
 			}
 		case 2: // quoted section
-			if r == opened {
+			if matchesQuote(opened, r) {
 				state = 0
 			}
 			word = append(word, r)
@@ -50,4 +49,18 @@ func SplitSpaceQuoted(text string) (output []string) {
 		output = append(output, string(word))
 	}
 	return
+}
+
+func isQuote(r rune) bool {
+	return r == '"' || r == '\'' || r == '“' || r == '”' || r == '`'
+}
+
+func matchesQuote(a, b rune) bool {
+	if a == '“' && b == '”' {
+		return true
+	}
+	if a == '”' && b == '“' {
+		return true
+	}
+	return a == b
 }
