@@ -12,7 +12,7 @@ import (
 func NewManagementServer(jm *cron.JobManager, cfg *Config) *web.App {
 	app := web.NewFromConfig(&cfg.Web)
 	app.GET("/", func(r *web.Ctx) web.Result {
-		return r.Static("index.html")
+		return r.Text().OK()
 	})
 	app.GET("/healthz", func(_ *web.Ctx) web.Result {
 		if jm.IsRunning() {
