@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"io/ioutil"
 	"net/http"
+	"net/url"
 	"testing"
 	"time"
 
@@ -275,9 +276,14 @@ func TestCtxRedirectWithMethodf(t *testing.T) {
 func TestCtxPostBodyReparse(t *testing.T) {
 	assert := assert.New(t)
 
-	contents := []byte(`foo=bar`)
+	values := url.Values{}
+	values.Add("foo", "bar")
+	contents := []byte(values.Encode())
 
-	ctx := NewCtx(nil, &http.Request{Body: ioutil.NopCloser(bytes.NewBuffer(contents))})
+	headers := http.Header{}
+	headers.Set("Content-Type", "application/x-www-form-urlencoded")
+
+	ctx := NewCtx(nil, &http.Request{Method: "POST", Header: headers, Body: ioutil.NopCloser(bytes.NewBuffer(contents))})
 
 	body, err := ctx.PostBody()
 	assert.Nil(err)

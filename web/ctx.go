@@ -626,11 +626,16 @@ func (rc *Ctx) ensureForm() error {
 	if err != nil {
 		return err
 	}
-	values, err := url.ParseQuery(string(body))
-	if err != nil {
+
+	r := &http.Request{
+		Method: rc.Request().Method,
+		Header: rc.Request().Header,
+		Body:   ioutil.NopCloser(bytes.NewBuffer(body)),
+	}
+	if err := r.ParseForm(); err != nil {
 		return err
 	}
-	rc.form = values
+	rc.form = r.Form
 	return nil
 }
 
