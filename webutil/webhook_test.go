@@ -25,7 +25,7 @@ func TestWebhookSend(t *testing.T) {
 		headerCorrect = r.Header.Get("X-Test-Value") == "foo"
 
 		w.WriteHeader(http.StatusOK)
-		fmt.Fprintln(w, "OK!")
+		fmt.Fprint(w, "OK!\n")
 	}))
 	defer ts.Close()
 
