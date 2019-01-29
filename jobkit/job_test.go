@@ -2,6 +2,7 @@ package jobkit
 
 import (
 	"context"
+	"fmt"
 	"testing"
 	"time"
 
@@ -107,4 +108,54 @@ func TestJobLifecycleHooksNotificationsSetDisabled(t *testing.T) {
 
 	job.OnFixed(ctx)
 	assert.Empty(slackMessages)
+}
+
+func TestJobLifecycleHooksNotificationsSetEnabled(t *testing.T) {
+	assert := assert.New(t)
+
+	ctx := cron.WithJobInvocation(context.Background(), &cron.JobInvocation{
+		ID:   uuid.V4().String(),
+		Name: "test-job",
+		Err:  fmt.Errorf("only a test"),
+	})
+
+	slackMessages := make(chan slack.Message, 6)
+
+	job := &Job{
+		slackClient: slack.MockWebhookSender(slackMessages),
+		notifications: &NotificationsConfig{
+			NotifyOnStart:   OptBool(true),
+			NotifyOnSuccess: OptBool(true),
+			NotifyOnFailure: OptBool(true),
+			NotifyOnBroken:  OptBool(true),
+			NotifyOnFixed:   OptBool(true),
+		},
+	}
+
+	job.OnStart(ctx)
+	job.OnComplete(ctx)
+	job.OnFailure(ctx)
+	job.OnCancellation(ctx)
+	job.OnBroken(ctx)
+	job.OnFixed(ctx)
+
+	assert.Len(slackMessages, 6)
+
+	msg := <-slackMessages
+	assert.Contains("cron.started", msg.Text)
+
+	msg = <-slackMessages
+	assert.Contains("cron.complete", msg.Text)
+
+	msg = <-slackMessages
+	assert.Contains("cron.failed", msg.Text)
+
+	msg = <-slackMessages
+	assert.Contains("cron.cancelled", msg.Text)
+
+	msg = <-slackMessages
+	assert.Contains("cron.broken", msg.Text)
+
+	msg = <-slackMessages
+	assert.Contains("cron.fixed", msg.Text)
 }
