@@ -43,6 +43,19 @@ func TestParseString(t *testing.T) {
 	}
 }
 
+func TestStringScheduleEvery(t *testing.T) {
+	assert := assert.New(t)
+
+	schedule, err := ParseString("*/1 * * * * * *")
+	assert.Nil(err)
+
+	last := time.Date(2019, 01, 29, 0, 0, 0, 0, time.UTC)
+	for x := 0; x < 60*60*6; x++ {
+		last = schedule.Next(last)
+	}
+	assert.Equal(time.Date(2019, 01, 29, 6, 0, 0, 0, time.UTC), last)
+}
+
 func TestMapKeysToArray(t *testing.T) {
 	assert := assert.New(t)
 
