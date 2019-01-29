@@ -2,8 +2,8 @@ package stringutil
 
 import "unicode"
 
-// SplitSpaceQuoted splits a corpus on space but treats quoted string
-// i.e. `"` as being atomic chunks.
+// SplitSpaceQuoted splits a corpus on space but treats quoted strings
+// i.e. within `"` as being atomic chunks.
 func SplitSpaceQuoted(text string) (output []string) {
 	if len(text) == 0 {
 		return
