@@ -2,7 +2,7 @@ package sh
 
 import "io"
 
-// Tee retruns a new tee writer for a given set of writers.
+// Tee returns a new tee writer for a given set of writers.
 func Tee(writers ...io.Writer) io.Writer {
 	return TeeWriter(writers)
 }
