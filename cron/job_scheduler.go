@@ -11,11 +11,12 @@ import (
 )
 
 // NewJobScheduler returns a job scheduler for a given job.
-func NewJobScheduler(job Job) *JobScheduler {
+func NewJobScheduler(cfg *Config, job Job) *JobScheduler {
 	js := &JobScheduler{
-		Latch: &async.Latch{},
-		Name:  job.Name(),
-		Job:   job,
+		Latch:  &async.Latch{},
+		Name:   job.Name(),
+		Job:    job,
+		Config: cfg,
 	}
 
 	if typed, ok := job.(ScheduleProvider); ok {
@@ -57,27 +58,29 @@ func NewJobScheduler(job Job) *JobScheduler {
 
 // JobScheduler is a job instance.
 type JobScheduler struct {
-	sync.Mutex
-	Latch *async.Latch
+	sync.Mutex `json:"-"`
+	Latch      *async.Latch `json:"-"`
 
-	Name string
-	Job  Job
+	Name string `json:"name"`
+	Job  Job    `json:"-"`
 
-	Tracer Tracer
-	Log    logger.Log
+	Tracer Tracer     `json:"-"`
+	Log    logger.Log `json:"-"`
+	Config *Config    `json:"-"`
 
 	// Meta Fields
-	Disabled    bool
-	NextRuntime time.Time
-	Current     *JobInvocation
-	Last        *JobInvocation
+	Disabled    bool            `json:"disabled"`
+	NextRuntime time.Time       `json:"nextRuntime"`
+	Current     *JobInvocation  `json:"current"`
+	Last        *JobInvocation  `json:"last"`
+	History     []JobInvocation `json:"history"`
 
-	Schedule                       Schedule
-	EnabledProvider                func() bool
-	SerialProvider                 func() bool
-	TimeoutProvider                func() time.Duration
-	ShouldTriggerListenersProvider func() bool
-	ShouldWriteOutputProvider      func() bool
+	Schedule                       Schedule             `json:"-"`
+	EnabledProvider                func() bool          `json:"-"`
+	SerialProvider                 func() bool          `json:"-"`
+	TimeoutProvider                func() time.Duration `json:"-"`
+	ShouldTriggerListenersProvider func() bool          `json:"-"`
+	ShouldWriteOutputProvider      func() bool          `json:"-"`
 }
 
 // WithTracer sets the scheduler tracer.
@@ -138,8 +141,10 @@ func (js *JobScheduler) Cancel() {
 func (js *JobScheduler) RunLoop() {
 	js.Latch.Started()
 
-	// sniff the schedule, see if a next runtime is called for (or if the job is on demand).
-	js.NextRuntime = js.Schedule.Next(js.NextRuntime)
+	if js.Schedule != nil {
+		// sniff the schedule, see if a next runtime is called for (or if the job is on demand).
+		js.NextRuntime = js.Schedule.Next(js.NextRuntime)
+	}
 	if js.NextRuntime.IsZero() {
 		js.Latch.Stopped()
 		return
@@ -220,6 +225,7 @@ func (js *JobScheduler) Run() {
 			js.onComplete(ctx, &ji)
 		}
 
+		js.addHistory(ji)
 		js.setCurrent(nil)
 		js.setLast(&ji)
 	}()
@@ -381,4 +387,36 @@ func (js *JobScheduler) onFailure(ctx context.Context, ji *JobInvocation) {
 			typed.OnBroken(ctx)
 		}
 	}
+}
+
+func (js *JobScheduler) addHistory(ji JobInvocation) {
+	js.Lock()
+	defer js.Unlock()
+	js.History = js.cullHistory()
+	js.History = append(js.History, ji)
+}
+
+func (js *JobScheduler) cullHistory() []JobInvocation {
+	if js.Config == nil {
+		return js.History
+	}
+	count := len(js.History)
+	maxCount := js.Config.History.MaxCountOrDefault()
+	maxAge := js.Config.History.MaxAgeOrDefault()
+	now := time.Now().UTC()
+	var filtered []JobInvocation
+	for index, h := range js.History {
+		if maxCount > 0 {
+			if index < (count - maxCount) {
+				continue
+			}
+		}
+		if maxAge > 0 {
+			if now.Sub(h.StartTime) > maxAge {
+				continue
+			}
+		}
+		filtered = append(filtered, h)
+	}
+	return filtered
 }

@@ -1,7 +1,10 @@
 package web
 
 import (
+	"bytes"
+	"io/ioutil"
 	"net/http"
+	"net/url"
 	"testing"
 	"time"
 
@@ -268,4 +271,25 @@ func TestCtxRedirectWithMethodf(t *testing.T) {
 	result := context.RedirectWithMethodf("POST", "foo%sbar", "buzz")
 	assert.Equal("POST", result.Method)
 	assert.Equal("foobuzzbar", result.RedirectURI)
+}
+
+func TestCtxPostBodyReparse(t *testing.T) {
+	assert := assert.New(t)
+
+	values := url.Values{}
+	values.Add("foo", "bar")
+	contents := []byte(values.Encode())
+
+	headers := http.Header{}
+	headers.Set("Content-Type", "application/x-www-form-urlencoded")
+
+	ctx := NewCtx(nil, &http.Request{Method: "POST", Header: headers, Body: ioutil.NopCloser(bytes.NewBuffer(contents))})
+
+	body, err := ctx.PostBody()
+	assert.Nil(err)
+	assert.Equal(contents, body)
+
+	value, err := ctx.FormValue("foo")
+	assert.Nil(err)
+	assert.Equal("bar", value)
 }

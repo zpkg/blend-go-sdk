@@ -198,7 +198,7 @@ func (ss *StringSchedule) Next(after time.Time) time.Time {
 	if len(ss.Hours) > 0 {
 		var didSet bool
 		for _, hour := range ss.Hours {
-			if hour >= working.Hour() {
+			if hour > working.Hour() {
 				working = setHour(working, hour)
 				didSet = true
 				break
@@ -216,7 +216,7 @@ func (ss *StringSchedule) Next(after time.Time) time.Time {
 	if len(ss.Minutes) > 0 {
 		var didSet bool
 		for _, minute := range ss.Minutes {
-			if minute >= working.Minute() {
+			if minute > working.Minute() {
 				working = setMinute(working, minute)
 				didSet = true
 				break
@@ -233,7 +233,7 @@ func (ss *StringSchedule) Next(after time.Time) time.Time {
 	if len(ss.Seconds) > 0 {
 		var didSet bool
 		for _, second := range ss.Seconds {
-			if second >= working.Second() {
+			if second > working.Second() {
 				working = setSecond(working, second)
 				didSet = true
 				break
