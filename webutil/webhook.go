@@ -1,6 +1,8 @@
 package webutil
 
 import (
+	"bytes"
+	"io/ioutil"
 	"net/http"
 	"net/url"
 
@@ -44,6 +46,9 @@ func (wh Webhook) Send() (*http.Response, error) {
 		headers.Add(key, value)
 	}
 	req.Header = headers
+	if wh.Body != "" {
+		req.Body = ioutil.NopCloser(bytes.NewBufferString(wh.Body))
+	}
 
 	res, err := http.DefaultClient.Do(req)
 	if err != nil {
