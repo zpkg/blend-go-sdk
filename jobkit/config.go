@@ -3,6 +3,7 @@ package jobkit
 import (
 	"github.com/blend/go-sdk/airbrake"
 	"github.com/blend/go-sdk/aws"
+	"github.com/blend/go-sdk/configutil"
 	"github.com/blend/go-sdk/cron"
 	"github.com/blend/go-sdk/datadog"
 	"github.com/blend/go-sdk/email"
@@ -15,6 +16,8 @@ import (
 type Config struct {
 	cron.Config `json:",inline" yaml:",inline"`
 
+	MaxLogBytes int `json:"maxLogBytes" yaml:"maxLogBytes"`
+
 	Logger logger.Config `json:"logger" yaml:"logger"`
 	Web    web.Config    `json:"web" yaml:"web"`
 
@@ -25,4 +28,9 @@ type Config struct {
 	Slack    slack.Config    `json:"slack" yaml:"slack"`
 
 	Notifications map[string]NotificationsConfig `json:"notifications" yaml:"notifications"`
+}
+
+// MaxLogBytesOrDefault is a the maximum amount of log data to buffer.
+func (c Config) MaxLogBytesOrDefault() int {
+	return configutil.CoalesceInt(c.MaxLogBytes, DefaultMaxLogBytes)
 }
