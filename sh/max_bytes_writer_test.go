@@ -14,7 +14,7 @@ func TestMaxBytesWriter(t *testing.T) {
 	assert := assert.New(t)
 
 	buf := bytes.NewBuffer(nil)
-	mbw := NewMaxBytesWriter(64, buf)
+	mbw := LimitBytes(64, buf)
 
 	written, err := mbw.Write(makeChunk(32))
 	assert.Nil(err)

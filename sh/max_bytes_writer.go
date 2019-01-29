@@ -12,10 +12,10 @@ const (
 	ErrMaxBytesWriterCapacityLimit exception.Class = "write failed; maximum capacity reached or would be exceede"
 )
 
-// NewMaxBytesWriter returns a new max bytes writer.
-func NewMaxBytesWriter(max int, inner io.Writer) *MaxBytesWriter {
+// LimitBytes returns a new max bytes writer.
+func LimitBytes(maxBytes int, inner io.Writer) *MaxBytesWriter {
 	return &MaxBytesWriter{
-		max:   max,
+		max:   maxBytes,
 		inner: inner,
 	}
 }
