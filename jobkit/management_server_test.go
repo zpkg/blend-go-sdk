@@ -33,3 +33,28 @@ func TestManagementServer(t *testing.T) {
 	assert.Equal(http.StatusOK, meta.StatusCode)
 	assert.Len(jobs.Jobs, 2)
 }
+
+func TestManagementServerHealthz(t *testing.T) {
+	assert := assert.New(t)
+
+	jm := cron.New()
+	jm.LoadJob(cron.NewJob("test0"))
+	jm.LoadJob(cron.NewJob("test1"))
+	jm.Start()
+
+	app := NewManagementServer(jm, &Config{
+		Web: web.Config{
+			Port: 5000,
+		},
+	})
+
+	meta, err := app.Mock().Get("/healthz").ExecuteWithMeta()
+	assert.Nil(err)
+	assert.Equal(http.StatusOK, meta.StatusCode)
+
+	jm.Stop()
+
+	meta, err = app.Mock().Get("/healthz").ExecuteWithMeta()
+	assert.Nil(err)
+	assert.Equal(http.StatusInternalServerError, meta.StatusCode)
+}

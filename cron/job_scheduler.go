@@ -141,8 +141,10 @@ func (js *JobScheduler) Cancel() {
 func (js *JobScheduler) RunLoop() {
 	js.Latch.Started()
 
-	// sniff the schedule, see if a next runtime is called for (or if the job is on demand).
-	js.NextRuntime = js.Schedule.Next(js.NextRuntime)
+	if js.Schedule != nil {
+		// sniff the schedule, see if a next runtime is called for (or if the job is on demand).
+		js.NextRuntime = js.Schedule.Next(js.NextRuntime)
+	}
 	if js.NextRuntime.IsZero() {
 		js.Latch.Stopped()
 		return
