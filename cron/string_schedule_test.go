@@ -27,7 +27,10 @@ func TestParseString(t *testing.T) {
 		{Input: "*/5 * * * * * *", After: time.Date(2018, 12, 29, 13, 12, 11, 0, time.UTC), Expected: time.Date(2018, 12, 29, 13, 12, 15, 0, time.UTC)},
 		{Input: "* 2 1 * * 1-6 *", After: time.Date(2019, 01, 01, 12, 0, 0, 0, time.UTC), Expected: time.Date(2019, 01, 02, 01, 02, 0, 0, time.UTC)},
 		{Input: "* 2 1 * * MON-FRI *", After: time.Date(2019, 01, 01, 12, 0, 0, 0, time.UTC), Expected: time.Date(2019, 01, 02, 01, 02, 0, 0, time.UTC)},
-		{Input: "* 9 10 * * SUN-TUE *", After: time.Date(2019, 01, 02, 12, 0, 0, 0, time.UTC), Expected: time.Date(2019, 01, 06, 10, 9, 0, 0, time.UTC)},
+		{Input: "* 9 10 * * SUN-TUE *", After: time.Date(2019, 01, 02, 12, 0, 0, 0, time.UTC), Expected: time.Date(2019, 01, 06, 10, 9, 0, 0, time.UTC)}, //at a specific time
+		{Input: "0 0 0 * * 0 *", After: time.Date(2019, 01, 02, 12, 3, 4, 5, time.UTC), Expected: time.Date(2019, 01, 07, 0, 0, 0, 0, time.UTC)},         // every week at midnight sat/sun
+		{Input: "0 0 0 * * * *", After: time.Date(2019, 01, 02, 12, 3, 4, 5, time.UTC), Expected: time.Date(2019, 01, 03, 0, 0, 0, 0, time.UTC)},         // every day at midnight
+		{Input: "0 0 * * * * *", After: time.Date(2019, 01, 02, 12, 3, 4, 5, time.UTC), Expected: time.Date(2019, 01, 02, 13, 0, 0, 0, time.UTC)},        // every hour on the hour
 	}
 
 	for _, tc := range testCases {
@@ -36,9 +39,9 @@ func TestParseString(t *testing.T) {
 			assert.NotNil(err)
 			assert.True(exception.Is(err, tc.ExpectedErr))
 		} else {
-			next := parsed.Next(tc.After)
 			assert.Nil(err)
-			assert.Equal(tc.Expected, next, fmt.Sprintf("%s vs. %s %v vs. %v", tc.Input, parsed.String(), tc.Expected.Format(time.RFC3339), next.Format(time.RFC3339)))
+			next := parsed.Next(tc.After)
+			assert.Equal(tc.Expected, next, fmt.Sprintf("%s vs. %s\n%v vs. %v", tc.Input, parsed.String(), tc.Expected.Format(time.RFC3339), next.Format(time.RFC3339)))
 		}
 	}
 }

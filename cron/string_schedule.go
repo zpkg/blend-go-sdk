@@ -11,22 +11,46 @@ import (
 )
 
 // ParseString parses a cron formatted string into a schedule.
-// The string must be 7 components, whitespace separated.
+// The string must be at least 5 components, whitespace separated.
+// If the string has 5 components a 0 will be prepended for the seconds component, and a * appended for the year component.
+// If the string has 6 components a * appended for the year component.
+// (seconds) (minutes) (hours) (day of month) (month) (day of week) (year)
 /*
-Field name     Mandatory?   Allowed values    Allowed special characters
-----------     ----------   --------------    --------------------------
-Seconds        No           0-59              * / , -
-Minutes        Yes          0-59              * / , -
-Hours          Yes          0-23              * / , -
-Day of month   Yes          1-31              * / , - L W
-Month          Yes          1-12 or JAN-DEC   * / , -
-Day of week    Yes          0-6 or SUN-SAT    * / , - L #
-Year           No           1970–2099         * / , -
+	Field name     Mandatory?   Allowed values    Allowed special characters
+	----------     ----------   --------------    --------------------------
+	Seconds        No           0-59              * / , -
+	Minutes        Yes          0-59              * / , -
+	Hours          Yes          0-23              * / , -
+	Day of month   Yes          1-31              * / , - L W
+	Month          Yes          1-12 or JAN-DEC   * / , -
+	Day of week    Yes          0-6 or SUN-SAT    * / , - L #
+	Year           No           1970–2099         * / , -
+*/
+/*
+You can also use shorthands for the cron string:
+	@yearly is equivalent to "0 0 0 1 1 * *"
+	@monthly is equivalent to "0 0 0 1 * * *"
+	@weekly is equivalent to "0 0 0 * * 0 *"
+	@daily is equivalent to "0 0 0 * * * *"
+	@hourly is equivalent to "0 0 * * * * *"
 */
 func ParseString(cronString string) (*StringSchedule, error) {
+	// escape shorthands.
+	if shorthand, ok := StringScheduleShorthands[strings.TrimSpace(cronString)]; ok {
+		cronString = shorthand
+	}
+
 	parts := stringutil.SplitSpace(cronString)
-	if len(parts) != 7 {
+	if len(parts) < 5 || len(parts) > 7 {
 		return nil, exception.New(ErrStringScheduleInvalid).WithInner(ErrStringScheduleComponents).WithMessagef("provided string; %s", cronString)
+	}
+	// fill in optional components
+	if len(parts) == 5 {
+		parts = append([]string{"0"}, parts...)
+		parts = append(parts, "*")
+	}
+	if len(parts) == 6 {
+		parts = append([]string{"0"}, parts...)
 	}
 
 	seconds, err := parsePart(parts[0], parseInt, below(60))
@@ -80,9 +104,30 @@ func ParseString(cronString string) (*StringSchedule, error) {
 // Error Constants
 const (
 	ErrStringScheduleInvalid         exception.Class = "cron: schedule string invalid"
-	ErrStringScheduleComponents      exception.Class = "cron: must have (7) components space delimited"
+	ErrStringScheduleComponents      exception.Class = "cron: must have at least (5) components space delimited; ex: '0 0 * * * * *'"
 	ErrStringScheduleValueOutOfRange exception.Class = "cron: string schedule part out of range"
 	ErrStringScheduleInvalidRange    exception.Class = "cron: range (from-to) invalid"
+)
+
+// String schedule shorthands labels
+const (
+	StringScheduleShorthandAnnually = "@annually"
+	StringScheduleShorthandYearly   = "@yearly"
+	StringScheduleShorthandMonthly  = "@monthly"
+	StringScheduleShorthandWeekly   = "@weekly"
+	StringScheduleShorthandDaily    = "@daily"
+	StringScheduleShorthandHourly   = "@hourly"
+)
+
+// String schedule shorthand values
+var (
+	StringScheduleShorthands = map[string]string{
+		StringScheduleShorthandAnnually: "0 0 0 1 1 * *",
+		StringScheduleShorthandYearly:   "0 0 0 1 1 * *",
+		StringScheduleShorthandMonthly:  "0 0 0 1 * * *",
+		StringScheduleShorthandDaily:    "0 0 0 * * * *",
+		StringScheduleShorthandHourly:   "0 0 * * * * *",
+	}
 )
 
 // Interface assertions.
@@ -127,8 +172,11 @@ func (ss *StringSchedule) Next(after time.Time) time.Time {
 
 	if len(ss.Years) > 0 {
 		for _, year := range ss.Years {
-			if year >= working.Year() {
-				working = setYear(working, year)
+			if year == working.Year() {
+				break
+			}
+			if year > working.Year() {
+				working = advanceYearTo(working, year)
 				break
 			}
 		}
@@ -137,17 +185,22 @@ func (ss *StringSchedule) Next(after time.Time) time.Time {
 	if len(ss.Months) > 0 {
 		var didSet bool
 		for _, month := range ss.Months {
-			if time.Month(month) >= working.Month() {
-				working = setMonth(working, time.Month(month))
+			if time.Month(month) == working.Month() {
+				didSet = true
+				break
+			}
+			if time.Month(month) > working.Month() {
+				working = advanceMonthTo(working, time.Month(month))
 				didSet = true
 				break
 			}
 		}
+		// if we didn't find a month, advance a year.
 		if !didSet {
-			working = working.AddDate(1, 0, 0)
+			working = advanceYear(working)
 			for _, month := range ss.Months {
 				if time.Month(month) >= working.Month() {
-					working = setMonth(working, time.Month(month))
+					working = advanceMonthTo(working, time.Month(month))
 					break
 				}
 			}
@@ -157,14 +210,19 @@ func (ss *StringSchedule) Next(after time.Time) time.Time {
 	if len(ss.DaysOfMonth) > 0 {
 		var didSet bool
 		for _, day := range ss.DaysOfMonth {
+			if day == working.Day() {
+				didSet = true
+				break
+			}
 			if day >= working.Day() {
-				working = setDay(working, day)
+				working = advanceDayTo(working, day)
 				didSet = true
 				break
 			}
 		}
+
 		if !didSet {
-			working = working.AddDate(0, 1, 0)
+			working = advanceMonth(working)
 			for _, day := range ss.DaysOfMonth {
 				if day >= working.Day() {
 					working = setDay(working, day)
@@ -176,74 +234,95 @@ func (ss *StringSchedule) Next(after time.Time) time.Time {
 
 	if len(ss.DaysOfWeek) > 0 {
 		var didSet bool
-		for x := 0; x < 7; x++ {
+		for _, dow := range ss.DaysOfWeek {
+			if dow == int(working.Weekday()) {
+				didSet = true
+				break
+			}
+			if dow > int(working.Weekday()) {
+				working = advanceDayBy(working, (dow - int(working.Weekday())))
+				didSet = true
+				break
+			}
+		}
+
+		if !didSet {
+			working = advanceToNextSunday(working)
 			for _, dow := range ss.DaysOfWeek {
-				if int(working.Weekday()) == dow {
-					didSet = true
+				if dow >= int(working.Weekday()) {
+					working = advanceDayBy(working, (dow - int(working.Weekday())))
 					break
 				}
 			}
-			if didSet {
-				break
-			}
-
-			working = working.AddDate(0, 0, 1)
-			working = setHour(working, 0)
-			working = setMinute(working, 0)
-			working = setSecond(working, 0)
-			working = setNanosecond(working, 0)
 		}
 	}
 
 	if len(ss.Hours) > 0 {
 		var didSet bool
 		for _, hour := range ss.Hours {
+			if hour == working.Hour() && len(ss.Minutes) == 0 && len(ss.Seconds) == 0 {
+				didSet = true
+				break
+			}
 			if hour > working.Hour() {
-				working = setHour(working, hour)
+				working = advanceHourTo(working, hour)
 				didSet = true
 				break
 			}
 		}
 		if !didSet {
-			working = working.AddDate(0, 0, 1)
-			working = setHour(working, ss.Hours[0])
+			working = advanceDay(working)
+			for _, hour := range ss.Hours {
+				if hour >= working.Hour() {
+					working = advanceHourTo(working, hour)
+					break
+				}
+			}
 		}
-		working = setMinute(working, 0)
-		working = setSecond(working, 0)
-		working = setNanosecond(working, 0)
 	}
 
 	if len(ss.Minutes) > 0 {
 		var didSet bool
 		for _, minute := range ss.Minutes {
+			if minute == working.Minute() && len(ss.Seconds) == 0 {
+				didSet = true
+				break
+			}
 			if minute > working.Minute() {
-				working = setMinute(working, minute)
+				working = advanceMinuteTo(working, minute)
 				didSet = true
 				break
 			}
 		}
 		if !didSet {
-			working = working.Add(time.Hour)
-			working = setMinute(working, ss.Minutes[0])
+			working = advanceHour(working)
+			for _, minute := range ss.Minutes {
+				if minute >= working.Minute() {
+					working = advanceMinuteTo(working, minute)
+					break
+				}
+			}
 		}
-		working = setSecond(working, 0)
-		working = setNanosecond(working, 0)
 	}
 
 	if len(ss.Seconds) > 0 {
 		var didSet bool
 		for _, second := range ss.Seconds {
 			if second > working.Second() {
-				working = setSecond(working, second)
+				working = advanceSecondTo(working, second)
 				didSet = true
 				break
 			}
 		}
 		if !didSet {
-			working = working.Add(time.Minute)
-			working = setSecond(working, ss.Seconds[0])
+			working = advanceMinute(working)
+			for _, second := range ss.Hours {
+				if second >= working.Second() {
+					working = advanceSecondTo(working, second)
+					break
+				}
+			}
 		}
-		working = setNanosecond(working, 0)
 	}
 
 	return working
@@ -392,28 +471,86 @@ func mapKeysToArray(values map[int]bool) []int {
 	return output
 }
 
+//
+// time helpers
+//
+
 func setYear(t time.Time, year int) time.Time {
 	return time.Date(year, t.Month(), t.Day(), t.Hour(), t.Minute(), t.Second(), t.Nanosecond(), t.Location())
+}
+
+func advanceYear(t time.Time) time.Time {
+	return advanceYearTo(t, t.AddDate(1, 0, 0).Year())
+}
+
+func advanceYearTo(t time.Time, year int) time.Time {
+	return time.Date(year, 1, 1, 0, 0, 0, 0, t.Location())
 }
 
 func setMonth(t time.Time, month time.Month) time.Time {
 	return time.Date(t.Year(), month, t.Day(), t.Hour(), t.Minute(), t.Second(), t.Nanosecond(), t.Location())
 }
 
+func advanceMonth(t time.Time) time.Time {
+	updated := t.AddDate(0, 1, 0)
+	return advanceMonthTo(t, updated.Month())
+}
+
+func advanceMonthTo(t time.Time, month time.Month) time.Time {
+	return time.Date(t.Year(), month, 1, 0, 0, 0, 0, t.Location())
+}
+
 func setDay(t time.Time, day int) time.Time {
 	return time.Date(t.Year(), t.Month(), day, t.Hour(), t.Minute(), t.Second(), t.Nanosecond(), t.Location())
+}
+
+func advanceDayTo(t time.Time, day int) time.Time {
+	return time.Date(t.Year(), t.Month(), day, 0, 0, 0, 0, t.Location())
+}
+
+func advanceToNextSunday(t time.Time) time.Time {
+	daysUntilSunday := int(time.Sunday) - int(t.Weekday())
+	return t.AddDate(0, 0, daysUntilSunday)
+}
+
+func advanceDay(t time.Time) time.Time {
+	return time.Date(t.Year(), t.Month(), t.Day(), 0, 0, 0, 0, t.Location()).AddDate(0, 0, 1)
+}
+
+func advanceDayBy(t time.Time, days int) time.Time {
+	return time.Date(t.Year(), t.Month(), t.Day(), 0, 0, 0, 0, t.Location()).AddDate(0, 0, days)
 }
 
 func setHour(t time.Time, hour int) time.Time {
 	return time.Date(t.Year(), t.Month(), t.Day(), hour, t.Minute(), t.Second(), t.Nanosecond(), t.Location())
 }
 
+func advanceHour(t time.Time) time.Time {
+	return time.Date(t.Year(), t.Month(), t.Day(), t.Hour(), 0, 0, 0, t.Location()).Add(time.Hour)
+}
+
+func advanceHourTo(t time.Time, hour int) time.Time {
+	return time.Date(t.Year(), t.Month(), t.Day(), hour, 0, 0, 0, t.Location())
+}
+
 func setMinute(t time.Time, minute int) time.Time {
 	return time.Date(t.Year(), t.Month(), t.Day(), t.Hour(), minute, t.Second(), t.Nanosecond(), t.Location())
 }
 
+func advanceMinute(t time.Time) time.Time {
+	return time.Date(t.Year(), t.Month(), t.Day(), t.Hour(), t.Minute(), 0, 0, t.Location()).Add(time.Minute)
+}
+
+func advanceMinuteTo(t time.Time, minute int) time.Time {
+	return time.Date(t.Year(), t.Month(), t.Day(), t.Hour(), minute, 0, 0, t.Location())
+}
+
 func setSecond(t time.Time, second int) time.Time {
 	return time.Date(t.Year(), t.Month(), t.Day(), t.Hour(), t.Minute(), second, t.Nanosecond(), t.Location())
+}
+
+func advanceSecondTo(t time.Time, second int) time.Time {
+	return time.Date(t.Year(), t.Month(), t.Day(), t.Hour(), t.Minute(), second, 0, t.Location())
 }
 
 func setNanosecond(t time.Time, nanosecond int) time.Time {
