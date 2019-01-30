@@ -172,10 +172,7 @@ func (ss *StringSchedule) Next(after time.Time) time.Time {
 
 	if len(ss.Years) > 0 {
 		for _, year := range ss.Years {
-			if year == working.Year() {
-				break
-			}
-			if year > working.Year() {
+			if year >= working.Year() {
 				working = advanceYearTo(working, year)
 				break
 			}
@@ -185,16 +182,13 @@ func (ss *StringSchedule) Next(after time.Time) time.Time {
 	if len(ss.Months) > 0 {
 		var didSet bool
 		for _, month := range ss.Months {
-			if time.Month(month) == working.Month() {
-				didSet = true
-				break
-			}
-			if time.Month(month) > working.Month() {
+			if time.Month(month) >= working.Month() {
 				working = advanceMonthTo(working, time.Month(month))
 				didSet = true
 				break
 			}
 		}
+
 		// if we didn't find a month, advance a year.
 		if !didSet {
 			working = advanceYear(working)
@@ -210,10 +204,6 @@ func (ss *StringSchedule) Next(after time.Time) time.Time {
 	if len(ss.DaysOfMonth) > 0 {
 		var didSet bool
 		for _, day := range ss.DaysOfMonth {
-			if day == working.Day() {
-				didSet = true
-				break
-			}
 			if day >= working.Day() {
 				working = advanceDayTo(working, day)
 				didSet = true
@@ -225,7 +215,7 @@ func (ss *StringSchedule) Next(after time.Time) time.Time {
 			working = advanceMonth(working)
 			for _, day := range ss.DaysOfMonth {
 				if day >= working.Day() {
-					working = setDay(working, day)
+					working = advanceDayTo(working, day)
 					break
 				}
 			}
@@ -235,11 +225,7 @@ func (ss *StringSchedule) Next(after time.Time) time.Time {
 	if len(ss.DaysOfWeek) > 0 {
 		var didSet bool
 		for _, dow := range ss.DaysOfWeek {
-			if dow == int(working.Weekday()) {
-				didSet = true
-				break
-			}
-			if dow > int(working.Weekday()) {
+			if dow >= int(working.Weekday()) {
 				working = advanceDayBy(working, (dow - int(working.Weekday())))
 				didSet = true
 				break
@@ -260,10 +246,6 @@ func (ss *StringSchedule) Next(after time.Time) time.Time {
 	if len(ss.Hours) > 0 {
 		var didSet bool
 		for _, hour := range ss.Hours {
-			if hour == working.Hour() && len(ss.Minutes) == 0 && len(ss.Seconds) == 0 {
-				didSet = true
-				break
-			}
 			if hour > working.Hour() {
 				working = advanceHourTo(working, hour)
 				didSet = true
@@ -284,10 +266,6 @@ func (ss *StringSchedule) Next(after time.Time) time.Time {
 	if len(ss.Minutes) > 0 {
 		var didSet bool
 		for _, minute := range ss.Minutes {
-			if minute == working.Minute() && len(ss.Seconds) == 0 {
-				didSet = true
-				break
-			}
 			if minute > working.Minute() {
 				working = advanceMinuteTo(working, minute)
 				didSet = true
@@ -475,33 +453,20 @@ func mapKeysToArray(values map[int]bool) []int {
 // time helpers
 //
 
-func setYear(t time.Time, year int) time.Time {
-	return time.Date(year, t.Month(), t.Day(), t.Hour(), t.Minute(), t.Second(), t.Nanosecond(), t.Location())
-}
-
 func advanceYear(t time.Time) time.Time {
-	return advanceYearTo(t, t.AddDate(1, 0, 0).Year())
+	return time.Date(t.Year(), 1, 1, 0, 0, 0, 0, t.Location()).AddDate(1, 0, 0)
 }
 
 func advanceYearTo(t time.Time, year int) time.Time {
 	return time.Date(year, 1, 1, 0, 0, 0, 0, t.Location())
 }
 
-func setMonth(t time.Time, month time.Month) time.Time {
-	return time.Date(t.Year(), month, t.Day(), t.Hour(), t.Minute(), t.Second(), t.Nanosecond(), t.Location())
-}
-
 func advanceMonth(t time.Time) time.Time {
-	updated := t.AddDate(0, 1, 0)
-	return advanceMonthTo(t, updated.Month())
+	return time.Date(t.Year(), t.Month(), 1, 0, 0, 0, 0, t.Location()).AddDate(0, 1, 0)
 }
 
 func advanceMonthTo(t time.Time, month time.Month) time.Time {
 	return time.Date(t.Year(), month, 1, 0, 0, 0, 0, t.Location())
-}
-
-func setDay(t time.Time, day int) time.Time {
-	return time.Date(t.Year(), t.Month(), day, t.Hour(), t.Minute(), t.Second(), t.Nanosecond(), t.Location())
 }
 
 func advanceDayTo(t time.Time, day int) time.Time {
@@ -509,7 +474,7 @@ func advanceDayTo(t time.Time, day int) time.Time {
 }
 
 func advanceToNextSunday(t time.Time) time.Time {
-	daysUntilSunday := int(time.Sunday) - int(t.Weekday())
+	daysUntilSunday := 7 - int(t.Weekday())
 	return t.AddDate(0, 0, daysUntilSunday)
 }
 
@@ -521,20 +486,12 @@ func advanceDayBy(t time.Time, days int) time.Time {
 	return time.Date(t.Year(), t.Month(), t.Day(), 0, 0, 0, 0, t.Location()).AddDate(0, 0, days)
 }
 
-func setHour(t time.Time, hour int) time.Time {
-	return time.Date(t.Year(), t.Month(), t.Day(), hour, t.Minute(), t.Second(), t.Nanosecond(), t.Location())
-}
-
 func advanceHour(t time.Time) time.Time {
 	return time.Date(t.Year(), t.Month(), t.Day(), t.Hour(), 0, 0, 0, t.Location()).Add(time.Hour)
 }
 
 func advanceHourTo(t time.Time, hour int) time.Time {
 	return time.Date(t.Year(), t.Month(), t.Day(), hour, 0, 0, 0, t.Location())
-}
-
-func setMinute(t time.Time, minute int) time.Time {
-	return time.Date(t.Year(), t.Month(), t.Day(), t.Hour(), minute, t.Second(), t.Nanosecond(), t.Location())
 }
 
 func advanceMinute(t time.Time) time.Time {
@@ -545,16 +502,8 @@ func advanceMinuteTo(t time.Time, minute int) time.Time {
 	return time.Date(t.Year(), t.Month(), t.Day(), t.Hour(), minute, 0, 0, t.Location())
 }
 
-func setSecond(t time.Time, second int) time.Time {
-	return time.Date(t.Year(), t.Month(), t.Day(), t.Hour(), t.Minute(), second, t.Nanosecond(), t.Location())
-}
-
 func advanceSecondTo(t time.Time, second int) time.Time {
 	return time.Date(t.Year(), t.Month(), t.Day(), t.Hour(), t.Minute(), second, 0, t.Location())
-}
-
-func setNanosecond(t time.Time, nanosecond int) time.Time {
-	return time.Date(t.Year(), t.Month(), t.Day(), t.Hour(), t.Minute(), t.Second(), nanosecond, t.Location())
 }
 
 func csvOfInts(values []int, placeholder string) string {
