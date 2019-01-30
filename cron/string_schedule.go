@@ -48,9 +48,8 @@ func ParseString(cronString string) (*StringSchedule, error) {
 	if len(parts) == 5 {
 		parts = append([]string{"0"}, parts...)
 		parts = append(parts, "*")
-	}
-	if len(parts) == 6 {
-		parts = append([]string{"0"}, parts...)
+	} else if len(parts) == 6 {
+		parts = append(parts, "*")
 	}
 
 	seconds, err := parsePart(parts[0], parseInt, below(60))

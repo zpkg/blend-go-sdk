@@ -31,6 +31,8 @@ func TestParseString(t *testing.T) {
 		{Input: "0 0 0 * * 0 *", After: time.Date(2019, 01, 02, 12, 3, 4, 5, time.UTC), Expected: time.Date(2019, 01, 06, 0, 0, 0, 0, time.UTC)},  // every week at midnight sat/sun
 		{Input: "0 0 0 * * * *", After: time.Date(2019, 01, 02, 12, 3, 4, 5, time.UTC), Expected: time.Date(2019, 01, 03, 0, 0, 0, 0, time.UTC)},  // every day at midnight
 		{Input: "0 0 * * * * *", After: time.Date(2019, 01, 02, 12, 3, 4, 5, time.UTC), Expected: time.Date(2019, 01, 02, 13, 0, 0, 0, time.UTC)}, // every hour on the hour
+		{Input: "0 * * * *", After: time.Date(2019, 01, 02, 12, 3, 4, 5, time.UTC), Expected: time.Date(2019, 01, 02, 13, 0, 0, 0, time.UTC)},     // every hour on the hour (5 field)
+		{Input: "0 0 * * * *", After: time.Date(2019, 01, 02, 12, 3, 4, 5, time.UTC), Expected: time.Date(2019, 01, 02, 13, 0, 0, 0, time.UTC)},   // every hour on the hour (6 field)
 		{Input: "@daily", After: time.Date(2019, 01, 02, 12, 3, 4, 5, time.UTC), Expected: time.Date(2019, 01, 03, 0, 0, 0, 0, time.UTC)},         // daily shorthand
 		{Input: "@hourly", After: time.Date(2019, 01, 02, 12, 3, 4, 5, time.UTC), Expected: time.Date(2019, 01, 02, 13, 0, 0, 0, time.UTC)},       // hourly shorthand
 	}
