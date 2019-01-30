@@ -169,6 +169,7 @@ func (ss *StringSchedule) Next(after time.Time) time.Time {
 	if after.IsZero() {
 		working = Now()
 	}
+	original := working
 
 	if len(ss.Years) > 0 {
 		for _, year := range ss.Years {
@@ -182,14 +183,16 @@ func (ss *StringSchedule) Next(after time.Time) time.Time {
 	if len(ss.Months) > 0 {
 		var didSet bool
 		for _, month := range ss.Months {
-			if time.Month(month) >= working.Month() {
+			if time.Month(month) == working.Month() && working.After(original) {
+				didSet = true
+				break
+			}
+			if time.Month(month) > working.Month() {
 				working = advanceMonthTo(working, time.Month(month))
 				didSet = true
 				break
 			}
 		}
-
-		// if we didn't find a month, advance a year.
 		if !didSet {
 			working = advanceYear(working)
 			for _, month := range ss.Months {
@@ -204,13 +207,16 @@ func (ss *StringSchedule) Next(after time.Time) time.Time {
 	if len(ss.DaysOfMonth) > 0 {
 		var didSet bool
 		for _, day := range ss.DaysOfMonth {
-			if day >= working.Day() {
+			if day == working.Day() && working.After(original) {
+				didSet = true
+				break
+			}
+			if day > working.Day() {
 				working = advanceDayTo(working, day)
 				didSet = true
 				break
 			}
 		}
-
 		if !didSet {
 			working = advanceMonth(working)
 			for _, day := range ss.DaysOfMonth {
@@ -225,13 +231,16 @@ func (ss *StringSchedule) Next(after time.Time) time.Time {
 	if len(ss.DaysOfWeek) > 0 {
 		var didSet bool
 		for _, dow := range ss.DaysOfWeek {
-			if dow >= int(working.Weekday()) {
+			if dow == int(working.Weekday()) && working.After(original) {
+				didSet = true
+				break
+			}
+			if dow > int(working.Weekday()) {
 				working = advanceDayBy(working, (dow - int(working.Weekday())))
 				didSet = true
 				break
 			}
 		}
-
 		if !didSet {
 			working = advanceToNextSunday(working)
 			for _, dow := range ss.DaysOfWeek {
@@ -246,6 +255,10 @@ func (ss *StringSchedule) Next(after time.Time) time.Time {
 	if len(ss.Hours) > 0 {
 		var didSet bool
 		for _, hour := range ss.Hours {
+			if hour == working.Hour() && working.After(original) {
+				didSet = true
+				break
+			}
 			if hour > working.Hour() {
 				working = advanceHourTo(working, hour)
 				didSet = true
@@ -266,6 +279,10 @@ func (ss *StringSchedule) Next(after time.Time) time.Time {
 	if len(ss.Minutes) > 0 {
 		var didSet bool
 		for _, minute := range ss.Minutes {
+			if minute == working.Minute() && working.After(original) {
+				didSet = true
+				break
+			}
 			if minute > working.Minute() {
 				working = advanceMinuteTo(working, minute)
 				didSet = true
@@ -286,6 +303,10 @@ func (ss *StringSchedule) Next(after time.Time) time.Time {
 	if len(ss.Seconds) > 0 {
 		var didSet bool
 		for _, second := range ss.Seconds {
+			if second == working.Second() && working.After(original) {
+				didSet = true
+				break
+			}
 			if second > working.Second() {
 				working = advanceSecondTo(working, second)
 				didSet = true
