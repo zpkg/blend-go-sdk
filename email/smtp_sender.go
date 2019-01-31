@@ -33,6 +33,10 @@ func (s SMTPSender) LocalNameOrDefault() string {
 
 // Send sends an email via. smtp.
 func (s SMTPSender) Send(ctx context.Context, message Message) error {
+	if err := message.Validate(); err != nil {
+		return err
+	}
+
 	tlsConfig := &tls.Config{ServerName: s.Host, InsecureSkipVerify: true}
 	conn, err := tls.Dial("tcp", fmt.Sprintf("%s:%s", s.Host, s.PortOrDefault()), tlsConfig)
 	if err != nil {
@@ -97,11 +101,8 @@ func (s SMTPSender) Send(ctx context.Context, message Message) error {
 		if _, err := bufWriter.WriteString("Subject: " + message.Subject + "\r\n"); err != nil {
 			return exception.New(err)
 		}
-	} else {
-		if _, err := bufWriter.WriteString("Subject: (no subject)\r\n"); err != nil {
-			return exception.New(err)
-		}
 	}
+
 	if message.HTMLBody != "" {
 		if _, err := bufWriter.WriteString("MIME-version: 1.0;\r\nContent-Type: text/html; charset=\"UTF-8\";\r\n\r\n"); err != nil {
 			return exception.New(err)
@@ -124,7 +125,7 @@ func (s SMTPSender) Send(ctx context.Context, message Message) error {
 		return exception.New(err)
 	}
 
-	return client.Quit()
+	return exception.New(client.Quit())
 }
 
 // SMTPPlainAuth is a auth set for smtp.

@@ -29,6 +29,9 @@ func (s *APISender) Send(ctx context.Context, m email.Message) error {
 	if s.client == nil {
 		return nil
 	}
+	if err := m.Validate(); err != nil {
+		return err
+	}
 	input := &awsSes.SendEmailInput{
 		Source: &m.From,
 		Destination: &awsSes.Destination{
