@@ -46,3 +46,17 @@ func WithSubject(subject string) MessageOption {
 		m.Subject = subject
 	}
 }
+
+// WithTextBody sets the text body for a message.
+func WithTextBody(textBody string) MessageOption {
+	return func(m *Message) {
+		m.TextBody = textBody
+	}
+}
+
+// WithHTMLBody sets the html body for a message.
+func WithHTMLBody(htmlBody string) MessageOption {
+	return func(m *Message) {
+		m.HTMLBody = htmlBody
+	}
+}
