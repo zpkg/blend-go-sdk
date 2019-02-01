@@ -8,3 +8,10 @@ func WithCookie(cookie *http.Cookie) Option {
 		r.AddCookie(cookie)
 	}
 }
+
+// WithCookieValue adds a cookie with a given name and value.
+func WithCookieValue(name, value string) Option {
+	return func(r *Request) {
+		r.AddCookie(&http.Cookie{Name: name, Value: value})
+	}
+}
