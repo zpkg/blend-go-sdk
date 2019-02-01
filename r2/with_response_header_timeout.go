@@ -1,4 +1,4 @@
-package request2
+package r2
 
 import (
 	"net/http"
@@ -9,9 +9,7 @@ import (
 func WithResponseHeaderTimeout(d time.Duration) Option {
 	return func(r *Request) {
 		if r.Client.Transport == nil {
-			r.Client.Transport = &http.Transport{
-				ResponseHeaderTimeout: d,
-			}
+			r.Client.Transport = &http.Transport{}
 		}
 		if typed, ok := r.Client.Transport.(*http.Transport); ok {
 			typed.ResponseHeaderTimeout = d

@@ -1,4 +1,4 @@
-package request2
+package r2
 
 import "net/http"
 

@@ -1,4 +1,4 @@
-package request2
+package r2
 
 import (
 	"net/http"
@@ -9,11 +9,8 @@ import (
 func WithTimeout(d time.Duration) Option {
 	return func(r *Request) {
 		if r.Client == nil {
-			r.Client = &http.Client{
-				Timeout: d,
-			}
-		} else {
-			r.Client.Timeout = d
+			r.Client = &http.Client{}
 		}
+		r.Client.Timeout = d
 	}
 }

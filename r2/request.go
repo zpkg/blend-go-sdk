@@ -1,4 +1,4 @@
-package request2
+package r2
 
 import (
 	"encoding/json"
@@ -11,44 +11,59 @@ import (
 	"github.com/blend/go-sdk/exception"
 )
 
-// MustNew returns a new request and panics on error.
-func MustNew(remoteURL string, options ...Option) *Request {
-	req, err := New(remoteURL, options...)
-	if err != nil {
-		panic(err)
-	}
-	return req
-}
-
 // New returns a new request.
-func New(remoteURL string, options ...Option) (*Request, error) {
+// The default method is GET.
+func New(remoteURL string, options ...Option) *Request {
 	parsedURL, err := url.Parse(remoteURL)
 	if err != nil {
-		return nil, exception.New(err)
+		return &Request{
+			Err: err,
+		}
 	}
-	req := Request{
+	req := &Request{
 		Request: &http.Request{
-			URL: parsedURL,
+			Method: MethodGet, // default to get
+			URL:    parsedURL,
 		},
 	}
-	for _, option := range options {
-		option(&req)
-	}
-	return &req, nil
+	return req.WithOptions(options...)
 }
 
 // Request is a combination of the http.Request options and the underlying client.
 type Request struct {
 	*http.Request
 	Client *http.Client
+	Err    error
+}
+
+// WithOptions applies a given set of options.
+func (r *Request) WithOptions(options ...Option) *Request {
+	for _, option := range options {
+		option(r)
+	}
+	return r
 }
 
 // Do sends the request.
 func (r *Request) Do() (*http.Response, error) {
+	if r.Err != nil {
+		return nil, r.Err
+	}
 	if r.Client != nil {
 		return r.Client.Do(r.Request)
 	}
 	return http.DefaultClient.Do(r.Request)
+}
+
+// Discard discards the response of a request.
+func (r *Request) Discard() error {
+	res, err := r.Do()
+	if err != nil {
+		return err
+	}
+	defer res.Body.Close()
+	_, err = io.Copy(ioutil.Discard, res.Body)
+	return exception.New(err)
 }
 
 // CopyTo copies the response body to a given writer.

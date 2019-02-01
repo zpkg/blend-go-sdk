@@ -1,4 +1,4 @@
-package request2
+package r2
 
 // WithQuery adds or sets a header.
 func WithQuery(key, value string) Option {

@@ -1,4 +1,4 @@
-package request2
+package r2
 
 // WithMethod sets the request method.
 func WithMethod(method string) Option {
