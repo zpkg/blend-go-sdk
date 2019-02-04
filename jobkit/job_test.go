@@ -28,9 +28,9 @@ func TestJobProperties(t *testing.T) {
 	job.WithSchedule(cron.EverySecond())
 	assert.NotNil(job.Schedule())
 
-	assert.Nil(job.NotificationsConfig())
-	job.WithNotificationsConfig(&NotificationsConfig{})
-	assert.NotNil(job.NotificationsConfig())
+	assert.Nil(job.Config())
+	job.WithConfig(&JobConfig{})
+	assert.NotNil(job.Config())
 
 	assert.Zero(job.Timeout())
 	job.WithTimeout(time.Second)
@@ -82,7 +82,7 @@ func TestJobLifecycleHooksNotificationsSetDisabled(t *testing.T) {
 
 	job := &Job{
 		slackClient: slack.MockWebhookSender(slackMessages),
-		notifications: &NotificationsConfig{
+		config: &JobConfig{
 			NotifyOnStart:   OptBool(false),
 			NotifyOnSuccess: OptBool(false),
 			NotifyOnFailure: OptBool(false),
@@ -123,7 +123,7 @@ func TestJobLifecycleHooksNotificationsSetEnabled(t *testing.T) {
 
 	job := &Job{
 		slackClient: slack.MockWebhookSender(slackMessages),
-		notifications: &NotificationsConfig{
+		config: &JobConfig{
 			NotifyOnStart:   OptBool(true),
 			NotifyOnSuccess: OptBool(true),
 			NotifyOnFailure: OptBool(true),

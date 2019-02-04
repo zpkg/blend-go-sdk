@@ -26,8 +26,6 @@ type Config struct {
 	Email    email.Message   `json:"email" yaml:"email"`
 	Datadog  datadog.Config  `json:"datadog" yaml:"datadog"`
 	Slack    slack.Config    `json:"slack" yaml:"slack"`
-
-	Notifications map[string]NotificationsConfig `json:"notifications" yaml:"notifications"`
 }
 
 // MaxLogBytesOrDefault is a the maximum amount of log data to buffer.
