@@ -18,10 +18,35 @@ func WithChannel(channel string) MessageOption {
 	}
 }
 
-// WithUsername sets the channel.
+// WithChannelOrDefault sets the channel if its unset.
+func WithChannelOrDefault(channel string) MessageOption {
+	return func(m *Message) {
+		if len(m.Channel) == 0 {
+			m.Channel = channel
+		}
+	}
+}
+
+// WithResponseType sets the response type.
+func WithResponseType(responseType string) MessageOption {
+	return func(m *Message) {
+		m.ResponseType = responseType
+	}
+}
+
+// WithUsername sets the username.
 func WithUsername(username string) MessageOption {
 	return func(m *Message) {
 		m.Username = username
+	}
+}
+
+// WithUsernameOrDefault sets the username.
+func WithUsernameOrDefault(username string) MessageOption {
+	return func(m *Message) {
+		if len(m.Username) == 0 {
+			m.Username = username
+		}
 	}
 }
 
@@ -32,9 +57,27 @@ func WithIconEmoji(emoji string) MessageOption {
 	}
 }
 
+// WithIconEmojiOrDefault sets the icon emoji.
+func WithIconEmojiOrDefault(emoji string) MessageOption {
+	return func(m *Message) {
+		if len(m.IconEmoji) == 0 {
+			m.IconEmoji = emoji
+		}
+	}
+}
+
 // WithIconURL sets the icon url.
 func WithIconURL(url string) MessageOption {
 	return func(m *Message) {
 		m.IconURL = url
+	}
+}
+
+// WithIconURLOrDefault sets the icon url.
+func WithIconURLOrDefault(url string) MessageOption {
+	return func(m *Message) {
+		if len(m.IconURL) == 0 {
+			m.IconURL = url
+		}
 	}
 }

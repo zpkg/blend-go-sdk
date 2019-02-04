@@ -45,7 +45,7 @@ func TestWebhookSenderStatusCode(t *testing.T) {
 	}))
 }
 
-func TestWebhookSenderApplyDefaults(t *testing.T) {
+func TestWebhookSenderDefaults(t *testing.T) {
 	assert := assert.New(t)
 
 	config := &Config{
@@ -55,11 +55,18 @@ func TestWebhookSenderApplyDefaults(t *testing.T) {
 	}
 
 	sender := New(config)
-	updated := sender.ApplyDefaults(Message{
-		Text: "this is only a test",
-	})
 
-	assert.Equal("this is only a test", updated.Text)
-	assert.Equal("#bot-test", updated.Channel)
-	assert.Equal("default-test", updated.Username)
+	message := Message{
+		Text: "this is only a test",
+	}
+
+	defaults := sender.Defaults()
+
+	for _, option := range defaults {
+		option(&message)
+	}
+
+	assert.Equal("this is only a test", message.Text)
+	assert.Equal("#bot-test", message.Channel)
+	assert.Equal("default-test", message.Username)
 }
