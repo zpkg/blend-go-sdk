@@ -81,3 +81,10 @@ func WithIconURLOrDefault(url string) MessageOption {
 		}
 	}
 }
+
+// WithMessageAttachment adds a message attachment.
+func WithMessageAttachment(attachment MessageAttachment) MessageOption {
+	return func(m *Message) {
+		m.Attachments = append(m.Attachments, attachment)
+	}
+}

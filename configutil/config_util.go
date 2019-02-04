@@ -44,7 +44,7 @@ var (
 // Paths will be tested from a standard set of defaults (ex. config.yml)
 // and optionally a csv named in the `CONFIG_PATH` environment variable.
 func Read(ref Any, paths ...string) error {
-	_, err := TryReadFromPaths(ref, PathsWithDefaults(paths...)...)
+	_, err := TryReadFromPaths(ref, Paths(paths...)...)
 	return err
 }
 
@@ -85,12 +85,7 @@ func ReadFromReader(ref Any, r io.Reader, ext string) error {
 	if err := Deserialize(ext, r, ref); err != nil {
 		return err
 	}
-	return env.Env().ReadInto(ref)
-}
-
-// PathsWithDefaults returns the default paths and additional optional paths.
-func PathsWithDefaults(paths ...string) []string {
-	return Paths(append(DefaultPaths, paths...)...)
+	return nil
 }
 
 // Paths returns config paths.

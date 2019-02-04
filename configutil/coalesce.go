@@ -2,6 +2,39 @@ package configutil
 
 import "time"
 
+// CoalesceSources coalesces a given list of sources.
+func CoalesceSources(sources ...ValueSource) (string, error) {
+	var value string
+	var err error
+	for _, source := range sources {
+		value, err = source.Value()
+		if err != nil {
+			return "", err
+		}
+		if value != "" {
+			return value, nil
+		}
+	}
+	return "", nil
+}
+
+// CoalesceSourcesVar coalesces a given list of sources.
+func CoalesceSourcesVar(destination *string, sources ...ValueSource) error {
+	var value string
+	var err error
+	for _, source := range sources {
+		value, err = source.Value()
+		if err != nil {
+			return err
+		}
+		if value != "" {
+			*destination = value
+			return nil
+		}
+	}
+	return nil
+}
+
 // CoalesceString returns a coalesced value.
 func CoalesceString(value, defaultValue string, inheritedValues ...string) string {
 	if len(value) > 0 {
