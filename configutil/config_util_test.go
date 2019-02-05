@@ -82,20 +82,18 @@ func TestDeserializeJSON(t *testing.T) {
 
 func TestReadFromReader(t *testing.T) {
 	assert := assert.New(t)
-	defer env.Restore()
 
-	env.Env().Set(env.VarServiceEnv, "dev")
 	var cfg config
 	err := ReadFromReader(&cfg, bytes.NewBuffer([]byte("env: test\nother: foo")), ExtensionYAML)
 	assert.Nil(err)
-	assert.Equal("dev", cfg.Environment)
+	assert.Equal("test", cfg.Environment)
 }
 
 func TestTryReadFromPathYAML(t *testing.T) {
 	assert := assert.New(t)
 
 	var cfg config
-	path, err := TryReadFromPaths(&cfg, "testdata/config.yaml")
+	path, err := ReadFromPaths(&cfg, "testdata/config.yaml")
 	assert.Nil(err)
 	assert.Equal(path, "testdata/config.yaml")
 	assert.Equal("test_yaml", cfg.Environment)
@@ -106,7 +104,7 @@ func TestTryReadFromPathYML(t *testing.T) {
 	assert := assert.New(t)
 
 	var cfg config
-	path, err := TryReadFromPaths(&cfg, "testdata/config.yml")
+	path, err := ReadFromPaths(&cfg, "testdata/config.yml")
 	assert.Nil(err)
 	assert.Equal(path, "testdata/config.yml")
 	assert.Equal("test_yml", cfg.Environment)
@@ -117,7 +115,7 @@ func TestTryReadFromPathJSON(t *testing.T) {
 	assert := assert.New(t)
 
 	var cfg config
-	path, err := TryReadFromPaths(&cfg, "testdata/config.json")
+	path, err := ReadFromPaths(&cfg, "testdata/config.json")
 	assert.Nil(err)
 	assert.Equal(path, "testdata/config.json")
 	assert.Equal("test_json", cfg.Environment)
@@ -126,12 +124,10 @@ func TestTryReadFromPathJSON(t *testing.T) {
 
 func TestReadPathUnset(t *testing.T) {
 	assert := assert.New(t)
-	defer env.Restore()
 
-	env.Env().Set(env.VarServiceEnv, "dev")
 	var cfg config
-	path, err := TryReadFromPaths(&cfg, "")
-	assert.True(IsNotExist(err))
+	path, err := ReadFromPaths(&cfg, "")
+	assert.Nil(err)
 	assert.Empty(path)
 	assert.NotEqual("dev", cfg.Environment)
 }
@@ -140,7 +136,7 @@ func TestReadPathNotFound(t *testing.T) {
 	assert := assert.New(t)
 
 	var cfg config
-	_, err := TryReadFromPaths(&cfg, filepath.Join("testdata", uuid.V4().String()))
+	_, err := ReadFromPaths(&cfg, filepath.Join("testdata", uuid.V4().String()))
 	assert.True(IsNotExist(err))
 }
 

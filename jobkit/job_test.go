@@ -28,10 +28,6 @@ func TestJobProperties(t *testing.T) {
 	job.WithSchedule(cron.EverySecond())
 	assert.NotNil(job.Schedule())
 
-	assert.Nil(job.Config())
-	job.WithConfig(&JobConfig{})
-	assert.NotNil(job.Config())
-
 	assert.Zero(job.Timeout())
 	job.WithTimeout(time.Second)
 	assert.Equal(time.Second, job.Timeout())

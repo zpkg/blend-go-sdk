@@ -44,12 +44,12 @@ var (
 // Paths will be tested from a standard set of defaults (ex. config.yml)
 // and optionally a csv named in the `CONFIG_PATH` environment variable.
 func Read(ref Any, paths ...string) error {
-	_, err := TryReadFromPaths(ref, Paths(append(DefaultPaths, paths...)...)...)
+	_, err := ReadFromPaths(ref, Paths(append(DefaultPaths, paths...)...)...)
 	return err
 }
 
-// TryReadFromPaths tries to read the config from a list of given paths, reading from the first file that exists.
-func TryReadFromPaths(ref Any, paths ...string) (path string, err error) {
+// ReadFromPaths tries to read the config from a list of given paths, reading from the first file that exists.
+func ReadFromPaths(ref Any, paths ...string) (path string, err error) {
 	// for each of the paths
 	// if the path doesn't exist, continue, read the path that is found.
 	var f *os.File
@@ -69,6 +69,9 @@ func TryReadFromPaths(ref Any, paths ...string) (path string, err error) {
 		defer f.Close()
 		err = ReadFromReader(ref, f, filepath.Ext(path))
 		break
+	}
+	if err != nil {
+		return
 	}
 
 	if typed, ok := ref.(Resolver); ok {
