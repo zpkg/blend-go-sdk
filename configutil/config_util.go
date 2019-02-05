@@ -44,17 +44,12 @@ var (
 // Paths will be tested from a standard set of defaults (ex. config.yml)
 // and optionally a csv named in the `CONFIG_PATH` environment variable.
 func Read(ref Any, paths ...string) error {
-	_, err := TryReadFromPaths(ref, Paths(paths...)...)
+	_, err := TryReadFromPaths(ref, Paths(append(DefaultPaths, paths...)...)...)
 	return err
 }
 
 // TryReadFromPaths tries to read the config from a list of given paths, reading from the first file that exists.
 func TryReadFromPaths(ref Any, paths ...string) (path string, err error) {
-	if len(paths) == 0 {
-		err = exception.New(ErrConfigPathUnset)
-		return
-	}
-
 	// for each of the paths
 	// if the path doesn't exist, continue, read the path that is found.
 	var f *os.File
@@ -69,14 +64,18 @@ func TryReadFromPaths(ref Any, paths ...string) (path string, err error) {
 		}
 		if err != nil {
 			err = exception.New(err)
-			return
+			break
 		}
 		defer f.Close()
-
 		err = ReadFromReader(ref, f, filepath.Ext(path))
-		return
+		break
 	}
-	err = exception.New(os.ErrNotExist).WithMessagef("no provided paths exist: %#v", paths)
+
+	if typed, ok := ref.(Resolver); ok {
+		if err := typed.Resolve(); err != nil {
+			return "", err
+		}
+	}
 	return
 }
 
@@ -93,7 +92,7 @@ func ReadFromReader(ref Any, r io.Reader, ext string) error {
 // environment variable as a csv if it's set.
 func Paths(defaults ...string) (output []string) {
 	if env.Env().Has(EnvVarConfigPath) {
-		output = append(output, env.Env().CSV(EnvVarConfigPath)...)
+		output = env.Env().CSV(EnvVarConfigPath)
 	}
 	output = append(output, defaults...)
 	return

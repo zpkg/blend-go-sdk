@@ -8,6 +8,7 @@ import (
 	"testing"
 
 	"github.com/blend/go-sdk/assert"
+	"github.com/blend/go-sdk/webutil"
 )
 
 func urlMustParse(urlToParse string) *url.URL {
@@ -22,8 +23,14 @@ func TestProxy(t *testing.T) {
 	assert := assert.New(t)
 
 	mockedEndpoint := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		if protoHeader := r.Header.Get(webutil.HeaderXForwardedProto); protoHeader == "" {
+			w.WriteHeader(http.StatusBadRequest)
+			w.Write([]byte("No `X-Forwarded-Proto` header!"))
+			return
+		}
 		w.WriteHeader(http.StatusOK)
 		w.Write([]byte("Ok!"))
+		return
 	}))
 	defer mockedEndpoint.Close()
 
@@ -31,6 +38,7 @@ func TestProxy(t *testing.T) {
 	assert.Nil(err)
 
 	proxy := New().WithUpstream(NewUpstream(target))
+	proxy.WithUpstreamHeader(webutil.HeaderXForwardedProto, webutil.SchemeHTTP)
 
 	mockedProxy := httptest.NewServer(proxy)
 
