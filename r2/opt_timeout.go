@@ -5,8 +5,8 @@ import (
 	"time"
 )
 
-// WithTimeout sets the client timeout.
-func WithTimeout(d time.Duration) Option {
+// Timeout sets the client timeout.
+func Timeout(d time.Duration) Option {
 	return func(r *Request) {
 		if r.Client == nil {
 			r.Client = &http.Client{}

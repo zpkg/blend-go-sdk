@@ -65,8 +65,8 @@ func main() {
 
 	log.SyncInfof("making a secure request")
 	if err := r2.New("https://localhost:5000",
-		r2.WithTLSRootCAs(caPool),
-		r2.WithTLSClientCertPair([]byte(clientKeyPair.Cert), []byte(clientKeyPair.Key)),
+		r2.TLSRootCAs(caPool),
+		r2.TLSClientCert([]byte(clientKeyPair.Cert), []byte(clientKeyPair.Key)),
 	).Discard(); err != nil {
 		log.SyncFatalExit(err)
 	} else {
@@ -74,7 +74,7 @@ func main() {
 	}
 
 	log.SyncInfof("making an insecure request")
-	if err := r2.New("https://localhost:5000", r2.WithTLSRootCAs(caPool)).Discard(); err != nil {
+	if err := r2.New("https://localhost:5000", r2.TLSRootCAs(caPool)).Discard(); err != nil {
 		log.SyncFatalExit(err)
 	}
 }

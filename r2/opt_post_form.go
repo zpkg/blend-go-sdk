@@ -5,8 +5,8 @@ import (
 	"net/url"
 )
 
-// WithPostForm sets the request post form and the content type.
-func WithPostForm(postForm url.Values) Option {
+// PostForm sets the request post form and the content type.
+func PostForm(postForm url.Values) Option {
 	return func(r *Request) {
 		if r.Header == nil {
 			r.Header = http.Header{}
@@ -16,8 +16,8 @@ func WithPostForm(postForm url.Values) Option {
 	}
 }
 
-// WithPostFormValue sets a request post form value.
-func WithPostFormValue(key, value string) Option {
+// PostFormValue sets a request post form value.
+func PostFormValue(key, value string) Option {
 	return func(r *Request) {
 		if r.Header == nil {
 			r.Header = http.Header{}

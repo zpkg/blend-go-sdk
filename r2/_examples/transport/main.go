@@ -14,11 +14,10 @@ func main() {
 	transport := &http.Transport{}
 
 	// pass to the request
-	req := r2.New("https://google.com/robots.txt", r2.WithTransport(transport))
+	req := r2.New("https://google.com/robots.txt", r2.Transport(transport))
 	var res *http.Response
 	var err error
 	for x := 0; x < 10; x++ {
-		// re-use it a whole bunch.
 		res, err = r2.Close(req.Do())
 		if err != nil {
 			fmt.Fprintf(os.Stderr, "%v\n", err)

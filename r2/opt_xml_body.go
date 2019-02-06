@@ -2,15 +2,15 @@ package r2
 
 import (
 	"bytes"
-	"encoding/json"
+	"encoding/xml"
 	"io/ioutil"
 	"net/http"
 )
 
-// WithJSONBody sets the post body on the request.
-func WithJSONBody(obj interface{}) Option {
+// XMLBody sets the post body on the request.
+func XMLBody(obj interface{}) Option {
 	return func(r *Request) {
-		contents, err := json.Marshal(obj)
+		contents, err := xml.Marshal(obj)
 		if err != nil {
 			r.Err = err
 			return
@@ -18,7 +18,7 @@ func WithJSONBody(obj interface{}) Option {
 		if r.Header == nil {
 			r.Header = http.Header{}
 		}
-		r.Header.Set(HeaderContentType, ContentTypeApplicationJSON)
+		r.Header.Set(HeaderContentType, ContentTypeApplicationXML)
 		r.Body = ioutil.NopCloser(bytes.NewBuffer(contents))
 	}
 }

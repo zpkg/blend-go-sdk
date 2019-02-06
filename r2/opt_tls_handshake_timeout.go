@@ -1,13 +1,12 @@
 package r2
 
 import (
-	"crypto/tls"
-	"crypto/x509"
 	"net/http"
+	"time"
 )
 
-// WithTLSRootCAs sets the client tls root ca pool.
-func WithTLSRootCAs(pool *x509.CertPool) Option {
+// TLSHandshakeTimeout sets the client transport TLSHandshakeTimeout.
+func TLSHandshakeTimeout(d time.Duration) Option {
 	return func(r *Request) {
 		if r.Client == nil {
 			r.Client = &http.Client{}
@@ -16,10 +15,7 @@ func WithTLSRootCAs(pool *x509.CertPool) Option {
 			r.Client.Transport = &http.Transport{}
 		}
 		if typed, ok := r.Client.Transport.(*http.Transport); ok {
-			if typed.TLSClientConfig == nil {
-				typed.TLSClientConfig = &tls.Config{}
-			}
-			typed.TLSClientConfig.RootCAs = pool
+			typed.TLSHandshakeTimeout = d
 		}
 	}
 }

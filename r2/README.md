@@ -29,10 +29,10 @@ func CustomOption() r2.Option {
 
 func main() {
 	_, err := r2.New("https://google.com",
-		r2.WithMethodGet(),
-		r2.WithTimeout(500*time.Millisecond),
-		r2.WithHeader("X-Sent-By", "go-sdk/request2"),
-		r2.WithCookieValue("ssid", "baileydog01"),
+		r2.Get(),
+		r2.Timeout(500*time.Millisecond),
+		r2.Header("X-Sent-By", "go-sdk/request2"),
+		r2.CookieValue("ssid", "baileydog01"),
 		CustomOption(),
 	).CopyTo(os.Stdout)
 

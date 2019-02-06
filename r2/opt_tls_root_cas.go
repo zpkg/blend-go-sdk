@@ -2,11 +2,12 @@ package r2
 
 import (
 	"crypto/tls"
+	"crypto/x509"
 	"net/http"
 )
 
-// WithTLSClientCertPair adds a client cert and key to the request.
-func WithTLSClientCertPair(cert, key []byte) Option {
+// TLSRootCAs sets the client tls root ca pool.
+func TLSRootCAs(pool *x509.CertPool) Option {
 	return func(r *Request) {
 		if r.Client == nil {
 			r.Client = &http.Client{}
@@ -18,12 +19,7 @@ func WithTLSClientCertPair(cert, key []byte) Option {
 			if typed.TLSClientConfig == nil {
 				typed.TLSClientConfig = &tls.Config{}
 			}
-			cert, err := tls.X509KeyPair(cert, key)
-			if err != nil {
-				r.Err = err
-				return
-			}
-			typed.TLSClientConfig.Certificates = append(typed.TLSClientConfig.Certificates, cert)
+			typed.TLSClientConfig.RootCAs = pool
 		}
 	}
 }
