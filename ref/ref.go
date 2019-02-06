@@ -16,6 +16,11 @@ func Strings(values ...string) []*string {
 	return output
 }
 
+// Bool returns a reference.
+func Bool(v bool) *bool {
+	return &v
+}
+
 // Byte returns a reference.
 func Byte(v byte) *byte {
 	return &v
