@@ -252,16 +252,23 @@ type Rule struct {
 	File string `yaml:"-"`
 	// Message is a descriptive message for the rule.
 	Message string `yaml:"message,omitempty"`
-	// Contains implies we should fail if a file contains a given string.
-	Contains string `yaml:"contains,omitempty"`
-	// Contains implies we should fail if a file doesn't contains a given string.
-	NotContains string `yaml:"notContains,omitempty"`
-	// Matches implies we should fail if a file matches a given regex.
-	Matches string `yaml:"matches,omitempty"`
+
 	// Include sets a glob filter for file inclusion by filename.
 	Include string `yaml:"include,omitempty"`
 	// Exclude sets a glob filter for file exclusion by filename.
 	Exclude string `yaml:"exclude,omitempty"`
+
+	//
+	// the below are matching rules.
+	// if these match, the rule is valid
+	//
+
+	// Contains implies we should fail if a file contains a given string.
+	Contains string `yaml:"contains,omitempty"`
+	// Contains implies we should fail if a file doesn't contains a given string.
+	NotContains string `yaml:"notContains,omitempty"`
+	// Matches implies we should fail if a file's content matches a given regex.
+	Matches string `yaml:"matches,omitempty"`
 }
 
 // ShouldInclude returns if we should include a file for a given rule.

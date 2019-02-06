@@ -1,6 +1,10 @@
 - id: GOLANG_LOGGER
   contains: "*logger.Logger"
   message: "please use `logger.Log`, not a type reference"
+- id: GOLANG_ASSERT_NON_TEST
+  contains: "github.com/blend/go-sdk/assert"
+  exclude: "*_test.go"
+  message: "do not include assert in non _test.go files"
 - id: GOLANG_DEPRECATED
   contains: "github.com/blendlabs/"
   message: "please switch to using `github.com/blend/go-sdk`"
