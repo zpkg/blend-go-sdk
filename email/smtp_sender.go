@@ -13,7 +13,7 @@ import (
 )
 
 // SMTPSender is a sender for emails over smtp.
-// NOTE: it only supports dialing TLS smtp servers.
+// NOTE: it only supports dialing TLS SMTP servers.
 type SMTPSender struct {
 	Host      string        `json:"host" yaml:"host"`
 	Port      string        `json:"port" yaml:"port"`

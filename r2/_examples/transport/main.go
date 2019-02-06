@@ -14,7 +14,7 @@ func main() {
 	transport := &http.Transport{}
 
 	// pass to the request
-	req := r2.New("https://google.com/robots.txt", r2.Transport(transport))
+	req := r2.New("https://google.com/robots.txt", r2.Get(), r2.Transport(transport))
 	var res *http.Response
 	var err error
 	for x := 0; x < 10; x++ {

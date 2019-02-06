@@ -12,6 +12,7 @@ import (
 )
 
 // NewCertBundle returns a new cert bundle from bytes.
+// A "CertBundle" is the parsed public key, private key, and individual certificates for the pair.
 func NewCertBundle(keyPair KeyPair) (*CertBundle, error) {
 	certPEM, err := keyPair.CertBytes()
 	if err != nil {
@@ -72,18 +73,18 @@ type CertBundle struct {
 	CertificateDERs [][]byte
 }
 
-// MustKeyPair returns a serialized version of the bundle as a key pair
+// MustGenerateKeyPair returns a serialized version of the bundle as a key pair
 // and panics if there is an error.
-func (cb *CertBundle) MustKeyPair() KeyPair {
-	pair, err := cb.KeyPair()
+func (cb *CertBundle) MustGenerateKeyPair() KeyPair {
+	pair, err := cb.GenerateKeyPair()
 	if err != nil {
 		panic(err)
 	}
 	return pair
 }
 
-// KeyPair returns a serialized key pair for the cert bundle.
-func (cb *CertBundle) KeyPair() (output KeyPair, err error) {
+// GenerateKeyPair returns a serialized key pair for the cert bundle.
+func (cb *CertBundle) GenerateKeyPair() (output KeyPair, err error) {
 	private := bytes.NewBuffer(nil)
 	if err = cb.WriteKeyPem(private); err != nil {
 		return

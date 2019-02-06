@@ -12,8 +12,9 @@ func TestCreateServer(t *testing.T) {
 	ca, err := CreateCA()
 	assert.Nil(err)
 
-	server, err := CreateServer("warden-serevr", &ca)
+	server, err := CreateServer("warden-server", &ca, OptAdditionalNames("warden-server-test"))
 	assert.Nil(err)
 	assert.Len(server.Certificates, 2)
 	assert.Len(server.CertificateDERs, 2)
+	assert.Len(server.Certificates[0].DNSNames, 2)
 }

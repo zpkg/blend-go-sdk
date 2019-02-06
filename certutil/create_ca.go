@@ -12,7 +12,8 @@ import (
 )
 
 // CreateCA creates a ca cert bundle.
-func CreateCA() (output CertBundle, err error) {
+// The cert bundle can be used to generate client and server certificates.
+func CreateCA(options ...CertOption) (output CertBundle, err error) {
 	output.PrivateKey, err = rsa.GenerateKey(rand.Reader, 2048)
 	if err != nil {
 		err = exception.New(err)
@@ -42,6 +43,10 @@ func CreateCA() (output CertBundle, err error) {
 		IsCA:                  true,
 		KeyUsage:              x509.KeyUsageKeyEncipherment | x509.KeyUsageDigitalSignature | x509.KeyUsageCertSign,
 		BasicConstraintsValid: true,
+	}
+
+	for _, option := range options {
+		option(&csr)
 	}
 
 	der, err := x509.CreateCertificate(rand.Reader, &csr, &csr, output.PublicKey, output.PrivateKey)

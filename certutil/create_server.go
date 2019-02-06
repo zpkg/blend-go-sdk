@@ -12,11 +12,16 @@ import (
 )
 
 // CreateServer creates a ca cert bundle.
-func CreateServer(commonName string, ca *CertBundle, alternateNames ...string) (output CertBundle, err error) {
+func CreateServer(commonName string, ca *CertBundle, options ...CertOption) (*CertBundle, error) {
+	if ca == nil {
+		return nil, exception.New("must provide a ca cert bundle")
+	}
+
+	var output CertBundle
+	var err error
 	output.PrivateKey, err = rsa.GenerateKey(rand.Reader, 2048)
 	if err != nil {
-		err = exception.New(err)
-		return
+		return nil, exception.New(err)
 	}
 	output.PublicKey = &output.PrivateKey.PublicKey
 
@@ -24,8 +29,7 @@ func CreateServer(commonName string, ca *CertBundle, alternateNames ...string) (
 	var serialNumber *big.Int
 	serialNumber, err = rand.Int(rand.Reader, serialNumberLimit)
 	if err != nil {
-		err = exception.New(err)
-		return
+		return nil, exception.New(err)
 	}
 	csr := x509.Certificate{
 		SerialNumber: serialNumber,
@@ -41,19 +45,20 @@ func CreateServer(commonName string, ca *CertBundle, alternateNames ...string) (
 		ExtKeyUsage: []x509.ExtKeyUsage{x509.ExtKeyUsageServerAuth},
 		KeyUsage:    x509.KeyUsageDigitalSignature,
 	}
-	csr.DNSNames = append([]string{commonName}, alternateNames...)
+	csr.DNSNames = []string{commonName}
+	for _, option := range options {
+		option(&csr)
+	}
 
 	der, err := x509.CreateCertificate(rand.Reader, &csr, &ca.Certificates[0], output.PublicKey, ca.PrivateKey)
 	if err != nil {
-		err = exception.New(err)
-		return
+		return nil, exception.New(err)
 	}
 	cert, err := x509.ParseCertificate(der)
 	if err != nil {
-		err = exception.New(err)
-		return
+		return nil, exception.New(err)
 	}
 	output.CertificateDERs = append([][]byte{der}, ca.CertificateDERs...)
 	output.Certificates = append([]x509.Certificate{*cert}, ca.Certificates...)
-	return
+	return &output, nil
 }
