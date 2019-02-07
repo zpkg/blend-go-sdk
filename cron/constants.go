@@ -46,6 +46,10 @@ const (
 	FlagBroken logger.Flag = "cron.broken"
 	// FlagFixed is an event flag.
 	FlagFixed logger.Flag = "cron.fixed"
+	// FlagEnabled is an event flag.
+	FlagEnabled logger.Flag = "cron.enabled"
+	// FlagDisabled is an event flag.
+	FlagDisabled logger.Flag = "cron.disabled"
 )
 
 // State is a job state.

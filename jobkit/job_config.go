@@ -24,6 +24,10 @@ type JobConfig struct {
 	NotifyOnBroken *bool `json:"notifyOnBroken" yaml:"notifyOnBroken"`
 	// NotifyOnFixed governs if we should send notifications on a failure => success transition.
 	NotifyOnFixed *bool `json:"notifyOnFixed" yaml:"notifyOnFixed"`
+	// NotifyOnEnabled governs if we should send notifications when a job is enabled.
+	NotifyOnEnabled *bool `json:"notifyOnEnabled" yaml:"notifyOnEnabled"`
+	// NotifyOnDisabled governs if we should send notifications when a job is disabled.
+	NotifyOnDisabled *bool `json:"notifyOnDisabled" yaml:"notifyOnDisabled"`
 }
 
 // NameOrDefault returns the job name or a default (uuid v4).
@@ -59,4 +63,14 @@ func (jc JobConfig) NotifyOnBrokenOrDefault() bool {
 // NotifyOnFixedOrDefault returns a value or a default.
 func (jc JobConfig) NotifyOnFixedOrDefault() bool {
 	return configutil.CoalesceBool(jc.NotifyOnFixed, true)
+}
+
+// NotifyOnEnabledOrDefault returns a value or a default.
+func (jc JobConfig) NotifyOnEnabledOrDefault() bool {
+	return configutil.CoalesceBool(jc.NotifyOnEnabled, true)
+}
+
+// NotifyOnDisabledOrDefault returns a value or a default.
+func (jc JobConfig) NotifyOnDisabledOrDefault() bool {
+	return configutil.CoalesceBool(jc.NotifyOnDisabled, true)
 }

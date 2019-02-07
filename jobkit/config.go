@@ -21,6 +21,8 @@ type Config struct {
 	Logger logger.Config `json:"logger" yaml:"logger"`
 	Web    web.Config    `json:"web" yaml:"web"`
 
+	DisableManagementServer bool `json:"disableManagementServer" yaml:"disableManagementServer"`
+
 	Airbrake airbrake.Config `json:"airbrake" yaml:"airbrake"`
 	AWS      aws.Config      `json:"aws" yaml:"aws"`
 	Email    email.Message   `json:"email" yaml:"email"`

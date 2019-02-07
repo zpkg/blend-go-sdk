@@ -18,6 +18,8 @@ var (
 	_ OnFailureReceiver              = (*JobBuilder)(nil)
 	_ OnBrokenReceiver               = (*JobBuilder)(nil)
 	_ OnFixedReceiver                = (*JobBuilder)(nil)
+	_ OnEnabledReceiver              = (*JobBuilder)(nil)
+	_ OnDisabledReceiver             = (*JobBuilder)(nil)
 )
 
 // NewJob returns a new job factory.
@@ -43,6 +45,9 @@ type JobBuilder struct {
 	onFailure      func(*JobInvocation)
 	onBroken       func(*JobInvocation)
 	onFixed        func(*JobInvocation)
+
+	onEnabled  func(context.Context)
+	onDisabled func(context.Context)
 }
 
 // WithName sets the job name.
@@ -120,6 +125,18 @@ func (jb *JobBuilder) WithOnFixed(receiver func(*JobInvocation)) *JobBuilder {
 // WithOnBroken sets a lifecycle handler.
 func (jb *JobBuilder) WithOnBroken(receiver func(*JobInvocation)) *JobBuilder {
 	jb.onBroken = receiver
+	return jb
+}
+
+// WithOnEnabled sets a lifecycle handler.
+func (jb *JobBuilder) WithOnEnabled(receiver func(context.Context)) *JobBuilder {
+	jb.onEnabled = receiver
+	return jb
+}
+
+// WithOnDisabled sets a lifecycle handler.
+func (jb *JobBuilder) WithOnDisabled(receiver func(context.Context)) *JobBuilder {
+	jb.onDisabled = receiver
 	return jb
 }
 
@@ -208,6 +225,20 @@ func (jb *JobBuilder) OnFixed(ctx context.Context) {
 func (jb *JobBuilder) OnBroken(ctx context.Context) {
 	if jb.onBroken != nil {
 		jb.onBroken(GetJobInvocation(ctx))
+	}
+}
+
+// OnEnabled is a lifecycle hook.
+func (jb *JobBuilder) OnEnabled(ctx context.Context) {
+	if jb.onEnabled != nil {
+		jb.onEnabled(ctx)
+	}
+}
+
+// OnDisabled is a lifecycle hook.
+func (jb *JobBuilder) OnDisabled(ctx context.Context) {
+	if jb.onDisabled != nil {
+		jb.onDisabled(ctx)
 	}
 }
 

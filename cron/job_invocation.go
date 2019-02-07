@@ -9,7 +9,9 @@ import (
 type JobInvocation struct {
 	ID        string             `json:"id"`
 	Name      string             `json:"name"`
-	StartTime time.Time          `json:"startTime"`
+	Started   time.Time          `json:"started"`
+	Finished  time.Time          `json:"finished"`
+	Cancelled time.Time          `json:"cancelled"`
 	Timeout   time.Time          `json:"timeout"`
 	Err       error              `json:"err"`
 	Elapsed   time.Duration      `json:"elapsed"`

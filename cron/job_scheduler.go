@@ -117,15 +117,33 @@ func (js *JobScheduler) Stop() {
 // Enable sets the job as enabled.
 func (js *JobScheduler) Enable() {
 	js.Lock()
+	defer js.Unlock()
+
 	js.Disabled = false
-	js.Unlock()
+	if js.Log != nil && js.ShouldTriggerListenersProvider() {
+		event := NewEvent(FlagEnabled, js.Name).
+			WithIsWritable(js.ShouldWriteOutputProvider())
+		js.Log.Trigger(event)
+	}
+	if typed, ok := js.Job.(OnEnabledReceiver); ok {
+		typed.OnEnabled(context.Background())
+	}
 }
 
 // Disable sets the job as disabled.
 func (js *JobScheduler) Disable() {
 	js.Lock()
+	defer js.Unlock()
+
 	js.Disabled = true
-	js.Unlock()
+	if js.Log != nil && js.ShouldTriggerListenersProvider() {
+		event := NewEvent(FlagDisabled, js.Name).
+			WithIsWritable(js.ShouldWriteOutputProvider())
+		js.Log.Trigger(event)
+	}
+	if typed, ok := js.Job.(OnDisabledReceiver); ok {
+		typed.OnDisabled(context.Background())
+	}
 }
 
 // Cancel stops an execution in process.
@@ -181,17 +199,22 @@ func (js *JobScheduler) Run() {
 	// mark the start time
 	start := Now()
 
+	timeout := js.TimeoutProvider()
+
 	// create the root context.
-	ctx, cancel := js.createContextWithTimeout()
+	ctx, cancel := js.createContextWithTimeout(timeout)
 
 	// create a job invocation, or a record of each
 	// individual execution of a job.
 	ji := JobInvocation{
-		ID:        NewJobInvocationID(),
-		Name:      js.Name,
-		StartTime: start,
-		Context:   ctx,
-		Cancel:    cancel,
+		ID:      NewJobInvocationID(),
+		Name:    js.Name,
+		Started: start,
+		Context: ctx,
+		Cancel:  cancel,
+	}
+	if timeout > 0 {
+		ji.Timeout = start.Add(timeout)
 	}
 	js.setCurrent(&ji)
 
@@ -214,10 +237,12 @@ func (js *JobScheduler) Run() {
 			tf.Finish(ctx)
 		}
 
-		ji.Elapsed = Since(ji.StartTime)
+		ji.Finished = Now()
+		ji.Elapsed = ji.Finished.Sub(ji.Started)
 		ji.Err = err
 
 		if err != nil && IsJobCancelled(err) {
+			ji.Cancelled = ji.Finished
 			js.onCancelled(ctx, &ji)
 		} else if ji.Err != nil {
 			js.onFailure(ctx, &ji)
@@ -262,12 +287,6 @@ func (js *JobScheduler) setLast(ji *JobInvocation) {
 	js.Unlock()
 }
 
-// execute runs a given job invocation.
-// it will signal lifecycle hooks.
-func (js *JobScheduler) execute(ji *JobInvocation) {
-
-}
-
 // safeAsyncExec runs a given job's body and recovers panics.
 func (js *JobScheduler) safeAsyncExec(ctx context.Context) chan error {
 	errors := make(chan error)
@@ -282,8 +301,8 @@ func (js *JobScheduler) safeAsyncExec(ctx context.Context) chan error {
 	return errors
 }
 
-func (js *JobScheduler) createContextWithTimeout() (context.Context, context.CancelFunc) {
-	if timeout := js.TimeoutProvider(); timeout > 0 {
+func (js *JobScheduler) createContextWithTimeout(timeout time.Duration) (context.Context, context.CancelFunc) {
+	if timeout > 0 {
 		return context.WithTimeout(context.Background(), timeout)
 	}
 	return context.WithCancel(context.Background())
@@ -412,7 +431,7 @@ func (js *JobScheduler) cullHistory() []JobInvocation {
 			}
 		}
 		if maxAge > 0 {
-			if now.Sub(h.StartTime) > maxAge {
+			if now.Sub(h.Started) > maxAge {
 				continue
 			}
 		}

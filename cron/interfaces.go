@@ -84,3 +84,13 @@ type OnBrokenReceiver interface {
 type OnFixedReceiver interface {
 	OnFixed(context.Context)
 }
+
+// OnDisabledReceiver is a lifecycle hook for disabled events.
+type OnDisabledReceiver interface {
+	OnDisabled(context.Context)
+}
+
+// OnEnabledReceiver is a lifecycle hook for enabled events.
+type OnEnabledReceiver interface {
+	OnEnabled(context.Context)
+}

@@ -27,7 +27,8 @@ const (
 	// DefaultProfanityFile is the default file to use for profanity rules
 	DefaultProfanityFile = "PROFANITY"
 
-	star = "*"
+	// Star is a special character
+	Star = "*"
 )
 
 var rulesFile = flag.String("rules", DefaultProfanityFile, "the default rules to include for any sub-package.")
@@ -418,19 +419,19 @@ func glob(pattern, subj string) bool {
 	}
 
 	// If the pattern _is_ a glob, it matches everything
-	if pattern == star {
+	if pattern == Star {
 		return true
 	}
 
-	parts := strings.Split(pattern, star)
+	parts := strings.Split(pattern, Star)
 
 	if len(parts) == 1 {
 		// No globs in pattern, so test for equality
 		return subj == pattern
 	}
 
-	leadingGlob := strings.HasPrefix(pattern, star)
-	trailingGlob := strings.HasSuffix(pattern, star)
+	leadingGlob := strings.HasPrefix(pattern, Star)
+	trailingGlob := strings.HasSuffix(pattern, Star)
 	end := len(parts) - 1
 
 	// Go over the leading parts and ensure they match.

@@ -73,17 +73,20 @@ func main() {
 	jobs := cron.NewFromConfig(&config.Config.Config).WithLogger(log)
 	jobs.LoadJob(job)
 
-	ws := jobkit.NewManagementServer(jobs, &config.Config).WithLogger(log)
-	if *bind != "" {
-		ws.WithBindAddr(*bind)
+	if !config.DisableManagementServer {
+		ws := jobkit.NewManagementServer(jobs, &config.Config).WithLogger(log)
+		if *bind != "" {
+			ws.WithBindAddr(*bind)
+		}
+
+		go func() {
+			if err := graceful.Shutdown(ws); err != nil {
+				logger.FatalExit(err)
+			}
+		}()
 	}
 
-	go func() {
-		if err := graceful.Shutdown(jobs); err != nil {
-			logger.FatalExit(err)
-		}
-	}()
-	if err := graceful.Shutdown(ws); err != nil {
+	if err := graceful.Shutdown(jobs); err != nil {
 		logger.FatalExit(err)
 	}
 }

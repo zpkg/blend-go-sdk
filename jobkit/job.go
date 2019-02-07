@@ -21,6 +21,8 @@ var (
 	_ cron.OnCancellationReceiver = (*Job)(nil)
 	_ cron.OnBrokenReceiver       = (*Job)(nil)
 	_ cron.OnFixedReceiver        = (*Job)(nil)
+	_ cron.OnDisabledReceiver     = (*Job)(nil)
+	_ cron.OnEnabledReceiver      = (*Job)(nil)
 )
 
 // NewJob creates a new exec job.
@@ -163,6 +165,20 @@ func (job Job) OnFixed(ctx context.Context) {
 func (job Job) OnCancellation(ctx context.Context) {
 	if job.config != nil && job.config.NotifyOnFailureOrDefault() {
 		job.notify(ctx, cron.FlagCancelled)
+	}
+}
+
+// OnEnabled is a lifecycle event handler.
+func (job Job) OnEnabled(ctx context.Context) {
+	if job.config != nil && job.config.NotifyOnEnabledOrDefault() {
+		job.notify(ctx, cron.FlagEnabled)
+	}
+}
+
+// OnDisabled is a lifecycle event handler.
+func (job Job) OnDisabled(ctx context.Context) {
+	if job.config != nil && job.config.NotifyOnDisabledOrDefault() {
+		job.notify(ctx, cron.FlagDisabled)
 	}
 }
 
