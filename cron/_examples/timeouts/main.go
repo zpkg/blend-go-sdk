@@ -62,8 +62,10 @@ func main() {
 	for {
 		status := jm.Status()
 		for _, job := range status.Jobs {
-			if runningJob, ok := status.Running[job.Name]; ok {
-				jm.Logger().Infof("job: %s state: running elapsed: %v", job.Name, cron.Since(runningJob.Started))
+			if runningJobs, ok := status.Running[job.Name]; ok {
+				for _, runningJob := range runningJobs {
+					jm.Logger().Infof("job: %s > %s state: running elapsed: %v", job.Name, runningJob.ID, cron.Since(runningJob.Started))
+				}
 			} else {
 				jm.Logger().Infof("job: %s state: stopped", job.Name)
 			}

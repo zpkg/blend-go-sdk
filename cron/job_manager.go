@@ -279,14 +279,14 @@ func (jm *JobManager) Status() *Status {
 	defer jm.Unlock()
 
 	status := Status{
-		Running: map[string]*JobInvocation{},
+		Running: map[string][]*JobInvocation{},
 	}
 
 	for _, job := range jm.jobs {
 		status.Jobs = append(status.Jobs, job)
 
 		if job.Current != nil {
-			status.Running[job.Current.ID] = job.Current
+			status.Running[job.Name] = append(status.Running[job.Name], job.Current)
 		}
 	}
 	return &status
