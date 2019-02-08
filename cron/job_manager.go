@@ -294,6 +294,7 @@ func (jm *JobManager) Status() *Status {
 //
 
 // Start begins the schedule runner for a JobManager.
+// It does not block.
 func (jm *JobManager) Start() error {
 	if !jm.latch.CanStart() {
 		return fmt.Errorf("already started")

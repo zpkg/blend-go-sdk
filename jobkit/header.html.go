@@ -427,6 +427,13 @@ var headerTemplate = `
 		.align-right {
 			text-align: right;
 		}
+		h4 {
+			font-size: inherit;
+			font-weight: bold;
+		}
+		.small-text {
+			font-size: 12px;
+		}
 	</style>
 </head>
 <body>

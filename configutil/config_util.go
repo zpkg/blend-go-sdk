@@ -44,7 +44,7 @@ var (
 // Paths will be tested from a standard set of defaults (ex. config.yml)
 // and optionally a csv named in the `CONFIG_PATH` environment variable.
 func Read(ref Any, paths ...string) error {
-	_, err := ReadFromPaths(ref, Paths(append(DefaultPaths, paths...)...)...)
+	_, err := ReadFromPaths(ref, Paths(append(paths, DefaultPaths...)...)...)
 	return err
 }
 
@@ -70,7 +70,7 @@ func ReadFromPaths(ref Any, paths ...string) (path string, err error) {
 		err = ReadFromReader(ref, f, filepath.Ext(path))
 		break
 	}
-	if err != nil {
+	if err != nil && !IsNotExist(err) {
 		return
 	}
 

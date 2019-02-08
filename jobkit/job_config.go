@@ -2,7 +2,6 @@ package jobkit
 
 import (
 	"github.com/blend/go-sdk/configutil"
-	"github.com/blend/go-sdk/uuid"
 )
 
 // JobConfig is something you can use to give your jobs some knobs to turn
@@ -32,7 +31,7 @@ type JobConfig struct {
 
 // NameOrDefault returns the job name or a default (uuid v4).
 func (jc JobConfig) NameOrDefault() string {
-	return configutil.CoalesceString(jc.Name, uuid.V4().String())
+	return configutil.CoalesceString(jc.Name, "")
 }
 
 // ScheduleOrDefault returns the schedule or a default (every 5 minutes).

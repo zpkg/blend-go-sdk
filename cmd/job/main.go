@@ -24,14 +24,21 @@ var configPath = flag.String("config", "config.yml", "The job config path")
 var timeout = flag.Duration("timeout", 0, "The timeout")
 
 type jobConfig struct {
-	jobkit.Config
-	jobkit.JobConfig
+	jobkit.Config    `json:",inline" yaml:",inline"`
+	jobkit.JobConfig `json:",inline" yaml:",inline"`
+}
+
+func (jc *jobConfig) Resolve() error {
+	return configutil.AnyError(
+		configutil.Set(&jc.Name, configutil.Const(*name), configutil.Const(jc.Name)),
+		configutil.Set(&jc.Web.BindAddr, configutil.Const(*bind), configutil.Const(jc.Web.BindAddr)),
+	)
 }
 
 func main() {
-	var err error
 	flag.Parse()
 
+	var err error
 	var config jobConfig
 	if err := configutil.Read(&config, *configPath); !configutil.IsIgnored(err) {
 		logger.FatalExit(err)
@@ -39,6 +46,8 @@ func main() {
 
 	log := logger.NewFromConfig(&config.Logger)
 	log.WithEnabled(cron.FlagStarted, cron.FlagComplete, cron.FlagFixed, cron.FlagBroken, cron.FlagFailed, cron.FlagCancelled)
+
+	log.SyncInfof("starting job `%s`", config.NameOrDefault())
 
 	var command []string
 	if *exec != "" {
@@ -86,7 +95,7 @@ func main() {
 		}()
 	}
 
-	if err := graceful.Shutdown(jobs); err != nil {
+	if err := graceful.Shutdown(graceful.New(jobs.Start, jobs.Stop)); err != nil {
 		logger.FatalExit(err)
 	}
 }
