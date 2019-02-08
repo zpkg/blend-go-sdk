@@ -56,7 +56,7 @@ func TestRunJobBySchedule(t *testing.T) {
 	})
 	a.Nil(err)
 
-	a.Nil(jm.StartAsync())
+	a.Nil(jm.Start())
 	defer jm.Stop()
 
 	before := Now()
@@ -188,7 +188,7 @@ func TestJobManagerRunJobs(t *testing.T) {
 	assert := assert.New(t)
 
 	jm := New()
-	jm.StartAsync()
+	jm.Start()
 	defer jm.Stop()
 
 	job0 := uuid.V4().String()
@@ -229,7 +229,7 @@ func TestJobManagerRunAllJobs(t *testing.T) {
 	assert := assert.New(t)
 
 	jm := New()
-	jm.StartAsync()
+	jm.Start()
 	defer jm.Stop()
 
 	job0 := uuid.V4().String()
@@ -270,7 +270,7 @@ func TestJobManagerJobLifecycle(t *testing.T) {
 	assert := assert.New(t)
 
 	jm := New()
-	jm.StartAsync()
+	jm.Start()
 	defer jm.Stop()
 
 	var shouldFail bool

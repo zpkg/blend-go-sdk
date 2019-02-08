@@ -333,8 +333,10 @@ func (js *JobScheduler) canRun() bool {
 
 func (js *JobScheduler) onStart(ctx context.Context, ji *JobInvocation) {
 	if js.Log != nil && js.ShouldTriggerListenersProvider() {
-		event := NewEvent(FlagStarted, ji.Name).WithIsWritable(js.ShouldWriteOutputProvider())
-		js.Log.SubContext(ji.ID).Trigger(event)
+		event := NewEvent(FlagStarted, ji.Name).
+			WithJobInvocation(ji.ID).
+			WithIsWritable(js.ShouldWriteOutputProvider())
+		js.Log.Trigger(event)
 	}
 	if typed, ok := js.Job.(OnStartReceiver); ok {
 		typed.OnStart(ctx)
@@ -344,9 +346,10 @@ func (js *JobScheduler) onStart(ctx context.Context, ji *JobInvocation) {
 func (js *JobScheduler) onCancelled(ctx context.Context, ji *JobInvocation) {
 	if js.Log != nil && js.ShouldTriggerListenersProvider() {
 		event := NewEvent(FlagCancelled, ji.Name).
+			WithJobInvocation(ji.ID).
 			WithIsWritable(js.ShouldWriteOutputProvider()).
 			WithElapsed(ji.Elapsed)
-		js.Log.SubContext(ji.ID).Trigger(event)
+		js.Log.Trigger(event)
 	}
 	if typed, ok := js.Job.(OnCancellationReceiver); ok {
 		typed.OnCancellation(ctx)
@@ -356,9 +359,10 @@ func (js *JobScheduler) onCancelled(ctx context.Context, ji *JobInvocation) {
 func (js *JobScheduler) onComplete(ctx context.Context, ji *JobInvocation) {
 	if js.Log != nil && js.ShouldTriggerListenersProvider() {
 		event := NewEvent(FlagComplete, ji.Name).
+			WithJobInvocation(ji.ID).
 			WithIsWritable(js.ShouldWriteOutputProvider()).
 			WithElapsed(ji.Elapsed)
-		js.Log.SubContext(ji.ID).Trigger(event)
+		js.Log.Trigger(event)
 	}
 	if typed, ok := js.Job.(OnCompleteReceiver); ok {
 		typed.OnComplete(ctx)
@@ -370,7 +374,7 @@ func (js *JobScheduler) onComplete(ctx context.Context, ji *JobInvocation) {
 				WithIsWritable(js.ShouldWriteOutputProvider()).
 				WithElapsed(ji.Elapsed)
 
-			js.Log.SubContext(ji.ID).Trigger(event)
+			js.Log.Trigger(event)
 		}
 
 		if typed, ok := js.Job.(OnFixedReceiver); ok {
@@ -382,11 +386,12 @@ func (js *JobScheduler) onComplete(ctx context.Context, ji *JobInvocation) {
 func (js *JobScheduler) onFailure(ctx context.Context, ji *JobInvocation) {
 	if js.Log != nil && js.ShouldTriggerListenersProvider() {
 		event := NewEvent(FlagFailed, ji.Name).
+			WithJobInvocation(ji.ID).
 			WithIsWritable(js.ShouldWriteOutputProvider()).
 			WithElapsed(ji.Elapsed).
 			WithErr(ji.Err)
 
-		js.Log.SubContext(ji.ID).Trigger(event)
+		js.Log.Trigger(event)
 	}
 	if ji.Err != nil {
 		logger.MaybeError(js.Log, ji.Err)
@@ -397,9 +402,10 @@ func (js *JobScheduler) onFailure(ctx context.Context, ji *JobInvocation) {
 	if js.Last != nil && js.Last.Err == nil {
 		if js.Log != nil {
 			event := NewEvent(FlagBroken, ji.Name).
+				WithJobInvocation(ji.ID).
 				WithIsWritable(js.ShouldWriteOutputProvider()).
 				WithElapsed(ji.Elapsed)
-			js.Log.SubContext(ji.ID).Trigger(event)
+			js.Log.Trigger(event)
 		}
 
 		if typed, ok := js.Job.(OnBrokenReceiver); ok {

@@ -42,9 +42,10 @@ type Event struct {
 	enabled  bool
 	writable bool
 
-	jobName string
-	err     error
-	elapsed time.Duration
+	jobName       string
+	jobInvocation string
+	err           error
+	elapsed       time.Duration
 }
 
 // WithHeadings sets the headings.
@@ -110,6 +111,17 @@ func (e Event) JobName() string {
 	return e.jobName
 }
 
+// WithJobInvocation sets the job invocation.
+func (e *Event) WithJobInvocation(jobInvocation string) *Event {
+	e.jobInvocation = jobInvocation
+	return e
+}
+
+// JobInvocation returns the event job invocation.
+func (e Event) JobInvocation() string {
+	return e.jobInvocation
+}
+
 // WithErr sets the error on the event.
 func (e *Event) WithErr(err error) *Event {
 	e.err = err
@@ -139,7 +151,11 @@ func (e Event) Elapsed() time.Duration {
 
 // WriteText implements logger.TextWritable.
 func (e Event) WriteText(tf logger.TextFormatter, buf *bytes.Buffer) {
-	buf.WriteString(fmt.Sprintf("[%s]", tf.Colorize(e.jobName, logger.ColorBlue)))
+	if e.jobInvocation != "" {
+		buf.WriteString(fmt.Sprintf("[%s > %s]", tf.Colorize(e.jobName, logger.ColorBlue), tf.Colorize(e.jobInvocation, logger.ColorBlue)))
+	} else {
+		buf.WriteString(fmt.Sprintf("[%s]", tf.Colorize(e.jobName, logger.ColorBlue)))
+	}
 
 	if e.elapsed > 0 {
 		buf.WriteRune(logger.RuneSpace)
