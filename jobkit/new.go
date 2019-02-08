@@ -46,6 +46,7 @@ func New(jobConfig *JobConfig, cfg *Config, action func(context.Context) error) 
 		WithName(jobConfig.NameOrDefault()).
 		WithConfig(jobConfig).
 		WithSchedule(schedule).
+		WithTimeout(jobConfig.TimeoutOrDefault()).
 		WithEmailClient(emailClient).
 		WithStatsClient(statsClient).
 		WithSlackClient(slackClient).

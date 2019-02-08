@@ -19,7 +19,7 @@ import (
 var name = flag.String("name", stringutil.Letters.Random(8), "The name of the job")
 var exec = flag.String("exec", "", "The command to execute")
 var bind = flag.String("bind", "", "The address and port to bind the management server to (ex: 127.0.0.1:9000")
-var schedule = flag.String("schedule", "*/1 * * * * * *", "The job schedule as a cron string (i.e. 7 space delimited components)")
+var schedule = flag.String("schedule", "", "The job schedule as a cron string (i.e. 7 space delimited components)")
 var configPath = flag.String("config", "config.yml", "The job config path")
 var timeout = flag.Duration("timeout", 0, "The timeout")
 
@@ -31,6 +31,8 @@ type jobConfig struct {
 func (jc *jobConfig) Resolve() error {
 	return configutil.AnyError(
 		configutil.Set(&jc.Name, configutil.Const(*name), configutil.Const(jc.Name)),
+		configutil.Set(&jc.Schedule, configutil.Const(*schedule), configutil.Const(jc.Schedule)),
+		configutil.SetDuration(&jc.Timeout, configutil.DurationConst(*timeout), configutil.DurationConst(jc.Timeout)),
 		configutil.Set(&jc.Web.BindAddr, configutil.Const(*bind), configutil.Const(jc.Web.BindAddr)),
 	)
 }
@@ -48,6 +50,7 @@ func main() {
 	log.WithEnabled(cron.FlagStarted, cron.FlagComplete, cron.FlagFixed, cron.FlagBroken, cron.FlagFailed, cron.FlagCancelled)
 
 	log.SyncInfof("starting job `%s`", config.NameOrDefault())
+	log.SyncInfof("using schedule `%s`", config.ScheduleOrDefault())
 
 	var command []string
 	if *exec != "" {
@@ -67,27 +70,17 @@ func main() {
 		return sh.ForkContext(ctx, command[0], args(command...)...)
 	}
 
-	schedule, err := cron.ParseString(*schedule)
-	if err != nil {
-		logger.FatalExit(err)
-	}
-
 	job, err := jobkit.New(&config.JobConfig, &config.Config, action)
 	if err != nil {
 		logger.FatalExit(err)
 	}
 	job.WithLogger(log)
-	job.WithSchedule(schedule)
 
 	jobs := cron.NewFromConfig(&config.Config.Config).WithLogger(log)
 	jobs.LoadJob(job)
 
 	if !config.DisableManagementServer {
 		ws := jobkit.NewManagementServer(jobs, &config.Config).WithLogger(log)
-		if *bind != "" {
-			ws.WithBindAddr(*bind)
-		}
-
 		go func() {
 			if err := graceful.Shutdown(ws); err != nil {
 				logger.FatalExit(err)

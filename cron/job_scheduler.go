@@ -417,8 +417,7 @@ func (js *JobScheduler) onFailure(ctx context.Context, ji *JobInvocation) {
 func (js *JobScheduler) addHistory(ji JobInvocation) {
 	js.Lock()
 	defer js.Unlock()
-	js.History = js.cullHistory()
-	js.History = append(js.History, ji)
+	js.History = append(js.cullHistory(), ji)
 }
 
 func (js *JobScheduler) cullHistory() []JobInvocation {

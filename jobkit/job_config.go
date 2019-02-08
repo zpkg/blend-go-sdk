@@ -1,6 +1,8 @@
 package jobkit
 
 import (
+	"time"
+
 	"github.com/blend/go-sdk/configutil"
 )
 
@@ -12,6 +14,8 @@ type JobConfig struct {
 	Name string `json:"name" yaml:"name"`
 	// Schedule returns the job schedule.
 	Schedule string `json:"schedule" yaml:"schedule"`
+	// Timeout represents the abort threshold for the job.
+	Timeout time.Duration `json:"timeout" yaml:"timeout"`
 
 	// NotifyOnStart governs if we should send notifications job start.
 	NotifyOnStart *bool `json:"notifyOnStart" yaml:"notifyOnStart"`
@@ -37,6 +41,11 @@ func (jc JobConfig) NameOrDefault() string {
 // ScheduleOrDefault returns the schedule or a default (every 5 minutes).
 func (jc JobConfig) ScheduleOrDefault() string {
 	return configutil.CoalesceString(jc.Schedule, "* */5 * * * * *")
+}
+
+// TimeoutOrDefault the job timeout or a default
+func (jc JobConfig) TimeoutOrDefault() time.Duration {
+	return jc.Timeout
 }
 
 // NotifyOnStartOrDefault returns a value or a default.
