@@ -15,6 +15,8 @@ import (
 
 var (
 	_ cron.Job                    = (*Job)(nil)
+	_ cron.TimeoutProvider        = (*Job)(nil)
+	_ cron.ScheduleProvider       = (*Job)(nil)
 	_ cron.OnStartReceiver        = (*Job)(nil)
 	_ cron.OnCompleteReceiver     = (*Job)(nil)
 	_ cron.OnFailureReceiver      = (*Job)(nil)
