@@ -17,7 +17,7 @@ func TestJobSchedulerCullHistoryMaxAge(t *testing.T) {
 			MaxCount: 10,
 			MaxAge:   6 * time.Hour,
 		},
-	}, NewJob("foo"))
+	}, NewJob("foo", noop))
 
 	js.History = []JobInvocation{
 		{ID: uuid.V4().String(), Started: time.Now().Add(-10 * time.Hour)},
@@ -44,7 +44,7 @@ func TestJobSchedulerCullHistoryMaxCount(t *testing.T) {
 			MaxCount: 5,
 			MaxAge:   6 * time.Hour,
 		},
-	}, NewJob("foo"))
+	}, NewJob("foo", noop))
 
 	js.History = []JobInvocation{
 		{ID: uuid.V4().String(), Started: time.Now().Add(-10 * time.Minute)},
@@ -72,7 +72,7 @@ func TestJobSchedulerEnableDisable(t *testing.T) {
 			MaxCount: 5,
 			MaxAge:   6 * time.Hour,
 		},
-	}, NewJob("foo").WithOnDisabled(func(_ context.Context) {
+	}, NewJob("foo", noop).WithOnDisabled(func(_ context.Context) {
 		disabled = true
 	}).WithOnEnabled(func(_ context.Context) {
 		enabled = true

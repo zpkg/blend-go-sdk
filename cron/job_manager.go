@@ -277,11 +277,14 @@ func (jm *JobManager) CancelJob(jobName string) (err error) {
 func (jm *JobManager) Status() *Status {
 	jm.Lock()
 	defer jm.Unlock()
+
 	status := Status{
 		Running: map[string]*JobInvocation{},
 	}
+
 	for _, job := range jm.jobs {
 		status.Jobs = append(status.Jobs, job)
+
 		if job.Current != nil {
 			status.Running[job.Current.ID] = job.Current
 		}

@@ -1,6 +1,7 @@
 package jobkit
 
 import (
+	"context"
 	"net/http"
 	"testing"
 
@@ -14,8 +15,8 @@ func TestManagementServer(t *testing.T) {
 
 	jm := cron.New()
 
-	jm.LoadJob(cron.NewJob("test0"))
-	jm.LoadJob(cron.NewJob("test1"))
+	jm.LoadJob(cron.NewJob("test0", func(_ context.Context) error { return nil }))
+	jm.LoadJob(cron.NewJob("test1", func(_ context.Context) error { return nil }))
 
 	app := NewManagementServer(jm, &Config{
 		Web: web.Config{
@@ -38,8 +39,8 @@ func TestManagementServerHealthz(t *testing.T) {
 	assert := assert.New(t)
 
 	jm := cron.New()
-	jm.LoadJob(cron.NewJob("test0"))
-	jm.LoadJob(cron.NewJob("test1"))
+	jm.LoadJob(cron.NewJob("test0", func(_ context.Context) error { return nil }))
+	jm.LoadJob(cron.NewJob("test1", func(_ context.Context) error { return nil }))
 	jm.Start()
 
 	app := NewManagementServer(jm, &Config{

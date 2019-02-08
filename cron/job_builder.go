@@ -23,9 +23,10 @@ var (
 )
 
 // NewJob returns a new job factory.
-func NewJob(name string) *JobBuilder {
+func NewJob(name string, action Action) *JobBuilder {
 	return &JobBuilder{
-		name: name,
+		name:   name,
+		action: action,
 	}
 }
 
