@@ -433,6 +433,13 @@ var headerTemplate = `
 		.small-text {
 			font-size: 12px;
 		}
+
+		tr.failed {
+			background-color: #F55656
+		}
+		tr.cancelled {
+			background-color: #FFB366;
+		}
 	</style>
 </head>
 <body>

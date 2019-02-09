@@ -69,21 +69,34 @@ var indexTemplate = `
 				<td colspan=7>
 					<h4>History</h4>
 					<table class="u-full-width small-text">
-						{{ range $index, $ji := $job.History }}
-						<tr>
+						<thead>
+							<tr>
+								<th>Invocation</th>
+								<th>Started</th>
+								<th>Finished</th>
+								<th>Timeout</th>
+								<th>Cancelled</th>
+								<th>Elapsed</th>
+								<th>Error</th>
+							</tr>
+						</thead>
+						<tbody>
+						{{ range $index, $ji := $job.History | reverse }}
+						<tr class="{{ if $ji.Status | eq "failed" }}failed{{ else if $ji.Status | eq "cancelled"}}cancelled{{else}}ok{{end}}">
 							<td>{{ $ji.ID }}</td>
 							<td>{{ $ji.Started | rfc3339 }}</td>
 							<td>{{ if $ji.Finished.IsZero }}-{{ else }}{{ $ji.Finished | rfc3339 }}{{ end }}</td>
 							<td>{{ if $ji.Timeout.IsZero }}-{{ else }}{{ $ji.Timeout | rfc3339 }}{{ end }}</td>
 							<td>{{ if $ji.Cancelled.IsZero }}-{{ else }}{{ $ji.Cancelled | rfc3339 }}{{ end }}</td>
 							<td>{{ $ji.Elapsed }}</td>
-							<td>{{ $ji.Err }}</td>
+							<td>{{ if $ji.Err }}<code>{{ $ji.Err }}</code>{{ else }}-{{end}}</td>
 						</tr>
 						{{ else }}
 						<tr>
 							<td colspan=7>No History</td>
 						</tr>
 						{{ end }}
+						</tbody>
 					</table>
 				</td>
 			</tr>

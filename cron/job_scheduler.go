@@ -209,6 +209,7 @@ func (js *JobScheduler) Run() {
 	ji := JobInvocation{
 		ID:      NewJobInvocationID(),
 		Name:    js.Name,
+		Status:  JobStatusRunning,
 		Started: start,
 		Context: ctx,
 		Cancel:  cancel,
@@ -344,6 +345,8 @@ func (js *JobScheduler) onStart(ctx context.Context, ji *JobInvocation) {
 }
 
 func (js *JobScheduler) onCancelled(ctx context.Context, ji *JobInvocation) {
+	ji.Status = JobStatusCancelled
+
 	if js.Log != nil && js.ShouldTriggerListenersProvider() {
 		event := NewEvent(FlagCancelled, ji.Name).
 			WithJobInvocation(ji.ID).
@@ -357,6 +360,8 @@ func (js *JobScheduler) onCancelled(ctx context.Context, ji *JobInvocation) {
 }
 
 func (js *JobScheduler) onComplete(ctx context.Context, ji *JobInvocation) {
+	ji.Status = JobStatusComplete
+
 	if js.Log != nil && js.ShouldTriggerListenersProvider() {
 		event := NewEvent(FlagComplete, ji.Name).
 			WithJobInvocation(ji.ID).
@@ -384,6 +389,8 @@ func (js *JobScheduler) onComplete(ctx context.Context, ji *JobInvocation) {
 }
 
 func (js *JobScheduler) onFailure(ctx context.Context, ji *JobInvocation) {
+	ji.Status = JobStatusFailed
+
 	if js.Log != nil && js.ShouldTriggerListenersProvider() {
 		event := NewEvent(FlagFailed, ji.Name).
 			WithJobInvocation(ji.ID).

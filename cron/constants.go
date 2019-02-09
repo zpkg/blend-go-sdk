@@ -63,3 +63,14 @@ const (
 	// StateDisabled is the disabled state.
 	StateDisabled State = "disabled"
 )
+
+// JobStatus is a job status.
+type JobStatus string
+
+// Status values.
+const (
+	JobStatusRunning   JobStatus = "running"
+	JobStatusCancelled JobStatus = "cancelled"
+	JobStatusFailed    JobStatus = "failed"
+	JobStatusComplete  JobStatus = "complete"
+)

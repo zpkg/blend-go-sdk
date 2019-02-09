@@ -15,6 +15,7 @@ type JobInvocation struct {
 	Timeout   time.Time          `json:"timeout"`
 	Err       error              `json:"err"`
 	Elapsed   time.Duration      `json:"elapsed"`
+	Status    JobStatus          `json:"status"`
 	Context   context.Context    `json:"-"`
 	Cancel    context.CancelFunc `json:"-"`
 }
