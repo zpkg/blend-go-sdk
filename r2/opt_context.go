@@ -4,9 +4,10 @@ import (
 	"context"
 )
 
-// Context sets the request context.
-func Context(ctx context.Context) Option {
-	return func(r *Request) {
+// OptContext sets the request context.
+func OptContext(ctx context.Context) Option {
+	return func(r *Request) error {
 		r.Request = r.Request.WithContext(ctx)
+		return nil
 	}
 }

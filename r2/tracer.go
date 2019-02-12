@@ -1,6 +1,9 @@
 package r2
 
-import "net/http"
+import (
+	"net/http"
+	"time"
+)
 
 // Tracer is a tracer for requests.
 type Tracer interface {
@@ -9,5 +12,5 @@ type Tracer interface {
 
 // TraceFinisher is a finisher for traces.
 type TraceFinisher interface {
-	Finish(*http.Request, *http.Response, error)
+	Finish(*http.Request, *http.Response, time.Time, error)
 }

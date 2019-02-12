@@ -5,9 +5,9 @@ import (
 	"net/http"
 )
 
-// TLSClientCert adds a client cert and key to the request.
-func TLSClientCert(cert, key []byte) Option {
-	return func(r *Request) {
+// OptTLSClientCert adds a client cert and key to the request.
+func OptTLSClientCert(cert, key []byte) Option {
+	return func(r *Request) error {
 		if r.Client == nil {
 			r.Client = &http.Client{}
 		}
@@ -20,10 +20,10 @@ func TLSClientCert(cert, key []byte) Option {
 			}
 			cert, err := tls.X509KeyPair(cert, key)
 			if err != nil {
-				r.Err = err
-				return
+				return err
 			}
 			typed.TLSClientConfig.Certificates = append(typed.TLSClientConfig.Certificates, cert)
 		}
+		return nil
 	}
 }

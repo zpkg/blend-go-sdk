@@ -5,20 +5,21 @@ import (
 	"net/url"
 )
 
-// PostForm sets the request post form and the content type.
-func PostForm(postForm url.Values) Option {
-	return func(r *Request) {
+// OptPostForm sets the request post form and the content type.
+func OptPostForm(postForm url.Values) Option {
+	return func(r *Request) error {
 		if r.Header == nil {
 			r.Header = http.Header{}
 		}
 		r.Header.Set(HeaderContentType, ContentTypeApplicationFormEncoded)
 		r.PostForm = postForm
+		return nil
 	}
 }
 
-// PostFormValue sets a request post form value.
-func PostFormValue(key, value string) Option {
-	return func(r *Request) {
+// OptPostFormValue sets a request post form value.
+func OptPostFormValue(key, value string) Option {
+	return func(r *Request) error {
 		if r.Header == nil {
 			r.Header = http.Header{}
 		}
@@ -27,5 +28,6 @@ func PostFormValue(key, value string) Option {
 			r.PostForm = url.Values{}
 		}
 		r.PostForm.Set(key, value)
+		return nil
 	}
 }

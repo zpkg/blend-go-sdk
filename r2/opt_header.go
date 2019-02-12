@@ -4,19 +4,21 @@ import (
 	"net/http"
 )
 
-// Headers sets the request headers.
-func Headers(headers http.Header) Option {
-	return func(r *Request) {
+// OptHeaders sets the request headers.
+func OptHeaders(headers http.Header) Option {
+	return func(r *Request) error {
 		r.Header = headers
+		return nil
 	}
 }
 
-// HeaderValue adds or sets a header value.
-func HeaderValue(key, value string) Option {
-	return func(r *Request) {
+// OptHeaderValue adds or sets a header value.
+func OptHeaderValue(key, value string) Option {
+	return func(r *Request) error {
 		if r.Header == nil {
 			r.Header = http.Header{}
 		}
 		r.Header.Set(key, value)
+		return nil
 	}
 }

@@ -5,9 +5,9 @@ import (
 	"time"
 )
 
-// TLSHandshakeTimeout sets the client transport TLSHandshakeTimeout.
-func TLSHandshakeTimeout(d time.Duration) Option {
-	return func(r *Request) {
+// OptTLSHandshakeTimeout sets the client transport TLSHandshakeTimeout.
+func OptTLSHandshakeTimeout(d time.Duration) Option {
+	return func(r *Request) error {
 		if r.Client == nil {
 			r.Client = &http.Client{}
 		}
@@ -17,5 +17,6 @@ func TLSHandshakeTimeout(d time.Duration) Option {
 		if typed, ok := r.Client.Transport.(*http.Transport); ok {
 			typed.TLSHandshakeTimeout = d
 		}
+		return nil
 	}
 }

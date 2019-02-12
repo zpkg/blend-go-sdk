@@ -5,10 +5,10 @@ import (
 	"net/http"
 )
 
-// TLSClientConfig sets the tls config for the request.
+// OptTLSClientConfig sets the tls config for the request.
 // It will create a client, and a transport if unset.
-func TLSClientConfig(cfg *tls.Config) Option {
-	return func(r *Request) {
+func OptTLSClientConfig(cfg *tls.Config) Option {
+	return func(r *Request) error {
 		if r.Client == nil {
 			r.Client = &http.Client{}
 		}
@@ -18,5 +18,6 @@ func TLSClientConfig(cfg *tls.Config) Option {
 		if typed, ok := r.Client.Transport.(*http.Transport); ok {
 			typed.TLSClientConfig = cfg
 		}
+		return nil
 	}
 }

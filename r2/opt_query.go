@@ -2,18 +2,20 @@ package r2
 
 import "net/url"
 
-// Query set the fully querystring.
-func Query(query url.Values) Option {
-	return func(r *Request) {
+// OptQuery set the fully querystring.
+func OptQuery(query url.Values) Option {
+	return func(r *Request) error {
 		r.URL.RawQuery = query.Encode()
+		return nil
 	}
 }
 
-// QueryValue adds or sets a query value.
-func QueryValue(key, value string) Option {
-	return func(r *Request) {
+// OptQueryValue adds or sets a query value.
+func OptQueryValue(key, value string) Option {
+	return func(r *Request) error {
 		queryValues := r.URL.Query()
 		queryValues.Set(key, value)
 		r.URL.RawQuery = queryValues.Encode()
+		return nil
 	}
 }

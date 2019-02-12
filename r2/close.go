@@ -1,18 +1,17 @@
 package r2
 
-import "net/http"
+import (
+	"net/http"
 
-// Close closes a response.
-// It's meant to be nested in a `Do` call:
-//    res, err := r2.Close(r2.New("https://foo.com").Do())
-func Close(res *http.Response, err error) (*http.Response, error) {
+	"github.com/blend/go-sdk/exception"
+)
+
+// Close executes and closes the response.
+// It returns the response for metadata purposes.
+func Close(r *Request, err error) (*http.Response, error) {
+	res, err := Do(r, err)
 	if err != nil {
 		return nil, err
 	}
-	if res.Body != nil {
-		if err := res.Body.Close(); err != nil {
-			return nil, err
-		}
-	}
-	return res, nil
+	return res, exception.New(res.Body.Close())
 }

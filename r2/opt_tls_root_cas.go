@@ -6,9 +6,9 @@ import (
 	"net/http"
 )
 
-// TLSRootCAs sets the client tls root ca pool.
-func TLSRootCAs(pool *x509.CertPool) Option {
-	return func(r *Request) {
+// OptTLSRootCAs sets the client tls root ca pool.
+func OptTLSRootCAs(pool *x509.CertPool) Option {
+	return func(r *Request) error {
 		if r.Client == nil {
 			r.Client = &http.Client{}
 		}
@@ -21,5 +21,6 @@ func TLSRootCAs(pool *x509.CertPool) Option {
 			}
 			typed.TLSClientConfig.RootCAs = pool
 		}
+		return nil
 	}
 }

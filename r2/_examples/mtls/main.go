@@ -17,7 +17,7 @@ func main() {
 		log.SyncFatalExit(err)
 	}
 
-	caKeyPair, err := ca.KeyPair()
+	caKeyPair, err := ca.GenerateKeyPair()
 	if err != nil {
 		log.SyncFatalExit(err)
 	}
@@ -28,11 +28,11 @@ func main() {
 	}
 
 	// create the server certs
-	server, err := certutil.CreateServer("mtls-example.local", &ca, "localhost")
+	server, err := certutil.CreateServer("mtls-example.local", &ca, certutil.OptSubjectCommonName("localhost"))
 	if err != nil {
 		log.SyncFatalExit(err)
 	}
-	serverKeyPair, err := server.KeyPair()
+	serverKeyPair, err := server.GenerateKeyPair()
 	if err != nil {
 		log.SyncFatalExit(err)
 	}
@@ -41,7 +41,7 @@ func main() {
 	if err != nil {
 		log.SyncFatalExit(err)
 	}
-	clientKeyPair, err := client.KeyPair()
+	clientKeyPair, err := client.GenerateKeyPair()
 	if err != nil {
 		log.SyncFatalExit(err)
 	}
@@ -64,17 +64,17 @@ func main() {
 	// make some requests ...
 
 	log.SyncInfof("making a secure request")
-	if err := r2.New("https://localhost:5000",
-		r2.TLSRootCAs(caPool),
-		r2.TLSClientCert([]byte(clientKeyPair.Cert), []byte(clientKeyPair.Key)),
-	).Discard(); err != nil {
+	if err := r2.Discard(r2.New("https://localhost:5000",
+		r2.OptTLSRootCAs(caPool),
+		r2.OptTLSClientCert([]byte(clientKeyPair.Cert), []byte(clientKeyPair.Key)),
+	)); err != nil {
 		log.SyncFatalExit(err)
 	} else {
 		log.SyncInfof("secure request success")
 	}
 
 	log.SyncInfof("making an insecure request")
-	if err := r2.New("https://localhost:5000", r2.TLSRootCAs(caPool)).Discard(); err != nil {
+	if err := r2.Discard(r2.New("https://localhost:5000", r2.OptTLSRootCAs(caPool))); err != nil {
 		log.SyncFatalExit(err)
 	}
 }

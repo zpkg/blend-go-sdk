@@ -1,36 +1,41 @@
 package r2
 
-// Method sets the request method.
-func Method(method string) Option {
-	return func(r *Request) {
+// OptMethod sets the request method.
+func OptMethod(method string) Option {
+	return func(r *Request) error {
 		r.Method = method
+		return nil
 	}
 }
 
-// Get sets the request method.
-func Get() Option {
-	return func(r *Request) {
+// OptGet sets the request method.
+func OptGet() Option {
+	return func(r *Request) error {
 		r.Method = "GET"
+		return nil
 	}
 }
 
-// Post sets the request method.
-func Post() Option {
-	return func(r *Request) {
+// OptPost sets the request method.
+func OptPost() Option {
+	return func(r *Request) error {
 		r.Method = "POST"
+		return nil
 	}
 }
 
-// Put sets the request method.
-func Put() Option {
-	return func(r *Request) {
+// OptPut sets the request method.
+func OptPut() Option {
+	return func(r *Request) error {
 		r.Method = "PUT"
+		return nil
 	}
 }
 
-// Delete sets the request method.
-func Delete() Option {
-	return func(r *Request) {
+// OptDelete sets the request method.
+func OptDelete() Option {
+	return func(r *Request) error {
 		r.Method = "DELETE"
+		return nil
 	}
 }
