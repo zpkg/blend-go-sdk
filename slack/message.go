@@ -1,5 +1,14 @@
 package slack
 
+// NewMessage creates a new message with a given set of options.
+func NewMessage(options ...MessageOption) *Message {
+	var m Message
+	for _, option := range options {
+		option(&m)
+	}
+	return &m
+}
+
 // Message is a message sent to slack.
 type Message struct {
 	Username        string              `json:"username,omitempty"`

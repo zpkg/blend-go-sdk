@@ -22,9 +22,10 @@ func New(remoteURL string, options ...Option) *Request {
 		return &r
 	}
 
-	r.Method = MethodGet
-	r.URL = parsedURL
-
+	r.Request = &http.Request{
+		Method: MethodGet,
+		URL:    parsedURL,
+	}
 	for _, option := range options {
 		if err = option(&r); err != nil {
 			r.Err = err
