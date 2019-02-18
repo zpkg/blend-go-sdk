@@ -300,7 +300,7 @@ func (rc *Ctx) Param(name string) (string, error) {
 		}
 	}
 
-	return "", newParameterMissingError(name)
+	return "", NewParameterMissingError(name)
 }
 
 // RouteParam returns a string route parameter
@@ -309,7 +309,7 @@ func (rc *Ctx) RouteParam(key string) (output string, err error) {
 		output = value
 		return
 	}
-	err = newParameterMissingError(key)
+	err = NewParameterMissingError(key)
 	return
 }
 
@@ -318,7 +318,7 @@ func (rc *Ctx) QueryValue(key string) (value string, err error) {
 	if value = rc.request.URL.Query().Get(key); len(value) > 0 {
 		return
 	}
-	err = newParameterMissingError(key)
+	err = NewParameterMissingError(key)
 	return
 }
 
@@ -331,7 +331,7 @@ func (rc *Ctx) FormValue(key string) (output string, err error) {
 		output = value
 		return
 	}
-	err = newParameterMissingError(key)
+	err = NewParameterMissingError(key)
 	return
 }
 
@@ -340,7 +340,7 @@ func (rc *Ctx) HeaderValue(key string) (value string, err error) {
 	if value = rc.request.Header.Get(key); len(value) > 0 {
 		return
 	}
-	err = newParameterMissingError(key)
+	err = NewParameterMissingError(key)
 	return
 }
 
