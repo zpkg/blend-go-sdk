@@ -14,6 +14,7 @@ import (
 	"github.com/blend/go-sdk/env"
 	"github.com/blend/go-sdk/graceful"
 	"github.com/blend/go-sdk/logger"
+	"github.com/blend/go-sdk/ref"
 )
 
 // assert an app is graceful
@@ -68,14 +69,14 @@ func TestAppNewFromConfig(t *testing.T) {
 	app := NewFromConfig(&Config{
 		BindAddr:               ":5555",
 		Port:                   5000,
-		HandleMethodNotAllowed: RefBool(true),
-		HandleOptions:          RefBool(true),
-		RecoverPanics:          RefBool(true),
+		HandleMethodNotAllowed: ref.Bool(true),
+		HandleOptions:          ref.Bool(true),
+		RecoverPanics:          ref.Bool(true),
 		HSTS: HSTSConfig{
-			Enabled:           RefBool(true),
+			Enabled:           ref.Bool(true),
 			MaxAgeSeconds:     9999,
-			IncludeSubDomains: RefBool(false),
-			Preload:           RefBool(false),
+			IncludeSubDomains: ref.Bool(false),
+			Preload:           ref.Bool(false),
 		},
 		MaxHeaderBytes:    128,
 		ReadHeaderTimeout: 5 * time.Second,
@@ -86,7 +87,7 @@ func TestAppNewFromConfig(t *testing.T) {
 		CookieName: "A GOOD ONE",
 
 		Views: ViewCacheConfig{
-			Cached: RefBool(true),
+			Cached: ref.Bool(true),
 		},
 	})
 
@@ -448,10 +449,10 @@ func TestAppIssuesHSTSHeaders(t *testing.T) {
 	assert := assert.New(t)
 
 	app := New().WithHSTS(&HSTSConfig{
-		Enabled:           RefBool(true),
+		Enabled:           ref.Bool(true),
 		MaxAgeSeconds:     9999,
-		IncludeSubDomains: RefBool(true),
-		Preload:           RefBool(true),
+		IncludeSubDomains: ref.Bool(true),
+		Preload:           ref.Bool(true),
 	})
 	app.GET("/", func(r *Ctx) Result {
 		return r.Text().Result("ok")
