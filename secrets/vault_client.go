@@ -3,7 +3,6 @@ package secrets
 import (
 	"crypto/tls"
 	"encoding/json"
-	"fmt"
 	"io"
 	"io/ioutil"
 	"net/http"
@@ -12,17 +11,12 @@ import (
 
 	"golang.org/x/net/http2"
 
+	"github.com/blend/go-sdk/exception"
 	"github.com/blend/go-sdk/logger"
-	"github.com/blend/go-sdk/reflectutil"
 )
 
 // assert VaultClient implements Client
 var _ Client = &VaultClient{}
-
-// NewFromConfig is an alias to NewVaultClientFromConfig.
-func NewFromConfig(cfg *Config) (*VaultClient, error) {
-	return NewVaultClientFromConfig(cfg)
-}
 
 // NewVaultClient returns a new client.
 func NewVaultClient() (*VaultClient, error) {
@@ -198,12 +192,17 @@ func (c *VaultClient) ReadInto(key string, obj interface{}, options ...Option) e
 	if err != nil {
 		return err
 	}
-	return reflectutil.PatchStrings(ReflectTagName, response, obj)
+	return RestoreJSON(response, obj)
 }
 
 // WriteInto writes an object into a secret at a given key.
 func (c *VaultClient) WriteInto(key string, obj interface{}, options ...Option) error {
-	return c.Put(key, reflectutil.DecomposeStrings(obj, ReflectTagName), options...)
+	data, err := DecomposeJSON(obj)
+	if err != nil {
+		return err
+	}
+
+	return c.Put(key, data, options...)
 }
 
 // --------------------------------------------------------------------------------
@@ -301,7 +300,7 @@ func (c *VaultClient) send(req *http.Request) (io.ReadCloser, error) {
 		buf := c.bufferPool.Get()
 		defer buf.Close()
 		io.Copy(buf, res.Body)
-		return nil, fmt.Errorf("non-2xx returned from remote: %d; %v", res.StatusCode, buf.String())
+		return nil, exception.New(ExceptionClassForStatus(res.StatusCode)).WithMessagef("status: %d; %v", res.StatusCode, buf.String())
 	}
 	return res.Body, nil
 }

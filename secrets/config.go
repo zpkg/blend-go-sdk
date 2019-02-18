@@ -8,6 +8,12 @@ import (
 	"github.com/blend/go-sdk/env"
 )
 
+// EnvVars
+const (
+	EnvVarVaultAddr  = "VAULT_ADDR"
+	EnvVarVaultToken = "VAULT_TOKEN"
+)
+
 // MustNewConfigFromEnv returns a config set from the env, and panics on error.
 func MustNewConfigFromEnv() (cfg *Config) {
 	var err error
@@ -78,10 +84,10 @@ func (c Config) GetTimeout() time.Duration {
 
 // GetRootCAs returns root ca paths.
 func (c Config) GetRootCAs() []string {
-	return configutil.CoalesceStrings(c.RootCAs, nil)
+	return c.RootCAs
 }
 
 // GetServicePath returns the service path
 func (c Config) GetServicePath() string {
-	return configutil.CoalesceString(c.ServicePath, "")
+	return c.ServicePath
 }
