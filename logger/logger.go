@@ -524,7 +524,7 @@ func (l *Logger) trigger(async bool, e Event) {
 			return
 		}
 
-		if async {
+		if async && l.writeWorker != nil {
 			l.writeWorker.Work <- e
 		} else {
 			l.Write(e)
