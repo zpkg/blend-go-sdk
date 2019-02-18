@@ -19,6 +19,11 @@ import (
 // assert VaultClient implements Client
 var _ Client = &VaultClient{}
 
+// NewFromConfig is an alias to NewVaultClientFromConfig.
+func NewFromConfig(cfg *Config) (*VaultClient, error) {
+	return NewVaultClientFromConfig(cfg)
+}
+
 // NewVaultClient returns a new client.
 func NewVaultClient() (*VaultClient, error) {
 	return NewVaultClientFromConfig(&Config{})
