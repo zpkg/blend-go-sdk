@@ -14,6 +14,11 @@ const (
 	StructTag = "secret"
 )
 
+// IsZeroable is useful to test if we need to set a config field or not.
+type IsZeroable interface {
+	IsZero() bool
+}
+
 // DecomposeJSON decomposes an object into json fields marked with the `secret` struct tag.
 // Top level fields will get their own keys.
 // Nested objects are serialized as json.
@@ -25,9 +30,12 @@ func DecomposeJSON(obj interface{}) (map[string]string, error) {
 
 	var field reflect.StructField
 	var fieldValue reflect.Value
+	var fieldValueValue interface{}
 	var tagValue string
 	var outputKey string
 	var tagPieces []string
+	var typed IsZeroable
+	var ok bool
 	for x := 0; x < objType.NumField(); x++ {
 		field = objType.Field(x)
 		if !reflectutil.IsExported(field.Name) {
@@ -41,7 +49,18 @@ func DecomposeJSON(obj interface{}) (map[string]string, error) {
 		}
 		tagPieces = strings.Split(tagValue, ",")
 		outputKey = tagPieces[0]
-		contents, err := json.Marshal(fieldValue.Interface())
+
+		fieldValueValue = fieldValue.Interface()
+		if typed, ok = fieldValueValue.(IsZeroable); ok && typed.IsZero() {
+			continue
+		}
+
+		// skip empty values
+		if reflectutil.IsEmptyValue(fieldValue) {
+			continue
+		}
+
+		contents, err := json.Marshal(fieldValueValue)
 		if err != nil {
 			return nil, exception.New(err)
 		}

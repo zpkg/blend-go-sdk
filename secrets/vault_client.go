@@ -201,7 +201,6 @@ func (c *VaultClient) WriteInto(key string, obj interface{}, options ...Option) 
 	if err != nil {
 		return err
 	}
-
 	return c.Put(key, data, options...)
 }
 

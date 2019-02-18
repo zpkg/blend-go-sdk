@@ -109,8 +109,8 @@ func NewJSON() *Logger {
 // Sync returns a valid agent that only processes events synchronously.
 func Sync() *Logger {
 	return &Logger{
+		flags:         AllFlags(),
 		recoverPanics: DefaultRecoverPanics,
-		flags:         NewFlagSetFromEnv(),
 		writers:       []Writer{NewWriterFromEnv()},
 	}
 }

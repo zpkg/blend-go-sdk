@@ -26,6 +26,8 @@ new-install: deps install
 
 deps:
 	@go get -u ./...
+
+dev-deps:
 	@go get -d github.com/goreleaser/goreleaser
 
 install: install-ask install-coverage install-profanity install-proxy install-recover install-template

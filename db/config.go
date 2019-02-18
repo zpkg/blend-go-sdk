@@ -105,6 +105,11 @@ type Config struct {
 	BufferPoolSize int `json:"bufferPoolSize,omitempty" yaml:"bufferPoolSize,omitempty" env:"DB_BUFFER_POOL_SIZE"`
 }
 
+// IsZero returns if the config is unset.
+func (c Config) IsZero() bool {
+	return c.DSN == "" && c.Host == "" && c.Port == "" && c.Database == "" && c.Schema == "" && c.Username == "" && c.Password == "" && c.SSLMode == ""
+}
+
 // WithEngine sets the databse engine.
 func (c *Config) WithEngine(engine string) *Config {
 	c.Engine = engine
