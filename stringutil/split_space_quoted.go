@@ -8,38 +8,69 @@ func SplitSpaceQuoted(text string) (output []string) {
 	if len(text) == 0 {
 		return
 	}
+
+	// fsm states
+	const (
+		stateLeadingSpace    = iota
+		stateWord            = iota
+		stateIntraSpace      = iota
+		stateLeadingQuoted   = iota
+		stateIntraWordQuoted = iota
+	)
+
 	var state int
 	var word []rune
 	var opened rune
 	for _, r := range text {
 		switch state {
-		case 0: // word
+		case stateLeadingSpace: //leading whitespace until quote or alpha
+			if !unicode.IsSpace(r) {
+				if isQuote(r) { // start a quoted section
+					opened = r
+					state = stateLeadingQuoted
+				} else {
+					state = stateWord
+					word = append(word, r)
+				}
+			}
+		case stateWord: // within a word
 			if isQuote(r) {
 				opened = r
 				word = append(word, r)
-				state = 2
+				state = stateIntraWordQuoted
 			} else if unicode.IsSpace(r) {
 				if len(word) > 0 {
 					output = append(output, string(word))
 					word = nil
 				}
-				state = 1
+				state = stateIntraSpace
 			} else {
 				word = append(word, r)
 			}
-		case 1: // we've seen a space
+		case stateIntraSpace: // we've seen a space after we've seen at least one word
+			// consume spaces until a non-space character
 			if !unicode.IsSpace(r) {
-				if isQuote(r) {
+				if isQuote(r) { // start a quoted section
 					opened = r
-					state = 2
+					state = stateLeadingQuoted
 				} else {
-					state = 0
+					state = stateWord
+					word = append(word, r)
 				}
+			}
+		case stateLeadingQuoted: // leading quoted section
+			// if we close a quoted section, switch
+			// back to normal word mode
+			if matchesQuote(opened, r) {
+				state = stateWord
+			} else {
 				word = append(word, r)
 			}
-		case 2: // quoted section
+		case stateIntraWordQuoted: // quoted section within a word
+			// if we close a quoted section, switch
+			// back to normal word mode
 			if matchesQuote(opened, r) {
-				state = 0
+				state = stateWord
 			}
 			word = append(word, r)
 		}
