@@ -83,8 +83,10 @@ func TestWriterLabels(t *testing.T) {
 
 func TestFormatTimestamp(t *testing.T) {
 	assert := assert.New(t)
+	pstTz, err := time.LoadLocation("America/Los_Angeles")
+	assert.Nil(err)
 
-	tsValues := [7]time.Time{
+	tsValues := [8]time.Time{
 		time.Date(2019, time.February, 19, 15, 12, 47, 123000000, time.UTC),
 		time.Date(2019, time.February, 19, 15, 12, 47, 123400000, time.UTC),
 		time.Date(2019, time.February, 19, 15, 12, 47, 123450000, time.UTC),
@@ -92,8 +94,9 @@ func TestFormatTimestamp(t *testing.T) {
 		time.Date(2019, time.February, 19, 15, 12, 47, 123456700, time.UTC),
 		time.Date(2019, time.February, 19, 15, 12, 47, 123456780, time.UTC),
 		time.Date(2019, time.February, 19, 15, 12, 47, 123456789, time.UTC),
+		time.Date(2019, time.February, 19, 7, 12, 47, 123456789, pstTz),
 	}
-	expectedLogs := [7]string{
+	expectedLogs := [8]string{
 		"2019-02-19T15:12:47.123Z       [error] test string\n",
 		"2019-02-19T15:12:47.1234Z      [error] test string\n",
 		"2019-02-19T15:12:47.12345Z     [error] test string\n",
@@ -101,6 +104,7 @@ func TestFormatTimestamp(t *testing.T) {
 		"2019-02-19T15:12:47.1234567Z   [error] test string\n",
 		"2019-02-19T15:12:47.12345678Z  [error] test string\n",
 		"2019-02-19T15:12:47.123456789Z [error] test string\n",
+		"2019-02-19T07:12:47.123456789-08:00 [error] test string\n",
 	}
 
 	for i, ts := range tsValues {
