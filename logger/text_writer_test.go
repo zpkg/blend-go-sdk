@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"strings"
 	"testing"
+	"time"
 
 	"github.com/blend/go-sdk/assert"
 )
@@ -78,4 +79,37 @@ func TestWriterLabels(t *testing.T) {
 	writer.useColor = false
 	writer.WriteError(Messagef(Error, "test %s", "string").WithLabel("foo", "bar").WithLabel("moo", "boo"))
 	assert.True(strings.HasPrefix(buffer.String(), "[error] test string"))
+}
+
+func TestFormatTimestamp(t *testing.T) {
+	assert := assert.New(t)
+
+	tsValues := [7]time.Time{
+		time.Date(2019, time.February, 19, 15, 12, 47, 123000000, time.UTC),
+		time.Date(2019, time.February, 19, 15, 12, 47, 123400000, time.UTC),
+		time.Date(2019, time.February, 19, 15, 12, 47, 123450000, time.UTC),
+		time.Date(2019, time.February, 19, 15, 12, 47, 123456000, time.UTC),
+		time.Date(2019, time.February, 19, 15, 12, 47, 123456700, time.UTC),
+		time.Date(2019, time.February, 19, 15, 12, 47, 123456780, time.UTC),
+		time.Date(2019, time.February, 19, 15, 12, 47, 123456789, time.UTC),
+	}
+	expectedLogs := [7]string{
+		"2019-02-19T15:12:47.123Z       [error] test string\n",
+		"2019-02-19T15:12:47.1234Z      [error] test string\n",
+		"2019-02-19T15:12:47.12345Z     [error] test string\n",
+		"2019-02-19T15:12:47.123456Z    [error] test string\n",
+		"2019-02-19T15:12:47.1234567Z   [error] test string\n",
+		"2019-02-19T15:12:47.12345678Z  [error] test string\n",
+		"2019-02-19T15:12:47.123456789Z [error] test string\n",
+	}
+
+	for i, ts := range tsValues {
+		expected := expectedLogs[i]
+		buffer := bytes.NewBuffer(nil)
+		writer := NewTextWriter(buffer)
+		writer.showTimestamp = true
+		writer.useColor = false
+		writer.WriteError(Messagef(Error, "test %s", "string").WithTimestamp(ts))
+		assert.Equal(string(buffer.Bytes()), expected)
+	}
 }
