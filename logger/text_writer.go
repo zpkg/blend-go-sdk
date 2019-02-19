@@ -217,7 +217,7 @@ func (wr *TextWriter) FormatTimestamp(optionalTime ...time.Time) string {
 	} else {
 		value = time.Now().UTC().Format(timeFormat)
 	}
-	return wr.Colorize(fmt.Sprintf("%-27s", value), ColorGray)
+	return wr.Colorize(fmt.Sprintf("%-30s", value), ColorGray)
 }
 
 // GetBuffer returns a leased buffer from the buffer pool.
