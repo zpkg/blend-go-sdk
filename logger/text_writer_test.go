@@ -114,6 +114,6 @@ func TestFormatTimestamp(t *testing.T) {
 		writer.showTimestamp = true
 		writer.useColor = false
 		writer.WriteError(Messagef(Error, "test %s", "string").WithTimestamp(ts))
-		assert.Equal(string(buffer.Bytes()), expected)
+		assert.Equal(buffer.String(), expected)
 	}
 }
