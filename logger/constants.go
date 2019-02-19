@@ -24,8 +24,9 @@ const (
 	// DefaultBufferPoolSize is the default buffer pool size.
 	DefaultBufferPoolSize = 1 << 8 // 256
 
-	// DefaultTextTimeFormat is the default time format.
-	DefaultTextTimeFormat = time.RFC3339Nano
+	// DefaultTextTimeFormat is the default time format. This is
+	// `time.RFC3339Nano` but does not remove trailing zeros.
+	DefaultTextTimeFormat = "2006-01-02T15:04:05.000000000Z07:00"
 
 	// DefaultTextWriterUseColor is a default setting for writers.
 	DefaultTextWriterUseColor = true
