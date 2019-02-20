@@ -9,6 +9,7 @@ import (
 
 	"github.com/blend/go-sdk/configutil"
 	"github.com/blend/go-sdk/cron"
+	"github.com/blend/go-sdk/env"
 	"github.com/blend/go-sdk/graceful"
 	"github.com/blend/go-sdk/jobkit"
 	"github.com/blend/go-sdk/logger"
@@ -16,7 +17,7 @@ import (
 	"github.com/blend/go-sdk/stringutil"
 )
 
-var name = flag.String("name", stringutil.Letters.Random(8), "The name of the job")
+var name = flag.String("name", "", "The name of the job")
 var exec = flag.String("exec", "", "The command to execute")
 var bind = flag.String("bind", "", "The address and port to bind the management server to (ex: 127.0.0.1:9000")
 var schedule = flag.String("schedule", "", "The job schedule as a cron string (i.e. 7 space delimited components)")
@@ -30,7 +31,7 @@ type jobConfig struct {
 
 func (jc *jobConfig) Resolve() error {
 	return configutil.AnyError(
-		configutil.Set(&jc.Name, configutil.Const(*name), configutil.Const(jc.Name)),
+		configutil.Set(&jc.Name, configutil.Const(*name), configutil.Const(env.Env().ServiceName()), configutil.Const(jc.Name), configutil.Const(stringutil.Letters.Random(8))),
 		configutil.Set(&jc.Schedule, configutil.Const(*schedule), configutil.Const(jc.Schedule)),
 		configutil.SetDuration(&jc.Timeout, configutil.DurationConst(*timeout), configutil.DurationConst(jc.Timeout)),
 		configutil.Set(&jc.Web.BindAddr, configutil.Const(*bind), configutil.Const(jc.Web.BindAddr)),
