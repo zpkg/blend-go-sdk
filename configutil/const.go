@@ -16,6 +16,9 @@ type Const string
 // Value returns the value for a constant.
 func (cv Const) Value() (*string, error) {
 	value := string(cv)
+	if value == "" {
+		return nil, nil
+	}
 	return &value, nil
 }
 
