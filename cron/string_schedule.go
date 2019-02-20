@@ -33,11 +33,20 @@ You can also use shorthands for the cron string:
 	@weekly is equivalent to "0 0 0 * * 0 *"
 	@daily is equivalent to "0 0 0 * * * *"
 	@hourly is equivalent to "0 0 * * * * *"
+	@every xyz will parse the `xyz` value as a duration and return an every schedule for that
 */
-func ParseString(cronString string) (*StringSchedule, error) {
+func ParseString(cronString string) (Schedule, error) {
 	// escape shorthands.
 	if shorthand, ok := StringScheduleShorthands[strings.TrimSpace(cronString)]; ok {
 		cronString = shorthand
+	}
+
+	if strings.HasPrefix(cronString, "@every") {
+		duration, err := time.ParseDuration(strings.TrimSpace(strings.TrimPrefix(cronString, "@every")))
+		if err != nil {
+			return nil, exception.New(ErrStringScheduleInvalid).WithInner(err)
+		}
+		return Every(duration), nil
 	}
 
 	parts := stringutil.SplitSpace(cronString)
