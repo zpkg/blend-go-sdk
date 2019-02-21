@@ -75,46 +75,136 @@ type SyncTriggerable interface {
 	SyncTrigger(Event)
 }
 
+// InfofReceiver is a type that defines Infof.
+type InfofReceiver interface {
+	Infof(string, ...interface{})
+}
+
+// SillyfReceiver is a type that defines Sillyf.
+type SillyfReceiver interface {
+	Sillyf(string, ...interface{})
+}
+
+// DebugfReceiver is a type that defines Debugf.
+type DebugfReceiver interface {
+	Debugf(string, ...interface{})
+}
+
 // OutputReceiver is an interface
 type OutputReceiver interface {
-	Infof(string, ...interface{})
-	Sillyf(string, ...interface{})
-	Debugf(string, ...interface{})
+	InfofReceiver
+	SillyfReceiver
+	DebugfReceiver
+}
+
+// SyncInfofReceiver is a type that defines SyncInfof.
+type SyncInfofReceiver interface {
+	SyncInfof(string, ...interface{})
+}
+
+// SyncSillyfReceiver is a type that defines SyncSillyf.
+type SyncSillyfReceiver interface {
+	SyncSillyf(string, ...interface{})
+}
+
+// SyncDebugfReceiver is a type that defines SyncDebugf.
+type SyncDebugfReceiver interface {
+	SyncDebugf(string, ...interface{})
 }
 
 // SyncOutputReceiver is an interface
 type SyncOutputReceiver interface {
-	SyncInfof(string, ...interface{})
-	SyncSillyf(string, ...interface{})
-	SyncDebugf(string, ...interface{})
+	SyncInfofReceiver
+	SyncSillyfReceiver
+	SyncDebugfReceiver
+}
+
+// WarningfReceiver is a type that defines Warningf.
+type WarningfReceiver interface {
+	Warningf(string, ...interface{})
+}
+
+// ErrorfReceiver is a type that defines Errorf.
+type ErrorfReceiver interface {
+	Errorf(string, ...interface{})
+}
+
+// FatalfReceiver is a type that defines Fatalf.
+type FatalfReceiver interface {
+	Fatalf(string, ...interface{})
 }
 
 // ErrorOutputReceiver is an interface
 type ErrorOutputReceiver interface {
-	Warningf(string, ...interface{})
-	Errorf(string, ...interface{})
-	Fatalf(string, ...interface{})
+	WarningfReceiver
+	ErrorfReceiver
+	FatalfReceiver
 }
 
-// SyncErrorOutputReceiver is an interface
-type SyncErrorOutputReceiver interface {
+// SyncWarningfReceiver is a type that defines SyncWarningf.
+type SyncWarningfReceiver interface {
 	SyncWarningf(string, ...interface{})
+}
+
+// SyncErrorffReceiver is a type that defines SyncErrorf.
+type SyncErrorffReceiver interface {
 	SyncErrorf(string, ...interface{})
+}
+
+// SyncFatalfReceiver is a type that defines SyncFatalf.
+type SyncFatalfReceiver interface {
 	SyncFatalf(string, ...interface{})
 }
 
-// ErrorReceiver is an interface
-type ErrorReceiver interface {
+// SyncErrorOutputReceiver is an interface.
+type SyncErrorOutputReceiver interface {
+	SyncWarningfReceiver
+	SyncErrorffReceiver
+	SyncFatalfReceiver
+}
+
+// WarningReceiver is a type that defines Warning.
+type WarningReceiver interface {
 	Warning(error) error
+}
+
+// ErrorReceiver is a type that defines Error.
+type ErrorReceiver interface {
 	Error(error) error
+}
+
+// FatalReceiver is a type that defines Fatal.
+type FatalReceiver interface {
 	Fatal(error) error
 }
 
-// SyncErrorReceiver is an interface
-type SyncErrorReceiver interface {
+// Errorable is an interface
+type Errorable interface {
+	WarningReceiver
+	ErrorReceiver
+	FatalReceiver
+}
+
+// SyncWarningReceiver is a type that defines SyncWarning.
+type SyncWarningReceiver interface {
 	SyncWarning(error) error
+}
+
+// SyncErrorReceiver is a type that defines SyncError.
+type SyncErrorReceiver interface {
 	SyncError(error) error
+}
+
+// SyncFatalReceiver is a type that defines SyncFatal.
+type SyncFatalReceiver interface {
 	SyncFatal(error) error
+}
+
+// SyncErrorable is an interface
+type SyncErrorable interface {
+	SyncWarningReceiver
+	SyncErrorReceiver
+	SyncFatalReceiver
 }
 
 // SubContextable is a type that can spawn subcontexts.
@@ -128,7 +218,7 @@ type SyncLogger interface {
 	SyncTriggerable
 	SyncOutputReceiver
 	SyncErrorOutputReceiver
-	SyncErrorReceiver
+	SyncErrorable
 }
 
 // AsyncLogger is a logger that implements async methods.
@@ -137,7 +227,7 @@ type AsyncLogger interface {
 	Triggerable
 	OutputReceiver
 	ErrorOutputReceiver
-	ErrorReceiver
+	Errorable
 }
 
 // FullReceiver is every possible receiving / output interface.
@@ -145,11 +235,11 @@ type FullReceiver interface {
 	SyncTriggerable
 	SyncOutputReceiver
 	SyncErrorOutputReceiver
-	SyncErrorReceiver
+	SyncErrorable
 	Triggerable
 	OutputReceiver
 	ErrorOutputReceiver
-	ErrorReceiver
+	Errorable
 }
 
 // FullLogger is every possible interface, including listenable.
@@ -159,11 +249,11 @@ type FullLogger interface {
 	SyncTriggerable
 	SyncOutputReceiver
 	SyncErrorOutputReceiver
-	SyncErrorReceiver
+	SyncErrorable
 	Triggerable
 	OutputReceiver
 	ErrorOutputReceiver
-	ErrorReceiver
+	Errorable
 }
 
 // Log is an alias to full logger.

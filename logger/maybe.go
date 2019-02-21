@@ -17,7 +17,7 @@ func MaybeSyncTrigger(log SyncTriggerable, e Event) {
 }
 
 // MaybeInfof triggers Infof if the logger is set.
-func MaybeInfof(log OutputReceiver, format string, args ...interface{}) {
+func MaybeInfof(log InfofReceiver, format string, args ...interface{}) {
 	if log == nil {
 		return
 	}
@@ -25,7 +25,7 @@ func MaybeInfof(log OutputReceiver, format string, args ...interface{}) {
 }
 
 // MaybeSyncInfof triggers SyncInfof if the logger is set.
-func MaybeSyncInfof(log SyncOutputReceiver, format string, args ...interface{}) {
+func MaybeSyncInfof(log SyncInfofReceiver, format string, args ...interface{}) {
 	if log == nil {
 		return
 	}
@@ -33,7 +33,7 @@ func MaybeSyncInfof(log SyncOutputReceiver, format string, args ...interface{}) 
 }
 
 // MaybeDebugf triggers Debugf if the logger is set.
-func MaybeDebugf(log OutputReceiver, format string, args ...interface{}) {
+func MaybeDebugf(log DebugfReceiver, format string, args ...interface{}) {
 	if log == nil {
 		return
 	}
@@ -41,15 +41,31 @@ func MaybeDebugf(log OutputReceiver, format string, args ...interface{}) {
 }
 
 // MaybeSyncDebugf triggers SyncDebugf if the logger is set.
-func MaybeSyncDebugf(log SyncOutputReceiver, format string, args ...interface{}) {
+func MaybeSyncDebugf(log SyncDebugfReceiver, format string, args ...interface{}) {
 	if log == nil {
 		return
 	}
 	log.SyncDebugf(format, args...)
 }
 
+// MaybeSillyf triggers Sillyf if the logger is set.
+func MaybeSillyf(log SillyfReceiver, format string, args ...interface{}) {
+	if log == nil {
+		return
+	}
+	log.Sillyf(format, args...)
+}
+
+// MaybeSyncSillyf triggers SyncSillyf if the logger is set.
+func MaybeSyncSillyf(log SyncSillyfReceiver, format string, args ...interface{}) {
+	if log == nil {
+		return
+	}
+	log.SyncSillyf(format, args...)
+}
+
 // MaybeWarningf triggers Warningf if the logger is set.
-func MaybeWarningf(log ErrorOutputReceiver, format string, args ...interface{}) {
+func MaybeWarningf(log WarningfReceiver, format string, args ...interface{}) {
 	if log == nil {
 		return
 	}
@@ -57,7 +73,7 @@ func MaybeWarningf(log ErrorOutputReceiver, format string, args ...interface{}) 
 }
 
 // MaybeSyncWarningf triggers SyncWarningf if the logger is set.
-func MaybeSyncWarningf(log SyncErrorOutputReceiver, format string, args ...interface{}) {
+func MaybeSyncWarningf(log SyncWarningfReceiver, format string, args ...interface{}) {
 	if log == nil {
 		return
 	}
@@ -65,7 +81,7 @@ func MaybeSyncWarningf(log SyncErrorOutputReceiver, format string, args ...inter
 }
 
 // MaybeWarning triggers Warning if the logger is set.
-func MaybeWarning(log ErrorReceiver, err error) {
+func MaybeWarning(log WarningReceiver, err error) {
 	if log == nil || err == nil {
 		return
 	}
@@ -73,7 +89,7 @@ func MaybeWarning(log ErrorReceiver, err error) {
 }
 
 // MaybeSyncWarning triggers SyncWarning if the logger is set.
-func MaybeSyncWarning(log SyncErrorReceiver, err error) {
+func MaybeSyncWarning(log SyncWarningReceiver, err error) {
 	if log == nil || err == nil {
 		return
 	}
@@ -81,7 +97,7 @@ func MaybeSyncWarning(log SyncErrorReceiver, err error) {
 }
 
 // MaybeErrorf triggers Errorf if the logger is set.
-func MaybeErrorf(log ErrorOutputReceiver, format string, args ...interface{}) {
+func MaybeErrorf(log ErrorfReceiver, format string, args ...interface{}) {
 	if log == nil {
 		return
 	}
@@ -89,7 +105,7 @@ func MaybeErrorf(log ErrorOutputReceiver, format string, args ...interface{}) {
 }
 
 // MaybeSyncErrorf triggers SyncErrorf if the logger is set.
-func MaybeSyncErrorf(log SyncErrorOutputReceiver, format string, args ...interface{}) {
+func MaybeSyncErrorf(log SyncErrorffReceiver, format string, args ...interface{}) {
 	if log == nil {
 		return
 	}
@@ -113,7 +129,7 @@ func MaybeSyncError(log SyncErrorReceiver, err error) {
 }
 
 // MaybeFatalf triggers Fatalf if the logger is set.
-func MaybeFatalf(log ErrorOutputReceiver, format string, args ...interface{}) {
+func MaybeFatalf(log FatalfReceiver, format string, args ...interface{}) {
 	if log == nil {
 		return
 	}
@@ -121,7 +137,7 @@ func MaybeFatalf(log ErrorOutputReceiver, format string, args ...interface{}) {
 }
 
 // MaybeSyncFatalf triggers SyncFatalf if the logger is set.
-func MaybeSyncFatalf(log SyncErrorOutputReceiver, format string, args ...interface{}) {
+func MaybeSyncFatalf(log SyncFatalfReceiver, format string, args ...interface{}) {
 	if log == nil {
 		return
 	}
@@ -129,7 +145,7 @@ func MaybeSyncFatalf(log SyncErrorOutputReceiver, format string, args ...interfa
 }
 
 // MaybeFatal triggers Fatal if the logger is set.
-func MaybeFatal(log ErrorReceiver, err error) {
+func MaybeFatal(log FatalReceiver, err error) {
 	if log == nil || err == nil {
 		return
 	}
@@ -137,7 +153,7 @@ func MaybeFatal(log ErrorReceiver, err error) {
 }
 
 // MaybeSyncFatal triggers SyncFatal if the logger is set.
-func MaybeSyncFatal(log SyncErrorReceiver, err error) {
+func MaybeSyncFatal(log SyncFatalReceiver, err error) {
 	if log == nil || err == nil {
 		return
 	}
