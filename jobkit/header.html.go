@@ -338,8 +338,7 @@ var headerTemplate = `
 		p,
 		ul,
 		ol,
-		form {
-		margin-bottom: 2.5rem; }
+		form { margin: 0; }
 
 
 		/* Utilities

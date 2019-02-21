@@ -452,3 +452,25 @@ func TestJobManagerStatusRunning(t *testing.T) {
 	close(jobShouldProceed)
 	<-jobDidRun
 }
+
+func TestJobManagerEnableDisableJob(t *testing.T) {
+	assert := assert.New(t)
+
+	name := "enable-disable-test"
+	jm := New()
+	jm.LoadJob(NewJob(name, noop))
+
+	j, err := jm.Job(name)
+	assert.Nil(err)
+	assert.False(j.Disabled)
+
+	jm.DisableJob(name)
+	j, err = jm.Job(name)
+	assert.Nil(err)
+	assert.True(j.Disabled)
+
+	jm.EnableJob(name)
+	j, err = jm.Job(name)
+	assert.Nil(err)
+	assert.False(j.Disabled)
+}
