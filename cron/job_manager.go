@@ -173,7 +173,7 @@ func (jm *JobManager) EnableJob(jobName string) error {
 	if !ok {
 		return exception.New(ErrJobNotFound).WithMessagef("job: %s", jobName)
 	}
-	job.Disable()
+	job.Enable()
 	return nil
 }
 

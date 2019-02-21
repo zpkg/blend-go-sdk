@@ -14,6 +14,7 @@ var indexTemplate = `
 				<th>Last Ran</th>
 				<th>Last Result</th>
 				<th>Last Elapsed</th>
+				<th>Actions</th>
 			</tr>
 		</thead>
 		<tbody>
@@ -24,14 +25,18 @@ var indexTemplate = `
 				</td>
 				<td> <!-- job status -->
 				{{ if $job.Disabled }}
-					<span class="danger">Disabled</span>
+					<form method="POST" action="/job.enable/{{ $job.Name }}">
+						<input type="submit" class="button" value="Enable" />
+					</form>
 				{{else}}
-					<span class="primary">Enabled</span>
+					<form method="POST" action="/job.disable/{{ $job.Name }}">
+						<input type="submit" class="button" value="Disable" />
+					</form>
 				{{end}}
 				</td>
 				<td> <!-- job status -->
 				{{ if $job.Current }}
-					{{ since_utc $job.Current.Started }}
+					{{ $job.Current.Started | since_utc }}
 				{{else}}
 					<span>-</span>
 				{{end}}
@@ -64,9 +69,20 @@ var indexTemplate = `
 					<span class="none">-</span>
 				{{ end }}
 				</td>
+				<td><!-- actions -->
+				{{ if $job.Current }}
+				<form method="POST" action="/job.cancel/{{ $job.Name }}">
+					<input type="submit" class="button button-danger" value="Cancel" />
+				</form>
+				{{else}}
+				<form method="POST" action="/job.run/{{ $job.Name }}">
+					<input type="submit" class="button button-primary" value="Run" />
+				</form>
+				{{end}}
+				</td>
 			</tr>
 			<tr>
-				<td colspan=7>
+				<td colspan=8>
 					<h4>History</h4>
 					<table class="u-full-width small-text">
 						<thead>

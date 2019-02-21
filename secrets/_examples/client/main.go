@@ -1,31 +1,35 @@
 package main
 
 import (
+	"context"
+
 	"github.com/blend/go-sdk/logger"
 	"github.com/blend/go-sdk/secrets"
 )
 
 func main() {
-	log := logger.All()
+	log := logger.Sync()
 	client := secrets.Must(secrets.NewFromEnv()).WithLogger(log)
 
 	key := "cubbyhole/willtest"
 
-	if err := client.Put(key, secrets.Values{"value": "THE FOOOS"}); err != nil {
+	ctx := context.Background()
+
+	if err := client.Put(ctx, key, secrets.Values{"value": "THE FOOOS"}); err != nil {
 		log.SyncFatalExit(err)
 	}
-	if err := client.Put(key, secrets.Values{"value": "THE BUZZ"}); err != nil {
+	if err := client.Put(ctx, key, secrets.Values{"value": "THE BUZZ"}); err != nil {
 		log.SyncFatalExit(err)
 	}
 
-	values, err := client.Get(key)
+	values, err := client.Get(ctx, key)
 	if err != nil {
 		log.SyncFatalExit(err)
 	}
-	log.Infof("values: %#v", values)
+	log.SyncInfof("values: %#v", values)
 
-	if err := client.Delete(key); err != nil {
+	if err := client.Delete(ctx, key); err != nil {
 		log.SyncFatalExit(err)
 	}
-	log.Infof("~fin~")
+	log.SyncInfof("~fin~")
 }

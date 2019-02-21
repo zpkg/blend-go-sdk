@@ -1,6 +1,7 @@
 package secrets
 
 import (
+	"context"
 	"encoding/json"
 	"path/filepath"
 	"strings"
@@ -16,12 +17,12 @@ type kv2 struct {
 	client *VaultClient
 }
 
-func (kv2 kv2) Put(key string, data Values, options ...Option) error {
+func (kv2 kv2) Put(ctx context.Context, key string, data Values, options ...Option) error {
 	contents, err := kv2.client.jsonBody(SecretData{Data: data})
 	if err != nil {
 		return err
 	}
-	req := kv2.client.createRequest(MethodPut, filepath.Join("/v1/", kv2.fixSecretDataPrefix(key)), options...)
+	req := kv2.client.createRequest(MethodPut, filepath.Join("/v1/", kv2.fixSecretDataPrefix(key)), options...).WithContext(ctx)
 	req.Body = contents
 	res, err := kv2.client.send(req)
 	if err != nil {
@@ -31,8 +32,8 @@ func (kv2 kv2) Put(key string, data Values, options ...Option) error {
 	return nil
 }
 
-func (kv2 kv2) Get(key string, options ...Option) (Values, error) {
-	req := kv2.client.createRequest(MethodGet, filepath.Join("/v1/", kv2.fixSecretDataPrefix(key)), options...)
+func (kv2 kv2) Get(ctx context.Context, key string, options ...Option) (Values, error) {
+	req := kv2.client.createRequest(MethodGet, filepath.Join("/v1/", kv2.fixSecretDataPrefix(key)), options...).WithContext(ctx)
 	res, err := kv2.client.send(req)
 	if err != nil {
 		return nil, err
@@ -47,8 +48,9 @@ func (kv2 kv2) Get(key string, options ...Option) (Values, error) {
 }
 
 // Delete puts a key.
-func (kv2 kv2) Delete(key string, options ...Option) error {
-	req := kv2.client.createRequest(MethodDelete, filepath.Join("/v1/", kv2.fixSecretDataPrefix(key)), options...)
+func (kv2 kv2) Delete(ctx context.Context, key string, options ...Option) error {
+	req := kv2.client.createRequest(MethodDelete, filepath.Join("/v1/", kv2.fixSecretDataPrefix(key)), options...).WithContext(ctx)
+
 	res, err := kv2.client.send(req)
 	if err != nil {
 		return err

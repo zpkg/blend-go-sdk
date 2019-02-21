@@ -35,6 +35,16 @@ func NewManagementServer(jm *cron.JobManager, cfg *Config) *web.App {
 		}
 		return web.JSON.Result(status)
 	})
+	app.POST("/job.run/:jobName", func(r *web.Ctx) web.Result {
+		jobName, err := r.RouteParam("jobName")
+		if err != nil {
+			return r.View().BadRequest(err)
+		}
+		if err := jm.RunJob(jobName); err != nil {
+			return r.View().BadRequest(err)
+		}
+		return r.RedirectWithMethod("GET", "/")
+	})
 	app.POST("/api/job.run/:jobName", func(r *web.Ctx) web.Result {
 		jobName, err := r.RouteParam("jobName")
 		if err != nil {
@@ -55,6 +65,16 @@ func NewManagementServer(jm *cron.JobManager, cfg *Config) *web.App {
 		}
 		return web.JSON.OK()
 	})
+	app.POST("/job.cancel/:jobName", func(r *web.Ctx) web.Result {
+		jobName, err := r.RouteParam("jobName")
+		if err != nil {
+			return r.View().BadRequest(err)
+		}
+		if err := jm.CancelJob(jobName); err != nil {
+			return r.View().BadRequest(err)
+		}
+		return r.RedirectWithMethod("GET", "/")
+	})
 	app.POST("/api/job.disable/:jobName", func(r *web.Ctx) web.Result {
 		jobName, err := r.RouteParam("jobName")
 		if err != nil {
@@ -65,6 +85,16 @@ func NewManagementServer(jm *cron.JobManager, cfg *Config) *web.App {
 		}
 		return web.JSON.Result(fmt.Sprintf("%s disabled", jobName))
 	})
+	app.POST("/job.disable/:jobName", func(r *web.Ctx) web.Result {
+		jobName, err := r.RouteParam("jobName")
+		if err != nil {
+			return r.View().BadRequest(err)
+		}
+		if err := jm.DisableJob(jobName); err != nil {
+			return r.View().BadRequest(err)
+		}
+		return r.RedirectWithMethod("GET", "/")
+	})
 	app.POST("/api/job.enable/:jobName", func(r *web.Ctx) web.Result {
 		jobName, err := r.RouteParam("jobName")
 		if err != nil {
@@ -74,6 +104,16 @@ func NewManagementServer(jm *cron.JobManager, cfg *Config) *web.App {
 			return web.JSON.BadRequest(err)
 		}
 		return web.JSON.Result(fmt.Sprintf("%s enabled", jobName))
+	})
+	app.POST("/job.enable/:jobName", func(r *web.Ctx) web.Result {
+		jobName, err := r.RouteParam("jobName")
+		if err != nil {
+			return r.View().BadRequest(err)
+		}
+		if err := jm.EnableJob(jobName); err != nil {
+			return r.View().BadRequest(err)
+		}
+		return r.RedirectWithMethod("GET", "/")
 	})
 	return app
 }

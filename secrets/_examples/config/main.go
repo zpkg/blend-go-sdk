@@ -1,6 +1,7 @@
 package main
 
 import (
+	"context"
 	"encoding/base64"
 	"fmt"
 
@@ -20,7 +21,7 @@ func main() {
 	client := secrets.Must(secrets.NewFromEnv()).WithLogger(log)
 
 	keyPath := "configTest"
-	err := client.WriteInto(keyPath, myConfig{
+	err := client.WriteInto(context.TODO(), keyPath, myConfig{
 		Environment: "test",
 		Version:     "wont be in output",
 		Secret:      base64.StdEncoding.EncodeToString([]byte("a super secure one")),
@@ -30,7 +31,7 @@ func main() {
 	}
 
 	var cfg myConfig
-	err = client.ReadInto(keyPath, &cfg)
+	err = client.ReadInto(context.TODO(), keyPath, &cfg)
 	if err != nil {
 		log.SyncFatalExit(err)
 	}

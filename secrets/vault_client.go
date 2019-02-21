@@ -1,6 +1,7 @@
 package secrets
 
 import (
+	"context"
 	"crypto/tls"
 	"encoding/json"
 	"io"
@@ -158,37 +159,37 @@ func (c *VaultClient) Logger() logger.Log {
 }
 
 // Put puts a value.
-func (c *VaultClient) Put(key string, data Values, options ...Option) error {
-	backend, err := c.backend(key)
+func (c *VaultClient) Put(ctx context.Context, key string, data Values, options ...Option) error {
+	backend, err := c.backend(ctx, key)
 	if err != nil {
 		return err
 	}
 
-	return backend.Put(key, data, options...)
+	return backend.Put(ctx, key, data, options...)
 }
 
 // Get gets a value at a given key.
-func (c *VaultClient) Get(key string, options ...Option) (Values, error) {
-	backend, err := c.backend(key)
+func (c *VaultClient) Get(ctx context.Context, key string, options ...Option) (Values, error) {
+	backend, err := c.backend(ctx, key)
 	if err != nil {
 		return nil, err
 	}
 
-	return backend.Get(key, options...)
+	return backend.Get(ctx, key, options...)
 }
 
 // Delete puts a key.
-func (c *VaultClient) Delete(key string, options ...Option) error {
-	backend, err := c.backend(key)
+func (c *VaultClient) Delete(ctx context.Context, key string, options ...Option) error {
+	backend, err := c.backend(ctx, key)
 	if err != nil {
 		return err
 	}
-	return backend.Delete(key, options...)
+	return backend.Delete(ctx, key, options...)
 }
 
 // ReadInto reads a secret into an object.
-func (c *VaultClient) ReadInto(key string, obj interface{}, options ...Option) error {
-	response, err := c.Get(key, options...)
+func (c *VaultClient) ReadInto(ctx context.Context, key string, obj interface{}, options ...Option) error {
+	response, err := c.Get(ctx, key, options...)
 	if err != nil {
 		return err
 	}
@@ -196,20 +197,20 @@ func (c *VaultClient) ReadInto(key string, obj interface{}, options ...Option) e
 }
 
 // WriteInto writes an object into a secret at a given key.
-func (c *VaultClient) WriteInto(key string, obj interface{}, options ...Option) error {
+func (c *VaultClient) WriteInto(ctx context.Context, key string, obj interface{}, options ...Option) error {
 	data, err := DecomposeJSON(obj)
 	if err != nil {
 		return err
 	}
-	return c.Put(key, data, options...)
+	return c.Put(ctx, key, data, options...)
 }
 
 // --------------------------------------------------------------------------------
 // utility methods
 // --------------------------------------------------------------------------------
 
-func (c *VaultClient) backend(key string) (KV, error) {
-	version, err := c.getVersion(key)
+func (c *VaultClient) backend(ctx context.Context, key string) (KV, error) {
+	version, err := c.getVersion(ctx, key)
 	if err != nil {
 		return nil, err
 	}
@@ -223,16 +224,17 @@ func (c *VaultClient) backend(key string) (KV, error) {
 	}
 }
 
-func (c *VaultClient) getVersion(key string) (string, error) {
-	meta, err := c.getMountMeta(filepath.Join(c.mount, key))
+func (c *VaultClient) getVersion(ctx context.Context, key string) (string, error) {
+	meta, err := c.getMountMeta(ctx, filepath.Join(c.mount, key))
 	if err != nil {
 		return "", err
 	}
 	return meta.Data.Options["version"], nil
 }
 
-func (c *VaultClient) getMountMeta(key string) (*MountResponse, error) {
+func (c *VaultClient) getMountMeta(ctx context.Context, key string) (*MountResponse, error) {
 	req := c.createRequest(MethodGet, filepath.Join("/v1/sys/internal/ui/mounts/", key))
+	req = req.WithContext(ctx)
 
 	res, err := c.client.Do(req)
 	if err != nil {

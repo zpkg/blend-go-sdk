@@ -2,6 +2,7 @@ package secrets
 
 import (
 	"bytes"
+	"context"
 	"fmt"
 	"io/ioutil"
 	"testing"
@@ -11,6 +12,7 @@ import (
 
 func TestVaultClientBackend(t *testing.T) {
 	assert := assert.New(t)
+	todo := context.TODO()
 
 	client, err := NewVaultClient()
 	assert.Nil(err)
@@ -20,13 +22,14 @@ func TestVaultClientBackend(t *testing.T) {
 	m := NewMockHTTPClient().WithString("GET", MustURL("%s/v1/sys/internal/ui/mounts/secret/foo/bar", client.Remote().String()), mountMetaJSON)
 	client.WithHTTPClient(m)
 
-	backend, err := client.backend("foo/bar")
+	backend, err := client.backend(todo, "foo/bar")
 	assert.Nil(err)
 	assert.NotNil(backend)
 }
 
 func TestVaultClientGetVersion(t *testing.T) {
 	assert := assert.New(t)
+	todo := context.TODO()
 
 	client, err := NewVaultClient()
 	assert.Nil(err)
@@ -39,19 +42,20 @@ func TestVaultClientGetVersion(t *testing.T) {
 
 	client.WithHTTPClient(m)
 
-	version, err := client.getVersion("foo/bar")
+	version, err := client.getVersion(todo, "foo/bar")
 	assert.Nil(err)
 	assert.Equal(Version1, version)
 
 	m.WithString("GET", MustURL("%s/v1/sys/internal/ui/mounts/secret/foo/bar", client.Remote().String()), mountMetaJSONV2)
 
-	version, err = client.getVersion("foo/bar")
+	version, err = client.getVersion(todo, "foo/bar")
 	assert.Nil(err)
 	assert.Equal(Version2, version)
 }
 
 func TestVaultClientGetMountMeta(t *testing.T) {
 	assert := assert.New(t)
+	todo := context.TODO()
 
 	client, err := NewVaultClient()
 	assert.Nil(err)
@@ -61,7 +65,7 @@ func TestVaultClientGetMountMeta(t *testing.T) {
 	m := NewMockHTTPClient().WithString("GET", MustURL("%s/v1/sys/internal/ui/mounts/secret/foo/bar", client.Remote().String()), mountMetaJSON)
 	client.WithHTTPClient(m)
 
-	mountMeta, err := client.getMountMeta("secret/foo/bar")
+	mountMeta, err := client.getMountMeta(todo, "secret/foo/bar")
 	assert.Nil(err)
 	assert.NotNil(mountMeta)
 	assert.Equal(Version2, mountMeta.Data.Options["version"])
