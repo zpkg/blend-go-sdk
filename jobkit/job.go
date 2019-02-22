@@ -27,14 +27,6 @@ var (
 	_ cron.OnEnabledReceiver      = (*Job)(nil)
 )
 
-// NewJob creates a new exec job.
-func NewJob(action func(context.Context) error) *Job {
-	return &Job{
-		config: &JobConfig{},
-		action: action,
-	}
-}
-
 // Job is the main job body.
 type Job struct {
 	name   string
@@ -214,5 +206,5 @@ func (job Job) notify(ctx context.Context, flag logger.Flag) {
 
 // Execute is the job body.
 func (job Job) Execute(ctx context.Context) error {
-	return job.action(ctx)
+	return job.action(WithJobInvocationState(ctx, NewJobInvocationState()))
 }

@@ -14,8 +14,8 @@ import (
 	"github.com/blend/go-sdk/stats"
 )
 
-// New returns a new job.
-func New(jobConfig *JobConfig, cfg *Config, action func(context.Context) error) (*Job, error) {
+// NewJob returns a new job.
+func NewJob(jobConfig *JobConfig, kitConfig *Config, action func(context.Context) error) (*Job, error) {
 	schedule, err := cron.ParseString(jobConfig.ScheduleOrDefault())
 	if err != nil {
 		return nil, err
@@ -23,26 +23,26 @@ func New(jobConfig *JobConfig, cfg *Config, action func(context.Context) error) 
 
 	// set up myriad of notification targets
 	var emailClient email.Sender
-	if !cfg.AWS.IsZero() {
-		emailClient = ses.New(aws.MustNewSession(&cfg.AWS))
+	if !kitConfig.AWS.IsZero() {
+		emailClient = ses.New(aws.MustNewSession(&kitConfig.AWS))
 	}
 	var slackClient slack.Sender
-	if !cfg.Slack.IsZero() {
-		slackClient = slack.New(&cfg.Slack)
+	if !kitConfig.Slack.IsZero() {
+		slackClient = slack.New(&kitConfig.Slack)
 	}
 	var statsClient stats.Collector
-	if !cfg.Datadog.IsZero() {
-		statsClient, err = datadog.NewCollector(&cfg.Datadog)
+	if !kitConfig.Datadog.IsZero() {
+		statsClient, err = datadog.NewCollector(&kitConfig.Datadog)
 		if err != nil {
 			return nil, err
 		}
 	}
 	var errorClient diagnostics.Notifier
-	if !cfg.Airbrake.IsZero() {
-		errorClient = airbrake.MustNew(&cfg.Airbrake)
+	if !kitConfig.Airbrake.IsZero() {
+		errorClient = airbrake.MustNew(&kitConfig.Airbrake)
 	}
 
-	job := NewJob(action).
+	job := (&Job{action: action}).
 		WithName(jobConfig.NameOrDefault()).
 		WithConfig(jobConfig).
 		WithSchedule(schedule).

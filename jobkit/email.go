@@ -11,7 +11,7 @@ func NewEmailMessage(status string, ji *cron.JobInvocation, options ...email.Mes
 	message := email.Message{}
 
 	vars := map[string]interface{}{
-		"jobName":   ji.Name,
+		"jobName":   ji.JobName,
 		"jobStatus": string(status),
 		"elapsed":   ji.Elapsed,
 		"err":       ji.Err,

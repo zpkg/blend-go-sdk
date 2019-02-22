@@ -208,7 +208,7 @@ func (js *JobScheduler) Run() {
 	// individual execution of a job.
 	ji := JobInvocation{
 		ID:      NewJobInvocationID(),
-		Name:    js.Name,
+		JobName: js.Name,
 		Status:  JobStatusRunning,
 		Started: start,
 		Context: ctx,
@@ -334,7 +334,7 @@ func (js *JobScheduler) canRun() bool {
 
 func (js *JobScheduler) onStart(ctx context.Context, ji *JobInvocation) {
 	if js.Log != nil && js.ShouldTriggerListenersProvider() {
-		event := NewEvent(FlagStarted, ji.Name).
+		event := NewEvent(FlagStarted, ji.JobName).
 			WithJobInvocation(ji.ID).
 			WithIsWritable(js.ShouldWriteOutputProvider())
 		js.Log.Trigger(event)
@@ -348,7 +348,7 @@ func (js *JobScheduler) onCancelled(ctx context.Context, ji *JobInvocation) {
 	ji.Status = JobStatusCancelled
 
 	if js.Log != nil && js.ShouldTriggerListenersProvider() {
-		event := NewEvent(FlagCancelled, ji.Name).
+		event := NewEvent(FlagCancelled, ji.JobName).
 			WithJobInvocation(ji.ID).
 			WithIsWritable(js.ShouldWriteOutputProvider()).
 			WithElapsed(ji.Elapsed)
@@ -363,7 +363,7 @@ func (js *JobScheduler) onComplete(ctx context.Context, ji *JobInvocation) {
 	ji.Status = JobStatusComplete
 
 	if js.Log != nil && js.ShouldTriggerListenersProvider() {
-		event := NewEvent(FlagComplete, ji.Name).
+		event := NewEvent(FlagComplete, ji.JobName).
 			WithJobInvocation(ji.ID).
 			WithIsWritable(js.ShouldWriteOutputProvider()).
 			WithElapsed(ji.Elapsed)
@@ -375,7 +375,7 @@ func (js *JobScheduler) onComplete(ctx context.Context, ji *JobInvocation) {
 
 	if js.Last != nil && js.Last.Err != nil {
 		if js.Log != nil {
-			event := NewEvent(FlagFixed, ji.Name).
+			event := NewEvent(FlagFixed, ji.JobName).
 				WithIsWritable(js.ShouldWriteOutputProvider()).
 				WithElapsed(ji.Elapsed)
 
@@ -392,7 +392,7 @@ func (js *JobScheduler) onFailure(ctx context.Context, ji *JobInvocation) {
 	ji.Status = JobStatusFailed
 
 	if js.Log != nil && js.ShouldTriggerListenersProvider() {
-		event := NewEvent(FlagFailed, ji.Name).
+		event := NewEvent(FlagFailed, ji.JobName).
 			WithJobInvocation(ji.ID).
 			WithIsWritable(js.ShouldWriteOutputProvider()).
 			WithElapsed(ji.Elapsed).
@@ -408,7 +408,7 @@ func (js *JobScheduler) onFailure(ctx context.Context, ji *JobInvocation) {
 	}
 	if js.Last != nil && js.Last.Err == nil {
 		if js.Log != nil {
-			event := NewEvent(FlagBroken, ji.Name).
+			event := NewEvent(FlagBroken, ji.JobName).
 				WithJobInvocation(ji.ID).
 				WithIsWritable(js.ShouldWriteOutputProvider()).
 				WithElapsed(ji.Elapsed)

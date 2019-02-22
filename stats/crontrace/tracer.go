@@ -20,7 +20,7 @@ type tracer struct {
 
 func (t tracer) Start(ctx context.Context) (context.Context, cron.TraceFinisher) {
 	startOptions := []opentracing.StartSpanOption{
-		opentracing.Tag{Key: tracing.TagKeyResourceName, Value: cron.GetJobInvocation(ctx).Name},
+		opentracing.Tag{Key: tracing.TagKeyResourceName, Value: cron.GetJobInvocation(ctx).JobName},
 		opentracing.Tag{Key: tracing.TagKeySpanType, Value: tracing.SpanTypeJob},
 		opentracing.StartTime(time.Now().UTC()),
 	}

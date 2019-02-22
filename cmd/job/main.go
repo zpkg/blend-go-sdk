@@ -10,6 +10,7 @@ import (
 	"github.com/blend/go-sdk/configutil"
 	"github.com/blend/go-sdk/cron"
 	"github.com/blend/go-sdk/env"
+	"github.com/blend/go-sdk/exception"
 	"github.com/blend/go-sdk/graceful"
 	"github.com/blend/go-sdk/jobkit"
 	"github.com/blend/go-sdk/logger"
@@ -21,6 +22,8 @@ var name = flag.String("name", "", "The name of the job")
 var exec = flag.String("exec", "", "The command to execute")
 var bind = flag.String("bind", "", "The address and port to bind the management server to (ex: 127.0.0.1:9000")
 var schedule = flag.String("schedule", "", "The job schedule as a cron string (i.e. 7 space delimited components)")
+var disableServer = flag.Bool("disable-server", false, "Disables the management server (will make --bind irrelevant)")
+var discardOutput = flag.Bool("discard-output", false, "Discard job output")
 var configPath = flag.String("config", "config.yml", "The job config path")
 var timeout = flag.Duration("timeout", 0, "The timeout")
 
@@ -68,10 +71,22 @@ func main() {
 	}
 
 	action := func(ctx context.Context) error {
+		if !*discardOutput {
+			if jis := jobkit.GetJobInvocationState(ctx); jis != nil {
+				cmd, err := sh.CmdContext(ctx, command[0], args(command...)...)
+				if err != nil {
+					return err
+				}
+				writer := jis.CreateMultiWriter(os.Stdout)
+				cmd.Stdout = writer
+				cmd.Stderr = writer
+				return exception.New(cmd.Run())
+			}
+		}
 		return sh.ForkContext(ctx, command[0], args(command...)...)
 	}
 
-	job, err := jobkit.New(&config.JobConfig, &config.Config, action)
+	job, err := jobkit.NewJob(&config.JobConfig, &config.Config, action)
 	if err != nil {
 		logger.FatalExit(err)
 	}
@@ -80,7 +95,7 @@ func main() {
 	jobs := cron.NewFromConfig(&config.Config.Config).WithLogger(log)
 	jobs.LoadJob(job)
 
-	if !config.DisableManagementServer {
+	if !*disableServer {
 		ws := jobkit.NewManagementServer(jobs, &config.Config).WithLogger(log)
 		go func() {
 			if err := graceful.Shutdown(ws); err != nil {

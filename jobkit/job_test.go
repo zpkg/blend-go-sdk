@@ -15,9 +15,9 @@ import (
 func TestJobProperties(t *testing.T) {
 	assert := assert.New(t)
 
-	job := NewJob(func(ctx context.Context) error {
+	job := (&Job{config: &JobConfig{}, action: func(_ context.Context) error {
 		return nil
-	})
+	}})
 	assert.NotNil(job.action)
 
 	assert.Empty(job.Name())
@@ -37,8 +37,8 @@ func TestJobLifecycleHooksNotificationsUnset(t *testing.T) {
 	assert := assert.New(t)
 
 	ctx := cron.WithJobInvocation(context.Background(), &cron.JobInvocation{
-		ID:   uuid.V4().String(),
-		Name: "test-job",
+		ID:      uuid.V4().String(),
+		JobName: "test-job",
 	})
 
 	slackMessages := make(chan slack.Message, 1)
@@ -70,8 +70,8 @@ func TestJobLifecycleHooksNotificationsSetDisabled(t *testing.T) {
 	assert := assert.New(t)
 
 	ctx := cron.WithJobInvocation(context.Background(), &cron.JobInvocation{
-		ID:   uuid.V4().String(),
-		Name: "test-job",
+		ID:      uuid.V4().String(),
+		JobName: "test-job",
 	})
 
 	slackMessages := make(chan slack.Message, 1)
@@ -110,9 +110,9 @@ func TestJobLifecycleHooksNotificationsSetEnabled(t *testing.T) {
 	assert := assert.New(t)
 
 	ctx := cron.WithJobInvocation(context.Background(), &cron.JobInvocation{
-		ID:   uuid.V4().String(),
-		Name: "test-job",
-		Err:  fmt.Errorf("only a test"),
+		ID:      uuid.V4().String(),
+		JobName: "test-job",
+		Err:     fmt.Errorf("only a test"),
 	})
 
 	slackMessages := make(chan slack.Message, 6)

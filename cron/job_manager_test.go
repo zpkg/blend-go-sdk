@@ -164,12 +164,12 @@ func TestManagerTracer(t *testing.T) {
 			OnStart: func(ctx context.Context) {
 				defer wg.Done()
 				didCallStart = true
-				startTaskCorrect = GetJobInvocation(ctx).Name == "tracer-test"
+				startTaskCorrect = GetJobInvocation(ctx).JobName == "tracer-test"
 			},
 			OnFinish: func(ctx context.Context) {
 				defer wg.Done()
 				didCallFinish = true
-				finishTaskCorrect = GetJobInvocation(ctx).Name == "tracer-test"
+				finishTaskCorrect = GetJobInvocation(ctx).JobName == "tracer-test"
 				errorUnset = GetJobInvocation(ctx).Err == nil
 			},
 		})

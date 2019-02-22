@@ -12,7 +12,7 @@ import (
 func TestNewEmailMessage(t *testing.T) {
 	assert := assert.New(t)
 
-	message, err := NewEmailMessage(string(cron.FlagComplete), &cron.JobInvocation{Name: "test", Elapsed: time.Millisecond}, email.WithFrom("jobkit@blend.com"), email.WithTo("foo@bar.com"), email.WithCC("baileydog@blend.com"))
+	message, err := NewEmailMessage(string(cron.FlagComplete), &cron.JobInvocation{JobName: "test", Elapsed: time.Millisecond}, email.WithFrom("jobkit@blend.com"), email.WithTo("foo@bar.com"), email.WithCC("baileydog@blend.com"))
 	assert.Nil(err)
 	assert.Equal("test :: cron.complete", message.Subject)
 	assert.NotEmpty(message.From)

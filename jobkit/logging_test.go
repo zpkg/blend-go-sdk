@@ -17,8 +17,8 @@ func TestLoggingDebugf(t *testing.T) {
 	Debugf(nil, nil, "foo")
 
 	ctx := cron.WithJobInvocation(context.Background(), &cron.JobInvocation{
-		ID:   "log-test-0",
-		Name: "log-test",
+		ID:      "log-test-0",
+		JobName: "log-test",
 	})
 
 	triggered := make(chan struct{})
@@ -44,8 +44,8 @@ func TestLoggingInfof(t *testing.T) {
 	Infof(nil, nil, "foo")
 
 	ctx := cron.WithJobInvocation(context.Background(), &cron.JobInvocation{
-		ID:   "log-test-0",
-		Name: "log-test",
+		ID:      "log-test-0",
+		JobName: "log-test",
 	})
 
 	triggered := make(chan struct{})
@@ -71,8 +71,8 @@ func TestLoggingWarningf(t *testing.T) {
 	Warningf(nil, nil, "foo")
 
 	ctx := cron.WithJobInvocation(context.Background(), &cron.JobInvocation{
-		ID:   "log-test-0",
-		Name: "log-test",
+		ID:      "log-test-0",
+		JobName: "log-test",
 	})
 
 	triggered := make(chan struct{})
@@ -98,8 +98,8 @@ func TestLoggingWarning(t *testing.T) {
 	Warning(nil, nil, fmt.Errorf("foo"))
 
 	ctx := cron.WithJobInvocation(context.Background(), &cron.JobInvocation{
-		ID:   "log-test-0",
-		Name: "log-test",
+		ID:      "log-test-0",
+		JobName: "log-test",
 	})
 
 	triggered := make(chan struct{})
@@ -125,8 +125,8 @@ func TestLoggingErrorf(t *testing.T) {
 	Errorf(nil, nil, "foo")
 
 	ctx := cron.WithJobInvocation(context.Background(), &cron.JobInvocation{
-		ID:   "log-test-0",
-		Name: "log-test",
+		ID:      "log-test-0",
+		JobName: "log-test",
 	})
 
 	triggered := make(chan struct{})
@@ -152,8 +152,8 @@ func TestLoggingError(t *testing.T) {
 	Error(nil, nil, fmt.Errorf("foo"))
 
 	ctx := cron.WithJobInvocation(context.Background(), &cron.JobInvocation{
-		ID:   "log-test-0",
-		Name: "log-test",
+		ID:      "log-test-0",
+		JobName: "log-test",
 	})
 
 	triggered := make(chan struct{})
@@ -179,8 +179,8 @@ func TestLoggingFatalf(t *testing.T) {
 	Fatalf(nil, nil, "foo")
 
 	ctx := cron.WithJobInvocation(context.Background(), &cron.JobInvocation{
-		ID:   "log-test-0",
-		Name: "log-test",
+		ID:      "log-test-0",
+		JobName: "log-test",
 	})
 
 	triggered := make(chan struct{})
@@ -206,8 +206,8 @@ func TestLoggingFatal(t *testing.T) {
 	Fatal(nil, nil, fmt.Errorf("foo"))
 
 	ctx := cron.WithJobInvocation(context.Background(), &cron.JobInvocation{
-		ID:   "log-test-0",
-		Name: "log-test",
+		ID:      "log-test-0",
+		JobName: "log-test",
 	})
 
 	triggered := make(chan struct{})
