@@ -42,7 +42,11 @@ var indexTemplate = `
 				{{end}}
 				</td>
 				<td> <!-- next run-->
+				{{ if $job.Disabled }}
+					<span>-</span>
+				{{ else }}
 					{{ $job.NextRuntime | rfc3339 }}
+				{{ end }}
 				</td>
 				<td> <!-- last run -->
 				{{ if $job.Last }}

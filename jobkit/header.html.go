@@ -425,6 +425,9 @@ var headerTemplate = `
 		.align-right {
 			text-align: right;
 		}
+		.container {
+			max-width: 1200px;
+		}
 		h4 {
 			font-size: inherit;
 			font-weight: bold;
