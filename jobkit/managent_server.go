@@ -11,7 +11,12 @@ import (
 // trigger jobs or look at job statuses via. a json api.
 func NewManagementServer(jm *cron.JobManager, cfg *Config) *web.App {
 	app := web.NewFromConfig(&cfg.Web)
-	app.Views().AddLiterals(headerTemplate, footerTemplate, indexTemplate)
+	app.Views().AddLiterals(
+		headerTemplate,
+		footerTemplate,
+		indexTemplate,
+		invocationTemplate,
+	)
 	app.GET("/", func(r *web.Ctx) web.Result {
 		return r.View().View("index", jm.Status())
 	})
@@ -114,6 +119,28 @@ func NewManagementServer(jm *cron.JobManager, cfg *Config) *web.App {
 			return r.View().BadRequest(err)
 		}
 		return r.RedirectWithMethod("GET", "/")
+	})
+	app.GET("/job.invocation/:jobName/:invocation", func(r *web.Ctx) web.Result {
+		job, err := jm.Job(web.StringValue(r.RouteParam("jobName")))
+		if err != nil {
+			return r.View().BadRequest(err)
+		}
+		invocation := job.Invocation(web.StringValue(r.RouteParam("invocation")))
+		if invocation == nil {
+			return r.View().NotFound()
+		}
+		return r.View().View("invocation", invocation)
+	})
+	app.GET("/api/job.invocation/:jobName/:invocation", func(r *web.Ctx) web.Result {
+		job, err := jm.Job(web.StringValue(r.RouteParam("jobName")))
+		if err != nil {
+			return r.JSON().BadRequest(err)
+		}
+		invocation := job.Invocation(web.StringValue(r.RouteParam("invocation")))
+		if invocation == nil {
+			return r.View().NotFound()
+		}
+		return r.JSON().Result(invocation)
 	})
 	return app
 }

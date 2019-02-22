@@ -103,7 +103,7 @@ var indexTemplate = `
 						<tbody>
 						{{ range $index, $ji := $job.History | reverse }}
 						<tr class="{{ if $ji.Status | eq "failed" }}failed{{ else if $ji.Status | eq "cancelled"}}cancelled{{else}}ok{{end}}">
-							<td>{{ $ji.ID }}</td>
+							<td><a href="/job.invocation/{{$ji.JobName}}/{{ $ji.ID }}">{{ $ji.ID }}</a></td>
 							<td>{{ $ji.Started | rfc3339 }}</td>
 							<td>{{ if $ji.Finished.IsZero }}-{{ else }}{{ $ji.Finished | rfc3339 }}{{ end }}</td>
 							<td>{{ if $ji.Timeout.IsZero }}-{{ else }}{{ $ji.Timeout | rfc3339 }}{{ end }}</td>

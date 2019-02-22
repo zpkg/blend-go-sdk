@@ -83,6 +83,16 @@ type JobScheduler struct {
 	ShouldWriteOutputProvider      func() bool          `json:"-"`
 }
 
+// Invocation returns an invocation by id.
+func (js *JobScheduler) Invocation(id string) *JobInvocation {
+	for _, ji := range js.History {
+		if ji.ID == id {
+			return &ji
+		}
+	}
+	return nil
+}
+
 // WithTracer sets the scheduler tracer.
 func (js *JobScheduler) WithTracer(tracer Tracer) *JobScheduler {
 	js.Tracer = tracer
