@@ -3,7 +3,6 @@ package jobkit
 import (
 	"bytes"
 	"context"
-	"io"
 
 	"github.com/blend/go-sdk/cron"
 )
@@ -35,16 +34,13 @@ func GetJobInvocationState(ctx context.Context) *JobInvocationState {
 // NewJobInvocationState returns a new job invocation state.
 func NewJobInvocationState() *JobInvocationState {
 	return &JobInvocationState{
-		Output: new(bytes.Buffer),
+		Output:      new(bytes.Buffer),
+		ErrorOutput: new(bytes.Buffer),
 	}
 }
 
 // JobInvocationState is the state object for a job invocation.
 type JobInvocationState struct {
-	Output *bytes.Buffer
-}
-
-// CreateMultiWriter returns a new writer that writes to both the destination and the output buffer.
-func (jis *JobInvocationState) CreateMultiWriter(dst io.Writer) io.Writer {
-	return io.MultiWriter(jis.Output, dst)
+	Output      *bytes.Buffer
+	ErrorOutput *bytes.Buffer
 }

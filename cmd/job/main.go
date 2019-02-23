@@ -4,6 +4,7 @@ import (
 	"context"
 	"flag"
 	"fmt"
+	"io"
 	"os"
 	"strings"
 
@@ -77,9 +78,8 @@ func main() {
 				if err != nil {
 					return err
 				}
-				writer := jis.CreateMultiWriter(os.Stdout)
-				cmd.Stdout = writer
-				cmd.Stderr = writer
+				cmd.Stdout = io.MultiWriter(jis.Output, os.Stdout)
+				cmd.Stderr = io.MultiWriter(jis.ErrorOutput, os.Stderr)
 				return exception.New(cmd.Run())
 			}
 		}

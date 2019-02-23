@@ -88,7 +88,7 @@ var indexTemplate = `
 			<tr>
 				<td colspan=8>
 					<h4>History</h4>
-					<table class="u-full-width small-text">
+					<table class="u-full-width">
 						<thead>
 							<tr>
 								<th>Invocation</th>

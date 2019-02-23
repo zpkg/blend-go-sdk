@@ -4,6 +4,11 @@ var invocationTemplate = `
 {{ define "invocation" }}
 {{ template "header" . }}
 <div class="container">
+	<ul class="breadcrumbs">
+		<li><a href="/">Jobs</a></li>
+		<li>{{ .ViewModel.JobName }}</li>
+		<li>{{ .ViewModel.ID }}</li>
+	</ul>
 	<table class="u-full-width">
 		<thead>
 			<tr>
@@ -43,6 +48,20 @@ var invocationTemplate = `
 	</table>
 	{{ end }}
 	{{ if .ViewModel.State }}
+	<table class="u-full-width">
+		<thead>
+			<tr>
+				<th>Error Output</th>
+			</tr>
+		</thead>
+		<tbody>
+			<tr>
+				<td>
+					<pre>{{ .ViewModel.State.ErrorOutput }}</pre>
+				</td>
+			</tr>
+		</tbody>
+	</table>
 	<table class="u-full-width">
 		<thead>
 			<tr>
