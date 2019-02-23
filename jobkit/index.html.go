@@ -8,7 +8,7 @@ var indexTemplate = `
 		<thead>
 			<tr>
 				<th>Job Name</th>
-				<th>Status</th>
+				<th>Schedule</th>
 				<th>Current</th>
 				<th>Next Run</th>
 				<th>Last Ran</th>
@@ -23,18 +23,10 @@ var indexTemplate = `
 				<td> <!-- job name -->
 					{{ $job.Name }}
 				</td>
-				<td> <!-- job status -->
-				{{ if $job.Disabled }}
-					<form method="POST" action="/job.enable/{{ $job.Name }}">
-						<input type="submit" class="button" value="Enable" />
-					</form>
-				{{else}}
-					<form method="POST" action="/job.disable/{{ $job.Name }}">
-						<input type="submit" class="button" value="Disable" />
-					</form>
-				{{end}}
+				<td> <!-- schedule -->
+					<pre>{{ $job.Schedule }}</pre>
 				</td>
-				<td> <!-- job status -->
+				<td> <!-- current -->
 				{{ if $job.Current }}
 					{{ $job.Current.Started | since_utc }}
 				{{else}}
@@ -74,6 +66,15 @@ var indexTemplate = `
 				{{ end }}
 				</td>
 				<td><!-- actions -->
+				{{ if $job.Disabled }}
+					<form method="POST" action="/job.enable/{{ $job.Name }}">
+						<input type="submit" class="button" value="Enable" />
+					</form>
+				{{else}}
+					<form method="POST" action="/job.disable/{{ $job.Name }}">
+						<input type="submit" class="button" value="Disable" />
+					</form>
+				{{end}}
 				{{ if $job.Current }}
 				<form method="POST" action="/job.cancel/{{ $job.Name }}">
 					<input type="submit" class="button button-danger" value="Cancel" />
