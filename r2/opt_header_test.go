@@ -13,7 +13,7 @@ func TestOptHeader(t *testing.T) {
 	opt := OptHeader(http.Header{"Foo": []string{"bar"}})
 
 	req := New("https://foo.bar.local")
-	opt(req)
+	assert.Nil(opt(req))
 
 	assert.NotNil(req.Header)
 	assert.Equal("bar", req.Header.Get("foo"))
@@ -25,7 +25,7 @@ func TestOptHeaderValue(t *testing.T) {
 	opt := OptHeaderValue("Foo", "bar")
 
 	req := New("https://foo.bar.local")
-	opt(req)
+	assert.Nil(opt(req))
 
 	assert.NotNil(req.Header)
 	assert.Equal("bar", req.Header.Get("foo"))

@@ -12,7 +12,7 @@ func TestOptBasicAuth(t *testing.T) {
 	opt := OptBasicAuth("foo", "bar")
 
 	req := New("https://foo.bar.local")
-	opt(req)
+	assert.Nil(opt(req))
 
 	assert.NotNil(req.Header)
 	assert.NotEmpty(req.Header.Get("Authorization"))
