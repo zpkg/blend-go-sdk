@@ -443,6 +443,12 @@ var headerTemplate = `
 			font-size: 10px;
 		}
 
+		.job {
+			border: 1px solid #efefef;
+			margin: 10px;
+			padding: 10px;
+		}
+
 		tr.failed {
 			background-color: #F55656
 		}
