@@ -87,7 +87,7 @@ func (hz *Healthz) WithConfig(cfg *HealthzConfig) *Healthz {
 	return hz
 }
 
-// Self returns the inner web server.
+// Self returns the inner web server that powers the healthz endpoints.
 func (hz *Healthz) Self() *App {
 	return hz.self
 }

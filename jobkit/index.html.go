@@ -25,7 +25,7 @@ var indexTemplate = `
 				</td>
 				<td> <!-- schedule -->
 					<pre>{{ $job.Schedule }}</pre>
-				</td>
+					</td>
 				<td> <!-- current -->
 				{{ if $job.Current }}
 					{{ $job.Current.Started | since_utc }}

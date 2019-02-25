@@ -68,7 +68,7 @@ type App struct {
 	cfg   *Config
 	hsts  *HSTSConfig
 
-	log   logger.Log
+	log   logger.FullReceiver
 	auth  *AuthManager
 	views *ViewCache
 
@@ -393,7 +393,7 @@ func (a *App) WithLogger(log logger.Log) *App {
 }
 
 // Logger returns the diagnostics agent for the app.
-func (a *App) Logger() logger.Log {
+func (a *App) Logger() logger.FullReceiver {
 	return a.log
 }
 
