@@ -387,7 +387,7 @@ func (a *App) BindAddr() string {
 
 // WithLogger sets the app logger agent and returns a reference to the app.
 // It also sets underlying loggers in any child resources like providers and the auth manager.
-func (a *App) WithLogger(log logger.Log) *App {
+func (a *App) WithLogger(log logger.FullReceiver) *App {
 	a.log = log
 	return a
 }
