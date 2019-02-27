@@ -11,9 +11,7 @@ import (
 // NewAutoAction returns a new NewAutoAction
 func NewAutoAction(interval time.Duration, maxCount int32) *AutoAction {
 	return &AutoAction{
-		Mutex:          sync.Mutex{},
 		maxCount:       maxCount,
-		action:         nil,
 		interval:       interval,
 		latch:          NewLatch(),
 		triggerOnAbort: true,
