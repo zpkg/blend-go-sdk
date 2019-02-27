@@ -5,10 +5,11 @@ import (
 	"time"
 
 	"github.com/blend/go-sdk/exception"
+	"sync/atomic"
 )
 
 // NewAutoAction returns a new NewAutoAction
-func NewAutoAction(interval time.Duration, maxCount int) *AutoAction {
+func NewAutoAction(interval time.Duration, maxCount int32) *AutoAction {
 	return &AutoAction{
 		value:          nil,
 		valueLock:      &sync.Mutex{},
@@ -25,8 +26,8 @@ func NewAutoAction(interval time.Duration, maxCount int) *AutoAction {
 type AutoAction struct {
 	value          interface{}
 	valueLock      *sync.Mutex
-	counter        int
-	maxCount       int
+	counter        int32
+	maxCount       int32
 	handler        func(interface{})
 	interval       time.Duration
 	latch          *Latch
@@ -101,6 +102,20 @@ func (a *AutoAction) runLoop() {
 	}
 }
 
+// Increment updates the count
+func (a *AutoAction) Increment() {
+	atomic.AddInt32(&a.counter, 1)
+	count := atomic.LoadInt32(&a.counter)
+	if count >= a.maxCount {
+		a.valueLock.Lock()
+		defer a.valueLock.Unlock()
+		count = atomic.LoadInt32(&a.counter)
+		if count >= a.maxCount {
+			a.triggerUnsafe()
+		}
+	}
+}
+
 // Update updates the value and invokes the trigger handler if the max count is reached
 func (a *AutoAction) Update(value interface{}) {
 	a.valueLock.Lock()
@@ -134,7 +149,7 @@ func (a *AutoAction) triggerUnsafe() {
 	if a.handler != nil {
 		a.handler(a.value)
 	}
-	a.counter = 0
+	atomic.StoreInt32(&a.counter, 0)
 }
 
 // triggerUnsafeAsync calls the handler, if one is set, without acquiring any locks
@@ -142,5 +157,5 @@ func (a *AutoAction) triggerUnsafeAsync() {
 	if a.handler != nil {
 		go a.handler(a.value)
 	}
-	a.counter = 0
+	atomic.StoreInt32(&a.counter, 0)
 }
