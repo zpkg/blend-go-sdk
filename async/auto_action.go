@@ -33,6 +33,12 @@ type AutoAction struct {
 	triggerOnAbort bool
 }
 
+// WithMaxCount determines the maximum number of updates between action triggers
+func (a *AutoAction) WithMaxCount(maxCount int) *AutoAction {
+	a.maxCount = 0
+	return a
+}
+
 // WithHandler sets the trigger handler
 func (a *AutoAction) WithHandler(handler func(interface{})) *AutoAction {
 	a.handler = handler
