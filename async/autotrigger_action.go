@@ -20,7 +20,7 @@ func NewAutotriggerAction(interval time.Duration) *AutotriggerAction {
 }
 
 // AutotriggerAction is an action that is triggered automatically on some set interval.
-// It can also be triggered synchronously
+// It also exposes a function to trigger the action synchronously
 type AutotriggerAction struct {
 	value          interface{}
 	valueLock      *sync.Mutex
@@ -36,7 +36,7 @@ func (at *AutotriggerAction) WithHandler(handler func(interface{})) *Autotrigger
 	return at
 }
 
-//
+// WithTriggerOnAbort determines whether the trigger should be invoked when AutotriggerAction is stopped
 func (at *AutotriggerAction) WithTriggerOnAbort(triggerOnAbort bool) *AutotriggerAction {
 	at.triggerOnAbort = triggerOnAbort
 	return at
