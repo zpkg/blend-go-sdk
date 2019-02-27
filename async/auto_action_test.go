@@ -18,14 +18,14 @@ func TestAutoAction(t *testing.T) {
 		}
 	}
 
-	a := NewAutoAction(time.Hour).
+	a := NewAutoAction(time.Hour, 10).
 		WithHandler(action).
 		WithTriggerOnAbort(false)
 
 	a.Start()
 	defer a.Stop()
 
-	a.SetValue(wg)
+	a.Update(wg)
 	a.Trigger()
 	wg.Wait()
 }
@@ -45,9 +45,28 @@ func TestAutoActionTick(t *testing.T) {
 		}
 	}
 
-	at := NewAutoAction(time.Millisecond * 3).
+	at := NewAutoAction(time.Millisecond*3, 10).
 		WithHandler(action).
 		WithTriggerOnAbort(false)
+
+	at.Start()
+	defer at.Stop()
+	wg.Wait()
+}
+
+func TestAutoActionCount(t *testing.T) {
+	wg := sync.WaitGroup{}
+
+	wg.Add(1)
+
+	action := func(obj interface{}) {
+		wg.Done()
+	}
+
+	at := NewAutoAction(time.Hour, 1).
+		WithHandler(action).
+		WithTriggerOnAbort(false)
+	at.Update(nil)
 
 	at.Start()
 	defer at.Stop()

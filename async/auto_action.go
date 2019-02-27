@@ -8,10 +8,11 @@ import (
 )
 
 // NewAutoAction returns a new NewAutoAction
-func NewAutoAction(interval time.Duration) *AutoAction {
+func NewAutoAction(interval time.Duration, maxCount int) *AutoAction {
 	return &AutoAction{
 		value:          nil,
 		valueLock:      &sync.Mutex{},
+		maxCount:       maxCount,
 		handler:        nil,
 		interval:       interval,
 		latch:          NewLatch(),
@@ -24,6 +25,8 @@ func NewAutoAction(interval time.Duration) *AutoAction {
 type AutoAction struct {
 	value          interface{}
 	valueLock      *sync.Mutex
+	counter        int
+	maxCount       int
 	handler        func(interface{})
 	interval       time.Duration
 	latch          *Latch
@@ -92,11 +95,16 @@ func (a *AutoAction) runLoop() {
 	}
 }
 
-// Set sets the value
-func (a *AutoAction) SetValue(value interface{}) {
+// Update updates the value and invokes the trigger handler if the max count is reached
+func (a *AutoAction) Update(value interface{}) {
 	a.valueLock.Lock()
-	a.value = value
 	defer a.valueLock.Unlock()
+
+	a.value = value
+	a.counter++
+	if a.counter >= a.maxCount {
+		a.triggerUnsafe()
+	}
 }
 
 // Trigger invokes the handler, if one is set, with the value
@@ -120,6 +128,7 @@ func (a *AutoAction) triggerUnsafe() {
 	if a.handler != nil {
 		a.handler(a.value)
 	}
+	a.counter = 0
 }
 
 // triggerUnsafeAsync calls the handler, if one is set, without acquiring any locks
@@ -127,4 +136,5 @@ func (a *AutoAction) triggerUnsafeAsync() {
 	if a.handler != nil {
 		go a.handler(a.value)
 	}
+	a.counter = 0
 }
