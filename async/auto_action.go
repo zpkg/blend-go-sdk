@@ -2,10 +2,10 @@ package async
 
 import (
 	"sync"
+	"sync/atomic"
 	"time"
 
 	"github.com/blend/go-sdk/exception"
-	"sync/atomic"
 )
 
 // NewAutoAction returns a new NewAutoAction
