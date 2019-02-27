@@ -11,7 +11,7 @@ func TestSerializeState(t *testing.T) {
 	assert := assert.New(t)
 
 	state := State{
-		RedirectURL: "https://foo.com/bar",
+		RedirectURI: "https://foo.com/bar",
 		Token:       stringutil.Random(stringutil.Letters, 32),
 		SecureToken: stringutil.Random(stringutil.Letters, 64),
 	}
@@ -23,7 +23,7 @@ func TestSerializeState(t *testing.T) {
 	deserialized, err := DeserializeState(contents)
 	assert.Nil(err)
 	assert.NotNil(deserialized)
-	assert.Equal(state.RedirectURL, deserialized.RedirectURL)
+	assert.Equal(state.RedirectURI, deserialized.RedirectURI)
 	assert.Equal(state.Token, deserialized.Token)
 	assert.Equal(state.SecureToken, deserialized.SecureToken)
 }

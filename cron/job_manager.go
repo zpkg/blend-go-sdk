@@ -50,18 +50,18 @@ type JobManager struct {
 	latch  *async.Latch
 	cfg    *Config
 	tracer Tracer
-	log    logger.Log
+	log    logger.FullReceiver
 	jobs   map[string]*JobScheduler
 }
 
 // WithLogger sets the logger and returns a reference to the job manager.
-func (jm *JobManager) WithLogger(log logger.Log) *JobManager {
+func (jm *JobManager) WithLogger(log logger.FullReceiver) *JobManager {
 	jm.log = log
 	return jm
 }
 
 // Logger returns the diagnostics agent.
-func (jm *JobManager) Logger() logger.Log {
+func (jm *JobManager) Logger() logger.FullReceiver {
 	return jm.log
 }
 

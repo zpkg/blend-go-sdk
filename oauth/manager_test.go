@@ -144,7 +144,7 @@ func TestManagerOAuthURLRedirect(t *testing.T) {
 		WithClientID("test_client_id").
 		WithRedirectURI("https://local.shortcut-service.centrio.com/oauth/google")
 
-	urlFragment, err := m.OAuthURL(nil, "bar_foo")
+	urlFragment, err := m.OAuthURL(nil, OptRedirectURI("bar_foo"))
 	assert.Nil(err)
 
 	u, err := url.Parse(urlFragment)
@@ -155,7 +155,7 @@ func TestManagerOAuthURLRedirect(t *testing.T) {
 	deserialized, err := DeserializeState(state)
 	assert.Nil(err)
 	assert.Nil(m.ValidateState(deserialized))
-	assert.Equal("bar_foo", deserialized.RedirectURL)
+	assert.Equal("bar_foo", deserialized.RedirectURI)
 }
 
 func TestManagerValidateProfile(t *testing.T) {
