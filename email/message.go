@@ -17,7 +17,7 @@ type Message struct {
 	From     string   `json:"from" yaml:"from"`
 	To       []string `json:"to" yaml:"to"`
 	CC       []string `json:"cc" yaml:"cc"`
-	BCC      []string `json:"bcc" yaml:"cc"`
+	BCC      []string `json:"bcc" yaml:"bcc"`
 	Subject  string   `json:"subject" yaml:"subject"`
 	TextBody string   `json:"textBody" yaml:"textBody"`
 	HTMLBody string   `json:"htmlBody" yaml:"htmlBody"`

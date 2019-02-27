@@ -6,10 +6,15 @@ import (
 )
 
 // NewBatch creates a new batch processor.
-func NewBatch(action QueueAction) *Batch {
+func NewBatch(action QueueAction, items ...interface{}) *Batch {
+	work := make(chan interface{}, len(items))
+	for _, item := range items {
+		work <- item
+	}
 	return &Batch{
 		latch:      &Latch{},
 		action:     action,
+		work:       work,
 		numWorkers: runtime.NumCPU(),
 	}
 }
@@ -33,11 +38,6 @@ func (b *Batch) WithWork(work chan interface{}) *Batch {
 // Work returns the work channel.
 func (b *Batch) Work() chan interface{} {
 	return b.work
-}
-
-// Add adds an item.
-func (b *Batch) Add(item interface{}) {
-	b.work <- item
 }
 
 // WithNumWorkers sets the number of workers.

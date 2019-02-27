@@ -1,10 +1,12 @@
 package email
 
 import (
+	"encoding/json"
 	"testing"
 
 	"github.com/blend/go-sdk/assert"
 	"github.com/blend/go-sdk/exception"
+	"github.com/blend/go-sdk/yaml"
 )
 
 func TestMessageValidate(t *testing.T) {
@@ -63,4 +65,20 @@ func TestMessageValidate(t *testing.T) {
 		To:       []string{"moo@bar.com"},
 		TextBody: "stuff",
 	}.Validate())
+}
+
+func TestMessageSerializeJSON(t *testing.T) {
+	assert := assert.New(t)
+
+	contents, err := json.Marshal(&Message{})
+	assert.Nil(err)
+	assert.NotEmpty(contents)
+}
+
+func TestMessageSerializeYAML(t *testing.T) {
+	assert := assert.New(t)
+
+	contents, err := yaml.Marshal(&Message{})
+	assert.Nil(err)
+	assert.NotEmpty(contents)
 }
