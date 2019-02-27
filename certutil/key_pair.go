@@ -28,6 +28,9 @@ func (kp KeyPair) CertBytes() ([]byte, error) {
 	if kp.Cert != "" {
 		return []byte(kp.Cert), nil
 	}
+	if kp.CertPath == "" {
+		return nil, exception.New("error loading cert; cert path unset")
+	}
 	contents, err := ioutil.ReadFile(os.ExpandEnv(kp.CertPath))
 	if err != nil {
 		return nil, exception.New("error loading cert from path").WithInner(err).WithMessage(kp.CertPath)
@@ -39,6 +42,9 @@ func (kp KeyPair) CertBytes() ([]byte, error) {
 func (kp KeyPair) KeyBytes() ([]byte, error) {
 	if kp.Key != "" {
 		return []byte(kp.Key), nil
+	}
+	if kp.KeyPath == "" {
+		return nil, exception.New("error loading key; key path unset")
 	}
 	contents, err := ioutil.ReadFile(os.ExpandEnv(kp.KeyPath))
 	if err != nil {
