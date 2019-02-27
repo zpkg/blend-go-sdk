@@ -7,7 +7,7 @@ import (
 	"time"
 )
 
-func TestAutotriggerAction(t *testing.T) {
+func TestAutoAction(t *testing.T) {
 	wg := &sync.WaitGroup{}
 	wg.Add(1)
 
@@ -18,19 +18,19 @@ func TestAutotriggerAction(t *testing.T) {
 		}
 	}
 
-	at := NewAutotriggerAction(time.Hour).
+	a := NewAutoAction(time.Hour).
 		WithHandler(action).
 		WithTriggerOnAbort(false)
 
-	at.Start()
-	defer at.Stop()
+	a.Start()
+	defer a.Stop()
 
-	at.SetValue(wg)
-	at.Trigger()
+	a.SetValue(wg)
+	a.Trigger()
 	wg.Wait()
 }
 
-func TestAutotriggerActionTicker(t *testing.T) {
+func TestAutoActionTick(t *testing.T) {
 	wg := sync.WaitGroup{}
 
 	// keep track of the wait group state
@@ -45,7 +45,7 @@ func TestAutotriggerActionTicker(t *testing.T) {
 		}
 	}
 
-	at := NewAutotriggerAction(time.Millisecond * 3).
+	at := NewAutoAction(time.Millisecond * 3).
 		WithHandler(action).
 		WithTriggerOnAbort(false)
 
