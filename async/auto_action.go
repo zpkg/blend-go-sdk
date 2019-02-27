@@ -9,10 +9,10 @@ import (
 )
 
 // NewAutoAction returns a new NewAutoAction
-func NewAutoAction(interval time.Duration, maxCounter int32) *AutoAction {
+func NewAutoAction(interval time.Duration, maxCount int32) *AutoAction {
 	return &AutoAction{
 		Mutex:          sync.Mutex{},
-		maxCounter:     maxCounter,
+		maxCount:       maxCount,
 		action:         nil,
 		interval:       interval,
 		latch:          NewLatch(),
@@ -25,26 +25,31 @@ func NewAutoAction(interval time.Duration, maxCounter int32) *AutoAction {
 type AutoAction struct {
 	sync.Mutex
 	counter        int32
-	maxCounter     int32
+	maxCount       int32
 	action         func()
 	interval       time.Duration
 	latch          *Latch
 	triggerOnAbort bool
 }
 
-// WithMaxCount determines the maximum number of updates between action triggers
-func (a *AutoAction) WithMaxCount(maxCount int) *AutoAction {
-	a.maxCounter = 0
-	return a
+// MaxCount returns the number of increments between action triggers
+func (a *AutoAction) MaxCount() int32 {
+	return a.maxCount
 }
 
 // WithAction sets the trigger action
+// This should be called before Start(), and, if it's called after start, the AutoAction's lock should be acquired first
 func (a *AutoAction) WithAction(action func()) *AutoAction {
 	a.action = action
 	return a
 }
 
-// WithTriggerOnAbort determines whether the action should be triggered when NewAutoAction is stopped
+// ShouldTriggerOnAbort refers to whether the action should be triggered when NewAutoAction is stopped
+func (a *AutoAction) ShouldTriggerOnAbort() bool {
+	return a.triggerOnAbort
+}
+
+// WithTriggerOnAbort sets whether the action should be triggered when NewAutoAction is stopped
 func (a *AutoAction) WithTriggerOnAbort(triggerOnAbort bool) *AutoAction {
 	a.triggerOnAbort = triggerOnAbort
 	return a
@@ -102,7 +107,7 @@ func (a *AutoAction) runLoop() {
 
 // Increment updates the count
 func (a *AutoAction) Increment() {
-	if atomic.CompareAndSwapInt32(&a.counter, a.maxCounter-1, 0) {
+	if atomic.CompareAndSwapInt32(&a.counter, a.maxCount-1, 0) {
 		a.Trigger()
 		return
 	}
