@@ -38,7 +38,7 @@ func (a *AutoAction) WithMaxCount(maxCount int) *AutoAction {
 	return a
 }
 
-// WithHandler sets the trigger action
+// WithAction sets the trigger action
 func (a *AutoAction) WithAction(action func()) *AutoAction {
 	a.action = action
 	return a
