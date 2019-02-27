@@ -452,7 +452,6 @@ func (rc *Ctx) WriteNewCookie(name string, value string, expires time.Time, path
 		Expires:  expires,
 	}
 	rc.WriteCookie(c)
-
 }
 
 // ExtendCookieByDuration extends a cookie by a time duration (on the order of nanoseconds to hours).

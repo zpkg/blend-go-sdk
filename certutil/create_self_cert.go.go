@@ -6,5 +6,5 @@ func CreateSelfServerCert(commonName string, options ...CertOption) (*CertBundle
 	if err != nil {
 		return nil, err
 	}
-	return CreateServer(commonName, &ca, options...)
+	return CreateServer(commonName, ca, options...)
 }
