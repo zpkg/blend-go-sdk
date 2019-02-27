@@ -9,12 +9,11 @@ import (
 )
 
 // NewAutoAction returns a new NewAutoAction
-func NewAutoAction(interval time.Duration, maxCount int32) *AutoAction {
+func NewAutoAction(interval time.Duration, maxCounter int32) *AutoAction {
 	return &AutoAction{
-		value:          nil,
-		valueLock:      &sync.Mutex{},
-		maxCount:       maxCount,
-		handler:        nil,
+		Mutex:          sync.Mutex{},
+		maxCounter:     maxCounter,
+		action:         nil,
 		interval:       interval,
 		latch:          NewLatch(),
 		triggerOnAbort: true,
@@ -24,11 +23,10 @@ func NewAutoAction(interval time.Duration, maxCount int32) *AutoAction {
 // NewAutoAction is an action that is triggered automatically on some set interval.
 // It also exposes a function to trigger the action synchronously
 type AutoAction struct {
-	value          interface{}
-	valueLock      *sync.Mutex
+	sync.Mutex
 	counter        int32
-	maxCount       int32
-	handler        func(interface{})
+	maxCounter     int32
+	action         func()
 	interval       time.Duration
 	latch          *Latch
 	triggerOnAbort bool
@@ -36,13 +34,13 @@ type AutoAction struct {
 
 // WithMaxCount determines the maximum number of updates between action triggers
 func (a *AutoAction) WithMaxCount(maxCount int) *AutoAction {
-	a.maxCount = 0
+	a.maxCounter = 0
 	return a
 }
 
-// WithHandler sets the trigger handler
-func (a *AutoAction) WithHandler(handler func(interface{})) *AutoAction {
-	a.handler = handler
+// WithHandler sets the trigger action
+func (a *AutoAction) WithAction(action func()) *AutoAction {
+	a.action = action
 	return a
 }
 
@@ -91,7 +89,7 @@ func (a *AutoAction) runLoop() {
 	for {
 		select {
 		case <-ticker:
-			a.TriggerAsync()
+			a.Trigger()
 		case <-a.latch.NotifyStopping():
 			if a.triggerOnAbort {
 				a.Trigger()
@@ -104,59 +102,19 @@ func (a *AutoAction) runLoop() {
 
 // Increment updates the count
 func (a *AutoAction) Increment() {
-	atomic.AddInt32(&a.counter, 1)
-	count := atomic.LoadInt32(&a.counter)
-	if count >= a.maxCount {
-		a.valueLock.Lock()
-		defer a.valueLock.Unlock()
-		count = atomic.LoadInt32(&a.counter)
-		if count >= a.maxCount {
-			a.triggerUnsafe()
-		}
+	if atomic.CompareAndSwapInt32(&a.counter, a.maxCounter-1, 0) {
+		a.Trigger()
+		return
 	}
+	atomic.AddInt32(&a.counter, 1)
 }
 
-// Update updates the value and invokes the trigger handler if the max count is reached
-func (a *AutoAction) Update(value interface{}) {
-	a.valueLock.Lock()
-	defer a.valueLock.Unlock()
-
-	a.value = value
-	atomic.AddInt32(&a.counter, 1)
-	count := atomic.LoadInt32(&a.counter)
-	if count >= a.maxCount {
-		a.triggerUnsafe()
-	}
-}
-
-// Trigger invokes the handler, if one is set, with the value
-// This call is synchronous, in that it will call the trigger handler on the same goroutine.
+// Trigger invokes the action, if one is set, with the value
+// This call is synchronous, in that it will call the trigger action on the same goroutine.
 func (a *AutoAction) Trigger() {
-	a.valueLock.Lock()
-	defer a.valueLock.Unlock()
-	a.triggerUnsafe()
-}
-
-// TriggerAsync calls the handler, if one is set, with the value
-// This call is asynchronous, in that it will call the trigger handler on its own goroutine.
-func (a *AutoAction) TriggerAsync() {
-	a.valueLock.Lock()
-	defer a.valueLock.Unlock()
-	a.triggerUnsafeAsync()
-}
-
-// triggerUnsafe calls the handler, if one is set, without acquiring any locks
-func (a *AutoAction) triggerUnsafe() {
-	if a.handler != nil {
-		a.handler(a.value)
+	a.Lock()
+	defer a.Unlock()
+	if a.action != nil {
+		a.action()
 	}
-	atomic.StoreInt32(&a.counter, 0)
-}
-
-// triggerUnsafeAsync calls the handler, if one is set, without acquiring any locks
-func (a *AutoAction) triggerUnsafeAsync() {
-	if a.handler != nil {
-		go a.handler(a.value)
-	}
-	atomic.StoreInt32(&a.counter, 0)
 }
