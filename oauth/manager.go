@@ -87,9 +87,9 @@ type Manager struct {
 
 // OAuthURL is the auth url for google with a given clientID.
 // This is typically the link that a user will click on to start the auth process.
-func (m *Manager) OAuthURL(r *http.Request, redirect ...string) (oauthURL string, err error) {
+func (m *Manager) OAuthURL(r *http.Request, stateOptions ...StateOption) (oauthURL string, err error) {
 	var state string
-	state, err = SerializeState(m.CreateState(redirect...))
+	state, err = SerializeState(m.CreateState(stateOptions...))
 	if err != nil {
 		return
 	}
@@ -181,14 +181,13 @@ func (m *Manager) FetchProfile(ctx context.Context, accessToken string) (profile
 }
 
 // CreateState creates auth state.
-func (m *Manager) CreateState(redirect ...string) (state State) {
-	if len(m.secret) > 0 {
+func (m *Manager) CreateState(options ...StateOption) (state State) {
+	for _, opt := range options {
+		opt(&state)
+	}
+	if len(m.secret) > 0 && state.Token == "" && state.SecureToken == "" {
 		state.Token = uuid.V4().String()
 		state.SecureToken = m.hash(state.Token)
-	}
-
-	if len(redirect) > 0 && len(redirect[0]) > 0 {
-		state.RedirectURL = redirect[0]
 	}
 	return
 }

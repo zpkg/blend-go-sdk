@@ -13,11 +13,12 @@ import (
 
 // CreateCA creates a ca cert bundle.
 // The cert bundle can be used to generate client and server certificates.
-func CreateCA(options ...CertOption) (output CertBundle, err error) {
+func CreateCA(options ...CertOption) (*CertBundle, error) {
+	var output CertBundle
+	var err error
 	output.PrivateKey, err = rsa.GenerateKey(rand.Reader, 2048)
 	if err != nil {
-		err = exception.New(err)
-		return
+		return nil, exception.New(err)
 	}
 	output.PublicKey = &output.PrivateKey.PublicKey
 
@@ -25,8 +26,7 @@ func CreateCA(options ...CertOption) (output CertBundle, err error) {
 	var serialNumber *big.Int
 	serialNumber, err = rand.Int(rand.Reader, serialNumberLimit)
 	if err != nil {
-		err = exception.New(err)
-		return
+		return nil, exception.New(err)
 	}
 
 	csr := x509.Certificate{
@@ -51,15 +51,13 @@ func CreateCA(options ...CertOption) (output CertBundle, err error) {
 
 	der, err := x509.CreateCertificate(rand.Reader, &csr, &csr, output.PublicKey, output.PrivateKey)
 	if err != nil {
-		err = exception.New(err)
-		return
+		return nil, exception.New(err)
 	}
 	cert, err := x509.ParseCertificate(der)
 	if err != nil {
-		err = exception.New(err)
-		return
+		return nil, exception.New(err)
 	}
 	output.CertificateDERs = [][]byte{der}
 	output.Certificates = []x509.Certificate{*cert}
-	return
+	return &output, nil
 }

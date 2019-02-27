@@ -15,7 +15,7 @@ func TestNewClientConfig(t *testing.T) {
 	assert.Nil(err)
 
 	uid := uuid.V4().String()
-	client, err := CreateClient(uid, &ca)
+	client, err := CreateClient(uid, ca)
 	assert.Nil(err)
 
 	caPEM := new(bytes.Buffer)
