@@ -122,8 +122,9 @@ func (a *AutoAction) Update(value interface{}) {
 	defer a.valueLock.Unlock()
 
 	a.value = value
-	a.counter++
-	if a.counter >= a.maxCount {
+	atomic.AddInt32(&a.counter, 1)
+	count := atomic.LoadInt32(&a.counter)
+	if count >= a.maxCount {
 		a.triggerUnsafe()
 	}
 }
