@@ -8,9 +8,9 @@ import (
 )
 
 func main() {
-	log := logger.NewFromEnv()
+	log := logger.MustNewFromEnv()
 	app := web.New().WithLogger(log)
-	sf := web.NewCachedStaticFileServer(http.Dir("."))
+	csf := web.NewCachedStaticFileServer(http.Dir("."))
 
 	app.ServeStatic("/static/*filepath", "_static")
 	app.ServeStaticCached("/static_cached/*filepath", "_static")
@@ -18,11 +18,7 @@ func main() {
 		return r.Static("index.html")
 	})
 	app.GET("/cached", func(r *web.Ctx) web.Result {
-		cf, err := sf.GetCachedFile("index.html")
-		if err != nil {
-			return r.View().InternalError(err)
-		}
-		return cf
+		return csf.ServeFile(r, "index.html")
 	})
 	log.SyncFatalExit(app.Start())
 }

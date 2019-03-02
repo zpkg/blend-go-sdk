@@ -131,7 +131,5 @@ func (sc *StaticFileServer) ServeFile(r *Ctx) Result {
 		return r.DefaultResultProvider().InternalError(err)
 	}
 	http.ServeContent(r.Response(), r.Request(), filePath, finfo.ModTime(), f)
-
 	return nil
-
 }

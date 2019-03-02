@@ -122,7 +122,7 @@ func (ac *APIController) delete(r *web.Ctx) web.Result {
 }
 
 func main() {
-	app := web.New().WithLogger(logger.NewFromEnv())
+	app := web.New().WithLogger(logger.MustNewFromEnv())
 	app.Register(new(APIController))
 	app.Start()
 }
