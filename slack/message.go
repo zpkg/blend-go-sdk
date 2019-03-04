@@ -27,6 +27,12 @@ type Message struct {
 	ReplyBroadcast  bool                `json:"reply_broadcast"`
 	LinkNames       int                 `json:"link_names"`
 	Attachments     []MessageAttachment `json:"attachments"`
+
+	// Response-specific fields
+	BotID     string `json:"bot_id,omitempty"`
+	Type      string `json:"type,omitempty"`
+	SubType   string `json:"bot_message,omitempty"`
+	Timestamp string `json:"ts,omitempty"`
 }
 
 // MessageAttachment is an attachment for a message.

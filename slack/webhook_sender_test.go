@@ -72,14 +72,14 @@ func TestWebhookSenderDefaults(t *testing.T) {
 	assert.Equal("default-test", message.Username)
 }
 
-func TestWebhookSendAndRead(t *testing.T) {
+func TestWebhookSendAndReadResponse(t *testing.T) {
 	assert := assert.New(t)
 
-	mockResponse := Response{
-		OK:              true,
-		Channel:         "#bot-test",
-		ThreadTimestamp: "1503435956.000247",
-		Message: ResponseMessage{
+	mockResponse := PostMessageResponse{
+		OK:        true,
+		Channel:   "#bot-test",
+		Timestamp: "1503435956.000247",
+		Message: Message{
 			Text:     "Here's a message for you",
 			Username: "ecto1",
 			BotID:    "B19LU7CSY",
@@ -88,9 +88,9 @@ func TestWebhookSendAndRead(t *testing.T) {
 					Text: "This is an attachment",
 				},
 			},
-			Type:            "message",
-			SubType:         "bot_message",
-			ThreadTimestamp: "1503435956.000247",
+			Type:      "message",
+			SubType:   "bot_message",
+			Timestamp: "1503435956.000247",
 		},
 	}
 	ts := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
@@ -104,17 +104,17 @@ func TestWebhookSendAndRead(t *testing.T) {
 	sender := New(config)
 
 	// Test: Successful send should return the response body
-	response, err := sender.SendAndRead(context.TODO(), Message{
+	response, err := sender.SendAndReadResponse(context.TODO(), Message{
 		Text: "this is only a test",
 	})
 	assert.Nil(err)
 	assert.Equal(mockResponse, *response)
 }
 
-func TestWebhookSendAndReadStatusCode(t *testing.T) {
+func TestWebhookSendAndReadResponseStatusCode(t *testing.T) {
 	assert := assert.New(t)
 
-	mockResponse := Response{
+	mockResponse := PostMessageResponse{
 		OK:    false,
 		Error: "too_many_attachments",
 	}
@@ -130,21 +130,21 @@ func TestWebhookSendAndReadStatusCode(t *testing.T) {
 	sender := New(config)
 
 	// Test: Non-200 http response should cause an error to be returned along with the response body
-	response, err := sender.SendAndRead(context.TODO(), Message{
+	response, err := sender.SendAndReadResponse(context.TODO(), Message{
 		Text: "this is only a test",
 	})
 	assert.NotNil(err)
 	assert.Equal(mockResponse, *response)
 }
 
-func TestPostMessageAndRead(t *testing.T) {
+func TestPostMessageAndReadResponse(t *testing.T) {
 	assert := assert.New(t)
 
-	mockResponse := Response{
-		OK:              true,
-		Channel:         "#bot-test",
-		ThreadTimestamp: "1503435956.000247",
-		Message: ResponseMessage{
+	mockResponse := PostMessageResponse{
+		OK:        true,
+		Channel:   "#bot-test",
+		Timestamp: "1503435956.000247",
+		Message: Message{
 			Text:     "Here's a message for you",
 			Username: "ecto1",
 			BotID:    "B19LU7CSY",
@@ -153,9 +153,9 @@ func TestPostMessageAndRead(t *testing.T) {
 					Text: "This is an attachment",
 				},
 			},
-			Type:            "message",
-			SubType:         "bot_message",
-			ThreadTimestamp: "1503435956.000247",
+			Type:      "message",
+			SubType:   "bot_message",
+			Timestamp: "1503435956.000247",
 		},
 	}
 	ts := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
@@ -178,7 +178,7 @@ func TestPostMessageAndRead(t *testing.T) {
 
 	// Test: Channel and text parameters should be passed along in the request
 	expectedChannel, expectedText := "#test-channel", "Test test"
-	response, err := sender.PostMessageAndRead(expectedChannel, expectedText)
+	response, err := sender.PostMessageAndReadResponse(expectedChannel, expectedText)
 	assert.Nil(err)
 	assert.Equal(true, response.OK)
 	assert.Equal(expectedChannel, response.Channel)

@@ -63,22 +63,22 @@ func (whs WebhookSender) Send(ctx context.Context, message Message) error {
 	return nil
 }
 
-// SendAndRead sends a slack hook and returns the deserialized response
-func (whs WebhookSender) SendAndRead(ctx context.Context, message Message) (*Response, error) {
+// SendAndReadResponse sends a slack hook and returns the deserialized response
+func (whs WebhookSender) SendAndReadResponse(ctx context.Context, message Message) (*PostMessageResponse, error) {
 	res, err := whs.SendJSON(ctx, ApplyMessageOptions(message, whs.Defaults()...))
 	if err != nil {
 		return nil, err
 	}
 	defer res.Body.Close()
 
-	var contents Response
+	var contents PostMessageResponse
 	err = json.NewDecoder(res.Body).Decode(&contents)
 	if err != nil {
 		return nil, exception.New(err)
 	}
 
 	if res.StatusCode > http.StatusOK {
-		return &contents, exception.New(ErrNon200).WithMessage(fmt.Sprintf("%v", contents))
+		return &contents, exception.New(ErrNon200).WithMessage(fmt.Sprintf("%#v", contents))
 	}
 
 	return &contents, nil
@@ -96,8 +96,8 @@ func (whs WebhookSender) PostMessage(channel, messageText string, options ...Mes
 	return whs.Send(context.Background(), message)
 }
 
-// PostMessageAndRead posts a basic message to a given channel and returns the deserialized response
-func (whs WebhookSender) PostMessageAndRead(channel, messageText string, options ...MessageOption) (*Response, error) {
+// PostMessageAndReadResponse posts a basic message to a given channel and returns the deserialized response
+func (whs WebhookSender) PostMessageAndReadResponse(channel, messageText string, options ...MessageOption) (*PostMessageResponse, error) {
 	message := Message{
 		Channel: channel,
 		Text:    messageText,
@@ -105,7 +105,7 @@ func (whs WebhookSender) PostMessageAndRead(channel, messageText string, options
 	for _, option := range options {
 		option(&message)
 	}
-	return whs.SendAndRead(context.Background(), message)
+	return whs.SendAndReadResponse(context.Background(), message)
 }
 
 // PostMessageContext posts a basic message to a given chanel with a given context.
