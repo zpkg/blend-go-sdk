@@ -7,6 +7,11 @@ import (
 	"sync"
 )
 
+// Interface assertions
+var (
+	_ Fileserver = (*CachedStaticFileServer)(nil)
+)
+
 // NewCachedStaticFileServer returns a new static file cache.
 func NewCachedStaticFileServer(searchPaths ...http.FileSystem) *CachedStaticFileServer {
 	return &CachedStaticFileServer{
@@ -31,53 +36,64 @@ func (csfs *CachedStaticFileServer) Files() map[string]*CachedStaticFile {
 
 // Action is the entrypoint for the static server.
 func (csfs *CachedStaticFileServer) Action(r *Ctx) Result {
-	if csfs.middleware != nil {
-		return csfs.middleware(r)
-	}
-	return csfs.ServeFile(r)
-}
-
-// ServeFile writes the file to the response.
-func (csfs *CachedStaticFileServer) ServeFile(r *Ctx) Result {
-	csfs.Lock()
-	defer csfs.Unlock()
-
-	for key, values := range csfs.StaticFileServer.headers {
-		for _, value := range values {
-			r.Response().Header().Set(key, value)
-		}
-	}
-
 	filepath, err := r.RouteParam("filepath")
 	if err != nil {
 		return r.DefaultResultProvider().BadRequest(err)
 	}
-	if file, hasFile := csfs.files[filepath]; hasFile {
-		http.ServeContent(r.Response(), r.Request(), filepath, file.ModTime, file.Contents)
-		return nil
+
+	if csfs.middleware != nil {
+		return csfs.middleware(r)
+	}
+	return csfs.ServeFile(r, filepath)
+}
+
+// File returns a cached file at a given path.
+// It returns the cached instance of a file if it exists, and adds it to the cache if there is a miss.
+func (csfs *CachedStaticFileServer) File(filepath string) (*CachedStaticFile, error) {
+	csfs.Lock()
+	defer csfs.Unlock()
+
+	if file, ok := csfs.files[filepath]; ok {
+		return file, nil
 	}
 
-	file, err := csfs.StaticFileServer.ResolveFile(filepath)
+	diskFile, err := csfs.StaticFileServer.ResolveFile(filepath)
 	if err != nil {
-		return r.DefaultResultProvider().InternalError(err)
+		return nil, err
 	}
 
-	finfo, err := file.Stat()
+	finfo, err := diskFile.Stat()
 	if err != nil {
-		return r.DefaultResultProvider().InternalError(err)
+		return nil, err
 	}
 
-	contents, err := ioutil.ReadAll(file)
+	contents, err := ioutil.ReadAll(diskFile)
 	if err != nil {
-		return r.DefaultResultProvider().InternalError(err)
+		return nil, err
 	}
 
-	csfs.files[filepath] = &CachedStaticFile{
+	file := &CachedStaticFile{
 		Path:     filepath,
 		Contents: bytes.NewReader(contents),
 		ModTime:  finfo.ModTime(),
 		Size:     len(contents),
 	}
-	http.ServeContent(r.Response(), r.Request(), filepath, finfo.ModTime(), bytes.NewReader(contents))
+
+	csfs.files[filepath] = file
+	return file, nil
+}
+
+// ServeFile writes the file to the response.
+func (csfs *CachedStaticFileServer) ServeFile(r *Ctx, filepath string) Result {
+	for key, values := range csfs.StaticFileServer.headers {
+		for _, value := range values {
+			r.Response().Header().Set(key, value)
+		}
+	}
+	file, err := csfs.File(filepath)
+	if err != nil {
+		return r.DefaultResultProvider().InternalError(err)
+	}
+	http.ServeContent(r.Response(), r.Request(), filepath, file.ModTime, file.Contents)
 	return nil
 }

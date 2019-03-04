@@ -19,6 +19,6 @@ func main() {
 	})
 
 	if err := graceful.Shutdown(app); err != nil {
-		app.Logger().SyncFatalExit(err)
+		logger.FatalExit(err)
 	}
 }

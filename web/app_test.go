@@ -363,7 +363,7 @@ func TestAppViewResult(t *testing.T) {
 	app := New()
 	app.Views().AddPaths("testdata/test_file.html")
 	app.GET("/", func(r *Ctx) Result {
-		return r.View().View("test", "foobarbaz")
+		return r.Views().View("test", "foobarbaz")
 	})
 
 	res, meta, err := app.Mock().WithPathf("/").BytesWithMeta()
@@ -493,7 +493,7 @@ func TestAppViewErrorsRenderErrorView(t *testing.T) {
 	app := New()
 	app.Views().AddLiterals(`{{ define "malformed" }} {{ .Ctx ALSKADJALSKDJA }} {{ end }}`)
 	app.GET("/", func(r *Ctx) Result {
-		return r.View().View("malformed", nil)
+		return r.Views().View("malformed", nil)
 	})
 
 	_, err := app.Mock().Get("/").Bytes()
@@ -592,7 +592,7 @@ func (mvf mockViewTraceFinisher) Finish(ctx *Ctx, vr *ViewResult, err error) {
 
 func ok(_ *Ctx) Result            { return JSON.OK() }
 func internalError(_ *Ctx) Result { return JSON.InternalError(fmt.Errorf("only a test")) }
-func viewOK(ctx *Ctx) Result      { return ctx.View().View("ok", nil) }
+func viewOK(ctx *Ctx) Result      { return ctx.Views().View("ok", nil) }
 
 func TestAppTracer(t *testing.T) {
 	assert := assert.New(t)

@@ -8,10 +8,8 @@ import (
 )
 
 func main() {
-	log := logger.All()
-	cfg := web.NewConfigFromEnv()
-
-	app := web.NewFromConfig(cfg).WithLogger(log)
+	log := logger.MustNewFromEnv()
+	app := web.MustNewFromEnv().WithLogger(log)
 	app.GET("/", func(r *web.Ctx) web.Result {
 		return r.Text().Result("foo")
 	})

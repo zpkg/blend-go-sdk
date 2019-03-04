@@ -3,7 +3,7 @@ package web
 // ViewProviderAsDefault sets the context.DefaultResultProvider() equal to context.View().
 func ViewProviderAsDefault(action Action) Action {
 	return func(ctx *Ctx) Result {
-		return action(ctx.WithDefaultResultProvider(ctx.View()))
+		return action(ctx.WithDefaultResultProvider(ctx.Views()))
 	}
 }
 
