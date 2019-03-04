@@ -2,6 +2,7 @@ package slack
 
 import (
 	"context"
+	"encoding/json"
 	"net/http"
 	"net/http/httptest"
 	"testing"
@@ -69,4 +70,117 @@ func TestWebhookSenderDefaults(t *testing.T) {
 	assert.Equal("this is only a test", message.Text)
 	assert.Equal("#bot-test", message.Channel)
 	assert.Equal("default-test", message.Username)
+}
+
+func TestWebhookSendAndRead(t *testing.T) {
+	assert := assert.New(t)
+
+	mockResponse := Response{
+		OK:              true,
+		Channel:         "#bot-test",
+		ThreadTimestamp: "1503435956.000247",
+		Message: ResponseMessage{
+			Text:     "Here's a message for you",
+			Username: "ecto1",
+			BotID:    "B19LU7CSY",
+			Attachments: []MessageAttachment{
+				MessageAttachment{
+					Text: "This is an attachment",
+				},
+			},
+			Type:            "message",
+			SubType:         "bot_message",
+			ThreadTimestamp: "1503435956.000247",
+		},
+	}
+	ts := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		json.NewEncoder(w).Encode(mockResponse)
+	}))
+	defer ts.Close()
+
+	config := &Config{
+		Webhook: ts.URL,
+	}
+	sender := New(config)
+
+	// Test: Successful send should return the response body
+	response, err := sender.SendAndRead(context.TODO(), Message{
+		Text: "this is only a test",
+	})
+	assert.Nil(err)
+	assert.Equal(mockResponse, *response)
+}
+
+func TestWebhookSendAndReadStatusCode(t *testing.T) {
+	assert := assert.New(t)
+
+	mockResponse := Response{
+		OK:    false,
+		Error: "too_many_attachments",
+	}
+	ts := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		w.WriteHeader(http.StatusBadRequest)
+		json.NewEncoder(w).Encode(mockResponse)
+	}))
+	defer ts.Close()
+
+	config := &Config{
+		Webhook: ts.URL,
+	}
+	sender := New(config)
+
+	// Test: Non-200 http response should cause an error to be returned along with the response body
+	response, err := sender.SendAndRead(context.TODO(), Message{
+		Text: "this is only a test",
+	})
+	assert.NotNil(err)
+	assert.Equal(mockResponse, *response)
+}
+
+func TestPostMessageAndRead(t *testing.T) {
+	assert := assert.New(t)
+
+	mockResponse := Response{
+		OK:              true,
+		Channel:         "#bot-test",
+		ThreadTimestamp: "1503435956.000247",
+		Message: ResponseMessage{
+			Text:     "Here's a message for you",
+			Username: "ecto1",
+			BotID:    "B19LU7CSY",
+			Attachments: []MessageAttachment{
+				MessageAttachment{
+					Text: "This is an attachment",
+				},
+			},
+			Type:            "message",
+			SubType:         "bot_message",
+			ThreadTimestamp: "1503435956.000247",
+		},
+	}
+	ts := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		var received Message
+		err := json.NewDecoder(r.Body).Decode(&received)
+		if err != nil {
+			w.WriteHeader(http.StatusBadRequest)
+		} else {
+			mockResponse.Channel = received.Channel
+			mockResponse.Message.Text = received.Text
+		}
+		json.NewEncoder(w).Encode(mockResponse)
+	}))
+	defer ts.Close()
+
+	config := &Config{
+		Webhook: ts.URL,
+	}
+	sender := New(config)
+
+	// Test: Channel and text parameters should be passed along in the request
+	expectedChannel, expectedText := "#test-channel", "Test test"
+	response, err := sender.PostMessageAndRead(expectedChannel, expectedText)
+	assert.Nil(err)
+	assert.Equal(true, response.OK)
+	assert.Equal(expectedChannel, response.Channel)
+	assert.Equal(expectedText, response.Message.Text)
 }

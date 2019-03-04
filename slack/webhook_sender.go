@@ -2,6 +2,8 @@ package slack
 
 import (
 	"context"
+	"encoding/json"
+	"fmt"
 	"io/ioutil"
 
 	"net/http"
@@ -61,7 +63,28 @@ func (whs WebhookSender) Send(ctx context.Context, message Message) error {
 	return nil
 }
 
-// PostMessage posts a basic message to a given chanel.
+// SendAndRead sends a slack hook and returns the deserialized response
+func (whs WebhookSender) SendAndRead(ctx context.Context, message Message) (*Response, error) {
+	res, err := whs.SendJSON(ctx, ApplyMessageOptions(message, whs.Defaults()...))
+	if err != nil {
+		return nil, err
+	}
+	defer res.Body.Close()
+
+	var contents Response
+	err = json.NewDecoder(res.Body).Decode(&contents)
+	if err != nil {
+		return nil, exception.New(err)
+	}
+
+	if res.StatusCode > http.StatusOK {
+		return &contents, exception.New(ErrNon200).WithMessage(fmt.Sprintf("%v", contents))
+	}
+
+	return &contents, nil
+}
+
+// PostMessage posts a basic message to a given channel.
 func (whs WebhookSender) PostMessage(channel, messageText string, options ...MessageOption) error {
 	message := Message{
 		Channel: channel,
@@ -71,6 +94,18 @@ func (whs WebhookSender) PostMessage(channel, messageText string, options ...Mes
 		option(&message)
 	}
 	return whs.Send(context.Background(), message)
+}
+
+// PostMessageAndRead posts a basic message to a given channel and returns the deserialized response
+func (whs WebhookSender) PostMessageAndRead(channel, messageText string, options ...MessageOption) (*Response, error) {
+	message := Message{
+		Channel: channel,
+		Text:    messageText,
+	}
+	for _, option := range options {
+		option(&message)
+	}
+	return whs.SendAndRead(context.Background(), message)
 }
 
 // PostMessageContext posts a basic message to a given chanel with a given context.
