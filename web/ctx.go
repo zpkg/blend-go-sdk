@@ -159,19 +159,19 @@ func (rc *Ctx) WithViews(vc *ViewCache) *Ctx {
 	return rc
 }
 
-// View returns the view cache as a result provider.
+// Views returns the view cache as a result provider.
 /*
 It returns a reference to the view cache where views can either be read from disk
 for every request (uncached) or read from an in-memory cache.
 
 To return a web result for a view with the name "index" simply return:
 
-	return r.View().View("index", myViewmodel)
+	return r.Views().View("index", myViewmodel)
 
 It is important to not you'll want to have loaded the "index" view at some point
 in the application bootstrap (typically when you register your controller).
 */
-func (rc *Ctx) View() *ViewCache {
+func (rc *Ctx) Views() *ViewCache {
 	return rc.views
 }
 
