@@ -31,7 +31,7 @@ type Message struct {
 	// Response-specific fields
 	BotID     string `json:"bot_id,omitempty"`
 	Type      string `json:"type,omitempty"`
-	SubType   string `json:"bot_message,omitempty"`
+	SubType   string `json:"subtype,omitempty"`
 	Timestamp string `json:"ts,omitempty"`
 }
 
