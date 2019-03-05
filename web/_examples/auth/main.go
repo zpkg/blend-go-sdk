@@ -17,7 +17,7 @@ You should investigate specific authentication mechanisms like oauth to do the a
 */
 
 func main() {
-	app := web.MustNewFromEnv().WithLogger(logger.All())
+	app := web.MustNewFromEnv().WithLogger(logger.All()).WithAuth(web.NewLocalAuthManager())
 
 	app.ServeStaticCached("/cached", "_static")
 	app.SetStaticMiddleware("/cached", web.SessionMiddleware(func(ctx *web.Ctx) web.Result {

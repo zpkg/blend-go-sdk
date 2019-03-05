@@ -36,7 +36,7 @@ type Job struct {
 	timeout  time.Duration
 	action   func(context.Context) error
 
-	log         logger.Log
+	log         logger.FullReceiver
 	statsClient stats.Collector
 	slackClient slack.Sender
 	emailClient email.Sender
@@ -91,7 +91,7 @@ func (job *Job) WithTimeout(d time.Duration) *Job {
 }
 
 // WithLogger sets the job logger.
-func (job *Job) WithLogger(log logger.Log) *Job {
+func (job *Job) WithLogger(log logger.FullReceiver) *Job {
 	job.log = log
 	return job
 }
