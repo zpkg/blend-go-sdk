@@ -2,12 +2,12 @@ package configutil
 
 import "time"
 
-// Set coalesces a given list of sources into a variable.
-func Set(destination *string, sources ...ValueSource) error {
+// SetString coalesces a given list of sources into a variable.
+func SetString(destination *string, sources ...StringSource) error {
 	var value *string
 	var err error
 	for _, source := range sources {
-		value, err = source.Value()
+		value, err = source.String()
 		if err != nil {
 			return err
 		}
@@ -20,16 +20,16 @@ func Set(destination *string, sources ...ValueSource) error {
 }
 
 // SetBool coalesces a given list of sources into a variable.
-func SetBool(destination *bool, sources ...BoolValueSource) error {
+func SetBool(destination **bool, sources ...BoolSource) error {
 	var value *bool
 	var err error
 	for _, source := range sources {
-		value, err = source.BoolValue()
+		value, err = source.Bool()
 		if err != nil {
 			return err
 		}
 		if value != nil {
-			*destination = *value
+			*destination = value
 			return nil
 		}
 	}
@@ -37,11 +37,11 @@ func SetBool(destination *bool, sources ...BoolValueSource) error {
 }
 
 // SetInt coalesces a given list of sources into a variable.
-func SetInt(destination *int, sources ...IntValueSource) error {
+func SetInt(destination *int, sources ...IntSource) error {
 	var value *int
 	var err error
 	for _, source := range sources {
-		value, err = source.IntValue()
+		value, err = source.Int()
 		if err != nil {
 			return err
 		}
@@ -53,12 +53,12 @@ func SetInt(destination *int, sources ...IntValueSource) error {
 	return nil
 }
 
-// SetFloat coalesces a given list of sources into a variable.
-func SetFloat(destination *float64, sources ...FloatValueSource) error {
+// SetFloat64 coalesces a given list of sources into a variable.
+func SetFloat64(destination *float64, sources ...Float64Source) error {
 	var value *float64
 	var err error
 	for _, source := range sources {
-		value, err = source.FloatValue()
+		value, err = source.Float64()
 		if err != nil {
 			return err
 		}
@@ -71,11 +71,11 @@ func SetFloat(destination *float64, sources ...FloatValueSource) error {
 }
 
 // SetDuration coalesces a given list of sources into a variable.
-func SetDuration(destination *time.Duration, sources ...DurationValueSource) error {
+func SetDuration(destination *time.Duration, sources ...DurationSource) error {
 	var value *time.Duration
 	var err error
 	for _, source := range sources {
-		value, err = source.DurationValue()
+		value, err = source.Duration()
 		if err != nil {
 			return err
 		}

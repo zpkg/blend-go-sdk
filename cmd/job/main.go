@@ -35,10 +35,10 @@ type jobConfig struct {
 
 func (jc *jobConfig) Resolve() error {
 	return configutil.AnyError(
-		configutil.Set(&jc.Name, configutil.Const(*name), configutil.Const(env.Env().ServiceName()), configutil.Const(jc.Name), configutil.Const(stringutil.Letters.Random(8))),
-		configutil.Set(&jc.Schedule, configutil.Const(*schedule), configutil.Const(jc.Schedule)),
-		configutil.SetDuration(&jc.Timeout, configutil.DurationConst(*timeout), configutil.DurationConst(jc.Timeout)),
-		configutil.Set(&jc.Web.BindAddr, configutil.Const(*bind), configutil.Const(jc.Web.BindAddr)),
+		configutil.SetString(&jc.Name, configutil.String(*name), configutil.String(env.Env().ServiceName()), configutil.String(jc.Name), configutil.String(stringutil.Letters.Random(8))),
+		configutil.SetString(&jc.Schedule, configutil.String(*schedule), configutil.String(jc.Schedule)),
+		configutil.SetDuration(&jc.Timeout, configutil.Duration(*timeout), configutil.Duration(jc.Timeout)),
+		configutil.SetString(&jc.Web.BindAddr, configutil.String(*bind), configutil.String(jc.Web.BindAddr)),
 	)
 }
 

@@ -74,7 +74,7 @@ func ReadFromPaths(ref Any, paths ...string) (path string, err error) {
 		return
 	}
 
-	if typed, ok := ref.(Resolver); ok {
+	if typed, ok := ref.(ConfigResolver); ok {
 		if err := typed.Resolve(); err != nil {
 			return "", err
 		}

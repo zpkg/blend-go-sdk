@@ -3,48 +3,50 @@ package configutil
 import "time"
 
 var (
-	_ ValueSource         = (*ValueFunc)(nil)
-	_ BoolValueSource     = (*BoolValueFunc)(nil)
-	_ IntValueSource      = (*IntValueFunc)(nil)
-	_ DurationValueSource = (*DurationValueFunc)(nil)
+	_ StringSource   = (*StringFunc)(nil)
+	_ BoolSource     = (*BoolFunc)(nil)
+	_ IntSource      = (*IntFunc)(nil)
+	_ Float64Source  = (*Float64Func)(nil)
+	_ DurationSource = (*DurationFunc)(nil)
 )
 
-// ValueFunc is a value source from a function.
-type ValueFunc func() (*string, error)
+// StringFunc is a value source from a function.
+type StringFunc func() (*string, error)
 
-// Value returns an invocation of the function.
-func (vf ValueFunc) Value() (*string, error) {
+// StringValue returns an invocation of the function.
+func (svf StringFunc) String() (*string, error) {
+	return svf()
+}
+
+// BoolFunc is a bool value source.
+// It can be used with configutil.SetBool
+type BoolFunc func() (*bool, error)
+
+// Bool returns an invocation of the function.
+func (vf BoolFunc) Bool() (*bool, error) {
 	return vf()
 }
 
-// BoolValueFunc is a bool value source from a commandline flag.
-type BoolValueFunc func() (*bool, error)
+// IntFunc is an int value source from a commandline flag.
+type IntFunc func() (*int, error)
 
-// BoolValue returns an invocation of the function.
-func (vf BoolValueFunc) BoolValue() (*bool, error) {
+// Int returns an invocation of the function.
+func (vf IntFunc) Int() (*int, error) {
 	return vf()
 }
 
-// IntValueFunc is an int value source from a commandline flag.
-type IntValueFunc func() (*int, error)
+// Float64Func is a float value source from a commandline flag.
+type Float64Func func() (*float64, error)
 
-// IntValue returns an invocation of the function.
-func (vf IntValueFunc) IntValue() (*int, error) {
+// Float64 returns an invocation of the function.
+func (vf Float64Func) Float64() (*float64, error) {
 	return vf()
 }
 
-// FloatValueFunc is a float value source from a commandline flag.
-type FloatValueFunc func() (*float64, error)
+// DurationFunc is a value source from a function.
+type DurationFunc func() (*time.Duration, error)
 
-// FloatValue returns an invocation of the function.
-func (vf FloatValueFunc) FloatValue() (*float64, error) {
-	return vf()
-}
-
-// DurationValueFunc is a value source from a function.
-type DurationValueFunc func() (*time.Duration, error)
-
-// DurationValue returns an invocation of the function.
-func (vf DurationValueFunc) DurationValue() (*time.Duration, error) {
+// Duration returns an invocation of the function.
+func (vf DurationFunc) Duration() (*time.Duration, error) {
 	return vf()
 }

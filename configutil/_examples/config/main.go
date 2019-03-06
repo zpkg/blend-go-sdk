@@ -6,6 +6,7 @@ import (
 
 	cfg "github.com/blend/go-sdk/configutil"
 	"github.com/blend/go-sdk/logger"
+	"github.com/blend/go-sdk/ref"
 )
 
 var (
@@ -15,20 +16,22 @@ var (
 
 // Config is a sample config.
 type Config struct {
-	Target      string `yaml:"target"`
-	Environment string `yaml:"env"`
+	Target       string `yaml:"target"`
+	DebugEnabled *bool  `yaml:"debugEnabled"`
+	Environment  string `yaml:"env"`
 }
 
 // Resolve parses the config and sets values from predefined sources.
 func (c *Config) Resolve() error {
 	return cfg.AnyError(
-		cfg.Set(&c.Target, cfg.Const(*flagTarget), cfg.Env("TARGET"), cfg.Const(c.Target), cfg.Const("https://google.com/robots.txt")),
-		cfg.Set(&c.Environment, cfg.Const(*flagEnvironment), cfg.Env("SERVICE_ENV"), cfg.Const(c.Environment), cfg.Const("development")),
+		cfg.SetString(&c.Target, cfg.String(*flagTarget), cfg.Env("TARGET"), cfg.String(c.Target), cfg.String("https://google.com/robots.txt")),
+		cfg.SetBool(&c.DebugEnabled, cfg.Env("DEBUG_ENABLED"), cfg.Bool(c.DebugEnabled), cfg.Bool(ref.Bool(true))),
+		cfg.SetString(&c.Environment, cfg.String(*flagEnvironment), cfg.Env("SERVICE_ENV"), cfg.String(c.Environment), cfg.String("development")),
 	)
 }
 
 var (
-	_ cfg.Resolver = (*Config)(nil)
+	_ cfg.ConfigResolver = (*Config)(nil)
 )
 
 func main() {
@@ -38,5 +41,6 @@ func main() {
 		logger.FatalExit(err)
 	}
 	fmt.Println("target:", config.Target)
+	fmt.Println("debug enabled:", *config.DebugEnabled)
 	fmt.Println("env:", config.Environment)
 }
