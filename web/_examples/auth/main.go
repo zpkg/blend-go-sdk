@@ -14,6 +14,7 @@ import (
 This example is meant to illustrate the bare minimum required to implement an authenticated web app.
 It is meant to be extended considerably, and is not secure as currently formed.
 You should investigate specific authentication mechanisms like oauth to do the actual authentication.
+Caveat; this will only work if you are deploying a single instance of the app.
 */
 
 func main() {
