@@ -11,8 +11,11 @@ type ViewModel struct {
 	ViewModel interface{}
 }
 
-// StatusViewModel returns the status view model.
-type StatusViewModel struct {
-	StatusCode int
-	Response   interface{}
+// Wrap returns a ViewModel that wraps a new object.
+func (vm ViewModel) Wrap(other interface{}) ViewModel {
+	return ViewModel{
+		Env:       vm.Env,
+		Ctx:       vm.Ctx,
+		ViewModel: other,
+	}
 }

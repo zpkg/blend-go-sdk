@@ -197,12 +197,12 @@ func (job Job) notify(ctx context.Context, flag logger.Flag) {
 	}
 	if job.slackClient != nil {
 		if ji := cron.GetJobInvocation(ctx); ji != nil {
-			logger.MaybeError(job.log, job.slackClient.Send(context.Background(), NewSlackMessage(string(flag), ji)))
+			logger.MaybeError(job.log, job.slackClient.Send(context.Background(), NewSlackMessage(ji)))
 		}
 	}
 	if job.emailClient != nil {
 		if ji := cron.GetJobInvocation(ctx); ji != nil {
-			message, err := NewEmailMessage(string(flag), ji)
+			message, err := NewEmailMessage(ji)
 			if err != nil {
 				logger.MaybeError(job.log, err)
 			}

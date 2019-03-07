@@ -7,14 +7,14 @@ import (
 )
 
 // NewEmailMessage returns a new email message.
-func NewEmailMessage(status string, ji *cron.JobInvocation, options ...email.MessageOption) (email.Message, error) {
+func NewEmailMessage(ji *cron.JobInvocation, options ...email.MessageOption) (email.Message, error) {
 	message := email.Message{}
 
 	vars := map[string]interface{}{
-		"jobName":   ji.JobName,
-		"jobStatus": string(status),
-		"elapsed":   ji.Elapsed,
-		"err":       ji.Err,
+		"jobName": ji.JobName,
+		"status":  ji.Status,
+		"elapsed": ji.Elapsed,
+		"err":     ji.Err,
 	}
 	var err error
 	message.Subject, err = template.New().WithBody(DefaultEmailSubjectTemplate).WithVars(vars).ProcessString()
@@ -38,13 +38,13 @@ const (
 	DefaultEmailMimeType = "text/plain"
 
 	// DefaultEmailSubjectTemplate is the default subject template.
-	DefaultEmailSubjectTemplate = `{{.Var "jobName" }} :: {{ .Var "jobStatus" }}`
+	DefaultEmailSubjectTemplate = `{{.Var "jobName" }} :: {{ .Var "status" }}`
 
 	// DefaultEmailHTMLBodyTemplate is the default email html body template.
 	DefaultEmailHTMLBodyTemplate = `
 <html xmlns="http://www.w3.org/1999/xhtml">
 <head>
-<title>{{ .Var "jobName" }} {{ .Var "jobStatus" "unknown" }}</title>
+<title>{{ .Var "jobName" }} {{ .Var "status" "unknown" }}</title>
 <meta http-equiv="Content-Type" content="text/html; charset=UTF-8" />
 <meta http-equiv="X-UA-Compatible" content="IE=edge" />
 <meta name="viewport" content="width=device-width, initial-scale=1.0 " />
@@ -58,7 +58,7 @@ const (
 </style>
 </head>
 <body class="email-body">
-	<h2>{{ .Var "jobName" }} {{ .Var "jobStatus" "Unknown" }}</h2>
+	<h2>{{ .Var "jobName" }} {{ .Var "status" "Unknown" }}</h2>
 	<div class="email-details">
 	{{ if .Var "err" }}
 	<pre>{{ .Var "err" }}</pre>
@@ -69,7 +69,7 @@ const (
 `
 
 	// DefaultEmailTextBodyTemplate is the default body template.
-	DefaultEmailTextBodyTemplate = `{{ .Var "jobName" }} {{ .Var "jobStatus" }}
+	DefaultEmailTextBodyTemplate = `{{ .Var "jobName" }} {{ .Var "status" }}
 Elapsed: {{ .Var "elapsed" }}
 {{ if .HasVar "err" }}Error: {{ .Var "err" }}{{end}}`
 )
