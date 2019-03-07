@@ -3,6 +3,8 @@ package stats
 import (
 	"fmt"
 	"time"
+	
+	"github.com/blend/go-sdk/timeutil"
 )
 
 // Assert that the mock collector implements Collector.
@@ -61,7 +63,7 @@ func (mc MockCollector) Histogram(name string, value float64, tags ...string) er
 
 // TimeInMilliseconds adds a mock time in millis event to the event stream with a value.
 func (mc MockCollector) TimeInMilliseconds(name string, value time.Duration, tags ...string) error {
-	mc.Events <- MockMetric{Name: name, TimeInMilliseconds: millis(value), Tags: append(mc.defaultTags, tags...)}
+	mc.Events <- MockMetric{Name: name, TimeInMilliseconds: timeutil.Milliseconds(value), Tags: append(mc.defaultTags, tags...)}
 	return nil
 }
 
@@ -75,6 +77,3 @@ type MockMetric struct {
 	Tags               []string
 }
 
-func millis(d time.Duration) float64 {
-	return float64(d / time.Millisecond)
-}
