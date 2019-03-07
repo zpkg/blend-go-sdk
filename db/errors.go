@@ -19,7 +19,7 @@ const (
 	// ErrConnectionAlreadyOpen is an error indicating the db connection was already opened.
 	ErrConnectionAlreadyOpen exception.Class = "db: the connection is already opened"
 	// ErrConnectionClosed is an error indicating the db connection hasn't been opened.
-	ErrConnectionClosed exception.Class = "db: the connection is closed"
+	ErrConnectionClosed exception.Class = "db: the connection is closed, or is being used before opened"
 	// ErrPlanCacheUnset is an error indicating the statement cache is unset.
 	ErrPlanCacheUnset exception.Class = "db: the plan cache is unset"
 	// ErrPlanCacheKeyUnset is an error indicating the plan cache key is unset.

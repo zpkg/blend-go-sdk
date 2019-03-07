@@ -8,6 +8,7 @@ import (
 
 	"github.com/lib/pq"
 
+	"github.com/blend/go-sdk/exception"
 	"github.com/blend/go-sdk/logger"
 
 	// PQ is the postgres driver
@@ -217,6 +218,9 @@ func (dbc *Connection) Begin(opts ...*sql.TxOptions) (*sql.Tx, error) {
 
 // BeginContext starts a new transaction in a givent context.
 func (dbc *Connection) BeginContext(context context.Context, opts ...*sql.TxOptions) (*sql.Tx, error) {
+	if dbc.connection == nil {
+		return nil, exception.New(ErrConnectionClosed)
+	}
 	if len(opts) > 0 {
 		tx, err := dbc.connection.BeginTx(context, opts[0])
 		return tx, Error(err)

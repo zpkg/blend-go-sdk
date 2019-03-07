@@ -10,8 +10,22 @@ import (
 	"sync"
 
 	"github.com/blend/go-sdk/assert"
+	"github.com/blend/go-sdk/exception"
 	"github.com/blend/go-sdk/uuid"
 )
+
+// TestConnectionSanityCheck tests if we can connect to the db, a.k.a., if the underlying driver works.
+func TestConnectionUseBeforeOpen(t *testing.T) {
+	assert := assert.New(t)
+
+	conn, err := NewFromEnv()
+	assert.Nil(err)
+
+	tx, err := conn.Begin()
+	assert.NotNil(err)
+	assert.True(exception.Is(ErrConnectionClosed, err))
+	assert.Nil(tx)
+}
 
 // TestConnectionSanityCheck tests if we can connect to the db, a.k.a., if the underlying driver works.
 func TestConnectionSanityCheck(t *testing.T) {
