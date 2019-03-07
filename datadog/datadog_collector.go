@@ -133,5 +133,5 @@ func ConvertEvent(e stats.Event) *statsd.Event {
 	}
 }
 func millis(d time.Duration) float64 {
-	return float64(d / time.Millisecond)
+	return float64(d) / float64(time.Millisecond)
 }
