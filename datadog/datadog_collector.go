@@ -9,6 +9,7 @@ import (
 
 	"github.com/blend/go-sdk/env"
 	"github.com/blend/go-sdk/stats"
+	"github.com/blend/go-sdk/timeutil"
 )
 
 // Assert that the datadog collector implements stats.Collector and stats.EventCollector.
@@ -91,7 +92,7 @@ func (dc *Collector) Histogram(name string, value float64, tags ...string) error
 
 // TimeInMilliseconds sets a timing value.
 func (dc *Collector) TimeInMilliseconds(name string, value time.Duration, tags ...string) error {
-	return dc.client.TimeInMilliseconds(name, millis(value), dc.tags(tags...), 1.0)
+	return dc.client.TimeInMilliseconds(name, timeutil.Milliseconds(value), dc.tags(tags...), 1.0)
 }
 
 // SimpleEvent sends an event w/ title and text
@@ -131,7 +132,4 @@ func ConvertEvent(e stats.Event) *statsd.Event {
 		AlertType:      statsd.EventAlertType(e.AlertType),
 		Tags:           e.Tags,
 	}
-}
-func millis(d time.Duration) float64 {
-	return float64(d / time.Millisecond)
 }
