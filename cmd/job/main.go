@@ -112,10 +112,12 @@ func main() {
 	var emailClient email.Sender
 	if !cfg.AWS.IsZero() {
 		emailClient = ses.New(aws.MustNewSession(&cfg.AWS))
+		log.SyncInfof("adding email notifications")
 	}
 	var slackClient slack.Sender
 	if !cfg.Slack.IsZero() {
 		slackClient = slack.New(&cfg.Slack)
+		log.SyncInfof("adding slack notifications")
 	}
 	var statsClient stats.Collector
 	if !cfg.Datadog.IsZero() {
@@ -123,10 +125,13 @@ func main() {
 		if err != nil {
 			log.SyncFatalExit(err)
 		}
+		log.SyncInfof("adding datadog metrics")
 	}
+
 	var errorClient diagnostics.Notifier
 	if !cfg.Airbrake.IsZero() {
 		errorClient = airbrake.MustNew(&cfg.Airbrake)
+		log.SyncInfof("adding airbrake notifications")
 	}
 
 	jobs := cron.NewFromConfig(&cfg.Config.Config).WithLogger(log)
