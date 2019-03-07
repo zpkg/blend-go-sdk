@@ -12,6 +12,8 @@ import (
 type JobConfig struct {
 	// Name is the name of the job.
 	Name string `json:"name" yaml:"name"`
+	// Description is a description of the job.
+	Description string `json:"description" yaml:"description"`
 	// Schedule returns the job schedule.
 	Schedule string `json:"schedule" yaml:"schedule"`
 	// Timeout represents the abort threshold for the job.
@@ -33,9 +35,14 @@ type JobConfig struct {
 	NotifyOnDisabled *bool `json:"notifyOnDisabled" yaml:"notifyOnDisabled"`
 }
 
-// NameOrDefault returns the job name or a default (uuid v4).
+// NameOrDefault returns the job name if it's set.
 func (jc JobConfig) NameOrDefault() string {
 	return configutil.CoalesceString(jc.Name, "")
+}
+
+// DescritionOrDefault returns the job description if it's set.
+func (jc JobConfig) DescritionOrDefault() string {
+	return configutil.CoalesceString(jc.Description, "")
 }
 
 // ScheduleOrDefault returns the schedule or a default (every 5 minutes).

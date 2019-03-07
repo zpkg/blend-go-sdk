@@ -4,6 +4,7 @@ import "time"
 
 var (
 	_ StringSource   = (*StringFunc)(nil)
+	_ StringsSource  = (*StringsFunc)(nil)
 	_ BoolSource     = (*BoolFunc)(nil)
 	_ IntSource      = (*IntFunc)(nil)
 	_ Float64Source  = (*Float64Func)(nil)
@@ -13,8 +14,16 @@ var (
 // StringFunc is a value source from a function.
 type StringFunc func() (*string, error)
 
-// StringValue returns an invocation of the function.
+// String returns an invocation of the function.
 func (svf StringFunc) String() (*string, error) {
+	return svf()
+}
+
+// StringsFunc is a value source from a function.
+type StringsFunc func() ([]string, error)
+
+// Strings returns an invocation of the function.
+func (svf StringsFunc) Strings() ([]string, error) {
 	return svf()
 }
 

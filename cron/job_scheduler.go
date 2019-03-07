@@ -19,6 +19,10 @@ func NewJobScheduler(cfg *Config, job Job) *JobScheduler {
 		Config: cfg,
 	}
 
+	if typed, ok := job.(DescriptionProvider); ok {
+		js.Description = typed.Description()
+	}
+
 	if typed, ok := job.(ScheduleProvider); ok {
 		js.Schedule = typed.Schedule()
 	}
@@ -61,8 +65,9 @@ type JobScheduler struct {
 	sync.Mutex `json:"-"`
 	Latch      *async.Latch `json:"-"`
 
-	Name string `json:"name"`
-	Job  Job    `json:"-"`
+	Name        string `json:"name"`
+	Description string `json:"description"`
+	Job         Job    `json:"-"`
 
 	Tracer Tracer              `json:"-"`
 	Log    logger.FullReceiver `json:"-"`

@@ -19,6 +19,23 @@ func SetString(destination *string, sources ...StringSource) error {
 	return nil
 }
 
+// SetStrings coalesces a given list of sources into a variable.
+func SetStrings(destination *[]string, sources ...StringsSource) error {
+	var value []string
+	var err error
+	for _, source := range sources {
+		value, err = source.Strings()
+		if err != nil {
+			return err
+		}
+		if value != nil {
+			*destination = value
+			return nil
+		}
+	}
+	return nil
+}
+
 // SetBool coalesces a given list of sources into a variable.
 func SetBool(destination **bool, sources ...BoolSource) error {
 	var value *bool

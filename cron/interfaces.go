@@ -17,6 +17,11 @@ MethodName[Receiver|Provider] is the general pattern.
 They're mostly the same except
 */
 
+// DescriptionProvider is a type that proivdes a description.
+type DescriptionProvider interface {
+	Description() string
+}
+
 // ScheduleProvider returns a schedule for the job.
 type ScheduleProvider interface {
 	Schedule() Schedule

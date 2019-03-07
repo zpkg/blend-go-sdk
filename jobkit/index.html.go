@@ -58,14 +58,14 @@ var indexTemplate = `
 						<span class="none">-</span>
 					{{ end }}
 					</td>
-					<td><!-- last elapsed -->
+					<td> <!-- last elapsed -->
 					{{ if $job.Last }}
 						{{ $job.Last.Elapsed }}
 					{{ else }}
 						<span class="none">-</span>
 					{{ end }}
 					</td>
-					<td><!-- actions -->
+					<td> <!-- actions -->
 					{{ if $job.Disabled }}
 						<form method="POST" action="/job.enable/{{ $job.Name }}">
 							<input type="submit" class="button" value="Enable" />
@@ -86,6 +86,14 @@ var indexTemplate = `
 					{{end}}
 					</td>
 				</tr>
+				{{ if $job.Description }}
+				<tr>
+					<td colspan=8>
+						<h4>Description</h4>
+						<pre>{{ $job.Description }}</pre>
+					</td>
+				</tr>
+				{{ end }}
 				<tr>
 					<td colspan=8>
 						<h4>History</h4>

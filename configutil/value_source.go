@@ -10,6 +10,14 @@ type StringSource interface {
 	String() (*string, error)
 }
 
+// StringsSource is a type that can return a value.
+type StringsSource interface {
+	// Strings should return a string array if the source has a given value.
+	// It should return nil if the value is not present.
+	// It should return an error if there was a problem fetching the value.
+	Strings() ([]string, error)
+}
+
 // BoolSource is a type that can return a value.
 type BoolSource interface {
 	// Bool should return a bool if the source has a given value.

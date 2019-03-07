@@ -29,8 +29,9 @@ var (
 
 // Job is the main job body.
 type Job struct {
-	name   string
-	config *JobConfig
+	name        string
+	description string
+	config      *JobConfig
 
 	schedule cron.Schedule
 	timeout  time.Duration
@@ -54,6 +55,17 @@ func (job Job) Name() string {
 // WithName sets the name.
 func (job *Job) WithName(name string) *Job {
 	job.name = name
+	return job
+}
+
+// Description returns an optional description for the job.
+func (job *Job) Description() string {
+	return job.description
+}
+
+// WithDescription returns the job description.
+func (job *Job) WithDescription(description string) *Job {
+	job.description = description
 	return job
 }
 
