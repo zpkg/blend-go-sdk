@@ -30,6 +30,7 @@ func TestAppNew(t *testing.T) {
 	var route *Route
 	app := New()
 	assert.NotEmpty(app.BindAddr())
+	assert.NotEmpty(app.Auth().CookieName())
 	assert.NotNil(app.state)
 	assert.NotNil(app.Views())
 	app.GET("/", func(c *Ctx) Result {

@@ -23,7 +23,7 @@ func New() *App {
 	return &App{
 		latch:                 async.NewLatch(),
 		hsts:                  &HSTSConfig{},
-		auth:                  &AuthManager{},
+		auth:                  &AuthManager{cookieName: DefaultCookieName, cookiePath: DefaultCookiePath},
 		bindAddr:              DefaultBindAddr,
 		state:                 &SyncState{},
 		statics:               map[string]Fileserver{},
