@@ -155,7 +155,7 @@ func main() {
 		}()
 	}
 
-	if err := graceful.Shutdown(graceful.New(jobs.Start, jobs.Stop)); err != nil {
+	if err := graceful.Shutdown(jobs); err != nil {
 		logger.FatalExit(err)
 	}
 }
