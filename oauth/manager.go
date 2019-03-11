@@ -12,7 +12,7 @@ import (
 	"strings"
 
 	"github.com/blend/go-sdk/exception"
-	"github.com/blend/go-sdk/request"
+	"github.com/blend/go-sdk/r2"
 	"github.com/blend/go-sdk/stringutil"
 	"github.com/blend/go-sdk/uuid"
 	"github.com/blend/go-sdk/webutil"
@@ -24,9 +24,7 @@ import (
 // By default it will error if you try and validate a profile.
 // You must either enable `SkipDomainvalidation` or provide valid domains.
 func New() *Manager {
-	return &Manager{
-		requestFactory: request.NewFactory(),
-	}
+	return &Manager{}
 }
 
 // Must is a helper for handling NewFromEnv() and NewFromConfig().
@@ -63,26 +61,25 @@ func NewFromConfig(cfg *Config) (*Manager, error) {
 		return nil, err
 	}
 	return &Manager{
-		requestFactory: request.NewFactory(),
-		secret:         secret,
-		redirectURI:    cfg.GetRedirectURI(),
-		hostedDomain:   cfg.GetHostedDomain(),
-		scopes:         cfg.GetScopes(),
-		clientID:       cfg.GetClientID(),
-		clientSecret:   cfg.GetClientSecret(),
+		secret:       secret,
+		redirectURI:  cfg.GetRedirectURI(),
+		hostedDomain: cfg.GetHostedDomain(),
+		scopes:       cfg.GetScopes(),
+		clientID:     cfg.GetClientID(),
+		clientSecret: cfg.GetClientSecret(),
 	}, nil
 }
 
 // Manager is the oauth manager.
 type Manager struct {
-	requestFactory *request.Factory
-	tracer         Tracer
-	secret         []byte
-	scopes         []string
-	redirectURI    string
-	hostedDomain   string
-	clientID       string
-	clientSecret   string
+	defaults     r2.Defaults
+	tracer       Tracer
+	secret       []byte
+	scopes       []string
+	redirectURI  string
+	hostedDomain string
+	clientID     string
+	clientSecret string
 }
 
 // OAuthURL is the auth url for google with a given clientID.
@@ -158,22 +155,22 @@ func (m *Manager) Finish(r *http.Request) (result *Result, err error) {
 
 // FetchProfile gets a google profile for an access token.
 func (m *Manager) FetchProfile(ctx context.Context, accessToken string) (profile Profile, err error) {
-	req, err := m.requestFactory.Get("https://www.googleapis.com/oauth2/v1/userinfo")
-
-	contents, meta, err := req.
-		WithContext(ctx).
-		WithQueryString("alt", "json").
-		WithQueryString("access_token", accessToken).
-		BytesWithMeta()
+	res, err := r2.New("https://www.googleapis.com/oauth2/v1/userinfo", m.defaults.ConcatWith(
+		r2.OptGet(),
+		r2.OptContext(ctx),
+		r2.OptQueryValue("alt", "json"),
+		r2.OptQueryValue("access_token", accessToken),
+	)...).Do()
 
 	if err != nil {
 		return
 	}
-	if meta.StatusCode > 299 {
-		err = exception.New(ErrGoogleResponseStatus).WithMessagef("status code: %d, response: %s", meta.StatusCode, string(contents))
+	if res.StatusCode > 299 {
+		err = exception.New(ErrGoogleResponseStatus).WithMessagef("status code: %d", res.StatusCode)
 		return
 	}
-	if err = json.Unmarshal(contents, &profile); err != nil {
+	defer res.Body.Close()
+	if err = json.NewDecoder(res.Body).Decode(&profile); err != nil {
 		err = exception.New(ErrProfileJSONUnmarshal).WithInner(err)
 		return
 	}
@@ -239,9 +236,9 @@ func (m *Manager) Tracer() Tracer {
 	return m.tracer
 }
 
-// RequestCreator returns the request creator.
-func (m *Manager) RequestCreator() *request.Factory {
-	return m.requestFactory
+// RequestDefaults returns the request defaults.
+func (m *Manager) RequestDefaults() r2.Defaults {
+	return m.defaults
 }
 
 // WithSecret sets the secret used to create state tokens.
@@ -330,7 +327,6 @@ func (m *Manager) getRedirectURI(r *http.Request) string {
 		stringutil.HasPrefixCaseless(m.redirectURI, "spdy://") {
 		return m.redirectURI
 	}
-
 	requestURI := &url.URL{
 		Scheme: webutil.GetProto(r),
 		Host:   webutil.GetHost(r),

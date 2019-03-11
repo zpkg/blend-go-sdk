@@ -10,6 +10,15 @@ const (
 	DefaultAWSRegion = "us-east-1"
 )
 
+// MustNewConfigFromEnv returns a new config from the environment and panics on error.
+func MustNewConfigFromEnv() *Config {
+	cfg, err := NewConfigFromEnv()
+	if err != nil {
+		panic(err)
+	}
+	return cfg
+}
+
 // NewConfigFromEnv returns a new aws config from the environment.
 func NewConfigFromEnv() (*Config, error) {
 	var config Config

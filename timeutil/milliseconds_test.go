@@ -13,3 +13,9 @@ func TestMilliseconds(t *testing.T) {
 
 	assert.Equal(1.001, Milliseconds(d))
 }
+
+func TestFromMilliseconds(t *testing.T) {
+	assert := assert.New(t)
+	expected := time.Millisecond + time.Microsecond
+	assert.Equal(expected, FromMilliseconds(1.001))
+}

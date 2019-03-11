@@ -10,10 +10,10 @@ import (
 
 func main() {
 	_, err := r2.New("https://google.com/robots.txt",
-		r2.Get(),
-		r2.Timeout(500*time.Millisecond),
-		r2.HeaderValue("X-Sent-By", "go-sdk/request2"),
-		r2.CookieValue("r2-ray-id", "baileydog01"),
+		r2.OptGet(),
+		r2.OptTimeout(500*time.Millisecond),
+		r2.OptHeaderValue("X-Sent-By", "go-sdk/request2"),
+		r2.OptCookieValue("r2-ray-id", "baileydog01"),
 	).CopyTo(os.Stdout)
 
 	if err != nil {

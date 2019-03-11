@@ -3,7 +3,7 @@ package stats
 import (
 	"fmt"
 	"time"
-	
+
 	"github.com/blend/go-sdk/timeutil"
 )
 
@@ -76,4 +76,3 @@ type MockMetric struct {
 	TimeInMilliseconds float64
 	Tags               []string
 }
-
