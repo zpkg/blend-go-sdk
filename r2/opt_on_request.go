@@ -2,10 +2,13 @@ package r2
 
 import "net/http"
 
+// OnRequestListener is an a listener for on request events.
+type OnRequestListener func(*http.Request) error
+
 // OptOnRequest sets an on request listener.
-func OptOnRequest(listener func(*http.Request)) Option {
+func OptOnRequest(listener OnRequestListener) Option {
 	return func(r *Request) error {
-		r.OnRequest = listener
+		r.OnRequest = append(r.OnRequest, listener)
 		return nil
 	}
 }

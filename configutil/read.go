@@ -43,17 +43,17 @@ var (
 // Read reads a config from optional path(s).
 // Paths will be tested from a standard set of defaults (ex. config.yml)
 // and optionally a csv named in the `CONFIG_PATH` environment variable.
-func Read(ref Any, paths ...string) error {
-	_, err := ReadFromPaths(ref, Paths(append(paths, DefaultPaths...)...)...)
-	return err
-}
+func Read(ref Any, options ...Option) (path string, err error) {
+	var configOptions ConfigOptions
+	configOptions, err = createConfigOptions(options...)
+	if err != nil {
+		return
+	}
 
-// ReadFromPaths tries to read the config from a list of given paths, reading from the first file that exists.
-func ReadFromPaths(ref Any, paths ...string) (path string, err error) {
 	// for each of the paths
 	// if the path doesn't exist, continue, read the path that is found.
 	var f *os.File
-	for _, path = range paths {
+	for _, path = range configOptions.Paths {
 		if path == "" {
 			continue
 		}
@@ -67,7 +67,7 @@ func ReadFromPaths(ref Any, paths ...string) (path string, err error) {
 			break
 		}
 		defer f.Close()
-		err = ReadFromReader(ref, f, filepath.Ext(path))
+		err = deserialize(filepath.Ext(path), f, ref)
 		break
 	}
 	if err != nil && !IsNotExist(err) {
@@ -75,34 +75,33 @@ func ReadFromPaths(ref Any, paths ...string) (path string, err error) {
 	}
 
 	if typed, ok := ref.(ConfigResolver); ok {
-		if err := typed.Resolve(); err != nil {
-			return "", err
+		if err = typed.Resolve(); err != nil {
+			return
+		}
+	}
+	if configOptions.Resolver != nil {
+		if err = configOptions.Resolver(ref); err != nil {
+			return
 		}
 	}
 	return
 }
 
-// ReadFromReader reads a config from a given reader.
-func ReadFromReader(ref Any, r io.Reader, ext string) error {
-	if err := Deserialize(ext, r, ref); err != nil {
-		return err
-	}
-	return nil
-}
-
-// Paths returns config paths.
-// The results are the provided defaults and the `CONFIG_PATH`
-// environment variable as a csv if it's set.
-func Paths(defaults ...string) (output []string) {
+func createConfigOptions(options ...Option) (configOptions ConfigOptions, err error) {
+	configOptions.Paths = DefaultPaths
 	if env.Env().Has(EnvVarConfigPath) {
-		output = env.Env().CSV(EnvVarConfigPath)
+		configOptions.Paths = append(env.Env().CSV(EnvVarConfigPath), configOptions.Paths...)
 	}
-	output = append(output, defaults...)
+	for _, option := range options {
+		if err = option(&configOptions); err != nil {
+			return
+		}
+	}
 	return
 }
 
-// Deserialize deserializes a config.
-func Deserialize(ext string, r io.Reader, ref Any) error {
+// deserialize deserializes a config.
+func deserialize(ext string, r io.Reader, ref Any) error {
 	// make sure the extension starts with a "."
 	if !strings.HasPrefix(ext, ".") {
 		ext = "." + ext

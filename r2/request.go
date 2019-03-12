@@ -21,7 +21,6 @@ func New(remoteURL string, options ...Option) *Request {
 		r.Err = err
 		return &r
 	}
-
 	r.Request = &http.Request{
 		Method: MethodGet,
 		URL:    parsedURL,
@@ -44,9 +43,12 @@ type Request struct {
 	// It pre-empts the request going out.
 	Err error
 
+	// ResponseBodyInterceptor is an optional custom step to alter the response stream.
+	ResponseBodyInterceptor ReaderInterceptor
+
 	// OnRequest and OnResponse are lifecycle hooks.
-	OnRequest  func(*http.Request)
-	OnResponse func(*http.Request, *http.Response, time.Time, error)
+	OnRequest  []OnRequestListener
+	OnResponse []OnResponseListener
 }
 
 // Do executes the request.
@@ -54,11 +56,14 @@ func (r *Request) Do() (*http.Response, error) {
 	if r.Err != nil {
 		return nil, r.Err
 	}
+
 	var err error
 	started := time.Now().UTC()
 
-	if r.OnRequest != nil {
-		r.OnRequest(r.Request)
+	for _, listener := range r.OnRequest {
+		if err = listener(r.Request); err != nil {
+			return nil, err
+		}
 	}
 
 	var res *http.Response
@@ -67,15 +72,23 @@ func (r *Request) Do() (*http.Response, error) {
 	} else {
 		res, err = http.DefaultClient.Do(r.Request)
 	}
-
-	if r.OnResponse != nil {
-		r.OnResponse(r.Request, res, started, err)
+	for _, listener := range r.OnResponse {
+		if err = listener(r.Request, res, started, err); err != nil {
+			return nil, err
+		}
 	}
-	return res, err
+	if err != nil {
+		return nil, err
+	}
+
+	// apply the interceptor if supplied.
+	res.Body = r.responseBody(res)
+	return res, nil
 }
 
 // Close executes and closes the response.
 // It returns the response for metadata purposes.
+// It does not read any data from the response.
 func (r *Request) Close() (*http.Response, error) {
 	res, err := r.Do()
 	if err != nil {
@@ -84,7 +97,7 @@ func (r *Request) Close() (*http.Response, error) {
 	return res, exception.New(res.Body.Close())
 }
 
-// Discard discards the response of a request.
+// Discard reads the response fully and discards all data it reads.
 func (r *Request) Discard() error {
 	res, err := r.Do()
 	if err != nil {
@@ -129,7 +142,7 @@ func (r *Request) String() (string, error) {
 	if err != nil {
 		return "", err
 	}
-	return string(contents), err
+	return string(contents), nil
 }
 
 // JSON reads the response as json into a given object.
@@ -150,4 +163,16 @@ func (r *Request) XML(dst interface{}) error {
 	}
 	defer res.Body.Close()
 	return exception.New(xml.NewDecoder(res.Body).Decode(dst))
+}
+
+//
+// utils
+//
+
+// responseBody applies a ResponseBodyInterceptor if it's supplied.
+func (r *Request) responseBody(res *http.Response) io.ReadCloser {
+	if r.ResponseBodyInterceptor != nil {
+		return NewReadCloser(res.Body, r.ResponseBodyInterceptor)
+	}
+	return res.Body
 }

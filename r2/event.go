@@ -28,7 +28,7 @@ type Event struct {
 	Started  time.Time
 	Request  *http.Request
 	Response *http.Response
-	Body     *bytes.Buffer
+	Body     []byte
 }
 
 // WriteText writes the event to a text writer.
@@ -40,7 +40,7 @@ func (e *Event) WriteText(tf logger.TextFormatter, buf *bytes.Buffer) {
 	}
 	if e.Body != nil {
 		buf.WriteRune(logger.RuneNewline)
-		buf.Write(e.Body.Bytes())
+		buf.Write(e.Body)
 	}
 }
 
@@ -67,7 +67,7 @@ func (e *Event) WriteJSON() logger.JSONObj {
 		}
 	}
 	if e.Body != nil {
-		output["body"] = e.Body.String()
+		output["body"] = string(e.Body)
 	}
 
 	return output

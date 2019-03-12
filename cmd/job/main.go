@@ -89,7 +89,7 @@ func main() {
 
 	var err error
 	var cfg config
-	if err := configutil.Read(&cfg, *configPath); !configutil.IsIgnored(err) {
+	if _, err := configutil.Read(&cfg, configutil.OptAddPaths(*configPath)); !configutil.IsIgnored(err) {
 		logger.FatalExit(err)
 	}
 
