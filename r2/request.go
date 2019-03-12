@@ -45,6 +45,7 @@ type Request struct {
 
 	// ResponseBodyInterceptor is an optional custom step to alter the response stream.
 	ResponseBodyInterceptor ReaderInterceptor
+	Tracer                  Tracer
 
 	// OnRequest and OnResponse are lifecycle hooks.
 	OnRequest  []OnRequestListener
@@ -60,6 +61,11 @@ func (r *Request) Do() (*http.Response, error) {
 	var err error
 	started := time.Now().UTC()
 
+	var finisher TraceFinisher
+	if r.Tracer != nil {
+		finisher = r.Tracer.Start(r.Request)
+	}
+
 	for _, listener := range r.OnRequest {
 		if err = listener(r.Request); err != nil {
 			return nil, err
@@ -72,6 +78,9 @@ func (r *Request) Do() (*http.Response, error) {
 	} else {
 		res, err = http.DefaultClient.Do(r.Request)
 	}
+	if finisher != nil {
+		finisher.Finish(r.Request, res, started, err)
+	}
 	for _, listener := range r.OnResponse {
 		if err = listener(r.Request, res, started, err); err != nil {
 			return nil, err
@@ -83,6 +92,7 @@ func (r *Request) Do() (*http.Response, error) {
 
 	// apply the interceptor if supplied.
 	res.Body = r.responseBody(res)
+
 	return res, nil
 }
 

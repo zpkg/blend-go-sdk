@@ -10,6 +10,13 @@ import (
 	"github.com/blend/go-sdk/logger"
 )
 
+const (
+	// Flag is a logger event flag.
+	Flag logger.Flag = "request"
+	// FlagResponse is a logger event flag.
+	FlagResponse logger.Flag = "request.response"
+)
+
 // NewEvent returns a new event.
 func NewEvent(flag logger.Flag, options ...EventOption) *Event {
 	e := &Event{

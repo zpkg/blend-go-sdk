@@ -19,7 +19,7 @@ const (
 // OptLogRequest adds an OnResponse listener to log the response of a call.
 func OptLogRequest(log logger.Log) Option {
 	return OptOnRequest(func(req *http.Request) error {
-		event := NewEvent(logger.HTTPRequest,
+		event := NewEvent(Flag,
 			OptEventRequest(req))
 		log.Trigger(event)
 		return nil
@@ -32,7 +32,7 @@ func OptLogResponse(log logger.Log) Option {
 		if err != nil {
 			return err
 		}
-		event := NewEvent(logger.HTTPResponse,
+		event := NewEvent(FlagResponse,
 			OptEventStarted(started),
 			OptEventRequest(req),
 			OptEventResponse(res))
@@ -60,7 +60,7 @@ func OptLogResponseWithBody(log logger.Log) Option {
 		// set the body to the read contents
 		res.Body = ioutil.NopCloser(bytes.NewReader(buffer.Bytes()))
 
-		event := NewEvent(logger.HTTPResponse,
+		event := NewEvent(FlagResponse,
 			OptEventStarted(started),
 			OptEventRequest(req),
 			OptEventResponse(res),
