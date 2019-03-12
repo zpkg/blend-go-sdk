@@ -25,10 +25,15 @@ func NewEvent(flag logger.Flag, options ...EventOption) *Event {
 type Event struct {
 	*logger.EventMeta
 
-	Started  time.Time
-	Request  *http.Request
+	// Started is the time the request was started.
+	// It is used for elapsed time calculations.
+	Started time.Time
+	// The request metadata.
+	Request *http.Request
+	// The response metadata (excluding the body).
 	Response *http.Response
-	Body     []byte
+	// The response body.
+	Body []byte
 }
 
 // WriteText writes the event to a text writer.
