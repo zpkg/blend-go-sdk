@@ -28,7 +28,7 @@ func main() {
 	}
 
 	// create the server certs
-	server, err := certutil.CreateServer("mtls-example.local", &ca, certutil.OptSubjectCommonName("localhost"))
+	server, err := certutil.CreateServer("mtls-example.local", ca, certutil.OptSubjectCommonName("localhost"))
 	if err != nil {
 		log.SyncFatalExit(err)
 	}
@@ -37,7 +37,7 @@ func main() {
 		log.SyncFatalExit(err)
 	}
 
-	client, err := certutil.CreateClient("mtls-client", &ca)
+	client, err := certutil.CreateClient("mtls-client", ca)
 	if err != nil {
 		log.SyncFatalExit(err)
 	}
@@ -64,17 +64,16 @@ func main() {
 	// make some requests ...
 
 	log.SyncInfof("making a secure request")
-	if err := r2.Discard(r2.New("https://localhost:5000",
+	if err := r2.New("https://localhost:5000",
 		r2.OptTLSRootCAs(caPool),
-		r2.OptTLSClientCert([]byte(clientKeyPair.Cert), []byte(clientKeyPair.Key)),
-	)); err != nil {
+		r2.OptTLSClientCert([]byte(clientKeyPair.Cert), []byte(clientKeyPair.Key))).Discard(); err != nil {
 		log.SyncFatalExit(err)
 	} else {
 		log.SyncInfof("secure request success")
 	}
 
 	log.SyncInfof("making an insecure request")
-	if err := r2.Discard(r2.New("https://localhost:5000", r2.OptTLSRootCAs(caPool))); err != nil {
+	if err := r2.New("https://localhost:5000", r2.OptTLSRootCAs(caPool)).Discard(); err != nil {
 		log.SyncFatalExit(err)
 	}
 }

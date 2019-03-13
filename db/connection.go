@@ -102,7 +102,7 @@ type Connection struct {
 	connection *sql.DB
 	config     *Config
 	bufferPool *BufferPool
-	log        logger.Log
+	log        logger.FullReceiver
 	planCache  *PlanCache
 }
 
@@ -155,13 +155,13 @@ func (dbc *Connection) Close() error {
 }
 
 // WithLogger sets the connection's diagnostic agent.
-func (dbc *Connection) WithLogger(log logger.Log) *Connection {
+func (dbc *Connection) WithLogger(log logger.FullReceiver) *Connection {
 	dbc.log = log
 	return dbc
 }
 
 // Logger returns the diagnostics agent.
-func (dbc *Connection) Logger() logger.Log {
+func (dbc *Connection) Logger() logger.FullReceiver {
 	return dbc.log
 }
 
