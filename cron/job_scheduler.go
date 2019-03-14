@@ -2,6 +2,7 @@ package cron
 
 import (
 	"context"
+	"fmt"
 	"sync"
 	"time"
 
@@ -111,22 +112,45 @@ func (js *JobScheduler) WithLogger(log logger.FullReceiver) *JobScheduler {
 }
 
 // Start starts the scheduler.
-func (js *JobScheduler) Start() {
+// This call blocks.
+func (js *JobScheduler) Start() error {
 	if !js.Latch.CanStart() {
-		return
+		return fmt.Errorf("already started")
+	}
+	js.Latch.Starting()
+	js.RunLoop()
+	return nil
+}
+
+// StartAsync starts the job scheduler in the background.
+func (js *JobScheduler) StartAsync() error {
+	if !js.Latch.CanStart() {
+		return fmt.Errorf("already started")
 	}
 	js.Latch.Starting()
 	go js.RunLoop()
 	<-js.Latch.NotifyStarted()
+	return nil
 }
 
 // Stop stops the scheduler.
-func (js *JobScheduler) Stop() {
+func (js *JobScheduler) Stop() error {
 	if !js.Latch.CanStop() {
-		return
+		return fmt.Errorf("already stopped")
 	}
 	js.Latch.Stopping()
 	<-js.Latch.NotifyStopped()
+	return nil
+}
+
+// NotifyStarted notifies the job scheduler has started.
+func (js *JobScheduler) NotifyStarted() <-chan struct{} {
+	return js.Latch.NotifyStarted()
+}
+
+// NotifyStopped notifies the job scheduler has stopped.
+func (js *JobScheduler) NotifyStopped() <-chan struct{} {
+	return js.Latch.NotifyStopped()
 }
 
 // Enable sets the job as enabled.

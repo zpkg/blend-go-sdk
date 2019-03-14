@@ -44,7 +44,7 @@ func TestManagementServerHealthz(t *testing.T) {
 	jm := cron.New()
 	jm.LoadJob(cron.NewJob("test0", func(_ context.Context) error { return nil }))
 	jm.LoadJob(cron.NewJob("test1", func(_ context.Context) error { return nil }))
-	jm.Start()
+	jm.StartAsync()
 
 	app := NewManagementServer(jm, &Config{
 		Web: web.Config{
