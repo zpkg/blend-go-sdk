@@ -4,6 +4,8 @@ import (
 	"os"
 	"testing"
 
+	_ "github.com/lib/pq"
+
 	"github.com/blend/go-sdk/db"
 	"github.com/blend/go-sdk/logger"
 )
