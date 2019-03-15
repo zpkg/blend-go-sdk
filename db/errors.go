@@ -2,7 +2,6 @@ package db
 
 import (
 	"github.com/blend/go-sdk/exception"
-	"github.com/lib/pq"
 )
 
 const (
@@ -77,9 +76,6 @@ func Error(err error) error {
 	}
 	if ex := exception.As(err); ex != nil {
 		return ex
-	}
-	if typed, ok := err.(*pq.Error); ok {
-		return exception.New(typed.Code.Name()).WithMessage(typed.Message).WithInner(err)
 	}
 	return exception.New(err)
 }

@@ -13,7 +13,6 @@ import (
 	"github.com/blend/go-sdk/db"
 	"github.com/blend/go-sdk/exception"
 	"github.com/blend/go-sdk/stringutil"
-	"github.com/lib/pq"
 )
 
 const (
@@ -136,7 +135,7 @@ func (dfr *DataFileReader) executeCopyLine(line string, c *db.Connection, tx *sq
 	tableName := pieces[1]
 	columnCSV := pieces[2]
 	columns := strings.Split(columnCSV, ", ")
-	return tx.Prepare(pq.CopyIn(tableName, columns...))
+	return tx.Prepare(CopyIn(tableName, columns...))
 }
 
 // regexExtractSubMatches returns sub matches for an expr because go's regexp library is weird.
@@ -317,4 +316,37 @@ func (dfr *DataFileReader) readTabLineAppendPiece(pieces []interface{}, lineBuff
 		return append(pieces, value)
 	}
 	return pieces
+}
+
+// CopyIn creates a COPY FROM statement which can be prepared with
+// Tx.Prepare().  The target table should be visible in search_path.
+func CopyIn(table string, columns ...string) string {
+	stmt := "COPY " + QuoteIdentifier(table) + " ("
+	for i, col := range columns {
+		if i != 0 {
+			stmt += ", "
+		}
+		stmt += QuoteIdentifier(col)
+	}
+	stmt += ") FROM STDIN"
+	return stmt
+}
+
+// QuoteIdentifier quotes an "identifier" (e.g. a table or a column name) to be
+// used as part of an SQL statement.  For example:
+//
+//    tblname := "my_table"
+//    data := "my_data"
+//    quoted := pq.QuoteIdentifier(tblname)
+//    err := db.Exec(fmt.Sprintf("INSERT INTO %s VALUES ($1)", quoted), data)
+//
+// Any double quotes in name will be escaped.  The quoted identifier will be
+// case sensitive when used in a query.  If the input string contains a zero
+// byte, the result will be truncated immediately before it.
+func QuoteIdentifier(name string) string {
+	end := strings.IndexRune(name, 0)
+	if end > -1 {
+		name = name[:end]
+	}
+	return `"` + strings.Replace(name, `"`, `""`, -1) + `"`
 }

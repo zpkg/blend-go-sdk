@@ -6,8 +6,6 @@ import (
 	"sync"
 	"time"
 
-	"github.com/lib/pq"
-
 	"github.com/blend/go-sdk/exception"
 	"github.com/blend/go-sdk/logger"
 )
@@ -187,7 +185,7 @@ func (dbc *Connection) Open() error {
 	}
 
 	dsn := dbc.config.CreateDSN()
-	namedValues, err := pq.ParseURL(dsn)
+	namedValues, err := ParseURL(dsn)
 	if err != nil {
 		return err
 	}

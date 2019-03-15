@@ -9,6 +9,8 @@ import (
 	"sync"
 	"time"
 
+	_ "github.com/lib/pq"
+
 	"github.com/blend/go-sdk/db"
 	"github.com/blend/go-sdk/db/migration"
 	"github.com/blend/go-sdk/db/migration/pg"
