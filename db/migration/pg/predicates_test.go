@@ -1,6 +1,7 @@
-package migration
+package pg
 
 import (
+	"context"
 	"database/sql"
 	"fmt"
 	"math/rand"
@@ -8,6 +9,7 @@ import (
 
 	"github.com/blend/go-sdk/assert"
 	"github.com/blend/go-sdk/db"
+	"github.com/blend/go-sdk/db/migration"
 )
 
 var (
@@ -26,8 +28,8 @@ func randomName() string {
 
 func createTestTable(tableName string, tx *sql.Tx) error {
 	body := fmt.Sprintf("CREATE TABLE %s (id int, name varchar(32));", tableName)
-	step := NewStep(TableNotExists(tableName), Statements(body))
-	return step.Apply(db.Default(), tx)
+	step := migration.Step(TableNotExists(tableName), migration.Statements(body))
+	return step.Action(context.Background(), db.Default(), tx)
 }
 
 func insertTestValue(tableName string, id int, name string, tx *sql.Tx) error {
@@ -37,26 +39,26 @@ func insertTestValue(tableName string, id int, name string, tx *sql.Tx) error {
 
 func createTestColumn(tableName, columnName string, tx *sql.Tx) error {
 	body := fmt.Sprintf("ALTER TABLE %s ADD %s varchar(32);", tableName, columnName)
-	step := NewStep(ColumnNotExists(tableName, columnName), Statements(body))
-	return step.Apply(db.Default(), tx)
+	step := migration.Step(ColumnNotExists(tableName, columnName), migration.Statements(body))
+	return step.Action(context.Background(), db.Default(), tx)
 }
 
 func createTestConstraint(tableName, constraintName string, tx *sql.Tx) error {
 	body := fmt.Sprintf("ALTER TABLE %s ADD CONSTRAINT %s UNIQUE (name);", tableName, constraintName)
-	step := NewStep(ColumnNotExists(tableName, constraintName), Statements(body))
-	return step.Apply(db.Default(), tx)
+	step := migration.Step(ColumnNotExists(tableName, constraintName), migration.Statements(body))
+	return step.Action(context.Background(), db.Default(), tx)
 }
 
 func createTestIndex(tableName, indexName string, tx *sql.Tx) error {
 	body := fmt.Sprintf("CREATE INDEX %s ON %s (name);", indexName, tableName)
-	step := NewStep(IndexNotExists(tableName, indexName), Statements(body))
-	return step.Apply(db.Default(), tx)
+	step := migration.Step(IndexNotExists(tableName, indexName), migration.Statements(body))
+	return step.Action(context.Background(), db.Default(), tx)
 }
 
 func createTestRole(roleName string, tx *sql.Tx) error {
 	body := fmt.Sprintf("CREATE ROLE %s;", roleName)
-	step := NewStep(RoleNotExists(roleName), Statements(body))
-	return step.Apply(db.Default(), tx)
+	step := migration.Step(RoleNotExists(roleName), migration.Statements(body))
+	return step.Action(context.Background(), db.Default(), tx)
 }
 
 func TestCreateTable(t *testing.T) {
@@ -69,7 +71,7 @@ func TestCreateTable(t *testing.T) {
 	err = createTestTable(tableName, nil)
 	assert.Nil(err)
 
-	exists, err := tableExists(db.Default(), nil, tableName)
+	exists, err := PredicateTableExists(db.Default(), nil, tableName)
 	assert.Nil(err)
 	assert.True(exists, "table does not exist")
 }
@@ -88,7 +90,7 @@ func TestCreateColumn(t *testing.T) {
 	err = createTestColumn(tableName, columnName, tx)
 	assert.Nil(err)
 
-	exists, err := columnExists(db.Default(), tx, tableName, columnName)
+	exists, err := PredicateColumnExists(db.Default(), tx, tableName, columnName)
 	assert.Nil(err)
 	assert.True(exists, "column does not exist on table")
 }
@@ -107,7 +109,7 @@ func TestCreateConstraint(t *testing.T) {
 	err = createTestConstraint(tableName, constraintName, tx)
 	assert.Nil(err)
 
-	exists, err := constraintExists(db.Default(), tx, constraintName)
+	exists, err := PredicateConstraintExists(db.Default(), tx, constraintName)
 	assert.Nil(err)
 	assert.True(exists, "constraint does not exist")
 }
@@ -126,7 +128,7 @@ func TestCreateIndex(t *testing.T) {
 	err = createTestIndex(tableName, indexName, tx)
 	assert.Nil(err)
 
-	exists, err := indexExists(db.Default(), tx, tableName, indexName)
+	exists, err := PredicateIndexExists(db.Default(), tx, tableName, indexName)
 	assert.Nil(err)
 	assert.True(exists, "constraint should exist")
 }
@@ -141,60 +143,7 @@ func TestCreateRole(t *testing.T) {
 	err = createTestRole(roleName, tx)
 	assert.Nil(err)
 
-	exists, err := roleExists(db.Default(), tx, roleName)
+	exists, err := PredicateRoleExists(db.Default(), tx, roleName)
 	assert.Nil(err)
 	assert.True(exists, "role does exist")
-}
-
-func TestNotExists(t *testing.T) {
-	assert := assert.New(t)
-	tx, err := db.Default().Begin()
-	assert.Nil(err)
-	defer tx.Rollback()
-
-	tableName := randomName()
-	err = createTestTable(tableName, tx)
-	assert.Nil(err)
-
-	err = insertTestValue(tableName, 4, "test", tx)
-	assert.Nil(err)
-
-	ne, err := notExists(db.Default(), tx, fmt.Sprintf(`select * from %s where id = %d`, tableName, 4))
-	assert.Nil(err)
-	assert.False(ne)
-
-	ne, err = notExists(db.Default(), tx, fmt.Sprintf(`select * from %s where id = %d`, tableName, 101))
-	assert.Nil(err)
-	assert.True(ne)
-}
-
-func TestGuard(t *testing.T) {
-	assert := assert.New(t)
-	tx, err := db.Default().Begin()
-	assert.Nil(err)
-	defer tx.Rollback()
-
-	tableName := randomName()
-	err = createTestTable(tableName, tx)
-	assert.Nil(err)
-
-	err = insertTestValue(tableName, 4, "test", tx)
-	assert.Nil(err)
-
-	var didRun bool
-	action := Actions(func(c *db.Connection, itx *sql.Tx) error {
-		didRun = true
-		return nil
-	})
-
-	err = Guard("test", func(c *db.Connection, itx *sql.Tx) (bool, error) {
-		return c.QueryInTx(fmt.Sprintf("select * from %s", tableName), itx).Any()
-	})(
-		nil, nil,
-		&Step{body: action},
-		db.Default(),
-		tx,
-	)
-	assert.Nil(err)
-	assert.True(didRun)
 }

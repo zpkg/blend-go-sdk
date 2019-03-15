@@ -10,9 +10,6 @@ import (
 
 	"github.com/blend/go-sdk/exception"
 	"github.com/blend/go-sdk/logger"
-
-	// PQ is the postgres driver
-	_ "github.com/lib/pq"
 )
 
 const (
@@ -203,7 +200,6 @@ func (dbc *Connection) Open() error {
 
 	dbc.planCache.WithConnection(dbConn)
 	dbc.planCache.WithEnabled(!dbc.config.GetPlanCacheDisabled())
-
 	dbc.connection = dbConn
 	dbc.connection.SetConnMaxLifetime(dbc.config.GetMaxLifetime())
 	dbc.connection.SetMaxIdleConns(dbc.config.GetIdleConnections())

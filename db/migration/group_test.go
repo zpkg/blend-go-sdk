@@ -9,10 +9,6 @@ import (
 func TestNewGroup(t *testing.T) {
 	assert := assert.New(t)
 
-	g := NewGroup(NewStep(AlwaysRun(), NoOp))
-	assert.Empty(g.Label())
-	assert.Len(g.steps, 1)
-
-	g.WithLabel("test")
-	assert.Equal("test", g.Label())
+	g := Group(Step(Always(), NoOp))
+	assert.Len(g, 1)
 }

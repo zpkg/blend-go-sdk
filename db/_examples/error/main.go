@@ -3,10 +3,13 @@ package main
 import (
 	"fmt"
 
+	_ "github.com/lib/pq"
+
 	"github.com/blend/go-sdk/db"
 )
 
 func main() {
+
 	conn := db.MustNewFromEnv()
 	conn.Open()
 

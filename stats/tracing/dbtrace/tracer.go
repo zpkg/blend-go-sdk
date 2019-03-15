@@ -2,6 +2,7 @@ package dbtrace
 
 import (
 	"context"
+	"database/sql/driver"
 	"time"
 
 	"github.com/blend/go-sdk/db"
@@ -38,7 +39,7 @@ func (dbt dbTracer) Prepare(ctx context.Context, conn *db.Connection, statement 
 		opentracing.Tag{Key: tracing.TagKeySpanType, Value: tracing.SpanTypeSQL},
 		opentracing.Tag{Key: tracing.TagKeyDBName, Value: conn.Config().GetDatabase()},
 		opentracing.Tag{Key: tracing.TagKeyDBUser, Value: conn.Config().GetUsername()},
-		opentracing.Tag{Key: "db.query", Value: statement},
+		opentracing.Tag{Key: TagKeyQuery, Value: statement},
 		opentracing.StartTime(time.Now().UTC()),
 	}
 	span, _ := tracing.StartSpanFromContext(ctx, dbt.tracer, tracing.OperationSQLPrepare, startOptions...)
@@ -51,7 +52,7 @@ func (dbt dbTracer) Query(ctx context.Context, conn *db.Connection, inv *db.Invo
 		opentracing.Tag{Key: tracing.TagKeySpanType, Value: tracing.SpanTypeSQL},
 		opentracing.Tag{Key: tracing.TagKeyDBName, Value: conn.Config().GetDatabase()},
 		opentracing.Tag{Key: tracing.TagKeyDBUser, Value: conn.Config().GetUsername()},
-		opentracing.Tag{Key: "db.query", Value: statement},
+		opentracing.Tag{Key: TagKeyQuery, Value: statement},
 		opentracing.StartTime(inv.StartTime()),
 	}
 	span, _ := tracing.StartSpanFromContext(ctx, dbt.tracer, tracing.OperationSQLQuery, startOptions...)
@@ -66,6 +67,10 @@ func (dbtf dbTraceFinisher) Finish(err error) {
 	if dbtf.span == nil {
 		return
 	}
+	if err == driver.ErrSkip {
+		return
+	}
+
 	tracing.SpanError(dbtf.span, err)
 	dbtf.span.Finish()
 }

@@ -1,44 +1,27 @@
 package migration
 
 import (
+	"context"
 	"database/sql"
 
 	"github.com/blend/go-sdk/db"
 )
 
-// NewStep is an alias to NewOperation.
-func NewStep(guard GuardFunc, body InvocableFunc) *Step {
-	return &Step{
-		guard: guard,
-		body:  body,
+// Step returns a new guarded actionable.
+func Step(guard GuardFunc, action Action) *GuardedAction {
+	return &GuardedAction{
+		Guard: guard,
+		Body:  action,
 	}
 }
 
-// Step is a single guarded function.
-type Step struct {
-	label string
-	guard GuardFunc
-	body  InvocableFunc
+// GuardedAction is a guarded actionable.
+type GuardedAction struct {
+	Guard GuardFunc
+	Body  Action
 }
 
-// WithLabel sets the operation label.
-func (s *Step) WithLabel(label string) *Step {
-	s.label = label
-	return s
-}
-
-// Label returns the operation label.
-func (s *Step) Label() string {
-	return s.label
-}
-
-// Apply applies a step in isolation.
-func (s *Step) Apply(c *db.Connection, tx *sql.Tx) error {
-	return s.Invoke(nil, nil, c, tx)
-}
-
-// Invoke runs the body if the provided guard passes.
-func (s *Step) Invoke(suite *Suite, group *Group, c *db.Connection, tx *sql.Tx) (err error) {
-	err = s.guard(suite, group, s, c, tx)
-	return
+// Action runs the body if the provided guard passes.
+func (ga GuardedAction) Action(ctx context.Context, c *db.Connection, tx *sql.Tx) error {
+	return ga.Guard(ctx, c, tx, ga.Body)
 }

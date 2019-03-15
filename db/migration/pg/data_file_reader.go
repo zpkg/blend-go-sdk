@@ -1,7 +1,8 @@
-package migration
+package pg
 
 import (
 	"bytes"
+	"context"
 	"database/sql"
 	"fmt"
 	"io"
@@ -34,37 +35,17 @@ func ReadDataFile(filePath string) *DataFileReader {
 
 // DataFileReader reads a postgres dump.
 type DataFileReader struct {
-	parent        *Group
-	label         string
 	path          string
 	copyExtractor *regexp.Regexp
 }
 
-// WithLabel sets the migration label.
-func (dfr *DataFileReader) WithLabel(value string) *DataFileReader {
-	dfr.label = value
-	return dfr
-}
-
 // Label returns the label for the data file reader.
 func (dfr *DataFileReader) Label() string {
-	if len(dfr.label) > 0 {
-		return dfr.label
-	}
 	return fmt.Sprintf("read data file `%s`", dfr.path)
 }
 
-// Invoke implements the invocable interface.
-func (dfr *DataFileReader) Invoke(suite *Suite, group *Group, c *db.Connection, tx *sql.Tx) error {
-	if err := dfr.Apply(c, tx); err != nil {
-		return suite.error(group, dfr, err)
-	}
-	suite.applyf(group, dfr, "")
-	return nil
-}
-
-// Apply applies the file reader.
-func (dfr *DataFileReader) Apply(c *db.Connection, tx *sql.Tx) (err error) {
+// Action applies the file reader.
+func (dfr *DataFileReader) Action(ctx context.Context, c *db.Connection, tx *sql.Tx) (err error) {
 	var f *os.File
 	if f, err = os.Open(dfr.path); err != nil {
 		return

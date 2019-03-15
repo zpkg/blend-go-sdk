@@ -1,52 +1,29 @@
 package migration
 
 import (
+	"context"
 	"database/sql"
 
 	"github.com/blend/go-sdk/db"
 	"github.com/blend/go-sdk/exception"
 )
 
-// NewGroup creates a new migration group.
-func NewGroup(steps ...Invocable) *Group {
-	r := &Group{}
-	return r.WithSteps(steps...)
+// Group creates a new GroupedActions from a given list of actionable.
+func Group(actions ...Actionable) GroupedActions {
+	return GroupedActions(actions)
 }
 
-// Group is an atomic series of migrations.
-// It uses transactions to apply a set of sub-migrations as a unit.
-type Group struct {
-	label string
-	steps []Invocable
-}
+// GroupedActions is an atomic series of migration actions.
+// It uses transactions to apply these actions as an atomic unit.
+type GroupedActions []Actionable
 
-// WithSteps adds steps to the group.
-func (g *Group) WithSteps(steps ...Invocable) *Group {
-	for _, s := range steps {
-		g.steps = append(g.steps, s)
-	}
-	return g
-}
-
-// WithLabel sets the migration label.
-func (g *Group) WithLabel(value string) *Group {
-	g.label = value
-	return g
-}
-
-// Label returns a label for the runner.
-func (g *Group) Label() string {
-	return g.label
-}
-
-// Invoke runs the steps in a transaction.
-func (g *Group) Invoke(suite *Suite, c *db.Connection) (err error) {
+// Action runs the groups actions within a transaction.
+func (ga GroupedActions) Action(ctx context.Context, c *db.Connection) (err error) {
 	var tx *sql.Tx
 	tx, err = c.Begin()
 	if err != nil {
 		return
 	}
-
 	// commit or rollback the transaction.
 	defer func() {
 		if err != nil {
@@ -60,8 +37,8 @@ func (g *Group) Invoke(suite *Suite, c *db.Connection) (err error) {
 		}
 	}()
 
-	for _, s := range g.steps {
-		err = s.Invoke(suite, g, c, tx)
+	for _, a := range ga {
+		err = a.Action(ctx, c, tx)
 		if err != nil {
 			return
 		}
