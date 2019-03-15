@@ -31,7 +31,7 @@ deps:
 dev-deps:
 	@go get -d github.com/goreleaser/goreleaser
 
-install: install-ask install-coverage install-profanity install-proxy install-recover install-template
+install: install-ask install-coverage install-profanity install-proxy install-recover install-semver install-shamir install-template
 
 install-ask:
 	@go install github.com/blend/go-sdk/cmd/ask
@@ -50,6 +50,9 @@ install-recover:
 
 install-semver:
 	@go install github.com/blend/go-sdk/cmd/semver
+
+install-shamir:
+	@go install github.com/blend/go-sdk/cmd/shamir
 
 install-template:
 	@go install github.com/blend/go-sdk/cmd/template
