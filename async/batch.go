@@ -2,130 +2,84 @@ package async
 
 import (
 	"context"
-	"runtime"
 )
 
 // NewBatch creates a new batch processor.
-func NewBatch(action QueueAction, items ...interface{}) *Batch {
-	work := make(chan interface{}, len(items))
-	for _, item := range items {
-		work <- item
+// Batch processes are a known quantity of work that needs to be processed in parallel.
+func NewBatch(action WorkAction, work chan interface{}, options ...BatchOption) *Batch {
+	b := Batch{
+		Action: action,
+		Work:   work,
 	}
-	return &Batch{
-		latch:      &Latch{},
-		action:     action,
-		work:       work,
-		numWorkers: runtime.NumCPU(),
+	for _, option := range options {
+		option(&b)
+	}
+	return &b
+}
+
+// BatchOption is an option for the batch worker.
+type BatchOption func(*Batch)
+
+// OptBatchErrors sets the batch worker error return channel.
+func OptBatchErrors(errors chan error) BatchOption {
+	return func(i *Batch) {
+		i.Errors = errors
+	}
+}
+
+// OptBatchParallelism sets the batch worker parallelism, or the number of workers to create.
+func OptBatchParallelism(parallelism int) BatchOption {
+	return func(i *Batch) {
+		i.Parallelism = parallelism
 	}
 }
 
 // Batch is a batch of work executed by a fixed count of workers.
 type Batch struct {
-	latch      *Latch
-	numWorkers int
-	action     QueueAction
-	work       chan interface{}
-	errors     chan error
-	workers    chan *Worker
+	Action      WorkAction
+	Parallelism int
+	Work        chan interface{}
+	Errors      chan error
 }
 
-// WithWork sets the work channel.
-func (b *Batch) WithWork(work chan interface{}) *Batch {
-	b.work = work
-	return b
-}
-
-// Work returns the work channel.
-func (b *Batch) Work() chan interface{} {
-	return b.work
-}
-
-// WithNumWorkers sets the number of workers.
-// It defaults to `runtime.NumCPU()`
-func (b *Batch) WithNumWorkers(numWorkers int) *Batch {
-	b.numWorkers = numWorkers
-	return b
-}
-
-// NumWorkers returns the number of worker route
-func (b *Batch) NumWorkers() int {
-	return b.numWorkers
-}
-
-// Latch returns the worker latch.
-func (b *Batch) Latch() *Latch {
-	return b.latch
-}
-
-// WithErrors sets the error channel.
-func (b *Batch) WithErrors(errors chan error) *Batch {
-	b.errors = errors
-	return b
-}
-
-// Errors returns a channel to read action errors from.
-func (b *Batch) Errors() chan error {
-	return b.errors
-}
-
-// Process exeuctes the action for all the work items.
-func (b *Batch) Process() {
-	b.ProcessContext(context.Background())
-}
-
-// ProcessContext exeuctes the action for all the work items.
-func (b *Batch) ProcessContext(ctx context.Context) {
+// Process executes the action for all the work items.
+func (b *Batch) Process(ctx context.Context) {
 	// initialize the workers
-	b.workers = make(chan *Worker, b.numWorkers)
-	for x := 0; x < b.numWorkers; x++ {
+	workers := make(chan *Worker, b.Parallelism)
+
+	returnWorker := func(ctx context.Context, worker *Worker) error {
+		workers <- worker
+		return nil
+	}
+
+	for x := 0; x < b.Parallelism; x++ {
 		worker := &Worker{
-			latch:  &Latch{},
-			work:   make(chan interface{}),
-			errors: b.errors,
+			Work:      make(chan interface{}),
+			Errors:    b.Errors,
+			Action:    b.Action,
+			Finalizer: returnWorker,
 		}
-		worker.action = b.andReturn(worker, b.action)
 		worker.Start()
-		b.workers <- worker
+		workers <- worker
 	}
 
 	defer func() {
-		for x := 0; x < b.numWorkers; x++ {
-			worker := <-b.workers
+		for x := 0; x < b.Parallelism; x++ {
+			worker := <-workers
 			worker.Stop()
 		}
 	}()
 
-	numWorkItems := len(b.work)
+	numWorkItems := len(b.Work)
 	var worker *Worker
 	var workItem interface{}
 	for x := 0; x < numWorkItems; x++ {
-		workItem = <-b.work
+		workItem = <-b.Work
 		select {
-		case worker = <-b.workers:
+		case worker = <-workers:
 			worker.Enqueue(workItem)
 		case <-ctx.Done():
-			b.latch.Stopped()
-			return
-		case <-b.latch.NotifyStopping():
-			b.latch.Stopped()
 			return
 		}
-	}
-}
-
-// Abort aborts the work in progress.
-func (b *Batch) Abort() {
-	b.latch.Stopping()
-	<-b.latch.NotifyStopped()
-}
-
-// AndReturn creates an action handler that returns a given worker to the worker queue.
-// It wraps any action provided to the queue.
-func (b *Batch) andReturn(worker *Worker, action QueueAction) QueueAction {
-	return func(ctx context.Context, workItem interface{}) error {
-		defer func() {
-			b.workers <- worker
-		}()
-		return action(ctx, workItem)
 	}
 }

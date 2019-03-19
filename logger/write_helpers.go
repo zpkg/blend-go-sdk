@@ -8,6 +8,7 @@ import (
 	"time"
 	"unicode"
 
+	"github.com/blend/go-sdk/ansi"
 	"github.com/blend/go-sdk/webutil"
 )
 
@@ -29,7 +30,7 @@ func TextWriteHTTPRequest(tf TextFormatter, buf *bytes.Buffer, req *http.Request
 		buf.WriteString(ip)
 		buf.WriteRune(RuneSpace)
 	}
-	buf.WriteString(tf.Colorize(req.Method, ColorBlue))
+	buf.WriteString(tf.Colorize(req.Method, ansi.ColorBlue))
 	buf.WriteRune(RuneSpace)
 	buf.WriteString(req.URL.Path)
 }
@@ -38,7 +39,7 @@ func TextWriteHTTPRequest(tf TextFormatter, buf *bytes.Buffer, req *http.Request
 func TextWriteHTTPResponse(tf TextFormatter, buf *bytes.Buffer, req *http.Request, statusCode, contentLength int, contentType string, elapsed time.Duration) {
 	buf.WriteString(webutil.GetRemoteAddr(req))
 	buf.WriteRune(RuneSpace)
-	buf.WriteString(tf.Colorize(req.Method, ColorBlue))
+	buf.WriteString(tf.Colorize(req.Method, ansi.ColorBlue))
 	buf.WriteRune(RuneSpace)
 	buf.WriteString(req.URL.Path)
 	buf.WriteRune(RuneSpace)

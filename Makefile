@@ -31,7 +31,7 @@ deps:
 dev-deps:
 	@go get -d github.com/goreleaser/goreleaser
 
-install: install-ask install-coverage install-profanity install-proxy install-recover install-semver install-shamir install-template
+install: install-ask install-coverage install-profanity install-reverseproxy install-recover install-semver install-shamir install-template
 
 install-ask:
 	@go install github.com/blend/go-sdk/cmd/ask
@@ -42,8 +42,8 @@ install-coverage:
 install-profanity:
 	@go install github.com/blend/go-sdk/cmd/profanity
 
-install-proxy:
-	@go install github.com/blend/go-sdk/cmd/proxy
+install-reverseproxy:
+	@go install github.com/blend/go-sdk/cmd/reverseproxy
 
 install-recover:
 	@go install github.com/blend/go-sdk/cmd/recover
@@ -77,7 +77,7 @@ build:
 .PHONY: profanity
 profanity:
 	@echo "$(VERSION)/$(GIT_REF) >> profanity"
-	@go run cmd/profanity/main.go -rules PROFANITY --exclude="cmd/*,coverage.html,dist/*"
+	@go run cmd/profanity/main.go -rules PROFANITY_RULES --exclude="cmd/*,coverage.html,dist/*"
 
 test-circleci:
 	@echo "$(VERSION)/$(GIT_REF) >> tests"

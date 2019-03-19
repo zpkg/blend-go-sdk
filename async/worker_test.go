@@ -20,12 +20,11 @@ func TestWorker(t *testing.T) {
 		assert.Equal("hello", obj)
 		return nil
 	})
-
 	w.Start()
-	assert.True(w.Latch().IsRunning())
+	assert.True(w.IsRunning())
 	w.Enqueue("hello")
 	wg.Wait()
 	w.Close()
-	assert.False(w.Latch().IsRunning())
+	assert.False(w.IsRunning())
 	assert.True(didWork)
 }

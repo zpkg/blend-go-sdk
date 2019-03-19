@@ -1,132 +1,118 @@
 package async
 
 import (
+	"context"
 	"time"
 
 	"github.com/blend/go-sdk/exception"
 )
 
-// NewInterval returns a new worker that runs an action on an interval.
-func NewInterval(action func() error, interval time.Duration) *Interval {
-	return &Interval{
-		interval: interval,
-		action:   action,
-		latch:    &Latch{},
+/*
+NewInterval returns a new worker that runs an action on an interval.
+
+Example:
+
+	iw := NewInterval(func(ctx context.Context) error { return nil }, 500*time.Millisecond)
+	go iw.Start()
+	<-iw.Started()
+
+
+*/
+func NewInterval(action ContextAction, interval time.Duration, options ...IntervalOption) *Interval {
+	i := Interval{
+		Action:   action,
+		Context:  context.Background(),
+		Interval: DefaultInterval,
+	}
+	for _, option := range options {
+		option(&i)
+	}
+	return &i
+}
+
+// IntervalOption is an option for the interval worker.
+type IntervalOption func(*Interval)
+
+// OptIntervalDelay sets the interval worker start delay.
+func OptIntervalDelay(d time.Duration) IntervalOption {
+	return func(i *Interval) {
+		i.Delay = d
 	}
 }
 
-// Interval is a managed goroutine that does things.
+// OptIntervalContext sets the interval worker context.
+func OptIntervalContext(ctx context.Context) IntervalOption {
+	return func(i *Interval) {
+		i.Context = ctx
+	}
+}
+
+// OptIntervalErrors sets the interval worker start error channel.
+func OptIntervalErrors(errors chan error) IntervalOption {
+	return func(i *Interval) {
+		i.Errors = errors
+	}
+}
+
+// Interval is a background worker that performs an action on an interval.
 type Interval struct {
-	delay    time.Duration
-	interval time.Duration
-	action   func() error
-	latch    *Latch
-	errors   chan error
+	Latch
+	Context  context.Context
+	Interval time.Duration
+	Action   ContextAction
+	Delay    time.Duration
+	Errors   chan error
 }
 
-// WithDelay sets a start delay time.
-func (i *Interval) WithDelay(d time.Duration) *Interval {
-	i.delay = d
-	return i
-}
+/*
+Start starts the worker.
 
-// Delay returns the start delay.
-func (i *Interval) Delay() time.Duration {
-	return i.delay
-}
+This will start the internal ticker, with a default initial delay of the given interval, and will return an ErrCannotStart if the interval worker is already started.
 
-// WithInterval sets the inteval. It must be set before `.Start()` is called.
-func (i *Interval) WithInterval(d time.Duration) *Interval {
-	i.interval = d
-	return i
-}
-
-// Interval returns the interval for the ticker.
-func (i Interval) Interval() time.Duration {
-	return i.interval
-}
-
-// IsRunning returns if the worker is running.
-func (i *Interval) IsRunning() bool {
-	return i.latch.IsRunning()
-}
-
-// Latch returns the inteval worker latch.
-func (i *Interval) Latch() *Latch {
-	return i.latch
-}
-
-// WithAction sets the interval action.
-func (i *Interval) WithAction(action func() error) *Interval {
-	i.action = action
-	return i
-}
-
-// Action returns the interval action.
-func (i *Interval) Action() func() error {
-	return i.action
-}
-
-// WithErrors returns the error channel.
-func (i *Interval) WithErrors(errors chan error) *Interval {
-	i.errors = errors
-	return i
-}
-
-// Errors returns a channel to read action errors from.
-func (i *Interval) Errors() chan error {
-	return i.errors
-}
-
-// NotifyStarted returns the notify started signal.
-func (i *Interval) NotifyStarted() <-chan struct{} {
-	return i.latch.NotifyStarted()
-}
-
-// NotifyStopped returns the notify stopped signal.
-func (i *Interval) NotifyStopped() <-chan struct{} {
-	return i.latch.NotifyStopped()
-}
-
-// Start starts the worker.
+This call will block.
+*/
 func (i *Interval) Start() error {
-	if !i.latch.CanStart() {
+	if !i.CanStart() {
 		return exception.New(ErrCannotStart)
 	}
-
-	i.latch.Starting()
-	go func() {
-		i.latch.Started()
-
-		if i.delay > 0 {
-			time.Sleep(i.delay)
-		}
-
-		tick := time.Tick(i.interval)
-		var err error
-		for {
-			select {
-			case <-tick:
-				err = i.action()
-				if err != nil && i.errors != nil {
-					i.errors <- err
-				}
-			case <-i.latch.NotifyStopping():
-				i.latch.Stopped()
-				return
-			}
-		}
-	}()
-	<-i.latch.NotifyStarted()
+	i.Starting()
+	i.Dispatch()
 	return nil
 }
 
 // Stop stops the worker.
 func (i *Interval) Stop() error {
-	if !i.latch.CanStop() {
+	if !i.CanStop() {
 		return exception.New(ErrCannotStop)
 	}
-	i.latch.Stopping()
-	<-i.latch.NotifyStopped()
+	i.Stopping()
+	<-i.NotifyStopped()
 	return nil
+}
+
+// Dispatch is the main dispatch loop.
+func (i *Interval) Dispatch() {
+	i.Started()
+
+	if i.Delay > 0 {
+		time.Sleep(i.Delay)
+	}
+
+	tick := time.Tick(i.Interval)
+	var err error
+	for {
+		select {
+		case <-tick:
+			err = i.Action(context.Background())
+			if err != nil && i.Errors != nil {
+				i.Errors <- err
+			}
+		case <-i.Context.Done():
+			i.Stopped()
+			return
+		case <-i.NotifyStopping():
+			i.Stopped()
+			return
+		}
+	}
 }

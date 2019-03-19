@@ -5,6 +5,8 @@ import (
 	"encoding/json"
 	"fmt"
 	"time"
+
+	"github.com/blend/go-sdk/ansi"
 )
 
 // these are compile time assertions
@@ -93,7 +95,7 @@ func (e *ErrorEvent) WithFlag(flag Flag) *ErrorEvent {
 }
 
 // WithFlagTextColor sets the flag text color.
-func (e *ErrorEvent) WithFlagTextColor(color AnsiColor) *ErrorEvent {
+func (e *ErrorEvent) WithFlagTextColor(color ansi.Color) *ErrorEvent {
 	e.flagTextColor = color
 	return e
 }

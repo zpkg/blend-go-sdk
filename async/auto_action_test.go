@@ -1,6 +1,7 @@
 package async
 
 import (
+	"context"
 	"sync"
 	"sync/atomic"
 	"testing"
@@ -11,18 +12,16 @@ func TestAutoActionTrigger(t *testing.T) {
 	wg := &sync.WaitGroup{}
 	wg.Add(1)
 
-	action := func() {
+	action := func(_ context.Context) error {
 		wg.Done()
+		return nil
 	}
 
-	a := NewAutoAction(time.Hour, 10).
-		WithAction(action).
-		WithTriggerOnAbort(false)
-
+	a := NewAutoAction(action, time.Hour, 10)
 	a.Start()
 	defer a.Stop()
 
-	a.Trigger()
+	a.Trigger(context.Background())
 	wg.Wait()
 }
 
@@ -33,21 +32,18 @@ func TestAutoActionTick(t *testing.T) {
 	ticksRemaining := int32(3)
 	wg.Add(int(ticksRemaining))
 
-	action := func() {
+	action := func(_ context.Context) error {
 		ticks := atomic.LoadInt32(&ticksRemaining)
 		if ticks > 0 {
 			atomic.AddInt32(&ticksRemaining, -1)
 			wg.Done()
 		}
+		return nil
 	}
 
-	at := NewAutoAction(time.Millisecond*3, 10).
-		WithAction(action).
-		WithTriggerOnAbort(false)
-
+	at := NewAutoAction(action, time.Millisecond, 10)
 	at.Start()
 	defer at.Stop()
-
 	wg.Wait()
 }
 
@@ -56,18 +52,17 @@ func TestAutoActionCount(t *testing.T) {
 
 	wg.Add(1)
 
-	action := func() {
+	action := func(_ context.Context) error {
 		wg.Done()
+		return nil
 	}
 
 	maxCounter := 10
 
-	at := NewAutoAction(time.Hour, int32(maxCounter)).
-		WithAction(action).
-		WithTriggerOnAbort(false)
+	at := NewAutoAction(action, time.Hour, maxCounter)
 
 	for i := 0; i < maxCounter; i++ {
-		at.Increment()
+		at.Increment(context.Background())
 	}
 
 	at.Start()

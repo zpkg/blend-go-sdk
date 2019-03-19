@@ -3,6 +3,8 @@ package logger
 import (
 	"bytes"
 	"time"
+
+	"github.com/blend/go-sdk/ansi"
 )
 
 // these are compile time assertions
@@ -167,14 +169,14 @@ func (e *RPCEvent) WriteText(tf TextFormatter, buf *bytes.Buffer) {
 
 	if e.engine != "" {
 		buf.WriteString("[")
-		buf.WriteString(tf.Colorize(e.engine, ColorLightWhite))
+		buf.WriteString(tf.Colorize(e.engine, ansi.ColorLightWhite))
 		buf.WriteString("]")
 	}
 	if e.method != "" {
 		if e.engine != "" {
 			buf.WriteRune(RuneSpace)
 		}
-		buf.WriteString(tf.Colorize(e.method, ColorBlue))
+		buf.WriteString(tf.Colorize(e.method, ansi.ColorBlue))
 	}
 	if e.peer != "" {
 		buf.WriteRune(RuneSpace)
@@ -198,7 +200,7 @@ func (e *RPCEvent) WriteText(tf TextFormatter, buf *bytes.Buffer) {
 
 	if e.err != nil {
 		buf.WriteRune(RuneSpace)
-		buf.WriteString(tf.Colorize("failed", ColorRed))
+		buf.WriteString(tf.Colorize("failed", ansi.ColorRed))
 	}
 }
 

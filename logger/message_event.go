@@ -4,6 +4,8 @@ import (
 	"bytes"
 	"fmt"
 	"time"
+
+	"github.com/blend/go-sdk/ansi"
 )
 
 // these are compile time assertions
@@ -62,7 +64,7 @@ func (e *MessageEvent) WithFlag(flag Flag) *MessageEvent {
 }
 
 // WithFlagTextColor sets the message flag text color.
-func (e *MessageEvent) WithFlagTextColor(color AnsiColor) *MessageEvent {
+func (e *MessageEvent) WithFlagTextColor(color ansi.Color) *MessageEvent {
 	e.flagTextColor = color
 	return e
 }

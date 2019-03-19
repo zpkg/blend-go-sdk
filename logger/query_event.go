@@ -4,6 +4,8 @@ import (
 	"bytes"
 	"fmt"
 	"time"
+
+	"github.com/blend/go-sdk/ansi"
 )
 
 // these are compile time assertions
@@ -156,19 +158,19 @@ func (e QueryEvent) Err() error {
 func (e QueryEvent) WriteText(tf TextFormatter, buf *bytes.Buffer) {
 	buf.WriteString("[")
 	if len(e.engine) > 0 {
-		buf.WriteString(tf.Colorize(e.engine, ColorLightWhite))
+		buf.WriteString(tf.Colorize(e.engine, ansi.ColorLightWhite))
 		buf.WriteRune(RuneSpace)
 	}
 	if len(e.username) > 0 {
-		buf.WriteString(tf.Colorize(e.username, ColorLightWhite))
+		buf.WriteString(tf.Colorize(e.username, ansi.ColorLightWhite))
 		buf.WriteRune('@')
 	}
-	buf.WriteString(tf.Colorize(e.database, ColorLightWhite))
+	buf.WriteString(tf.Colorize(e.database, ansi.ColorLightWhite))
 	buf.WriteString("]")
 
 	if len(e.queryLabel) > 0 {
 		buf.WriteRune(RuneSpace)
-		buf.WriteString(fmt.Sprintf("[%s]", tf.Colorize(e.queryLabel, ColorLightWhite)))
+		buf.WriteString(fmt.Sprintf("[%s]", tf.Colorize(e.queryLabel, ansi.ColorLightWhite)))
 	}
 
 	buf.WriteRune(RuneSpace)
@@ -176,7 +178,7 @@ func (e QueryEvent) WriteText(tf TextFormatter, buf *bytes.Buffer) {
 
 	if e.err != nil {
 		buf.WriteRune(RuneSpace)
-		buf.WriteString(tf.Colorize("failed", ColorRed))
+		buf.WriteString(tf.Colorize("failed", ansi.ColorRed))
 	}
 
 	if len(e.body) > 0 {

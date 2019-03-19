@@ -5,17 +5,6 @@ import (
 	"sync/atomic"
 )
 
-const (
-	// LatchStopped is a latch lifecycle state.
-	LatchStopped int32 = 0
-	// LatchStarting is a latch lifecycle state.
-	LatchStarting int32 = 1
-	// LatchRunning is a latch lifecycle state.
-	LatchRunning int32 = 2
-	// LatchStopping is a latch lifecycle state.
-	LatchStopping int32 = 3
-)
-
 // NewLatch returns a new latch.
 func NewLatch() *Latch {
 	return &Latch{

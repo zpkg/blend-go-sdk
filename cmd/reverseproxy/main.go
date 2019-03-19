@@ -11,10 +11,9 @@ import (
 	"strings"
 
 	"github.com/blend/go-sdk/graceful"
-	"github.com/blend/go-sdk/webutil"
-
 	"github.com/blend/go-sdk/logger"
-	"github.com/blend/go-sdk/proxy"
+	"github.com/blend/go-sdk/reverseproxy"
+	"github.com/blend/go-sdk/webutil"
 )
 
 // linker metadata block
@@ -64,7 +63,7 @@ func main() {
 		log.Flags().CoalesceWith(eventSet)
 	}
 
-	reverseProxy := proxy.New().WithLogger(log)
+	reverseProxy := reverseproxy.New().WithLogger(log)
 
 	for _, upstream := range upstreams {
 		log.SyncInfof("upstream: %s", upstream)
@@ -73,7 +72,7 @@ func main() {
 			log.SyncFatalExit(err)
 		}
 
-		proxyUpstream := proxy.NewUpstream(target).
+		proxyUpstream := reverseproxy.NewUpstream(target).
 			WithLogger(log)
 
 		reverseProxy.WithUpstream(proxyUpstream)

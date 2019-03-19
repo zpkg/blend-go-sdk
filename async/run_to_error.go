@@ -15,7 +15,6 @@ func RunToError(fns ...func() error) error {
 			errChan <- fn()
 		}(fn)
 	}
-
 	select {
 	case p := <-panicChan:
 		panic(p)

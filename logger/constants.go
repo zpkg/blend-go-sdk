@@ -54,3 +54,9 @@ const (
 	// It's currently set to 256k entries.
 	DefaultListenerQueueDepth = 1 << 10
 )
+
+// Rune constants
+const (
+	RuneSpace   rune = ' '
+	RuneNewline rune = '\n'
+)

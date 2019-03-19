@@ -1,123 +1,151 @@
 package async
 
 import (
-	"sync"
+	"context"
 	"sync/atomic"
 	"time"
 
 	"github.com/blend/go-sdk/exception"
 )
 
-// NewAutoAction returns a new NewAutoAction
-func NewAutoAction(interval time.Duration, maxCount int32) *AutoAction {
-	return &AutoAction{
-		maxCount:       maxCount,
-		interval:       interval,
-		latch:          NewLatch(),
-		triggerOnAbort: true,
+// NewAutoAction returns a new singleton that will trigger an action after a given amount of time has passed (interval)
+// or after a given number of increments has happened (maxCount).
+func NewAutoAction(action ContextAction, interval time.Duration, maxCount int, options ...AutoActionOption) *AutoAction {
+	aa := AutoAction{
+		Action:   action,
+		MaxCount: int32(maxCount),
+		Interval: interval,
+		Context:  context.Background(),
+	}
+	for _, option := range options {
+		option(&aa)
+	}
+	return &aa
+}
+
+// AutoActionOption is an option for an auto-action.
+type AutoActionOption func(*AutoAction)
+
+// OptAutoActionMaxCount sets the auto-action max count.
+func OptAutoActionMaxCount(maxCount int32) AutoActionOption {
+	return func(aa *AutoAction) {
+		aa.MaxCount = maxCount
+	}
+}
+
+// OptAutoActionInterval sets the auto-action interval.
+func OptAutoActionInterval(d time.Duration) AutoActionOption {
+	return func(aa *AutoAction) {
+		aa.Interval = d
+	}
+}
+
+// OptAutoActionErrors sets the auto-action error channel.
+func OptAutoActionErrors(errors chan error) AutoActionOption {
+	return func(aa *AutoAction) {
+		aa.Errors = errors
+	}
+}
+
+// OptAutoActionTriggerOnStop sets if the auto-action should call the action on shutdown.
+func OptAutoActionTriggerOnStop(errors chan error) AutoActionOption {
+	return func(aa *AutoAction) {
+		aa.Errors = errors
 	}
 }
 
 // AutoAction is an action that is triggered automatically on some set interval.
 // It also exposes a function to trigger the action synchronously
 type AutoAction struct {
-	sync.Mutex
-	counter        int32
-	maxCount       int32
-	action         func()
-	interval       time.Duration
-	latch          *Latch
-	triggerOnAbort bool
+	Latch
+
+	Action         ContextAction
+	Context        context.Context
+	Errors         chan error
+	Interval       time.Duration
+	MaxCount       int32
+	TriggerOnAbort bool
+
+	Counter int32
 }
 
-// MaxCount returns the number of increments between action triggers
-func (a *AutoAction) MaxCount() int32 {
-	return a.maxCount
+// Background returns a background context.
+func (a *AutoAction) Background() context.Context {
+	if a.Context != nil {
+		return a.Context
+	}
+	return context.Background()
 }
 
-// WithAction sets the trigger action
-// This should be called before Start(), and, if it's called after start, the AutoAction's lock should be acquired first
-func (a *AutoAction) WithAction(action func()) *AutoAction {
-	a.action = action
-	return a
-}
+/*
+Start starts the singleton.
 
-// ShouldTriggerOnAbort refers to whether the action should be triggered when NewAutoAction is stopped
-func (a *AutoAction) ShouldTriggerOnAbort() bool {
-	return a.triggerOnAbort
-}
+This call blocks. To call it asynchronously:
 
-// WithTriggerOnAbort sets whether the action should be triggered when NewAutoAction is stopped
-func (a *AutoAction) WithTriggerOnAbort(triggerOnAbort bool) *AutoAction {
-	a.triggerOnAbort = triggerOnAbort
-	return a
-}
+	go a.Start()
+	<-a.NotifyStarted()
 
-// NotifyStarted returns the started signal.
-func (a *AutoAction) NotifyStarted() <-chan struct{} {
-	return a.latch.NotifyStarted()
-}
-
-// NotifyStopped returns the started stopped.
-func (a *AutoAction) NotifyStopped() <-chan struct{} {
-	return a.latch.NotifyStopped()
-}
-
-// Start starts the trigger.
+This will start the singleton and wait for it to enter the running state.
+*/
 func (a *AutoAction) Start() error {
-	if !a.latch.CanStart() {
+	if !a.CanStart() {
 		return exception.New(ErrCannotStart)
 	}
-	a.latch.Starting()
-	go func() {
-		a.latch.Started()
-		a.runLoop()
-	}()
-	<-a.latch.NotifyStarted()
+	a.Starting()
+	a.Dispatch()
 	return nil
 }
 
-// Stop stops the trigger
+// Stop stops the auto-action singleton.
 func (a *AutoAction) Stop() error {
-	if !a.latch.CanStop() {
+	if !a.CanStop() {
 		return exception.New(ErrCannotStop)
 	}
-	a.latch.Stopping()
-	<-a.latch.NotifyStopped()
+	a.Stopping()
+	<-a.NotifyStopped()
 	return nil
 }
 
-func (a *AutoAction) runLoop() {
-	ticker := time.Tick(a.interval)
+// Dispatch is the main run loop.
+func (a *AutoAction) Dispatch() {
+	a.Started()
+	ticker := time.Tick(a.Interval)
 	for {
 		select {
 		case <-ticker:
-			a.Trigger()
-		case <-a.latch.NotifyStopping():
-			if a.triggerOnAbort {
-				a.Trigger()
+			a.Trigger(a.Background())
+		case <-a.NotifyStopping():
+			if a.TriggerOnAbort {
+				a.Trigger(a.Background())
 			}
-			a.latch.Stopped()
+			a.Stopped()
 			return
 		}
 	}
 }
 
 // Increment updates the count
-func (a *AutoAction) Increment() {
-	if atomic.CompareAndSwapInt32(&a.counter, a.maxCount-1, 0) {
-		a.Trigger()
+func (a *AutoAction) Increment(ctx context.Context) {
+	if atomic.CompareAndSwapInt32(&a.Counter, a.MaxCount-1, 0) {
+		a.Trigger(ctx)
 		return
 	}
-	atomic.AddInt32(&a.counter, 1)
+	atomic.AddInt32(&a.Counter, 1)
 }
 
-// Trigger invokes the action, if one is set, with the value
-// This call is synchronous, in that it will call the trigger action on the same goroutine.
-func (a *AutoAction) Trigger() {
+// Trigger invokes the action if one is set, it will acquire the lock and hold it for the duration of the call to the action.
+func (a *AutoAction) Trigger(ctx context.Context) {
 	a.Lock()
 	defer a.Unlock()
-	if a.action != nil {
-		a.action()
+	defer func() {
+		if r := recover(); r != nil {
+			if a.Errors != nil {
+				a.Errors <- exception.New(r)
+			}
+		}
+	}()
+
+	if err := a.Action(ctx); err != nil && a.Errors != nil {
+		a.Errors <- err
 	}
 }

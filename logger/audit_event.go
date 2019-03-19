@@ -5,6 +5,8 @@ import (
 	"fmt"
 	"strings"
 	"time"
+
+	"github.com/blend/go-sdk/ansi"
 )
 
 // these are compile time assertions
@@ -180,49 +182,49 @@ func (e AuditEvent) Extra() map[string]string {
 // WriteText implements TextWritable.
 func (e AuditEvent) WriteText(formatter TextFormatter, buf *bytes.Buffer) {
 	if len(e.context) > 0 {
-		buf.WriteString(formatter.Colorize("Context:", ColorGray))
+		buf.WriteString(formatter.Colorize("Context:", ansi.ColorGray))
 		buf.WriteString(e.context)
 		buf.WriteRune(RuneSpace)
 	}
 	if len(e.principal) > 0 {
-		buf.WriteString(formatter.Colorize("Principal:", ColorGray))
+		buf.WriteString(formatter.Colorize("Principal:", ansi.ColorGray))
 		buf.WriteString(e.principal)
 		buf.WriteRune(RuneSpace)
 	}
 	if len(e.verb) > 0 {
-		buf.WriteString(formatter.Colorize("Verb:", ColorGray))
+		buf.WriteString(formatter.Colorize("Verb:", ansi.ColorGray))
 		buf.WriteString(e.verb)
 		buf.WriteRune(RuneSpace)
 	}
 	if len(e.noun) > 0 {
-		buf.WriteString(formatter.Colorize("Noun:", ColorGray))
+		buf.WriteString(formatter.Colorize("Noun:", ansi.ColorGray))
 		buf.WriteString(e.noun)
 		buf.WriteRune(RuneSpace)
 	}
 	if len(e.subject) > 0 {
-		buf.WriteString(formatter.Colorize("Subject:", ColorGray))
+		buf.WriteString(formatter.Colorize("Subject:", ansi.ColorGray))
 		buf.WriteString(e.subject)
 		buf.WriteRune(RuneSpace)
 	}
 	if len(e.property) > 0 {
-		buf.WriteString(formatter.Colorize("Property:", ColorGray))
+		buf.WriteString(formatter.Colorize("Property:", ansi.ColorGray))
 		buf.WriteString(e.property)
 		buf.WriteRune(RuneSpace)
 	}
 	if len(e.remoteAddress) > 0 {
-		buf.WriteString(formatter.Colorize("Remote Addr:", ColorGray))
+		buf.WriteString(formatter.Colorize("Remote Addr:", ansi.ColorGray))
 		buf.WriteString(e.remoteAddress)
 		buf.WriteRune(RuneSpace)
 	}
 	if len(e.userAgent) > 0 {
-		buf.WriteString(formatter.Colorize("UA:", ColorGray))
+		buf.WriteString(formatter.Colorize("UA:", ansi.ColorGray))
 		buf.WriteString(e.userAgent)
 		buf.WriteRune(RuneSpace)
 	}
 	if len(e.extra) > 0 {
 		var values []string
 		for key, value := range e.extra {
-			values = append(values, fmt.Sprintf("%s%s", formatter.Colorize(key+":", ColorGray), value))
+			values = append(values, fmt.Sprintf("%s%s", formatter.Colorize(key+":", ansi.ColorGray), value))
 		}
 		buf.WriteString(strings.Join(values, " "))
 	}

@@ -8,6 +8,8 @@ import (
 	"strconv"
 	"strings"
 	"time"
+
+	"github.com/blend/go-sdk/ansi"
 )
 
 // Asserts text writer is a writer.
@@ -22,12 +24,12 @@ type TextWritable interface {
 
 // FlagTextColorProvider is a function types can implement to provide a color.
 type FlagTextColorProvider interface {
-	FlagTextColor() AnsiColor
+	FlagTextColor() ansi.Color
 }
 
 // TextFormatter formats text.
 type TextFormatter interface {
-	Colorize(value string, color AnsiColor) string
+	Colorize(value string, color ansi.Color) string
 	ColorizeStatusCode(code int) string
 	ColorizeByStatusCode(code int, value string) string
 }
@@ -156,7 +158,7 @@ func (wr *TextWriter) WithErrorOutput(errorOutput io.Writer) *TextWriter {
 }
 
 // Colorize (optionally) applies a color to a string.
-func (wr *TextWriter) Colorize(value string, color AnsiColor) string {
+func (wr *TextWriter) Colorize(value string, color ansi.Color) string {
 	if wr.useColor {
 		return color.Apply(value)
 	}
@@ -180,12 +182,12 @@ func (wr *TextWriter) ColorizeByStatusCode(statusCode int, value string) string 
 }
 
 // FormatFlag formats the flag portion of the message.
-func (wr *TextWriter) FormatFlag(flag Flag, color AnsiColor) string {
+func (wr *TextWriter) FormatFlag(flag Flag, color ansi.Color) string {
 	return fmt.Sprintf("[%s]", wr.Colorize(string(flag), color))
 }
 
 // FormatEntity formats the flag portion of the message.
-func (wr *TextWriter) FormatEntity(entity string, color AnsiColor) string {
+func (wr *TextWriter) FormatEntity(entity string, color ansi.Color) string {
 	return fmt.Sprintf("[%s]", wr.Colorize(entity, color))
 }
 
@@ -195,11 +197,11 @@ func (wr *TextWriter) FormatHeadings(headings ...string) string {
 		return ""
 	}
 	if len(headings) == 1 {
-		return fmt.Sprintf("[%s]", wr.Colorize(headings[0], ColorBlue))
+		return fmt.Sprintf("[%s]", wr.Colorize(headings[0], ansi.ColorBlue))
 	}
 	if wr.useColor {
 		for index := 0; index < len(headings); index++ {
-			headings[index] = wr.Colorize(headings[index], ColorBlue)
+			headings[index] = wr.Colorize(headings[index], ansi.ColorBlue)
 		}
 	}
 	return fmt.Sprintf("[%s]", strings.Join(headings, " > "))
@@ -217,7 +219,7 @@ func (wr *TextWriter) FormatTimestamp(optionalTime ...time.Time) string {
 	} else {
 		value = time.Now().UTC().Format(timeFormat)
 	}
-	return wr.Colorize(fmt.Sprintf("%-30s", value), ColorGray)
+	return wr.Colorize(fmt.Sprintf("%-30s", value), ansi.ColorGray)
 }
 
 // GetBuffer returns a leased buffer from the buffer pool.
@@ -271,7 +273,7 @@ func (wr *TextWriter) write(output io.Writer, e Event) error {
 
 	if typed, isTyped := e.(EventEntity); isTyped {
 		if len(typed.Entity()) > 0 {
-			buf.WriteString(wr.FormatEntity(typed.Entity(), ColorBlue))
+			buf.WriteString(wr.FormatEntity(typed.Entity(), ansi.ColorBlue))
 			buf.WriteRune(RuneSpace)
 		}
 	}

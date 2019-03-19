@@ -1,6 +1,10 @@
 package logger
 
-import "time"
+import (
+	"time"
+
+	"github.com/blend/go-sdk/ansi"
+)
 
 // these are compile time assertions
 var (
@@ -23,7 +27,7 @@ func NewEventMeta(flag Flag) *EventMeta {
 // EventMeta is the metadata common to events.
 type EventMeta struct {
 	flag          Flag
-	flagTextColor AnsiColor
+	flagTextColor ansi.Color
 	ts            time.Time
 	headings      []string
 	entity        string
@@ -44,10 +48,10 @@ func (em *EventMeta) Flag() Flag { return em.flag }
 func (em *EventMeta) SetFlag(flag Flag) { em.flag = flag }
 
 // FlagTextColor returns a custom color for the flag.
-func (em *EventMeta) FlagTextColor() AnsiColor { return em.flagTextColor }
+func (em *EventMeta) FlagTextColor() ansi.Color { return em.flagTextColor }
 
 // SetFlagTextColor sets the flag text color.
-func (em *EventMeta) SetFlagTextColor(color AnsiColor) { em.flagTextColor = color }
+func (em *EventMeta) SetFlagTextColor(color ansi.Color) { em.flagTextColor = color }
 
 // Timestamp returnst the event meta timestamp.
 func (em *EventMeta) Timestamp() time.Time { return em.ts }
