@@ -10,7 +10,6 @@ import (
 	"github.com/blend/go-sdk/env"
 	"github.com/blend/go-sdk/exception"
 	"github.com/blend/go-sdk/stringutil"
-	"github.com/lib/pq"
 )
 
 // NewConfig creates a new config.
@@ -20,7 +19,7 @@ func NewConfig() *Config {
 
 // NewConfigFromDSN creates a new config from a dsn.
 func NewConfigFromDSN(dsn string) (*Config, error) {
-	parsed, err := pq.ParseURL(dsn)
+	parsed, err := ParseURL(dsn)
 	if err != nil {
 		return nil, exception.New(err)
 	}
@@ -206,7 +205,7 @@ func (c Config) GetPassword(inherited ...string) string {
 }
 
 // GetSSLMode returns the connection ssl mode.
-// It defaults to unset, which will then use the lib/pq defaults.
+// It defaults to unset, which will then use the driver defaults.
 func (c Config) GetSSLMode(inherited ...string) string {
 	return configutil.CoalesceString(c.SSLMode, "", inherited...)
 }

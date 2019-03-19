@@ -298,15 +298,27 @@ func (jm *JobManager) Status() *Status {
 // Life Cycle
 //
 
-// Start begins the schedule runner for a JobManager.
-// It does not block.
+// Start starts the job manager and blocks.
 func (jm *JobManager) Start() error {
+	if err := jm.StartAsync(); err != nil {
+		return err
+	}
+	<-jm.latch.NotifyStopped()
+	return nil
+}
+
+// StartAsync starts the job manager and the loaded jobs.
+// It does not block.
+func (jm *JobManager) StartAsync() error {
 	if !jm.latch.CanStart() {
 		return fmt.Errorf("already started")
 	}
 	jm.latch.Starting()
+	var err error
 	for _, job := range jm.jobs {
-		job.WithTracer(jm.tracer).WithLogger(jm.log).Start()
+		if err = job.WithTracer(jm.tracer).WithLogger(jm.log).StartAsync(); err != nil {
+			return err
+		}
 	}
 	jm.latch.Started()
 	return nil

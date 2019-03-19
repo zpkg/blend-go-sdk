@@ -1,21 +1,8 @@
 request
 ==========
 
-This is a simple convenience library for making service requests and deserializing the results to objects either from JSON or from XML.
+## DEPRECATION NOTICE ##
 
-## Usage
+This package is deprecated as of `v2.x.x`, please use `r2` for future projects.
 
-Here is an exmple of fetching an object:
-
-```go
-myObject := MyObject{}
-reqErr := request.NewRequest().AsGet().WithUrl("http://myservice.com/api/foo").JSON(&myObject)
-```
-
-Here is an example of fetching a raw response:
-
-```go
-res, res_err := request.New().AsGet().WithUrl(host).WithTimeout(5000).FetchRawResponse()
-defer res.Body.Close()
-//... do things with the raw body ...
-```
+This package will be deleted in `v3.x.x`.

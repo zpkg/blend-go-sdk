@@ -6,7 +6,6 @@ import (
 	"testing"
 
 	"github.com/blend/go-sdk/assert"
-	"github.com/blend/go-sdk/env"
 	"github.com/blend/go-sdk/exception"
 	"github.com/blend/go-sdk/uuid"
 )
@@ -16,30 +15,10 @@ type config struct {
 	Other       string `json:"other" yaml:"other" env:"OTHER"`
 }
 
-func TestPaths(t *testing.T) {
-	assert := assert.New(t)
-	defer env.Restore()
-	env.Env().Delete(EnvVarConfigPath)
-
-	assert.Empty(Paths())
-	assert.Equal([]string{"testdata/foo.yml"}, Paths("testdata/foo.yml"))
-	assert.Equal([]string{"testdata/foo.yml"}, Paths("testdata/foo.yml"))
-}
-
-func TestPathEnv(t *testing.T) {
-	assert := assert.New(t)
-	defer env.Restore()
-	env.Env().Set(EnvVarConfigPath, "testdata/config.yml,testdata/alt.yml")
-
-	assert.Equal([]string{"testdata/config.yml", "testdata/alt.yml"}, Paths())
-	assert.Equal([]string{"testdata/config.yml", "testdata/alt.yml", "foo.yml"}, Paths("foo.yml"))
-	assert.Equal([]string{"testdata/config.yml", "testdata/alt.yml", "foo.yml", "bar.yml"}, Paths("foo.yml", "bar.yml"))
-}
-
 func TestDeserializeInvalid(t *testing.T) {
 	assert := assert.New(t)
 
-	err := Deserialize(".???", nil, nil)
+	err := deserialize(".???", nil, nil)
 	assert.NotNil(err)
 	assert.True(IsInvalidConfigExtension(err))
 }
@@ -48,7 +27,7 @@ func TestDeserializeYAML(t *testing.T) {
 	assert := assert.New(t)
 
 	var cfg config
-	assert.Nil(Deserialize(ExtensionYAML, bytes.NewBuffer([]byte("env: test\nother: foo")), &cfg))
+	assert.Nil(deserialize(ExtensionYAML, bytes.NewBuffer([]byte("env: test\nother: foo")), &cfg))
 	assert.Equal("test", cfg.Environment)
 	assert.Equal("foo", cfg.Other)
 }
@@ -57,7 +36,7 @@ func TestDeserializeYML(t *testing.T) {
 	assert := assert.New(t)
 
 	var cfg config
-	assert.Nil(Deserialize(ExtensionYML, bytes.NewBuffer([]byte("env: test\nother: foo")), &cfg))
+	assert.Nil(deserialize(ExtensionYML, bytes.NewBuffer([]byte("env: test\nother: foo")), &cfg))
 	assert.Equal("test", cfg.Environment)
 	assert.Equal("foo", cfg.Other)
 }
@@ -66,7 +45,7 @@ func TestDeserializeAddsPrefix(t *testing.T) {
 	assert := assert.New(t)
 
 	var cfg config
-	assert.Nil(Deserialize("yml", bytes.NewBuffer([]byte("env: test\nother: foo")), &cfg))
+	assert.Nil(deserialize("yml", bytes.NewBuffer([]byte("env: test\nother: foo")), &cfg))
 	assert.Equal("test", cfg.Environment)
 	assert.Equal("foo", cfg.Other)
 }
@@ -75,58 +54,49 @@ func TestDeserializeJSON(t *testing.T) {
 	assert := assert.New(t)
 
 	var cfg config
-	assert.Nil(Deserialize(ExtensionJSON, bytes.NewBuffer([]byte(`{"env": "test", "other": "foo"}`)), &cfg))
+	assert.Nil(deserialize(ExtensionJSON, bytes.NewBuffer([]byte(`{"env": "test", "other": "foo"}`)), &cfg))
 	assert.Equal("test", cfg.Environment)
 	assert.Equal("foo", cfg.Other)
 }
 
-func TestReadFromReader(t *testing.T) {
+func TestTryReadYAML(t *testing.T) {
 	assert := assert.New(t)
 
 	var cfg config
-	err := ReadFromReader(&cfg, bytes.NewBuffer([]byte("env: test\nother: foo")), ExtensionYAML)
-	assert.Nil(err)
-	assert.Equal("test", cfg.Environment)
-}
-
-func TestTryReadFromPathYAML(t *testing.T) {
-	assert := assert.New(t)
-
-	var cfg config
-	path, err := ReadFromPaths(&cfg, "testdata/config.yaml")
+	path, err := Read(&cfg, OptSetPaths("testdata/config.yaml"))
 	assert.Nil(err)
 	assert.Equal(path, "testdata/config.yaml")
 	assert.Equal("test_yaml", cfg.Environment)
 	assert.Equal("foo", cfg.Other)
 }
 
-func TestTryReadFromPathYML(t *testing.T) {
+func TestTryReadYML(t *testing.T) {
 	assert := assert.New(t)
 
 	var cfg config
-	path, err := ReadFromPaths(&cfg, "testdata/config.yml")
+	path, err := Read(&cfg, OptSetPaths("testdata/config.yml"))
 	assert.Nil(err)
 	assert.Equal(path, "testdata/config.yml")
 	assert.Equal("test_yml", cfg.Environment)
 	assert.Equal("foo", cfg.Other)
 }
 
-func TestTryReadFromPathJSON(t *testing.T) {
+func TestTryReadJSON(t *testing.T) {
 	assert := assert.New(t)
 
 	var cfg config
-	path, err := ReadFromPaths(&cfg, "testdata/config.json")
+	path, err := Read(&cfg, OptSetPaths("testdata/config.json"))
 	assert.Nil(err)
 	assert.Equal(path, "testdata/config.json")
 	assert.Equal("test_json", cfg.Environment)
 	assert.Equal("moo", cfg.Other)
 }
 
-func TestReadPathUnset(t *testing.T) {
+func TestReadUnset(t *testing.T) {
 	assert := assert.New(t)
 
 	var cfg config
-	path, err := ReadFromPaths(&cfg, "")
+	path, err := Read(&cfg, OptSetPaths(""))
 	assert.Nil(err)
 	assert.Empty(path)
 	assert.NotEqual("dev", cfg.Environment)
@@ -136,13 +106,12 @@ func TestReadPathNotFound(t *testing.T) {
 	assert := assert.New(t)
 
 	var cfg config
-	_, err := ReadFromPaths(&cfg, filepath.Join("testdata", uuid.V4().String()))
+	_, err := Read(&cfg, OptSetPaths(filepath.Join("testdata", uuid.V4().String())))
 	assert.True(IsNotExist(err))
 }
 
 func TestIsUnset(t *testing.T) {
 	assert := assert.New(t)
-
 	assert.True(IsConfigPathUnset(exception.New(ErrConfigPathUnset)))
 	assert.False(IsConfigPathUnset(exception.New(uuid.V4().String())))
 }

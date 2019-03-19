@@ -8,6 +8,8 @@ import (
 	"sync/atomic"
 	"time"
 
+	"github.com/blend/go-sdk/logger"
+
 	"github.com/blend/go-sdk/cron"
 )
 
@@ -114,7 +116,10 @@ func main() {
 		jm.LoadJob(&loadTestJob{id: x})
 	}
 	fmt.Printf("Loaded %d Job Instances.\n\n", N)
-	jm.Start()
+
+	if err := jm.StartAsync(); err != nil {
+		logger.FatalExit(err)
+	}
 
 	time.Sleep(Q)
 

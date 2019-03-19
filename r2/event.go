@@ -10,6 +10,13 @@ import (
 	"github.com/blend/go-sdk/logger"
 )
 
+const (
+	// Flag is a logger event flag.
+	Flag logger.Flag = "request"
+	// FlagResponse is a logger event flag.
+	FlagResponse logger.Flag = "request.response"
+)
+
 // NewEvent returns a new event.
 func NewEvent(flag logger.Flag, options ...EventOption) *Event {
 	e := &Event{
@@ -25,10 +32,15 @@ func NewEvent(flag logger.Flag, options ...EventOption) *Event {
 type Event struct {
 	*logger.EventMeta
 
-	Started  time.Time
-	Request  *http.Request
+	// Started is the time the request was started.
+	// It is used for elapsed time calculations.
+	Started time.Time
+	// The request metadata.
+	Request *http.Request
+	// The response metadata (excluding the body).
 	Response *http.Response
-	Body     *bytes.Buffer
+	// The response body.
+	Body []byte
 }
 
 // WriteText writes the event to a text writer.
@@ -40,7 +52,7 @@ func (e *Event) WriteText(tf logger.TextFormatter, buf *bytes.Buffer) {
 	}
 	if e.Body != nil {
 		buf.WriteRune(logger.RuneNewline)
-		buf.Write(e.Body.Bytes())
+		buf.Write(e.Body)
 	}
 }
 
@@ -67,7 +79,7 @@ func (e *Event) WriteJSON() logger.JSONObj {
 		}
 	}
 	if e.Body != nil {
-		output["body"] = e.Body.String()
+		output["body"] = string(e.Body)
 	}
 
 	return output

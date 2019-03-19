@@ -197,6 +197,6 @@ func (rs *RequestSender) reqJSON(msg interface{}) (*http.Request, error) {
 	req := rs.req()
 	req.Body = ioutil.NopCloser(bytes.NewBuffer(contents))
 	req.ContentLength = int64(len(contents))
-	req.Header.Add(HeaderContentType, ContentTypeApplicationJSON)
+	req.Header.Set(HeaderContentType, ContentTypeApplicationJSON)
 	return req, nil
 }

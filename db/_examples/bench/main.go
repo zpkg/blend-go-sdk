@@ -9,10 +9,13 @@ import (
 	"sync"
 	"time"
 
+	_ "github.com/lib/pq"
+
 	"github.com/blend/go-sdk/db"
 	"github.com/blend/go-sdk/db/migration"
+	"github.com/blend/go-sdk/db/migration/pg"
 	"github.com/blend/go-sdk/logger"
-	"github.com/blend/go-sdk/util"
+	"github.com/blend/go-sdk/stringutil"
 )
 
 type benchObject struct {
@@ -23,9 +26,9 @@ type benchObject struct {
 func createTable(tableName string, log logger.Log, conn *db.Connection) error {
 	log.SyncInfof("creating %s", tableName)
 	return migration.New(
-		migration.NewGroup(
-			migration.NewStep(
-				migration.TableNotExists(tableName),
+		migration.Group(
+			migration.Step(
+				pg.TableNotExists(tableName),
 				migration.Statements(
 					fmt.Sprintf("CREATE TABLE %s (id serial not null primary key, name varchar(255))", tableName),
 				),
@@ -37,9 +40,9 @@ func createTable(tableName string, log logger.Log, conn *db.Connection) error {
 func dropTable(tableName string, log logger.Log, conn *db.Connection) error {
 	log.SyncInfof("dropping %s", tableName)
 	return migration.New(
-		migration.NewGroup(
-			migration.NewStep(
-				migration.TableExists(tableName),
+		migration.Group(
+			migration.Step(
+				pg.TableExists(tableName),
 				migration.Statements(
 					fmt.Sprintf("DROP TABLE %s", tableName),
 				),
@@ -76,7 +79,7 @@ func main() {
 
 	go reportStats(log, conn)
 
-	tableName := strings.ToLower(util.String.RandomLetters(12))
+	tableName := strings.ToLower(stringutil.Random(stringutil.Letters, 12))
 
 	maybeFatal(createTable(tableName, log, conn))
 	defer func() { maybeFatal(dropTable(tableName, log, conn)) }()

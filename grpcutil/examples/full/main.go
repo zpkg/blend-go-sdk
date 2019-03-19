@@ -39,7 +39,7 @@ func (c *config) Resolve() error {
 
 func main() {
 	var cfg config
-	if err := configutil.Read(&cfg); !configutil.IsIgnored(err) {
+	if _, err := configutil.Read(&cfg); !configutil.IsIgnored(err) {
 		logger.FatalExit(err)
 	}
 

@@ -17,7 +17,7 @@ import (
 	"github.com/blend/go-sdk/webutil"
 )
 
-// New returns a new app.
+// New returns a new web app.
 func New() *App {
 	views := NewViewCache()
 	return &App{
@@ -38,7 +38,7 @@ func New() *App {
 	}
 }
 
-// NewFromEnv returns a new app from the environment.
+// NewFromEnv returns a new app with a config read from the environment.
 func NewFromEnv() (*App, error) {
 	cfg, err := NewConfigFromEnv()
 	if err != nil {
@@ -48,7 +48,7 @@ func NewFromEnv() (*App, error) {
 }
 
 // MustNewFromEnv returns a new app with a config set from environment
-// variabales, and it will panic if there is an error.
+// variabales, and will panic if there is an error.
 func MustNewFromEnv() *App {
 	cfg, err := NewConfigFromEnv()
 	if err != nil {

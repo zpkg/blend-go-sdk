@@ -18,7 +18,7 @@ func NewAutoAction(interval time.Duration, maxCount int32) *AutoAction {
 	}
 }
 
-// NewAutoAction is an action that is triggered automatically on some set interval.
+// AutoAction is an action that is triggered automatically on some set interval.
 // It also exposes a function to trigger the action synchronously
 type AutoAction struct {
 	sync.Mutex

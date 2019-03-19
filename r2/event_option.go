@@ -1,7 +1,6 @@
 package r2
 
 import (
-	"bytes"
 	"net/http"
 	"time"
 
@@ -11,43 +10,43 @@ import (
 // EventOption is an event option.
 type EventOption func(e *Event)
 
-// EventFlag sets the event flag.
-func EventFlag(flag logger.Flag) EventOption {
+// OptEventFlag sets the event flag.
+func OptEventFlag(flag logger.Flag) EventOption {
 	return func(e *Event) {
 		e.SetFlag(flag)
 	}
 }
 
-// EventCompleted sets the event completed time.
-func EventCompleted(ts time.Time) EventOption {
+// OptEventCompleted sets the event completed time.
+func OptEventCompleted(ts time.Time) EventOption {
 	return func(e *Event) {
 		e.SetTimestamp(ts)
 	}
 }
 
-// EventStarted sets the start time.
-func EventStarted(ts time.Time) EventOption {
+// OptEventStarted sets the start time.
+func OptEventStarted(ts time.Time) EventOption {
 	return func(e *Event) {
 		e.Started = ts
 	}
 }
 
-// EventRequest sets the response.
-func EventRequest(req *http.Request) EventOption {
+// OptEventRequest sets the response.
+func OptEventRequest(req *http.Request) EventOption {
 	return func(e *Event) {
 		e.Request = req
 	}
 }
 
-// EventResponse sets the response.
-func EventResponse(res *http.Response) EventOption {
+// OptEventResponse sets the response.
+func OptEventResponse(res *http.Response) EventOption {
 	return func(e *Event) {
 		e.Response = res
 	}
 }
 
-// EventBody sets the body.
-func EventBody(body *bytes.Buffer) EventOption {
+// OptEventBody sets the body.
+func OptEventBody(body []byte) EventOption {
 	return func(e *Event) {
 		e.Body = body
 	}

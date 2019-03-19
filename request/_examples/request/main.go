@@ -1,11 +1,11 @@
 package main
 
 import (
+	"encoding/json"
 	"fmt"
 	"os"
 
 	"github.com/blend/go-sdk/request"
-	"github.com/blend/go-sdk/util"
 )
 
 func main() {
@@ -14,5 +14,7 @@ func main() {
 		fmt.Fprintf(os.Stderr, "%v", err)
 		os.Exit(1)
 	}
-	fmt.Fprintf(os.Stdout, util.JSON.SerializePretty(meta, "", "  "))
+	encoder := json.NewEncoder(os.Stdout)
+	encoder.SetIndent("", "  ")
+	encoder.Encode(meta)
 }

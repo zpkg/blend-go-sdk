@@ -89,7 +89,7 @@ func main() {
 
 	var err error
 	var cfg config
-	if err := configutil.Read(&cfg, *configPath); !configutil.IsIgnored(err) {
+	if _, err := configutil.Read(&cfg, configutil.OptAddPaths(*configPath)); !configutil.IsIgnored(err) {
 		logger.FatalExit(err)
 	}
 
@@ -155,7 +155,7 @@ func main() {
 		}()
 	}
 
-	if err := graceful.Shutdown(graceful.New(jobs.Start, jobs.Stop)); err != nil {
+	if err := graceful.Shutdown(jobs); err != nil {
 		logger.FatalExit(err)
 	}
 }

@@ -28,42 +28,46 @@ func Shutdown(hosted Graceful) error {
 
 // ShutdownBySignal gracefully stops a hosted process based on an os signal channel.
 // A "Graceful" process *must* block on start.
-func ShutdownBySignal(hosted Graceful, terminateSignal chan os.Signal) error {
+func ShutdownBySignal(hosted Graceful, shouldShutdown chan os.Signal) error {
 	shutdown := make(chan struct{})
-	shutdownAbort := make(chan struct{})
-	shutdownComplete := make(chan struct{})
-	server := make(chan struct{})
+	abortWaitShutdown := make(chan struct{})
+	waitShutdownComplete := make(chan struct{})
+	serverExited := make(chan struct{})
 	errors := make(chan error, 2)
 
 	go func() {
+		// signal hosted has exited
+		defer close(serverExited)
+
+		// `hosted.Start()` should block here.
 		if err := hosted.Start(); err != nil {
 			errors <- err
 		}
-		close(server)
 	}()
 
 	go func() {
 		select {
 		case <-shutdown:
+			// tell the hosted process to terminate "gracefully"
 			if err := hosted.Stop(); err != nil {
 				errors <- err
 			}
-			close(shutdownComplete)
+			close(waitShutdownComplete)
 			return
-		case <-shutdownAbort:
-			close(shutdownComplete)
+		case <-abortWaitShutdown:
+			close(waitShutdownComplete)
 			return
 		}
 	}()
 
 	select {
-	case <-terminateSignal: // if we've issued a shutdown, wait for the server to exit
+	case <-shouldShutdown: // if we've issued a shutdown, wait for the server to exit
 		close(shutdown)
-		<-shutdownComplete
-		<-server
-	case <-server: // if the server exited
-		close(shutdownAbort) // quit the signal listener
-		<-shutdownComplete
+		<-waitShutdownComplete
+		<-serverExited
+	case <-serverExited: // if the server exited
+		close(abortWaitShutdown) // quit the signal listener
+		<-waitShutdownComplete
 	}
 
 	if len(errors) > 0 {

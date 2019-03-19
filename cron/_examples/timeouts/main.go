@@ -57,7 +57,9 @@ func (j *emptyJob) Schedule() cron.Schedule {
 func main() {
 	jm := cron.New().WithLogger(logger.All())
 	jm.LoadJob(&emptyJob{})
-	jm.Start()
+	if err := jm.StartAsync(); err != nil {
+		logger.FatalExit(err)
+	}
 
 	for {
 		status := jm.Status()

@@ -1,6 +1,7 @@
 package migration
 
 import (
+	"context"
 	"fmt"
 
 	"github.com/blend/go-sdk/db"
@@ -20,21 +21,34 @@ const (
 )
 
 // New returns a new suite of groups.
-func New(groups ...*Group) *Suite {
+func New(groups ...GroupedActions) *Suite {
 	return &Suite{
+		ctx:    context.Background(),
 		groups: groups,
 	}
 }
 
 // Suite is a migration suite.
 type Suite struct {
+	ctx    context.Context
 	log    logger.Log
-	groups []*Group
+	groups []GroupedActions
 
 	applied int
 	skipped int
 	failed  int
 	total   int
+}
+
+// WithContext sets the suite context.
+func (s *Suite) WithContext(ctx context.Context) *Suite {
+	s.ctx = ctx
+	return s
+}
+
+// Context returns the suite context.
+func (s *Suite) Context() context.Context {
+	return s.ctx
 }
 
 // WithLogger sets the suite logger.
@@ -49,14 +63,14 @@ func (s *Suite) Logger() logger.Log {
 }
 
 // WithGroups adds groups to the suite and returns the suite.
-func (s *Suite) WithGroups(groups ...*Group) *Suite {
+func (s *Suite) WithGroups(groups ...GroupedActions) *Suite {
 	s.groups = append(s.groups, groups...)
 	return s
 }
 
 // Apply applies the suite.
 func (s *Suite) Apply(c *db.Connection) (err error) {
-	defer s.writeStats()
+	defer s.WriteStats()
 	defer func() {
 		if r := recover(); r != nil {
 			err = exception.New(r)
@@ -64,53 +78,48 @@ func (s *Suite) Apply(c *db.Connection) (err error) {
 	}()
 
 	for _, group := range s.groups {
-		if err = group.Invoke(s, c); err != nil {
+		if err = group.Action(WithSuite(s.Context(), s), c); err != nil {
 			return
 		}
 	}
 	return
 }
 
-func (s *Suite) applyf(group *Group, step Invocable, body string, args ...interface{}) {
+// Applyf writes an applied step message.
+func (s *Suite) Applyf(ctx context.Context, format string, args ...interface{}) {
 	s.applied = s.applied + 1
 	s.total = s.total + 1
-	s.write(group, step, StatApplied, fmt.Sprintf(body, args...))
+	s.Write(ctx, StatApplied, fmt.Sprintf(format, args...))
 }
 
-func (s *Suite) skipf(group *Group, step Invocable, body string, args ...interface{}) {
+// Skipf skips a given step.
+func (s *Suite) Skipf(ctx context.Context, format string, args ...interface{}) {
 	s.skipped = s.skipped + 1
 	s.total = s.total + 1
-	s.write(group, step, StatSkipped, fmt.Sprintf(body, args...))
+	s.Write(ctx, StatSkipped, fmt.Sprintf(format, args...))
 }
 
-func (s *Suite) errorf(group *Group, step Invocable, body string, args ...interface{}) {
+// Errorf writes an error for a given step.
+func (s *Suite) Errorf(ctx context.Context, format string, args ...interface{}) {
 	s.failed = s.failed + 1
 	s.total = s.total + 1
-	s.write(group, step, StatFailed, fmt.Sprintf(body, args...))
+	s.Write(ctx, StatFailed, fmt.Sprintf(format, args...))
 }
 
-func (s *Suite) error(group *Group, step Invocable, err error) error {
+// Error
+func (s *Suite) Error(ctx context.Context, err error) error {
 	s.failed = s.failed + 1
 	s.total = s.total + 1
-	s.write(group, step, StatFailed, fmt.Sprintf("%v", err))
+	s.Write(ctx, StatFailed, fmt.Sprintf("%v", err))
 	return err
 }
 
-func (s *Suite) write(group *Group, step Invocable, result, body string) {
-	if s.log == nil {
-		return
-	}
-	var labels []string
-	if group != nil && len(group.Label()) > 0 {
-		labels = append(labels, group.Label())
-	}
-	if step != nil && len(step.Label()) > 0 {
-		labels = append(labels, step.Label())
-	}
-	s.log.SyncTrigger(NewEvent(result, body, labels...))
+func (s *Suite) Write(ctx context.Context, result, body string) {
+	logger.MaybeSyncTrigger(s.log, NewEvent(result, body, GetContextLabels(ctx)...))
 }
 
-func (s *Suite) writeStats() {
+// WriteStats writes the stats if a logger is configured.
+func (s *Suite) WriteStats() {
 	if s.log != nil {
 		s.log.SyncTrigger(NewStatsEvent(s.applied, s.skipped, s.failed, s.total))
 	}

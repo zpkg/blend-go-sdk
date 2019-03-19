@@ -6,13 +6,8 @@ import (
 	"sync"
 	"time"
 
-	"github.com/lib/pq"
-
 	"github.com/blend/go-sdk/exception"
 	"github.com/blend/go-sdk/logger"
-
-	// PQ is the postgres driver
-	_ "github.com/lib/pq"
 )
 
 const (
@@ -102,7 +97,7 @@ type Connection struct {
 	connection *sql.DB
 	config     *Config
 	bufferPool *BufferPool
-	log        logger.Log
+	log        logger.FullReceiver
 	planCache  *PlanCache
 }
 
@@ -155,13 +150,13 @@ func (dbc *Connection) Close() error {
 }
 
 // WithLogger sets the connection's diagnostic agent.
-func (dbc *Connection) WithLogger(log logger.Log) *Connection {
+func (dbc *Connection) WithLogger(log logger.FullReceiver) *Connection {
 	dbc.log = log
 	return dbc
 }
 
 // Logger returns the diagnostics agent.
-func (dbc *Connection) Logger() logger.Log {
+func (dbc *Connection) Logger() logger.FullReceiver {
 	return dbc.log
 }
 
@@ -190,7 +185,7 @@ func (dbc *Connection) Open() error {
 	}
 
 	dsn := dbc.config.CreateDSN()
-	namedValues, err := pq.ParseURL(dsn)
+	namedValues, err := ParseURL(dsn)
 	if err != nil {
 		return err
 	}
@@ -203,7 +198,6 @@ func (dbc *Connection) Open() error {
 
 	dbc.planCache.WithConnection(dbConn)
 	dbc.planCache.WithEnabled(!dbc.config.GetPlanCacheDisabled())
-
 	dbc.connection = dbConn
 	dbc.connection.SetConnMaxLifetime(dbc.config.GetMaxLifetime())
 	dbc.connection.SetMaxIdleConns(dbc.config.GetIdleConnections())

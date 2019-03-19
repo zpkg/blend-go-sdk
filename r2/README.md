@@ -3,6 +3,33 @@ r2
 
 This is meant to be an experiment for an options based api for sending request. It is not stable and should only be used on an experimental basis.
 
+## Philosophy
+
+Departing from "Fluent APIs", `go-sdk/r2` investigates what an "Options" based api for making http requests would look like.
+
+Funadmentally, it means taking code that looks like:
+
+```golang
+res, err := request.New().
+	WithVerb("POST").
+	MustWithURL("https://www.google.com/robots.txt").
+	WithHeaderValue("X-Authorization", "none").
+	WithHeaderValue(request.HeaderContentType, request.ContentTypeApplicationJSON).
+	WithBody([]byte(`{"status":"maybe?"}`)).
+	Execute()
+```
+
+And refactors that to:
+
+```golang
+res, err := r2.New("https://www.google.com/robots.txt",
+	r2.OptPost(),
+	r2.OptHeaderValue("X-Authorization", "none").
+	r2.OptHeaderValue(request.HeaderContentType, request.ContentTypeApplicationJSON),
+	r2.OptBody([]byte(`{"status":"maybe?"}`)).Do()
+```
+
+The key difference here is making use of a variadic list of "Options" which are really just functions that satisfy the signature `func(*r2.Request) error`. This lets developers _extend_ the possible options that can be specified, vs. having a strictly hard coded list hung off the `request.Request` object, which require a PR to make changes to.
 
 ## Usage
 
