@@ -6,6 +6,7 @@ import (
 	"testing"
 	"time"
 
+	"github.com/blend/go-sdk/ansi"
 	"github.com/blend/go-sdk/assert"
 )
 
@@ -82,5 +83,5 @@ func TestMessageEventProperties(t *testing.T) {
 	assert.Equal("Message", e.WithMessage("Message").Message())
 
 	assert.Empty(e.FlagTextColor())
-	assert.Equal(ColorWhite, e.WithFlagTextColor(ColorWhite).FlagTextColor())
+	assert.Equal(ansi.ColorWhite, e.WithFlagTextColor(ansi.ColorWhite).FlagTextColor())
 }

@@ -5,24 +5,22 @@ import (
 	"sync/atomic"
 )
 
-// NewLatch returns a new latch.
-func NewLatch() *Latch {
-	return &Latch{
-		starting: make(chan struct{}),
-		started:  make(chan struct{}),
-		stopping: make(chan struct{}),
-		stopped:  make(chan struct{}),
-	}
-}
+/*
+Latch is a helper to coordinate goroutine lifecycles, specifically waiting for goroutines to start and end.
 
-// Latch is a helper to coordinate goroutine lifecycles.
-// The lifecycle is generally as follows.
-// 0 - stopped / idle
-// 1 - starting
-// 2 - running
-// 3 - stopping
-// goto 0
-// Each state includes a transition notification, i.e. `Starting()` triggers `NotifyStarting`
+The lifecycle is generally as follows:
+
+	0 - stopped / idle
+	1 - starting
+	2 - running
+	3 - stopping
+	goto 0
+
+Control flow is coordinated with chan struct{}, which allows waiters to pull from the
+channel and the triggers to close them.
+
+As a result, each state includes a transition notification, i.e. Starting() triggers <-NotifyStarting().
+*/
 type Latch struct {
 	sync.Mutex
 	state int32
@@ -37,10 +35,6 @@ type Latch struct {
 func (l *Latch) Reset() {
 	l.Lock()
 	l.state = LatchStopped
-	l.starting = make(chan struct{})
-	l.started = make(chan struct{})
-	l.stopping = make(chan struct{})
-	l.stopped = make(chan struct{})
 	l.Unlock()
 }
 

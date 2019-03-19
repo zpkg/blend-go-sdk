@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"time"
 
+	"github.com/blend/go-sdk/ansi"
 	logger "github.com/blend/go-sdk/logger"
 )
 
@@ -152,9 +153,9 @@ func (e Event) Elapsed() time.Duration {
 // WriteText implements logger.TextWritable.
 func (e Event) WriteText(tf logger.TextFormatter, buf *bytes.Buffer) {
 	if e.jobInvocation != "" {
-		buf.WriteString(fmt.Sprintf("[%s > %s]", tf.Colorize(e.jobName, logger.ColorBlue), tf.Colorize(e.jobInvocation, logger.ColorBlue)))
+		buf.WriteString(fmt.Sprintf("[%s > %s]", tf.Colorize(e.jobName, ansi.ColorBlue), tf.Colorize(e.jobInvocation, ansi.ColorBlue)))
 	} else {
-		buf.WriteString(fmt.Sprintf("[%s]", tf.Colorize(e.jobName, logger.ColorBlue)))
+		buf.WriteString(fmt.Sprintf("[%s]", tf.Colorize(e.jobName, ansi.ColorBlue)))
 	}
 
 	if e.elapsed > 0 {

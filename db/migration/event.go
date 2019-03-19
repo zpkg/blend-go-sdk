@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"strings"
 
+	"github.com/blend/go-sdk/ansi"
 	"github.com/blend/go-sdk/logger"
 )
 
@@ -29,28 +30,29 @@ func NewEvent(result, body string, labels ...string) *Event {
 // Event is a migration logger event.
 type Event struct {
 	*logger.EventMeta
+
 	result string
 	body   string
 	labels []string
 }
 
-func (e Event) colorizeFixedWidthLeftAligned(tf logger.TextFormatter, text string, color logger.AnsiColor, width int) string {
+func (e Event) colorizeFixedWidthLeftAligned(tf logger.TextFormatter, text string, color ansi.Color, width int) string {
 	fixedToken := fmt.Sprintf("%%-%ds", width)
 	return tf.Colorize(fmt.Sprintf(fixedToken, text), color)
 }
 
 // WriteText writes the migration event as text.
 func (e Event) WriteText(tf logger.TextFormatter, buf *bytes.Buffer) {
-	resultColor := logger.ColorBlue
+	resultColor := ansi.ColorBlue
 	switch e.result {
 	case "skipped":
-		resultColor = logger.ColorYellow
+		resultColor = ansi.ColorYellow
 	case "failed":
-		resultColor = logger.ColorRed
+		resultColor = ansi.ColorRed
 	}
 
 	if len(e.result) > 0 {
-		buf.WriteString(tf.Colorize("--", logger.ColorLightBlack))
+		buf.WriteString(tf.Colorize("--", ansi.ColorLightBlack))
 		buf.WriteRune(logger.RuneSpace)
 		buf.WriteString(tf.Colorize(e.result, resultColor))
 	}
@@ -62,7 +64,7 @@ func (e Event) WriteText(tf logger.TextFormatter, buf *bytes.Buffer) {
 
 	if len(e.body) > 0 {
 		buf.WriteRune(logger.RuneSpace)
-		buf.WriteString(tf.Colorize("--", logger.ColorLightBlack))
+		buf.WriteString(tf.Colorize("--", ansi.ColorLightBlack))
 		buf.WriteRune(logger.RuneSpace)
 		buf.WriteString(e.body)
 	}
@@ -100,10 +102,10 @@ type StatsEvent struct {
 // WriteText writes the event to a text writer.
 func (se StatsEvent) WriteText(tf logger.TextFormatter, buf *bytes.Buffer) {
 	buf.WriteString(fmt.Sprintf("%s applied %s skipped %s failed %s total",
-		tf.Colorize(fmt.Sprintf("%d", se.applied), logger.ColorGreen),
-		tf.Colorize(fmt.Sprintf("%d", se.skipped), logger.ColorLightGreen),
-		tf.Colorize(fmt.Sprintf("%d", se.failed), logger.ColorRed),
-		tf.Colorize(fmt.Sprintf("%d", se.total), logger.ColorLightWhite),
+		tf.Colorize(fmt.Sprintf("%d", se.applied), ansi.ColorGreen),
+		tf.Colorize(fmt.Sprintf("%d", se.skipped), ansi.ColorLightGreen),
+		tf.Colorize(fmt.Sprintf("%d", se.failed), ansi.ColorRed),
+		tf.Colorize(fmt.Sprintf("%d", se.total), ansi.ColorLightWhite),
 	))
 }
 

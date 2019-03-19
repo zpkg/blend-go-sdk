@@ -17,11 +17,12 @@ func TestAutoActionTrigger(t *testing.T) {
 		return nil
 	}
 
-	a := NewAutoAction(action, time.Hour, 10)
-	a.Start()
-	defer a.Stop()
+	at := NewAutoAction(action, time.Hour, 10)
+	go at.Start()
+	<-at.NotifyStarted()
 
-	a.Trigger(context.Background())
+	defer at.Stop()
+	at.Trigger(context.Background())
 	wg.Wait()
 }
 
@@ -42,7 +43,8 @@ func TestAutoActionTick(t *testing.T) {
 	}
 
 	at := NewAutoAction(action, time.Millisecond, 10)
-	at.Start()
+	go at.Start()
+	<-at.NotifyStarted()
 	defer at.Stop()
 	wg.Wait()
 }
@@ -65,7 +67,8 @@ func TestAutoActionCount(t *testing.T) {
 		at.Increment(context.Background())
 	}
 
-	at.Start()
+	go at.Start()
+	<-at.NotifyStarted()
 	defer at.Stop()
 	wg.Wait()
 }

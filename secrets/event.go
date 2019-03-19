@@ -5,6 +5,7 @@ import (
 	"net/http"
 	"strings"
 
+	"github.com/blend/go-sdk/ansi"
 	"github.com/blend/go-sdk/logger"
 )
 
@@ -76,7 +77,7 @@ func (e *Event) WriteJSON() map[string]interface{} {
 
 // WriteText writes text for the event.
 func (e *Event) WriteText(tf logger.TextFormatter, buf *bytes.Buffer) {
-	buf.WriteString("[" + tf.Colorize(e.method, logger.ColorBlue) + "]")
+	buf.WriteString("[" + tf.Colorize(e.method, ansi.ColorBlue) + "]")
 	buf.WriteRune(logger.RuneSpace)
 	buf.WriteString(e.remote)
 	buf.WriteRune(logger.RuneSpace)

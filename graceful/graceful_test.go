@@ -45,14 +45,42 @@ func TestGracefulShutdown(t *testing.T) {
 	assert := assert.New(t)
 
 	hosted := newHosted()
+
 	terminateSignal := make(chan os.Signal)
 	var err error
 	done := make(chan struct{})
 	go func() {
-		err = ShutdownBySignal(hosted, terminateSignal)
+		err = ShutdownBySignal(terminateSignal, hosted)
 		close(done)
 	}()
 	<-hosted.NotifyStarted()
+
+	close(terminateSignal)
+	<-done
+	assert.Nil(err)
+}
+
+func TestGracefulShutdownMany(t *testing.T) {
+	assert := assert.New(t)
+
+	hosted := []Graceful{
+		newHosted(),
+		newHosted(),
+		newHosted(),
+		newHosted(),
+		newHosted(),
+	}
+
+	terminateSignal := make(chan os.Signal)
+	var err error
+	done := make(chan struct{})
+	go func() {
+		err = ShutdownBySignal(terminateSignal, hosted...)
+		close(done)
+	}()
+	for _, instance := range hosted {
+		<-instance.NotifyStarted()
+	}
 
 	close(terminateSignal)
 	<-done

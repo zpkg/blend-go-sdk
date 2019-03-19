@@ -4,6 +4,7 @@ import (
 	"testing"
 	"time"
 
+	"github.com/blend/go-sdk/ansi"
 	"github.com/blend/go-sdk/assert"
 )
 
@@ -32,8 +33,8 @@ func TestEventMetaProperties(t *testing.T) {
 	assert.Equal(Fatal, em.Flag())
 
 	assert.Empty(em.FlagTextColor())
-	em.SetFlagTextColor(ColorRed)
-	assert.Equal(ColorRed, em.FlagTextColor())
+	em.SetFlagTextColor(ansi.ColorRed)
+	assert.Equal(ansi.ColorRed, em.FlagTextColor())
 
 	assert.False(em.Timestamp().IsZero())
 	em.SetTimestamp(time.Time{})

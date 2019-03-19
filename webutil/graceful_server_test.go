@@ -33,7 +33,7 @@ func TestGracefulServer(t *testing.T) {
 	didShutdown := make(chan struct{})
 	go func() {
 		defer func() { close(didShutdown) }()
-		graceful.ShutdownBySignal(gs, stopSignal)
+		graceful.ShutdownBySignal(stopSignal, gs)
 	}()
 	res, err := http.Get("http://" + typedListener.Addr().String())
 	assert.Nil(err)

@@ -6,6 +6,7 @@ import (
 	"testing"
 	"time"
 
+	"github.com/blend/go-sdk/ansi"
 	"github.com/blend/go-sdk/assert"
 )
 
@@ -42,7 +43,7 @@ func TestLogWriterWriteWithLabelColorized(t *testing.T) {
 	writer.showHeadings = true
 	writer.useColor = true
 	writer.Write(Messagef(Info, "test string").WithHeadings("unit-test"))
-	assert.Equal("["+ColorBlue.Apply("unit-test")+"] ["+ColorLightWhite.Apply("info")+"] test string\n", string(buffer.Bytes()))
+	assert.Equal("["+ansi.Blue("unit-test")+"] ["+ansi.LightWhite("info")+"] test string\n", string(buffer.Bytes()))
 }
 
 func TestWriterErrorOutputCoalesced(t *testing.T) {

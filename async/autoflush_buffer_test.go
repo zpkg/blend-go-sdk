@@ -1,6 +1,7 @@
 package async
 
 import (
+	"context"
 	"fmt"
 	"sync"
 	"testing"
@@ -10,7 +11,7 @@ import (
 	"github.com/blend/go-sdk/graceful"
 )
 
-// Assert a latch is graceful
+// Assert AutoflushBuffer is graceful.
 var (
 	_ graceful.Graceful = (*AutoflushBuffer)(nil)
 )
@@ -20,12 +21,16 @@ func TestAutoflushBuffer(t *testing.T) {
 
 	wg := sync.WaitGroup{}
 	wg.Add(2)
-	buffer := NewAutoflushBuffer(10, time.Hour).WithFlushHandler(func(objects []interface{}) {
+
+	buffer := NewAutoflushBuffer(func(_ context.Context, objects []interface{}) error {
 		defer wg.Done()
 		assert.Len(objects, 10)
-	})
+		return nil
+	}, OptAutoflushBufferMaxLen(10), OptAutoflushBufferInterval(time.Hour))
 
-	buffer.Start()
+	go buffer.Start()
+	<-buffer.NotifyStarted()
+
 	defer buffer.Stop()
 
 	for x := 0; x < 20; x++ {
@@ -42,13 +47,16 @@ func TestAutoflushBufferTicker(t *testing.T) {
 
 	wg := sync.WaitGroup{}
 	wg.Add(20)
-	buffer := NewAutoflushBuffer(100, time.Millisecond).WithFlushHandler(func(objects []interface{}) {
+	buffer := NewAutoflushBuffer(func(_ context.Context, objects []interface{}) error {
 		for range objects {
 			wg.Done()
 		}
-	})
+		return nil
+	}, OptAutoflushBufferMaxLen(100), OptAutoflushBufferInterval(time.Millisecond))
 
-	buffer.Start()
+	go buffer.Start()
+	<-buffer.NotifyStarted()
+
 	defer buffer.Stop()
 
 	for x := 0; x < 20; x++ {
@@ -58,13 +66,16 @@ func TestAutoflushBufferTicker(t *testing.T) {
 }
 
 func BenchmarkAutoflushBuffer(b *testing.B) {
-	buffer := NewAutoflushBuffer(128, 500*time.Millisecond).WithFlushHandler(func(objects []interface{}) {
+	buffer := NewAutoflushBuffer(func(_ context.Context, objects []interface{}) error {
 		if len(objects) > 128 {
 			b.Fail()
 		}
-	})
+		return nil
+	}, OptAutoflushBufferMaxLen(128), OptAutoflushBufferInterval(500*time.Millisecond))
 
-	buffer.Start()
+	go buffer.Start()
+	<-buffer.NotifyStarted()
+
 	defer buffer.Stop()
 
 	for x := 0; x < b.N; x++ {

@@ -21,7 +21,7 @@ import (
 func New() *App {
 	views := NewViewCache()
 	return &App{
-		latch:                 async.NewLatch(),
+		latch:                 &async.Latch{},
 		hsts:                  &HSTSConfig{},
 		auth:                  &AuthManager{cookieName: DefaultCookieName, cookiePath: DefaultCookiePath},
 		bindAddr:              DefaultBindAddr,

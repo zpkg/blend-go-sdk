@@ -8,14 +8,21 @@ import (
 	"github.com/blend/go-sdk/exception"
 )
 
-// NewAutoAction returns a new singleton that will trigger an action after a given amount of time has passed (interval)
-// or after a given number of increments has happened (maxCount).
+/*
+NewAutoAction returns a new singleton that can be used to coordinate a trigger.
+
+It will call an action after a given amount of time has passed (interval)
+or after a given number of increments has happened (maxCount).
+
+This can be useful to debounce calls to upstream systems, such as a checkpointer.
+*/
 func NewAutoAction(action ContextAction, interval time.Duration, maxCount int, options ...AutoActionOption) *AutoAction {
 	aa := AutoAction{
-		Action:   action,
-		MaxCount: int32(maxCount),
-		Interval: interval,
-		Context:  context.Background(),
+		Action:        action,
+		MaxCount:      int32(maxCount),
+		Interval:      interval,
+		Context:       context.Background(),
+		TriggerOnStop: true,
 	}
 	for _, option := range options {
 		option(&aa)
@@ -59,12 +66,12 @@ func OptAutoActionTriggerOnStop(errors chan error) AutoActionOption {
 type AutoAction struct {
 	Latch
 
-	Action         ContextAction
-	Context        context.Context
-	Errors         chan error
-	Interval       time.Duration
-	MaxCount       int32
-	TriggerOnAbort bool
+	Action        ContextAction
+	Context       context.Context
+	Errors        chan error
+	Interval      time.Duration
+	MaxCount      int32
+	TriggerOnStop bool
 
 	Counter int32
 }
@@ -96,16 +103,6 @@ func (a *AutoAction) Start() error {
 	return nil
 }
 
-// Stop stops the auto-action singleton.
-func (a *AutoAction) Stop() error {
-	if !a.CanStop() {
-		return exception.New(ErrCannotStop)
-	}
-	a.Stopping()
-	<-a.NotifyStopped()
-	return nil
-}
-
 // Dispatch is the main run loop.
 func (a *AutoAction) Dispatch() {
 	a.Started()
@@ -115,13 +112,23 @@ func (a *AutoAction) Dispatch() {
 		case <-ticker:
 			a.Trigger(a.Background())
 		case <-a.NotifyStopping():
-			if a.TriggerOnAbort {
+			if a.TriggerOnStop {
 				a.Trigger(a.Background())
 			}
 			a.Stopped()
 			return
 		}
 	}
+}
+
+// Stop stops the auto-action singleton.
+func (a *AutoAction) Stop() error {
+	if !a.CanStop() {
+		return exception.New(ErrCannotStop)
+	}
+	a.Stopping()
+	<-a.NotifyStopped()
+	return nil
 }
 
 // Increment updates the count

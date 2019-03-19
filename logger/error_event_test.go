@@ -7,6 +7,7 @@ import (
 	"testing"
 	"time"
 
+	"github.com/blend/go-sdk/ansi"
 	"github.com/blend/go-sdk/assert"
 	"github.com/blend/go-sdk/exception"
 )
@@ -93,5 +94,5 @@ func TestErrorEventProperties(t *testing.T) {
 	assert.Equal("State", ee.WithState("State").State())
 
 	assert.Empty(ee.FlagTextColor())
-	assert.Equal(ColorWhite, ee.WithFlagTextColor(ColorWhite).FlagTextColor())
+	assert.Equal(ansi.ColorWhite, ee.WithFlagTextColor(ansi.ColorWhite).FlagTextColor())
 }

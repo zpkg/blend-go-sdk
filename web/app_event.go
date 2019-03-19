@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"time"
 
+	"github.com/blend/go-sdk/ansi"
 	"github.com/blend/go-sdk/logger"
 )
 
@@ -150,11 +151,11 @@ func (ae *AppEvent) Elapsed() time.Duration {
 func (ae *AppEvent) WriteText(tf logger.TextFormatter, buf *bytes.Buffer) {
 	if ae.elapsed > 0 {
 		if ae.err != nil {
-			buf.WriteString(tf.Colorize("failed", logger.ColorRed))
+			buf.WriteString(tf.Colorize("failed", ansi.ColorRed))
 			buf.WriteRune(logger.RuneNewline)
 			buf.WriteString(fmt.Sprintf("%+v", ae.err))
 		} else {
-			buf.WriteString(tf.Colorize("complete", logger.ColorBlue))
+			buf.WriteString(tf.Colorize("complete", ansi.ColorBlue))
 		}
 
 		buf.WriteRune(logger.RuneSpace)
