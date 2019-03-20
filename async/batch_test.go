@@ -19,12 +19,13 @@ func TestBatch(t *testing.T) {
 	}
 
 	var processed int32
-	errors := make(chan error, 32)
-	b := NewBatch(func(_ context.Context, v interface{}) error {
+	action := func(_ context.Context, v interface{}) error {
 		atomic.AddInt32(&processed, 1)
 		return fmt.Errorf("this is only a test")
-	}, items)
-	b.Process(context.Background())
+	}
+
+	errors := make(chan error, 32)
+	NewBatch(action, items, OptBatchErrors(errors)).Process(context.Background())
 
 	assert.Equal(32, processed)
 	assert.Equal(32, len(errors))

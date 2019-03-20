@@ -5,6 +5,16 @@ import (
 	"sync/atomic"
 )
 
+// NewLatch creates a new latch.
+func NewLatch() *Latch {
+	return &Latch{
+		starting: make(chan struct{}),
+		started:  make(chan struct{}),
+		stopping: make(chan struct{}),
+		stopped:  make(chan struct{}),
+	}
+}
+
 /*
 Latch is a helper to coordinate goroutine lifecycles, specifically waiting for goroutines to start and end.
 
@@ -35,6 +45,10 @@ type Latch struct {
 func (l *Latch) Reset() {
 	l.Lock()
 	l.state = LatchStopped
+	l.starting = make(chan struct{})
+	l.started = make(chan struct{})
+	l.stopping = make(chan struct{})
+	l.stopped = make(chan struct{})
 	l.Unlock()
 }
 
@@ -112,10 +126,8 @@ func (l *Latch) Starting() {
 	}
 	l.Lock()
 	atomic.StoreInt32(&l.state, LatchStarting)
-	if l.starting != nil {
-		close(l.starting)
-	}
-	l.started = make(chan struct{})
+	close(l.starting)
+	l.starting = make(chan struct{})
 	l.Unlock()
 }
 
@@ -127,10 +139,8 @@ func (l *Latch) Started() {
 	}
 	l.Lock()
 	atomic.StoreInt32(&l.state, LatchRunning)
-	if l.started != nil {
-		close(l.started)
-	}
-	l.stopping = make(chan struct{})
+	close(l.started)
+	l.started = make(chan struct{})
 	l.Unlock()
 }
 
@@ -142,10 +152,8 @@ func (l *Latch) Stopping() {
 	}
 	l.Lock()
 	atomic.StoreInt32(&l.state, LatchStopping)
-	if l.stopping != nil {
-		close(l.stopping)
-	}
-	l.stopped = make(chan struct{})
+	close(l.stopping)
+	l.stopping = make(chan struct{})
 	l.Unlock()
 }
 
@@ -156,9 +164,7 @@ func (l *Latch) Stopped() {
 	}
 	l.Lock()
 	atomic.StoreInt32(&l.state, LatchStopped)
-	if l.stopped != nil {
-		close(l.stopped)
-	}
-	l.starting = make(chan struct{})
+	close(l.stopped)
+	l.stopped = make(chan struct{})
 	l.Unlock()
 }

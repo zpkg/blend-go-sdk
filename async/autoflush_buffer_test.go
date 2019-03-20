@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 	"sync"
+	"sync/atomic"
 	"testing"
 	"time"
 
@@ -16,28 +17,30 @@ var (
 	_ graceful.Graceful = (*AutoflushBuffer)(nil)
 )
 
-func TestAutoflushBuffer(t *testing.T) {
+func TestAutoflushBufferMaxLen(t *testing.T) {
 	assert := assert.New(t)
 
 	wg := sync.WaitGroup{}
 	wg.Add(2)
 
-	buffer := NewAutoflushBuffer(func(_ context.Context, objects []interface{}) error {
+	var processed int32
+
+	afb := NewAutoflushBuffer(func(_ context.Context, objects []interface{}) error {
 		defer wg.Done()
-		assert.Len(objects, 10)
+		atomic.AddInt32(&processed, int32(len(objects)))
 		return nil
 	}, OptAutoflushBufferMaxLen(10), OptAutoflushBufferInterval(time.Hour))
 
-	go buffer.Start()
-	<-buffer.NotifyStarted()
-
-	defer buffer.Stop()
+	go afb.Start()
+	<-afb.NotifyStarted()
+	defer afb.Stop()
 
 	for x := 0; x < 20; x++ {
-		buffer.Add(fmt.Sprintf("foo%d", x))
+		afb.Add(fmt.Sprintf("foo%d", x))
 	}
 
 	wg.Wait()
+	assert.Equal(20, processed)
 }
 
 func TestAutoflushBufferTicker(t *testing.T) {
@@ -56,7 +59,6 @@ func TestAutoflushBufferTicker(t *testing.T) {
 
 	go buffer.Start()
 	<-buffer.NotifyStarted()
-
 	defer buffer.Stop()
 
 	for x := 0; x < 20; x++ {
@@ -75,7 +77,6 @@ func BenchmarkAutoflushBuffer(b *testing.B) {
 
 	go buffer.Start()
 	<-buffer.NotifyStarted()
-
 	defer buffer.Stop()
 
 	for x := 0; x < b.N; x++ {

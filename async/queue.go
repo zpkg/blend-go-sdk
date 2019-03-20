@@ -10,6 +10,7 @@ import (
 // NewQueue returns a new parallel queue worker.
 func NewQueue(action WorkAction, options ...QueueOption) *Queue {
 	q := Queue{
+		Latch:       NewLatch(),
 		Action:      action,
 		Context:     context.Background(),
 		MaxWork:     DefaultQueueMaxWork,
@@ -54,7 +55,7 @@ func OptQueueContext(ctx context.Context) QueueOption {
 
 // Queue is a queude with multiple workers..
 type Queue struct {
-	Latch
+	*Latch
 
 	Action      WorkAction
 	Context     context.Context
@@ -86,8 +87,11 @@ func (pq *Queue) Start() error {
 	if !pq.CanStart() {
 		return exception.New(ErrCannotStart)
 	}
-	pq.Latch.Starting()
+	pq.Starting()
+
+	// create channel(s)
 	pq.Work = make(chan interface{}, pq.MaxWork)
+	pq.Workers = make(chan *Worker, pq.Parallelism)
 
 	for x := 0; x < pq.Parallelism; x++ {
 		worker := NewWorker(pq.Action)
@@ -102,6 +106,28 @@ func (pq *Queue) Start() error {
 	}
 	pq.Dispatch()
 	return nil
+}
+
+// Dispatch processes work items in a loop.
+func (pq *Queue) Dispatch() {
+	pq.Started()
+	var workItem interface{}
+	var worker *Worker
+	for {
+		select {
+		case workItem = <-pq.Work:
+			select {
+			case worker = <-pq.Workers:
+				worker.Enqueue(workItem)
+			case <-pq.NotifyStopping():
+				pq.Stopped()
+				return
+			}
+		case <-pq.NotifyStopping():
+			pq.Stopped()
+			return
+		}
+	}
 }
 
 // Stop stops the queue
@@ -120,34 +146,9 @@ func (pq *Queue) Stop() error {
 // Close stops the queue.
 // Any work left in the queue will be discarded.
 func (pq *Queue) Close() error {
-	pq.Latch.Stopping()
-	<-pq.Latch.NotifyStopped()
+	pq.Stopping()
+	<-pq.NotifyStopped()
 	return nil
-}
-
-// Dispatch processes work items in a loop.
-func (pq *Queue) Dispatch() {
-	pq.Latch.Started()
-	var workItem interface{}
-	var worker *Worker
-	for {
-		select {
-		case workItem = <-pq.Work:
-			select {
-			case worker = <-pq.Workers:
-				worker.Enqueue(workItem)
-			case <-pq.Context.Done():
-				pq.Stopped()
-				return
-			case <-pq.NotifyStopping():
-				pq.Latch.Stopped()
-				return
-			}
-		case <-pq.Latch.NotifyStopping():
-			pq.Latch.Stopped()
-			return
-		}
-	}
 }
 
 // ReturnWorker creates an action handler that returns a given worker to the worker queue.

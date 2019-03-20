@@ -27,7 +27,9 @@ func TestIntervalWorker(t *testing.T) {
 		return nil
 	}, time.Millisecond)
 
-	w.Start()
+	go w.Start()
+	<-w.NotifyStarted()
+
 	assert.True(w.IsRunning())
 	<-done
 	w.Stop()

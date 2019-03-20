@@ -9,6 +9,7 @@ import (
 // NewWorker creates a new worker.
 func NewWorker(action WorkAction) *Worker {
 	return &Worker{
+		Latch:  NewLatch(),
 		Action: action,
 		Work:   make(chan interface{}),
 	}
@@ -16,7 +17,7 @@ func NewWorker(action WorkAction) *Worker {
 
 // Worker is a worker that is pushed work over a channel.
 type Worker struct {
-	Latch
+	*Latch
 	Context   context.Context
 	Action    WorkAction
 	Finalizer WorkerFinalizer
@@ -49,14 +50,14 @@ func (qw *Worker) Start() error {
 
 // Dispatch starts the listen loop for work.
 func (qw *Worker) Dispatch() {
-	qw.Latch.Started()
+	qw.Started()
 	var workItem interface{}
 	for {
 		select {
 		case workItem = <-qw.Work:
 			qw.Execute(qw.Background(), workItem)
-		case <-qw.Latch.NotifyStopping():
-			qw.Latch.Stopped()
+		case <-qw.NotifyStopping():
+			qw.Stopped()
 			return
 		}
 	}

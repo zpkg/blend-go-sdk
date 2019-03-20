@@ -20,6 +20,7 @@ Example:
 */
 func NewInterval(action ContextAction, interval time.Duration, options ...IntervalOption) *Interval {
 	i := Interval{
+		Latch:    NewLatch(),
 		Action:   action,
 		Context:  context.Background(),
 		Interval: DefaultInterval,
@@ -56,7 +57,7 @@ func OptIntervalErrors(errors chan error) IntervalOption {
 
 // Interval is a background worker that performs an action on an interval.
 type Interval struct {
-	Latch
+	*Latch
 	Context  context.Context
 	Interval time.Duration
 	Action   ContextAction

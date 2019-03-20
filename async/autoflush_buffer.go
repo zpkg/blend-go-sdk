@@ -11,6 +11,7 @@ import (
 // NewAutoflushBuffer creates a new autoflush buffer.
 func NewAutoflushBuffer(handler AutoflushAction, options ...AutoflushBufferOption) *AutoflushBuffer {
 	afb := AutoflushBuffer{
+		Latch:       NewLatch(),
 		Handler:     handler,
 		MaxLen:      DefaultQueueMaxWork,
 		Interval:    DefaultInterval,
@@ -64,7 +65,7 @@ func OptAutoflushBufferFlushOnStop(flushOnStop bool) AutoflushBufferOption {
 // A handler should be provided but without one the buffer will just clear.
 // Adds that would cause fixed length flushes do not block on the flush handler.
 type AutoflushBuffer struct {
-	Latch
+	*Latch
 	Context     context.Context
 	MaxLen      int
 	Interval    time.Duration
@@ -135,7 +136,7 @@ func (ab *AutoflushBuffer) Add(obj interface{}) {
 
 	ab.Contents.Enqueue(obj)
 	if ab.Contents.Len() >= ab.MaxLen {
-		ab.flushUnsafeAsync(ab.Background())
+		ab.flushUnsafeAsync(ab.Background(), ab.Contents.Drain())
 	}
 }
 
@@ -147,7 +148,7 @@ func (ab *AutoflushBuffer) AddMany(objs ...interface{}) {
 	for _, obj := range objs {
 		ab.Contents.Enqueue(obj)
 		if ab.Contents.Len() >= ab.MaxLen {
-			ab.flushUnsafeAsync(ab.Background())
+			ab.flushUnsafeAsync(ab.Background(), ab.Contents.Drain())
 		}
 	}
 }
@@ -157,7 +158,7 @@ func (ab *AutoflushBuffer) AddMany(objs ...interface{}) {
 func (ab *AutoflushBuffer) Flush(ctx context.Context) {
 	ab.Lock()
 	defer ab.Unlock()
-	ab.flushUnsafe(ctx)
+	ab.flushUnsafe(ctx, ab.Contents.Drain())
 }
 
 // FlushAsync clears the buffer, if a handler is provided it is passed the contents of the buffer.
@@ -165,23 +166,21 @@ func (ab *AutoflushBuffer) Flush(ctx context.Context) {
 func (ab *AutoflushBuffer) FlushAsync(ctx context.Context) {
 	ab.Lock()
 	defer ab.Unlock()
-	ab.flushUnsafeAsync(ctx)
+	ab.flushUnsafeAsync(ctx, ab.Contents.Drain())
 }
 
 // flushUnsafeAsync flushes the buffer without acquiring any locks.
-func (ab *AutoflushBuffer) flushUnsafeAsync(ctx context.Context) {
-	go ab.flushUnsafe(ctx)
+func (ab *AutoflushBuffer) flushUnsafeAsync(ctx context.Context, contents []interface{}) {
+	go ab.flushUnsafe(ctx, contents)
 }
 
 // flushUnsafeAsync flushes the buffer without acquiring any locks.
-func (ab *AutoflushBuffer) flushUnsafe(ctx context.Context) {
+func (ab *AutoflushBuffer) flushUnsafe(ctx context.Context, contents []interface{}) {
 	if ab.Handler != nil {
-		if ab.Contents.Len() > 0 {
+		if len(contents) > 0 {
 			Recover(func() error {
-				return ab.Handler(ctx, ab.Contents.Drain())
+				return ab.Handler(ctx, contents)
 			}, ab.Errors)
 		}
-	} else {
-		ab.Contents.Clear()
 	}
 }

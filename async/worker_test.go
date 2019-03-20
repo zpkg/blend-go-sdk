@@ -20,7 +20,9 @@ func TestWorker(t *testing.T) {
 		assert.Equal("hello", obj)
 		return nil
 	})
-	w.Start()
+	go w.Start()
+	<-w.NotifyStarted()
+
 	assert.True(w.IsRunning())
 	w.Enqueue("hello")
 	wg.Wait()

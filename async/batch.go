@@ -2,14 +2,16 @@ package async
 
 import (
 	"context"
+	"runtime"
 )
 
 // NewBatch creates a new batch processor.
 // Batch processes are a known quantity of work that needs to be processed in parallel.
 func NewBatch(action WorkAction, work chan interface{}, options ...BatchOption) *Batch {
 	b := Batch{
-		Action: action,
-		Work:   work,
+		Action:      action,
+		Work:        work,
+		Parallelism: runtime.NumCPU(),
 	}
 	for _, option := range options {
 		option(&b)
@@ -53,13 +55,11 @@ func (b *Batch) Process(ctx context.Context) {
 	}
 
 	for x := 0; x < b.Parallelism; x++ {
-		worker := &Worker{
-			Work:      make(chan interface{}),
-			Errors:    b.Errors,
-			Action:    b.Action,
-			Finalizer: returnWorker,
-		}
-		worker.Start()
+		worker := NewWorker(b.Action)
+		worker.Errors = b.Errors
+		worker.Finalizer = returnWorker
+		go worker.Start()
+		<-worker.NotifyStarted()
 		workers <- worker
 	}
 

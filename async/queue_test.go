@@ -13,18 +13,21 @@ func TestParallelQueue(t *testing.T) {
 
 	wg := sync.WaitGroup{}
 	wg.Add(8)
-	w := NewQueue(func(_ context.Context, obj interface{}) error {
+	q := NewQueue(func(_ context.Context, obj interface{}) error {
 		defer wg.Done()
 		return nil
 	})
-	w.Start()
-	assert.True(w.IsRunning())
+
+	go q.Start()
+	<-q.NotifyStarted()
+
+	assert.True(q.IsRunning())
 
 	for x := 0; x < 8; x++ {
-		w.Enqueue("hello")
+		q.Enqueue("hello")
 	}
 
 	wg.Wait()
-	w.Close()
-	assert.False(w.IsRunning())
+	q.Close()
+	assert.False(q.IsRunning())
 }
