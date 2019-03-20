@@ -36,6 +36,11 @@ type Config struct {
 	SecurityToken   string `json:"securityToken,omitempty" yaml:"securityToken,omitempty" env:"AWS_SECURITY_TOKEN"`
 }
 
+// Resolve adds extra resolution steps for the config.
+func (a *Config) Resolve() error {
+	return env.Env().ReadInto(a)
+}
+
 // IsZero returns if the config is unset or not.
 func (a Config) IsZero() bool {
 	return len(a.AccessKeyID) == 0 || len(a.SecretAccessKey) == 0

@@ -50,6 +50,8 @@ func main() {
 	}
 
 	engine := profanity.New(profanity.OptConfig(&cfg.Config))
+	engine.Stdout = os.Stdout
+	engine.Stderr = os.Stderr
 	if err := engine.Process(); err != nil {
 		fmt.Fprintf(os.Stderr, "%+v\n\n", err)
 		os.Exit(1)

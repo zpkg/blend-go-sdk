@@ -100,7 +100,8 @@ func (cb *CertBundle) GenerateKeyPair() (output KeyPair, err error) {
 	return
 }
 
-// WithParent adds a parent certificate to the chain.
+// WithParent adds a parent certificate to the certificate chain.
+// It is used typically to add the certificate authority.
 func (cb *CertBundle) WithParent(parent *CertBundle) {
 	cb.Certificates = append(cb.Certificates, parent.Certificates...)
 	cb.CertificateDERs = append(cb.CertificateDERs, parent.CertificateDERs...)
