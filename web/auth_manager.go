@@ -20,8 +20,8 @@ const (
 	AuthManagerModeLocal AuthManagerMode = "local"
 )
 
-// NewAuthManagerFromConfig returns a new auth manager from a given config.
-func NewAuthManagerFromConfig(cfg *Config) (manager *AuthManager) {
+// NewAuthManager returns a new auth manager from a given config.
+func NewAuthManager(cfg *Config) (manager *AuthManager) {
 	switch cfg.AuthManagerModeOrDefault() {
 	case AuthManagerModeJWT:
 		manager = NewJWTAuthManager(cfg.MustAuthSecret())

@@ -30,7 +30,9 @@ func (vr *ViewResult) Render(ctx *Ctx) (err error) {
 	if ctx.Tracer != nil {
 		if typed, ok := ctx.Tracer.(ViewTracer); ok {
 			tf := typed.StartView(ctx, vr)
-			defer func() { tf.Finish(ctx, vr, err) }()
+			defer func() {
+				tf.FinishView(ctx, vr, err)
+			}()
 		}
 	}
 
@@ -38,9 +40,9 @@ func (vr *ViewResult) Render(ctx *Ctx) (err error) {
 
 	// use a pooled buffer if possible
 	var buffer *bytes.Buffer
-	if vr.Views != nil && vr.Views.bufferPool != nil {
-		buffer = vr.Views.bufferPool.Get()
-		defer vr.Views.bufferPool.Put(buffer)
+	if vr.Views != nil && vr.Views.BufferPool != nil {
+		buffer = vr.Views.BufferPool.Get()
+		defer vr.Views.BufferPool.Put(buffer)
 	} else {
 		buffer = bytes.NewBuffer(nil)
 	}
@@ -50,7 +52,6 @@ func (vr *ViewResult) Render(ctx *Ctx) (err error) {
 		Ctx:       ctx,
 		ViewModel: vr.ViewModel,
 	})
-
 	if err != nil {
 		err = exception.New(err)
 		ctx.Response.WriteHeader(http.StatusInternalServerError)

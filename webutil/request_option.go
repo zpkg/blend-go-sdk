@@ -192,7 +192,7 @@ func OptCookie(cookie *http.Cookie) RequestOption {
 
 // OptCookieValue adds a cookie value to a context.
 func OptCookieValue(key, value string) RequestOption {
-	return OptCookie(&http.Cookie{Name: key, Value: key})
+	return OptCookie(&http.Cookie{Name: key, Value: value})
 }
 
 // OptBody sets the post body on the request.

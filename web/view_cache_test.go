@@ -13,31 +13,35 @@ func TestViewCacheProperties(t *testing.T) {
 	assert := assert.New(t)
 
 	vc := NewViewCache()
-	assert.False(vc.Initialized())
-	assert.NotNil(vc.FuncMap())
+	assert.NotNil(vc.FuncMap)
 
-	assert.Equal(DefaultTemplateNameBadRequest, vc.BadRequestTemplateName())
-	assert.Equal("foo", vc.WithBadRequestTemplateName("foo").BadRequestTemplateName())
+	assert.Equal(DefaultTemplateNameBadRequest, vc.BadRequestTemplateName)
+	assert.Nil(OptViewCacheBadRequestTemplateName("foo")(vc))
+	assert.Equal("foo", vc.BadRequestTemplateName)
 
-	assert.Equal(DefaultTemplateNameInternalError, vc.InternalErrorTemplateName())
-	assert.Equal("bar", vc.WithInternalErrorTemplateName("bar").InternalErrorTemplateName())
+	assert.Equal(DefaultTemplateNameInternalError, vc.InternalErrorTemplateName)
+	assert.Nil(OptViewCacheInternalErrorTemplateName("bar")(vc))
+	assert.Equal("bar", vc.InternalErrorTemplateName)
 
-	assert.Equal(DefaultTemplateNameNotFound, vc.NotFoundTemplateName())
-	assert.Equal("baz", vc.WithNotFoundTemplateName("baz").NotFoundTemplateName())
+	assert.Equal(DefaultTemplateNameNotFound, vc.NotFoundTemplateName)
+	assert.Nil(OptViewCacheNotFoundTemplateName("baz")(vc))
+	assert.Equal("baz", vc.NotFoundTemplateName)
 
-	assert.Equal(DefaultTemplateNameNotAuthorized, vc.NotAuthorizedTemplateName())
-	assert.Equal("buzz", vc.WithNotAuthorizedTemplateName("buzz").NotAuthorizedTemplateName())
+	assert.Equal(DefaultTemplateNameNotAuthorized, vc.NotAuthorizedTemplateName)
+	assert.Nil(OptViewCacheNotAuthorizedTemplateName("buzz")(vc))
+	assert.Equal("buzz", vc.NotAuthorizedTemplateName)
 
-	assert.Equal(DefaultTemplateNameStatus, vc.StatusTemplateName())
-	assert.Equal("fuzz", vc.WithStatusTemplateName("fuzz").StatusTemplateName())
+	assert.Equal(DefaultTemplateNameStatus, vc.StatusTemplateName)
+	assert.Nil(OptViewCacheStatusTemplateName("fuzz")(vc))
+	assert.Equal("fuzz", vc.StatusTemplateName)
 
-	assert.Empty(vc.Paths())
-	vc.SetPaths("foo", "bar")
-	assert.NotEmpty(vc.Paths())
+	assert.Empty(vc.Paths)
+	assert.Nil(OptViewCachePaths("foo", "bar")(vc))
+	assert.NotEmpty(vc.Paths)
 
-	assert.Empty(vc.Literals())
-	vc.SetLiterals("boo", "loo")
-	assert.NotEmpty(vc.Literals())
+	assert.Empty(vc.Literals)
+	assert.Nil(OptViewCacheLiterals("boo", "loo")(vc))
+	assert.NotEmpty(vc.Literals)
 }
 
 func TestViewCacheAddRawViews(t *testing.T) {
@@ -59,7 +63,7 @@ func TestViewCacheCached(t *testing.T) {
 	assert := assert.New(t)
 
 	vc := NewViewCache()
-	assert.True(vc.Cached())
+	assert.False(vc.LiveReload)
 	vc.AddLiterals(`{{ define "foo" }}bar{{ end }}`)
 	assert.Nil(vc.Initialize())
 
@@ -70,7 +74,7 @@ func TestViewCacheCached(t *testing.T) {
 	assert.Nil(tmp.Execute(buf, nil))
 	assert.Equal("bar", buf.String())
 
-	vc.viewLiterals = []string{`{{ define "foo" }}baz{{ end }}`}
+	vc.Literals = []string{`{{ define "foo" }}baz{{ end }}`}
 	tmp, err = vc.Lookup("foo")
 	assert.Nil(err)
 	assert.NotNil(tmp)
@@ -82,9 +86,8 @@ func TestViewCacheCached(t *testing.T) {
 func TestViewCacheCachingDisabled(t *testing.T) {
 	assert := assert.New(t)
 
-	vc := NewViewCache()
-	assert.True(vc.Cached())
-	vc.WithCached(false)
+	vc := NewViewCache(OptViewCacheLiveReload(true))
+	assert.True(vc.LiveReload)
 	vc.AddLiterals(`{{ define "foo" }}bar{{ end }}`)
 	assert.Nil(vc.Initialize())
 
@@ -95,7 +98,7 @@ func TestViewCacheCachingDisabled(t *testing.T) {
 	assert.Nil(tmp.Execute(buf, nil))
 	assert.Equal("bar", buf.String())
 
-	vc.viewLiterals = []string{`{{ define "foo" }}baz{{ end }}`}
+	vc.Literals = []string{`{{ define "foo" }}baz{{ end }}`}
 	tmp, err = vc.Lookup("foo")
 	assert.Nil(err)
 	assert.NotNil(tmp)
@@ -109,9 +112,8 @@ func TestViewCacheBadRequest(t *testing.T) {
 
 	vc := NewViewCache()
 	assert.Nil(vc.Initialize())
-
 	vr, _ := vc.BadRequest(exception.Class("only a test")).(*ViewResult)
-	assert.Equal(vc.BadRequestTemplateName(), vr.ViewName)
+	assert.Equal(vc.BadRequestTemplateName, vr.ViewName)
 	assert.Equal(http.StatusBadRequest, vr.StatusCode)
 	assert.NotNil(vr.Views)
 	assert.NotNil(vr.ViewModel)
@@ -126,7 +128,7 @@ func TestViewCacheInternalError(t *testing.T) {
 	ler, _ := vc.InternalError(exception.Class("only a test")).(*LoggedErrorResult)
 	assert.NotNil(ler)
 	vr := ler.Result.(*ViewResult)
-	assert.Equal(vc.InternalErrorTemplateName(), vr.ViewName)
+	assert.Equal(vc.InternalErrorTemplateName, vr.ViewName)
 	assert.Equal(http.StatusInternalServerError, vr.StatusCode)
 	assert.NotNil(vr.Views)
 	assert.NotNil(vr.Template)
@@ -141,7 +143,7 @@ func TestViewCacheNotFound(t *testing.T) {
 
 	vr, _ := vc.NotFound().(*ViewResult)
 	assert.NotNil(vr)
-	assert.Equal(vc.NotFoundTemplateName(), vr.ViewName)
+	assert.Equal(vc.NotFoundTemplateName, vr.ViewName)
 	assert.Equal(http.StatusNotFound, vr.StatusCode)
 	assert.NotNil(vr.Views)
 	assert.NotNil(vr.Template)
@@ -156,7 +158,7 @@ func TestViewCacheNotAuthorized(t *testing.T) {
 
 	vr, _ := vc.NotAuthorized().(*ViewResult)
 	assert.NotNil(vr)
-	assert.Equal(vc.NotAuthorizedTemplateName(), vr.ViewName)
+	assert.Equal(vc.NotAuthorizedTemplateName, vr.ViewName)
 	assert.Equal(http.StatusForbidden, vr.StatusCode)
 	assert.NotNil(vr.Views)
 	assert.NotNil(vr.Template)
@@ -171,7 +173,7 @@ func TestViewCacheStatus(t *testing.T) {
 
 	vr, _ := vc.Status(http.StatusFailedDependency).(*ViewResult)
 	assert.NotNil(vr)
-	assert.Equal(vc.StatusTemplateName(), vr.ViewName)
+	assert.Equal(vc.StatusTemplateName, vr.ViewName)
 	assert.Equal(http.StatusFailedDependency, vr.StatusCode)
 	assert.NotNil(vr.Views)
 	assert.NotNil(vr.Template)
@@ -199,7 +201,7 @@ func TestViewCacheView(t *testing.T) {
 	ler, _ := vc.View("not-test", "foo").(*LoggedErrorResult)
 	assert.NotNil(ler)
 	vr, _ = ler.Result.(*ViewResult)
-	assert.Equal(vc.InternalErrorTemplateName(), vr.ViewName)
+	assert.Equal(vc.InternalErrorTemplateName, vr.ViewName)
 	assert.Equal(http.StatusInternalServerError, vr.StatusCode)
 	assert.NotNil(vr.Template)
 	assert.NotNil(vr.Views)

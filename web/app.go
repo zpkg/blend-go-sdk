@@ -21,6 +21,7 @@ func New(options ...AppOption) *App {
 		Auth:            &AuthManager{},
 		State:           &SyncState{},
 		Statics:         map[string]Fileserver{},
+		DefaultHeaders:  DefaultHeaders,
 		Views:           views,
 		DefaultProvider: views,
 	}
@@ -413,13 +414,14 @@ func (a *App) RenderAction(action Action) Handler {
 			}
 
 			// do the render, log any errors emitted
-			if err = result.Render(ctx); err != nil {
-				logger.MaybeError(a.Log, err)
+			if resultErr := result.Render(ctx); resultErr != nil {
+				err = exception.Nest(err, resultErr)
+				a.logFatal(err, r)
 			}
 
 			// check for a render complete step
 			// typically this is used to render error results if there was a problem rendering
-			// the result
+			// the result.
 			if typed, ok := result.(ResultPostRender); ok {
 				if postRender := typed.PostRender(ctx); postRender != nil {
 					err = exception.Nest(err, postRender)

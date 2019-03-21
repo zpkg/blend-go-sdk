@@ -144,7 +144,7 @@ func TestCtxWriteNewCookie(t *testing.T) {
 
 	context := MockCtx("GET", "/")
 	context.WriteNewCookie("foo", "bar", time.Time{}, "/foo/bar", true)
-	assert.Equal("foo=bar; Path=/foo/bar; HttpOnly; Secure", context.Response.Header().Get("Set-Cookie"))
+	assert.Equal("foo=bar; Path=/foo/bar; Domain=localhost; HttpOnly; Secure", context.Response.Header().Get("Set-Cookie"))
 }
 
 func TestCtxExtendCookie(t *testing.T) {

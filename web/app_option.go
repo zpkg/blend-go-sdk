@@ -15,8 +15,8 @@ type AppOption func(*App)
 func OptConfig(cfg *Config) AppOption {
 	return func(a *App) {
 		a.Config = cfg
-		a.Auth = NewAuthManagerFromConfig(cfg)
-		a.Views = NewViewCacheFromConfig(&cfg.Views)
+		a.Auth = NewAuthManager(cfg)
+		a.Views = NewViewCache(OptViewCacheConfig(&cfg.Views))
 	}
 }
 

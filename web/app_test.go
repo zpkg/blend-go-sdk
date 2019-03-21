@@ -49,7 +49,7 @@ func TestAppNewFromConfig(t *testing.T) {
 
 		CookieName: "A GOOD ONE",
 		Views: ViewCacheConfig{
-			Cached: ref.Bool(true),
+			LiveReload: true,
 		},
 	}))
 
@@ -63,7 +63,7 @@ func TestAppNewFromConfig(t *testing.T) {
 	assert.Equal(7*time.Second, app.Config.IdleTimeout)
 	assert.Equal(8*time.Second, app.Config.WriteTimeout)
 	assert.Equal("A GOOD ONE", app.Auth.CookieName, "we should use the auth config for the auth manager")
-	assert.True(app.Views.Cached(), "we should use the view cache config for the view cache")
+	assert.True(app.Views.LiveReload, "we should use the view cache config for the view cache")
 }
 
 func TestAppPathParams(t *testing.T) {
@@ -398,8 +398,7 @@ func TestAppViewErrorsRenderErrorView(t *testing.T) {
 	app.GET("/", func(r *Ctx) Result {
 		return r.Views.View("malformed", nil)
 	})
-
-	assert.Nil(MockDiscard(MockGet(app, "/")))
+	assert.NotNil(MockDiscard(MockGet(app, "/")))
 }
 
 func TestAppAddsDefaultHeaders(t *testing.T) {
@@ -485,7 +484,7 @@ type mockViewTraceFinisher struct {
 	parent *mockTracer
 }
 
-func (mvf mockViewTraceFinisher) Finish(ctx *Ctx, vr *ViewResult, err error) {
+func (mvf mockViewTraceFinisher) FinishView(ctx *Ctx, vr *ViewResult, err error) {
 	mvf.parent.OnViewFinish(ctx, vr, err)
 }
 
@@ -531,7 +530,6 @@ func TestAppTracerError(t *testing.T) {
 	app := New()
 	app.GET("/", ok)
 	app.GET("/error", internalError)
-
 	app.Tracer = mockTracer{
 		OnFinish: func(ctx *Ctx, err error) {
 			defer wg.Done()
@@ -539,9 +537,8 @@ func TestAppTracerError(t *testing.T) {
 		},
 	}
 
-	assert.Nil(MockDiscard(MockGet(app, "/")))
+	assert.Nil(MockDiscard(MockGet(app, "/error")))
 	wg.Wait()
-
 	assert.True(hasError)
 }
 
@@ -587,7 +584,6 @@ func TestAppViewTracerError(t *testing.T) {
 
 	app := New()
 	app.Views.AddLiterals("{{ define \"ok\" }}{{template \"fake\"}}ok{{end}}")
-	assert.Nil(app.Views.Initialize())
 	app.GET("/view", viewOK)
 	app.Tracer = mockTracer{
 		OnStart: func(_ *Ctx) { wg.Done() },
@@ -609,6 +605,6 @@ func TestAppViewTracerError(t *testing.T) {
 	wg.Wait()
 
 	assert.True(hasValue)
-	assert.False(hasError)
+	assert.True(hasError)
 	assert.True(hasViewError)
 }
