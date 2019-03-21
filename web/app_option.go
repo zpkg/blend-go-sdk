@@ -13,7 +13,11 @@ type AppOption func(*App)
 
 // OptConfig sets the config.
 func OptConfig(cfg *Config) AppOption {
-	return func(a *App) { a.Config = cfg }
+	return func(a *App) {
+		a.Config = cfg
+		a.Auth = NewAuthManagerFromConfig(cfg)
+		a.Views = NewViewCacheFromConfig(&cfg.Views)
+	}
 }
 
 // OptBindAddr sets the config bind address

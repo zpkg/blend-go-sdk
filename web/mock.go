@@ -29,11 +29,18 @@ func Mock(app *App, req *http.Request, options ...func(*http.Request) error) (*h
 
 	app.Config.BindAddr = DefaultMockBindAddr
 
-	if err := app.Start(); err != nil {
-		return nil, err
-	}
+	go func() {
+		if err := app.Start(); err != nil {
+			panic(err)
+		}
+	}()
+	<-app.NotifyStarted()
 	defer app.Stop()
-	req.Host = app.Listener.Addr().String()
+
+	if req.URL == nil {
+		req.URL = &url.URL{}
+	}
+	req.URL.Host = app.Listener.Addr().String()
 	return http.DefaultClient.Do(req)
 }
 
@@ -44,7 +51,6 @@ func MockGet(app *App, path string, options ...func(*http.Request) error) (*http
 	}
 	req.URL = &url.URL{
 		Scheme: "http",
-		Host:   app.Listener.Addr().String(),
 		Path:   path,
 	}
 	return Mock(app, req, options...)
@@ -58,7 +64,6 @@ func MockPost(app *App, path string, body io.ReadCloser, options ...func(*http.R
 	}
 	req.URL = &url.URL{
 		Scheme: "http",
-		Host:   app.Listener.Addr().String(),
 		Path:   path,
 	}
 	return Mock(app, req)

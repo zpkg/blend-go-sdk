@@ -4,7 +4,6 @@ import (
 	"bytes"
 	"fmt"
 	"net/http"
-	"net/url"
 	"strings"
 	"sync"
 	"testing"
@@ -79,7 +78,8 @@ func TestAppPathParams(t *testing.T) {
 		return Raw([]byte("ok!"))
 	})
 
-	assert.Nil(MockDiscard(Mock(app, &http.Request{Method: "GET", URL: &url.URL{Path: "/foo"}})))
+	err := MockDiscard(MockGet(app, "/foo"))
+	assert.Nil(err, fmt.Sprintf("%+v", err))
 	assert.NotNil(route)
 	assert.Equal("GET", route.Method)
 	assert.Equal("/:uuid", route.Path)
@@ -258,8 +258,7 @@ func TestAppDefaultResultProvider(t *testing.T) {
 	assert := assert.New(t)
 
 	app := New(OptUse(ViewProviderAsDefault))
-	assert.Nil(app.DefaultMiddleware)
-
+	assert.NotEmpty(app.DefaultMiddleware)
 	rc := app.createCtx(nil, nil, nil, nil)
 	assert.NotNil(rc.DefaultProvider)
 	assert.NotNil(rc.App)
@@ -400,8 +399,7 @@ func TestAppViewErrorsRenderErrorView(t *testing.T) {
 		return r.Views.View("malformed", nil)
 	})
 
-	_, err := MockBytes(MockGet(app, "/"))
-	assert.NotNil(err)
+	assert.Nil(MockDiscard(MockGet(app, "/")))
 }
 
 func TestAppAddsDefaultHeaders(t *testing.T) {

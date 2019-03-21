@@ -111,6 +111,7 @@ func (a *App) Start() (err error) {
 	a.Listener, ok = listener.(*net.TCPListener)
 	if !ok {
 		err = exception.New("listener returned was not a net.TCPListener")
+		return
 	}
 
 	keepAliveListener := TCPKeepAliveListener{a.Listener}
