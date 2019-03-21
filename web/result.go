@@ -10,28 +10,31 @@ type ResultPreRender interface {
 	PreRender(ctx *Ctx) error
 }
 
-// ResultRenderComplete is a result that has a RenderComplete step.
-type ResultRenderComplete interface {
-	RenderComplete(ctx *Ctx) error
+// ResultPostRender is a result that has a PostRender step.
+type ResultPostRender interface {
+	PostRender(ctx *Ctx) error
 }
 
-// resultWithLoggedError logs an error before it renders the result.
-func resultWithLoggedError(result Result, err error) *loggedErrorResult {
-	return &loggedErrorResult{
+// ResultWithLoggedError logs an error before it renders the result.
+func ResultWithLoggedError(result Result, err error) *LoggedErrorResult {
+	return &LoggedErrorResult{
 		Error:  err,
 		Result: result,
 	}
 }
 
-type loggedErrorResult struct {
+// LoggedErrorResult is a result that returns an error during the prerender phase.
+type LoggedErrorResult struct {
 	Result Result
 	Error  error
 }
 
-func (ler loggedErrorResult) PreRender(ctx *Ctx) error {
+// PreRender returns the underlying error.
+func (ler LoggedErrorResult) PreRender(ctx *Ctx) error {
 	return ler.Error
 }
 
-func (ler loggedErrorResult) Render(ctx *Ctx) error {
+// Render renders the result.
+func (ler LoggedErrorResult) Render(ctx *Ctx) error {
 	return ler.Result.Render(ctx)
 }

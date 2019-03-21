@@ -1,5 +1,7 @@
 package r2
 
+import "github.com/blend/go-sdk/webutil"
+
 const (
 	// MethodGet is a method.
 	MethodGet = "GET"
@@ -29,11 +31,11 @@ const (
 
 const (
 	// ContentTypeApplicationJSON is a content type header value.
-	ContentTypeApplicationJSON = "application/json; charset=utf-8"
+	ContentTypeApplicationJSON = webutil.ContentTypeApplicationJSON
 	// ContentTypeApplicationXML is a content type header value.
-	ContentTypeApplicationXML = "application/xml"
+	ContentTypeApplicationXML = webutil.ContentTypeApplicationXML
 	// ContentTypeApplicationFormEncoded is a content type header value.
-	ContentTypeApplicationFormEncoded = "application/x-www-form-urlencoded"
+	ContentTypeApplicationFormEncoded = webutil.ContentTypeApplicationFormEncoded
 	// ContentTypeApplicationOctetStream is a content type header value.
-	ContentTypeApplicationOctetStream = "application/octet-stream"
+	ContentTypeApplicationOctetStream = webutil.ContentTypeApplicationOctetStream
 )

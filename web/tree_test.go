@@ -13,11 +13,11 @@ import (
 )
 
 func printChildren(n *RouteNode, prefix string) {
-	fmt.Printf(" %02d:%02d %s%s[%d] %v %t %d \r\n", n.priority, n.maxParams, prefix, n.path, len(n.children), n.route, n.isWildcard, n.nodeType)
-	for l := len(n.path); l > 0; l-- {
+	fmt.Printf(" %02d:%02d %s%s[%d] %v %t %d \r\n", n.Priority, n.MaxParams, prefix, n.Path, len(n.Children), n.Route, n.IsWildcard, n.RouteNodeType)
+	for l := len(n.Path); l > 0; l-- {
 		prefix += " "
 	}
-	for _, child := range n.children {
+	for _, child := range n.Children {
 		printChildren(child, prefix)
 	}
 }
@@ -63,18 +63,18 @@ func checkRequests(t *testing.T, tree *RouteNode, requests testRequests) {
 
 func checkPriorities(t *testing.T, n *RouteNode) uint32 {
 	var prio uint32
-	for i := range n.children {
-		prio += checkPriorities(t, n.children[i])
+	for i := range n.Children {
+		prio += checkPriorities(t, n.Children[i])
 	}
 
-	if n.route != nil {
+	if n.Route != nil {
 		prio++
 	}
 
-	if n.priority != prio {
+	if n.Priority != prio {
 		t.Errorf(
 			"priority mismatch for node '%s': is %d, should be %d",
-			n.path, n.priority, prio,
+			n.Path, n.Priority, prio,
 		)
 	}
 
@@ -83,20 +83,20 @@ func checkPriorities(t *testing.T, n *RouteNode) uint32 {
 
 func checkMaxParams(t *testing.T, n *RouteNode) uint8 {
 	var maxParams uint8
-	for i := range n.children {
-		params := checkMaxParams(t, n.children[i])
+	for i := range n.Children {
+		params := checkMaxParams(t, n.Children[i])
 		if params > maxParams {
 			maxParams = params
 		}
 	}
-	if n.nodeType > root && !n.isWildcard {
+	if n.RouteNodeType > RouteNodeTypeRoot && !n.IsWildcard {
 		maxParams++
 	}
 
-	if n.maxParams != maxParams {
+	if n.MaxParams != maxParams {
 		t.Errorf(
 			"maxParams mismatch for node '%s': is %d, should be %d",
-			n.path, n.maxParams, maxParams,
+			n.Path, n.MaxParams, maxParams,
 		)
 	}
 
@@ -113,7 +113,7 @@ func TestCountParams(t *testing.T) {
 }
 
 func TestTreeAddAndGet(t *testing.T) {
-	tree := &node{}
+	tree := &RouteNode{}
 
 	routes := [...]string{
 		"/hi",
@@ -153,7 +153,7 @@ func TestTreeAddAndGet(t *testing.T) {
 }
 
 func TestTreeWildcard(t *testing.T) {
-	tree := &node{}
+	tree := &RouteNode{}
 
 	routes := [...]string{
 		"/",
@@ -213,7 +213,7 @@ type testRoute struct {
 }
 
 func testRoutes(t *testing.T, routes []testRoute) {
-	tree := &node{}
+	tree := &RouteNode{}
 
 	for _, route := range routes {
 		recv := catchPanic(func() {
@@ -270,7 +270,7 @@ func TestTreeChildConflict(t *testing.T) {
 }
 
 func TestTreeDupliatePath(t *testing.T) {
-	tree := &node{}
+	tree := &RouteNode{}
 
 	routes := [...]string{
 		"/",
@@ -308,7 +308,7 @@ func TestTreeDupliatePath(t *testing.T) {
 }
 
 func TestEmptyWildcardName(t *testing.T) {
-	tree := &node{}
+	tree := &RouteNode{}
 
 	routes := [...]string{
 		"/user:",
@@ -353,7 +353,7 @@ func TestTreeDoubleWildcard(t *testing.T) {
 	}
 
 	for _, route := range routes {
-		tree := &node{}
+		tree := &RouteNode{}
 		recv := catchPanic(func() {
 			tree.addRoute("GET", route, nil)
 		})
@@ -376,7 +376,7 @@ func TestTreeDoubleWildcard(t *testing.T) {
 }*/
 
 func TestTreeTrailingSlashRedirect(t *testing.T) {
-	tree := &node{}
+	tree := &RouteNode{}
 
 	routes := [...]string{
 		"/hi",
@@ -459,7 +459,7 @@ func TestTreeTrailingSlashRedirect(t *testing.T) {
 }
 
 func TestTreeRootTrailingSlashRedirect(t *testing.T) {
-	tree := &node{}
+	tree := &RouteNode{}
 
 	recv := catchPanic(func() {
 		tree.addRoute("GET", "/:test", fakeHandler("/:test"))
@@ -477,7 +477,7 @@ func TestTreeRootTrailingSlashRedirect(t *testing.T) {
 }
 
 func TestTreeFindCaseInsensitivePath(t *testing.T) {
-	tree := &node{}
+	tree := &RouteNode{}
 
 	routes := [...]string{
 		"/hi",
@@ -610,12 +610,12 @@ func TestTreeFindCaseInsensitivePath(t *testing.T) {
 func TestTreeInvalidNodeType(t *testing.T) {
 	const panicMsg = "invalid node type"
 
-	tree := &node{}
+	tree := &RouteNode{}
 	tree.addRoute("GET", "/", fakeHandler("/"))
 	tree.addRoute("GET", "/:page", fakeHandler("/:page"))
 
 	// set invalid node type
-	tree.children[0].nodeType = 42
+	tree.Children[0].RouteNodeType = 42
 
 	// normal lookup
 	recv := catchPanic(func() {

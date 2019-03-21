@@ -177,7 +177,7 @@ func (vc *ViewCache) InternalError(err error) Result {
 	if t == nil {
 		t, _ = template.New("").Parse(DefaultTemplateInternalError)
 	}
-	return resultWithLoggedError(&ViewResult{
+	return ResultWithLoggedError(&ViewResult{
 		ViewName:   vc.InternalErrorTemplateName(),
 		StatusCode: http.StatusInternalServerError,
 		ViewModel:  err,

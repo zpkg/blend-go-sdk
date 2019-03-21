@@ -1,14 +1,11 @@
 package web
 
 import (
-	"bytes"
-	"io/ioutil"
-	"net/http"
-	"net/url"
 	"testing"
 	"time"
 
 	"github.com/blend/go-sdk/assert"
+	"github.com/blend/go-sdk/webutil"
 )
 
 func TestCtxGetState(t *testing.T) {
@@ -22,8 +19,7 @@ func TestCtxGetState(t *testing.T) {
 func TestCtxParamQuery(t *testing.T) {
 	assert := assert.New(t)
 
-	context, err := NewMockRequestBuilder(New()).WithQueryString("foo", "bar").CreateCtx(nil)
-	assert.Nil(err)
+	context := MockCtx("GET", "/", OptCtxQueryValue("foo", "bar"))
 	param, err := context.Param("foo")
 	assert.Nil(err)
 	assert.Equal("bar", param)
@@ -36,8 +32,7 @@ func TestCtxParamQuery(t *testing.T) {
 func TestCtxParamHeader(t *testing.T) {
 	assert := assert.New(t)
 
-	context, err := NewMockRequestBuilder(New()).WithHeader("foo", "bar").CreateCtx(nil)
-	assert.Nil(err)
+	context := MockCtx("GET", "/", OptCtxHeaderValue("foo", "bar"))
 	param, err := context.Param("foo")
 	assert.Nil(err)
 	assert.Equal("bar", param)
@@ -50,8 +45,7 @@ func TestCtxParamHeader(t *testing.T) {
 func TestCtxParamForm(t *testing.T) {
 	assert := assert.New(t)
 
-	context, err := NewMockRequestBuilder(New()).WithFormValue("foo", "bar").CreateCtx(nil)
-	assert.Nil(err)
+	context := MockCtx("GET", "/", OptCtxFormValue("foo", "bar"))
 	param, err := context.Param("foo")
 	assert.Nil(err)
 	assert.Equal("bar", param)
@@ -64,8 +58,7 @@ func TestCtxParamForm(t *testing.T) {
 func TestCtxParamCookie(t *testing.T) {
 	assert := assert.New(t)
 
-	context, err := NewMockRequestBuilder(New()).WithCookie(&http.Cookie{Name: "foo", Value: "bar"}).CreateCtx(nil)
-	assert.Nil(err)
+	context := MockCtx("GET", "/", OptCtxCookieValue("foo", "bar"))
 	param, err := context.Param("foo")
 	assert.Nil(err)
 	assert.Equal("bar", param)
@@ -74,14 +67,12 @@ func TestCtxParamCookie(t *testing.T) {
 func TestCtxPostBodyAsString(t *testing.T) {
 	assert := assert.New(t)
 
-	context, err := NewMockRequestBuilder(New()).WithPostBody([]byte("test payload")).CreateCtx(nil)
-	assert.Nil(err)
+	context := MockCtx("GET", "/", OptCtxBodyBytes([]byte("test payload")))
 	body, err := context.PostBodyAsString()
 	assert.Nil(err)
 	assert.Equal("test payload", body)
 
-	context, err = NewMockRequestBuilder(New()).CreateCtx(nil)
-	assert.Nil(err)
+	context = MockCtx("GET", "/")
 	body, err = context.PostBodyAsString()
 	assert.Nil(err)
 	assert.Empty(body)
@@ -90,15 +81,14 @@ func TestCtxPostBodyAsString(t *testing.T) {
 func TestCtxPostBodyAsJSON(t *testing.T) {
 	assert := assert.New(t)
 
-	context, err := NewMockRequestBuilder(New()).WithPostBody([]byte(`{"test":"test payload"}`)).CreateCtx(nil)
-	assert.Nil(err)
+	context := MockCtx("GET", "/", OptCtxBodyBytes([]byte(`{"test":"test payload"}`)))
 
 	var contents map[string]interface{}
-	err = context.PostBodyAsJSON(&contents)
+	err := context.PostBodyAsJSON(&contents)
 	assert.Nil(err)
 	assert.Equal("test payload", contents["test"])
 
-	context, err = NewMockRequestBuilder(New()).CreateCtx(nil)
+	context = MockCtx("GET", "/")
 	assert.Nil(err)
 	contents = make(map[string]interface{})
 	err = context.PostBodyAsJSON(&contents)
@@ -110,46 +100,29 @@ type postXMLTest string
 func TestCtxPostBodyAsXML(t *testing.T) {
 	assert := assert.New(t)
 
-	context, err := NewMockRequestBuilder(New()).WithPostBody([]byte(`<postXMLTest>test payload</postXMLTest>`)).CreateCtx(nil)
-	assert.Nil(err)
+	context := MockCtx("GET", "/", OptCtxBodyBytes([]byte(`<postXMLTest>test payload</postXMLTest>`)))
 
 	var contents postXMLTest
-	err = context.PostBodyAsXML(&contents)
+	err := context.PostBodyAsXML(&contents)
 	assert.Nil(err)
 	assert.Equal("test payload", string(contents))
-}
-
-func TestCtxPostBody(t *testing.T) {
-	assert := assert.New(t)
-
-	context, err := NewMockRequestBuilder(New()).CreateCtx(nil)
-	assert.Nil(err)
-	body, err := context.PostBody()
-	assert.Nil(err)
-	assert.Empty(body)
-
-	context, err = NewMockRequestBuilder(New()).WithPostBody([]byte(`testbytes`)).CreateCtx(nil)
-	assert.Nil(err)
-	body, err = context.PostBody()
-	assert.Equal([]byte(`testbytes`), body)
 }
 
 func TestCtxPostedFiles(t *testing.T) {
 	assert := assert.New(t)
 
-	context, err := NewMockRequestBuilder(New()).CreateCtx(nil)
-	assert.Nil(err)
-	postedFiles, err := context.PostedFiles()
+	context := MockCtx("GET", "/")
+	postedFiles, err := webutil.PostedFiles(context.Request)
 	assert.Nil(err)
 	assert.Empty(postedFiles)
 
-	context, err = NewMockRequestBuilder(New()).WithPostedFile(PostedFile{
+	context = MockCtx("GET", "/", OptCtxPostedFiles(webutil.PostedFile{
 		Key:      "file",
 		FileName: "test.txt",
-		Contents: []byte("this is only a test")}).CreateCtx(nil)
-	assert.Nil(err)
+		Contents: []byte("this is only a test"),
+	}))
 
-	postedFiles, err = context.PostedFiles()
+	postedFiles, err = webutil.PostedFiles(context.Request)
 	assert.Nil(err)
 	assert.NotEmpty(postedFiles)
 	assert.Equal("file", postedFiles[0].Key)
@@ -160,56 +133,27 @@ func TestCtxPostedFiles(t *testing.T) {
 func TestCtxRouteParam(t *testing.T) {
 	assert := assert.New(t)
 
-	context, err := NewMockRequestBuilder(New()).CreateCtx(RouteParameters{"foo": "bar"})
-	assert.Nil(err)
+	context := MockCtx("GET", "/", OptCtxRouteParamValue("foo", "bar"))
 	value, err := context.RouteParam("foo")
 	assert.Nil(err)
 	assert.Equal("bar", value)
 }
 
-func TestCtxGetCookie(t *testing.T) {
-	assert := assert.New(t)
-
-	context, err := NewMockRequestBuilder(New()).WithCookie(&http.Cookie{Name: "foo", Value: "bar"}).CreateCtx(nil)
-	assert.Nil(err)
-	assert.Equal("bar", context.GetCookie("foo").Value)
-}
-
-func TestCtxHeaderParam(t *testing.T) {
-	assert := assert.New(t)
-
-	context, err := NewMockRequestBuilder(New()).CreateCtx(nil)
-	assert.Nil(err)
-	value, err := context.HeaderValue("test")
-	assert.NotNil(err)
-	assert.Empty(value)
-
-	context, err = NewMockRequestBuilder(New()).WithHeader("test", "foo").CreateCtx(nil)
-	assert.Nil(err)
-	value, err = context.HeaderValue("test")
-	assert.Nil(err)
-	assert.Equal("foo", value)
-}
-
 func TestCtxWriteNewCookie(t *testing.T) {
 	assert := assert.New(t)
 
-	context, err := NewMockRequestBuilder(New()).CreateCtx(nil)
-	assert.Nil(err)
-
+	context := MockCtx("GET", "/")
 	context.WriteNewCookie("foo", "bar", time.Time{}, "/foo/bar", true)
-	assert.Equal("foo=bar; Path=/foo/bar; HttpOnly; Secure", context.Response().Header().Get("Set-Cookie"))
+	assert.Equal("foo=bar; Path=/foo/bar; HttpOnly; Secure", context.Response.Header().Get("Set-Cookie"))
 }
 
 func TestCtxExtendCookie(t *testing.T) {
 	assert := assert.New(t)
 
-	ctx, err := NewMockRequestBuilder(New()).WithCookieValue("foo", "bar").CreateCtx(nil)
-	assert.Nil(err)
-
+	ctx := MockCtx("GET", "/", OptCtxCookieValue("foo", "bar"))
 	ctx.ExtendCookie("foo", "/", 0, 0, 1)
 
-	cookies := ReadSetCookies(ctx.Response().Header())
+	cookies := ReadSetCookies(ctx.Response.Header())
 	assert.NotEmpty(cookies)
 	cookie := cookies[0]
 	assert.False(cookie.Expires.IsZero())
@@ -218,78 +162,11 @@ func TestCtxExtendCookie(t *testing.T) {
 func TestCtxExtendCookieByDuration(t *testing.T) {
 	assert := assert.New(t)
 
-	ctx, err := NewMockRequestBuilder(New()).WithCookieValue("foo", "bar").CreateCtx(nil)
-	assert.Nil(err)
-
+	ctx := MockCtx("GET", "/", OptCtxCookieValue("foo", "bar"))
 	ctx.ExtendCookieByDuration("foo", "/", time.Hour)
 
-	cookies := ReadSetCookies(ctx.Response().Header())
+	cookies := ReadSetCookies(ctx.Response.Header())
 	assert.NotEmpty(cookies)
 	cookie := cookies[0]
 	assert.False(cookie.Expires.IsZero())
-}
-
-func TestCtxRedirect(t *testing.T) {
-	assert := assert.New(t)
-
-	context, err := NewMockRequestBuilder(New()).CreateCtx(nil)
-	assert.Nil(err)
-
-	result := context.Redirect("foo%sbar")
-	assert.Empty(result.Method)
-	assert.Equal("foo%sbar", result.RedirectURI)
-}
-
-func TestCtxRedirectf(t *testing.T) {
-	assert := assert.New(t)
-
-	context, err := NewMockRequestBuilder(New()).CreateCtx(nil)
-	assert.Nil(err)
-
-	result := context.Redirectf("foo%sbar", "buzz")
-	assert.Empty(result.Method)
-	assert.Equal("foobuzzbar", result.RedirectURI)
-}
-
-func TestCtxRedirectWithMethod(t *testing.T) {
-	assert := assert.New(t)
-
-	context, err := NewMockRequestBuilder(New()).CreateCtx(nil)
-	assert.Nil(err)
-
-	result := context.RedirectWithMethod("POST", "foo%sbar")
-	assert.Equal("POST", result.Method)
-	assert.Equal("foo%sbar", result.RedirectURI)
-}
-
-func TestCtxRedirectWithMethodf(t *testing.T) {
-	assert := assert.New(t)
-
-	context, err := NewMockRequestBuilder(New()).CreateCtx(nil)
-	assert.Nil(err)
-
-	result := context.RedirectWithMethodf("POST", "foo%sbar", "buzz")
-	assert.Equal("POST", result.Method)
-	assert.Equal("foobuzzbar", result.RedirectURI)
-}
-
-func TestCtxPostBodyReparse(t *testing.T) {
-	assert := assert.New(t)
-
-	values := url.Values{}
-	values.Add("foo", "bar")
-	contents := []byte(values.Encode())
-
-	headers := http.Header{}
-	headers.Set("Content-Type", "application/x-www-form-urlencoded")
-
-	ctx := NewCtx(nil, &http.Request{Method: "POST", Header: headers, Body: ioutil.NopCloser(bytes.NewBuffer(contents))})
-
-	body, err := ctx.PostBody()
-	assert.Nil(err)
-	assert.Equal(contents, body)
-
-	value, err := ctx.FormValue("foo")
-	assert.Nil(err)
-	assert.Equal("bar", value)
 }

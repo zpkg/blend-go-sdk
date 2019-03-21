@@ -313,14 +313,12 @@ func (a *App) Lookup(method, path string) (route *Route, params RouteParameters,
 
 // ServeHTTP makes the router implement the http.Handler interface.
 func (a *App) ServeHTTP(w http.ResponseWriter, req *http.Request) {
-	println("servehttp")
 	if a.Config.RecoverPanicsOrDefault() {
 		defer a.recover(w, req)
 	}
 
 	path := req.URL.Path
 	if root := a.Routes[req.Method]; root != nil {
-		println("servehttp has method")
 		if route, params, tsr := root.getValue(path); route != nil {
 			route.Handler(w, req, route, params)
 			return
@@ -405,7 +403,6 @@ func (a *App) RenderAction(action Action) Handler {
 		}
 		result := action(ctx)
 		if result != nil {
-
 			// check for a prerender step
 			if typed, ok := result.(ResultPreRender); ok {
 				if preRender := typed.PreRender(ctx); preRender != nil {
@@ -422,10 +419,10 @@ func (a *App) RenderAction(action Action) Handler {
 			// check for a render complete step
 			// typically this is used to render error results if there was a problem rendering
 			// the result
-			if typed, ok := result.(ResultRenderComplete); ok {
-				if renderComplete := typed.RenderComplete(ctx); renderComplete != nil {
-					err = exception.Nest(err, renderComplete)
-					a.logFatal(renderComplete, r)
+			if typed, ok := result.(ResultPostRender); ok {
+				if postRender := typed.PostRender(ctx); postRender != nil {
+					err = exception.Nest(err, postRender)
+					a.logFatal(postRender, r)
 				}
 			}
 		}

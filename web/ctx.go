@@ -29,59 +29,6 @@ func NewCtx(w ResponseWriter, r *http.Request, options ...CtxOption) *Ctx {
 	return &ctx
 }
 
-// CtxOption is an option for a context.
-type CtxOption func(*Ctx)
-
-// OptCtxID sets the context request id.
-func OptCtxID(id string) CtxOption {
-	return func(c *Ctx) { c.ID = id }
-}
-
-// OptCtxApp sets the context app.
-func OptCtxApp(a *App) CtxOption {
-	return func(c *Ctx) { c.App = a }
-}
-
-// OptCtxAuth sets the context auth manager.
-func OptCtxAuth(a *AuthManager) CtxOption {
-	return func(c *Ctx) { c.Auth = a }
-}
-
-// OptCtxViews sets the context view cache.
-func OptCtxViews(v *ViewCache) CtxOption {
-	return func(c *Ctx) { c.Views = v }
-}
-
-// OptCtxState sets the context state.
-func OptCtxState(s State) CtxOption {
-	return func(c *Ctx) { c.State = s }
-}
-
-// OptCtxRoute sets the context route.
-func OptCtxRoute(r *Route) CtxOption {
-	return func(c *Ctx) { c.Route = r }
-}
-
-// OptCtxRouteParams sets the context route params.
-func OptCtxRouteParams(r RouteParameters) CtxOption {
-	return func(c *Ctx) { c.RouteParams = r }
-}
-
-// OptCtxLog sets the context logger.
-func OptCtxLog(log logger.FullReceiver) CtxOption {
-	return func(c *Ctx) { c.Log = log }
-}
-
-// OptCtxTracer sets the context tracer.
-func OptCtxTracer(tracer Tracer) CtxOption {
-	return func(c *Ctx) { c.Tracer = tracer }
-}
-
-// OptCtxDefaultProvider sets the context default result provider.
-func OptCtxDefaultProvider(rp ResultProvider) CtxOption {
-	return func(c *Ctx) { c.DefaultProvider = rp }
-}
-
 // Ctx is the struct that represents the context for an hc request.
 type Ctx struct {
 	ID              string

@@ -18,9 +18,9 @@ func TestStaticFileserver(t *testing.T) {
 	buffer := bytes.NewBuffer(nil)
 	res := webutil.NewMockResponse(buffer)
 	req := webutil.NewMockRequest("GET", "/test_file.html")
-	result := cfs.Action(NewCtx(res, req).WithRouteParams(RouteParameters{
+	result := cfs.Action(NewCtx(res, req, OptCtxRouteParams(RouteParameters{
 		RouteTokenFilepath: "test_file.html",
-	}))
+	})))
 
 	assert.Nil(result)
 	assert.NotEmpty(buffer.Bytes())
@@ -36,9 +36,9 @@ func TestStaticFileserverHeaders(t *testing.T) {
 	buffer := bytes.NewBuffer(nil)
 	res := webutil.NewMockResponse(buffer)
 	req := webutil.NewMockRequest("GET", "/test_file.html")
-	result := cfs.Action(NewCtx(res, req).WithRouteParams(RouteParameters{
+	result := cfs.Action(NewCtx(res, req, OptCtxRouteParams(RouteParameters{
 		RouteTokenFilepath: "test_file.html",
-	}))
+	})))
 
 	assert.Nil(result)
 	assert.NotEmpty(buffer.Bytes())
@@ -57,9 +57,9 @@ func TestStaticFileserverRewriteRule(t *testing.T) {
 	buffer := bytes.NewBuffer(nil)
 	res := webutil.NewMockResponse(buffer)
 	req := webutil.NewMockRequest("GET", "/test_file.123123123.html")
-	result := cfs.Action(NewCtx(res, req).WithRouteParams(RouteParameters{
+	result := cfs.Action(NewCtx(res, req, OptCtxRouteParams(RouteParameters{
 		RouteTokenFilepath: "test_file.123123123.html",
-	}))
+	})))
 
 	assert.Nil(result)
 	assert.NotEmpty(buffer.Bytes(), "we should still have reached the file")
@@ -85,9 +85,9 @@ func TestStaticFileserverMiddleware(t *testing.T) {
 	buffer := bytes.NewBuffer(nil)
 	res := webutil.NewMockResponse(buffer)
 	req := webutil.NewMockRequest("GET", "/test_file.html")
-	result := cfs.Action(NewCtx(res, req).WithRouteParams(RouteParameters{
+	result := cfs.Action(NewCtx(res, req, OptCtxRouteParams(RouteParameters{
 		RouteTokenFilepath: "test_file.html",
-	}))
+	})))
 	wg.Wait()
 
 	assert.Nil(result)
@@ -98,9 +98,9 @@ func TestStaticFileserverMiddleware(t *testing.T) {
 	didNestMiddleware = false
 	didCallMiddleware = false
 	wg.Add(1)
-	result = cfs.Action(NewCtx(res, req).WithRouteParams(RouteParameters{
+	result = cfs.Action(NewCtx(res, req, OptCtxRouteParams(RouteParameters{
 		RouteTokenFilepath: "test_file.html",
-	}))
+	})))
 	wg.Wait()
 
 	assert.Nil(result)

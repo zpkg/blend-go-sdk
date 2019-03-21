@@ -41,6 +41,11 @@ func OptServer(server *http.Server) AppOption {
 	return func(a *App) { a.Server = server }
 }
 
+// OptAuth sets the auth manager.
+func OptAuth(auth *AuthManager) AppOption {
+	return func(a *App) { a.Auth = auth }
+}
+
 // OptViews sets the view cache.
 func OptViews(views *ViewCache) AppOption {
 	return func(a *App) { a.Views = views }

@@ -14,12 +14,19 @@ import (
 
 // MockCtx returns a new mock ctx.
 // It is intended to be used in testing.
-func MockCtx(method, path string) *Ctx {
-	return NewCtx(webutil.NewMockResponse(new(bytes.Buffer)), webutil.NewMockRequest(method, path))
+func MockCtx(method, path string, options ...CtxOption) *Ctx {
+	return NewCtx(webutil.NewMockResponse(new(bytes.Buffer)), webutil.NewMockRequest(method, path), options...)
 }
 
 // Mock sends a mock request to an app.
-func Mock(app *App, req *http.Request) (*http.Response, error) {
+func Mock(app *App, req *http.Request, options ...func(*http.Request) error) (*http.Response, error) {
+	var err error
+	for _, option := range options {
+		if err = option(req); err != nil {
+			return nil, err
+		}
+	}
+
 	app.Config.BindAddr = DefaultMockBindAddr
 
 	if err := app.Start(); err != nil {
@@ -31,7 +38,7 @@ func Mock(app *App, req *http.Request) (*http.Response, error) {
 }
 
 // MockGet sends a mock get request to an app.
-func MockGet(app *App, path string) (*http.Response, error) {
+func MockGet(app *App, path string, options ...func(*http.Request) error) (*http.Response, error) {
 	req := &http.Request{
 		Method: "GET",
 	}
@@ -40,11 +47,11 @@ func MockGet(app *App, path string) (*http.Response, error) {
 		Host:   app.Listener.Addr().String(),
 		Path:   path,
 	}
-	return Mock(app, req)
+	return Mock(app, req, options...)
 }
 
 // MockPost sends a mock post request to an app.
-func MockPost(app *App, path string, body io.ReadCloser) (*http.Response, error) {
+func MockPost(app *App, path string, body io.ReadCloser, options ...func(*http.Request) error) (*http.Response, error) {
 	req := &http.Request{
 		Method: "POST",
 		Body:   body,

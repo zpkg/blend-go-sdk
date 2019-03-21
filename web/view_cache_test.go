@@ -123,7 +123,7 @@ func TestViewCacheInternalError(t *testing.T) {
 	vc := NewViewCache()
 	assert.Nil(vc.Initialize())
 
-	ler, _ := vc.InternalError(exception.Class("only a test")).(*loggedErrorResult)
+	ler, _ := vc.InternalError(exception.Class("only a test")).(*LoggedErrorResult)
 	assert.NotNil(ler)
 	vr := ler.Result.(*ViewResult)
 	assert.Equal(vc.InternalErrorTemplateName(), vr.ViewName)
@@ -196,7 +196,7 @@ func TestViewCacheView(t *testing.T) {
 	assert.NotNil(vr.Views)
 
 	// handle if the view is not found ...
-	ler, _ := vc.View("not-test", "foo").(*loggedErrorResult)
+	ler, _ := vc.View("not-test", "foo").(*LoggedErrorResult)
 	assert.NotNil(ler)
 	vr, _ = ler.Result.(*ViewResult)
 	assert.Equal(vc.InternalErrorTemplateName(), vr.ViewName)

@@ -8,12 +8,11 @@ import (
 )
 
 func main() {
-	log := logger.MustNewFromEnv()
-	app := web.MustNewFromEnv().WithLogger(log)
+	log := logger.All()
+	app := web.New(web.OptLog(log))
 	app.GET("/", func(r *web.Ctx) web.Result {
-		return r.Text().Result("foo")
+		return web.Text.Result("foo")
 	})
-
 	log.Listen(logger.HTTPRequest, logger.DefaultListenerName, logger.NewHTTPRequestEventListener(func(wre *logger.HTTPRequestEvent) {
 		fmt.Printf("Route: %s\n", wre.Route())
 	}))

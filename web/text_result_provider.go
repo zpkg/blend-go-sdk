@@ -36,7 +36,7 @@ func (trp TextResultProvider) NotAuthorized() Result {
 
 // InternalError returns a plainttext result.
 func (trp TextResultProvider) InternalError(err error) Result {
-	return resultWithLoggedError(&RawResult{
+	return ResultWithLoggedError(&RawResult{
 		StatusCode:  http.StatusInternalServerError,
 		ContentType: ContentTypeText,
 		Response:    []byte(fmt.Sprintf("%+v", err)),

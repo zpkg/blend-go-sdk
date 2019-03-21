@@ -30,7 +30,7 @@ func (ac *APIController) Register(app *web.App) {
 func (ac *APIController) randomFailure(action web.Action) web.Action {
 	return func(r *web.Ctx) web.Result {
 		if rand.Int()%2 == 0 {
-			return r.JSON().InternalError(fmt.Errorf("random error"))
+			return web.JSON.InternalError(fmt.Errorf("random error"))
 		}
 		return action(r)
 	}
@@ -47,7 +47,7 @@ func (ac *APIController) all(r *web.Ctx) web.Result {
 	defer ac.dbLock.Unlock()
 	ac.ensureDB()
 
-	return r.JSON().Result(ac.db)
+	return web.JSON.Result(ac.db)
 }
 
 func (ac *APIController) get(r *web.Ctx) web.Result {
@@ -57,9 +57,9 @@ func (ac *APIController) get(r *web.Ctx) web.Result {
 
 	value, hasValue := ac.db[web.StringValue(r.Param("key"))]
 	if !hasValue {
-		return r.JSON().NotFound()
+		return web.JSON.NotFound()
 	}
-	return r.JSON().Result(value)
+	return web.JSON.Result(value)
 }
 
 func (ac *APIController) post(r *web.Ctx) web.Result {
@@ -69,10 +69,10 @@ func (ac *APIController) post(r *web.Ctx) web.Result {
 
 	body, err := r.PostBody()
 	if err != nil {
-		return r.JSON().InternalError(err)
+		return web.JSON.InternalError(err)
 	}
 	ac.db[web.StringValue(r.Param("key"))] = string(body)
-	return r.JSON().OK()
+	return web.JSON.OK()
 }
 
 func (ac *APIController) put(r *web.Ctx) web.Result {
@@ -82,16 +82,16 @@ func (ac *APIController) put(r *web.Ctx) web.Result {
 
 	_, hasValue := ac.db[web.StringValue(r.Param("key"))]
 	if !hasValue {
-		return r.JSON().NotFound()
+		return web.JSON.NotFound()
 	}
 
 	body, err := r.PostBody()
 	if err != nil {
-		return r.JSON().InternalError(err)
+		return web.JSON.InternalError(err)
 	}
 	ac.db[web.StringValue(r.Param("key"))] = string(body)
 
-	return r.JSON().OK()
+	return web.JSON.OK()
 }
 
 func (ac *APIController) delete(r *web.Ctx) web.Result {
@@ -102,14 +102,15 @@ func (ac *APIController) delete(r *web.Ctx) web.Result {
 	key := web.StringValue(r.Param("key"))
 	_, hasValue := ac.db[key]
 	if !hasValue {
-		return r.JSON().NotFound()
+		return web.JSON.NotFound()
 	}
 	delete(ac.db, key)
-	return r.JSON().OK()
+	return web.JSON.OK()
 }
 
 func main() {
 	log := logger.MustNewFromEnv()
-	app := web.New().WithLogger(log).WithControllers(new(APIController))
+	app := web.New(web.OptLog(log))
+	app.Register(new(APIController))
 	log.SyncFatalExit(app.Start())
 }

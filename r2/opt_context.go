@@ -2,12 +2,11 @@ package r2
 
 import (
 	"context"
+
+	"github.com/blend/go-sdk/webutil"
 )
 
 // OptContext sets the request context.
 func OptContext(ctx context.Context) Option {
-	return func(r *Request) error {
-		r.Request = r.Request.WithContext(ctx)
-		return nil
-	}
+	return RequestOption(webutil.OptContext(ctx))
 }

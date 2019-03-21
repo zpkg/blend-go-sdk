@@ -11,9 +11,10 @@ import (
 func TestTimeout(t *testing.T) {
 	assert := assert.New(t)
 
-	app := New().
-		WithBindAddr("127.0.0.1:0").
-		WithDefaultMiddleware(WithTimeout(1 * time.Millisecond))
+	app := New(
+		OptBindAddr(DefaultMockBindAddr),
+		OptUse(WithTimeout(1*time.Millisecond)),
+	)
 
 	var didFinish bool
 	app.GET("/panic", func(_ *Ctx) Result {
@@ -29,21 +30,19 @@ func TestTimeout(t *testing.T) {
 		return NoContent
 	})
 
-	go func() {
-		app.Start()
-	}()
-	defer app.Shutdown()
+	go app.Start()
+	defer app.Stop()
 	<-app.NotifyStarted()
 
-	_, err := http.Get("http://" + app.Listener().Addr().String() + "/panic")
+	_, err := http.Get("http://" + app.Listener.Addr().String() + "/panic")
 	assert.Nil(err)
 	assert.False(didFinish)
 
-	_, err = http.Get("http://" + app.Listener().Addr().String() + "/long")
+	_, err = http.Get("http://" + app.Listener.Addr().String() + "/long")
 	assert.Nil(err)
 	assert.False(didFinish)
 
-	_, err = http.Get("http://" + app.Listener().Addr().String() + "/short")
+	_, err = http.Get("http://" + app.Listener.Addr().String() + "/short")
 	assert.Nil(err)
 	assert.True(didFinish)
 }

@@ -38,7 +38,7 @@ func port() string {
 	if len(envPort) != 0 {
 		return envPort
 	}
-	return "9090"
+	return "8080"
 }
 
 func main() {

@@ -33,7 +33,7 @@ func (xrp XMLResultProvider) NotAuthorized() Result {
 
 // InternalError returns a service response.
 func (xrp XMLResultProvider) InternalError(err error) Result {
-	return resultWithLoggedError(&XMLResult{
+	return ResultWithLoggedError(&XMLResult{
 		StatusCode: http.StatusInternalServerError,
 		Response:   err,
 	}, err)

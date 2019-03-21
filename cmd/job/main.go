@@ -147,7 +147,8 @@ func main() {
 	}
 
 	if !*disableServer {
-		ws := jobkit.NewManagementServer(jobs, &cfg.Config).WithLogger(log)
+		ws := jobkit.NewManagementServer(jobs, &cfg.Config)
+		ws.Log = log
 		go func() {
 			if err := graceful.Shutdown(ws); err != nil {
 				logger.FatalExit(err)

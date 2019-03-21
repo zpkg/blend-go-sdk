@@ -12,19 +12,19 @@ func TestDefaultProviderMiddlewares(t *testing.T) {
 	assert := assert.New(t)
 
 	r := applyMiddleware(JSONProviderAsDefault)
-	_, ok := r.DefaultResultProvider().(JSONResultProvider)
+	_, ok := r.DefaultProvider.(JSONResultProvider)
 	assert.True(ok)
 
 	r = applyMiddleware(ViewProviderAsDefault)
-	_, ok = r.DefaultResultProvider().(*ViewCache)
+	_, ok = r.DefaultProvider.(*ViewCache)
 	assert.True(ok)
 
 	r = applyMiddleware(XMLProviderAsDefault)
-	_, ok = r.DefaultResultProvider().(XMLResultProvider)
+	_, ok = r.DefaultProvider.(XMLResultProvider)
 	assert.True(ok)
 
 	r = applyMiddleware(TextProviderAsDefault)
-	_, ok = r.DefaultResultProvider().(TextResultProvider)
+	_, ok = r.DefaultProvider.(TextResultProvider)
 	assert.True(ok)
 }
 

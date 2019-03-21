@@ -33,12 +33,12 @@ func (jrp JSONResultProvider) NotAuthorized() Result {
 // InternalError returns a service response.
 func (jrp JSONResultProvider) InternalError(err error) Result {
 	if err != nil {
-		return resultWithLoggedError(&JSONResult{
+		return ResultWithLoggedError(&JSONResult{
 			StatusCode: http.StatusInternalServerError,
 			Response:   err.Error(),
 		}, err)
 	}
-	return resultWithLoggedError(&JSONResult{
+	return ResultWithLoggedError(&JSONResult{
 		StatusCode: http.StatusInternalServerError,
 		Response:   "Internal Server Error",
 	}, err)
