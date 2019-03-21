@@ -27,8 +27,8 @@ func Shutdown(hosted ...Graceful) error {
 	return ShutdownBySignal(terminateSignal, hosted...)
 }
 
-// ShutdownBySignal gracefully stops a hosted process based on an os signal channel.
-// A "Graceful" process *must* block on start.
+// ShutdownBySignal gracefully stops a set hosted processes based on an os signal channel.
+// A "Graceful" processes *must* block on start.
 func ShutdownBySignal(shouldShutdown chan os.Signal, hosted ...Graceful) error {
 	shutdown := make(chan struct{})
 	abortWaitShutdown := make(chan struct{})
@@ -43,28 +43,32 @@ func ShutdownBySignal(shouldShutdown chan os.Signal, hosted ...Graceful) error {
 	errors := make(chan error, 2*len(hosted))
 
 	for _, hostedInstance := range hosted {
+		// start the hosted instance
 		go func(instance Graceful) {
-			// signal hosted has exited
-			defer close(serverExited)
+			defer func() {
+				close(serverExited)     // close the emergency crash channel
+				waitServerExited.Done() // signal the normal exit process is done
+			}()
 
 			// `hosted.Start()` should block here.
 			if err := instance.Start(); err != nil {
 				errors <- err
 			}
+			return
 		}(hostedInstance)
 
 		go func(instance Graceful) {
+			defer waitShutdownComplete.Done()
+
 			select {
 			case <-shutdown:
-				// tell the hosted process to terminate "gracefully"
+				// tell the hosted process to stop "gracefully"
 				if err := instance.Stop(); err != nil {
 					errors <- err
 				}
-				waitShutdownComplete.Done()
 				return
-			case <-abortWaitShutdown:
-				waitShutdownComplete.Done()
-				return
+			case <-abortWaitShutdown: // a server has exited on its own
+				return // clean up this goroutine
 			}
 		}(hostedInstance)
 	}

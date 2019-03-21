@@ -5,8 +5,8 @@ import (
 	"path"
 )
 
-// NewStaticResultForFile returns a static result for an individual file.
-func NewStaticResultForFile(filePath string) *StaticResult {
+// Static returns a static result for an individual file.
+func Static(filePath string) *StaticResult {
 	file := path.Base(filePath)
 	root := path.Dir(filePath)
 	return &StaticResult{
@@ -34,7 +34,7 @@ func (sr StaticResult) Render(ctx *Ctx) error {
 
 	for key, values := range sr.Headers {
 		for _, value := range values {
-			ctx.Response().Header().Add(key, value)
+			ctx.Response.Header().Add(key, value)
 		}
 	}
 
@@ -49,6 +49,6 @@ func (sr StaticResult) Render(ctx *Ctx) error {
 		return err
 	}
 
-	http.ServeContent(ctx.Response(), ctx.Request(), filePath, d.ModTime(), f)
+	http.ServeContent(ctx.Response, ctx.Request, filePath, d.ModTime(), f)
 	return nil
 }

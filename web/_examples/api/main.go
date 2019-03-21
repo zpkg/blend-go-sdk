@@ -33,7 +33,7 @@ func (ac *APIController) ensureDB() {
 }
 
 func (ac *APIController) index(r *web.Ctx) web.Result {
-	return r.JSON().OK()
+	return web.JSON.OK()
 }
 
 func (ac *APIController) all(r *web.Ctx) web.Result {
@@ -41,7 +41,7 @@ func (ac *APIController) all(r *web.Ctx) web.Result {
 	defer ac.dbLock.Unlock()
 	ac.ensureDB()
 
-	return r.JSON().Result(ac.db)
+	return web.JSON.Result(ac.db)
 }
 
 func (ac *APIController) get(r *web.Ctx) web.Result {
@@ -51,14 +51,14 @@ func (ac *APIController) get(r *web.Ctx) web.Result {
 
 	key, err := r.Param("key")
 	if err != nil {
-		return r.JSON().BadRequest(err)
+		return web.JSON.BadRequest(err)
 	}
 
 	value, hasValue := ac.db[key]
 	if !hasValue {
-		return r.JSON().NotFound()
+		return web.JSON.NotFound()
 	}
-	return r.JSON().Result(value)
+	return web.JSON.Result(value)
 }
 
 func (ac *APIController) post(r *web.Ctx) web.Result {
@@ -66,17 +66,17 @@ func (ac *APIController) post(r *web.Ctx) web.Result {
 	defer ac.dbLock.Unlock()
 	ac.ensureDB()
 
-	body, err := r.PostBody()
+	body, err := r.GetPostBody()
 	if err != nil {
-		return r.JSON().InternalError(err)
+		return web.JSON.InternalError(err)
 	}
 
 	key, err := r.Param("key")
 	if err != nil {
-		return r.JSON().BadRequest(err)
+		return web.JSON.BadRequest(err)
 	}
 	ac.db[key] = string(body)
-	return r.JSON().OK()
+	return web.JSON.OK()
 }
 
 func (ac *APIController) put(r *web.Ctx) web.Result {
@@ -86,21 +86,21 @@ func (ac *APIController) put(r *web.Ctx) web.Result {
 
 	key, err := r.Param("key")
 	if err != nil {
-		return r.JSON().BadRequest(err)
+		return web.JSON.BadRequest(err)
 	}
 
 	_, hasValue := ac.db[key]
 	if !hasValue {
-		return r.JSON().NotFound()
+		return web.JSON.NotFound()
 	}
 
-	body, err := r.PostBody()
+	body, err := r.GetPostBody()
 	if err != nil {
-		return r.JSON().InternalError(err)
+		return web.JSON.InternalError(err)
 	}
 	ac.db[key] = string(body)
 
-	return r.JSON().OK()
+	return web.JSON.OK()
 }
 
 func (ac *APIController) delete(r *web.Ctx) web.Result {
@@ -110,19 +110,19 @@ func (ac *APIController) delete(r *web.Ctx) web.Result {
 
 	key, err := r.Param("key")
 	if err != nil {
-		return r.JSON().BadRequest(err)
+		return web.JSON.BadRequest(err)
 	}
 
 	_, hasValue := ac.db[key]
 	if !hasValue {
-		return r.JSON().NotFound()
+		return web.JSON.NotFound()
 	}
 	delete(ac.db, key)
-	return r.JSON().OK()
+	return web.JSON.OK()
 }
 
 func main() {
-	app := web.New().WithLogger(logger.MustNewFromEnv())
+	app := web.New(web.OptLog(logger.MustNewFromEnv()))
 	app.Register(new(APIController))
 	app.Start()
 }

@@ -10,15 +10,15 @@ import (
 // NewManagementServer returns a new management server that lets you
 // trigger jobs or look at job statuses via. a json api.
 func NewManagementServer(jm *cron.JobManager, cfg *Config) *web.App {
-	app := web.NewFromConfig(&cfg.Web)
-	app.Views().AddLiterals(
+	app := web.New(web.OptConfig(&cfg.Web))
+	app.Views.AddLiterals(
 		headerTemplate,
 		footerTemplate,
 		indexTemplate,
 		invocationTemplate,
 	)
 	app.GET("/", func(r *web.Ctx) web.Result {
-		return r.Views().View("index", jm.Status())
+		return r.Views.View("index", jm.Status())
 	})
 	app.GET("/healthz", func(_ *web.Ctx) web.Result {
 		if jm.IsRunning() {
@@ -43,12 +43,12 @@ func NewManagementServer(jm *cron.JobManager, cfg *Config) *web.App {
 	app.POST("/job.run/:jobName", func(r *web.Ctx) web.Result {
 		jobName, err := r.RouteParam("jobName")
 		if err != nil {
-			return r.Views().BadRequest(err)
+			return r.Views.BadRequest(err)
 		}
 		if err := jm.RunJob(jobName); err != nil {
-			return r.Views().BadRequest(err)
+			return r.Views.BadRequest(err)
 		}
-		return r.RedirectWithMethod("GET", "/")
+		return web.RedirectWithMethod("GET", "/")
 	})
 	app.POST("/api/job.run/:jobName", func(r *web.Ctx) web.Result {
 		jobName, err := r.RouteParam("jobName")
@@ -73,12 +73,12 @@ func NewManagementServer(jm *cron.JobManager, cfg *Config) *web.App {
 	app.POST("/job.cancel/:jobName", func(r *web.Ctx) web.Result {
 		jobName, err := r.RouteParam("jobName")
 		if err != nil {
-			return r.Views().BadRequest(err)
+			return r.Views.BadRequest(err)
 		}
 		if err := jm.CancelJob(jobName); err != nil {
-			return r.Views().BadRequest(err)
+			return r.Views.BadRequest(err)
 		}
-		return r.RedirectWithMethod("GET", "/")
+		return web.RedirectWithMethod("GET", "/")
 	})
 	app.POST("/api/job.disable/:jobName", func(r *web.Ctx) web.Result {
 		jobName, err := r.RouteParam("jobName")
@@ -93,12 +93,12 @@ func NewManagementServer(jm *cron.JobManager, cfg *Config) *web.App {
 	app.POST("/job.disable/:jobName", func(r *web.Ctx) web.Result {
 		jobName, err := r.RouteParam("jobName")
 		if err != nil {
-			return r.Views().BadRequest(err)
+			return r.Views.BadRequest(err)
 		}
 		if err := jm.DisableJob(jobName); err != nil {
-			return r.Views().BadRequest(err)
+			return r.Views.BadRequest(err)
 		}
-		return r.RedirectWithMethod("GET", "/")
+		return web.RedirectWithMethod("GET", "/")
 	})
 	app.POST("/api/job.enable/:jobName", func(r *web.Ctx) web.Result {
 		jobName, err := r.RouteParam("jobName")
@@ -113,34 +113,34 @@ func NewManagementServer(jm *cron.JobManager, cfg *Config) *web.App {
 	app.POST("/job.enable/:jobName", func(r *web.Ctx) web.Result {
 		jobName, err := r.RouteParam("jobName")
 		if err != nil {
-			return r.Views().BadRequest(err)
+			return r.Views.BadRequest(err)
 		}
 		if err := jm.EnableJob(jobName); err != nil {
-			return r.Views().BadRequest(err)
+			return r.Views.BadRequest(err)
 		}
-		return r.RedirectWithMethod("GET", "/")
+		return web.RedirectWithMethod("GET", "/")
 	})
 	app.GET("/job.invocation/:jobName/:invocation", func(r *web.Ctx) web.Result {
 		job, err := jm.Job(web.StringValue(r.RouteParam("jobName")))
 		if err != nil {
-			return r.Views().BadRequest(err)
+			return r.Views.BadRequest(err)
 		}
 		invocation := job.Invocation(web.StringValue(r.RouteParam("invocation")))
 		if invocation == nil {
-			return r.Views().NotFound()
+			return r.Views.NotFound()
 		}
-		return r.Views().View("invocation", invocation)
+		return r.Views.View("invocation", invocation)
 	})
 	app.GET("/api/job.invocation/:jobName/:invocation", func(r *web.Ctx) web.Result {
 		job, err := jm.Job(web.StringValue(r.RouteParam("jobName")))
 		if err != nil {
-			return r.JSON().BadRequest(err)
+			return web.JSON.BadRequest(err)
 		}
 		invocation := job.Invocation(web.StringValue(r.RouteParam("invocation")))
 		if invocation == nil {
-			return r.Views().NotFound()
+			return web.JSON.NotFound()
 		}
-		return r.JSON().Result(invocation)
+		return web.JSON.Result(invocation)
 	})
 	return app
 }

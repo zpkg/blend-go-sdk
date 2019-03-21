@@ -27,7 +27,7 @@ func TestManagementServer(t *testing.T) {
 		},
 	})
 
-	meta, err := app.Mock().Get("/").ExecuteWithMeta()
+	meta, err := web.MockGet(app, "/")
 	assert.Nil(err)
 	assert.Equal(http.StatusOK, meta.StatusCode)
 

@@ -3,25 +3,28 @@ package main
 import (
 	"fmt"
 
+	"github.com/blend/go-sdk/graceful"
 	"github.com/blend/go-sdk/logger"
 	"github.com/blend/go-sdk/web"
 )
 
 func main() {
-	app := web.MustNewFromEnv().WithBindAddr(":8080").WithLogger(logger.All())
+	app := web.New(web.OptBindAddr(":8080"), web.OptLog(logger.All()))
 	app.GET("/", func(r *web.Ctx) web.Result {
-		return r.Text().Result("ok!")
+		return web.Text.Result("ok!")
 	})
 
 	app.POST("/reparse", func(r *web.Ctx) web.Result {
-		body, err := r.PostBody()
+		body, err := r.GetPostBody()
 		if err != nil {
-			return r.Text().BadRequest(err)
+			return web.Text.BadRequest(err)
 		}
 		if len(body) == 0 {
-			return r.Text().BadRequest(fmt.Errorf("empty body"))
+			return web.Text.BadRequest(fmt.Errorf("empty body"))
 		}
-		return r.Text().Result(web.StringValue(r.Param("foo")))
+		return web.Text.Result(web.StringValue(r.Param("foo")))
 	})
-	logger.All().SyncFatalExit(app.Start())
+	if err := graceful.Shutdown(app); err != nil {
+		logger.FatalExit(err)
+	}
 }

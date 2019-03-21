@@ -12,6 +12,6 @@ type NoContentResult struct{}
 
 // Render renders a static result.
 func (ncr NoContentResult) Render(ctx *Ctx) error {
-	ctx.Response().WriteHeader(http.StatusNoContent)
+	ctx.Response.WriteHeader(http.StatusNoContent)
 	return nil
 }

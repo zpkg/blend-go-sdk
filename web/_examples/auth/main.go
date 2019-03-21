@@ -18,64 +18,64 @@ Caveat; this will only work if you are deploying a single instance of the app.
 */
 
 func main() {
-	app := web.MustNewFromEnv().WithLogger(logger.All()).WithAuth(web.NewLocalAuthManager())
+	app := web.New(web.OptLog(logger.All()))
+	app.Auth = web.NewLocalAuthManager()
 
 	app.ServeStaticCached("/cached", "_static")
 	app.SetStaticMiddleware("/cached", web.SessionMiddleware(func(ctx *web.Ctx) web.Result {
-		return ctx.Text().NotAuthorized()
+		return web.Text.NotAuthorized()
 	}))
 
 	app.ServeStatic("/static", "_static")
 	app.SetStaticMiddleware("/static", web.SessionMiddleware(func(ctx *web.Ctx) web.Result {
-		return ctx.Text().NotAuthorized()
+		return web.Text.NotAuthorized()
 	}))
 
 	app.ServeStatic("/static_unauthed", "_static")
 
-	app.Auth().WithValidateHandler(func(_ context.Context, session *web.Session, state web.State) error {
+	app.Auth.ValidateHandler = func(_ context.Context, session *web.Session) error {
 		if session.UserID == "bailey" {
 			return fmt.Errorf("bailey isn't allowed here")
 		}
 		return nil
-	})
+	}
+	app.Auth.LoginRedirectHandler = web.PathRedirectHandler("/login")
 
-	app.Auth().WithLoginRedirectHandler(web.PathRedirectHandler("/login"))
-
-	app.Views().AddLiterals(`{{ define "login" }}<a href="/login/user_valid">Login Valid</a><br/><a href="/login/user_notvalid">Login Invalid</a>{{end}}`)
+	app.Views.AddLiterals(`{{ define "login" }}<a href="/login/user_valid">Login Valid</a><br/><a href="/login/user_notvalid">Login Invalid</a>{{end}}`)
 	app.GET("/login", func(r *web.Ctx) web.Result {
-		return r.Views().View("login", nil)
+		return r.Views.View("login", nil)
 	})
 
 	app.GET("/login/:userID", func(r *web.Ctx) web.Result {
-		if r.Session() != nil {
-			r.Logger().Debugf("already logged in, redirecting")
-			return r.RedirectWithMethodf("GET", "/")
+		if r.Session != nil {
+			r.Log.Debugf("already logged in, redirecting")
+			return web.RedirectWithMethodf("GET", "/")
 		}
 
 		userID, _ := r.Param("userID")
 		if !strings.HasSuffix(userID, "_valid") { //maximum security
-			return r.Text().NotAuthorized()
+			return web.Text.NotAuthorized()
 		}
-		_, err := r.Auth().Login(userID, r)
+		_, err := r.Auth.Login(userID, r)
 		if err != nil {
-			return r.Text().InternalError(err)
+			return web.Text.InternalError(err)
 		}
-		return r.Text().Result("Logged In")
+		return web.Text.Result("Logged In")
 	}, web.SessionAware)
 
 	app.GET("/logout", func(r *web.Ctx) web.Result {
-		if r.Session() == nil {
-			return r.Text().Result("Weren't logged in anyway.")
+		if r.Session == nil {
+			return web.Text.Result("Weren't logged in anyway.")
 		}
-		err := r.Auth().Logout(r)
+		err := r.Auth.Logout(r)
 		if err != nil {
-			return r.Text().InternalError(err)
+			return web.Text.InternalError(err)
 		}
-		return r.Text().Result("Logged Out")
+		return web.Text.Result("Logged Out")
 	}, web.SessionRequired)
 
 	app.GET("/", func(r *web.Ctx) web.Result {
-		return r.Text().Result("Yep")
+		return web.Text.Result("Yep")
 	}, web.SessionRequired)
 
 	if err := graceful.Shutdown(app); err != nil {

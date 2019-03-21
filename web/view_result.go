@@ -27,14 +27,14 @@ func (vr *ViewResult) Render(ctx *Ctx) (err error) {
 		return
 	}
 
-	if ctx.tracer != nil {
-		if typed, ok := ctx.tracer.(ViewTracer); ok {
+	if ctx.Tracer != nil {
+		if typed, ok := ctx.Tracer.(ViewTracer); ok {
 			tf := typed.StartView(ctx, vr)
 			defer func() { tf.Finish(ctx, vr, err) }()
 		}
 	}
 
-	ctx.Response().Header().Set(HeaderContentType, ContentTypeHTML)
+	ctx.Response.Header().Set(HeaderContentType, ContentTypeHTML)
 
 	// use a pooled buffer if possible
 	var buffer *bytes.Buffer
@@ -53,13 +53,13 @@ func (vr *ViewResult) Render(ctx *Ctx) (err error) {
 
 	if err != nil {
 		err = exception.New(err)
-		ctx.Response().WriteHeader(http.StatusInternalServerError)
-		ctx.Response().Write([]byte(fmt.Sprintf("%+v\n", err)))
+		ctx.Response.WriteHeader(http.StatusInternalServerError)
+		ctx.Response.Write([]byte(fmt.Sprintf("%+v\n", err)))
 		return
 	}
 
-	ctx.Response().WriteHeader(vr.StatusCode)
-	_, err = ctx.Response().Write(buffer.Bytes())
+	ctx.Response.WriteHeader(vr.StatusCode)
+	_, err = ctx.Response.Write(buffer.Bytes())
 	if err != nil {
 		err = exception.New(err)
 	}

@@ -108,28 +108,28 @@ func (sc *StaticFileServer) ResolveFile(filePath string) (f http.File, err error
 func (sc *StaticFileServer) ServeFile(r *Ctx) Result {
 	filePath, err := r.RouteParam("filepath")
 	if err != nil {
-		return r.DefaultResultProvider().BadRequest(err)
+		return r.DefaultProvider.BadRequest(err)
 	}
 
 	for key, values := range sc.headers {
 		for _, value := range values {
-			r.Response().Header().Set(key, value)
+			r.Response.Header().Set(key, value)
 		}
 	}
 
 	f, err := sc.ResolveFile(filePath)
 	if f == nil || (err != nil && os.IsNotExist(err)) {
-		return r.DefaultResultProvider().NotFound()
+		return r.DefaultProvider.NotFound()
 	}
 	if err != nil {
-		return r.DefaultResultProvider().InternalError(err)
+		return r.DefaultProvider.InternalError(err)
 	}
 	defer f.Close()
 
 	finfo, err := f.Stat()
 	if err != nil {
-		return r.DefaultResultProvider().InternalError(err)
+		return r.DefaultProvider.InternalError(err)
 	}
-	http.ServeContent(r.Response(), r.Request(), filePath, finfo.ModTime(), f)
+	http.ServeContent(r.Response, r.Request, filePath, finfo.ModTime(), f)
 	return nil
 }

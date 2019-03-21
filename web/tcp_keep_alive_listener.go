@@ -14,6 +14,8 @@ const (
 // connections. It's used by ListenAndServe and ListenAndServeTLS so
 // dead TCP connections (e.g. closing laptop mid-download) eventually
 // go away.
+// Specifically it allows us to bind to any available port (i.e. `BIND_ADDR=127.0.0.1:`
+// and eventually determine that port from the listener.
 type TCPKeepAliveListener struct {
 	*net.TCPListener
 }

@@ -10,5 +10,5 @@ type XMLResult struct {
 
 // Render renders the result
 func (ar *XMLResult) Render(ctx *Ctx) error {
-	return webutil.WriteXML(ctx.Response(), ar.StatusCode, ar.Response)
+	return webutil.WriteXML(ctx.Response, ar.StatusCode, ar.Response)
 }

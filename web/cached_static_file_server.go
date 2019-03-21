@@ -38,7 +38,7 @@ func (csfs *CachedStaticFileServer) Files() map[string]*CachedStaticFile {
 func (csfs *CachedStaticFileServer) Action(r *Ctx) Result {
 	filepath, err := r.RouteParam("filepath")
 	if err != nil {
-		return r.DefaultResultProvider().BadRequest(err)
+		return r.DefaultProvider.BadRequest(err)
 	}
 
 	if csfs.middleware != nil {
@@ -87,13 +87,13 @@ func (csfs *CachedStaticFileServer) File(filepath string) (*CachedStaticFile, er
 func (csfs *CachedStaticFileServer) ServeFile(r *Ctx, filepath string) Result {
 	for key, values := range csfs.StaticFileServer.headers {
 		for _, value := range values {
-			r.Response().Header().Set(key, value)
+			r.Response.Header().Set(key, value)
 		}
 	}
 	file, err := csfs.File(filepath)
 	if err != nil {
-		return r.DefaultResultProvider().InternalError(err)
+		return r.DefaultProvider.InternalError(err)
 	}
-	http.ServeContent(r.Response(), r.Request(), filepath, file.ModTime, file.Contents)
+	http.ServeContent(r.Response, r.Request, filepath, file.ModTime, file.Contents)
 	return nil
 }

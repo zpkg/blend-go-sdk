@@ -21,18 +21,18 @@ type LocalSessionCache struct {
 }
 
 // FetchHandler is a shim to interface with the auth manager.
-func (lsc *LocalSessionCache) FetchHandler(_ context.Context, sessionID string, _ State) (*Session, error) {
+func (lsc *LocalSessionCache) FetchHandler(_ context.Context, sessionID string) (*Session, error) {
 	return lsc.Get(sessionID), nil
 }
 
 // PersistHandler is a shim to interface with the auth manager.
-func (lsc *LocalSessionCache) PersistHandler(_ context.Context, session *Session, _ State) error {
+func (lsc *LocalSessionCache) PersistHandler(_ context.Context, session *Session) error {
 	lsc.Upsert(session)
 	return nil
 }
 
 // RemoveHandler is a shim to interface with the auth manager.
-func (lsc *LocalSessionCache) RemoveHandler(_ context.Context, sessionID string, _ State) error {
+func (lsc *LocalSessionCache) RemoveHandler(_ context.Context, sessionID string) error {
 	lsc.Remove(sessionID)
 	return nil
 }

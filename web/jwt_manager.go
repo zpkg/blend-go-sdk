@@ -60,7 +60,7 @@ func (jwtm JWTManager) KeyFunc(token *jwt.Token) (interface{}, error) {
 }
 
 // SerializeSessionValueHandler is a shim to the auth manager.
-func (jwtm JWTManager) SerializeSessionValueHandler(_ context.Context, session *Session, _ State) (output string, err error) {
+func (jwtm JWTManager) SerializeSessionValueHandler(_ context.Context, session *Session) (output string, err error) {
 	var key []byte
 	key, err = jwtm.KeyProvider(session)
 	if err != nil {
@@ -73,7 +73,7 @@ func (jwtm JWTManager) SerializeSessionValueHandler(_ context.Context, session *
 }
 
 // ParseSessionValueHandler is a shim to the auth manager.
-func (jwtm JWTManager) ParseSessionValueHandler(_ context.Context, sessionValue string, _ State) (*Session, error) {
+func (jwtm JWTManager) ParseSessionValueHandler(_ context.Context, sessionValue string) (*Session, error) {
 	var claims jwt.StandardClaims
 	_, err := jwt.ParseWithClaims(sessionValue, &claims, jwtm.KeyFunc)
 	if err != nil {

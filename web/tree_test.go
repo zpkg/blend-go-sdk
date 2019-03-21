@@ -12,7 +12,7 @@ import (
 	"testing"
 )
 
-func printChildren(n *node, prefix string) {
+func printChildren(n *RouteNode, prefix string) {
 	fmt.Printf(" %02d:%02d %s%s[%d] %v %t %d \r\n", n.priority, n.maxParams, prefix, n.path, len(n.children), n.route, n.isWildcard, n.nodeType)
 	for l := len(n.path); l > 0; l-- {
 		prefix += " "
@@ -38,7 +38,7 @@ type testRequests []struct {
 	ps         RouteParameters
 }
 
-func checkRequests(t *testing.T, tree *node, requests testRequests) {
+func checkRequests(t *testing.T, tree *RouteNode, requests testRequests) {
 	for _, request := range requests {
 		route, ps, _ := tree.getValue(request.path)
 
@@ -61,7 +61,7 @@ func checkRequests(t *testing.T, tree *node, requests testRequests) {
 	}
 }
 
-func checkPriorities(t *testing.T, n *node) uint32 {
+func checkPriorities(t *testing.T, n *RouteNode) uint32 {
 	var prio uint32
 	for i := range n.children {
 		prio += checkPriorities(t, n.children[i])
@@ -81,7 +81,7 @@ func checkPriorities(t *testing.T, n *node) uint32 {
 	return prio
 }
 
-func checkMaxParams(t *testing.T, n *node) uint8 {
+func checkMaxParams(t *testing.T, n *RouteNode) uint8 {
 	var maxParams uint8
 	for i := range n.children {
 		params := checkMaxParams(t, n.children[i])

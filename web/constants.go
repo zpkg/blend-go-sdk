@@ -194,10 +194,10 @@ const (
 	DefaultBindAddr = ":8080"
 	// DefaultHealthzBindAddr is the default healthz bind address.
 	DefaultHealthzBindAddr = ":8081"
-	// DefaultIntegrationBindAddr is a bind address used for integration testing.
-	DefaultIntegrationBindAddr = "127.0.0.1:0"
-	// DefaultRedirectTrailingSlash is the default if we should redirect for missing trailing slashes.
-	DefaultRedirectTrailingSlash = true
+	// DefaultMockBindAddr is a bind address used for integration testing.
+	DefaultMockBindAddr = "127.0.0.1:0"
+	// DefaultSkipRedirectTrailingSlash is the default if we should redirect for missing trailing slashes.
+	DefaultSkipRedirectTrailingSlash = false
 	// DefaultHandleOptions is a default.
 	DefaultHandleOptions = false
 	// DefaultHandleMethodNotAllowed is a default.
@@ -205,14 +205,6 @@ const (
 	// DefaultRecoverPanics returns if we should recover panics by default.
 	DefaultRecoverPanics = true
 
-	// DefaultHSTS is the default for if hsts is enabled.
-	DefaultHSTS = true
-	// DefaultHSTSMaxAgeSeconds is the default hsts max age seconds.
-	DefaultHSTSMaxAgeSeconds = 31536000
-	// DefaultHSTSIncludeSubDomains is a default.
-	DefaultHSTSIncludeSubDomains = true
-	// DefaultHSTSPreload is a default.
-	DefaultHSTSPreload = true
 	// DefaultMaxHeaderBytes is a default that is unset.
 	DefaultMaxHeaderBytes = 0
 	// DefaultReadTimeout is a default.
@@ -267,14 +259,6 @@ const (
 
 	// SessionReadWriteLock is a lock policy that acquires both a read and a write lock on session.
 	SessionReadWriteLock SessionLockPolicy = 2
-)
-
-const (
-	// PostBodySize is the maximum post body size we will typically consume.
-	PostBodySize = int64(1 << 26) //64mb
-
-	// PostBodySizeMax is the absolute maximum file size the server can handle.
-	PostBodySizeMax = int64(1 << 32) //enormous.
 )
 
 const (

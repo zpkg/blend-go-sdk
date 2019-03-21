@@ -13,7 +13,7 @@ func WithTimeout(d time.Duration) Middleware {
 			ctx, cancel := context.WithTimeout(r.Context(), d)
 			defer func() { cancel() }()
 
-			r.request = r.request.WithContext(ctx)
+			r.Request = r.Request.WithContext(ctx)
 
 			panicChan := make(chan interface{}, 1)
 			resultChan := make(chan Result, 1)
@@ -33,10 +33,10 @@ func WithTimeout(d time.Duration) Middleware {
 			case res := <-resultChan:
 				return res
 			case <-ctx.Done():
-				if len(r.Response().InnerResponse().(http.CloseNotifier).CloseNotify()) > 0 {
+				if len(r.Response.InnerResponse().(http.CloseNotifier).CloseNotify()) > 0 {
 					return NoContent
 				}
-				return r.DefaultResultProvider().Status(http.StatusServiceUnavailable)
+				return r.DefaultProvider.Status(http.StatusServiceUnavailable)
 			}
 		}
 	}
