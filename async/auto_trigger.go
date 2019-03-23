@@ -110,6 +110,15 @@ func (a *AutoTrigger) Dispatch() {
 		select {
 		case <-ticker:
 			a.Trigger(a.Background())
+		case <-a.NotifyPausing():
+			a.Paused()
+			select {
+			case <-a.NotifyResuming():
+				a.Started()
+			case <-a.NotifyStopping():
+				a.Stopped()
+				return
+			}
 		case <-a.NotifyStopping():
 			if a.TriggerOnStop {
 				a.Trigger(a.Background())

@@ -2,16 +2,14 @@ package logger
 
 import (
 	"strings"
-
-	"github.com/blend/go-sdk/env"
 )
 
 // Config is the logger config.
 type Config struct {
-	Flags        []string         `json:"flags,omitempty" yaml:"flags,omitempty" env:"LOG_EVENTS,csv"`
-	OutputFormat string           `json:"outputFormat,omitempty" yaml:"outputFormat,omitempty" env:"LOG_OUTPUT_FORMAT"`
-	Text         TextWriterConfig `json:"text,omitempty" yaml:"text,omitempty"`
-	JSON         JSONWriterConfig `json:"json,omitempty" yaml:"json,omitempty"`
+	Flags  []string   `json:"flags,omitempty" yaml:"flags,omitempty" env:"LOG_FLAGS,csv"`
+	Format string     `json:"format,omitempty" yaml:"format,omitempty" env:"LOG_FORMAT"`
+	Text   TextConfig `json:"text,omitempty" yaml:"text,omitempty"`
+	JSON   JSONConfig `json:"json,omitempty" yaml:"json,omitempty"`
 }
 
 // FlagsOrDefault returns the enabled logger events.
@@ -22,54 +20,42 @@ func (c Config) FlagsOrDefault() []string {
 	return DefaultFlags
 }
 
-// OutputFormatOrDefault returns the output format or a default.
-func (c Config) OutputFormatOrDefault() string {
-	if c.OutputFormat != "" {
-		return c.OutputFormat
+// FormatOrDefault returns the output format or a default.
+func (c Config) FormatOrDefault() string {
+	if c.Format != "" {
+		return c.Format
 	}
-	return OutputFormatText
+	return FormatText
 }
 
-// Writers returns the configured writers
-func (c Config) Writers() []Writer {
-	switch OutputFormat(strings.ToLower(string(c.OutputFormatOrDefault()))) {
-	case OutputFormatJSON:
-		return []Writer{NewJSONWriterFromConfig(&c.JSON)}
-	case OutputFormatText:
-		return []Writer{NewTextWriterFromConfig(&c.Text)}
+// Formatter returns the configured writers
+func (c Config) Formatter() WriteFormatter {
+	switch strings.ToLower(string(c.FormatOrDefault())) {
+	case FormatJSON:
+		return NewJSONFormatter(&c.JSON)
+	case FormatText:
+		return NewTextFormatter(&c.Text)
 	default:
-		return []Writer{NewTextWriterFromConfig(&c.Text)}
+		return NewTextFormatter(&c.Text)
 	}
 }
 
-// NewTextWriterConfigFromEnv returns a new text writer config from the environment.
-func NewTextWriterConfigFromEnv() *TextWriterConfig {
-	var config TextWriterConfig
-	if err := env.Env().ReadInto(&config); err != nil {
-		panic(err)
-	}
-	return &config
-}
-
-// TextWriterConfig is the config for a text writer.
-type TextWriterConfig struct {
+// TextConfig is the config for a text formatter.
+type TextConfig struct {
 	HideTimestamp bool   `json:"hideTimestamp,omitempty" yaml:"hideTimestamp,omitempty" env:"LOG_HIDE_TIMESTAMP"`
 	NoColor       bool   `json:"noColor,omitempty" yaml:"noColor,omitempty" env:"NO_COLOR"`
 	TimeFormat    string `json:"timeFormat,omitempty" yaml:"timeFormat,omitempty" env:"LOG_TIME_FORMAT"`
 }
 
 // TimeFormatOrDefault returns a field value or a default.
-func (twc TextWriterConfig) TimeFormatOrDefault(defaults ...string) string {
+func (twc TextConfig) TimeFormatOrDefault() string {
 	if len(twc.TimeFormat) > 0 {
 		return twc.TimeFormat
-	}
-	if len(defaults) > 0 {
-		return defaults[0]
 	}
 	return DefaultTextTimeFormat
 }
 
-// JSONWriterConfig is the config for a json writer.
-type JSONWriterConfig struct {
+// JSONConfig is the config for a json formatter.
+type JSONConfig struct {
 	Pretty bool `json:"pretty,omitempty" yaml:"pretty,omitempty" env:"LOG_JSON_PRETTY"`
 }

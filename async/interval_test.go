@@ -30,7 +30,7 @@ func TestIntervalWorker(t *testing.T) {
 	go w.Start()
 	<-w.NotifyStarted()
 
-	assert.True(w.IsRunning())
+	assert.True(w.IsStarted())
 	<-done
 	w.Stop()
 	assert.True(w.IsStopped())

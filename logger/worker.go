@@ -1,100 +1,109 @@
 package logger
 
 import (
-	"sync"
+	"github.com/blend/go-sdk/async"
+	"github.com/blend/go-sdk/exception"
 )
 
 // NewWorker returns a new worker.
-func NewWorker(parent *Logger, listener Listener, queueDepth int) *Worker {
+func NewWorker(listener Listener) *Worker {
 	return &Worker{
-		Parent:   parent,
+		Latch:    async.NewLatch(),
 		Listener: listener,
-		Work:     make(chan Event, queueDepth),
+		Work:     make(chan Event, DefaultWorkerQueueDepth),
 	}
 }
 
 // Worker is an agent that processes a listener.
 type Worker struct {
-	sync.Mutex
-	Parent   *Logger
+	*async.Latch
+	Errors   chan error
 	Listener Listener
-	Abort    chan struct{}
-	Aborted  chan struct{}
 	Work     chan Event
 }
 
 // Start starts the worker.
-func (w *Worker) Start() {
-	w.Lock()
-	w.startUnsafe()
-	w.Unlock()
+func (w *Worker) Start() error {
+	if !w.CanStart() {
+		return exception.New(async.ErrCannotStart)
+	}
+	w.Starting()
+	w.Dispatch()
+	return nil
 }
 
-func (w *Worker) startUnsafe() {
-	w.Abort = make(chan struct{})
-	w.Aborted = make(chan struct{})
-	go w.ProcessLoop()
-}
-
-// ProcessLoop is the for/select loop.
-func (w *Worker) ProcessLoop() {
+// Dispatch is the main listen loop
+func (w *Worker) Dispatch() {
+	w.Started()
 	var e Event
+	var err error
 	for {
 		select {
 		case e = <-w.Work:
-			w.Process(e)
-		case <-w.Abort:
-			close(w.Aborted)
+			if err = w.Process(e); err != nil && w.Errors != nil {
+				w.Errors <- e
+			}
+		case <-w.NotifyPausing():
+			w.Paused()
+			<-w.NotifyResuming()
+			w.Started()
+		case <-w.NotifyStopping():
+			w.Stopped()
 			return
 		}
 	}
 }
 
 // Process calls the listener for an event.
-func (w *Worker) Process(e Event) {
+func (w *Worker) Process(e Event) error {
 	if w.Parent != nil && w.Parent.RecoversPanics() {
 		defer func() {
 			if r := recover(); r != nil {
-				if w.Parent != nil {
-					w.Parent.Write(Errorf(Fatal, "%+v", r))
-				}
+				return exception.New(r)
 			}
 		}()
 	}
 	w.Listener(e)
+	return nil
 }
 
 // Drain stops the worker and synchronously processes any remaining work.
 // It then restarts the worker.
 func (w *Worker) Drain() {
-	w.Lock()
-	defer w.Unlock()
+	w.Pausing()
+	<-w.Paused()
 
-	if w.Abort != nil {
-		close(w.Abort)
-		<-w.Aborted
+	var work Event
+	var err error
+	workLeft := len(w.Work)
+	for index := 0; index < workLeft; index++ {
+		work = <-w.Work
+		if err = w.Process(<-work); err != nil && w.Errors != nil {
+			w.Errors <- err
+		}
 	}
+
+	w.Resuming()
+	<-w.NotifyStarted()
+}
+
+// Stop stops the worker.
+func (w *Worker) Stop() error {
+	if !w.CanStop() {
+		return exception.New(async.ErrCannotStop)
+	}
+	w.Stopping()
+	<-w.Stopped()
+
+	var work Event
+	var err error
 
 	workLeft := len(w.Work)
 	for index := 0; index < workLeft; index++ {
-		w.Process(<-w.Work)
+		work = <-w.Work
+		if err = w.Process(<-work); err != nil && w.Errors != nil {
+			w.Errors <- err
+		}
 	}
-
-	w.startUnsafe()
-}
-
-// Close closes the worker.
-func (w *Worker) Close() error {
-	w.Lock()
-	defer w.Unlock()
-
-	close(w.Abort)
-	<-w.Aborted
-
-	for len(w.Work) > 0 {
-		w.Process(<-w.Work)
-	}
-	close(w.Work)
-
 	return nil
 }

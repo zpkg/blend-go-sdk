@@ -123,6 +123,15 @@ func (pq *Queue) Dispatch() {
 				pq.Stopped()
 				return
 			}
+		case <-pq.NotifyPausing():
+			pq.Paused()
+			select {
+			case <-pq.NotifyResuming():
+				pq.Started()
+			case <-pq.NotifyStopping():
+				pq.Stopped()
+				return
+			}
 		case <-pq.NotifyStopping():
 			pq.Stopped()
 			return

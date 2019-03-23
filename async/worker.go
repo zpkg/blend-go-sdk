@@ -56,6 +56,15 @@ func (qw *Worker) Dispatch() {
 		select {
 		case workItem = <-qw.Work:
 			qw.Execute(qw.Background(), workItem)
+		case <-qw.NotifyPausing():
+			qw.Paused()
+			select {
+			case <-qw.NotifyResuming():
+				qw.Started()
+			case <-qw.NotifyStopping():
+				qw.Stopped()
+				return
+			}
 		case <-qw.NotifyStopping():
 			qw.Stopped()
 			return

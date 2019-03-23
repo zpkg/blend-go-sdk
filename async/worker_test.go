@@ -23,10 +23,10 @@ func TestWorker(t *testing.T) {
 	go w.Start()
 	<-w.NotifyStarted()
 
-	assert.True(w.IsRunning())
+	assert.True(w.IsStarted())
 	w.Enqueue("hello")
 	wg.Wait()
 	w.Close()
-	assert.False(w.IsRunning())
+	assert.False(w.IsStarted())
 	assert.True(didWork)
 }

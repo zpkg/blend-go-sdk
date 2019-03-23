@@ -14,19 +14,21 @@ var (
 // NewEventMeta returns a new event meta.
 func NewEventMeta(flag string) *EventMeta {
 	return &EventMeta{
-		Flag:        flag,
-		Time:        time.Now().UTC(),
-		Labels:      make(map[string]string),
-		Annotations: make(map[string]string),
+		EventFlag: flag,
+		Time:      time.Now().UTC(),
 	}
 }
 
 // EventMeta is the metadata common to events.
-// It is useful for ensuring you have standard fields on your events, and its typically embedded in event types.
+// It is useful for ensuring you have the minimum required fields on your events, and its typically embedded in types.
 type EventMeta struct {
-	Flag        string
-	FlagColor   ansi.Color
-	Time        time.Time
-	Labels      map[string]string
-	Annotations map[string]string
+	EventFlag string
+	Time      time.Time
+	FlagColor ansi.Color
 }
+
+// Flag returns the event flag.
+func (em EventMeta) Flag() string { return em.EventFlag }
+
+// Timestamp returns the event timestamp.
+func (em EventMeta) Timestamp() time.Time { return em.Time }

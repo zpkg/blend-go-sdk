@@ -42,7 +42,13 @@ type GracefulHTTPServer struct {
 // Start implements graceful.Graceful.Start.
 // It is expected to block.
 func (gs *GracefulHTTPServer) Start() (err error) {
+	if !gs.CanStart() {
+		err = exception.New(async.ErrCannotStart)
+		return
+	}
+	gs.Starting()
 	gs.Started()
+	defer gs.Stopped()
 
 	var shutdownErr error
 	if gs.Listener != nil {
@@ -50,8 +56,6 @@ func (gs *GracefulHTTPServer) Start() (err error) {
 	} else {
 		shutdownErr = gs.Server.ListenAndServe()
 	}
-
-	gs.Stopped()
 	if shutdownErr != nil && shutdownErr != http.ErrServerClosed {
 		err = exception.New(shutdownErr)
 	}
@@ -60,12 +64,11 @@ func (gs *GracefulHTTPServer) Start() (err error) {
 
 // Stop implements graceful.Graceful.Stop.
 func (gs *GracefulHTTPServer) Stop() error {
-	if !gs.IsRunning() {
-		return nil
+	if !gs.CanStop() {
+		return exception.New(async.ErrCannotStop)
 	}
 	gs.Stopping()
 	gs.Server.SetKeepAlivesEnabled(false)
-
 	ctx := context.Background()
 	if gs.ShutdownGracePeriod > 0 {
 		var cancel context.CancelFunc

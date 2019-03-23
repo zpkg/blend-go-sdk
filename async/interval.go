@@ -108,6 +108,15 @@ func (i *Interval) Dispatch() {
 			if err != nil && i.Errors != nil {
 				i.Errors <- err
 			}
+		case <-i.NotifyPausing():
+			i.Paused()
+			select {
+			case <-i.NotifyResuming():
+				i.Started()
+			case <-i.NotifyStopping():
+				i.Stopped()
+				return
+			}
 		case <-i.Context.Done():
 			i.Stopped()
 			return

@@ -108,6 +108,15 @@ func (ab *AutoflushBuffer) Dispatch() {
 		select {
 		case <-ticker:
 			ab.FlushAsync(ab.Background())
+		case <-ab.NotifyPausing():
+			ab.Paused()
+			select {
+			case <-ab.NotifyResuming():
+				ab.Started()
+			case <-ab.NotifyStopping():
+				ab.Stopped()
+				return
+			}
 		case <-ab.NotifyStopping():
 			if ab.FlushOnStop {
 				ab.Flush(ab.Background())

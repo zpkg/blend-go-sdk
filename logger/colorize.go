@@ -11,7 +11,6 @@ var (
 	// DefaultFlagTextColors is the default color for each known flag.
 	DefaultFlagTextColors = map[string]ansi.Color{
 		Info:    ansi.ColorLightWhite,
-		Silly:   ansi.ColorLightBlack,
 		Debug:   ansi.ColorLightYellow,
 		Warning: ansi.ColorLightYellow,
 		Error:   ansi.ColorRed,

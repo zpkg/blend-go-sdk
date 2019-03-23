@@ -7,6 +7,7 @@ import (
 	"time"
 
 	"github.com/blend/go-sdk/ansi"
+	"github.com/blend/go-sdk/timeutil"
 	"github.com/blend/go-sdk/webutil"
 )
 
@@ -23,7 +24,7 @@ func FormatFileSize(sizeBytes int) string {
 }
 
 // WriteHTTPRequest is a helper method to write request start events to a writer.
-func WriteHTTPRequest(wr io.Writer, req *http.Request) {
+func WriteHTTPRequest(tf TextFormatter, wr io.Writer, req *http.Request) {
 	if ip := webutil.GetRemoteAddr(req); len(ip) > 0 {
 		buf.WriteString(ip)
 		buf.WriteRune(RuneSpace)
@@ -52,9 +53,9 @@ func WriteHTTPResponse(wr io.Writer, req *http.Request, statusCode, contentLengt
 	buf.WriteString(FormatFileSize(contentLength))
 }
 
-// JSONWriteHTTPRequest marshals a request start as json.
-func HTTPRequestAsJSON(req *http.Request) JSONObj {
-	return JSONObj{
+// HTTPRequestFields marshals a request start as json.
+func HTTPRequestFields(req *http.Request) Fields {
+	return Fields{
 		"ip":   webutil.GetRemoteAddr(req),
 		"verb": req.Method,
 		"path": req.URL.Path,
@@ -62,8 +63,8 @@ func HTTPRequestAsJSON(req *http.Request) JSONObj {
 	}
 }
 
-// JSONWriteHTTPResponse marshals a request as json.
-func HTTPResponseAsJSON(req *http.Request, statusCode, contentLength int, contentType, contentEncoding string, elapsed time.Duration) JSONObj {
+// HTTPResponseFields marshals a request as json.
+func HTTPResponseFields(req *http.Request, statusCode, contentLength int, contentType, contentEncoding string, elapsed time.Duration) Fields {
 	return JSONObj{
 		"ip":              webutil.GetRemoteAddr(req),
 		"verb":            req.Method,
@@ -73,6 +74,6 @@ func HTTPResponseAsJSON(req *http.Request, statusCode, contentLength int, conten
 		"contentType":     contentType,
 		"contentEncoding": contentEncoding,
 		"statusCode":      statusCode,
-		JSONFieldElapsed:  Milliseconds(elapsed),
+		FieldElapsed:      timeutil.Milliseconds(elapsed),
 	}
 }

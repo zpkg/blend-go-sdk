@@ -11,18 +11,18 @@ func ParseFlags(flags ...string) *Flags {
 	}
 
 	for _, flag := range flags {
-		parsedFlag := Flag(strings.Trim(strings.ToLower(flag), " \t\n"))
-		if string(parsedFlag) == string(FlagAll) {
+		parsedFlag := strings.Trim(strings.ToLower(flag), " \t\n")
+		if parsedFlag == All {
 			flagSet.all = true
 		}
 
-		if string(parsedFlag) == string(FlagNone) {
+		if parsedFlag == None {
 			flagSet.none = true
 			return flagSet
 		}
 
 		if strings.HasPrefix(string(parsedFlag), "-") {
-			flag := Flag(strings.TrimPrefix(string(parsedFlag), "-"))
+			flag := strings.TrimPrefix(string(parsedFlag), "-")
 			flagSet.flags[flag] = false
 		} else {
 			flagSet.flags[parsedFlag] = true
@@ -33,11 +33,11 @@ func ParseFlags(flags ...string) *Flags {
 }
 
 // NewFlags returns a new FlagSet with the given flags enabled.
-func NewFlags(flags ...string) *Flags {
+func NewFlags(enabled ...string) *Flags {
 	efs := &Flags{
-		flags: make(map[Flag]bool),
+		flags: make(map[string]bool),
 	}
-	for _, flag := range flags {
+	for _, flag := range enabled {
 		efs.flags[flag] = true
 	}
 	return efs
@@ -63,8 +63,8 @@ func (efs *Flags) Disable(flag string) {
 
 // SetAll flips the `all` bit on the flag set to true.
 func (efs *Flags) SetAll() {
-	efs.flags = make(map[string]bool)
 	efs.all = true
+	efs.flags = make(map[string]bool)
 	efs.none = false
 }
 
@@ -76,8 +76,8 @@ func (efs *Flags) All() bool {
 // SetNone flips the `none` bit on the flag set to true.
 // It also disables the `all` bit.
 func (efs *Flags) SetNone() {
-	efs.flags = map[Flag]bool{}
 	efs.all = false
+	efs.flags = make(map[string]bool)
 	efs.none = true
 }
 
@@ -108,15 +108,15 @@ func (efs Flags) IsEnabled(flag string) bool {
 
 func (efs Flags) String() string {
 	if efs.none {
-		return string(FlagNone)
+		return None
 	}
 
 	var flags []string
 	if efs.all {
-		flags = []string{FlagAll}
+		flags = []string{All}
 	}
 	for key, enabled := range efs.flags {
-		if key != FlagAll {
+		if key != All {
 			if enabled {
 				if !efs.all {
 					flags = append(flags, string(key))

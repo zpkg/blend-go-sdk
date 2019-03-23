@@ -1,6 +1,7 @@
 package logger
 
 import (
+	"io"
 	"net/http"
 
 	"github.com/blend/go-sdk/async"
@@ -25,242 +26,153 @@ func New(options ...Option) *Logger {
 	return l
 }
 
-// Option is a logger option.
-type Option func(*Logger) error
-
 // Logger is a handler for various logging events with descendent handlers.
 type Logger struct {
 	*async.Latch
+	*Flags
 
 	RecoverPanics bool
-	Writers       []Writer
-	Flags         *Flags
-	Workers       map[string]map[string]*Worker
-	WriteWorker   *Worker
-}
 
-// WithEnabled flips the bit flag for a given set of events.
-func (l *Logger) WithEnabled(flags ...string) *Logger {
-	l.Enable(flags...)
-	return l
-}
-
-// Enable flips the bit flag for a given set of events.
-func (l *Logger) Enable(flags ...string) {
-	l.flagsLock.Lock()
-	defer l.flagsLock.Unlock()
-
-	if l.flags != nil {
-		for _, flag := range flags {
-			l.flags.Enable(flag)
-		}
-	} else {
-		l.flags = NewFlagSet(flags...)
-	}
-}
-
-// WithDisabled flips the bit flag for a given set of events.
-func (l *Logger) WithDisabled(flags ...string) *Logger {
-	l.Disable(flags...)
-	return l
-}
-
-// Disable flips the bit flag for a given set of events.
-func (l *Logger) Disable(flags ...string) {
-	l.flagsLock.Lock()
-	defer l.flagsLock.Unlock()
-	for _, flag := range flags {
-		l.flags.Disable(flag)
-	}
-}
-
-// IsEnabled asserts if a flag value is set or not.
-func (l *Logger) IsEnabled(flag string) (enabled bool) {
-	l.flagsLock.Lock()
-	if l.flags == nil {
-		enabled = false
-		l.flagsLock.Unlock()
-		return
-	}
-	enabled = l.flags.IsEnabled(flag)
-	l.flagsLock.Unlock()
-	return
+	Output    io.Writer
+	Errors    chan error
+	Listeners map[string]map[string]*Worker
 }
 
 // HasListeners returns if there are registered listener for an event.
 func (l *Logger) HasListeners(flag string) bool {
-	l.workersLock.Lock()
-	defer l.workersLock.Unlock()
+	l.Lock()
+	defer l.Unlock()
 
-	if l.workers == nil {
+	if l.Listeners == nil {
 		return false
 	}
-	workers, hasWorkers := l.workers[flag]
-	if !hasWorkers {
+	listeners, ok := l.Listeners[flag]
+	if !ok {
 		return false
 	}
-	return len(workers) > 0
+	return len(listeners) > 0
 }
 
 // HasListener returns if a specific listener is registerd for a flag.
 func (l *Logger) HasListener(flag, listenerName string) bool {
-	l.workersLock.Lock()
-	defer l.workersLock.Unlock()
+	l.Lock()
+	defer l.Unlock()
 
-	if l.workers == nil {
+	if l.Listeners == nil {
 		return false
 	}
-	workers, hasWorkers := l.workers[flag]
-	if !hasWorkers {
+	workers, ok := l.Listeners[flag]
+	if !ok {
 		return false
 	}
-	_, hasWorker := workers[listenerName]
-	return hasWorker
+	_, ok = workers[listenerName]
+	return ok
 }
 
 // Listen adds a listener for a given flag.
 func (l *Logger) Listen(flag, listenerName string, listener Listener) {
-	l.workersLock.Lock()
-	defer l.workersLock.Unlock()
+	l.Lock()
+	defer l.Unlock()
 
-	if l.workers == nil {
-		l.workers = map[string]map[string]*Worker{}
+	if l.Listeners == nil {
+		l.Listeners = make(map[string]map[string]*Worker)
 	}
 
-	w := NewWorker(l, listener, l.listenerWorkerQueueDepth)
-	if listeners, hasListeners := l.workers[flag]; hasListeners {
+	w := NewWorker(listener)
+	if listeners, ok := l.Listeners[flag]; ok {
 		listeners[listenerName] = w
 	} else {
-		l.workers[flag] = map[string]*Worker{
+		l.Listeners[flag] = map[string]*Worker{
 			listenerName: w,
 		}
 	}
-	w.Start()
+	go w.Start()
+	<-w.NotifyStarted()
 }
 
 // RemoveListeners clears *all* listeners for a Flag.
 func (l *Logger) RemoveListeners(flag string) {
-	l.workersLock.Lock()
-	defer l.workersLock.Unlock()
+	l.Lock()
+	defer l.Unlock()
 
-	if l.workers == nil {
+	if l.Listeners == nil {
 		return
 	}
 
-	listeners, hasListeners := l.workers[flag]
-	if !hasListeners {
+	listeners, ok := l.Listeners[flag]
+	if !ok {
 		return
 	}
 
-	for _, w := range listeners {
-		w.Close()
+	for _, l := range listeners {
+		l.Stop()
 	}
 
-	delete(l.workers, flag)
+	delete(l.Listeners, flag)
 }
 
 // RemoveListener clears a specific listener for a Flag.
 func (l *Logger) RemoveListener(flag, listenerName string) {
-	l.workersLock.Lock()
-	defer l.workersLock.Unlock()
+	l.Lock()
+	defer l.Unlock()
 
-	if l.workers == nil {
+	if l.Listeners == nil {
 		return
 	}
 
-	listeners, hasListeners := l.workers[flag]
-	if !hasListeners {
+	listeners, ok := l.Listeners[flag]
+	if !ok {
 		return
 	}
 
-	worker, hasWorker := listeners[listenerName]
-	if !hasWorker {
+	worker, ok := listeners[listenerName]
+	if !ok {
 		return
 	}
 
-	worker.Close()
+	worker.Stop()
+	<-worker.NotifyStopped()
+
 	delete(listeners, listenerName)
-
 	if len(listeners) == 0 {
-		delete(l.workers, flag)
+		delete(l.Listeners, flag)
 	}
 }
 
 // Trigger fires the listeners for a given event asynchronously.
-// The invocations will be queued in a work queue and processed by a fixed worker count.
-// There are no order guarantees on when these events will be processed.
-// This call will not block on the event listeners.
+// The invocations will be queued in a work queue per listener.
+// There are no order guarantees on when these events will be processed across listeners.
+// This call will not block on the event listeners, but will block on writing the event to the formatted output.
 func (l *Logger) Trigger(e Event) {
-	l.trigger(true, e)
-}
-
-// SyncTrigger fires the listeners for a given event synchronously.
-// The invocations will be triggered immediately, blocking the call.
-func (l *Logger) SyncTrigger(e Event) {
-	l.trigger(false, e)
-}
-
-func (l *Logger) trigger(async bool, e Event) {
-	if !async && l.recoverPanics {
-		defer func() {
-			if r := recover(); r != nil {
-				l.Write(Errorf(Fatal, "%+v", r))
-			}
-		}()
-	}
-
-	if async && !l.isStarted() {
-		return
-	}
-
-	if typed, isTyped := e.(EventEnabled); isTyped && !typed.IsEnabled() {
-		return
-	}
-
 	flag := e.Flag()
-	if l.IsEnabled(flag) {
-		if l.heading != "" {
-			if typed, isTyped := e.(EventHeadings); isTyped {
-				if len(typed.Headings()) > 0 {
-					typed.SetHeadings(append([]string{l.heading}, typed.Headings()...)...)
-				} else {
-					typed.SetHeadings(l.heading)
-				}
-			}
-		}
+	if !l.IsEnabled(flag) {
+		return
+	}
 
-		var workers map[string]*Worker
-		l.workersLock.Lock()
-		if l.workers != nil {
-			if flagWorkers, hasWorkers := l.workers[flag]; hasWorkers {
-				workers = flagWorkers
-			}
-		}
-		l.workersLock.Unlock()
+	if typed, isTyped := e.(EnabledProvider); isTyped && !typed.IsEnabled() {
+		return
+	}
 
-		for _, worker := range workers {
-			if async {
-				worker.Work <- e
-			} else {
-				worker.Listener(e)
-			}
+	var listeners map[string]*Worker
+	l.Lock()
+	if l.Listeners != nil {
+		if flagListeners, ok := l.Listeners[flag]; ok {
+			listeners = flagListeners
 		}
+	}
+	l.Unlock()
 
-		// check if the flag is globally hidden from output.
-		if l.IsHidden(flag) {
-			return
-		}
+	for _, listener := range listeners {
+		listener.Work <- e
+	}
 
-		// check if the event controls if it should be written or not.
-		if typed, isTyped := e.(EventWritable); isTyped && !typed.IsWritable() {
-			return
-		}
+	// check if the event controls if it should be written or not.
+	if typed, isTyped := e.(WritableProvider); isTyped && !typed.IsWritable() {
+		return
+	}
 
-		if async && l.writeWorker != nil {
-			l.writeWorker.Work <- e
-		} else {
-			l.Write(e)
-		}
+	if err := l.Write(e); err != nil && l.Errors != nil {
+		l.Errors <- err
 	}
 }
 
@@ -270,71 +182,62 @@ func (l *Logger) trigger(async bool, e Event) {
 
 // Infof logs an informational message to the output stream.
 func (l *Logger) Infof(format string, args ...interface{}) {
-	l.trigger(true, Messagef(Info, format, args...))
+	l.Trigger(Messagef(Info, format, args...))
 }
 
 // Debugf logs a debug message to the output stream.
 func (l *Logger) Debugf(format string, args ...interface{}) {
-	l.trigger(true, Messagef(Debug, format, args...))
+	l.Trigger(Messagef(Debug, format, args...))
 }
 
 // Warningf logs a debug message to the output stream.
 func (l *Logger) Warningf(format string, args ...interface{}) {
-	l.trigger(false, Errorf(Warning, format, args...))
+	l.Trigger(Errorf(Warning, format, args...))
 }
 
 // Warning logs a warning error to std err.
 func (l *Logger) Warning(err error) error {
-	l.trigger(true, NewErrorEvent(Warning, err))
+	l.Trigger(NewErrorEvent(Warning, err))
 	return err
 }
 
 // WarningWithReq logs a warning error to std err with a request.
 func (l *Logger) WarningWithReq(err error, req *http.Request) error {
-	l.trigger(true, NewErrorEventWithState(Warning, err, req))
+	l.Trigger(NewErrorEventWithState(Warning, err, req))
 	return err
 }
 
 // Errorf writes an event to the log and triggers event listeners.
 func (l *Logger) Errorf(format string, args ...interface{}) {
-	l.trigger(true, Errorf(Error, format, args...))
+	l.Trigger(Errorf(Error, format, args...))
 }
 
 // Error logs an error to std err.
 func (l *Logger) Error(err error) error {
-	l.trigger(true, NewErrorEvent(Error, err))
+	l.Trigger(NewErrorEvent(Error, err))
 	return err
 }
 
 // ErrorWithReq logs an error to std err with a request.
 func (l *Logger) ErrorWithReq(err error, req *http.Request) error {
-	l.trigger(true, NewErrorEventWithState(Error, err, req))
+	l.Trigger(NewErrorEventWithState(Error, err, req))
 	return err
 }
 
 // Fatalf writes an event to the log and triggers event listeners.
 func (l *Logger) Fatalf(format string, args ...interface{}) {
-	l.trigger(true, Errorf(Fatal, format, args...))
+	l.Trigger(Errorf(Fatal, format, args...))
 }
 
 // Fatal logs the result of a panic to std err.
 func (l *Logger) Fatal(err error) error {
-	l.trigger(true, NewErrorEvent(Fatal, err))
+	l.Trigger(NewErrorEvent(Fatal, err))
 	return err
 }
 
 // Write writes an event synchronously to the writer either as a normal even or as an error.
-func (l *Logger) Write(e Event) {
-	ll := len(l.writers)
-	if typed, isTyped := e.(EventError); isTyped && typed.IsError() {
-		for index := 0; index < ll; index++ {
-			l.writers[index].WriteError(e)
-		}
-		return
-	}
-	for index := 0; index < ll; index++ {
-		l.writers[index].Write(e)
-	}
+func (l *Logger) Write(e Event) error {
+	return l.Formatter(l.Output, e)
 }
 
 // --------------------------------------------------------------------------------

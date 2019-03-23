@@ -11,12 +11,17 @@ const (
 	Warning      = "warning"
 	Debug        = "debug"
 	Info         = "info"
-	Silly        = "silly"
 	HTTPRequest  = "http.request"
 	HTTPResponse = "http.response"
 	Audit        = "audit"
 	Query        = "db.query"
 	RPC          = "rpc"
+)
+
+// Output Formats
+const (
+	FormatJSON = "json"
+	FormatText = "text"
 )
 
 // Default flags
@@ -26,33 +31,19 @@ var (
 
 // Environment Variable Names
 const (
-	EnvVarEventFlags       = "LOG_EVENTS"
-	EnvVarHiddenEventFlags = "LOG_HIDDEN"
-	EnvVarFormat           = "LOG_FORMAT"
-	EnvVarUseColor         = "LOG_USE_COLOR"
-	EnvVarShowTime         = "LOG_SHOW_TIME"
-	EnvVarShowHeadings     = "LOG_SHOW_HEADINGS"
-	EnvVarHeading          = "LOG_HEADING"
-	EnvVarTimeFormat       = "LOG_TIME_FORMAT"
-	EnvVarJSONPretty       = "LOG_JSON_PRETTY"
-)
-
-const (
-	// Gigabyte is an SI unit.
-	Gigabyte int = 1 << 30
-	// Megabyte is an SI unit.
-	Megabyte int = 1 << 20
-	// Kilobyte is an SI unit.
-	Kilobyte int = 1 << 10
+	EnvVarFlags      = "LOG_FLAGS"
+	EnvVarFormat     = "LOG_FORMAT"
+	EnvVarNoColor    = "NOs_COLOR"
+	EnvVarHideTime   = "LOG_HIDE_TIME"
+	EnvVarTimeFormat = "LOG_TIME_FORMAT"
+	EnvVarJSONPretty = "LOG_JSON_PRETTY"
 )
 
 const (
 	// DefaultBufferPoolSize is the default buffer pool size.
 	DefaultBufferPoolSize = 1 << 8 // 256
-
 	// DefaultTextTimeFormat is the default time format.
 	DefaultTextTimeFormat = time.RFC3339Nano
-
 	// DefaultTextWriterUseColor is a default setting for writers.
 	DefaultTextWriterUseColor = true
 	// DefaultTextWriterShowHeadings is a default setting for writers.
@@ -62,17 +53,27 @@ const (
 )
 
 const (
-	// DefaultWriteQueueDepth  is the default depth per listener to queue work.
+	// DefaultWorkerQueueDepth is the default depth per listener to queue work.
 	// It's currently set to 256k entries.
-	DefaultWriteQueueDepth = 1 << 18
-
-	// DefaultListenerQueueDepth is the default depth per listener to queue work.
-	// It's currently set to 256k entries.
-	DefaultListenerQueueDepth = 1 << 10
+	DefaultWorkerQueueDepth = 1 << 10
 )
 
 // Rune constants
 const (
 	RuneSpace   rune = ' '
 	RuneNewline rune = '\n'
+)
+
+// Common json fields
+const (
+	FieldFlag      = "flag"
+	FieldTimestamp = "_timestamp"
+	FieldMessage   = "message"
+	FieldElapsed   = "elapsed"
+	FieldErr       = "err"
+)
+
+// JSON Formatter defaults
+const (
+	DefaultJSONPretty = false
 )
