@@ -407,25 +407,22 @@ func (a *App) RenderAction(action Action) Handler {
 		if result != nil {
 			// check for a prerender step
 			if typed, ok := result.(ResultPreRender); ok {
-				if preRender := typed.PreRender(ctx); preRender != nil {
-					err = exception.Nest(err, preRender)
-					a.logFatal(err, r)
+				if preRenderErr := typed.PreRender(ctx); preRenderErr != nil {
+					err = exception.Nest(err, preRenderErr)
 				}
 			}
 
 			// do the render, log any errors emitted
 			if resultErr := result.Render(ctx); resultErr != nil {
 				err = exception.Nest(err, resultErr)
-				a.logFatal(err, r)
 			}
 
 			// check for a render complete step
 			// typically this is used to render error results if there was a problem rendering
 			// the result.
 			if typed, ok := result.(ResultPostRender); ok {
-				if postRender := typed.PostRender(ctx); postRender != nil {
-					err = exception.Nest(err, postRender)
-					a.logFatal(postRender, r)
+				if postRenderErr := typed.PostRender(ctx); postRenderErr != nil {
+					err = exception.Nest(err, postRenderErr)
 				}
 			}
 		}
@@ -433,7 +430,9 @@ func (a *App) RenderAction(action Action) Handler {
 		ctx.onRequestFinish()
 		response.Close()
 
-		// effectively "request complete"
+		if err != nil {
+			a.logFatal(err, r)
+		}
 		if a.Log != nil {
 			a.Log.Trigger(a.httpResponseEvent(ctx))
 		}

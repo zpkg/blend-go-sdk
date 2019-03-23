@@ -85,7 +85,7 @@ func NewManagementServer(jm *cron.JobManager, cfg *Config) *web.App {
 		if err != nil {
 			return web.JSON.BadRequest(err)
 		}
-		if err := jm.DisableJob(jobName); err != nil {
+		if err := jm.DisableJobs(jobName); err != nil {
 			return web.JSON.BadRequest(err)
 		}
 		return web.JSON.Result(fmt.Sprintf("%s disabled", jobName))
@@ -95,7 +95,7 @@ func NewManagementServer(jm *cron.JobManager, cfg *Config) *web.App {
 		if err != nil {
 			return r.Views.BadRequest(err)
 		}
-		if err := jm.DisableJob(jobName); err != nil {
+		if err := jm.DisableJobs(jobName); err != nil {
 			return r.Views.BadRequest(err)
 		}
 		return web.RedirectWithMethod("GET", "/")
@@ -105,7 +105,7 @@ func NewManagementServer(jm *cron.JobManager, cfg *Config) *web.App {
 		if err != nil {
 			return web.JSON.BadRequest(err)
 		}
-		if err := jm.EnableJob(jobName); err != nil {
+		if err := jm.EnableJobs(jobName); err != nil {
 			return web.JSON.BadRequest(err)
 		}
 		return web.JSON.Result(fmt.Sprintf("%s enabled", jobName))
@@ -115,7 +115,7 @@ func NewManagementServer(jm *cron.JobManager, cfg *Config) *web.App {
 		if err != nil {
 			return r.Views.BadRequest(err)
 		}
-		if err := jm.EnableJob(jobName); err != nil {
+		if err := jm.EnableJobs(jobName); err != nil {
 			return r.Views.BadRequest(err)
 		}
 		return web.RedirectWithMethod("GET", "/")
@@ -125,7 +125,7 @@ func NewManagementServer(jm *cron.JobManager, cfg *Config) *web.App {
 		if err != nil {
 			return r.Views.BadRequest(err)
 		}
-		invocation := job.Invocation(web.StringValue(r.RouteParam("invocation")))
+		invocation := job.GetInvocationByID(web.StringValue(r.RouteParam("invocation")))
 		if invocation == nil {
 			return r.Views.NotFound()
 		}
@@ -136,7 +136,7 @@ func NewManagementServer(jm *cron.JobManager, cfg *Config) *web.App {
 		if err != nil {
 			return web.JSON.BadRequest(err)
 		}
-		invocation := job.Invocation(web.StringValue(r.RouteParam("invocation")))
+		invocation := job.GetInvocationByID(web.StringValue(r.RouteParam("invocation")))
 		if invocation == nil {
 			return web.JSON.NotFound()
 		}

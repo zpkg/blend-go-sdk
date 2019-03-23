@@ -2,6 +2,41 @@ package logger
 
 import "time"
 
+// Flags
+const (
+	All          = "all"
+	None         = "none"
+	Fatal        = "fatal"
+	Error        = "error"
+	Warning      = "warning"
+	Debug        = "debug"
+	Info         = "info"
+	Silly        = "silly"
+	HTTPRequest  = "http.request"
+	HTTPResponse = "http.response"
+	Audit        = "audit"
+	Query        = "db.query"
+	RPC          = "rpc"
+)
+
+// Default flags
+var (
+	DefaultFlags = []string{Info, Error, Fatal}
+)
+
+// Environment Variable Names
+const (
+	EnvVarEventFlags       = "LOG_EVENTS"
+	EnvVarHiddenEventFlags = "LOG_HIDDEN"
+	EnvVarFormat           = "LOG_FORMAT"
+	EnvVarUseColor         = "LOG_USE_COLOR"
+	EnvVarShowTime         = "LOG_SHOW_TIME"
+	EnvVarShowHeadings     = "LOG_SHOW_HEADINGS"
+	EnvVarHeading          = "LOG_HEADING"
+	EnvVarTimeFormat       = "LOG_TIME_FORMAT"
+	EnvVarJSONPretty       = "LOG_JSON_PRETTY"
+)
+
 const (
 	// Gigabyte is an SI unit.
 	Gigabyte int = 1 << 30
@@ -9,15 +44,6 @@ const (
 	Megabyte int = 1 << 20
 	// Kilobyte is an SI unit.
 	Kilobyte int = 1 << 10
-)
-
-const (
-	// LoggerStarted is a logger state.
-	LoggerStarted int32 = 0
-	// LoggerStopping is a logger state.
-	LoggerStopping int32 = 1
-	// LoggerStopped is a logger state.
-	LoggerStopped int32 = 2
 )
 
 const (
@@ -33,16 +59,6 @@ const (
 	DefaultTextWriterShowHeadings = true
 	// DefaultTextWriterShowTimestamp is a default setting for writers.
 	DefaultTextWriterShowTimestamp = true
-)
-
-var (
-	// DefaultFlags are the default flags.
-	DefaultFlags = []Flag{Fatal, Error, Warning, Info, HTTPResponse}
-	// DefaultFlagSet is the default verbosity for a diagnostics agent inited from the environment.
-	DefaultFlagSet = NewFlagSet(DefaultFlags...)
-
-	// DefaultHiddenFlags are the default hidden flags.
-	DefaultHiddenFlags []Flag
 )
 
 const (

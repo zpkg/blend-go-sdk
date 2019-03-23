@@ -2,10 +2,8 @@ package logger
 
 import (
 	"net/http"
-	"os"
-	"runtime"
-	"sync"
-	"sync/atomic"
+
+	"github.com/blend/go-sdk/async"
 )
 
 const (
@@ -17,257 +15,38 @@ const (
 	DefaultRecoverPanics = true
 )
 
-var (
-	// DefaultListenerWorkers is the default number of workers per listener.
-	DefaultListenerWorkers = runtime.NumCPU()
-)
-
-// FatalExit creates a logger and calls `SyncFatalExit` on it.
-func FatalExit(err error) {
-	if err == nil {
-		return
-	}
-	log := Sync()
-	log.Enable(Fatal)
-	log.SyncFatalExit(err)
-}
-
 // New returns a new logger with a given set of enabled flags, without a writer provisioned.
-func New(flags ...Flag) *Logger {
+func New(options ...Option) *Logger {
 	l := &Logger{
-		recoverPanics: DefaultRecoverPanics,
-		flags:         NewFlagSet(flags...),
+		Latch:         async.NewLatch(),
+		RecoverPanics: DefaultRecoverPanics,
+		Flags:         NewFlags(),
 	}
-	l.writeWorker = NewWorker(l, l.Write, DefaultWriteQueueDepth)
-	l.writeWorker.Start()
 	return l
 }
 
-// NewFromConfig returns a new logger from a config.
-func NewFromConfig(cfg *Config) *Logger {
-	l := &Logger{
-		recoverPanics:            DefaultRecoverPanics,
-		flags:                    NewFlagSetFromValues(cfg.GetFlags()...),
-		writeWorkerQueueDepth:    cfg.GetWriteQueueDepth(),
-		listenerWorkerQueueDepth: cfg.GetListenerQueueDepth(),
-	}
-	l.writeWorker = NewWorker(l, l.Write, l.writeWorkerQueueDepth)
-	l.writeWorker.Start()
-	return l.
-		WithHeading(cfg.GetHeading()).
-		WithRecoverPanics(cfg.GetRecoverPanics()).
-		WithHiddenFlags(NewFlagSetFromValues(cfg.GetHiddenFlags()...)).
-		WithWriters(cfg.GetWriters()...)
-
-}
-
-// NewFromEnv returns a new agent with settings read from the environment,
-// including the underlying writer.
-func NewFromEnv() (*Logger, error) {
-	cfg, err := NewConfigFromEnv()
-	if err != nil {
-		return nil, err
-	}
-	return NewFromConfig(cfg), nil
-}
-
-// MustNewFromEnv returns a new logger based on settings from the environment.
-func MustNewFromEnv() *Logger {
-	cfg, err := NewConfigFromEnv()
-	if err != nil {
-		panic(err)
-	}
-	return NewFromConfig(cfg)
-}
-
-// All returns a valid logger that fires any and all events, and includes a writer.
-// It is effectively an alias to:
-// 	New().WithFlags(NewFlagSetAll()).WithWriter(NewWriterFromEnv())
-func All() *Logger {
-	return New().WithFlags(NewFlagSetAll()).WithWriter(NewWriterFromEnv())
-}
-
-// None returns a valid agent that won't fire any events.
-func None() *Logger {
-	return &Logger{
-		flags: NewFlagSetNone(),
-	}
-}
-
-// NewText returns a new text logger.
-// It is a shortcut for `New().WithWriter(NewTextWriterFromEnv())`
-func NewText() *Logger {
-	return New().WithFlagsFromEnv().WithWriter(NewTextWriterFromEnv())
-}
-
-// NewJSON returns a new json logger.
-// It is a shortcut for `New().WithWriter(NewJSONWriterFromEnv())`
-func NewJSON() *Logger {
-	return New().WithFlagsFromEnv().WithWriter(NewJSONWriterFromEnv())
-}
-
-// Sync returns a valid agent that only processes events synchronously.
-func Sync() *Logger {
-	return &Logger{
-		flags:         AllFlags(),
-		recoverPanics: DefaultRecoverPanics,
-		writers:       []Writer{NewWriterFromEnv()},
-	}
-}
-
-// Assertions
-var (
-	_ FullLogger = (*Logger)(nil)
-)
+// Option is a logger option.
+type Option func(*Logger) error
 
 // Logger is a handler for various logging events with descendent handlers.
 type Logger struct {
-	writers []Writer
+	*async.Latch
 
-	heading                  string
-	writeWorkerQueueDepth    int
-	listenerWorkerQueueDepth int
-
-	state int32
-
-	flagsLock sync.Mutex
-	flags     *FlagSet
-
-	hiddenFlagsLock sync.Mutex
-	hiddenFlags     *FlagSet
-
-	workersLock sync.Mutex
-	workers     map[Flag]map[string]*Worker
-
-	writeWorkerLock sync.Mutex
-	writeWorker     *Worker
-
-	recoverPanics bool
-}
-
-// CanStart returns if the latch can start.
-func (l *Logger) CanStart() bool {
-	return atomic.LoadInt32(&l.state) == LoggerStopped
-}
-
-// CanStop returns if the latch can stop.
-func (l *Logger) CanStop() bool {
-	return atomic.LoadInt32(&l.state) == LoggerStarted
-}
-
-// WithHeading returns the logger heading.
-func (l *Logger) WithHeading(heading string) *Logger {
-	l.heading = heading
-	return l
-}
-
-// Heading returns the logger heading.
-func (l *Logger) Heading() string {
-	return l.heading
-}
-
-// WithWriteWorkerQueueDepth sets the worker queue depth.
-func (l *Logger) WithWriteWorkerQueueDepth(queueDepth int) *Logger {
-	l.writeWorkerQueueDepth = queueDepth
-	return l
-}
-
-// WriteWorkerQueueDepth returns the worker queue depth.
-func (l *Logger) WriteWorkerQueueDepth() int {
-	return l.writeWorkerQueueDepth
-}
-
-// WithListenerWorkerQueueDepth sets the worker queue depth.
-func (l *Logger) WithListenerWorkerQueueDepth(queueDepth int) *Logger {
-	l.listenerWorkerQueueDepth = queueDepth
-	return l
-}
-
-// ListenerWorkerQueueDepth returns the worker queue depth.
-func (l *Logger) ListenerWorkerQueueDepth() int {
-	return l.listenerWorkerQueueDepth
-}
-
-// Writers returns the output writers for events.
-func (l *Logger) Writers() []Writer {
-	return l.writers
-}
-
-// WithWriters sets the logger writers, overwriting any existing writers.
-func (l *Logger) WithWriters(writers ...Writer) *Logger {
-	l.writers = writers
-	return l
-}
-
-// WithWriter adds a logger writer.
-func (l *Logger) WithWriter(writer Writer) *Logger {
-	l.writers = append(l.writers, writer)
-	return l
-}
-
-// RecoversPanics returns if we should recover panics in logger listeners.
-func (l *Logger) RecoversPanics() bool {
-	return l.recoverPanics
-}
-
-// WithRecoverPanics sets the recoverPanics sets if the logger should trap panics in event handlers.
-func (l *Logger) WithRecoverPanics(value bool) *Logger {
-	l.recoverPanics = value
-	return l
-}
-
-// Flags returns the logger flag set.
-func (l *Logger) Flags() *FlagSet {
-	return l.flags
-}
-
-// WithFlags sets the logger flag set.
-func (l *Logger) WithFlags(flags *FlagSet) *Logger {
-	l.flagsLock.Lock()
-	defer l.flagsLock.Unlock()
-	l.flags = flags
-	return l
-}
-
-// WithHiddenFlags sets the hidden flag set.
-// These flags mark events as to be omitted from output.
-func (l *Logger) WithHiddenFlags(flags *FlagSet) *Logger {
-	l.hiddenFlagsLock.Lock()
-	defer l.hiddenFlagsLock.Unlock()
-	l.hiddenFlags = flags
-	return l
-}
-
-// WithFlagsFromEnv adds flags from the environment.
-func (l *Logger) WithFlagsFromEnv() *Logger {
-	l.flagsLock.Lock()
-	defer l.flagsLock.Unlock()
-
-	l.hiddenFlagsLock.Lock()
-	defer l.hiddenFlagsLock.Unlock()
-
-	if l.flags != nil {
-		l.flags.CoalesceWith(NewFlagSetFromEnv())
-	} else {
-		l.flags = NewFlagSetFromEnv()
-	}
-
-	if l.hiddenFlags != nil {
-		l.hiddenFlags.CoalesceWith(NewHiddenFlagSetFromEnv())
-	} else {
-		l.hiddenFlags = NewHiddenFlagSetFromEnv()
-	}
-	return l
+	RecoverPanics bool
+	Writers       []Writer
+	Flags         *Flags
+	Workers       map[string]map[string]*Worker
+	WriteWorker   *Worker
 }
 
 // WithEnabled flips the bit flag for a given set of events.
-func (l *Logger) WithEnabled(flags ...Flag) *Logger {
+func (l *Logger) WithEnabled(flags ...string) *Logger {
 	l.Enable(flags...)
 	return l
 }
 
 // Enable flips the bit flag for a given set of events.
-func (l *Logger) Enable(flags ...Flag) {
+func (l *Logger) Enable(flags ...string) {
 	l.flagsLock.Lock()
 	defer l.flagsLock.Unlock()
 
@@ -281,13 +60,13 @@ func (l *Logger) Enable(flags ...Flag) {
 }
 
 // WithDisabled flips the bit flag for a given set of events.
-func (l *Logger) WithDisabled(flags ...Flag) *Logger {
+func (l *Logger) WithDisabled(flags ...string) *Logger {
 	l.Disable(flags...)
 	return l
 }
 
 // Disable flips the bit flag for a given set of events.
-func (l *Logger) Disable(flags ...Flag) {
+func (l *Logger) Disable(flags ...string) {
 	l.flagsLock.Lock()
 	defer l.flagsLock.Unlock()
 	for _, flag := range flags {
@@ -296,7 +75,7 @@ func (l *Logger) Disable(flags ...Flag) {
 }
 
 // IsEnabled asserts if a flag value is set or not.
-func (l *Logger) IsEnabled(flag Flag) (enabled bool) {
+func (l *Logger) IsEnabled(flag string) (enabled bool) {
 	l.flagsLock.Lock()
 	if l.flags == nil {
 		enabled = false
@@ -308,45 +87,8 @@ func (l *Logger) IsEnabled(flag Flag) (enabled bool) {
 	return
 }
 
-// Hide disallows automatic logging for each event emitted under the provided list of flags.
-func (l *Logger) Hide(flags ...Flag) {
-	l.hiddenFlagsLock.Lock()
-	defer l.hiddenFlagsLock.Unlock()
-
-	if l.hiddenFlags != nil {
-		for _, flag := range flags {
-			l.hiddenFlags.Enable(flag)
-		}
-	} else {
-		l.hiddenFlags = NewFlagSet(flags...)
-	}
-}
-
-// IsHidden asserts if a flag is hidden or not.
-func (l *Logger) IsHidden(flag Flag) bool {
-	if l.hiddenFlags == nil {
-		return false
-	}
-	return l.hiddenFlags.IsEnabled(flag)
-}
-
-// WithHidden hides a set of flags and returns logger
-func (l *Logger) WithHidden(flags ...Flag) *Logger {
-	l.Hide(flags...)
-	return l
-}
-
-// Show allows automatic logging for each event emitted under the provided list of flags.
-func (l *Logger) Show(flags ...Flag) {
-	l.hiddenFlagsLock.Lock()
-	defer l.hiddenFlagsLock.Unlock()
-	for _, flag := range flags {
-		l.hiddenFlags.Disable(flag)
-	}
-}
-
 // HasListeners returns if there are registered listener for an event.
-func (l *Logger) HasListeners(flag Flag) bool {
+func (l *Logger) HasListeners(flag string) bool {
 	l.workersLock.Lock()
 	defer l.workersLock.Unlock()
 
@@ -361,7 +103,7 @@ func (l *Logger) HasListeners(flag Flag) bool {
 }
 
 // HasListener returns if a specific listener is registerd for a flag.
-func (l *Logger) HasListener(flag Flag, listenerName string) bool {
+func (l *Logger) HasListener(flag, listenerName string) bool {
 	l.workersLock.Lock()
 	defer l.workersLock.Unlock()
 
@@ -376,23 +118,13 @@ func (l *Logger) HasListener(flag Flag, listenerName string) bool {
 	return hasWorker
 }
 
-// SubContext returns a sub context for the logger.
-// It provides a more limited api surface area but lets you
-// decoarate events with context specific headings, labels and annotations.
-func (l *Logger) SubContext(heading string) *SubContext {
-	return &SubContext{
-		log:      l,
-		headings: []string{heading},
-	}
-}
-
 // Listen adds a listener for a given flag.
-func (l *Logger) Listen(flag Flag, listenerName string, listener Listener) {
+func (l *Logger) Listen(flag, listenerName string, listener Listener) {
 	l.workersLock.Lock()
 	defer l.workersLock.Unlock()
 
 	if l.workers == nil {
-		l.workers = map[Flag]map[string]*Worker{}
+		l.workers = map[string]map[string]*Worker{}
 	}
 
 	w := NewWorker(l, listener, l.listenerWorkerQueueDepth)
@@ -407,7 +139,7 @@ func (l *Logger) Listen(flag Flag, listenerName string, listener Listener) {
 }
 
 // RemoveListeners clears *all* listeners for a Flag.
-func (l *Logger) RemoveListeners(flag Flag) {
+func (l *Logger) RemoveListeners(flag string) {
 	l.workersLock.Lock()
 	defer l.workersLock.Unlock()
 
@@ -428,7 +160,7 @@ func (l *Logger) RemoveListeners(flag Flag) {
 }
 
 // RemoveListener clears a specific listener for a Flag.
-func (l *Logger) RemoveListener(flag Flag, listenerName string) {
+func (l *Logger) RemoveListener(flag, listenerName string) {
 	l.workersLock.Lock()
 	defer l.workersLock.Unlock()
 
@@ -536,24 +268,9 @@ func (l *Logger) trigger(async bool, e Event) {
 // Builtin Flag Handlers (infof, debugf etc.)
 // --------------------------------------------------------------------------------
 
-// Sillyf logs an incredibly verbose message to the output stream.
-func (l *Logger) Sillyf(format string, args ...interface{}) {
-	l.trigger(true, Messagef(Silly, format, args...))
-}
-
-// SyncSillyf logs an incredibly verbose message to the output stream synchronously.
-func (l *Logger) SyncSillyf(format string, args ...interface{}) {
-	l.trigger(false, Messagef(Silly, format, args...))
-}
-
 // Infof logs an informational message to the output stream.
 func (l *Logger) Infof(format string, args ...interface{}) {
 	l.trigger(true, Messagef(Info, format, args...))
-}
-
-// SyncInfof logs an informational message to the output stream synchronously.
-func (l *Logger) SyncInfof(format string, args ...interface{}) {
-	l.trigger(false, Messagef(Info, format, args...))
 }
 
 // Debugf logs a debug message to the output stream.
@@ -561,30 +278,14 @@ func (l *Logger) Debugf(format string, args ...interface{}) {
 	l.trigger(true, Messagef(Debug, format, args...))
 }
 
-// SyncDebugf logs an debug message to the output stream synchronously.
-func (l *Logger) SyncDebugf(format string, args ...interface{}) {
-	l.trigger(false, Messagef(Debug, format, args...))
-}
-
 // Warningf logs a debug message to the output stream.
 func (l *Logger) Warningf(format string, args ...interface{}) {
-	l.trigger(false, Errorf(Warning, format, args...))
-}
-
-// SyncWarningf logs an warning message to the output stream synchronously.
-func (l *Logger) SyncWarningf(format string, args ...interface{}) {
 	l.trigger(false, Errorf(Warning, format, args...))
 }
 
 // Warning logs a warning error to std err.
 func (l *Logger) Warning(err error) error {
 	l.trigger(true, NewErrorEvent(Warning, err))
-	return err
-}
-
-// SyncWarning synchronously logs a warning to std err.
-func (l *Logger) SyncWarning(err error) error {
-	l.trigger(false, NewErrorEvent(Warning, err))
 	return err
 }
 
@@ -599,20 +300,9 @@ func (l *Logger) Errorf(format string, args ...interface{}) {
 	l.trigger(true, Errorf(Error, format, args...))
 }
 
-// SyncErrorf synchronously triggers a error.
-func (l *Logger) SyncErrorf(format string, args ...interface{}) {
-	l.trigger(false, Errorf(Error, format, args...))
-}
-
 // Error logs an error to std err.
 func (l *Logger) Error(err error) error {
 	l.trigger(true, NewErrorEvent(Error, err))
-	return err
-}
-
-// SyncError synchronously logs an error to std err.
-func (l *Logger) SyncError(err error) error {
-	l.trigger(false, NewErrorEvent(Error, err))
 	return err
 }
 
@@ -627,28 +317,10 @@ func (l *Logger) Fatalf(format string, args ...interface{}) {
 	l.trigger(true, Errorf(Fatal, format, args...))
 }
 
-// SyncFatalf synchronously triggers a fatal.
-func (l *Logger) SyncFatalf(format string, args ...interface{}) {
-	l.trigger(false, Errorf(Fatal, format, args...))
-}
-
 // Fatal logs the result of a panic to std err.
 func (l *Logger) Fatal(err error) error {
 	l.trigger(true, NewErrorEvent(Fatal, err))
 	return err
-}
-
-// SyncFatal synchronously logs a fatal to std err.
-func (l *Logger) SyncFatal(err error) error {
-	l.trigger(false, NewErrorEvent(Fatal, err))
-	return err
-}
-
-// SyncFatalExit logs the result of a fatal error to std err and calls `exit(1)`
-func (l *Logger) SyncFatalExit(err error) {
-	l.SyncFatal(err)
-	l.Drain()
-	os.Exit(1)
 }
 
 // Write writes an event synchronously to the writer either as a normal even or as an error.
@@ -728,28 +400,4 @@ func (l *Logger) Drain() error {
 	l.setStarted()
 
 	return nil
-}
-
-func (l *Logger) isStarted() bool {
-	return atomic.LoadInt32(&l.state) == LoggerStarted
-}
-
-func (l *Logger) isStopping() bool {
-	return atomic.LoadInt32(&l.state) == LoggerStopping
-}
-
-func (l *Logger) isStopped() bool {
-	return atomic.LoadInt32(&l.state) == LoggerStopped
-}
-
-func (l *Logger) setStarted() {
-	atomic.StoreInt32(&l.state, LoggerStarted)
-}
-
-func (l *Logger) setStopping() {
-	atomic.StoreInt32(&l.state, LoggerStopping)
-}
-
-func (l *Logger) setStopped() {
-	atomic.StoreInt32(&l.state, LoggerStopped)
 }

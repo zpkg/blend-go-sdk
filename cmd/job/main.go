@@ -134,7 +134,7 @@ func main() {
 		log.SyncInfof("adding airbrake notifications")
 	}
 
-	jobs := cron.NewFromConfig(&cfg.Config.Config).WithLogger(log)
+	jobs := cron.New(cron.OptHistoryConfig(cfg.Config.HistoryConfig), cron.OptLog(log))
 
 	for _, jobCfg := range cfg.Jobs {
 		job, err := createJob(&jobCfg)
@@ -143,7 +143,7 @@ func main() {
 		}
 		job.WithLogger(log).WithEmailClient(emailClient).WithSlackClient(slackClient).WithStatsClient(statsClient).WithErrorClient(errorClient)
 		log.SyncInfof("loading job `%s` with schedule `%s`", jobCfg.NameOrDefault(), jobCfg.ScheduleOrDefault())
-		jobs.LoadJob(job)
+		jobs.LoadJobs(job)
 	}
 
 	if !*disableServer {

@@ -1,12 +1,10 @@
 package logger
 
 import (
-	"bytes"
+	"io"
 	"net/http"
 	"strconv"
-	"strings"
 	"time"
-	"unicode"
 
 	"github.com/blend/go-sdk/ansi"
 	"github.com/blend/go-sdk/webutil"
@@ -24,8 +22,8 @@ func FormatFileSize(sizeBytes int) string {
 	return strconv.Itoa(sizeBytes)
 }
 
-// TextWriteHTTPRequest is a helper method to write request start events to a writer.
-func TextWriteHTTPRequest(tf TextFormatter, buf *bytes.Buffer, req *http.Request) {
+// WriteHTTPRequest is a helper method to write request start events to a writer.
+func WriteHTTPRequest(wr io.Writer, req *http.Request) {
 	if ip := webutil.GetRemoteAddr(req); len(ip) > 0 {
 		buf.WriteString(ip)
 		buf.WriteRune(RuneSpace)
@@ -35,8 +33,8 @@ func TextWriteHTTPRequest(tf TextFormatter, buf *bytes.Buffer, req *http.Request
 	buf.WriteString(req.URL.Path)
 }
 
-// TextWriteHTTPResponse is a helper method to write request complete events to a writer.
-func TextWriteHTTPResponse(tf TextFormatter, buf *bytes.Buffer, req *http.Request, statusCode, contentLength int, contentType string, elapsed time.Duration) {
+// WriteHTTPResponse is a helper method to write request complete events to a writer.
+func WriteHTTPResponse(wr io.Writer, req *http.Request, statusCode, contentLength int, contentType string, elapsed time.Duration) {
 	buf.WriteString(webutil.GetRemoteAddr(req))
 	buf.WriteRune(RuneSpace)
 	buf.WriteString(tf.Colorize(req.Method, ansi.ColorBlue))
@@ -55,7 +53,7 @@ func TextWriteHTTPResponse(tf TextFormatter, buf *bytes.Buffer, req *http.Reques
 }
 
 // JSONWriteHTTPRequest marshals a request start as json.
-func JSONWriteHTTPRequest(req *http.Request) JSONObj {
+func HTTPRequestAsJSON(req *http.Request) JSONObj {
 	return JSONObj{
 		"ip":   webutil.GetRemoteAddr(req),
 		"verb": req.Method,
@@ -65,7 +63,7 @@ func JSONWriteHTTPRequest(req *http.Request) JSONObj {
 }
 
 // JSONWriteHTTPResponse marshals a request as json.
-func JSONWriteHTTPResponse(req *http.Request, statusCode, contentLength int, contentType, contentEncoding string, elapsed time.Duration) JSONObj {
+func HTTPResponseAsJSON(req *http.Request, statusCode, contentLength int, contentType, contentEncoding string, elapsed time.Duration) JSONObj {
 	return JSONObj{
 		"ip":              webutil.GetRemoteAddr(req),
 		"verb":            req.Method,
@@ -77,32 +75,4 @@ func JSONWriteHTTPResponse(req *http.Request, statusCode, contentLength int, con
 		"statusCode":      statusCode,
 		JSONFieldElapsed:  Milliseconds(elapsed),
 	}
-}
-
-// CompressWhitespace compresses whitespace characters into single spaces.
-// It trims leading and trailing whitespace as well.
-func CompressWhitespace(text string) (output string) {
-	if len(text) == 0 {
-		return
-	}
-
-	var state int
-	for _, r := range text {
-		switch state {
-		case 0: // non-whitespace
-			if unicode.IsSpace(r) {
-				state = 1
-			} else {
-				output = output + string(r)
-			}
-		case 1: // whitespace
-			if !unicode.IsSpace(r) {
-				output = output + " " + string(r)
-				state = 0
-			}
-		}
-	}
-
-	output = strings.TrimSpace(output)
-	return
 }

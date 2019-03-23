@@ -18,8 +18,10 @@ func TestManagementServer(t *testing.T) {
 
 	jm := cron.New()
 
-	jm.LoadJob(cron.NewJob("test0", func(_ context.Context) error { return nil }))
-	jm.LoadJob(cron.NewJob("test1", func(_ context.Context) error { return nil }))
+	jm.LoadJobs(
+		cron.NewJob("test0", func(_ context.Context) error { return nil }),
+		cron.NewJob("test1", func(_ context.Context) error { return nil }),
+	)
 
 	app := NewManagementServer(jm, &Config{
 		Web: web.Config{
@@ -42,10 +44,11 @@ func TestManagementServerHealthz(t *testing.T) {
 	assert := assert.New(t)
 
 	jm := cron.New()
-	jm.LoadJob(cron.NewJob("test0", func(_ context.Context) error { return nil }))
-	jm.LoadJob(cron.NewJob("test1", func(_ context.Context) error { return nil }))
+	jm.LoadJobs(
+		cron.NewJob("test0", func(_ context.Context) error { return nil }),
+		cron.NewJob("test1", func(_ context.Context) error { return nil }),
+	)
 	jm.StartAsync()
-
 	app := NewManagementServer(jm, &Config{
 		Web: web.Config{
 			Port: 5000,
@@ -72,7 +75,7 @@ func TestManagementServerIndex(t *testing.T) {
 	errorOutput := uuid.V4().String()
 
 	jm := cron.New()
-	jm.LoadJob(cron.NewJob(jobName, func(_ context.Context) error { return nil }))
+	jm.LoadJobs(cron.NewJob(jobName, func(_ context.Context) error { return nil }))
 
 	js, err := jm.Job(jobName)
 	assert.Nil(err)

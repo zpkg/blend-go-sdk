@@ -12,12 +12,11 @@ import (
 )
 
 // NewJobScheduler returns a job scheduler for a given job.
-func NewJobScheduler(cfg *Config, job Job) *JobScheduler {
+func NewJobScheduler(job Job, options ...JobSchedulerOption) *JobScheduler {
 	js := &JobScheduler{
-		Latch:  &async.Latch{},
-		Name:   job.Name(),
-		Job:    job,
-		Config: cfg,
+		Latch: async.NewLatch(),
+		Name:  job.Name(),
+		Job:   job,
 	}
 
 	if typed, ok := job.(DescriptionProvider); ok {
@@ -58,21 +57,25 @@ func NewJobScheduler(cfg *Config, job Job) *JobScheduler {
 		js.ShouldWriteOutputProvider = func() bool { return DefaultShouldWriteOutput }
 	}
 
+	for _, option := range options {
+		option(js)
+	}
+
 	return js
 }
 
 // JobScheduler is a job instance.
 type JobScheduler struct {
-	sync.Mutex `json:"-"`
-	Latch      *async.Latch `json:"-"`
+	sync.Mutex   `json:"-"`
+	*async.Latch `json:"-"`
 
 	Name        string `json:"name"`
 	Description string `json:"description"`
 	Job         Job    `json:"-"`
 
-	Tracer Tracer              `json:"-"`
-	Log    logger.FullReceiver `json:"-"`
-	Config *Config             `json:"-"`
+	Tracer        Tracer              `json:"-"`
+	Log           logger.FullReceiver `json:"-"`
+	HistoryConfig HistoryConfig       `json:"-"`
 
 	// Meta Fields
 	Disabled    bool            `json:"disabled"`
@@ -87,28 +90,6 @@ type JobScheduler struct {
 	TimeoutProvider                func() time.Duration `json:"-"`
 	ShouldTriggerListenersProvider func() bool          `json:"-"`
 	ShouldWriteOutputProvider      func() bool          `json:"-"`
-}
-
-// Invocation returns an invocation by id.
-func (js *JobScheduler) Invocation(id string) *JobInvocation {
-	for _, ji := range js.History {
-		if ji.ID == id {
-			return &ji
-		}
-	}
-	return nil
-}
-
-// WithTracer sets the scheduler tracer.
-func (js *JobScheduler) WithTracer(tracer Tracer) *JobScheduler {
-	js.Tracer = tracer
-	return js
-}
-
-// WithLogger sets the scheduler logger.
-func (js *JobScheduler) WithLogger(log logger.FullReceiver) *JobScheduler {
-	js.Log = log
-	return js
 }
 
 // Start starts the scheduler.
@@ -312,6 +293,20 @@ func (js *JobScheduler) Run() {
 }
 
 //
+// exported utility methods
+//
+
+// GetInvocationByID returns an invocation by id.
+func (js *JobScheduler) GetInvocationByID(id string) *JobInvocation {
+	for _, ji := range js.History {
+		if ji.ID == id {
+			return &ji
+		}
+	}
+	return nil
+}
+
+//
 // utility functions
 //
 
@@ -467,12 +462,9 @@ func (js *JobScheduler) addHistory(ji JobInvocation) {
 }
 
 func (js *JobScheduler) cullHistory() []JobInvocation {
-	if js.Config == nil {
-		return js.History
-	}
 	count := len(js.History)
-	maxCount := js.Config.History.MaxCountOrDefault()
-	maxAge := js.Config.History.MaxAgeOrDefault()
+	maxCount := js.HistoryConfig.MaxCountOrDefault()
+	maxAge := js.HistoryConfig.MaxAgeOrDefault()
 	now := time.Now().UTC()
 	var filtered []JobInvocation
 	for index, h := range js.History {

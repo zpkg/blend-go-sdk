@@ -16,7 +16,10 @@ const (
 )
 
 var (
-	_ web.Tracer = (*webTracer)(nil)
+	_ web.Tracer            = (*webTracer)(nil)
+	_ web.TraceFinisher     = (*webTraceFinisher)(nil)
+	_ web.ViewTracer        = (*webTracer)(nil)
+	_ web.ViewTraceFinisher = (*webViewTraceFinisher)(nil)
 )
 
 // Tracer returns a web tracer.
@@ -95,7 +98,7 @@ type webViewTraceFinisher struct {
 	span opentracing.Span
 }
 
-func (wvtf webViewTraceFinisher) Finish(ctx *web.Ctx, vr *web.ViewResult, err error) {
+func (wvtf webViewTraceFinisher) FinishView(ctx *web.Ctx, vr *web.ViewResult, err error) {
 	if wvtf.span == nil {
 		return
 	}

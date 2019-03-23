@@ -29,7 +29,7 @@ const (
 
 // Asserts text writer is a writer.
 var (
-	_ Writer = &TextWriter{}
+	_ Writer = (*JSONWriter)(nil)
 )
 
 // JSONObj is a type alias for map[string]Any
@@ -74,6 +74,8 @@ type JSONWriter struct {
 	errorOutput      io.Writer
 	pretty           bool
 	includeTimestamp bool
+
+	encoder *json.Encoder
 }
 
 // OutputFormat returns the output format.
@@ -139,7 +141,7 @@ func (jw *JSONWriter) WriteError(e Event) error {
 }
 
 func (jw *JSONWriter) write(output io.Writer, e Event) error {
-	encoder := json.NewEncoder(output)
+	jw.encoder = json.NewEncoder(output)
 	if jw.pretty {
 		encoder.SetIndent("", "\t")
 	}

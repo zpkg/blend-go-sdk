@@ -12,7 +12,7 @@ import (
 )
 
 var (
-	_ graceful.Graceful = (*GracefulServer)(nil)
+	_ graceful.Graceful = (*GracefulHTTPServer)(nil)
 )
 
 func TestGracefulServer(t *testing.T) {
@@ -28,7 +28,7 @@ func TestGracefulServer(t *testing.T) {
 		w.WriteHeader(http.StatusOK)
 		fmt.Fprintf(w, "OK!\n")
 	})
-	gs := NewGracefulServer(server).WithListener(typedListener)
+	gs := NewGracefulHTTPServer(server, OptGracefulHTTPServerListener(typedListener))
 	stopSignal := make(chan os.Signal)
 	didShutdown := make(chan struct{})
 	go func() {

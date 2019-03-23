@@ -97,7 +97,7 @@ func main() {
 	server := &http.Server{}
 	server.Handler = reverseProxy
 
-	gs := webutil.NewGracefulServer(server)
+	gs := webutil.NewGracefulHTTPServer(server)
 
 	listener, err := net.Listen("tcp", bindAddr)
 	if err != nil {
@@ -111,11 +111,11 @@ func main() {
 		if err != nil {
 			log.SyncFatalExit(err)
 		}
-		gs.WithListener(tls.NewListener(listener, &tls.Config{
+		gs.Listener = tls.NewListener(listener, &tls.Config{
 			Certificates: []tls.Certificate{cert},
-		}))
+		})
 	} else {
-		gs.WithListener(listener)
+		gs.Listener = listener
 	}
 
 	log.SyncInfof("proxy listening: %s", bindAddr)

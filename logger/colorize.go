@@ -9,7 +9,7 @@ import (
 
 var (
 	// DefaultFlagTextColors is the default color for each known flag.
-	DefaultFlagTextColors = map[Flag]ansi.Color{
+	DefaultFlagTextColors = map[string]ansi.Color{
 		Info:    ansi.ColorLightWhite,
 		Silly:   ansi.ColorLightBlack,
 		Debug:   ansi.ColorLightYellow,
@@ -22,8 +22,8 @@ var (
 	DefaultFlagTextColor = ansi.ColorLightWhite
 )
 
-// GetFlagTextColor returns the color for a flag.
-func GetFlagTextColor(flag Flag) ansi.Color {
+// FlagTextColor returns the color for a flag.
+func FlagTextColor(flag string) ansi.Color {
 	if color, hasColor := DefaultFlagTextColors[flag]; hasColor {
 		return color
 	}
