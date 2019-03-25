@@ -13,7 +13,7 @@ import (
 )
 
 // WriteHTTPRequest is a helper method to write request start events to a writer.
-func WriteHTTPRequest(tf TextFormatter, wr io.Writer, req *http.Request) {
+func WriteHTTPRequest(tf Colorizer, wr io.Writer, req *http.Request) {
 	if ip := webutil.GetRemoteAddr(req); len(ip) > 0 {
 		io.WriteString(wr, ip)
 		io.WriteString(wr, Space)
@@ -24,7 +24,7 @@ func WriteHTTPRequest(tf TextFormatter, wr io.Writer, req *http.Request) {
 }
 
 // WriteHTTPResponse is a helper method to write request complete events to a writer.
-func WriteHTTPResponse(tf TextFormatter, wr io.Writer, req *http.Request, statusCode, contentLength int, contentType string, elapsed time.Duration) {
+func WriteHTTPResponse(tf Colorizer, wr io.Writer, req *http.Request, statusCode, contentLength int, contentType string, elapsed time.Duration) {
 	io.WriteString(wr, webutil.GetRemoteAddr(req))
 	io.WriteString(wr, Space)
 	io.WriteString(wr, tf.Colorize(req.Method, ansi.ColorBlue))
@@ -43,7 +43,7 @@ func WriteHTTPResponse(tf TextFormatter, wr io.Writer, req *http.Request, status
 }
 
 // WriteFields writes fields.
-func WriteFields(tf TextFormatter, wr io.Writer, fields Fields) {
+func WriteFields(tf Colorizer, wr io.Writer, fields Fields) {
 	for _, value := range fields {
 		if typed, ok := value.(fmt.Stringer); ok {
 			io.WriteString(wr, typed.String())

@@ -114,6 +114,6 @@ func deserialize(ext string, r io.Reader, ref Any) error {
 	case ExtensionYAML, ExtensionYML:
 		return exception.New(yaml.NewDecoder(r).Decode(ref))
 	default: // return an error if we're passed a weird extension
-		return exception.New(ErrInvalidConfigExtension).WithMessagef("extension: %s", ext)
+		return exception.New(ErrInvalidConfigExtension, exception.OptMessagef("extension: %s", ext))
 	}
 }

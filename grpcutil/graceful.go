@@ -34,14 +34,14 @@ func (gz *Graceful) WithLogger(log logger.FullReceiver) *Graceful {
 func (gz *Graceful) Start() error {
 	gz.Latch.Starting()
 	gz.Latch.Started()
-	logger.MaybeSyncInfof(gz.Log, "grpc server starting, listening on %v %s", gz.Listener.Addr().Network(), gz.Listener.Addr().String())
+	logger.MaybeInfof(gz.Log, "grpc server starting, listening on %v %s", gz.Listener.Addr().Network(), gz.Listener.Addr().String())
 	return gz.Server.Serve(gz.Listener)
 }
 
 // Stop shuts the server down.
 func (gz *Graceful) Stop() error {
 	gz.Latch.Stopping()
-	logger.MaybeSyncInfof(gz.Log, "grpc server shutting down")
+	logger.MaybeInfof(gz.Log, "grpc server shutting down")
 	gz.Server.GracefulStop()
 	gz.Latch.Stopped()
 	return nil

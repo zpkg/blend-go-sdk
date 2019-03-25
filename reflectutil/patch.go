@@ -39,13 +39,13 @@ func Patch(obj interface{}, patchValues map[string]interface{}) (err error) {
 func SetValue(obj interface{}, objType reflect.Type, objValue reflect.Value, fieldName string, value interface{}) (err error) {
 	defer func() {
 		if r := recover(); r != nil {
-			err = exception.New("panic setting value by name").WithMessagef("field: %s panic: %v", fieldName, r)
+			err = exception.New("panic setting value by name", exception.OptMessagef("field: %s panic: %v", fieldName, r))
 		}
 	}()
 
 	relevantField, hasField := objType.FieldByName(fieldName)
 	if !hasField {
-		err = exception.New("unknown field").WithMessagef("%s `%s`", objType.Name(), fieldName)
+		err = exception.New("unknown field", exception.OptMessagef("%s `%s`", objType.Name(), fieldName))
 		return
 	}
 
@@ -55,13 +55,13 @@ func SetValue(obj interface{}, objType reflect.Type, objValue reflect.Value, fie
 func doSetValue(relevantField reflect.StructField, objType reflect.Type, objValue reflect.Value, name string, value interface{}) (err error) {
 	field := objValue.FieldByName(relevantField.Name)
 	if !field.CanSet() {
-		err = exception.New("cannot set field").WithMessagef("%s `%s`", objType.Name(), name)
+		err = exception.New("cannot set field", exception.OptMessagef("%s `%s`", objType.Name(), name))
 		return
 	}
 
 	valueReflected := Value(value)
 	if !valueReflected.IsValid() {
-		err = exception.New("invalid value").WithMessagef("%s `%s`", objType.Name(), name)
+		err = exception.New("invalid value", exception.OptMessagef("%s `%s`", objType.Name(), name))
 		return
 	}
 
@@ -71,7 +71,7 @@ func doSetValue(relevantField reflect.StructField, objType reflect.Type, objValu
 		return
 	}
 	if !assigned {
-		err = exception.New("cannot set field").WithMessagef("%s `%s`", objType.Name(), name)
+		err = exception.New("cannot set field", exception.OptMessagef("%s `%s`", objType.Name(), name))
 		return
 	}
 	return

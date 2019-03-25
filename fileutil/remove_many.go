@@ -12,7 +12,7 @@ func RemoveMany(filePaths ...string) error {
 	for _, path := range filePaths {
 		err = os.Remove(path)
 		if err != nil {
-			return exception.New(err).WithMessage(path)
+			return exception.New(err, exception.OptMessage(path))
 		}
 	}
 	return err

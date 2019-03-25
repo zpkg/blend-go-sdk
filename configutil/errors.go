@@ -27,8 +27,8 @@ func IsIgnored(err error) bool {
 
 // IsNotExist returns if an error is an os.ErrNotExist.
 func IsNotExist(err error) bool {
-	if typed, isTyped := err.(exception.Exception); isTyped {
-		err = typed.Class()
+	if typed, isTyped := err.(*exception.Ex); isTyped {
+		err = typed.Class
 	}
 	return os.IsNotExist(err)
 }

@@ -201,7 +201,7 @@ func (uuid *UUID) Scan(src interface{}) error {
 	case []byte:
 		return ParseExisting(uuid, string(src.([]byte)))
 	}
-	return exception.New(ErrInvalidScanSource).WithMessagef("scan type: %T", src)
+	return exception.New(ErrInvalidScanSource, exception.OptMessagef("scan type: %T", src))
 }
 
 // Value returns a sql driver value.

@@ -6,8 +6,8 @@ func ErrClass(err interface{}) string {
 	if err == nil {
 		return ""
 	}
-	if ex := As(err); ex != nil && ex.Class() != nil {
-		return ex.Class().Error()
+	if ex := As(err); ex != nil && ex.Class != nil {
+		return ex.Class.Error()
 	}
 	if typed, ok := err.(error); ok && typed != nil {
 		return typed.Error()
@@ -22,8 +22,8 @@ func ErrMessage(err interface{}) string {
 	if err == nil {
 		return ""
 	}
-	if ex := As(err); ex != nil && ex.Class() != nil {
-		return ex.Message()
+	if ex := As(err); ex != nil && ex.Class != nil {
+		return ex.Message
 	}
 	return ""
 }
@@ -33,8 +33,8 @@ func Is(err interface{}, cause error) bool {
 	if err == nil || cause == nil {
 		return false
 	}
-	if typed, isTyped := err.(Exception); isTyped && typed.Class() != nil {
-		return (typed.Class() == cause) || (typed.Class().Error() == cause.Error())
+	if typed, isTyped := err.(*Ex); isTyped && typed.Class != nil {
+		return (typed.Class == cause) || (typed.Class.Error() == cause.Error())
 	}
 	if typed, ok := err.(error); ok && typed != nil {
 		return (err == cause) || (typed.Error() == cause.Error())
@@ -46,14 +46,14 @@ func Is(err interface{}, cause error) bool {
 // Inner returns an inner error if the error is an exception.
 func Inner(err interface{}) error {
 	if typed := As(err); typed != nil {
-		return typed.Inner()
+		return typed.Inner
 	}
 	return nil
 }
 
 // As is a helper method that returns an error as an exception.
-func As(err interface{}) Exception {
-	if typed, typedOk := err.(Exception); typedOk {
+func As(err interface{}) *Ex {
+	if typed, typedOk := err.(*Ex); typedOk {
 		return typed
 	}
 	return nil

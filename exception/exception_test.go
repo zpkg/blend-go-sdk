@@ -15,8 +15,8 @@ func TestNewOfString(t *testing.T) {
 	a := assert.New(t)
 	ex := New("this is a test")
 	a.Equal("this is a test", fmt.Sprintf("%v", ex))
-	a.NotNil(ex.Stack())
-	a.Nil(ex.Inner())
+	a.NotNil(ex.Stack)
+	a.Nil(ex.Inner)
 }
 
 func TestNewOfError(t *testing.T) {
@@ -102,10 +102,10 @@ func TestExceptionFormatters(t *testing.T) {
 	assert := assert.New(t)
 
 	// test the "%v" formatter with just the exception class.
-	class := &Ex{class: Class("this is a test")}
+	class := &Ex{Class: Class("this is a test")}
 	assert.Equal("this is a test", fmt.Sprintf("%v", class))
 
-	classAndMessage := &Ex{class: Class("foo"), message: "bar"}
+	classAndMessage := &Ex{Class: Class("foo"), Message: "bar"}
 	assert.Equal("foo\nmessage: bar", fmt.Sprintf("%v", classAndMessage))
 }
 
@@ -120,7 +120,7 @@ func TestMarshalJSON(t *testing.T) {
 	message := "new test error"
 	ex := New(message)
 	a.NotNil(ex)
-	stackTrace := ex.Stack()
+	stackTrace := ex.Stack
 	typed, isTyped := stackTrace.(StackPointers)
 	a.True(isTyped)
 	a.NotNil(typed)
@@ -138,7 +138,7 @@ func TestMarshalJSON(t *testing.T) {
 
 	ex = New(fmt.Errorf(message))
 	a.NotNil(ex)
-	stackTrace = ex.Stack()
+	stackTrace = ex.Stack
 	typed, isTyped = stackTrace.(StackPointers)
 	a.True(isTyped)
 	a.NotNil(typed)
@@ -163,11 +163,11 @@ func TestNest(t *testing.T) {
 	err := Nest(ex1, ex2)
 
 	a.NotNil(err)
-	a.NotNil(err.Inner())
+	a.NotNil(err.Inner)
 	a.NotEmpty(err.Error())
 
 	a.True(Is(ex1, Class("this is an error")))
-	a.True(Is(ex1.Inner(), Class("this is another error")))
+	a.True(Is(ex1.Inner, Class("this is another error")))
 }
 
 func TestNestNil(t *testing.T) {
@@ -185,7 +185,7 @@ func TestNestNil(t *testing.T) {
 func TestExceptionPrintsInner(t *testing.T) {
 	assert := assert.New(t)
 
-	ex := New("outer").WithInner(New("middle").WithInner(New("terminal")))
+	ex := New("outer", OptInner(New("middle", OptInner(New("terminal")))))
 
 	output := fmt.Sprintf("%v", ex)
 

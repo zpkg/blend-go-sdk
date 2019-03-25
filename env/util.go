@@ -27,7 +27,7 @@ func parseBool(str string) (bool, error) {
 	case "false", "0", "no":
 		return false, nil
 	}
-	return false, exception.New("invalid bool value").WithMessage(str)
+	return false, exception.New("invalid bool value", exception.OptMessage(str))
 }
 
 // PatchStrings options.
@@ -216,7 +216,7 @@ func patchStrings(tagName string, data map[string]string, obj interface{}) (err 
 					case reflect.String:
 						dataFieldValue = dataValue
 					default:
-						err = exception.New("map strings into; unhandled assignment").WithMessagef("type %s", fieldType.String())
+						err = exception.New("map strings into; unhandled assignment", exception.OptMessagef("type %s", fieldType.String()))
 						return
 					}
 				}
@@ -224,7 +224,7 @@ func patchStrings(tagName string, data map[string]string, obj interface{}) (err 
 
 			value := reflectValue(dataFieldValue)
 			if !value.IsValid() {
-				err = exception.New("invalid value").WithMessagef("%s `%s`", objMeta.Name(), field.Name)
+				err = exception.New("invalid value", exception.OptMessagef("%s `%s`", objMeta.Name(), field.Name))
 				return
 			}
 
@@ -233,7 +233,7 @@ func patchStrings(tagName string, data map[string]string, obj interface{}) (err 
 				return
 			}
 			if !assigned {
-				err = exception.New("cannot set field").WithMessagef("%s `%s`", objMeta.Name(), field.Name)
+				err = exception.New("cannot set field", exception.OptMessagef("%s `%s`", objMeta.Name(), field.Name))
 				return
 			}
 		}

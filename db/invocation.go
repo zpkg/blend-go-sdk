@@ -12,81 +12,27 @@ import (
 	"github.com/blend/go-sdk/logger"
 )
 
+type InvocationOption func(*Invocation)
+
+// OptTx sets the invocation transaction.
+func OptTx(tx *sql.Tx) InvocationOption {
+	return func(i *Invocation) {
+		i.Tx = tx
+	}
+}
+
 // Invocation is a specific operation against a context.
 type Invocation struct {
 	cachedPlanKey string
 
-	conn                 *Connection
-	context              context.Context
-	cancel               func()
-	statementInterceptor StatementInterceptor
-	tracer               Tracer
-	traceFinisher        TraceFinisher
-	startTime            time.Time
-	tx                   *sql.Tx
-}
-
-// StartTime returns the invocation start time.
-func (i *Invocation) StartTime() time.Time {
-	return i.startTime
-}
-
-// WithContext sets the context and returns a reference to the invocation.
-func (i *Invocation) WithContext(context context.Context) *Invocation {
-	i.context = context
-	return i
-}
-
-// Context returns the underlying context.
-func (i *Invocation) Context() context.Context {
-	if i.context == nil {
-		return context.Background()
-	}
-	return i.context
-}
-
-// WithCancel sets an optional cancel callback.
-func (i *Invocation) WithCancel(cancel func()) *Invocation {
-	i.cancel = cancel
-	return i
-}
-
-// Cancel returns the optional cancel callback.
-func (i *Invocation) Cancel() func() {
-	return i.cancel
-}
-
-// WithCachedPlan instructs the query generator to get or create a cached prepared statement.
-func (i *Invocation) WithCachedPlan(cacheKey string) *Invocation {
-	i.cachedPlanKey = cacheKey
-	return i
-}
-
-// CachedPlanKey returns the statement / plan cache label for the context.
-func (i *Invocation) CachedPlanKey() string {
-	return i.cachedPlanKey
-}
-
-// WithTx sets the tx
-func (i *Invocation) WithTx(tx *sql.Tx) *Invocation {
-	i.tx = tx
-	return i
-}
-
-// Tx returns the underlying transaction.
-func (i *Invocation) Tx() *sql.Tx {
-	return i.tx
-}
-
-// WithStatementInterceptor sets the connection statement interceptor.
-func (i *Invocation) WithStatementInterceptor(interceptor StatementInterceptor) *Invocation {
-	i.statementInterceptor = interceptor
-	return i
-}
-
-// StatementInterceptor returns the statement interceptor.
-func (i *Invocation) StatementInterceptor() StatementInterceptor {
-	return i.statementInterceptor
+	Conn                 *Connection
+	Context              context.Context
+	Cancel               func()
+	StatementInterceptor StatementInterceptor
+	Tracer               Tracer
+	TraceFinisher        TraceFinisher
+	StartTime            time.Time
+	Tx                   *sql.Tx
 }
 
 // Prepare returns a cached or newly prepared statment plan for a given sql statement.

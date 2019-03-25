@@ -56,17 +56,17 @@ func ParseExisting(uuid *UUID, corpus string) error {
 			continue
 		}
 		if c == '{' {
-			return exception.New(ErrParseIllegalCharacter).WithMessagef("at %d: %v", i, string(c))
+			return exception.New(ErrParseIllegalCharacter, exception.OptMessagef("at %d: %v", i, string(c)))
 		}
 		if c == '}' && i != len(data)-1 {
-			return exception.New(ErrParseIllegalCharacter).WithMessagef("at %d: %v", i, string(c))
+			return exception.New(ErrParseIllegalCharacter, exception.OptMessagef("at %d: %v", i, string(c)))
 		}
 		if c == '}' {
 			continue
 		}
 
 		if c == '-' && !(di == 8 || di == 12 || di == 16 || di == 20) {
-			return exception.New(ErrParseIllegalCharacter).WithMessagef("at %d: %v", i, string(c))
+			return exception.New(ErrParseIllegalCharacter, exception.OptMessagef("at %d: %v", i, string(c)))
 		}
 		if c == '-' {
 			continue
@@ -74,7 +74,7 @@ func ParseExisting(uuid *UUID, corpus string) error {
 
 		hexChar, isHexChar = fromHexChar(c)
 		if !isHexChar {
-			return exception.New(ErrParseIllegalCharacter).WithMessagef("at %d: %v", i, string(c))
+			return exception.New(ErrParseIllegalCharacter, exception.OptMessagef("at %d: %v", i, string(c)))
 		}
 
 		hex[hexIndex] = hexChar

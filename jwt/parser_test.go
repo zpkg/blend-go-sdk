@@ -252,8 +252,8 @@ func TestParser_Parse(t *testing.T) {
 				}
 				if data.inner != nil {
 					if typed, ok := err.(*exception.Ex); ok {
-						if !exception.Is(typed.Inner(), data.inner) {
-							t.Errorf("[%v] Causing Errors don't match expectation. `%+v` != `%+v`", data.name, typed.Inner(), data.inner)
+						if !exception.Is(typed.Inner, data.inner) {
+							t.Errorf("[%v] Causing Errors don't match expectation. `%+v` != `%+v`", data.name, typed.Inner, data.inner)
 						}
 					} else {
 						t.Errorf("[%v] Errors aren't exceptions and we expect a causing error", data.name)

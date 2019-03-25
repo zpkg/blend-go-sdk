@@ -51,6 +51,7 @@ type ErrorEvent struct {
 func (e *ErrorEvent) WriteText(formatter Colorizer, output io.Writer) {
 	if e.Err != nil {
 		if typed, ok := e.Err.(*exception.Ex); ok {
+			io.WriteString(output, typed.String())
 		} else {
 			io.WriteString(output, e.Err.Error())
 		}

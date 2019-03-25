@@ -49,7 +49,7 @@ type AuditEvent struct {
 }
 
 // WriteText implements TextWritable.
-func (e AuditEvent) WriteText(formatter TextFormatter, wr io.Writer) {
+func (e AuditEvent) WriteText(formatter Colorizer, wr io.Writer) {
 	if len(e.Context) > 0 {
 		io.WriteString(wr, formatter.Colorize("Context:", ansi.ColorGray))
 		io.WriteString(wr, e.Context)

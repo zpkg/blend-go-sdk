@@ -1,6 +1,7 @@
 package exception
 
 import (
+	"bytes"
 	"encoding/json"
 	"fmt"
 	"io"
@@ -42,6 +43,37 @@ func NewWithStackDepth(class interface{}, startDepth int, options ...Option) *Ex
 	}
 }
 
+// Option is an exception option.
+type Option func(*Ex)
+
+// OptMessage sets the exception message from a given list of arguments with fmt.Sprint(args...).
+func OptMessage(args ...interface{}) Option {
+	return func(ex *Ex) {
+		ex.Message = fmt.Sprint(args...)
+	}
+}
+
+// OptMessagef sets the exception message from a given list of arguments with fmt.Sprintf(format, args...).
+func OptMessagef(format string, args ...interface{}) Option {
+	return func(ex *Ex) {
+		ex.Message = fmt.Sprintf(format, args...)
+	}
+}
+
+// OptStack sets the exception stack.
+func OptStack(stack StackTrace) Option {
+	return func(ex *Ex) {
+		ex.Stack = stack
+	}
+}
+
+// OptInner sets an inner or wrapped exception.
+func OptInner(inner error) Option {
+	return func(ex *Ex) {
+		ex.Inner = inner
+	}
+}
+
 // Ex is an error with a stack trace.
 // It also can have an optional cause, it implements `Exception`
 type Ex struct {
@@ -65,42 +97,42 @@ func (e *Ex) Format(s fmt.State, verb rune) {
 	switch verb {
 	case 'v':
 		if s.Flag('+') {
-			if e.class != nil && len(e.class.Error()) > 0 {
-				fmt.Fprintf(s, "%s", e.class)
-				if len(e.message) > 0 {
-					fmt.Fprintf(s, "\nmessage: %s", e.message)
+			if e.Class != nil && len(e.Class.Error()) > 0 {
+				fmt.Fprintf(s, "%s", e.Class)
+				if len(e.Message) > 0 {
+					fmt.Fprintf(s, "\nmessage: %s", e.Message)
 				}
-			} else if len(e.message) > 0 {
-				io.WriteString(s, e.message)
+			} else if len(e.Message) > 0 {
+				io.WriteString(s, e.Message)
 			}
-			e.stack.Format(s, verb)
+			e.Stack.Format(s, verb)
 		} else if s.Flag('-') {
-			e.stack.Format(s, verb)
+			e.Stack.Format(s, verb)
 		} else {
-			io.WriteString(s, e.class.Error())
-			if len(e.message) > 0 {
-				fmt.Fprintf(s, "\nmessage: %s", e.message)
+			io.WriteString(s, e.Class.Error())
+			if len(e.Message) > 0 {
+				fmt.Fprintf(s, "\nmessage: %s", e.Message)
 			}
 		}
-		if e.inner != nil {
-			if typed, ok := e.inner.(fmt.Formatter); ok {
+		if e.Inner != nil {
+			if typed, ok := e.Inner.(fmt.Formatter); ok {
 				fmt.Fprint(s, "\ninner: ")
 				typed.Format(s, verb)
 			} else {
-				fmt.Fprintf(s, "\ninner: %v", e.inner)
+				fmt.Fprintf(s, "\ninner: %v", e.Inner)
 			}
 		}
 		return
 	case 'c':
-		io.WriteString(s, e.class.Error())
+		io.WriteString(s, e.Class.Error())
 	case 'i':
-		if e.inner != nil {
-			io.WriteString(s, e.inner.Error())
+		if e.Inner != nil {
+			io.WriteString(s, e.Inner.Error())
 		}
 	case 'm':
-		io.WriteString(s, e.message)
+		io.WriteString(s, e.Message)
 	case 'q':
-		fmt.Fprintf(s, "%q", e.message)
+		fmt.Fprintf(s, "%q", e.Message)
 	}
 }
 
@@ -116,10 +148,10 @@ func (e *Ex) Decompose() map[string]interface{} {
 	values := map[string]interface{}{}
 	values["Class"] = e.Class.Error()
 	values["Message"] = e.Message
-	if e.stack != nil {
+	if e.Stack != nil {
 		values["Stack"] = e.Stack.Strings()
 	}
-	if e.inner != nil {
+	if e.Inner != nil {
 		if typed, isTyped := e.Inner.(*Ex); isTyped {
 			values["Inner"] = typed.Decompose()
 		} else {
@@ -132,4 +164,20 @@ func (e *Ex) Decompose() map[string]interface{} {
 // MarshalJSON is a custom json marshaler.
 func (e *Ex) MarshalJSON() ([]byte, error) {
 	return json.Marshal(e.Decompose())
+}
+
+// String returns a fully formed string representation of the exception.
+// It's equivalent to calling sprintf("%+v", ex).
+func (e *Ex) String() string {
+	s := new(bytes.Buffer)
+	if e.Class != nil && len(e.Class.Error()) > 0 {
+		fmt.Fprintf(s, "%s", e.Class)
+	}
+	if len(e.Message) > 0 {
+		io.WriteString(s, e.Message)
+	}
+	if e.Stack != nil {
+		io.WriteString(s, e.Stack.String())
+	}
+	return s.String()
 }

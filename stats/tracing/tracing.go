@@ -30,9 +30,9 @@ func GetTracingSpanFromContext(ctx context.Context, key string) opentracing.Span
 func SpanError(span opentracing.Span, err error) {
 	if err != nil {
 		if typed := exception.As(err); typed != nil {
-			span.SetTag(TagKeyError, typed.Class())
-			span.SetTag(TagKeyErrorMessage, typed.Message())
-			span.SetTag(TagKeyErrorStack, typed.Stack().String())
+			span.SetTag(TagKeyError, typed.Class)
+			span.SetTag(TagKeyErrorMessage, typed.Message)
+			span.SetTag(TagKeyErrorStack, typed.Stack.String())
 		} else {
 			span.SetTag(TagKeyError, fmt.Sprintf("%v", err))
 		}

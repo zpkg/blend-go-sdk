@@ -47,7 +47,7 @@ func (e TimedEvent) String() string {
 }
 
 // WriteText implements TextWritable.
-func (e TimedEvent) WriteText(tf TextFormatter, wr io.Writer) {
+func (e TimedEvent) WriteText(tf Colorizer, wr io.Writer) {
 	io.WriteString(wr, e.String())
 }
 

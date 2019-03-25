@@ -35,7 +35,7 @@ func (c StandardClaims) Valid() error {
 
 	if c.VerifyExpiresAt(now, false) == false {
 		delta := time.Unix(now, 0).Sub(time.Unix(c.ExpiresAt, 0))
-		return exception.New(ErrValidationExpired).WithMessagef("token is expired by %v", delta)
+		return exception.New(ErrValidationExpired, exception.OptMessagef("token is expired by %v", delta))
 	}
 
 	if c.VerifyIssuedAt(now, false) == false {
