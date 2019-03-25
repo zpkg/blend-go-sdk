@@ -38,7 +38,7 @@ type HTTPRequestEvent struct {
 }
 
 // WriteText implements TextWritable.
-func (e *HTTPRequestEvent) WriteText(formatter TextFormatter, wr io.Writer) {
+func (e *HTTPRequestEvent) WriteText(formatter Colorizer, wr io.Writer) {
 	WriteHTTPRequest(formatter, wr, e.Request)
 }
 

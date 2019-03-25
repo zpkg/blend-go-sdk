@@ -3,6 +3,9 @@ package logger
 import (
 	"encoding/json"
 	"fmt"
+	"io"
+
+	"github.com/blend/go-sdk/exception"
 )
 
 // these are compile time assertions
@@ -40,9 +43,18 @@ func NewErrorEventListener(listener func(*ErrorEvent)) Listener {
 // ErrorEvent is an event that wraps an error.
 type ErrorEvent struct {
 	*EventMeta
-
 	Err   error
 	State interface{}
+}
+
+// WriteText writes the text version of an error.
+func (e *ErrorEvent) WriteText(formatter Colorizer, output io.Writer) {
+	if e.Err != nil {
+		if typed, ok := e.Err.(*exception.Ex); ok {
+		} else {
+			io.WriteString(output, e.Err.Error())
+		}
+	}
 }
 
 // Fields implements FieldsProvider.
