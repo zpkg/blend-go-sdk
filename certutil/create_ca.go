@@ -30,16 +30,10 @@ func CreateCA(options ...CertOption) (*CertBundle, error) {
 	}
 
 	csr := x509.Certificate{
-		SerialNumber: serialNumber,
-		Subject: pkix.Name{
-			CommonName:   "warden-ca",
-			Organization: []string{"Warden"},
-			Country:      []string{"United States"},
-			Province:     []string{"California"},
-			Locality:     []string{"San Francisco"},
-		},
+		SerialNumber:          serialNumber,
+		Subject:               pkix.Name{},
 		NotBefore:             time.Now().UTC(),
-		NotAfter:              time.Now().UTC().AddDate(10, 0, 0),
+		NotAfter:              time.Now().UTC().AddDate(DefaultCANotAfterYears, 0, 0),
 		IsCA:                  true,
 		KeyUsage:              x509.KeyUsageKeyEncipherment | x509.KeyUsageDigitalSignature | x509.KeyUsageCertSign,
 		BasicConstraintsValid: true,
