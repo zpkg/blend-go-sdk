@@ -11,6 +11,7 @@ func NewLatch() *Latch {
 		starting: make(chan struct{}),
 		started:  make(chan struct{}),
 		pausing:  make(chan struct{}),
+		paused:   make(chan struct{}),
 		resuming: make(chan struct{}),
 		stopping: make(chan struct{}),
 		stopped:  make(chan struct{}),
@@ -224,6 +225,19 @@ func (l *Latch) Paused() {
 	atomic.StoreInt32(&l.state, LatchPaused)
 	close(l.paused)
 	l.paused = make(chan struct{})
+	l.Unlock()
+}
+
+// Resuming signals that the latch is resuming and has entered
+// the `IsResuming` state.
+func (l *Latch) Resuming() {
+	if l.IsResuming() {
+		return
+	}
+	l.Lock()
+	atomic.StoreInt32(&l.state, LatchResuming)
+	close(l.resuming)
+	l.resuming = make(chan struct{})
 	l.Unlock()
 }
 

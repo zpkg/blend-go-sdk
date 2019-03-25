@@ -10,7 +10,7 @@ import (
 func TestEventFlagSetEnable(t *testing.T) {
 	assert := assert.New(t)
 
-	set := NewFlags().WithEnabled("FOO")
+	set := NewFlags("FOO")
 	set.Enable("TEST")
 	assert.True(set.IsEnabled("TEST"))
 	assert.True(set.IsEnabled("FOO"))
@@ -43,10 +43,10 @@ func TestEventFlagSetEnableAll(t *testing.T) {
 func TestEventFlagSetFromEnvironment(t *testing.T) {
 	assert := assert.New(t)
 
-	env.Env().Set(EnvVarEventFlags, "error,info,web.request")
-	defer env.Env().Restore(EnvVarEventFlags)
+	env.Env().Set(EnvVarFlags, "error,info,web.request")
+	defer env.Env().Restore(EnvVarFlags)
 
-	set := NewFlagsFromEnv()
+	set := NewFlags(env.Env().CSV(EnvVarFlags)...)
 	assert.True(set.IsEnabled(Error))
 	assert.True(set.IsEnabled(Info))
 	assert.False(set.IsEnabled(Fatal))
@@ -55,23 +55,23 @@ func TestEventFlagSetFromEnvironment(t *testing.T) {
 func TestEventFlagSetFromEnvironmentWithDisabled(t *testing.T) {
 	assert := assert.New(t)
 
-	env.Env().Set(EnvVarEventFlags, "all,-debug")
-	defer env.Env().Restore(EnvVarEventFlags)
+	env.Env().Set(EnvVarFlags, "all,-debug")
+	defer env.Env().Restore(EnvVarFlags)
 
-	set := NewFlagsFromEnv()
+	set := NewFlags(env.Env().CSV(EnvVarFlags)...)
 	assert.True(set.IsEnabled(Error))
 	assert.True(set.IsEnabled(Fatal))
-	assert.True(set.IsEnabled(Flag("foo")))
+	assert.True(set.IsEnabled("foo"))
 	assert.False(set.IsEnabled(Debug))
 }
 
 func TestEventFlagSetFromEnvironmentAll(t *testing.T) {
 	assert := assert.New(t)
 
-	env.Env().Set(EnvVarEventFlags, "all")
-	defer env.Env().Restore(EnvVarEventFlags)
+	env.Env().Set(EnvVarFlags, "all")
+	defer env.Env().Restore(EnvVarFlags)
 
-	set := NewFlagsFromEnv()
+	set := NewFlags(env.Env().CSV(EnvVarFlags)...)
 	assert.True(set.All())
 	assert.False(set.None())
 	assert.True(set.IsEnabled(Error))
@@ -80,10 +80,10 @@ func TestEventFlagSetFromEnvironmentAll(t *testing.T) {
 func TestEventFlagSetFromEnvNone(t *testing.T) {
 	assert := assert.New(t)
 
-	env.Env().Set(EnvVarEventFlags, "none")
-	defer env.Env().Restore(EnvVarEventFlags)
+	env.Env().Set(EnvVarFlags, "none")
+	defer env.Env().Restore(EnvVarFlags)
 
-	set := NewFlagsFromEnv()
+	set := NewFlags(env.Env().CSV(EnvVarFlags)...)
 	assert.False(set.All())
 	assert.True(set.None())
 	assert.False(set.IsEnabled(Error))
@@ -92,7 +92,7 @@ func TestEventFlagSetFromEnvNone(t *testing.T) {
 func TestEventFlagNoneEnableEvents(t *testing.T) {
 	assert := assert.New(t)
 
-	flags := NewFlagsNone()
+	flags := FlagsNone()
 	assert.False(flags.IsEnabled("test_flag"))
 
 	flags.Enable("test_flag")
@@ -103,44 +103,33 @@ func TestEventSetCoalesceWith(t *testing.T) {
 	assert := assert.New(t)
 
 	first := NewFlags(Info)
-	first.CoalesceWith(NewFlags(Warning))
+	first.MergeWith(NewFlags(Warning))
 	assert.True(first.IsEnabled(Info))
 	assert.True(first.IsEnabled(Warning))
 	assert.False(first.IsEnabled(Fatal))
 
 	second := NewFlags(Info)
-	second.CoalesceWith(NewFlagsFromValues("-info"))
+	second.MergeWith(NewFlags("-info"))
 	assert.False(second.IsEnabled(Info))
 }
 
 func TestFlagSetNone(t *testing.T) {
 	assert := assert.New(t)
-
-	assert.True(NoneFlags().None())
-}
-
-func TestNewHiddenFlagSetFromEnv(t *testing.T) {
-	assert := assert.New(t)
-	defer env.Restore()
-	env.Env().Set(EnvVarHiddenEventFlags, "debug,silly")
-
-	set := NewHiddenFlagSetFromEnv()
-	assert.False(set.IsEnabled(Info))
-	assert.True(set.IsEnabled(Debug))
-	assert.True(set.IsEnabled(Silly))
+	assert.True(FlagsNone().None())
 }
 
 func TestFlagSetString(t *testing.T) {
 	assert := assert.New(t)
 
-	assert.Equal("none", NoneFlags().String())
-	assert.Equal("all", AllFlags().String())
+	assert.Equal("none", FlagsNone().String())
+	assert.Equal("all", FlagsAll().String())
 
 	fs := NewFlags(Info, Debug, Error)
 	assert.Contains(fs.String(), "info")
 	assert.Contains(fs.String(), "debug")
 	assert.Contains(fs.String(), "error")
 
-	nfs := AllFlags().WithDisabled(Fatal)
+	nfs := FlagsAll()
+	nfs.Disable(Fatal)
 	assert.Equal("all, -fatal", nfs.String())
 }

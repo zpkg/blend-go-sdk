@@ -2,6 +2,8 @@ package logger
 
 import (
 	"strings"
+
+	"github.com/blend/go-sdk/env"
 )
 
 // Config is the logger config.
@@ -10,6 +12,11 @@ type Config struct {
 	Format string     `json:"format,omitempty" yaml:"format,omitempty" env:"LOG_FORMAT"`
 	Text   TextConfig `json:"text,omitempty" yaml:"text,omitempty"`
 	JSON   JSONConfig `json:"json,omitempty" yaml:"json,omitempty"`
+}
+
+// Resolve resolves the config.
+func (c *Config) Resolve() error {
+	return env.Env().ReadInto(c)
 }
 
 // FlagsOrDefault returns the enabled logger events.
@@ -32,17 +39,18 @@ func (c Config) FormatOrDefault() string {
 func (c Config) Formatter() WriteFormatter {
 	switch strings.ToLower(string(c.FormatOrDefault())) {
 	case FormatJSON:
-		return NewJSONFormatter(&c.JSON)
+		return NewJSONFormatter(OptJSONConfig(&c.JSON))
 	case FormatText:
-		return NewTextFormatter(&c.Text)
+		return NewTextFormatter(OptTextConfig(&c.Text))
 	default:
-		return NewTextFormatter(&c.Text)
+		return NewTextFormatter(OptTextConfig(&c.Text))
 	}
 }
 
 // TextConfig is the config for a text formatter.
 type TextConfig struct {
 	HideTimestamp bool   `json:"hideTimestamp,omitempty" yaml:"hideTimestamp,omitempty" env:"LOG_HIDE_TIMESTAMP"`
+	HideFields    bool   `json:"hideFields,omitempty" yaml:"hideFields,omitempty" env:"LOG_HIDE_FIELDS"`
 	NoColor       bool   `json:"noColor,omitempty" yaml:"noColor,omitempty" env:"NO_COLOR"`
 	TimeFormat    string `json:"timeFormat,omitempty" yaml:"timeFormat,omitempty" env:"LOG_TIME_FORMAT"`
 }
@@ -57,5 +65,20 @@ func (twc TextConfig) TimeFormatOrDefault() string {
 
 // JSONConfig is the config for a json formatter.
 type JSONConfig struct {
-	Pretty bool `json:"pretty,omitempty" yaml:"pretty,omitempty" env:"LOG_JSON_PRETTY"`
+	Pretty       bool   `json:"pretty,omitempty" yaml:"pretty,omitempty" env:"LOG_JSON_PRETTY"`
+	PrettyPrefix string `json:"prettyPrefix,omitempty" yaml:"prettyPrefix,omitempty" env:"LOG_JSON_PRETTY_PREFIX"`
+	PrettyIndent string `json:"prettyIndent,omitempty" yaml:"prettyIndent,omitempty" env:"LOG_JSON_PRETTY_INDENT"`
+}
+
+// PrettyPrefixOrDefault returns the pretty prefix or a default.
+func (jc JSONConfig) PrettyPrefixOrDefault() string {
+	return jc.PrettyPrefix
+}
+
+// PrettyIndentOrDefault returns the pretty indent or a default.
+func (jc JSONConfig) PrettyIndentOrDefault() string {
+	if jc.PrettyIndent != "" {
+		return jc.PrettyIndent
+	}
+	return "  "
 }

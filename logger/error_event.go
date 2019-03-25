@@ -7,7 +7,9 @@ import (
 
 // these are compile time assertions
 var (
-	_ Event = &ErrorEvent{}
+	_ Event          = (*ErrorEvent)(nil)
+	_ TextWritable   = (*ErrorEvent)(nil)
+	_ FieldsProvider = (*ErrorEvent)(nil)
 )
 
 // Errorf returns a new error event based on format and arguments.
@@ -15,6 +17,14 @@ func Errorf(flag, format string, args ...interface{}) *ErrorEvent {
 	return &ErrorEvent{
 		EventMeta: NewEventMeta(flag),
 		Err:       fmt.Errorf(format, args...),
+	}
+}
+
+// NewErrorEvent returns a new error event.
+func NewErrorEvent(flag string, err error) *ErrorEvent {
+	return &ErrorEvent{
+		EventMeta: NewEventMeta(flag),
+		Err:       err,
 	}
 }
 

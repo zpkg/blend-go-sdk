@@ -1,19 +1,39 @@
 package logger
 
 import (
+	"bytes"
+	"context"
 	"fmt"
 	"io"
+	"strings"
 	"time"
 
 	"github.com/blend/go-sdk/ansi"
 )
 
 // NewTextFormatter returns a new text writer for a given output.
-func NewTextFormatter(cfg *TextConfig) *TextFormatter {
-	return &TextFormatter{
-		HideTimestamp: cfg.HideTimestamp,
-		NoColor:       cfg.NoColor,
-		TimeFormat:    cfg.TimeFormatOrDefault(),
+func NewTextFormatter(options ...TextFormatterOption) *TextFormatter {
+	tf := &TextFormatter{
+		TimeFormat: DefaultTextTimeFormat,
+	}
+
+	for _, option := range options {
+		option(tf)
+	}
+
+	return tf
+}
+
+// TextFormatterOption is an option for text formatters.
+type TextFormatterOption func(*TextFormatter)
+
+// OptTextConfig sets the text formatter config.
+func OptTextConfig(cfg *TextConfig) TextFormatterOption {
+	return func(tf *TextFormatter) {
+		tf.HideTimestamp = cfg.HideTimestamp
+		tf.HideFields = cfg.HideFields
+		tf.NoColor = cfg.NoColor
+		tf.TimeFormat = cfg.TimeFormatOrDefault()
 	}
 }
 
@@ -27,7 +47,7 @@ type TextFormatter struct {
 
 // Colorize (optionally) applies a color to a string.
 func (tf TextFormatter) Colorize(value string, color ansi.Color) string {
-	if wr.NoColor {
+	if tf.NoColor {
 		return value
 	}
 	return color.Apply(value)
@@ -41,29 +61,56 @@ func (tf TextFormatter) FormatFlag(flag string, color ansi.Color) string {
 // FormatTimestamp returns a new timestamp string.
 func (tf TextFormatter) FormatTimestamp(ts time.Time) string {
 	timeFormat := DefaultTextTimeFormat
-	if len(wr.timeFormat) > 0 {
-		timeFormat = wr.timeFormat
+	if len(tf.TimeFormat) > 0 {
+		timeFormat = tf.TimeFormat
 	}
 	value := ts.Format(timeFormat)
-	return wr.Colorize(fmt.Sprintf("%-30s", value), ansi.ColorGray)
+	return tf.Colorize(fmt.Sprintf("%-30s", value), ansi.ColorGray)
+}
+
+// FormatSubContextPath returns the sub-context path section of the message.
+func (tf *TextFormatter) FormatSubContextPath(path ...string) string {
+	if len(path) == 0 {
+		return ""
+	}
+	if len(path) == 1 {
+		return fmt.Sprintf("[%s]", tf.Colorize(path[0], ansi.ColorBlue))
+	}
+	if !tf.NoColor {
+		for index := 0; index < len(path); index++ {
+			path[index] = tf.Colorize(path[index], ansi.ColorBlue)
+		}
+	}
+	return fmt.Sprintf("[%s]", strings.Join(path, " > "))
 }
 
 // WriteFormat implements write formatter.
-func (tf TextFormatter) WriteFormat(output io.Writer, e Event) error {
-	if wr.ShowTimestamp {
-		buf.WriteString(wr.FormatTimestamp(e.Timestamp()))
-		buf.WriteRune(RuneSpace)
+func (tf TextFormatter) WriteFormat(ctx context.Context, output io.Writer, e Event) error {
+	buffer := new(bytes.Buffer)
+
+	if !tf.HideTimestamp {
+		buffer.WriteString(tf.FormatTimestamp(e.Timestamp()))
+		buffer.WriteString(Space)
 	}
 
-	buf.WriteString(wr.FormatFlag(e.Flag(), GetFlagTextColor(e.Flag())))
-	buf.WriteRune(RuneSpace)
+	buffer.WriteString(tf.FormatFlag(e.Flag(), FlagTextColor(e.Flag())))
+	buffer.WriteString(Space)
 
-	buf.WriteString(wr.FormatEntity(typed.Entity(), ansi.ColorBlue))
-	buf.WriteRune(RuneSpace)
+	if subContextPath := GetSubContextPath(ctx); subContextPath != nil {
+		buffer.WriteString(tf.FormatSubContextPath(subContextPath...))
+		buffer.WriteString(Space)
+	}
 
-	e.WriteText(wr, buf)
+	if typed, ok := e.(TextWritable); ok {
+		typed.WriteText(tf, buffer)
+	} else if fieldsProvider, ok := e.(FieldsProvider); ok {
+		fields := fieldsProvider.Fields()
+		WriteFields(tf, buffer, fields)
+	} else if stringer, ok := e.(fmt.Stringer); ok {
+		buffer.WriteString(stringer.String())
+	}
 
-	buf.WriteRune(RuneNewline)
-	_, err := buf.WriteTo(output)
+	buffer.WriteString(Newline)
+	_, err := io.Copy(output, buffer)
 	return err
 }

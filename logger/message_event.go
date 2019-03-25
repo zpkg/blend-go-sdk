@@ -14,7 +14,7 @@ var (
 func Messagef(flag, format string, args ...interface{}) *MessageEvent {
 	return &MessageEvent{
 		EventMeta: NewEventMeta(flag),
-		message:   fmt.Sprintf(format, args...),
+		Message:   fmt.Sprintf(format, args...),
 	}
 }
 
@@ -41,11 +41,11 @@ func (e *MessageEvent) WriteText(formatter TextFormatter, output io.Writer) {
 // Fields implements FieldsProvider.
 func (e *MessageEvent) Fields() Fields {
 	return Fields{
-		FieldMessage: e.message,
+		FieldMessage: e.Message,
 	}
 }
 
 // String returns the message event body.
 func (e *MessageEvent) String() string {
-	return e.message
+	return e.Message
 }

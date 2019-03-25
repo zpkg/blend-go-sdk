@@ -4,8 +4,11 @@ import (
 	"strings"
 )
 
-// ParseFlags returns a new flag set from an array of flag values.
-func ParseFlags(flags ...string) *Flags {
+// NewFlags returns a new flag set from an array of flag values.
+// It applies some parsing rules, such as a `-` prefix denotes disabling the flag explicitly.
+// `All` and `None` are special flag values that indicate all flags are enabled or none are enabled.
+// Flags are caseless, and are lowercase in final output.
+func NewFlags(flags ...string) *Flags {
 	flagSet := &Flags{
 		flags: make(map[string]bool),
 	}
@@ -32,16 +35,11 @@ func ParseFlags(flags ...string) *Flags {
 	return flagSet
 }
 
-// NewFlags returns a new FlagSet with the given flags enabled.
-func NewFlags(enabled ...string) *Flags {
-	efs := &Flags{
-		flags: make(map[string]bool),
-	}
-	for _, flag := range enabled {
-		efs.flags[flag] = true
-	}
-	return efs
-}
+// FlagsAll returns a flags set with all enabled.
+func FlagsAll() *Flags { return &Flags{all: true, flags: make(map[string]bool)} }
+
+// FlagsNone returns a flags set with no flags enabled.
+func FlagsNone() *Flags { return &Flags{none: true, flags: make(map[string]bool)} }
 
 // Flags is a set of event flags.
 type Flags struct {
@@ -51,20 +49,24 @@ type Flags struct {
 }
 
 // Enable enables an event flag.
-func (efs *Flags) Enable(flag string) {
+func (efs *Flags) Enable(flags ...string) {
 	efs.none = false
-	efs.flags[flag] = true
+	for _, flag := range flags {
+		efs.flags[flag] = true
+	}
 }
 
 // Disable disables a flag.
-func (efs *Flags) Disable(flag string) {
-	efs.flags[flag] = false
+func (efs *Flags) Disable(flags ...string) {
+	for _, flag := range flags {
+		efs.flags[flag] = false
+	}
 }
 
 // SetAll flips the `all` bit on the flag set to true.
+// Note: flags that are explicitly disabled will remain disabled.
 func (efs *Flags) SetAll() {
 	efs.all = true
-	efs.flags = make(map[string]bool)
 	efs.none = false
 }
 

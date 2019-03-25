@@ -1,13 +1,26 @@
 package logger
 
+import "context"
+
 // Listenable is an interface loggers can ascribe to.
 type Listenable interface {
 	Listen(flag string, label string, listener Listener)
 }
 
-// Triggerable is an interface.
+// Triggerable is type that can trigger events.
 type Triggerable interface {
-	Trigger(Event)
+	Trigger(context.Context, Event)
+}
+
+// Writable is an type that can write events.
+type Writable interface {
+	Write(context.Context, Event)
+}
+
+// WriteTriggerable is a type that can both trigger and write events.
+type WriteTriggerable interface {
+	Triggerable
+	Writable
 }
 
 // InfofReceiver is a type that defines Infof.
@@ -72,9 +85,14 @@ type Errorable interface {
 
 // Log is a logger that implements the full suite of logging methods.
 type Log interface {
-	Listenable
 	Triggerable
 	OutputReceiver
 	ErrorOutputReceiver
 	Errorable
+}
+
+// FullLog is a logger that implements the full suite of logging methods.
+type FullLog interface {
+	Listenable
+	Log
 }

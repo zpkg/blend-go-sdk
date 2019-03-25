@@ -58,19 +58,20 @@ const (
 	DefaultWorkerQueueDepth = 1 << 10
 )
 
-// Rune constants
+// String constants
 const (
-	RuneSpace   rune = ' '
-	RuneNewline rune = '\n'
+	Space   = " "
+	Newline = "\n"
 )
 
 // Common json fields
 const (
-	FieldFlag      = "flag"
-	FieldTimestamp = "_timestamp"
-	FieldMessage   = "message"
-	FieldElapsed   = "elapsed"
-	FieldErr       = "err"
+	FieldFlag           = "flag"
+	FieldTimestamp      = "_timestamp"
+	FieldMessage        = "message"
+	FieldElapsed        = "elapsed"
+	FieldErr            = "err"
+	FieldSubContextPath = "sub-context"
 )
 
 // JSON Formatter defaults

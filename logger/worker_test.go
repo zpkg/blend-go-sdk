@@ -14,17 +14,17 @@ func TestWorker(t *testing.T) {
 	wg := sync.WaitGroup{}
 	wg.Add(1)
 	var didFire bool
-	w := NewWorker(nil, func(e Event) {
+	w := NewWorker(func(e Event) {
 		defer wg.Done()
 		didFire = true
 
 		typed, isTyped := e.(*MessageEvent)
 		assert.True(isTyped)
-		assert.Equal("test", typed.Message())
-	}, DefaultWriteQueueDepth)
+		assert.Equal("test", typed.Message)
+	})
 
 	w.Start()
-	defer w.Close()
+	defer w.Stop()
 
 	w.Work <- Messagef(Info, "test")
 	wg.Wait()
@@ -36,26 +36,25 @@ func TestWorkerPanics(t *testing.T) {
 	assert := assert.New(t)
 
 	buffer := bytes.NewBuffer(nil)
-	wr := NewTextWriter(buffer)
 
-	log := New().WithFlags(AllFlags()).WithWriter(wr)
+	log := New(OptAll(), OptOutput(buffer), OptFormatter(&TextFormatter{}))
 	defer log.Close()
 
 	wg := sync.WaitGroup{}
 	wg.Add(1)
 	var didFire bool
-	w := NewWorker(log, func(e Event) {
+	w := NewWorker(func(e Event) {
 		defer wg.Done()
 		didFire = true
 		panic("only a test")
-	}, DefaultWriteQueueDepth)
+	})
 	w.Start()
 
 	w.Work <- Messagef(Info, "test")
 	wg.Wait()
 
 	assert.True(didFire)
-	w.Close()
+	w.Stop()
 	assert.NotEmpty(buffer.String())
 }
 
@@ -65,10 +64,10 @@ func TestWorkerDrain(t *testing.T) {
 	wg := sync.WaitGroup{}
 	wg.Add(4)
 	var didFire bool
-	w := NewWorker(nil, func(e Event) {
+	w := NewWorker(func(e Event) {
 		defer wg.Done()
 		didFire = true
-	}, DefaultWriteQueueDepth)
+	})
 
 	w.Work <- Messagef(Info, "test1")
 	w.Work <- Messagef(Info, "test2")

@@ -18,7 +18,7 @@ func logged(log logger.Log, handler http.HandlerFunc) http.HandlerFunc {
 	return func(res http.ResponseWriter, req *http.Request) {
 		start := time.Now()
 		log.Trigger(logger.NewHTTPRequestEvent(req))
-		rw := logger.NewResponseWriter(res)
+		rw := webutil.NewResponseWriter(res)
 		handler(rw, req)
 		log.Trigger(logger.NewHTTPResponseEvent(req).WithStatusCode(rw.StatusCode()).WithContentLength(rw.ContentLength()).WithElapsed(time.Now().Sub(start)))
 	}
@@ -83,7 +83,7 @@ func main() {
 		log.Println(http.ListenAndServe("localhost:6060", nil))
 	}()
 
-	log := logger.NewJSON().WithFlags(logger.AllFlags())
+	log := logger.New(logger.OptJSON(), logger.OptAll())
 
 	http.HandleFunc("/", logged(log, indexHandler))
 
@@ -96,7 +96,7 @@ func main() {
 	http.HandleFunc("/bench/logged", logged(log, indexHandler))
 	http.HandleFunc("/bench/stdout", stdoutLogged(indexHandler))
 
-	log.SyncInfof("Listening on :%s", port())
-	log.SyncInfof("Events %s", log.Flags().String())
+	log.Infof("Listening on :%s", port())
+	log.Infof("Events %s", log.Flags.String())
 	log.Fatal(http.ListenAndServe(":"+port(), nil))
 }

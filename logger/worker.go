@@ -41,7 +41,7 @@ func (w *Worker) Dispatch() {
 		select {
 		case e = <-w.Work:
 			if err = w.Process(e); err != nil && w.Errors != nil {
-				w.Errors <- e
+				w.Errors <- err
 			}
 		case <-w.NotifyPausing():
 			w.Paused()
@@ -55,30 +55,29 @@ func (w *Worker) Dispatch() {
 }
 
 // Process calls the listener for an event.
-func (w *Worker) Process(e Event) error {
-	if w.Parent != nil && w.Parent.RecoversPanics() {
-		defer func() {
-			if r := recover(); r != nil {
-				return exception.New(r)
-			}
-		}()
-	}
+func (w *Worker) Process(e Event) (err error) {
+	defer func() {
+		if r := recover(); r != nil {
+			err = exception.New(r)
+			return
+		}
+	}()
 	w.Listener(e)
-	return nil
+	return
 }
 
 // Drain stops the worker and synchronously processes any remaining work.
 // It then restarts the worker.
 func (w *Worker) Drain() {
 	w.Pausing()
-	<-w.Paused()
+	<-w.NotifyPaused()
 
 	var work Event
 	var err error
 	workLeft := len(w.Work)
 	for index := 0; index < workLeft; index++ {
 		work = <-w.Work
-		if err = w.Process(<-work); err != nil && w.Errors != nil {
+		if err = w.Process(work); err != nil && w.Errors != nil {
 			w.Errors <- err
 		}
 	}
@@ -93,7 +92,7 @@ func (w *Worker) Stop() error {
 		return exception.New(async.ErrCannotStop)
 	}
 	w.Stopping()
-	<-w.Stopped()
+	<-w.NotifyStopped()
 
 	var work Event
 	var err error
@@ -101,7 +100,7 @@ func (w *Worker) Stop() error {
 	workLeft := len(w.Work)
 	for index := 0; index < workLeft; index++ {
 		work = <-w.Work
-		if err = w.Process(<-work); err != nil && w.Errors != nil {
+		if err = w.Process(work); err != nil && w.Errors != nil {
 			w.Errors <- err
 		}
 	}

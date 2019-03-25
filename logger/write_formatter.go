@@ -1,8 +1,11 @@
 package logger
 
-import "io"
+import (
+	"context"
+	"io"
+)
 
 // WriteFormatter is a formatter for writing events to output writers.
 type WriteFormatter interface {
-	WriteFormat(io.Writer, Event) error
+	WriteFormat(context.Context, io.Writer, Event) error
 }
