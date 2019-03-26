@@ -7,14 +7,14 @@ import (
 
 var _ Client = &MockClient{}
 
-// NewMockClient creates a new mock client.
+// NewMockClient creates a new mock Client.
 func NewMockClient() *MockClient {
 	return &MockClient{
 		SecretValues: make(map[string]Values),
 	}
 }
 
-// MockClient is a mock events client
+// MockClient is a mock events Client
 type MockClient struct {
 	SecretValues map[string]Values
 }

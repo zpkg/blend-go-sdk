@@ -19,12 +19,12 @@ import (
 // assert VaultClient implements Client
 var _ Client = &VaultClient{}
 
-// NewVaultClient returns a new client.
+// NewVaultClient returns a new Client.
 func NewVaultClient() (*VaultClient, error) {
 	return NewVaultClientFromConfig(&Config{})
 }
 
-// NewVaultClientFromConfig returns a new client from a config.
+// NewVaultClientFromConfig returns a new Client from a config.
 func NewVaultClientFromConfig(cfg *Config) (*VaultClient, error) {
 	xport := &http.Transport{}
 	err := http2.ConfigureTransport(xport)
@@ -61,12 +61,12 @@ func NewVaultClientFromConfig(cfg *Config) (*VaultClient, error) {
 		},
 	}
 
-	client.kv1 = &KV1{client: client}
-	client.kv2 = &KV2{client: client}
+	client.kv1 = &KV1{Client: client}
+	client.kv2 = &KV2{Client: client}
 	return client, nil
 }
 
-// NewVaultClientFromEnv is a helper to create a client from a config read from the environment.
+// NewVaultClientFromEnv is a helper to create a Client from a config read from the environment.
 func NewVaultClientFromEnv() (*VaultClient, error) {
 	cfg, err := NewConfigFromEnv()
 	if err != nil {
@@ -83,7 +83,7 @@ func Must(c *VaultClient, err error) *VaultClient {
 	return c
 }
 
-// VaultClient is a client to talk to the secrets store.
+// VaultClient is a Client to talk to the secrets store.
 type VaultClient struct {
 	remote *url.URL
 	token  string
@@ -98,13 +98,13 @@ type VaultClient struct {
 	certPool   *CertPool
 }
 
-// WithRemote set the client remote url.
+// WithRemote set the Client remote url.
 func (c *VaultClient) WithRemote(remote *url.URL) *VaultClient {
 	c.remote = remote
 	return c
 }
 
-// Remote returns the client remote addr.
+// Remote returns the Client remote addr.
 func (c *VaultClient) Remote() *url.URL {
 	return c.remote
 }
@@ -131,13 +131,13 @@ func (c *VaultClient) Mount() string {
 	return c.mount
 }
 
-// WithHTTPClient sets the http client.
+// WithHTTPClient sets the http Client.
 func (c *VaultClient) WithHTTPClient(hc HTTPClient) *VaultClient {
 	c.client = hc
 	return c
 }
 
-// HTTPClient sets the http client.
+// HTTPClient sets the http Client.
 func (c *VaultClient) HTTPClient() HTTPClient {
 	return c.client
 }

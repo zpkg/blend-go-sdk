@@ -17,7 +17,7 @@ type SecretV1 struct {
 	Data Values `json:"data"`
 	// Warnings contains any warnings related to the operation. These
 	// are not issues that caused the command to fail, but that the
-	// client should be aware of.
+	// Client should be aware of.
 	Warnings []string `json:"warnings"`
 	// Auth, if non-nil, means that there was authentication information
 	// attached to this response.
@@ -40,7 +40,7 @@ type SecretV2 struct {
 	Data SecretData `json:"data"`
 	// Warnings contains any warnings related to the operation. These
 	// are not issues that caused the command to fail, but that the
-	// client should be aware of.
+	// Client should be aware of.
 	Warnings []string `json:"warnings"`
 	// Auth, if non-nil, means that there was authentication information
 	// attached to this response.
