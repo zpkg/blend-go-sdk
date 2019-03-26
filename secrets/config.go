@@ -53,7 +53,7 @@ func (c Config) IsZero() bool {
 	return len(c.Token) == 0
 }
 
-// GetAddr returns the Client addr.
+// GetAddr returns the c;oemt addr.
 func (c Config) GetAddr(inherited ...string) string {
 	return configutil.CoalesceString(c.Addr, DefaultAddr, inherited...)
 }
@@ -67,17 +67,17 @@ func (c Config) MustAddr() *url.URL {
 	return remote
 }
 
-// GetToken returns the Client token.
+// GetToken returns the c;oemt token.
 func (c Config) GetToken() string {
 	return configutil.CoalesceString(c.Token, "")
 }
 
-// GetMount returns the Client token.
+// GetMount returns the c;oemt token.
 func (c Config) GetMount() string {
 	return configutil.CoalesceString(c.Mount, DefaultMount)
 }
 
-// GetTimeout returns the Client timeout.
+// GetTimeout returns the c;oemt timeout.
 func (c Config) GetTimeout() time.Duration {
 	return configutil.CoalesceDuration(c.Timeout, DefaultTimeout)
 }

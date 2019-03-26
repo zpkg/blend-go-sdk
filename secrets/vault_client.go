@@ -16,15 +16,15 @@ import (
 	"github.com/blend/go-sdk/logger"
 )
 
-// assert VaultClient implements Client
+// assert VaultClient implements client
 var _ Client = &VaultClient{}
 
-// NewVaultClient returns a new Client.
+// NewVaultClient returns a new client.
 func NewVaultClient() (*VaultClient, error) {
 	return NewVaultClientFromConfig(&Config{})
 }
 
-// NewVaultClientFromConfig returns a new Client from a config.
+// NewVaultClientFromConfig returns a new client from a config.
 func NewVaultClientFromConfig(cfg *Config) (*VaultClient, error) {
 	xport := &http.Transport{}
 	err := http2.ConfigureTransport(xport)
@@ -66,7 +66,7 @@ func NewVaultClientFromConfig(cfg *Config) (*VaultClient, error) {
 	return client, nil
 }
 
-// NewVaultClientFromEnv is a helper to create a Client from a config read from the environment.
+// NewVaultClientFromEnv is a helper to create a client from a config read from the environment.
 func NewVaultClientFromEnv() (*VaultClient, error) {
 	cfg, err := NewConfigFromEnv()
 	if err != nil {
@@ -131,13 +131,13 @@ func (c *VaultClient) Mount() string {
 	return c.mount
 }
 
-// WithHTTPClient sets the http Client.
+// WithHTTPClient sets the http client.
 func (c *VaultClient) WithHTTPClient(hc HTTPClient) *VaultClient {
 	c.client = hc
 	return c
 }
 
-// HTTPClient sets the http Client.
+// HTTPClient sets the http client.
 func (c *VaultClient) HTTPClient() HTTPClient {
 	return c.client
 }
