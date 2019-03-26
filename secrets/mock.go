@@ -8,19 +8,19 @@ import (
 	"net/url"
 )
 
-// HTTPClient is a Client that can send http requests.
+// HTTPClient is a client that can send http requests.
 type HTTPClient interface {
 	Do(*http.Request) (*http.Response, error)
 }
 
-// NewMockHTTPClient returns a new mock http Client.
+// NewMockHTTPClient returns a new mock http client.
 func NewMockHTTPClient() *MockHTTPClient {
 	return &MockHTTPClient{
 		contents: make(map[string]*http.Response),
 	}
 }
 
-// MockHTTPClient is a mock http Client.
+// MockHTTPClient is a mock http client.
 type MockHTTPClient struct {
 	contents map[string]*http.Response
 }
