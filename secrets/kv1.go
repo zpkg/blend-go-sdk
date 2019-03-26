@@ -6,24 +6,24 @@ import (
 	"path/filepath"
 )
 
-// assert kv1 implements kv.
+// assert KV1 implements kv.
 var (
-	_ KV = &kv1{}
+	_ KV = &KV1{}
 )
 
-// kv1 defines key value version 1 interactions
-type kv1 struct {
-	client *VaultClient
+// KV1 defines key value version 1 interactions
+type KV1 struct {
+	Client *VaultClient
 }
 
-func (kv1 kv1) Put(ctx context.Context, key string, data Values, options ...Option) error {
-	contents, err := kv1.client.jsonBody(data)
+func (kv1 KV1) Put(ctx context.Context, key string, data Values, options ...Option) error {
+	contents, err := kv1.Client.jsonBody(data)
 	if err != nil {
 		return err
 	}
-	req := kv1.client.createRequest(MethodPut, filepath.Join("/v1/", key), options...).WithContext(ctx)
+	req := kv1.Client.createRequest(MethodPut, filepath.Join("/v1/", key), options...).WithContext(ctx)
 	req.Body = contents
-	res, err := kv1.client.send(req)
+	res, err := kv1.Client.send(req)
 	if err != nil {
 		return err
 	}
@@ -31,9 +31,9 @@ func (kv1 kv1) Put(ctx context.Context, key string, data Values, options ...Opti
 	return nil
 }
 
-func (kv1 kv1) Get(ctx context.Context, key string, options ...Option) (Values, error) {
-	req := kv1.client.createRequest(MethodGet, filepath.Join("/v1/", key), options...).WithContext(ctx)
-	res, err := kv1.client.send(req)
+func (kv1 KV1) Get(ctx context.Context, key string, options ...Option) (Values, error) {
+	req := kv1.Client.createRequest(MethodGet, filepath.Join("/v1/", key), options...).WithContext(ctx)
+	res, err := kv1.Client.send(req)
 	if err != nil {
 		return nil, err
 	}
@@ -47,9 +47,9 @@ func (kv1 kv1) Get(ctx context.Context, key string, options ...Option) (Values, 
 }
 
 // Delete puts a key.
-func (kv1 kv1) Delete(ctx context.Context, key string, options ...Option) error {
-	req := kv1.client.createRequest(MethodDelete, filepath.Join("/v1/", key), options...).WithContext(ctx)
-	res, err := kv1.client.send(req)
+func (kv1 KV1) Delete(ctx context.Context, key string, options ...Option) error {
+	req := kv1.Client.createRequest(MethodDelete, filepath.Join("/v1/", key), options...).WithContext(ctx)
+	res, err := kv1.Client.send(req)
 	if err != nil {
 		return err
 	}

@@ -16,7 +16,7 @@ import (
 	"github.com/blend/go-sdk/logger"
 )
 
-// assert VaultClient implements Client
+// assert VaultClient implements client
 var _ Client = &VaultClient{}
 
 // NewVaultClient returns a new client.
@@ -61,8 +61,8 @@ func NewVaultClientFromConfig(cfg *Config) (*VaultClient, error) {
 		},
 	}
 
-	client.kv1 = &kv1{client: client}
-	client.kv2 = &kv2{client: client}
+	client.kv1 = &KV1{Client: client}
+	client.kv2 = &KV2{Client: client}
 	return client, nil
 }
 
@@ -90,8 +90,8 @@ type VaultClient struct {
 	mount  string
 	log    logger.Log
 
-	kv1 *kv1
-	kv2 *kv2
+	kv1 *KV1
+	kv2 *KV2
 
 	bufferPool *BufferPool
 	client     HTTPClient
