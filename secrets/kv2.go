@@ -9,15 +9,15 @@ import (
 
 // assert kv1 implements kv.
 var (
-	_ KV = &kv2{}
+	_ KV = &KV2{}
 )
 
-// kv2 defines key value version 2 interactions
-type kv2 struct {
+// KV2 defines key value version 2 interactions
+type KV2 struct {
 	client *VaultClient
 }
 
-func (kv2 kv2) Put(ctx context.Context, key string, data Values, options ...Option) error {
+func (kv2 KV2) Put(ctx context.Context, key string, data Values, options ...Option) error {
 	contents, err := kv2.client.jsonBody(SecretData{Data: data})
 	if err != nil {
 		return err
@@ -32,7 +32,7 @@ func (kv2 kv2) Put(ctx context.Context, key string, data Values, options ...Opti
 	return nil
 }
 
-func (kv2 kv2) Get(ctx context.Context, key string, options ...Option) (Values, error) {
+func (kv2 KV2) Get(ctx context.Context, key string, options ...Option) (Values, error) {
 	req := kv2.client.createRequest(MethodGet, filepath.Join("/v1/", kv2.fixSecretDataPrefix(key)), options...).WithContext(ctx)
 	res, err := kv2.client.send(req)
 	if err != nil {
@@ -48,7 +48,7 @@ func (kv2 kv2) Get(ctx context.Context, key string, options ...Option) (Values, 
 }
 
 // Delete puts a key.
-func (kv2 kv2) Delete(ctx context.Context, key string, options ...Option) error {
+func (kv2 KV2) Delete(ctx context.Context, key string, options ...Option) error {
 	req := kv2.client.createRequest(MethodDelete, filepath.Join("/v1/", kv2.fixSecretDataPrefix(key)), options...).WithContext(ctx)
 
 	res, err := kv2.client.send(req)
@@ -60,7 +60,7 @@ func (kv2 kv2) Delete(ctx context.Context, key string, options ...Option) error 
 }
 
 // fixSecretDataPrefix ensures that a key is prefixed with secret/data/...
-func (kv2 kv2) fixSecretDataPrefix(key string) string {
+func (kv2 KV2) fixSecretDataPrefix(key string) string {
 	key = strings.TrimPrefix(key, "/")
 	if strings.HasPrefix(key, "secret") && !strings.HasPrefix(key, "secret/data") {
 		key = strings.TrimPrefix(key, "secret/")
