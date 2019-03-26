@@ -83,7 +83,7 @@ func Must(c *VaultClient, err error) *VaultClient {
 	return c
 }
 
-// VaultClient is a Client to talk to the secrets store.
+// VaultClient is a client to talk to the secrets store.
 type VaultClient struct {
 	remote *url.URL
 	token  string
@@ -98,13 +98,13 @@ type VaultClient struct {
 	certPool   *CertPool
 }
 
-// WithRemote set the Client remote url.
+// WithRemote set the client remote url.
 func (c *VaultClient) WithRemote(remote *url.URL) *VaultClient {
 	c.remote = remote
 	return c
 }
 
-// Remote returns the Client remote addr.
+// Remote returns the client remote addr.
 func (c *VaultClient) Remote() *url.URL {
 	return c.remote
 }
