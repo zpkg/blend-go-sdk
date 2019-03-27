@@ -1,6 +1,7 @@
 package logger
 
 import (
+	"context"
 	"encoding/json"
 	"fmt"
 	"io"
@@ -12,7 +13,7 @@ import (
 var (
 	_ Event          = (*ErrorEvent)(nil)
 	_ TextWritable   = (*ErrorEvent)(nil)
-	_ FieldsProvider = (*ErrorEvent)(nil)
+	_ json.Marshaler = (*ErrorEvent)(nil)
 )
 
 // Errorf returns a new error event based on format and arguments.
@@ -32,23 +33,23 @@ func NewErrorEvent(flag string, err error) *ErrorEvent {
 }
 
 // NewErrorEventListener returns a new error event listener.
-func NewErrorEventListener(listener func(*ErrorEvent)) Listener {
-	return func(e Event) {
+func NewErrorEventListener(listener func(context.Context, *ErrorEvent)) Listener {
+	return func(ctx context.Context, e Event) {
 		if typed, isTyped := e.(*ErrorEvent); isTyped {
-			listener(typed)
+			listener(ctx, typed)
 		}
 	}
 }
 
 // ErrorEvent is an event that wraps an error.
 type ErrorEvent struct {
-	*EventMeta
-	Err   error
-	State interface{}
+	*EventMeta `json:",inline"`
+	Err        error
+	State      interface{}
 }
 
 // WriteText writes the text version of an error.
-func (e *ErrorEvent) WriteText(formatter Colorizer, output io.Writer) {
+func (e *ErrorEvent) WriteText(formatter TextFormatter, output io.Writer) {
 	if e.Err != nil {
 		if typed, ok := e.Err.(*exception.Ex); ok {
 			io.WriteString(output, typed.String())
@@ -58,15 +59,15 @@ func (e *ErrorEvent) WriteText(formatter Colorizer, output io.Writer) {
 	}
 }
 
-// Fields implements FieldsProvider.
-func (e *ErrorEvent) Fields() Fields {
+// MarshalJSON implements json.Marshaler.
+func (e *ErrorEvent) MarshalJSON() ([]byte, error) {
 	var err interface{}
-	if _, ok := e.Err.(json.Marshaler); ok {
-		err = e.Err
+	if typed, ok := e.Err.(json.Marshaler); ok {
+		return typed.MarshalJSON()
 	} else {
 		err = e.Err.Error()
 	}
-	return Fields{
+	return nil, Fields{
 		FieldErr: err,
 	}
 }

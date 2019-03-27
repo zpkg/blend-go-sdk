@@ -2,6 +2,7 @@ package logger
 
 import (
 	"bytes"
+	"context"
 	"sync"
 	"testing"
 
@@ -14,7 +15,7 @@ func TestWorker(t *testing.T) {
 	wg := sync.WaitGroup{}
 	wg.Add(1)
 	var didFire bool
-	w := NewWorker(func(e Event) {
+	w := NewWorker(func(_ context.Context, e Event) {
 		defer wg.Done()
 		didFire = true
 
@@ -26,7 +27,7 @@ func TestWorker(t *testing.T) {
 	w.Start()
 	defer w.Stop()
 
-	w.Work <- Messagef(Info, "test")
+	w.Work <- EventWithContext{context.Background(), Messagef(Info, "test")}
 	wg.Wait()
 
 	assert.True(didFire)
@@ -37,20 +38,20 @@ func TestWorkerPanics(t *testing.T) {
 
 	buffer := bytes.NewBuffer(nil)
 
-	log := New(OptAll(), OptOutput(buffer), OptFormatter(&TextFormatter{}))
+	log := New(OptAll(), OptOutput(buffer))
 	defer log.Close()
 
 	wg := sync.WaitGroup{}
 	wg.Add(1)
 	var didFire bool
-	w := NewWorker(func(e Event) {
+	w := NewWorker(func(ctx context.Context, e Event) {
 		defer wg.Done()
 		didFire = true
 		panic("only a test")
 	})
 	w.Start()
 
-	w.Work <- Messagef(Info, "test")
+	w.Work <- EventWithContext{context.Background(), Messagef(Info, "test")}
 	wg.Wait()
 
 	assert.True(didFire)
@@ -64,15 +65,15 @@ func TestWorkerDrain(t *testing.T) {
 	wg := sync.WaitGroup{}
 	wg.Add(4)
 	var didFire bool
-	w := NewWorker(func(e Event) {
+	w := NewWorker(func(ctx context.Context, e Event) {
 		defer wg.Done()
 		didFire = true
 	})
 
-	w.Work <- Messagef(Info, "test1")
-	w.Work <- Messagef(Info, "test2")
-	w.Work <- Messagef(Info, "test3")
-	w.Work <- Messagef(Info, "test4")
+	w.Work <- EventWithContext{context.Background(), Messagef(Info, "test1")}
+	w.Work <- EventWithContext{context.Background(), Messagef(Info, "test2")}
+	w.Work <- EventWithContext{context.Background(), Messagef(Info, "test3")}
+	w.Work <- EventWithContext{context.Background(), Messagef(Info, "test4")}
 
 	go func() {
 		w.Drain()

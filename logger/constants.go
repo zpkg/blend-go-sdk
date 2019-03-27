@@ -4,8 +4,8 @@ import "time"
 
 // Flags
 const (
-	All          = "all"
-	None         = "none"
+	FlagAll      = "all"
+	FlagNone     = "none"
 	Fatal        = "fatal"
 	Error        = "error"
 	Warning      = "warning"

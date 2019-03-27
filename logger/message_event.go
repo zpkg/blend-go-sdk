@@ -1,6 +1,7 @@
 package logger
 
 import (
+	"context"
 	"fmt"
 	"io"
 )
@@ -19,10 +20,10 @@ func Messagef(flag, format string, args ...interface{}) *MessageEvent {
 }
 
 // NewMessageEventListener returns a new message event listener.
-func NewMessageEventListener(listener func(*MessageEvent)) Listener {
-	return func(e Event) {
+func NewMessageEventListener(listener func(context.Context, *MessageEvent)) Listener {
+	return func(ctx context.Context, e Event) {
 		if typed, isTyped := e.(*MessageEvent); isTyped {
-			listener(typed)
+			listener(ctx, typed)
 		}
 	}
 }

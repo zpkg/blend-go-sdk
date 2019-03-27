@@ -1,6 +1,7 @@
 package logger
 
 import (
+	"context"
 	"fmt"
 	"io"
 	"strings"
@@ -25,10 +26,10 @@ func NewAuditEvent(principal, verb string) *AuditEvent {
 }
 
 // NewAuditEventListener returns a new audit event listener.
-func NewAuditEventListener(listener func(me *AuditEvent)) Listener {
-	return func(e Event) {
+func NewAuditEventListener(listener func(context.Context, *AuditEvent)) Listener {
+	return func(ctx context.Context, e Event) {
 		if typed, isTyped := e.(*AuditEvent); isTyped {
-			listener(typed)
+			listener(ctx, typed)
 		}
 	}
 }
@@ -49,7 +50,7 @@ type AuditEvent struct {
 }
 
 // WriteText implements TextWritable.
-func (e AuditEvent) WriteText(formatter Colorizer, wr io.Writer) {
+func (e AuditEvent) WriteText(formatter TextFormatter, wr io.Writer) {
 	if len(e.Context) > 0 {
 		io.WriteString(wr, formatter.Colorize("Context:", ansi.ColorGray))
 		io.WriteString(wr, e.Context)

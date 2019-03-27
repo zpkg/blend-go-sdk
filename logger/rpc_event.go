@@ -1,6 +1,7 @@
 package logger
 
 import (
+	"context"
 	"io"
 	"time"
 
@@ -23,10 +24,10 @@ func NewRPCEvent(method string, elapsed time.Duration) *RPCEvent {
 }
 
 // NewRPCEventListener returns a new web request event listener.
-func NewRPCEventListener(listener func(*RPCEvent)) Listener {
-	return func(e Event) {
+func NewRPCEventListener(listener func(context.Context, *RPCEvent)) Listener {
+	return func(ctx context.Context, e Event) {
 		if typed, isTyped := e.(*RPCEvent); isTyped {
-			listener(typed)
+			listener(ctx, typed)
 		}
 	}
 }

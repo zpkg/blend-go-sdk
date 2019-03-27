@@ -1,11 +1,20 @@
 package logger
 
-import "time"
+import (
+	"context"
+	"time"
+)
 
 // Event is an interface representing methods necessary to trigger listeners.
 type Event interface {
 	Flag() string
 	Timestamp() time.Time
+}
+
+// EventWithContext is an event with a context.
+type EventWithContext struct {
+	context.Context
+	Event
 }
 
 // MarshalEvent marshals an object as a logger event.

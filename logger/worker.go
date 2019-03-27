@@ -10,7 +10,7 @@ func NewWorker(listener Listener) *Worker {
 	return &Worker{
 		Latch:    async.NewLatch(),
 		Listener: listener,
-		Work:     make(chan Event, DefaultWorkerQueueDepth),
+		Work:     make(chan EventWithContext, DefaultWorkerQueueDepth),
 	}
 }
 
@@ -19,7 +19,7 @@ type Worker struct {
 	*async.Latch
 	Errors   chan error
 	Listener Listener
-	Work     chan Event
+	Work     chan EventWithContext
 }
 
 // Start starts the worker.
@@ -35,7 +35,7 @@ func (w *Worker) Start() error {
 // Dispatch is the main listen loop
 func (w *Worker) Dispatch() {
 	w.Started()
-	var e Event
+	var e EventWithContext
 	var err error
 	for {
 		select {
@@ -55,14 +55,14 @@ func (w *Worker) Dispatch() {
 }
 
 // Process calls the listener for an event.
-func (w *Worker) Process(e Event) (err error) {
+func (w *Worker) Process(ec EventWithContext) (err error) {
 	defer func() {
 		if r := recover(); r != nil {
 			err = exception.New(r)
 			return
 		}
 	}()
-	w.Listener(e)
+	w.Listener(ec.Context, ec.Event)
 	return
 }
 
@@ -72,7 +72,7 @@ func (w *Worker) Drain() {
 	w.Pausing()
 	<-w.NotifyPaused()
 
-	var work Event
+	var work EventWithContext
 	var err error
 	workLeft := len(w.Work)
 	for index := 0; index < workLeft; index++ {
@@ -94,7 +94,7 @@ func (w *Worker) Stop() error {
 	w.Stopping()
 	<-w.NotifyStopped()
 
-	var work Event
+	var work EventWithContext
 	var err error
 
 	workLeft := len(w.Work)

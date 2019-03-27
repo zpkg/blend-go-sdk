@@ -6,36 +6,39 @@ import (
 )
 
 // NewInterlockedWriter returns a new interlocked writer.
-func NewInterlockedWriter(output io.Writer) io.Writer {
+func NewInterlockedWriter(output io.Writer) *InterlockedWriter {
+	if typed, ok := output.(*InterlockedWriter); ok {
+		return typed
+	}
 	return &InterlockedWriter{
-		output:   output,
-		syncRoot: sync.Mutex{},
+		output: output,
 	}
 }
 
 // InterlockedWriter is a writer that serializes access to the Write() method.
 type InterlockedWriter struct {
-	output   io.Writer
-	syncRoot sync.Mutex
+	sync.Mutex
+	output io.Writer
 }
 
 // Write writes the given bytes to the inner writer.
 func (iw *InterlockedWriter) Write(buffer []byte) (count int, err error) {
-	iw.syncRoot.Lock()
+	iw.Lock()
 
 	count, err = iw.output.Write(buffer)
 	if err != nil {
-		iw.syncRoot.Unlock()
+		iw.Unlock()
 		return
 	}
-	iw.syncRoot.Unlock()
+
+	iw.Unlock()
 	return
 }
 
 // Close closes any outputs that are io.WriteCloser's.
 func (iw *InterlockedWriter) Close() (err error) {
-	iw.syncRoot.Lock()
-	defer iw.syncRoot.Unlock()
+	iw.Lock()
+	defer iw.Unlock()
 
 	if typed, isTyped := iw.output.(io.WriteCloser); isTyped {
 		err = typed.Close()

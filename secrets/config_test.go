@@ -16,10 +16,10 @@ func TestNewConfigFromEnv(t *testing.T) {
 
 	cfg, err := NewConfigFromEnv()
 	assert.Nil(err)
-	assert.Equal("http://127.0.0.1:8100", cfg.GetAddr())
-	assert.Equal("thisisatest", cfg.GetToken())
+	assert.Equal("http://127.0.0.1:8100", cfg.AddrOrDefault())
+	assert.Equal("thisisatest", cfg.Token)
 
-	assert.Equal("http://127.0.0.1:8100", cfg.MustAddr().String())
+	assert.Equal("http://127.0.0.1:8100", cfg.MustParseAddr().String())
 }
 
 func TestConfigIsZero(t *testing.T) {
@@ -33,10 +33,10 @@ func TestConfig(t *testing.T) {
 	assert := assert.New(t)
 
 	cfg := Config{}
-	assert.Equal(DefaultAddr, cfg.GetAddr())
-	assert.Empty(cfg.GetToken())
-	assert.Equal(DefaultMount, cfg.GetMount())
-	assert.Equal(DefaultTimeout, cfg.GetTimeout())
-	assert.Empty(cfg.GetRootCAs())
-	assert.Empty(cfg.GetServicePath())
+	assert.Equal(DefaultAddr, cfg.AddrOrDefault())
+	assert.Empty(cfg.Token)
+	assert.Equal(DefaultMount, cfg.MountOrDefault())
+	assert.Equal(DefaultTimeout, cfg.TimeoutOrDefault())
+	assert.Empty(cfg.RootCAs)
+	assert.Empty(cfg.ServicePath)
 }

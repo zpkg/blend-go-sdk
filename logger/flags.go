@@ -15,11 +15,11 @@ func NewFlags(flags ...string) *Flags {
 
 	for _, flag := range flags {
 		parsedFlag := strings.Trim(strings.ToLower(flag), " \t\n")
-		if parsedFlag == All {
+		if parsedFlag == FlagAll {
 			flagSet.all = true
 		}
 
-		if parsedFlag == None {
+		if parsedFlag == FlagNone {
 			flagSet.none = true
 			return flagSet
 		}
@@ -110,15 +110,15 @@ func (efs Flags) IsEnabled(flag string) bool {
 
 func (efs Flags) String() string {
 	if efs.none {
-		return None
+		return FlagNone
 	}
 
 	var flags []string
 	if efs.all {
-		flags = []string{All}
+		flags = []string{FlagAll}
 	}
 	for key, enabled := range efs.flags {
-		if key != All {
+		if key != FlagAll {
 			if enabled {
 				if !efs.all {
 					flags = append(flags, string(key))

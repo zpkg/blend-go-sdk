@@ -53,41 +53,31 @@ func (c Config) IsZero() bool {
 	return len(c.Token) == 0
 }
 
-// GetAddr returns the client addr.
-func (c Config) GetAddr(inherited ...string) string {
-	return configutil.CoalesceString(c.Addr, DefaultAddr, inherited...)
+// Resolve reads the environment into the config on configutil.Read(...)
+func (c *Config) Resolve() error {
+	return env.Env().ReadInto(c)
 }
 
-// MustAddr returns the addr as a url.
-func (c Config) MustAddr() *url.URL {
-	remote, err := url.ParseRequestURI(c.GetAddr())
+// AddrOrDefault returns the client addr.
+func (c Config) AddrOrDefault() string {
+	return configutil.CoalesceString(c.Addr, DefaultAddr)
+}
+
+// MustParseAddr returns the addr as a url.
+func (c Config) MustParseAddr() *url.URL {
+	remote, err := url.ParseRequestURI(c.AddrOrDefault())
 	if err != nil {
 		panic(err)
 	}
 	return remote
 }
 
-// GetToken returns the client token.
-func (c Config) GetToken() string {
-	return configutil.CoalesceString(c.Token, "")
-}
-
-// GetMount returns the client token.
-func (c Config) GetMount() string {
+// MountOrDefault returns secrets mount or a default.
+func (c Config) MountOrDefault() string {
 	return configutil.CoalesceString(c.Mount, DefaultMount)
 }
 
-// GetTimeout returns the client timeout.
-func (c Config) GetTimeout() time.Duration {
+// TimeoutOrDefault returns the client timeout.
+func (c Config) TimeoutOrDefault() time.Duration {
 	return configutil.CoalesceDuration(c.Timeout, DefaultTimeout)
-}
-
-// GetRootCAs returns root ca paths.
-func (c Config) GetRootCAs() []string {
-	return c.RootCAs
-}
-
-// GetServicePath returns the service path
-func (c Config) GetServicePath() string {
-	return c.ServicePath
 }

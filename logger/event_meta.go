@@ -1,6 +1,7 @@
 package logger
 
 import (
+	"encoding/json"
 	"time"
 
 	"github.com/blend/go-sdk/ansi"
@@ -37,9 +38,6 @@ type EventMeta struct {
 	flag      string
 	ts        time.Time
 	flagColor ansi.Color
-
-	Labels      map[string]string
-	Annotations map[string]string
 }
 
 // Flag returns the event flag.
@@ -50,3 +48,11 @@ func (em EventMeta) FlagColor() ansi.Color { return em.flagColor }
 
 // Timestamp returns the event timestamp.
 func (em EventMeta) Timestamp() time.Time { return em.ts }
+
+// MarshalJSON implements json.Marshaler.
+func (em EventMeta) MarshalJSON() ([]byte, error) {
+	return json.Marshal(map[string]interface{}{
+		FieldFlag:      em.flag,
+		FieldTimestamp: em.ts.Format(time.RFC3339Nano),
+	})
+}

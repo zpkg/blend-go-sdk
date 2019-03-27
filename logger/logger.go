@@ -6,6 +6,7 @@ import (
 	"os"
 
 	"github.com/blend/go-sdk/async"
+	"github.com/blend/go-sdk/exception"
 )
 
 const (
@@ -17,11 +18,12 @@ const (
 	DefaultRecoverPanics = true
 )
 
-// New returns a new logger with a given set of enabled flags, without a writer provisioned.
+// New returns a new logger with a given set of enabled flags.
+// By default it uses a text output formatter writing to stdout.
 func New(options ...Option) *Logger {
 	l := &Logger{
 		Latch:         async.NewLatch(),
-		Formatter:     NewTextFormatter(),
+		Formatter:     NewTextOutputFormatter(),
 		Output:        NewInterlockedWriter(os.Stdout),
 		RecoverPanics: DefaultRecoverPanics,
 		Flags:         NewFlags(),
@@ -31,6 +33,27 @@ func New(options ...Option) *Logger {
 		option(l)
 	}
 	return l
+}
+
+// All returns a new logger with all flags enabled.
+func All(options ...Option) *Logger {
+	return New(append(options, OptAll())...)
+}
+
+// None returns a new logger with all flags enabled.
+func None() *Logger {
+	return New(OptNone(), OptOutput(nil))
+}
+
+// Prod returns a new logger tuned for production use.
+// It writes to os.Stderr with text output colorization disabled.
+func Prod(options ...Option) *Logger {
+	return New(
+		append([]Option{
+			OptAll(),
+			OptOutput(os.Stderr),
+			OptFormatter(NewTextOutputFormatter(OptTextNoColor())),
+		}, options...)...)
 }
 
 // Logger is a handler for various logging events with descendent handlers.
@@ -148,10 +171,10 @@ func (l *Logger) RemoveListener(flag, listenerName string) {
 	}
 }
 
-// Trigger fires the listeners for a given event asynchronously.
+// Trigger fires the listeners for a given event asynchronously, and writes the event to the output.
 // The invocations will be queued in a work queue per listener.
 // There are no order guarantees on when these events will be processed across listeners.
-// This call will not block on the event listeners, but will block on writing the event to the formatted output.
+// This call will not block on the event listeners, but will block on the write.
 func (l *Logger) Trigger(ctx context.Context, e Event) {
 	flag := e.Flag()
 	if !l.IsEnabled(flag) {
@@ -172,21 +195,51 @@ func (l *Logger) Trigger(ctx context.Context, e Event) {
 	l.Unlock()
 
 	for _, listener := range listeners {
-		listener.Work <- e
+		listener.Work <- EventWithContext{ctx, e}
+	}
+
+	l.Write(ctx, e)
+}
+
+// SyncTrigger triggers an event synchronously.
+func (l *Logger) SyncTrigger(ctx context.Context, e Event) {
+	flag := e.Flag()
+	if !l.IsEnabled(flag) {
+		return
+	}
+
+	if typed, isTyped := e.(EnabledProvider); isTyped && !typed.IsEnabled() {
+		return
+	}
+
+	var listeners map[string]*Worker
+	l.Lock()
+	if l.Listeners != nil {
+		if flagListeners, ok := l.Listeners[flag]; ok {
+			listeners = flagListeners
+		}
+	}
+	l.Unlock()
+
+	for _, listener := range listeners {
+		listener.Listener(ctx, e)
 	}
 }
 
 // Write writes an event synchronously to the writer either as a normal even or as an error.
 func (l *Logger) Write(ctx context.Context, e Event) {
+	// if a formater or the output are unset, bail.
+	if l.Formatter == nil || l.Output == nil {
+		return
+	}
+
 	// check if the event controls if it should be written or not.
 	if typed, isTyped := e.(WritableProvider); isTyped && !typed.IsWritable() {
 		return
 	}
 
-	if l.Formatter != nil && l.Output != nil {
-		if err := l.Formatter.WriteFormat(ctx, l.Output, e); err != nil && l.Errors != nil {
-			l.Errors <- err
-		}
+	if err := l.Formatter.WriteFormat(ctx, l.Output, e); err != nil && l.Errors != nil {
+		l.Errors <- err
 	}
 }
 
@@ -196,24 +249,32 @@ func (l *Logger) Write(ctx context.Context, e Event) {
 
 // Close releases shared resources for the agent.
 func (l *Logger) Close() error {
+	if !l.CanStop() {
+		return exception.New(async.ErrCannotStop)
+	}
+
 	l.Stopping()
 
 	if l.Flags != nil {
 		l.Flags.SetNone()
 	}
 
+	println("stopping listeners")
 	for _, listeners := range l.Listeners {
 		for _, listener := range listeners {
 			listener.Stop()
 			<-listener.NotifyStopped()
 		}
 	}
+
 	for key := range l.Listeners {
 		delete(l.Listeners, key)
 	}
 	l.Listeners = nil
 
 	l.Stopped()
+
+	println("stopped")
 	return nil
 }
 

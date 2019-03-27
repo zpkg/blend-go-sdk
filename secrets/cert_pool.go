@@ -37,7 +37,7 @@ func (cp *CertPool) AddPaths(paths ...string) error {
 			return exception.New(err)
 		}
 		if ok := cp.pool.AppendCertsFromPEM(cert); !ok {
-			return exception.New("append cert failed").WithMessagef("cert path: %s", path)
+			return exception.New("append cert failed", exception.OptMessagef("cert path: %s", path))
 		}
 	}
 	return nil

@@ -1,17 +1,18 @@
 package main
 
 import (
-	"bytes"
+	"context"
 	"fmt"
+	"io"
 
 	"github.com/blend/go-sdk/logger"
 )
 
 // NewCustomEvent returns a new custom event.
 // It is helpful to use a constructor syou can initialize the event meta.
-func NewCustomEvent(userID, sessionID, context string) CustomEvent {
-	return CustomEvent{
-		EventMeta: logger.NewEventMeta(logger.Flag("custom_event")),
+func NewCustomEvent(userID, sessionID, context string) *CustomEvent {
+	return &CustomEvent{
+		EventMeta: logger.NewEventMeta("custom_event"),
 		UserID:    userID,
 		SessionID: sessionID,
 		Context:   context,
@@ -31,19 +32,19 @@ type CustomEvent struct {
 // It is optional, but very much encouraged.
 // It takes a formatter and a buffer reference that you push data into.
 // This lets the logger re-use buffers.
-func (ce CustomEvent) WriteText(tf logger.TextFormatter, buf *bytes.Buffer) {
-	buf.WriteString(ce.UserID)
-	buf.WriteRune(logger.RuneSpace)
-	buf.WriteString(ce.SessionID)
-	buf.WriteRune(logger.RuneSpace)
-	buf.WriteString(ce.Context)
+func (ce CustomEvent) WriteText(tf logger.TextFormatter, wr io.Writer) {
+	io.WriteString(wr, ce.UserID)
+	io.WriteString(wr, logger.Space)
+	io.WriteString(wr, ce.SessionID)
+	io.WriteString(wr, logger.Space)
+	io.WriteString(wr, ce.Context)
 }
 
-// WriteJSON implements logger.JSONWritable.
+// Fields implements logger.FieldsProvider.
 // It is a function that returns just the custom fields on our object as a map,
 // to be serialized with the rest of the fields.
-func (ce CustomEvent) WriteJSON() logger.JSONObj {
-	return logger.JSONObj{
+func (ce CustomEvent) Fields() logger.Fields {
+	return logger.Fields{
 		"userID":    ce.UserID,
 		"sessionID": ce.SessionID,
 		"context":   ce.Context,
@@ -51,28 +52,30 @@ func (ce CustomEvent) WriteJSON() logger.JSONObj {
 }
 
 // NewCustomEventListener returns a type shim for the logger.
-func NewCustomEventListener(listener func(ce CustomEvent)) logger.Listener {
-	return func(e logger.Event) {
-		listener(e.(CustomEvent))
+func NewCustomEventListener(listener func(context.Context, *CustomEvent)) logger.Listener {
+	return func(ctx context.Context, e logger.Event) {
+		listener(ctx, e.(*CustomEvent))
 	}
 }
 
 func main() {
-
 	// make a text logger.
-	text := logger.NewText().WithFlags(logger.AllFlags())
+	text := logger.All(logger.OptText())
 	// make a json logger
-	js := logger.NewJSON().WithFlags(logger.AllFlags())
+	js := logger.All(logger.OptJSON())
+
+	ctx := context.Background()
 
 	event := NewCustomEvent("bailey", "session0", "Console Demo")
 
-	text.SyncTrigger(event)
-	js.SyncTrigger(event)
+	text.Trigger(ctx, event)
+	text.Write(ctx, event)
+	js.Trigger(ctx, event)
+	js.Write(ctx, event)
 
-	listener := logger.New().WithFlags(logger.AllFlags())
-	listener.Listen(logger.Flag("custom_event"), "demo", NewCustomEventListener(func(ce CustomEvent) {
+	listener := logger.All()
+	listener.Listen("custom_event", "demo", NewCustomEventListener(func(_ context.Context, ce *CustomEvent) {
 		fmt.Println("listener got event")
 	}))
-
-	listener.SyncTrigger(event)
+	listener.SyncTrigger(ctx, event)
 }

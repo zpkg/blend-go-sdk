@@ -1,6 +1,7 @@
 package logger
 
 import (
+	"context"
 	"fmt"
 	"io"
 	"time"
@@ -26,10 +27,10 @@ func NewQueryEvent(body string, elapsed time.Duration) *QueryEvent {
 }
 
 // NewQueryEventListener returns a new listener for spiffy events.
-func NewQueryEventListener(listener func(e *QueryEvent)) Listener {
-	return func(e Event) {
+func NewQueryEventListener(listener func(context.Context, *QueryEvent)) Listener {
+	return func(ctx context.Context, e Event) {
 		if typed, isTyped := e.(*QueryEvent); isTyped {
-			listener(typed)
+			listener(ctx, typed)
 		}
 	}
 }

@@ -18,18 +18,26 @@ func OptConfig(cfg *Config) Option {
 }
 
 // OptOutput sets the output writer for the logger.
+// It will wrap the output with a synchronizer if it's not already wrapped.
+// You can also use this option to "unset" the output by passing in nil.
 func OptOutput(output io.Writer) Option {
-	return func(l *Logger) { l.Output = NewInterlockedWriter(output) }
+	return func(l *Logger) {
+		if output != nil {
+			l.Output = NewInterlockedWriter(output)
+		} else {
+			l.Output = nil
+		}
+	}
 }
 
 // OptJSON sets the output formatter for the logger as json.
 func OptJSON() Option {
-	return func(l *Logger) { l.Formatter = NewJSONFormatter() }
+	return func(l *Logger) { l.Formatter = NewJSONOutputFormatter() }
 }
 
 // OptText sets the output formatter for the logger as json.
 func OptText() Option {
-	return func(l *Logger) { l.Formatter = NewTextFormatter() }
+	return func(l *Logger) { l.Formatter = NewTextOutputFormatter() }
 }
 
 // OptFormatter sets the output formatter.

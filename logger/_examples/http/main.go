@@ -10,6 +10,7 @@ import (
 	_ "net/http/pprof"
 
 	"github.com/blend/go-sdk/logger"
+	"github.com/blend/go-sdk/webutil"
 )
 
 var pool = logger.NewBufferPool(16)
@@ -17,10 +18,18 @@ var pool = logger.NewBufferPool(16)
 func logged(log logger.Log, handler http.HandlerFunc) http.HandlerFunc {
 	return func(res http.ResponseWriter, req *http.Request) {
 		start := time.Now()
-		log.Trigger(logger.NewHTTPRequestEvent(req))
-		rw := logger.NewResponseWriter(res)
+
+		log.Trigger(req.Context(), logger.NewHTTPRequestEvent(req))
+
+		rw := webutil.NewResponseWriter(res)
 		handler(rw, req)
-		log.Trigger(logger.NewHTTPResponseEvent(req).WithStatusCode(rw.StatusCode()).WithContentLength(rw.ContentLength()).WithElapsed(time.Now().Sub(start)))
+
+		resEvent := logger.NewHTTPResponseEvent(req)
+		resEvent.StatusCode = rw.StatusCode()
+		resEvent.ContentLength = rw.ContentLength()
+		resEvent.Elapsed = time.Now().Sub(start)
+
+		log.Trigger(req.Context(), resEvent)
 	}
 }
 
@@ -83,11 +92,11 @@ func main() {
 		log.Println(http.ListenAndServe("localhost:6060", nil))
 	}()
 
-	log := logger.MustNewFromEnv().WithEnabled(logger.Info, logger.Audit)
+	log := logger.Prod(logger.OptJSON())
 
 	http.HandleFunc("/", logged(log, indexHandler))
 
-	http.HandleFunc("/sub-context", logged(log, subContextHandler))
+	http.HandleFunc("/sub-context", logged(log.SubContext("a sub context"), subContextHandler))
 	http.HandleFunc("/fatalerror", logged(log, fatalErrorHandler))
 	http.HandleFunc("/error", logged(log, errorHandler))
 	http.HandleFunc("/warning", logged(log, warningHandler))
@@ -96,7 +105,8 @@ func main() {
 	http.HandleFunc("/bench/logged", logged(log, indexHandler))
 	http.HandleFunc("/bench/stdout", stdoutLogged(indexHandler))
 
-	log.SyncInfof("Listening on :%s", port())
-	log.SyncInfof("Events %s", log.Flags().String())
+	log.Infof("Listening on :%s", port())
+	log.Infof("Events %s", log.Flags.String())
+
 	log.Fatal(http.ListenAndServe(":"+port(), nil))
 }

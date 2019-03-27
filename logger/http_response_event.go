@@ -1,13 +1,20 @@
 package logger
 
 import (
-	"bytes"
+	"context"
+	"encoding/json"
+	"io"
 	"net/http"
 	"time"
+
+	"github.com/blend/go-sdk/timeutil"
+	"github.com/blend/go-sdk/webutil"
 )
 
 var (
-	_ Event = (*HTTPResponseEvent)(nil)
+	_ Event          = (*HTTPResponseEvent)(nil)
+	_ TextWritable   = (*HTTPResponseEvent)(nil)
+	_ json.Marshaler = (*HTTPResponseEvent)(nil)
 )
 
 // NewHTTPResponseEvent is an event representing a response to an http request.
@@ -19,17 +26,17 @@ func NewHTTPResponseEvent(req *http.Request) *HTTPResponseEvent {
 }
 
 // NewHTTPResponseEventListener returns a new web request event listener.
-func NewHTTPResponseEventListener(listener func(*HTTPResponseEvent)) Listener {
-	return func(e Event) {
+func NewHTTPResponseEventListener(listener func(context.Context, *HTTPResponseEvent)) Listener {
+	return func(ctx context.Context, e Event) {
 		if typed, isTyped := e.(*HTTPResponseEvent); isTyped {
-			listener(typed)
+			listener(ctx, typed)
 		}
 	}
 }
 
 // HTTPResponseEvent is an event type for responses.
 type HTTPResponseEvent struct {
-	*EventMeta
+	*EventMeta `json:",inline"`
 
 	Request         *http.Request
 	Route           string
@@ -42,11 +49,22 @@ type HTTPResponseEvent struct {
 }
 
 // WriteText implements TextWritable.
-func (e *HTTPResponseEvent) WriteText(formatter TextFormatter, buf *bytes.Buffer) {
-	WriteHTTPResponse(formatter, buf, e.Request, e.StatusCode, e.ContentLength, e.ContentType, e.Elapsed)
+func (e *HTTPResponseEvent) WriteText(formatter TextFormatter, wr io.Writer) {
+	WriteHTTPResponse(formatter, wr, e.Request, e.StatusCode, e.ContentLength, e.ContentType, e.Elapsed)
 }
 
-// WriteJSON implements JSONWritable.
-func (e *HTTPResponseEvent) WriteJSON() Fields {
-	return HTTPResponseFields(e.Request, e.StatusCode, e.ContentLength, e.ContentType, e.ContentEncoding, e.Elapsed)
+// MarshalJSON implements json.Marshaler.
+func (e HTTPResponseEvent) MarshalJSON() ([]byte, error) {
+	return json.Marshal(map[string]interface{}{
+		"ip":              webutil.GetRemoteAddr(e.Request),
+		"userAgent":       webutil.GetUserAgent(e.Request),
+		"verb":            e.Request.Method,
+		"path":            e.Request.URL.Path,
+		"host":            e.Request.Host,
+		"contentLength":   e.ContentLength,
+		"contentType":     e.ContentType,
+		"contentEncoding": e.ContentEncoding,
+		"statusCode":      e.StatusCode,
+		FieldElapsed:      timeutil.Milliseconds(e.Elapsed),
+	})
 }

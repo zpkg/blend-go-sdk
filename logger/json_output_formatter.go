@@ -1,15 +1,20 @@
 package logger
 
 import (
-	"bytes"
 	"context"
 	"encoding/json"
 	"io"
 )
 
-// NewJSONFormatter returns a new json event formatter.
-func NewJSONFormatter(options ...JSONFormatterOption) *JSONFormatter {
-	jf := &JSONFormatter{}
+var (
+	_ WriteFormatter = (*JSONOutputFormatter)(nil)
+)
+
+// NewJSONOutputFormatter returns a new json event formatter.
+func NewJSONOutputFormatter(options ...JSONOutputFormatterOption) *JSONOutputFormatter {
+	jf := &JSONOutputFormatter{
+		BufferPool: NewBufferPool(DefaultBufferPoolSize),
+	}
 
 	for _, option := range options {
 		option(jf)
@@ -17,28 +22,31 @@ func NewJSONFormatter(options ...JSONFormatterOption) *JSONFormatter {
 	return jf
 }
 
-// JSONFormatterOption is an option for json formatters.
-type JSONFormatterOption func(*JSONFormatter)
+// JSONOutputFormatterOption is an option for json formatters.
+type JSONOutputFormatterOption func(*JSONOutputFormatter)
 
 // OptJSONConfig sets a json formatter from a config.
-func OptJSONConfig(cfg *JSONConfig) JSONFormatterOption {
-	return func(jf *JSONFormatter) {
+func OptJSONConfig(cfg *JSONConfig) JSONOutputFormatterOption {
+	return func(jf *JSONOutputFormatter) {
 		jf.Pretty = cfg.Pretty
 		jf.PrettyIndent = cfg.PrettyIndentOrDefault()
 		jf.PrettyPrefix = cfg.PrettyPrefixOrDefault()
 	}
 }
 
-// JSONFormatter is a json output formatter.
-type JSONFormatter struct {
+// JSONOutputFormatter is a json output formatter.
+type JSONOutputFormatter struct {
+	BufferPool   *BufferPool
 	Pretty       bool
 	PrettyPrefix string
 	PrettyIndent string
 }
 
 // WriteFormat writes the event to the given output.
-func (jw JSONFormatter) WriteFormat(ctx context.Context, output io.Writer, e Event) error {
-	buffer := new(bytes.Buffer)
+func (jw JSONOutputFormatter) WriteFormat(ctx context.Context, output io.Writer, e Event) error {
+	buffer := jw.BufferPool.Get()
+	defer jw.BufferPool.Put(buffer)
+
 	encoder := json.NewEncoder(buffer)
 	if jw.Pretty {
 		encoder.SetIndent(jw.PrettyPrefix, jw.PrettyIndent)

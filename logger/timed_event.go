@@ -1,6 +1,7 @@
 package logger
 
 import (
+	"context"
 	"fmt"
 	"io"
 	"time"
@@ -25,10 +26,10 @@ func Timedf(flag string, elapsed time.Duration, format string, args ...interface
 }
 
 // NewTimedEventListener returns a new timed event listener.
-func NewTimedEventListener(listener func(e *TimedEvent)) Listener {
-	return func(e Event) {
+func NewTimedEventListener(listener func(context.Context, *TimedEvent)) Listener {
+	return func(ctx context.Context, e Event) {
 		if typed, isTyped := e.(*TimedEvent); isTyped {
-			listener(typed)
+			listener(ctx, typed)
 		}
 	}
 }
@@ -47,7 +48,7 @@ func (e TimedEvent) String() string {
 }
 
 // WriteText implements TextWritable.
-func (e TimedEvent) WriteText(tf Colorizer, wr io.Writer) {
+func (e TimedEvent) WriteText(tf TextFormatter, wr io.Writer) {
 	io.WriteString(wr, e.String())
 }
 
