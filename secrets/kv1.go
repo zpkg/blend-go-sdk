@@ -3,6 +3,7 @@ package secrets
 import (
 	"context"
 	"encoding/json"
+	"github.com/blend/go-sdk/request"
 	"path/filepath"
 )
 
@@ -55,4 +56,19 @@ func (kv1 KV1) Delete(ctx context.Context, key string, options ...Option) error 
 	}
 	defer res.Close()
 	return nil
+}
+
+func (kv1 kv1) List(ctx context.Context, path string, options ...Option) ([]string, error) {
+	req := kv1.client.createRequest(request.MethodList, filepath.Join("/v1/", path), options...).WithContext(ctx)
+	res, err := kv1.client.send(req)
+	if err != nil {
+		return nil, err
+	}
+	defer res.Close()
+
+	var response SecretListV1
+	if err := json.NewDecoder(res).Decode(&response); err != nil {
+		return nil, err
+	}
+	return response.Data, nil
 }

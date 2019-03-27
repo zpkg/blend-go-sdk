@@ -28,6 +28,28 @@ type SecretV1 struct {
 	WrapInfo *SecretWrapInfo `json:"wrap_info,omitempty"`
 }
 
+// SecretListV1 is the structure returned for a list of secret keys in vault
+type SecretListV1 struct {
+	// The request ID that generated this response
+	RequestID     string `json:"request_id"`
+	LeaseID       string `json:"lease_id"`
+	LeaseDuration int    `json:"lease_duration"`
+	Renewable     bool   `json:"renewable"`
+	// Data is the list of keys and subfolders at this path. Subfolders end with a slash, keys do not
+	Data []string `json:"data"`
+	// Warnings contains any warnings related to the operation. These
+	// are not issues that caused the command to fail, but that the
+	// client should be aware of.
+	Warnings []string `json:"warnings"`
+	// Auth, if non-nil, means that there was authentication information
+	// attached to this response.
+	Auth *SecretAuth `json:"auth,omitempty"`
+	// WrapInfo, if non-nil, means that the initial response was wrapped in the
+	// cubbyhole of the given token (which has a TTL of the given number of
+	// seconds)
+	WrapInfo *SecretWrapInfo `json:"wrap_info,omitempty"`
+}
+
 // SecretV2 is the structure returned for every secret within Vault.
 type SecretV2 struct {
 	// The request ID that generated this response
@@ -38,6 +60,28 @@ type SecretV2 struct {
 	// Data is the actual contents of the secret. The format of the data
 	// is arbitrary and up to the secret backend.
 	Data SecretData `json:"data"`
+	// Warnings contains any warnings related to the operation. These
+	// are not issues that caused the command to fail, but that the
+	// client should be aware of.
+	Warnings []string `json:"warnings"`
+	// Auth, if non-nil, means that there was authentication information
+	// attached to this response.
+	Auth *SecretAuth `json:"auth,omitempty"`
+	// WrapInfo, if non-nil, means that the initial response was wrapped in the
+	// cubbyhole of the given token (which has a TTL of the given number of
+	// seconds)
+	WrapInfo *SecretWrapInfo `json:"wrap_info,omitempty"`
+}
+
+// SecretV2 is the structure returned for every secret within Vault.
+type SecretListV2 struct {
+	// The request ID that generated this response
+	RequestID     string `json:"request_id"`
+	LeaseID       string `json:"lease_id"`
+	LeaseDuration int    `json:"lease_duration"`
+	Renewable     bool   `json:"renewable"`
+	// Data is the list of keys and subfolders at this path. Subfolders end with a slash, keys do not
+	Data []string `json:"data"`
 	// Warnings contains any warnings related to the operation. These
 	// are not issues that caused the command to fail, but that the
 	// client should be aware of.

@@ -68,3 +68,19 @@ func (kv2 KV2) fixSecretDataPrefix(key string) string {
 	}
 	return key
 }
+
+
+func (kv2 kv2) List(ctx context.Context, path string, options ...Option) ([]string, error) {
+	req := kv2.client.createRequest(MethodGet, filepath.Join("/v1/", kv2.fixSecretDataPrefix(path)), options...).WithContext(ctx)
+	res, err := kv2.client.send(req)
+	if err != nil {
+		return nil, err
+	}
+	defer res.Close()
+
+	var response SecretListV2
+	if err := json.NewDecoder(res).Decode(&response); err != nil {
+		return nil, err
+	}
+	return response.Data, nil
+}

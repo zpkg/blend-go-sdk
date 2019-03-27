@@ -34,6 +34,8 @@ const (
 	MethodDelete = "DELETE"
 	// MethodOptions is a method.
 	MethodOptions = "OPTIONS"
+	// MethodList is a method.
+	MethodList = "LIST"
 )
 
 const (
