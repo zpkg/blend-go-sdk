@@ -36,7 +36,7 @@ type SecretListV1 struct {
 	LeaseDuration int    `json:"lease_duration"`
 	Renewable     bool   `json:"renewable"`
 	// Data is the list of keys and subfolders at this path. Subfolders end with a slash, keys do not
-	Data []string `json:"data"`
+	Data KeyData`json:"data"`
 	// Warnings contains any warnings related to the operation. These
 	// are not issues that caused the command to fail, but that the
 	// client should be aware of.
@@ -81,7 +81,7 @@ type SecretListV2 struct {
 	LeaseDuration int    `json:"lease_duration"`
 	Renewable     bool   `json:"renewable"`
 	// Data is the list of keys and subfolders at this path. Subfolders end with a slash, keys do not
-	Data []string `json:"data"`
+	Data KeyData `json:"data"`
 	// Warnings contains any warnings related to the operation. These
 	// are not issues that caused the command to fail, but that the
 	// client should be aware of.
@@ -98,6 +98,11 @@ type SecretListV2 struct {
 // SecretData is used for puts.
 type SecretData struct {
 	Data Values `json:"data"`
+}
+
+// KeyData is used for lists.
+type KeyData struct {
+	Keys []string `json:"keys"`
 }
 
 // SecretAuth is the structure containing auth information if we have it.

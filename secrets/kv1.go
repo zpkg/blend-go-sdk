@@ -69,5 +69,5 @@ func (kv1 KV1) List(ctx context.Context, path string, options ...Option) ([]stri
 	if err := json.NewDecoder(res).Decode(&response); err != nil {
 		return nil, err
 	}
-	return response.Data, nil
+	return response.Data.Keys, nil
 }
