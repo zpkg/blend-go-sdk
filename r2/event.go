@@ -1,8 +1,8 @@
 package r2
 
 import (
-	"bytes"
 	"fmt"
+	"io"
 	"net/http"
 	"strings"
 	"time"
@@ -12,13 +12,13 @@ import (
 
 const (
 	// Flag is a logger event flag.
-	Flag logger.Flag = "request"
+	Flag = "request"
 	// FlagResponse is a logger event flag.
-	FlagResponse logger.Flag = "request.response"
+	FlagResponse = "request.response"
 )
 
 // NewEvent returns a new event.
-func NewEvent(flag logger.Flag, options ...EventOption) *Event {
+func NewEvent(flag string, options ...EventOption) *Event {
 	e := &Event{
 		EventMeta: logger.NewEventMeta(flag),
 	}
@@ -44,23 +44,23 @@ type Event struct {
 }
 
 // WriteText writes the event to a text writer.
-func (e *Event) WriteText(tf logger.TextFormatter, buf *bytes.Buffer) {
+func (e *Event) WriteText(tf logger.Colorizer, wr io.Writer) {
 	if e.Request != nil && e.Response != nil {
-		buf.WriteString(fmt.Sprintf("%s %s %s (%v)", e.Request.Method, e.Request.URL.String(), tf.ColorizeStatusCode(e.Response.StatusCode), e.Timestamp().Sub(e.Started)))
+		io.WriteString(wr, fmt.Sprintf("%s %s %s (%v)", e.Request.Method, e.Request.URL.String(), logger.ColorizeStatusCode(tf, e.Response.StatusCode), e.Timestamp().Sub(e.Started)))
 	} else if e.Request != nil {
-		buf.WriteString(fmt.Sprintf("%s %s", e.Request.Method, e.Request.URL.String()))
+		io.WriteString(wr, fmt.Sprintf("%s %s", e.Request.Method, e.Request.URL.String()))
 	}
 	if e.Body != nil {
-		buf.WriteRune(logger.RuneNewline)
-		buf.Write(e.Body)
+		io.WriteString(wr, logger.Newline)
+		io.WriteString(wr, string(e.Body))
 	}
 }
 
-// WriteJSON implements logger.JSONWritable.
-func (e *Event) WriteJSON() logger.JSONObj {
-	output := logger.JSONObj{}
+// Fields implements logger.FieldsProvider.
+func (e *Event) Fields() logger.Fields {
+	output := make(logger.Fields)
 	if e.Request != nil {
-		output["req"] = logger.JSONObj{
+		output["req"] = logger.Fields{
 			"startTime": e.Started,
 			"method":    e.Request.Method,
 			"url":       e.Request.URL.String(),
@@ -68,7 +68,7 @@ func (e *Event) WriteJSON() logger.JSONObj {
 		}
 	}
 	if e.Response != nil {
-		output["res"] = logger.JSONObj{
+		output["res"] = logger.Fields{
 			"completeTime":    e.Timestamp(),
 			"statusCode":      e.Response.StatusCode,
 			"contentLength":   e.Response.ContentLength,
