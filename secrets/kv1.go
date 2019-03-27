@@ -58,9 +58,9 @@ func (kv1 KV1) Delete(ctx context.Context, key string, options ...Option) error 
 	return nil
 }
 
-func (kv1 kv1) List(ctx context.Context, path string, options ...Option) ([]string, error) {
-	req := kv1.client.createRequest(request.MethodList, filepath.Join("/v1/", path), options...).WithContext(ctx)
-	res, err := kv1.client.send(req)
+func (kv1 KV1) List(ctx context.Context, path string, options ...Option) ([]string, error) {
+	req := kv1.Client.createRequest(request.MethodList, filepath.Join("/v1/", path), options...).WithContext(ctx)
+	res, err := kv1.Client.send(req)
 	if err != nil {
 		return nil, err
 	}

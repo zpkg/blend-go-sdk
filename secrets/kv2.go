@@ -70,9 +70,9 @@ func (kv2 KV2) fixSecretDataPrefix(key string) string {
 }
 
 
-func (kv2 kv2) List(ctx context.Context, path string, options ...Option) ([]string, error) {
-	req := kv2.client.createRequest(MethodGet, filepath.Join("/v1/", kv2.fixSecretDataPrefix(path)), options...).WithContext(ctx)
-	res, err := kv2.client.send(req)
+func (kv2 KV2) List(ctx context.Context, path string, options ...Option) ([]string, error) {
+	req := kv2.Client.createRequest(MethodGet, filepath.Join("/v1/", kv2.fixSecretDataPrefix(path)), options...).WithContext(ctx)
+	res, err := kv2.Client.send(req)
 	if err != nil {
 		return nil, err
 	}
