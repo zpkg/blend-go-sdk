@@ -3,7 +3,6 @@ package secrets
 import (
 	"context"
 	"encoding/json"
-	"github.com/blend/go-sdk/request"
 	"path/filepath"
 )
 
@@ -59,7 +58,7 @@ func (kv1 KV1) Delete(ctx context.Context, key string, options ...Option) error 
 }
 
 func (kv1 KV1) List(ctx context.Context, path string, options ...Option) ([]string, error) {
-	req := kv1.Client.createRequest(request.MethodList, filepath.Join("/v1/", path), options...).WithContext(ctx)
+	req := kv1.Client.createRequest(MethodList, filepath.Join("/v1/", path), options...).WithContext(ctx)
 	res, err := kv1.Client.send(req)
 	if err != nil {
 		return nil, err

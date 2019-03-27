@@ -22,6 +22,8 @@ const (
 	MethodPut = "PUT"
 	// MethodDelete is a request method.
 	MethodDelete = "DELETE"
+	// MethodList is a request method.
+	MethodList = "LIST"
 
 	// HeaderVaultToken is the vault token header.
 	HeaderVaultToken = "X-Vault-Token"
