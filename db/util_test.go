@@ -9,9 +9,9 @@ import (
 func TestMakeCsvTokens(t *testing.T) {
 	a := assert.New(t)
 
-	one := paramTokensCSV(1)
-	two := paramTokensCSV(2)
-	three := paramTokensCSV(3)
+	one := ParamTokensCSV(1)
+	two := ParamTokensCSV(2)
+	three := ParamTokensCSV(3)
 
 	a.Equal("$1", one)
 	a.Equal("$1,$2", two)
@@ -25,7 +25,7 @@ func TestReflectSliceType(t *testing.T) {
 		{}, {}, {},
 	}
 
-	ot := reflectSliceType(objects)
+	ot := ReflectSliceType(objects)
 	assert.Equal("benchObj", ot.Name())
 }
 
@@ -40,11 +40,11 @@ func TestMakeSliceOfType(t *testing.T) {
 	seedErr := seedObjects(10, tx)
 	a.Nil(seedErr)
 
-	myType := reflectType(benchObj{})
+	myType := ReflectType(benchObj{})
 	sliceOfT, castOk := makeSliceOfType(myType).(*[]benchObj)
 	a.True(castOk)
 
-	allErr := Default().GetAllInTx(sliceOfT, tx)
+	allErr := Default().Invoke(OptTx(tx)).All(sliceOfT)
 	a.Nil(allErr)
 	a.NotEmpty(*sliceOfT)
 }

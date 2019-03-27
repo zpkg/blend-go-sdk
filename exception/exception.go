@@ -14,7 +14,10 @@ var (
 )
 
 // New returns a new exception with a call stack.
-func New(class interface{}, options ...Option) *Ex {
+// Pragma: this violates the rule that you should take interfaces and return
+// concrete types intentionally; it is important for the semantics of typed pointers and nil
+// for this to return an interface because (*Ex)(nil) != nil, but (error)(nil) == nil.
+func New(class interface{}, options ...Option) error {
 	return NewWithStackDepth(class, defaultNewStartDepth, options...)
 }
 

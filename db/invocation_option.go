@@ -15,6 +15,11 @@ func OptCachedPlanKey(cacheKey string) InvocationOption {
 	}
 }
 
+// OptInvocationStatementInterceptor sets the invocation statement interceptor.
+func OptInvocationStatementInterceptor(interceptor StatementInterceptor) InvocationOption {
+	return func(i *Invocation) { i.StatementInterceptor = interceptor }
+}
+
 // OptContext sets a context on an invocation.
 func OptContext(ctx context.Context) InvocationOption {
 	return func(i *Invocation) {

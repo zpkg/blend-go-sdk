@@ -9,15 +9,12 @@ import (
 	"github.com/blend/go-sdk/logger"
 )
 
+// Migration Stats
 const (
-	// StatApplied is a stat name.
 	StatApplied = "applied"
-	// StatFailed is a stat name.
-	StatFailed = "failed"
-	// StatSkipped is a stat name.
+	StatFailed  = "failed"
 	StatSkipped = "skipped"
-	// StatTotal is a stat name.
-	StatTotal = "total"
+	StatTotal   = "total"
 )
 
 // New returns a new suite of groups.

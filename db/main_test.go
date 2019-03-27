@@ -21,8 +21,7 @@ import (
 
 // TestMain is the testing entrypoint.
 func TestMain(m *testing.M) {
-	cfg := MustNewConfigFromEnv()
-	conn, err := NewFromConfig(cfg)
+	conn, err := New(OptConfigFromEnv())
 	if err != nil {
 		fmt.Fprintf(os.Stderr, "%+v", err)
 		os.Exit(1)
@@ -97,7 +96,7 @@ func (uo upsertObj) TableName() string {
 
 func createUpserObjectTable(tx *sql.Tx) error {
 	createSQL := `CREATE TABLE IF NOT EXISTS upsert_object (uuid varchar(255) primary key, timestamp_utc timestamp, category varchar(255));`
-	return Default().ExecInTx(createSQL, tx)
+	return Default().Invoke(OptTx(tx)).Exec(createSQL)
 }
 
 //------------------------------------------------------------------------------------------------
@@ -132,12 +131,12 @@ func createTable(tx *sql.Tx) error {
 		, pending boolean
 		, category varchar(255)
 	);`
-	return Default().ExecInTx(createSQL, tx)
+	return Default().Invoke(OptTx(tx)).Exec(createSQL)
 }
 
 func dropTableIfExists(tx *sql.Tx) error {
 	dropSQL := `DROP TABLE IF EXISTS bench_object;`
-	return Default().ExecInTx(dropSQL, tx)
+	return Default().Invoke(OptTx(tx)).Exec(dropSQL)
 }
 
 func ensureUUIDExtension() error {
@@ -154,7 +153,7 @@ func createObject(index int, tx *sql.Tx) error {
 		Pending:   index%2 == 0,
 		Category:  fmt.Sprintf("category_%d", index),
 	}
-	return Default().CreateInTx(&obj, tx)
+	return Default().Invoke(OptTx(tx)).Create(&obj)
 }
 
 func seedObjects(count int, tx *sql.Tx) error {
@@ -206,6 +205,6 @@ func readManual(tx *sql.Tx) ([]benchObj, error) {
 
 func readOrm(tx *sql.Tx) ([]benchObj, error) {
 	var objs []benchObj
-	allErr := Default().GetAllInTx(&objs, tx)
+	allErr := Default().Invoke(OptTx(tx)).All(&objs)
 	return objs, allErr
 }

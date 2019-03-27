@@ -13,7 +13,7 @@ import (
 
 func TestNewOfString(t *testing.T) {
 	a := assert.New(t)
-	ex := New("this is a test")
+	ex := As(New("this is a test"))
 	a.Equal("this is a test", fmt.Sprintf("%v", ex))
 	a.NotNil(ex.Stack)
 	a.Nil(ex.Inner)
@@ -118,7 +118,7 @@ func TestMarshalJSON(t *testing.T) {
 
 	a := assert.New(t)
 	message := "new test error"
-	ex := New(message)
+	ex := As(New(message))
 	a.NotNil(ex)
 	stackTrace := ex.Stack
 	typed, isTyped := stackTrace.(StackPointers)
@@ -136,7 +136,7 @@ func TestMarshalJSON(t *testing.T) {
 	a.Len(ex2.Stack, stackDepth)
 	a.Equal(message, ex2.Class)
 
-	ex = New(fmt.Errorf(message))
+	ex = As(New(fmt.Errorf(message)))
 	a.NotNil(ex)
 	stackTrace = ex.Stack
 	typed, isTyped = stackTrace.(StackPointers)
@@ -158,8 +158,8 @@ func TestMarshalJSON(t *testing.T) {
 func TestNest(t *testing.T) {
 	a := assert.New(t)
 
-	ex1 := New("this is an error")
-	ex2 := New("this is another error")
+	ex1 := As(New("this is an error"))
+	ex2 := As(New("this is another error"))
 	err := Nest(ex1, ex2)
 
 	a.NotNil(err)

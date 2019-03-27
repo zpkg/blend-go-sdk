@@ -13,7 +13,6 @@ import (
 
 	"github.com/blend/go-sdk/db"
 	"github.com/blend/go-sdk/db/migration"
-	"github.com/blend/go-sdk/db/migration/pg"
 	"github.com/blend/go-sdk/logger"
 	"github.com/blend/go-sdk/stringutil"
 )

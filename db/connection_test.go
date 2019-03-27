@@ -1,12 +1,10 @@
-package db_test
+package db
 
 import (
-	"context"
 	"database/sql"
 	"testing"
 
 	"github.com/blend/go-sdk/assert"
-	"github.com/blend/go-sdk/db"
 	"github.com/blend/go-sdk/exception"
 )
 
@@ -14,7 +12,7 @@ import (
 func TestConnectionUseBeforeOpen(t *testing.T) {
 	assert := assert.New(t)
 
-	conn, err := db.New()
+	conn, err := New()
 	assert.Nil(err)
 
 	tx, err := conn.Begin()
@@ -27,7 +25,7 @@ func TestConnectionUseBeforeOpen(t *testing.T) {
 func TestConnectionSanityCheck(t *testing.T) {
 	assert := assert.New(t)
 
-	conn, err := db.New(OptConfigFromEnv())
+	conn, err := New(OptConfigFromEnv())
 	assert.Nil(err)
 	str := conn.Config.CreateDSN()
 	_, err = sql.Open("postgres", str)
@@ -36,7 +34,7 @@ func TestConnectionSanityCheck(t *testing.T) {
 
 func TestPrepare(t *testing.T) {
 	a := assert.New(t)
-	tx, err := db.Default().Begin()
+	tx, err := Default().Begin()
 	a.Nil(err)
 	defer tx.Rollback()
 
@@ -46,7 +44,7 @@ func TestPrepare(t *testing.T) {
 
 func TestQuery(t *testing.T) {
 	a := assert.New(t)
-	tx, err := db.Default().Begin()
+	tx, err := Default().Begin()
 	a.Nil(err)
 	defer tx.Rollback()
 
@@ -54,7 +52,7 @@ func TestQuery(t *testing.T) {
 	a.Nil(err)
 
 	objs := []benchObj{}
-	err = db.Default().Invoke(context.Background(), OptTx(tx)).Query("select * from bench_object").OutMany(&objs)
+	err = Default().Invoke(OptTx(tx)).Query("select * from bench_object").OutMany(&objs)
 	a.Nil(err)
 	a.NotEmpty(objs)
 }
@@ -62,7 +60,7 @@ func TestQuery(t *testing.T) {
 func TestConnectionStatementCacheExecute(t *testing.T) {
 	a := assert.New(t)
 
-	conn, err := db.New(OptConfigFromEnv())
+	conn, err := New(OptConfigFromEnv())
 	a.Nil(err)
 	a.Nil(conn.Open())
 	defer conn.Close()
@@ -80,7 +78,7 @@ func TestConnectionStatementCacheExecute(t *testing.T) {
 func TestConnectionStatementCacheQuery(t *testing.T) {
 	a := assert.New(t)
 
-	conn, err := db.New(OptConfigFromEnv())
+	conn, err := New(OptConfigFromEnv())
 	a.Nil(err)
 	a.Nil(conn.Open())
 	defer conn.Close()
@@ -100,7 +98,7 @@ func TestConnectionStatementCacheQuery(t *testing.T) {
 func TestConnectionOpen(t *testing.T) {
 	a := assert.New(t)
 
-	conn, err := db.New(OptConfigFromEnv())
+	conn, err := New(OptConfigFromEnv())
 	a.Nil(err)
 	a.Nil(conn.Open())
 	defer conn.Close()
@@ -112,7 +110,7 @@ func TestConnectionOpen(t *testing.T) {
 
 func TestExec(t *testing.T) {
 	a := assert.New(t)
-	tx, err := db.Default().Begin()
+	tx, err := Default().Begin()
 	a.Nil(err)
 	defer tx.Rollback()
 
@@ -123,12 +121,12 @@ func TestExec(t *testing.T) {
 func TestConnectionInvalidatesBadCachedStatements(t *testing.T) {
 	assert := assert.New(t)
 
-	conn, err := NewFromEnv()
+	conn, err := New(OptConfigFromEnv())
 	assert.Nil(err)
 	assert.Nil(conn.Open())
 	defer conn.Close()
 
-	conn.PlanCache().WithEnabled(true)
+	conn.PlanCache.WithEnabled(true)
 
 	createTableStatement := `CREATE TABLE state_invalidation (id int not null, name varchar(64))`
 	insertStatement := `INSERT INTO state_invalidation (id, name) VALUES ($1, $2)`
@@ -168,9 +166,9 @@ func TestConnectionInvalidatesBadCachedStatements(t *testing.T) {
 // TestConnectionConfigSetsDatabase tests if we set the .database property on open.
 func TestConnectionConfigSetsDatabase(t *testing.T) {
 	assert := assert.New(t)
-	conn, err := NewFromEnv()
+	conn, err := New(OptConfigFromEnv())
 	assert.Nil(err)
 	assert.Nil(conn.Open())
 	defer conn.Close()
-	assert.NotEmpty(conn.Config().GetDatabase())
+	assert.NotEmpty(conn.Config.GetDatabase())
 }

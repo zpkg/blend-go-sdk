@@ -16,7 +16,7 @@ func TestQueryExecute(t *testing.T) {
 	seedErr := seedObjects(10, tx)
 	a.Nil(seedErr)
 
-	rows, err := Default().QueryInTx("select * from bench_object", tx).Execute()
+	rows, err := Default().Invoke(OptTx(tx)).Query("select * from bench_object").Execute()
 	a.Nil(err)
 	defer rows.Close()
 	a.True(rows.Next())
@@ -34,7 +34,7 @@ func TestQueryEach(t *testing.T) {
 
 	var all []benchObj
 	var popErr error
-	err = Default().QueryInTx("select * from bench_object", tx).Each(func(r Rows) error {
+	err = Default().Invoke(OptTx(tx)).Query("select * from bench_object").Each(func(r Rows) error {
 		bo := benchObj{}
 		popErr = bo.Populate(r)
 		if popErr != nil {
@@ -57,17 +57,17 @@ func TestQueryAny(t *testing.T) {
 	a.Nil(err)
 
 	var all []benchObj
-	allErr := Default().GetAllInTx(&all, tx)
+	allErr := Default().Invoke(OptTx(tx)).All(&all)
 	a.Nil(allErr)
 	a.NotEmpty(all)
 
 	obj := all[0]
 
-	exists, err := Default().QueryInTx("select 1 from bench_object where id = $1", tx, obj.ID).Any()
+	exists, err := Default().Invoke(OptTx(tx)).Query("select 1 from bench_object where id = $1", obj.ID).Any()
 	a.Nil(err)
 	a.True(exists)
 
-	notExists, err := Default().QueryInTx("select 1 from bench_object where id = $1", tx, -1).Any()
+	notExists, err := Default().Invoke(OptTx(tx)).Query("select 1 from bench_object where id = $1", -1).Any()
 	a.Nil(err)
 	a.False(notExists)
 }
@@ -82,17 +82,17 @@ func TestQueryNone(t *testing.T) {
 	a.Nil(seedErr)
 
 	var all []benchObj
-	allErr := Default().GetAllInTx(&all, tx)
+	allErr := Default().Invoke(OptTx(tx)).All(&all)
 	a.Nil(allErr)
 	a.NotEmpty(all)
 
 	obj := all[0]
 
-	exists, existsErr := Default().QueryInTx("select 1 from bench_object where id = $1", tx, obj.ID).None()
+	exists, existsErr := Default().Invoke(OptTx(tx)).Query("select 1 from bench_object where id = $1", obj.ID).None()
 	a.Nil(existsErr)
 	a.False(exists)
 
-	notExists, notExistsErr := Default().QueryInTx("select 1 from bench_object where id = $1", tx, -1).None()
+	notExists, notExistsErr := Default().Invoke(OptTx(tx)).Query("select 1 from bench_object where id = $1", -1).None()
 	a.Nil(notExistsErr)
 	a.True(notExists)
 }
@@ -106,14 +106,14 @@ func TestQueryPanicHandling(t *testing.T) {
 	err = seedObjects(10, tx)
 	a.Nil(err)
 
-	err = Default().QueryInTx("select * from bench_object", tx).Each(func(r Rows) error {
+	err = Default().Invoke(OptTx(tx)).Query("select * from bench_object").Each(func(r Rows) error {
 		panic("THIS IS A TEST PANIC")
 	})
 	a.NotNil(err) // this should have the result of the panic
 
 	// we now test to see if the connection is still in a good state, i.e. that we recovered from the panic
 	// and closed the connection / rows / statement
-	hasRows, err := Default().QueryInTx("select * from bench_object", tx).Any()
+	hasRows, err := Default().Invoke(OptTx(tx)).Query("select * from bench_object").Any()
 	a.Nil(err)
 	a.True(hasRows)
 }
@@ -127,7 +127,7 @@ func TestMultipleQueriesPerTransaction(t *testing.T) {
 	wg := sync.WaitGroup{}
 	wg.Add(3)
 
-	a.NotNil(Default().Connection())
+	a.NotNil(Default().Connection)
 
 	err = seedObjects(10, nil)
 	a.Nil(err)
@@ -178,27 +178,27 @@ func TestMultipleQueriesPerTransactionWithFailure(t *testing.T) {
 
 	go func() {
 		defer wg.Done()
-		hasRows, err := Default().QueryInTx("select * from bench_object", tx).Any()
+		hasRows, err := Default().Invoke(OptTx(tx)).Query("select * from bench_object").Any()
 		a.NotNil(err)
 		a.False(hasRows)
 	}()
 
 	go func() {
 		defer wg.Done()
-		hasRows, err := Default().QueryInTx("select * from bench_object", tx).Any()
+		hasRows, err := Default().Invoke(OptTx(tx)).Query("select * from bench_object").Any()
 		a.NotNil(err)
 		a.False(hasRows)
 	}()
 
 	go func() {
 		defer wg.Done()
-		hasRows, err := Default().QueryInTx("select * from bench_object", tx).Any()
+		hasRows, err := Default().Invoke(OptTx(tx)).Query("select * from bench_object").Any()
 		a.NotNil(err)
 		a.False(hasRows)
 	}()
 
 	wg.Wait()
-	hasRows, err := Default().QueryInTx("select * from bench_object", tx).Any()
+	hasRows, err := Default().Invoke(OptTx(tx)).Query("select * from bench_object").Any()
 
 	a.NotNil(err)
 	a.False(hasRows)
@@ -214,7 +214,7 @@ func TestQueryFirst(t *testing.T) {
 	a.Nil(seedErr)
 
 	var first benchObj
-	err = Default().QueryInTx("select * from bench_object", tx).First(func(r Rows) error {
+	err = Default().Invoke(OptTx(tx)).Query("select * from bench_object").First(func(r Rows) error {
 		return first.Populate(r)
 	})
 	a.Nil(err)
@@ -228,18 +228,18 @@ func TestQueryExists(t *testing.T) {
 	defer tx.Rollback()
 
 	var first benchObj
-	err = Default().QueryInTx("select * from bench_object", tx).First(func(r Rows) error {
+	err = Default().Invoke(OptTx(tx)).Query("select * from bench_object").First(func(r Rows) error {
 		return first.Populate(r)
 	})
 	assert.Nil(err)
 	assert.Equal(1, first.ID)
 
-	exists, err := Default().ExistsInTx(&first, tx)
+	exists, err := Default().Invoke(OptTx(tx)).Exists(&first)
 	assert.Nil(err)
 	assert.True(exists)
 
 	var invalid benchObj
-	exists, err = Default().ExistsInTx(&invalid, tx)
+	exists, err = Default().Invoke(OptTx(tx)).Exists(&invalid)
 	assert.Nil(err)
 	assert.False(exists)
 }
@@ -252,7 +252,7 @@ func TestQueryQueryPopulateByname(t *testing.T) {
 
 	var first benchObj
 	cols := Columns(first)
-	err = Default().QueryInTx("select * from bench_object", tx).First(func(r Rows) error {
+	err = Default().Invoke(OptTx(tx)).Query("select * from bench_object").First(func(r Rows) error {
 		return PopulateByName(&first, r, cols)
 	})
 	assert.Nil(err)
