@@ -1,18 +1,17 @@
-package migration
+package pg
 
 import (
 	"os"
 	"testing"
 
-	_ "github.com/lib/pq"
-
 	"github.com/blend/go-sdk/db"
 	"github.com/blend/go-sdk/logger"
+
+	_ "github.com/lib/pq"
 )
 
-// TestMain is the testing entrypoint.
 func TestMain(m *testing.M) {
-	conn, err := db.NewFromEnv()
+	conn, err := db.New(db.OptConfigFromEnv())
 	if err != nil {
 		logger.FatalExit(err)
 	}
@@ -20,6 +19,5 @@ func TestMain(m *testing.M) {
 	if err != nil {
 		logger.FatalExit(err)
 	}
-
 	os.Exit(m.Run())
 }

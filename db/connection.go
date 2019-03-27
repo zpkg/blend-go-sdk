@@ -28,51 +28,18 @@ const (
 
 // New returns a new Connection.
 // It will use very bare bones defaults for the config.
-func New() *Connection {
-	return &Connection{
-		config:    &Config{},
-		planCache: NewPlanCache(),
+func New(options ...Option) (*Connection, error) {
+	c := &Connection{
+		Config:    &Config{},
+		PlanCache: NewPlanCache(),
 	}
-}
-
-// NewFromConfig returns a new connection from a config.
-func NewFromConfig(cfg *Config) (*Connection, error) {
-	dsn := cfg.CreateDSN()
-	parsed, err := NewConfigFromDSN(dsn)
-	if err != nil {
-		return nil, err
+	var err error
+	for _, o := range options {
+		if err = o(c); err != nil {
+			return nil, err
+		}
 	}
-	return New().WithConfig(parsed), nil
-}
-
-// MustNewFromConfig returns a new connection from a config
-// and panics if there is an error.
-func MustNewFromConfig(cfg *Config) *Connection {
-	conn, err := NewFromConfig(cfg)
-	if err != nil {
-		panic(err)
-	}
-	return conn
-}
-
-// MustNewFromEnv creates a new db connection from environment variables.
-// It will panic if there is an error.
-func MustNewFromEnv() *Connection {
-	cfg, err := NewConfigFromEnv()
-	if err != nil {
-		panic(err)
-	}
-	return MustNewFromConfig(cfg)
-}
-
-// NewFromEnv will returns a new connection from a config
-// set from environment variables.
-func NewFromEnv() (*Connection, error) {
-	cfg, err := NewConfigFromEnv()
-	if err != nil {
-		return nil, err
-	}
-	return NewFromConfig(cfg)
+	return c, nil
 }
 
 // Open opens a connection, testing an error and returning it if not nil, and if nil, opening the connection.
@@ -91,78 +58,23 @@ func Open(conn *Connection, err error) (*Connection, error) {
 // Connection is the basic wrapper for connection parameters and saves a reference to the created sql.Connection.
 type Connection struct {
 	sync.Mutex
-	tracer               Tracer
-	statementInterceptor StatementInterceptor
-
-	connection *sql.DB
-	config     *Config
-	bufferPool *BufferPool
-	log        logger.FullReceiver
-	planCache  *PlanCache
-}
-
-// WithConfig sets the config.
-func (dbc *Connection) WithConfig(cfg *Config) *Connection {
-	dbc.config = cfg
-	return dbc
-}
-
-// Config returns the config.
-func (dbc *Connection) Config() *Config {
-	return dbc.config
-}
-
-// WithTracer sets the connection tracer and returns a reference.
-func (dbc *Connection) WithTracer(tracer Tracer) *Connection {
-	dbc.tracer = tracer
-	return dbc
-}
-
-// Tracer returns the tracer.
-func (dbc *Connection) Tracer() Tracer {
-	return dbc.tracer
-}
-
-// WithStatementInterceptor sets the connection statement interceptor.
-func (dbc *Connection) WithStatementInterceptor(interceptor StatementInterceptor) *Connection {
-	dbc.statementInterceptor = interceptor
-	return dbc
-}
-
-// StatementInterceptor returns the statement interceptor.
-func (dbc *Connection) StatementInterceptor() StatementInterceptor {
-	return dbc.statementInterceptor
-}
-
-// Connection returns the underlying driver connection.
-func (dbc *Connection) Connection() *sql.DB {
-	return dbc.connection
+	Tracer               Tracer
+	StatementInterceptor StatementInterceptor
+	Connection           *sql.DB
+	Config               *Config
+	BufferPool           *BufferPool
+	Log                  logger.Log
+	PlanCache            *PlanCache
 }
 
 // Close implements a closer.
 func (dbc *Connection) Close() error {
-	if dbc.planCache != nil {
-		if err := dbc.planCache.Close(); err != nil {
+	if dbc.PlanCache != nil {
+		if err := dbc.PlanCache.Close(); err != nil {
 			return err
 		}
 	}
-	return dbc.connection.Close()
-}
-
-// WithLogger sets the connection's diagnostic agent.
-func (dbc *Connection) WithLogger(log logger.FullReceiver) *Connection {
-	dbc.log = log
-	return dbc
-}
-
-// Logger returns the diagnostics agent.
-func (dbc *Connection) Logger() logger.FullReceiver {
-	return dbc.log
-}
-
-// PlanCache returns the statement cache.
-func (dbc *Connection) PlanCache() *PlanCache {
-	return dbc.planCache
+	return dbc.Connection.Close()
 }
 
 // Open returns a connection object, either a cached connection object or creating a new one in the process.
@@ -171,37 +83,37 @@ func (dbc *Connection) Open() error {
 	defer dbc.Unlock()
 
 	// bail if we've already opened the connection.
-	if dbc.connection != nil {
+	if dbc.Connection != nil {
 		return Error(ErrConnectionAlreadyOpen)
 	}
-	if dbc.config == nil {
+	if dbc.Config == nil {
 		return Error(ErrConfigUnset)
 	}
-	if dbc.bufferPool == nil {
-		dbc.bufferPool = NewBufferPool(dbc.config.GetBufferPoolSize())
+	if dbc.BufferPool == nil {
+		dbc.BufferPool = NewBufferPool(dbc.Config.GetBufferPoolSize())
 	}
-	if dbc.planCache == nil {
-		dbc.planCache = NewPlanCache()
+	if dbc.PlanCache == nil {
+		dbc.PlanCache = NewPlanCache()
 	}
 
-	dsn := dbc.config.CreateDSN()
+	dsn := dbc.Config.CreateDSN()
 	namedValues, err := ParseURL(dsn)
 	if err != nil {
 		return err
 	}
 
 	// open the connection
-	dbConn, err := sql.Open(dbc.config.GetEngine(), namedValues)
+	dbConn, err := sql.Open(dbc.Config.GetEngine(), namedValues)
 	if err != nil {
 		return Error(err)
 	}
 
-	dbc.planCache.WithConnection(dbConn)
-	dbc.planCache.WithEnabled(!dbc.config.GetPlanCacheDisabled())
-	dbc.connection = dbConn
-	dbc.connection.SetConnMaxLifetime(dbc.config.GetMaxLifetime())
-	dbc.connection.SetMaxIdleConns(dbc.config.GetIdleConnections())
-	dbc.connection.SetMaxOpenConns(dbc.config.GetMaxConnections())
+	dbc.PlanCache.WithConnection(dbConn)
+	dbc.PlanCache.WithEnabled(!dbc.Config.GetPlanCacheDisabled())
+	dbc.Connection = dbConn
+	dbc.Connection.SetConnMaxLifetime(dbc.Config.GetMaxLifetime())
+	dbc.Connection.SetMaxIdleConns(dbc.Config.GetIdleConnections())
+	dbc.Connection.SetMaxOpenConns(dbc.Config.GetMaxConnections())
 	return nil
 }
 
@@ -212,34 +124,34 @@ func (dbc *Connection) Begin(opts ...*sql.TxOptions) (*sql.Tx, error) {
 
 // BeginContext starts a new transaction in a givent context.
 func (dbc *Connection) BeginContext(context context.Context, opts ...*sql.TxOptions) (*sql.Tx, error) {
-	if dbc.connection == nil {
+	if dbc.Connection == nil {
 		return nil, exception.New(ErrConnectionClosed)
 	}
 	if len(opts) > 0 {
-		tx, err := dbc.connection.BeginTx(context, opts[0])
+		tx, err := dbc.Connection.BeginTx(context, opts[0])
 		return tx, Error(err)
 	}
-	tx, err := dbc.connection.BeginTx(context, nil)
+	tx, err := dbc.Connection.BeginTx(context, nil)
 	return tx, Error(err)
 }
 
 // PrepareContext prepares a statement potentially returning a cached version of the statement.
-func (dbc *Connection) PrepareContext(context context.Context, cachedPlanKey, statement string, txs ...*sql.Tx) (stmt *sql.Stmt, err error) {
-	if dbc.tracer != nil {
-		tf := dbc.tracer.Prepare(context, dbc, statement)
+func (dbc *Connection) PrepareContext(context context.Context, cachedPlanKey, statement string, tx *sql.Tx) (stmt *sql.Stmt, err error) {
+	if dbc.Tracer != nil {
+		tf := dbc.Tracer.Prepare(context, dbc, statement)
 		if tf != nil {
 			defer func() { tf.Finish(err) }()
 		}
 	}
-	if tx := Tx(txs...); tx != nil {
+	if tx != nil {
 		stmt, err = tx.PrepareContext(context, statement)
 		return
 	}
-	if dbc.planCache != nil && dbc.planCache.Enabled() && cachedPlanKey != "" {
-		stmt, err = dbc.planCache.PrepareContext(context, cachedPlanKey, statement)
+	if dbc.PlanCache != nil && dbc.PlanCache.Enabled() && cachedPlanKey != "" {
+		stmt, err = dbc.PlanCache.PrepareContext(context, cachedPlanKey, statement)
 		return
 	}
-	stmt, err = dbc.connection.PrepareContext(context, statement)
+	stmt, err = dbc.Connection.PrepareContext(context, statement)
 	return
 }
 
@@ -248,31 +160,29 @@ func (dbc *Connection) PrepareContext(context context.Context, cachedPlanKey, st
 // --------------------------------------------------------------------------------
 
 // Invoke returns a new invocation.
-func (dbc *Connection) Invoke(context context.Context, txs ...*sql.Tx) *Invocation {
-	return &Invocation{
-		context:              context,
-		tracer:               dbc.tracer,
-		statementInterceptor: dbc.statementInterceptor,
-		conn:                 dbc,
-		startTime:            time.Now().UTC(),
-		tx:                   OptionalTx(txs...),
+func (dbc *Connection) Invoke(options ...InvocationOption) *Invocation {
+	i := &Invocation{
+		Context:              context.Background(),
+		Tracer:               dbc.Tracer,
+		StatementInterceptor: dbc.StatementInterceptor,
+		Conn:                 dbc,
+		StartTime:            time.Now().UTC(),
 	}
-}
-
-// Background returns an empty context.Context.
-func (dbc *Connection) Background() context.Context {
-	return context.Background()
+	for _, option := range options {
+		option(i)
+	}
+	return i
 }
 
 // Ping checks the db connection.
 func (dbc *Connection) Ping() error {
-	return Error(dbc.connection.Ping())
+	return Error(dbc.Connection.Ping())
 }
 
 // PingContext checks the db connection.
 func (dbc *Connection) PingContext(context context.Context) (err error) {
-	if dbc.tracer != nil {
-		tf := dbc.tracer.Ping(context, dbc)
+	if dbc.Tracer != nil {
+		tf := dbc.Tracer.Ping(context, dbc)
 		if tf != nil {
 			defer func() {
 				tf.Finish(err)
@@ -280,6 +190,26 @@ func (dbc *Connection) PingContext(context context.Context) (err error) {
 		}
 	}
 
-	err = Error(dbc.connection.PingContext(context))
+	err = Error(dbc.Connection.PingContext(context))
 	return
+}
+
+// Exec is a helper stub for .Invoke(...).Exec(...).
+func (dbc *Connection) Exec(statement string, args ...interface{}) error {
+	return dbc.Invoke().Exec(statement, args...)
+}
+
+// ExecContext is a helper stub for .Invoke(OptContext(ctx)).Exec(...).
+func (dbc *Connection) ExecContext(ctx context.Context, statement string, args ...interface{}) error {
+	return dbc.Invoke(OptContext(ctx)).Exec(statement, args...)
+}
+
+// Query is a helper stub for .Invoke(...).Query(...).
+func (dbc *Connection) Query(statement string, args ...interface{}) *Query {
+	return dbc.Invoke().Query(statement, args...)
+}
+
+// QueryContext is a helper stub for .Invoke(OptContext(ctx)).Query(...).
+func (dbc *Connection) QueryContext(ctx context.Context, statement string, args ...interface{}) *Query {
+	return dbc.Invoke(OptContext(ctx)).Query(statement, args...)
 }

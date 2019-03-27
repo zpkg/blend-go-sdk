@@ -1,6 +1,7 @@
 package certutil
 
 import (
+	"crypto/rsa"
 	"crypto/x509"
 	"encoding/pem"
 	"io/ioutil"
@@ -111,4 +112,18 @@ func CommonNamesForCertPEM(certPEM []byte) ([]string, error) {
 		output[index] = cert.Subject.CommonName
 	}
 	return output, nil
+}
+
+// ReadPrivateKeyPEMFromPath reads a private key pem from a given path.
+func ReadPrivateKeyPEMFromPath(keyPath string) (*rsa.PrivateKey, error) {
+	contents, err := ioutil.ReadFile(keyPath)
+	if err != nil {
+		return nil, exception.New(err, exception.OptMessagef("key path: %s", keyPath))
+	}
+	data, _ := pem.Decode(contents)
+	pk, err := x509.ParsePKCS1PrivateKey(data.Bytes)
+	if err != nil {
+		return nil, exception.New(err)
+	}
+	return pk, nil
 }

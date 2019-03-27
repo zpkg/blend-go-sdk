@@ -7,6 +7,11 @@ import (
 	"github.com/blend/go-sdk/exception"
 )
 
+// KeyPairFromPaths returns a key pair from paths.
+func KeyPairFromPaths(certPath, keyPath string) KeyPair {
+	return KeyPair{CertPath: certPath, KeyPath: keyPath}
+}
+
 // KeyPair is an x509 pem key pair as strings.
 type KeyPair struct {
 	Cert     string `json:"cert,omitempty" yaml:"cert,omitempty"`
@@ -33,7 +38,7 @@ func (kp KeyPair) CertBytes() ([]byte, error) {
 	}
 	contents, err := ioutil.ReadFile(os.ExpandEnv(kp.CertPath))
 	if err != nil {
-		return nil, exception.New("error loading cert from path").WithInner(err).WithMessage(kp.CertPath)
+		return nil, exception.New("error loading cert from path", exception.OptInner(err), exception.OptMessage(kp.CertPath))
 	}
 	return contents, nil
 }
@@ -48,7 +53,7 @@ func (kp KeyPair) KeyBytes() ([]byte, error) {
 	}
 	contents, err := ioutil.ReadFile(os.ExpandEnv(kp.KeyPath))
 	if err != nil {
-		return nil, exception.New("error loading key from path").WithInner(err).WithMessage(kp.KeyPath)
+		return nil, exception.New("error loading key from path", exception.OptInner(err), exception.OptMessage(kp.KeyPath))
 	}
 	return contents, nil
 }

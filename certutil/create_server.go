@@ -34,14 +34,10 @@ func CreateServer(commonName string, ca *CertBundle, options ...CertOption) (*Ce
 	csr := x509.Certificate{
 		SerialNumber: serialNumber,
 		Subject: pkix.Name{
-			CommonName:   commonName,
-			Organization: []string{"Warden"},
-			Country:      []string{"United States"},
-			Province:     []string{"California"},
-			Locality:     []string{"San Francisco"},
+			CommonName: commonName,
 		},
 		NotBefore:   time.Now().UTC(),
-		NotAfter:    time.Now().UTC().AddDate(10, 0, 0),
+		NotAfter:    time.Now().UTC().AddDate(DefaultServerNotAfterYears, 0, 0),
 		ExtKeyUsage: []x509.ExtKeyUsage{x509.ExtKeyUsageServerAuth},
 		KeyUsage:    x509.KeyUsageDigitalSignature,
 	}

@@ -281,7 +281,7 @@ func (c Config) ValidateProduction() error {
 		stringutil.EqualsCaseless(c.GetSSLMode(), SSLModeRequire) ||
 		stringutil.EqualsCaseless(c.GetSSLMode(), SSLModeVerifyCA) ||
 		stringutil.EqualsCaseless(c.GetSSLMode(), SSLModeVerifyFull)) {
-		return exception.New(ErrUnsafeSSLMode).WithMessagef("sslmode: %s", c.GetSSLMode())
+		return exception.New(ErrUnsafeSSLMode, exception.OptMessagef("sslmode: %s", c.GetSSLMode()))
 	}
 
 	if len(c.GetUsername()) == 0 {

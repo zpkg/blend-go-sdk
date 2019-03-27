@@ -38,7 +38,7 @@ func PopulateByName(object interface{}, row Rows, cols *ColumnCollection) error 
 		if field, ok = columnLookup[colName]; ok {
 			err = field.SetValue(object, v)
 			if err != nil {
-				return exception.New(Error(err)).WithMessagef("column: %s", colName)
+				return exception.New(Error(err), exception.OptMessagef("column: %s", colName))
 			}
 		}
 	}

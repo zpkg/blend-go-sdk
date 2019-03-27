@@ -54,7 +54,7 @@ func NewCertBundle(keyPair KeyPair) (*CertBundle, error) {
 	if typed, ok := certData.PrivateKey.(*rsa.PrivateKey); ok {
 		privateKey = typed
 	} else {
-		return nil, exception.New("invalid private key type").WithMessagef("%T", certData.PrivateKey)
+		return nil, exception.New("invalid private key type", exception.OptMessagef("%T", certData.PrivateKey))
 	}
 
 	return &CertBundle{

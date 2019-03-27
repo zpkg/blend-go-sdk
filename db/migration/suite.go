@@ -115,12 +115,12 @@ func (s *Suite) Error(ctx context.Context, err error) error {
 }
 
 func (s *Suite) Write(ctx context.Context, result, body string) {
-	logger.MaybeSyncTrigger(s.log, NewEvent(result, body, GetContextLabels(ctx)...))
+	logger.MaybeTrigger(s.log, NewEvent(result, body, GetContextLabels(ctx)...))
 }
 
 // WriteStats writes the stats if a logger is configured.
 func (s *Suite) WriteStats() {
 	if s.log != nil {
-		s.log.SyncTrigger(NewStatsEvent(s.applied, s.skipped, s.failed, s.total))
+		s.log.Trigger(context.Background(), NewStatsEvent(s.applied, s.skipped, s.failed, s.total))
 	}
 }

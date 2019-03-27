@@ -11,19 +11,50 @@ import (
 	"github.com/blend/go-sdk/exception"
 )
 
-// CreateClient creates a client cert bundle associated with a given common name.
+/*
+CreateClient creates a client cert bundle associated with a given common name.
+
+The CA must be passed in as a CertBundle.
+
+Example:
+
+	ca, err := certutil.NewCertBundle(certutil.KeyPairFromPaths("ca.crt", "ca.key"))
+	if err != nil {
+		return err
+	}
+	client, err := CreateClient("foo.bar.com", ca)
+*/
 func CreateClient(commonName string, ca *CertBundle, options ...CertOption) (*CertBundle, error) {
 	if ca == nil {
 		return nil, exception.New("must provide a ca cert bundle")
 	}
-	var output CertBundle
-	var err error
-	output.PrivateKey, err = rsa.GenerateKey(rand.Reader, 2048)
+	pk, err := rsa.GenerateKey(rand.Reader, 2048)
 	if err != nil {
 		return nil, exception.New(err)
 	}
-	output.PublicKey = &output.PrivateKey.PublicKey
+	return CreateClientFromPrivateKey(pk, commonName, ca, options...)
+}
 
+/*
+CreateClientFromPrivateKey creates a client cert bundle associated with a given common name with a given private key.
+
+The CA must be passed in as a CertBundle.
+
+Example:
+
+	pk, err := certutil.ReadPrivateKeyPEMFromPath("id_rsa")
+	if err != nil {
+		return err
+	}
+	ca, err := certutil.NewCertBundle(certutil.KeyPairFromPaths("ca.crt", "ca.key"))
+	if err != nil {
+		return err
+	}
+	client, err := CreateClientFromPrivateKey(pk, "foo.bar.com", ca)
+*/
+func CreateClientFromPrivateKey(pk *rsa.PrivateKey, commonName string, ca *CertBundle, options ...CertOption) (*CertBundle, error) {
+	var output CertBundle
+	var err error
 	serialNumberLimit := new(big.Int).Lsh(big.NewInt(1), 128)
 	var serialNumber *big.Int
 	serialNumber, err = rand.Int(rand.Reader, serialNumberLimit)
@@ -33,14 +64,10 @@ func CreateClient(commonName string, ca *CertBundle, options ...CertOption) (*Ce
 	csr := x509.Certificate{
 		SerialNumber: serialNumber,
 		Subject: pkix.Name{
-			CommonName:   commonName,
-			Organization: []string{"Warden"},
-			Country:      []string{"United States"},
-			Province:     []string{"California"},
-			Locality:     []string{"San Francisco"},
+			CommonName: commonName,
 		},
 		NotBefore:   time.Now().UTC(),
-		NotAfter:    time.Now().UTC().AddDate(1, 0, 0),
+		NotAfter:    time.Now().UTC().AddDate(DefaultClientNotAfterYears, 0, 0),
 		ExtKeyUsage: []x509.ExtKeyUsage{x509.ExtKeyUsageClientAuth},
 		KeyUsage:    x509.KeyUsageDigitalSignature,
 	}

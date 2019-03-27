@@ -1,7 +1,6 @@
 package db
 
 import (
-	"database/sql"
 	"fmt"
 	"reflect"
 	"strconv"
@@ -14,20 +13,6 @@ import (
 // --------------------------------------------------------------------------------
 // Utility Methods
 // --------------------------------------------------------------------------------
-
-// OptionalTx returns the first of a variadic set of txs.
-// It is useful if you want to have a tx an optional parameter.
-func OptionalTx(txs ...*sql.Tx) *sql.Tx {
-	if len(txs) > 0 {
-		return txs[0]
-	}
-	return nil
-}
-
-// Tx is an alias for OptionalTx
-func Tx(txs ...*sql.Tx) *sql.Tx {
-	return OptionalTx(txs...)
-}
 
 // TableNameByType returns the table name for a given reflect.Type by instantiating it and calling o.TableName().
 // The type must implement DatabaseMapped or an exception will be returned.
@@ -44,7 +29,7 @@ func TableName(obj DatabaseMapped) string {
 	if typed, isTyped := obj.(TableNameProvider); isTyped {
 		return typed.TableName()
 	}
-	return strings.ToLower(reflectType(obj).Name())
+	return strings.ToLower(ReflectType(obj).Name())
 }
 
 // --------------------------------------------------------------------------------
@@ -81,8 +66,8 @@ func isPopulatable(object interface{}) bool {
 	return isPopulatable
 }
 
-// reflectValue returns the reflect.Value for an object following pointers.
-func reflectValue(obj interface{}) reflect.Value {
+// ReflectValue returns the reflect.Value for an object following pointers.
+func ReflectValue(obj interface{}) reflect.Value {
 	v := reflect.ValueOf(obj)
 	for v.Kind() == reflect.Ptr || v.Kind() == reflect.Interface {
 		v = v.Elem()
@@ -90,8 +75,8 @@ func reflectValue(obj interface{}) reflect.Value {
 	return v
 }
 
-// reflectType retruns the reflect.Type for an object following pointers.
-func reflectType(obj interface{}) reflect.Type {
+// ReflectType retruns the reflect.Type for an object following pointers.
+func ReflectType(obj interface{}) reflect.Type {
 	t := reflect.TypeOf(obj)
 	for t.Kind() == reflect.Ptr || t.Kind() == reflect.Interface {
 		t = t.Elem()
@@ -100,8 +85,8 @@ func reflectType(obj interface{}) reflect.Type {
 	return t
 }
 
-// reflectSliceType returns the inner type of a slice following pointers.
-func reflectSliceType(collection interface{}) reflect.Type {
+// ReflectSliceType returns the inner type of a slice following pointers.
+func ReflectSliceType(collection interface{}) reflect.Type {
 	v := reflect.ValueOf(collection)
 	for v.Kind() == reflect.Ptr {
 		v = v.Elem()
@@ -121,8 +106,8 @@ func reflectSliceType(collection interface{}) reflect.Type {
 	return v.Type()
 }
 
-// makeWhereClause returns the sql `where` clause for a column collection, starting at a given index (used in sql $1 parameterization).
-func makeWhereClause(pks *ColumnCollection, startAt int) string {
+// MakeWhereClause returns the sql `where` clause for a column collection, starting at a given index (used in sql $1 parameterization).
+func MakeWhereClause(pks *ColumnCollection, startAt int) string {
 	whereClause := " WHERE "
 	for i, pk := range pks.Columns() {
 		whereClause = whereClause + fmt.Sprintf("%s = %s", pk.ColumnName, "$"+strconv.Itoa(i+startAt))
@@ -134,8 +119,8 @@ func makeWhereClause(pks *ColumnCollection, startAt int) string {
 	return whereClause
 }
 
-// paramTokensCSV returns a csv token string in the form "$1,$2,$3...$N"
-func paramTokensCSV(num int) string {
+// ParamTokensCSV returns a csv token string in the form "$1,$2,$3...$N"
+func ParamTokensCSV(num int) string {
 	str := ""
 	for i := 1; i <= num; i++ {
 		str = str + fmt.Sprintf("$%d", i)
@@ -146,13 +131,13 @@ func paramTokensCSV(num int) string {
 	return str
 }
 
-// makeNewDatabaseMapped returns a new instance of a database mapped type.
-func makeNewDatabaseMapped(t reflect.Type) (DatabaseMapped, error) {
+// MakeNewDatabaseMapped returns a new instance of a database mapped type.
+func MakeNewDatabaseMapped(t reflect.Type) (DatabaseMapped, error) {
 	newInterface := reflect.New(t).Interface()
 	if typed, isTyped := newInterface.(DatabaseMapped); isTyped {
 		return typed.(DatabaseMapped), nil
 	}
-	return nil, exception.New("type does not implement DatabaseMapped").WithMessagef("type: %s", t.Name())
+	return nil, exception.New("type does not implement DatabaseMapped", exception.OptMessagef("type: %s", t.Name()))
 }
 
 // makeNew creates a new object.

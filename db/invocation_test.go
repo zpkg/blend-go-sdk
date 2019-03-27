@@ -1,4 +1,4 @@
-package db
+package db_test
 
 import (
 	"context"
@@ -8,6 +8,7 @@ import (
 	"time"
 
 	"github.com/blend/go-sdk/assert"
+	"github.com/blend/go-sdk/db"
 	"github.com/blend/go-sdk/uuid"
 )
 
@@ -36,16 +37,16 @@ func (jt jsonTest) TableName() string {
 }
 
 func createJSONTestTable(tx *sql.Tx) error {
-	return Default().Invoke(context.Background(), tx).Exec("create table json_test (id serial primary key, name varchar(255), not_null json, nullable json)")
+	return db.Default().Invoke(context.Background(), OptTx(tx)).Exec("create table json_test (id serial primary key, name varchar(255), not_null json, nullable json)")
 }
 
 func dropJSONTextTable(tx *sql.Tx) error {
-	return Default().Invoke(context.Background(), tx).Exec("drop table if exists json_test")
+	return db.Default().Invoke(context.Background(), OptTx(tx)).Exec("drop table if exists json_test")
 }
 
 func TestInvocationJSONNulls(t *testing.T) {
 	assert := assert.New(t)
-	tx, err := Default().Begin()
+	tx, err := db.Default().Begin()
 	assert.Nil(err)
 	defer tx.Rollback()
 	defer dropJSONTextTable(tx)
@@ -54,10 +55,10 @@ func TestInvocationJSONNulls(t *testing.T) {
 
 	// try creating fully set object and reading it out
 	obj0 := jsonTest{Name: uuid.V4().String(), NotNull: jsonTestChild{Label: uuid.V4().String()}, Nullable: []string{uuid.V4().String()}}
-	assert.Nil(Default().Invoke(context.Background(), tx).Create(&obj0))
+	assert.Nil(db.Default().Invoke(context.Background(), OptTx(tx)).Create(&obj0))
 
 	var verify0 jsonTest
-	assert.Nil(Default().Invoke(context.Background(), tx).Get(&verify0, obj0.ID))
+	assert.Nil(db.Default().Invoke(context.Background(), OptTx(tx)).Get(&verify0, obj0.ID))
 
 	assert.Equal(obj0.ID, verify0.ID)
 	assert.Equal(obj0.Name, verify0.Name)
@@ -67,31 +68,31 @@ func TestInvocationJSONNulls(t *testing.T) {
 	// try creating partially set object and reading it out
 	obj1 := jsonTest{Name: uuid.V4().String(), NotNull: jsonTestChild{Label: uuid.V4().String()}} //note `Nullable` isn't set
 
-	columns := Columns(obj1)
+	columns := db.Columns(obj1)
 	values := columns.ColumnValues(obj1)
 	assert.Len(values, 4)
 	assert.Nil(values[3], "we shouldn't emit a literal 'null' here")
 	assert.NotEqual("null", values[3], "we shouldn't emit a literal 'null' here")
 
-	assert.Nil(Default().Invoke(context.Background(), tx).Create(&obj1))
+	assert.Nil(db.Default().Invoke(OptTx(tx)).Create(&obj1))
 
 	var verify1 jsonTest
-	assert.Nil(Default().Invoke(context.Background(), tx).Get(&verify1, obj1.ID))
+	assert.Nil(db.Default().Invoke(OptTx(tx)).Get(&verify1, obj1.ID))
 
 	assert.Equal(obj1.ID, verify1.ID)
 	assert.Equal(obj1.Name, verify1.Name)
 	assert.Nil(verify1.Nullable)
 	assert.Equal(obj1.NotNull.Label, verify1.NotNull.Label)
 
-	any, err := Default().Invoke(context.Background(), tx).Query("select 1 from json_test where id = $1 and nullable is null", obj1.ID).Any()
+	any, err := db.Default().Invoke(OptTx(tx)).Query("select 1 from json_test where id = $1 and nullable is null", obj1.ID).Any()
 	assert.Nil(err)
 	assert.True(any, "we should have written a sql null, not a literal string 'null'")
 
 	// set it to literal 'null' to test this is backward compatible
-	assert.Nil(Default().Invoke(context.Background(), tx).Exec("update json_test set nullable = 'null' where id = $1", obj1.ID))
+	assert.Nil(db.Default().Invoke(OptTx(tx)).Exec("update json_test set nullable = 'null' where id = $1", obj1.ID))
 
 	var verify2 jsonTest
-	assert.Nil(Default().Invoke(context.Background(), tx).Get(&verify2, obj1.ID))
+	assert.Nil(db.Default().Invoke(OptTx(tx)).Get(&verify2, obj1.ID))
 	assert.Equal(obj1.ID, verify2.ID)
 	assert.Equal(obj1.Name, verify2.Name)
 	assert.Nil(verify2.Nullable, "even if we set it to literal 'null' it should come out golang nil")
@@ -110,23 +111,24 @@ func (uo uniqueObj) TableName() string {
 
 func TestInvocationCreateRepeatInTx(t *testing.T) {
 	assert := assert.New(t)
-	tx, err := Default().Begin()
+
+	tx, err := db.Default().Begin()
 	assert.Nil(err)
 	defer tx.Rollback()
 
-	assert.Nil(Default().Invoke(context.Background(), tx).Exec("CREATE TABLE IF NOT EXISTS unique_obj (id int not null primary key, name varchar)"))
-	assert.Nil(Default().Invoke(context.Background(), tx).Create(&uniqueObj{ID: 1, Name: "one"}))
+	assert.Nil(db.Default().Invoke(context.Background(), tx).Exec("CREATE TABLE IF NOT EXISTS unique_obj (id int not null primary key, name varchar)"))
+	assert.Nil(db.Default().Invoke(context.Background(), tx).Create(&uniqueObj{ID: 1, Name: "one"}))
 	var verify uniqueObj
-	assert.Nil(Default().Invoke(context.Background(), tx).Get(&verify, 1))
+	assert.Nil(db.Default().Invoke(context.Background(), tx).Get(&verify, 1))
 	assert.Equal("one", verify.Name)
-	assert.NotNil(Default().Invoke(context.Background(), tx).Create(&uniqueObj{ID: 1, Name: "two"}))
+	assert.NotNil(db.Default().Invoke(context.Background(), tx).Create(&uniqueObj{ID: 1, Name: "two"}))
 }
 
 func TestInvocationExecError(t *testing.T) {
 	assert := assert.New(t)
 
-	conn := MustNewFromEnv()
-	conn.PlanCache().WithEnabled(false)
+	conn, err := db.New(db.OptConfigFromEnv())
+	conn.PlanCache.WithEnabled(false)
 	assert.Nil(conn.Open())
 	assert.NotNil(conn.Invoke(context.Background()).Exec("not a select"))
 	conn.PlanCache().WithEnabled(true)
@@ -146,13 +148,13 @@ func TestInvocationGetError(t *testing.T) {
 	assert := assert.New(t)
 
 	var getError modelTableNameError
-	conn := MustNewFromEnv()
-	conn.PlanCache().WithEnabled(false)
+	conn, err := db.New(db.OptConfigFromEnv())
+	conn.PlanCache.WithEnabled(false)
 	assert.Nil(conn.Open())
-	assert.NotNil(conn.Invoke(context.Background()).Get(&getError, uuid.V4().String()))
-	conn.PlanCache().WithEnabled(true)
-	assert.NotNil(conn.Invoke(context.Background()).Get(&getError, uuid.V4().String()))
-	assert.NotNil(conn.Invoke(context.Background()).WithCachedPlan("get_error_test").Get(&getError, uuid.V4().String()))
+	assert.NotNil(conn.Invoke().Get(&getError, uuid.V4().String()))
+	conn.PlanCache.WithEnabled(true)
+	assert.NotNil(conn.Invoke().Get(&getError, uuid.V4().String()))
+	assert.NotNil(conn.Invoke(OptCachedPlanKey("get_error_test")).Get(&getError, uuid.V4().String()))
 }
 
 func TestInvocationGetAllError(t *testing.T) {

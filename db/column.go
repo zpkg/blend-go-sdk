@@ -63,14 +63,14 @@ type Column struct {
 
 // SetValue sets the field on a database mapped object to the instance of `value`.
 func (c Column) SetValue(object interface{}, value interface{}) error {
-	objValue := reflectValue(object)
+	objValue := ReflectValue(object)
 	field := objValue.FieldByName(c.FieldName)
 	fieldType := field.Type()
 	if !field.CanSet() {
 		return exception.New("hit a field we can't set: '" + c.FieldName + "', did you forget to pass the object as a reference?")
 	}
 
-	valueReflected := reflectValue(value)
+	valueReflected := ReflectValue(value)
 	if !valueReflected.IsValid() {
 		return nil
 	}
@@ -120,7 +120,7 @@ func (c Column) SetValue(object interface{}, value interface{}) error {
 
 // GetValue returns the value for a column on a given database mapped object.
 func (c Column) GetValue(object DatabaseMapped) interface{} {
-	value := reflectValue(object)
+	value := ReflectValue(object)
 	if c.Parent != nil {
 		embedded := value.Field(c.Parent.Index)
 		valueField := embedded.Field(c.Index)

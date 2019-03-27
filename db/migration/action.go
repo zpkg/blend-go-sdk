@@ -22,7 +22,7 @@ func NoOp(ctx context.Context, c *db.Connection, tx *sql.Tx) error { return nil 
 func Statements(statements ...string) Action {
 	return func(ctx context.Context, c *db.Connection, tx *sql.Tx) (err error) {
 		for _, statement := range statements {
-			err = c.Invoke(ctx, tx).Exec(statement)
+			err = c.Invoke(db.OptContext(ctx), db.OptTx(tx)).Exec(statement)
 			if err != nil {
 				return
 			}

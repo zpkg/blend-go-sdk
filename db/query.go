@@ -95,13 +95,13 @@ func (q *Query) Out(object interface{}) (err error) {
 	}
 	defer func() { err = exception.Nest(err, Error(q.rows.Close())) }()
 
-	sliceType := reflectType(object)
+	sliceType := ReflectType(object)
 	if sliceType.Kind() != reflect.Struct {
 		err = Error(ErrDestinationNotStruct)
 		return
 	}
 
-	columnMeta := getCachedColumnCollectionFromInstance(object)
+	columnMeta := CachedColumnCollectionFromInstance(object)
 	if q.rows.Next() {
 		if populatable, ok := object.(Populatable); ok {
 			err = populatable.Populate(q.rows)
@@ -127,16 +127,16 @@ func (q *Query) OutMany(collection interface{}) (err error) {
 	}
 	defer func() { err = exception.Nest(err, q.rows.Close()) }()
 
-	sliceType := reflectType(collection)
+	sliceType := ReflectType(collection)
 	if sliceType.Kind() != reflect.Slice {
 		err = Error(ErrCollectionNotSlice)
 		return
 	}
 
-	sliceInnerType := reflectSliceType(collection)
-	collectionValue := reflectValue(collection)
+	sliceInnerType := ReflectSliceType(collection)
+	collectionValue := ReflectValue(collection)
 	v := makeNew(sliceInnerType)
-	meta := getCachedColumnCollectionFromType(newColumnCacheKey(sliceInnerType), sliceInnerType)
+	meta := CachedColumnCollectionFromType(newColumnCacheKey(sliceInnerType), sliceInnerType)
 
 	isPopulatable := isPopulatable(v)
 
@@ -153,7 +153,7 @@ func (q *Query) OutMany(collection interface{}) (err error) {
 			return
 		}
 
-		newObjValue := reflectValue(newObj)
+		newObjValue := ReflectValue(newObj)
 		collectionValue.Set(reflect.Append(collectionValue, newObjValue))
 		didSetRows = true
 	}
@@ -218,7 +218,7 @@ func (q *Query) query() (rows *sql.Rows, err error) {
 		err = Error(stmtErr)
 		return
 	}
-	defer func() { err = q.inv.closeStatement(stmt, err) }()
+	defer func() { err = q.inv.CloseStatement(stmt, err) }()
 
 	rows, err = stmt.QueryContext(q.context, q.args...)
 	if err != nil && !exception.Is(err, sql.ErrNoRows) {
@@ -228,5 +228,5 @@ func (q *Query) query() (rows *sql.Rows, err error) {
 }
 
 func (q *Query) finish(r interface{}, err error) error {
-	return q.inv.finish(q.statement, r, err)
+	return q.inv.Finish(q.statement, r, err)
 }

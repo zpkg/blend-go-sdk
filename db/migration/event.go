@@ -3,6 +3,7 @@ package migration
 import (
 	"bytes"
 	"fmt"
+	"io"
 	"strings"
 
 	"github.com/blend/go-sdk/ansi"
@@ -11,19 +12,19 @@ import (
 
 const (
 	// Flag is a logger event flag.
-	Flag logger.Flag = "db.migration"
+	Flag = "db.migration"
 
 	// FlagStats is a logger event flag.
-	FlagStats logger.Flag = "db.migration.stats"
+	FlagStats = "db.migration.stats"
 )
 
 // NewEvent returns a new event.
 func NewEvent(result, body string, labels ...string) *Event {
 	return &Event{
 		EventMeta: logger.NewEventMeta(Flag),
-		result:    result,
-		body:      body,
-		labels:    labels,
+		Result:    result,
+		Body:      body,
+		Labels:    labels,
 	}
 }
 
@@ -31,9 +32,9 @@ func NewEvent(result, body string, labels ...string) *Event {
 type Event struct {
 	*logger.EventMeta
 
-	result string
-	body   string
-	labels []string
+	Result string
+	Body   string
+	Labels []string
 }
 
 func (e Event) colorizeFixedWidthLeftAligned(tf logger.TextFormatter, text string, color ansi.Color, width int) string {
@@ -42,40 +43,40 @@ func (e Event) colorizeFixedWidthLeftAligned(tf logger.TextFormatter, text strin
 }
 
 // WriteText writes the migration event as text.
-func (e Event) WriteText(tf logger.TextFormatter, buf *bytes.Buffer) {
+func (e Event) WriteText(tf logger.Colorizer, wr io.Writer) {
 	resultColor := ansi.ColorBlue
-	switch e.result {
+	switch e.Result {
 	case "skipped":
 		resultColor = ansi.ColorYellow
 	case "failed":
 		resultColor = ansi.ColorRed
 	}
 
-	if len(e.result) > 0 {
-		buf.WriteString(tf.Colorize("--", ansi.ColorLightBlack))
-		buf.WriteRune(logger.RuneSpace)
-		buf.WriteString(tf.Colorize(e.result, resultColor))
+	if len(e.Result) > 0 {
+		io.WriteString(wr, tf.Colorize("--", ansi.ColorLightBlack))
+		io.WriteString(wr, logger.Space)
+		io.WriteString(wr, tf.Colorize(e.Result, resultColor))
 	}
 
-	if len(e.labels) > 0 {
-		buf.WriteRune(logger.RuneSpace)
-		buf.WriteString(strings.Join(e.labels, " > "))
+	if len(e.Labels) > 0 {
+		io.WriteString(wr, logger.Space)
+		io.WriteString(wr, strings.Join(e.Labels, " > "))
 	}
 
-	if len(e.body) > 0 {
-		buf.WriteRune(logger.RuneSpace)
-		buf.WriteString(tf.Colorize("--", ansi.ColorLightBlack))
-		buf.WriteRune(logger.RuneSpace)
-		buf.WriteString(e.body)
+	if len(e.Body) > 0 {
+		io.WriteString(wr, logger.Space)
+		io.WriteString(wr, tf.Colorize("--", ansi.ColorLightBlack))
+		io.WriteString(wr, logger.Space)
+		io.WriteString(wr, e.Body)
 	}
 }
 
-// WriteJSON implements logger.JSONWritable.
-func (e Event) WriteJSON() logger.JSONObj {
-	return logger.JSONObj{
-		"result": e.result,
-		"labels": e.labels,
-		"body":   e.body,
+// Fields implements logger.FieldsProvider.
+func (e Event) Fields() logger.Fields {
+	return logger.Fields{
+		"result": e.Result,
+		"labels": e.Labels,
+		"body":   e.Body,
 	}
 }
 
@@ -109,9 +110,9 @@ func (se StatsEvent) WriteText(tf logger.TextFormatter, buf *bytes.Buffer) {
 	))
 }
 
-// WriteJSON implements logger.JSONWritable.
-func (se StatsEvent) WriteJSON() logger.JSONObj {
-	return logger.JSONObj{
+// Fields implements logger.FieldsProvider.
+func (se StatsEvent) Fields() logger.Fields {
+	return logger.Fields{
 		StatApplied: se.applied,
 		StatSkipped: se.skipped,
 		StatFailed:  se.failed,

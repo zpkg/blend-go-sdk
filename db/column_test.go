@@ -13,7 +13,7 @@ func TestSetValue(t *testing.T) {
 
 	var value interface{}
 	value = 10
-	meta := getCachedColumnCollectionFromInstance(obj)
+	meta := CachedColumnCollectionFromInstance(obj)
 	pk := meta.Columns()[0]
 	a.Nil(pk.SetValue(&obj, value))
 	a.Equal(10, obj.PrimaryKeyCol)
@@ -23,7 +23,7 @@ func TestSetValueConverted(t *testing.T) {
 	a := assert.New(t)
 	obj := myStruct{InferredName: "Hello."}
 
-	meta := getCachedColumnCollectionFromInstance(obj)
+	meta := CachedColumnCollectionFromInstance(obj)
 	col := meta.Lookup()["big_int"]
 	a.NotNil(col)
 	err := col.SetValue(&obj, int(21))
@@ -34,7 +34,7 @@ func TestSetValueConverted(t *testing.T) {
 func TestSetValueJSON(t *testing.T) {
 	a := assert.New(t)
 	obj := myStruct{InferredName: "Hello."}
-	meta := getCachedColumnCollectionFromInstance(obj)
+	meta := CachedColumnCollectionFromInstance(obj)
 
 	col := meta.Lookup()["json_col"]
 	a.NotNil(col)
@@ -46,7 +46,7 @@ func TestSetValueJSON(t *testing.T) {
 func TestSetValuePtr(t *testing.T) {
 	a := assert.New(t)
 	obj := myStruct{InferredName: "Hello."}
-	meta := getCachedColumnCollectionFromInstance(obj)
+	meta := CachedColumnCollectionFromInstance(obj)
 
 	col := meta.Lookup()["pointer_col"]
 	a.NotNil(col)
@@ -60,7 +60,7 @@ func TestSetValuePtr(t *testing.T) {
 func TestGetValue(t *testing.T) {
 	a := assert.New(t)
 	obj := myStruct{EmbeddedMeta: EmbeddedMeta{PrimaryKeyCol: 5}, InferredName: "Hello."}
-	meta := getCachedColumnCollectionFromInstance(obj)
+	meta := CachedColumnCollectionFromInstance(obj)
 	pk := meta.PrimaryKeys().FirstOrDefault()
 	a.NotNil(pk)
 	value := pk.GetValue(&obj)

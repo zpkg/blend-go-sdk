@@ -141,7 +141,7 @@ func (cm *CertManager) refreshClientCerts() error {
 	pool := x509.NewCertPool()
 	for uid, cert := range cm.ClientCerts {
 		if ok := pool.AppendCertsFromPEM(cert); !ok {
-			return exception.New("invalid ca cert for client cert pool").WithMessagef("cert uid: %s", uid)
+			return exception.New("invalid ca cert for client cert pool", exception.OptMessagef("cert uid: %s", uid))
 		}
 	}
 	cm.TLSConfig.ClientCAs = pool

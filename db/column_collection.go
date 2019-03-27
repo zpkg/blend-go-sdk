@@ -21,12 +21,12 @@ var (
 
 // ColumnNamesCSV returns a csv of column names.
 func ColumnNamesCSV(object DatabaseMapped) string {
-	return getCachedColumnCollectionFromInstance(object).ColumnNamesCSV()
+	return CachedColumnCollectionFromInstance(object).ColumnNamesCSV()
 }
 
 // Columns returns the cached column metadata for an object.
 func Columns(object DatabaseMapped) *ColumnCollection {
-	return getCachedColumnCollectionFromInstance(object)
+	return CachedColumnCollectionFromInstance(object)
 }
 
 // --------------------------------------------------------------------------------
@@ -321,7 +321,7 @@ func (cc *ColumnCollection) ColumnNamesCSVFromAlias(tableAlias string) string {
 
 // ColumnValues returns the reflected value for all the columns on a given instance.
 func (cc *ColumnCollection) ColumnValues(instance interface{}) []interface{} {
-	value := reflectValue(instance)
+	value := ReflectValue(instance)
 
 	values := make([]interface{}, len(cc.columns))
 	for x := 0; x < len(cc.columns); x++ {
@@ -412,15 +412,15 @@ func newColumnCacheKey(objectType reflect.Type) string {
 	return typeName
 }
 
-// getCachedColumnCollectionFromInstance reflects an object instance into a new column collection.
-func getCachedColumnCollectionFromInstance(object interface{}) *ColumnCollection {
+// CachedColumnCollectionFromInstance reflects an object instance into a new column collection.
+func CachedColumnCollectionFromInstance(object interface{}) *ColumnCollection {
 	objectType := reflect.TypeOf(object)
-	return getCachedColumnCollectionFromType(newColumnCacheKey(objectType), objectType)
+	return CachedColumnCollectionFromType(newColumnCacheKey(objectType), objectType)
 }
 
-// getCachedColumnCollectionFromType reflects a reflect.Type into a column collection.
+// CachedColumnCollectionFromType reflects a reflect.Type into a column collection.
 // The results of this are cached for speed.
-func getCachedColumnCollectionFromType(identifier string, t reflect.Type) *ColumnCollection {
+func CachedColumnCollectionFromType(identifier string, t reflect.Type) *ColumnCollection {
 	metaCacheLock.Lock()
 	defer metaCacheLock.Unlock()
 
