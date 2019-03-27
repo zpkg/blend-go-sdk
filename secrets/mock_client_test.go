@@ -77,9 +77,8 @@ func validate(keys []string, values ...string) bool{
 		if _, ok := m[k]; ok {
 			// keys should never contain duplicates
 			return false
-		} else {
-			m[k] = struct{}{}
 		}
+		m[k] = struct{}{}
 	}
 
 	for _, v := range values {
@@ -90,4 +89,3 @@ func validate(keys []string, values ...string) bool{
 	}
 	return true
 }
-

@@ -73,7 +73,7 @@ type SecretV2 struct {
 	WrapInfo *SecretWrapInfo `json:"wrap_info,omitempty"`
 }
 
-// SecretV2 is the structure returned for every secret within Vault.
+// SecretListV2 is the structure returned for every secret within Vault.
 type SecretListV2 struct {
 	// The request ID that generated this response
 	RequestID     string `json:"request_id"`

@@ -187,7 +187,7 @@ func (c *VaultClient) Delete(ctx context.Context, key string, options ...Option)
 	return backend.Delete(ctx, key, options...)
 }
 
-
+// List returns a slice of key and subfolder names at this path.
 func (c *VaultClient) List(ctx context.Context, path string, options ...Option) ([]string, error) {
 	backend, err := c.backend(ctx, path)
 	if err != nil {

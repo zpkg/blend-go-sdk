@@ -17,6 +17,7 @@ type KV2 struct {
 	Client *VaultClient
 }
 
+// Put puts a value.
 func (kv2 KV2) Put(ctx context.Context, key string, data Values, options ...Option) error {
 	contents, err := kv2.Client.jsonBody(SecretData{Data: data})
 	if err != nil {
@@ -32,6 +33,7 @@ func (kv2 KV2) Put(ctx context.Context, key string, data Values, options ...Opti
 	return nil
 }
 
+// Get gets a value at a given key.
 func (kv2 KV2) Get(ctx context.Context, key string, options ...Option) (Values, error) {
 	req := kv2.Client.createRequest(MethodGet, filepath.Join("/v1/", kv2.fixSecretDataPrefix(key)), options...).WithContext(ctx)
 	res, err := kv2.Client.send(req)
@@ -59,17 +61,7 @@ func (kv2 KV2) Delete(ctx context.Context, key string, options ...Option) error 
 	return nil
 }
 
-// fixSecretDataPrefix ensures that a key is prefixed with secret/data/...
-func (kv2 KV2) fixSecretDataPrefix(key string) string {
-	key = strings.TrimPrefix(key, "/")
-	if strings.HasPrefix(key, "secret") && !strings.HasPrefix(key, "secret/data") {
-		key = strings.TrimPrefix(key, "secret/")
-		key = "secret/data" + key
-	}
-	return key
-}
-
-
+// List returns a slice of key and subfolder names at this path.
 func (kv2 KV2) List(ctx context.Context, path string, options ...Option) ([]string, error) {
 	req := kv2.Client.createRequest(MethodList, filepath.Join("/v1/", kv2.fixSecretDataPrefix(path)), options...).WithContext(ctx)
 	res, err := kv2.Client.send(req)
@@ -83,4 +75,14 @@ func (kv2 KV2) List(ctx context.Context, path string, options ...Option) ([]stri
 		return nil, err
 	}
 	return response.Data.Keys, nil
+}
+
+// fixSecretDataPrefix ensures that a key is prefixed with secret/data/...
+func (kv2 KV2) fixSecretDataPrefix(key string) string {
+	key = strings.TrimPrefix(key, "/")
+	if strings.HasPrefix(key, "secret") && !strings.HasPrefix(key, "secret/data") {
+		key = strings.TrimPrefix(key, "secret/")
+		key = "secret/data" + key
+	}
+	return key
 }
