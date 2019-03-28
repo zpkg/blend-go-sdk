@@ -187,6 +187,16 @@ func (c *VaultClient) Delete(ctx context.Context, key string, options ...Option)
 	return backend.Delete(ctx, key, options...)
 }
 
+// List returns a slice of key and subfolder names at this path.
+func (c *VaultClient) List(ctx context.Context, path string, options ...Option) ([]string, error) {
+	backend, err := c.backend(ctx, path)
+	if err != nil {
+		return nil, err
+	}
+
+	return backend.List(ctx, path, options...)
+}
+
 // ReadInto reads a secret into an object.
 func (c *VaultClient) ReadInto(ctx context.Context, key string, obj interface{}, options ...Option) error {
 	response, err := c.Get(ctx, key, options...)

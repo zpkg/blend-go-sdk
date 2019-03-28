@@ -14,10 +14,3 @@ func Version(version int) Option {
 		req.URL.Query().Add("version", strconv.Itoa(version))
 	}
 }
-
-// List adds a list parameter to the request.
-func List() Option {
-	return func(req *http.Request) {
-		req.URL.Query().Add("list", "true")
-	}
-}
