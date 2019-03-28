@@ -34,7 +34,7 @@ type requestTraceFinisher struct {
 }
 
 func (rtf requestTraceFinisher) Finish(req *http.Request, meta *request.ResponseMeta, err error) {
-	if rtf.span != nil {
+	if rtf.span == nil {
 		return
 	}
 	tracing.SpanError(rtf.span, err)
