@@ -61,25 +61,28 @@ func NewFromConfig(cfg *Config) (*Manager, error) {
 		return nil, err
 	}
 	return &Manager{
-		secret:       secret,
-		redirectURI:  cfg.GetRedirectURI(),
-		hostedDomain: cfg.GetHostedDomain(),
-		scopes:       cfg.GetScopes(),
-		clientID:     cfg.GetClientID(),
-		clientSecret: cfg.GetClientSecret(),
+		Secret:       secret,
+		RedirectURI:  cfg.RedirectURI,
+		HostedDomain: cfg.HostedDomain,
+		Scopes:       cfg.ScopesOrDefault(),
+		ClientID:     cfg.ClientID,
+		ClientSecret: cfg.ClientSecret,
 	}, nil
 }
 
+// Option is an option for an oauth manager.
+type Option func(*Manager) error
+
 // Manager is the oauth manager.
 type Manager struct {
-	defaults     r2.Defaults
-	tracer       Tracer
-	secret       []byte
-	scopes       []string
-	redirectURI  string
-	hostedDomain string
-	clientID     string
-	clientSecret string
+	RequestDefaults []r2.Option
+	Tracer          Tracer
+	Secret          []byte
+	Scopes          []string
+	RedirectURI     string
+	HostedDomain    string
+	ClientID        string
+	ClientSecret    string
 }
 
 // OAuthURL is the auth url for google with a given clientID.

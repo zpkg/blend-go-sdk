@@ -14,7 +14,7 @@ func NewFlags(flags ...string) *Flags {
 	}
 
 	for _, flag := range flags {
-		parsedFlag := strings.Trim(strings.ToLower(flag), " \t\n")
+		parsedFlag := strings.TrimSpace(strings.ToLower(flag))
 		if parsedFlag == FlagAll {
 			flagSet.all = true
 		}
@@ -24,9 +24,8 @@ func NewFlags(flags ...string) *Flags {
 			return flagSet
 		}
 
-		if strings.HasPrefix(string(parsedFlag), "-") {
-			flag := strings.TrimPrefix(string(parsedFlag), "-")
-			flagSet.flags[flag] = false
+		if strings.HasPrefix(parsedFlag, "-") {
+			flagSet.flags[strings.TrimPrefix(parsedFlag, "-")] = false
 		} else {
 			flagSet.flags[parsedFlag] = true
 		}
@@ -52,14 +51,14 @@ type Flags struct {
 func (efs *Flags) Enable(flags ...string) {
 	efs.none = false
 	for _, flag := range flags {
-		efs.flags[flag] = true
+		efs.flags[strings.ToLower(strings.TrimSpace(flag))] = true
 	}
 }
 
 // Disable disables a flag.
 func (efs *Flags) Disable(flags ...string) {
 	for _, flag := range flags {
-		efs.flags[flag] = false
+		efs.flags[strings.ToLower(strings.TrimSpace(flag))] = false
 	}
 }
 

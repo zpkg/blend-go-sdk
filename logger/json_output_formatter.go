@@ -4,6 +4,8 @@ import (
 	"context"
 	"encoding/json"
 	"io"
+
+	"github.com/blend/go-sdk/bufferutil"
 )
 
 var (
@@ -13,7 +15,7 @@ var (
 // NewJSONOutputFormatter returns a new json event formatter.
 func NewJSONOutputFormatter(options ...JSONOutputFormatterOption) *JSONOutputFormatter {
 	jf := &JSONOutputFormatter{
-		BufferPool: NewBufferPool(DefaultBufferPoolSize),
+		BufferPool: bufferutil.NewPool(DefaultBufferPoolSize),
 	}
 
 	for _, option := range options {
@@ -36,7 +38,7 @@ func OptJSONConfig(cfg *JSONConfig) JSONOutputFormatterOption {
 
 // JSONOutputFormatter is a json output formatter.
 type JSONOutputFormatter struct {
-	BufferPool   *BufferPool
+	BufferPool   *bufferutil.Pool
 	Pretty       bool
 	PrettyPrefix string
 	PrettyIndent string
@@ -51,16 +53,9 @@ func (jw JSONOutputFormatter) WriteFormat(ctx context.Context, output io.Writer,
 	if jw.Pretty {
 		encoder.SetIndent(jw.PrettyPrefix, jw.PrettyIndent)
 	}
-
-	if typed, isTyped := e.(FieldsProvider); isTyped {
-		fields := typed.Fields()
-		fields[FieldFlag] = e.Flag()
-		fields[FieldTimestamp] = e.Timestamp()
-		if err := encoder.Encode(fields); err != nil {
-			return err
-		}
+	if err := encoder.Encode(e); err != nil {
+		return err
 	}
-
 	_, err := io.Copy(output, buffer)
 	return err
 }

@@ -25,9 +25,9 @@ func Errorf(flag, format string, args ...interface{}) *ErrorEvent {
 }
 
 // NewErrorEvent returns a new error event.
-func NewErrorEvent(flag string, err error) *ErrorEvent {
+func NewErrorEvent(flag string, err error, options ...EventMetaOption) *ErrorEvent {
 	return &ErrorEvent{
-		EventMeta: NewEventMeta(flag),
+		EventMeta: NewEventMeta(flag, options...),
 		Err:       err,
 	}
 }
@@ -43,13 +43,13 @@ func NewErrorEventListener(listener func(context.Context, *ErrorEvent)) Listener
 
 // ErrorEvent is an event that wraps an error.
 type ErrorEvent struct {
-	*EventMeta `json:",inline"`
-	Err        error
-	State      interface{}
+	*EventMeta
+	Err   error
+	State interface{}
 }
 
 // WriteText writes the text version of an error.
-func (e *ErrorEvent) WriteText(formatter TextFormatter, output io.Writer) {
+func (e ErrorEvent) WriteText(formatter TextFormatter, output io.Writer) {
 	if e.Err != nil {
 		if typed, ok := e.Err.(*exception.Ex); ok {
 			io.WriteString(output, typed.String())
@@ -60,14 +60,9 @@ func (e *ErrorEvent) WriteText(formatter TextFormatter, output io.Writer) {
 }
 
 // MarshalJSON implements json.Marshaler.
-func (e *ErrorEvent) MarshalJSON() ([]byte, error) {
-	var err interface{}
-	if typed, ok := e.Err.(json.Marshaler); ok {
-		return typed.MarshalJSON()
-	} else {
-		err = e.Err.Error()
-	}
-	return nil, Fields{
-		FieldErr: err,
-	}
+func (e ErrorEvent) MarshalJSON() ([]byte, error) {
+	return json.Marshal(MergeDecomposed(e.EventMeta.Decompose(), map[string]interface{}{
+		"err":   e.Err,
+		"state": e.State,
+	}))
 }

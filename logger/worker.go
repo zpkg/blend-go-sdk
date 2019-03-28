@@ -69,8 +69,15 @@ func (w *Worker) Process(ec EventWithContext) (err error) {
 // Drain stops the worker and synchronously processes any remaining work.
 // It then restarts the worker.
 func (w *Worker) Drain() {
-	w.Pausing()
-	<-w.NotifyPaused()
+	if w.IsStarted() {
+		w.Pausing()
+		<-w.NotifyPaused()
+
+		defer func() {
+			w.Resuming()
+			<-w.NotifyStarted()
+		}()
+	}
 
 	var work EventWithContext
 	var err error
@@ -81,9 +88,6 @@ func (w *Worker) Drain() {
 			w.Errors <- err
 		}
 	}
-
-	w.Resuming()
-	<-w.NotifyStarted()
 }
 
 // Stop stops the worker.

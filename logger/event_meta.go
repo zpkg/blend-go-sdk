@@ -1,7 +1,7 @@
 package logger
 
 import (
-	"encoding/json"
+	"fmt"
 	"time"
 
 	"github.com/blend/go-sdk/ansi"
@@ -9,7 +9,8 @@ import (
 
 // these are compile time assertions
 var (
-	_ Event = &EventMeta{}
+	_ Event          = (*EventMeta)(nil)
+	_ FieldsProvider = (*EventMeta)(nil)
 )
 
 // NewEventMeta returns a new event meta.
@@ -27,9 +28,29 @@ func NewEventMeta(flag string, options ...EventMetaOption) *EventMeta {
 // EventMetaOption is an option for event metas.
 type EventMetaOption func(*EventMeta)
 
-// EventMetaFlagColor sets the event flag color.
-func EventMetaFlagColor(color ansi.Color) EventMetaOption {
+// OptEventMetaFlagColor sets the event flag color.
+func OptEventMetaFlagColor(color ansi.Color) EventMetaOption {
 	return func(em *EventMeta) { em.flagColor = color }
+}
+
+// OptEventMetaFlag sets the event flag.
+func OptEventMetaFlag(flag string) EventMetaOption {
+	return func(em *EventMeta) { em.flag = flag }
+}
+
+// OptEventMetaTimestamp sets the event timestamp.
+func OptEventMetaTimestamp(ts time.Time) EventMetaOption {
+	return func(em *EventMeta) { em.ts = ts }
+}
+
+// OptEventMetaField sets an event meta field.
+func OptEventMetaField(key string, value interface{}) EventMetaOption {
+	return func(em *EventMeta) {
+		if em.fields == nil {
+			em.fields = make(map[string]string)
+		}
+		em.fields[key] = fmt.Sprintf("%v", value)
+	}
 }
 
 // EventMeta is the metadata common to events.
@@ -38,6 +59,7 @@ type EventMeta struct {
 	flag      string
 	ts        time.Time
 	flagColor ansi.Color
+	fields    map[string]string
 }
 
 // Flag returns the event flag.
@@ -49,10 +71,17 @@ func (em EventMeta) FlagColor() ansi.Color { return em.flagColor }
 // Timestamp returns the event timestamp.
 func (em EventMeta) Timestamp() time.Time { return em.ts }
 
-// MarshalJSON implements json.Marshaler.
-func (em EventMeta) MarshalJSON() ([]byte, error) {
-	return json.Marshal(map[string]interface{}{
+// Fields returns the event meta fields.
+func (em EventMeta) Fields() map[string]string { return em.fields }
+
+// Decompose decomposes the object into a map[string]interface{}.
+func (em EventMeta) Decompose() map[string]interface{} {
+	output := map[string]interface{}{
 		FieldFlag:      em.flag,
 		FieldTimestamp: em.ts.Format(time.RFC3339Nano),
-	})
+	}
+	if em.fields != nil {
+		output[FieldFields] = em.fields
+	}
+	return output
 }

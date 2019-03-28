@@ -5,6 +5,7 @@ import (
 	"net/http"
 	"sync"
 
+	"github.com/blend/go-sdk/bufferutil"
 	"github.com/blend/go-sdk/exception"
 	templatehelpers "github.com/blend/go-sdk/template"
 )
@@ -41,8 +42,8 @@ var (
 // NewViewCache returns a new view cache.
 func NewViewCache(options ...ViewCacheOption) *ViewCache {
 	vc := &ViewCache{
-		FuncMap:                   template.FuncMap(templatehelpers.ViewFuncs{}.FuncMap()),
-		BufferPool:                NewBufferPool(32),
+		FuncMap:                   template.FuncMap(templatehelpers.Funcs),
+		BufferPool:                bufferutil.NewPool(1024),
 		InternalErrorTemplateName: DefaultTemplateNameInternalError,
 		BadRequestTemplateName:    DefaultTemplateNameBadRequest,
 		NotFoundTemplateName:      DefaultTemplateNameNotFound,
@@ -63,7 +64,7 @@ type ViewCache struct {
 	Paths      []string
 	Literals   []string
 	Templates  *template.Template
-	BufferPool *BufferPool
+	BufferPool *bufferutil.Pool
 
 	BadRequestTemplateName    string
 	InternalErrorTemplateName string

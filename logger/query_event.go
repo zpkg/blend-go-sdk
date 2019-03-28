@@ -2,25 +2,28 @@ package logger
 
 import (
 	"context"
+	"encoding/json"
 	"fmt"
 	"io"
 	"time"
 
 	"github.com/blend/go-sdk/stringutil"
+	"github.com/blend/go-sdk/timeutil"
 
 	"github.com/blend/go-sdk/ansi"
-	"github.com/blend/go-sdk/timeutil"
 )
 
 // these are compile time assertions
 var (
-	_ Event = (*QueryEvent)(nil)
+	_ Event          = (*QueryEvent)(nil)
+	_ TextWritable   = (*QueryEvent)(nil)
+	_ json.Marshaler = (*QueryEvent)(nil)
 )
 
 // NewQueryEvent creates a new query event.
-func NewQueryEvent(body string, elapsed time.Duration) *QueryEvent {
+func NewQueryEvent(body string, elapsed time.Duration, options ...EventMetaOption) *QueryEvent {
 	return &QueryEvent{
-		EventMeta: NewEventMeta(Query),
+		EventMeta: NewEventMeta(Query, options...),
 		Body:      body,
 		Elapsed:   elapsed,
 	}
@@ -81,15 +84,15 @@ func (e QueryEvent) WriteText(tf TextFormatter, wr io.Writer) {
 	}
 }
 
-// Fields implements FieldsProvider.
-func (e QueryEvent) Fields() Fields {
-	return Fields{
+// MarshalJSON implements json.Marshaler.
+func (e QueryEvent) MarshalJSON() ([]byte, error) {
+	return json.Marshal(MergeDecomposed(e.EventMeta.Decompose(), map[string]interface{}{
 		"engine":     e.Engine,
 		"database":   e.Database,
 		"username":   e.Username,
 		"queryLabel": e.QueryLabel,
 		"body":       e.Body,
-		FieldErr:     e.Err,
-		FieldElapsed: timeutil.Milliseconds(e.Elapsed),
-	}
+		"err":        e.Err,
+		"elapsed":    timeutil.Milliseconds(e.Elapsed),
+	}))
 }

@@ -2,13 +2,14 @@ package logger
 
 import (
 	"context"
+	"encoding/json"
 	"fmt"
 	"io"
 )
 
 // these are compile time assertions
 var (
-	_ Event = &MessageEvent{}
+	_ Event = (*MessageEvent)(nil)
 )
 
 // Messagef returns a new Message Event.
@@ -30,8 +31,8 @@ func NewMessageEventListener(listener func(context.Context, *MessageEvent)) List
 
 // MessageEvent is a common type of message.
 type MessageEvent struct {
-	*EventMeta
-	Message string
+	*EventMeta `json:",inline"`
+	Message    string `json:"message"`
 }
 
 // WriteText implements TextWritable.
@@ -39,14 +40,9 @@ func (e *MessageEvent) WriteText(formatter TextFormatter, output io.Writer) {
 	io.WriteString(output, e.Message)
 }
 
-// Fields implements FieldsProvider.
-func (e *MessageEvent) Fields() Fields {
-	return Fields{
-		FieldMessage: e.Message,
-	}
-}
-
-// String returns the message event body.
-func (e *MessageEvent) String() string {
-	return e.Message
+// MarshalJSON implements json.Marshaler.
+func (e MessageEvent) MarshalJSON() ([]byte, error) {
+	return json.Marshal(MergeDecomposed(e.EventMeta.Decompose(), map[string]interface{}{
+		"message": e.Message,
+	}))
 }

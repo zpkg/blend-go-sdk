@@ -48,11 +48,11 @@ func (e *HTTPRequestEvent) WriteText(formatter TextFormatter, wr io.Writer) {
 
 // MarshalJSON marshals the event as json.
 func (e *HTTPRequestEvent) MarshalJSON() ([]byte, error) {
-	return json.Marshal(map[string]interface{}{
+	return json.Marshal(MergeDecomposed(e.EventMeta.Decompose(), map[string]interface{}{
 		"verb":      e.Request.Method,
 		"path":      e.Request.URL.Path,
 		"host":      e.Request.Host,
 		"ip":        webutil.GetRemoteAddr(e.Request),
 		"userAgent": webutil.GetUserAgent(e.Request),
-	})
+	}))
 }

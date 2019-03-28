@@ -8,7 +8,6 @@ import (
 
 	"github.com/blend/go-sdk/ansi"
 	"github.com/blend/go-sdk/stringutil"
-	"github.com/blend/go-sdk/timeutil"
 	"github.com/blend/go-sdk/webutil"
 )
 
@@ -43,37 +42,19 @@ func WriteHTTPResponse(tf TextFormatter, wr io.Writer, req *http.Request, status
 }
 
 // WriteFields writes fields.
-func WriteFields(tf TextFormatter, wr io.Writer, fields Fields) {
-	for _, value := range fields {
-		if typed, ok := value.(fmt.Stringer); ok {
-			io.WriteString(wr, typed.String())
+func WriteFields(tf TextFormatter, wr io.Writer, fields map[string]string) {
+	for key, value := range fields {
+		io.WriteString(wr, fmt.Sprintf("%s=%s", key, value))
+	}
+}
+
+// MergeDecomposed merges sets of decomposed data.
+func MergeDecomposed(sets ...map[string]interface{}) map[string]interface{} {
+	output := make(map[string]interface{})
+	for _, set := range sets {
+		for key, value := range set {
+			output[key] = value
 		}
 	}
-}
-
-// HTTPRequestFields marshals a request start as json.
-func HTTPRequestFields(req *http.Request) Fields {
-	return Fields{
-		"verb":      req.Method,
-		"path":      req.URL.Path,
-		"host":      req.Host,
-		"ip":        webutil.GetRemoteAddr(req),
-		"userAgent": webutil.GetUserAgent(req),
-	}
-}
-
-// HTTPResponseFields marshals a request as json.
-func HTTPResponseFields(req *http.Request, statusCode, contentLength int, contentType, contentEncoding string, elapsed time.Duration) Fields {
-	return Fields{
-		"ip":              webutil.GetRemoteAddr(req),
-		"userAgent":       webutil.GetUserAgent(req),
-		"verb":            req.Method,
-		"path":            req.URL.Path,
-		"host":            req.Host,
-		"contentLength":   contentLength,
-		"contentType":     contentType,
-		"contentEncoding": contentEncoding,
-		"statusCode":      statusCode,
-		FieldElapsed:      timeutil.Milliseconds(elapsed),
-	}
+	return output
 }

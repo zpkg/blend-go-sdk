@@ -8,6 +8,7 @@ import (
 	"time"
 
 	"github.com/blend/go-sdk/ansi"
+	"github.com/blend/go-sdk/bufferutil"
 )
 
 var (
@@ -17,7 +18,7 @@ var (
 // NewTextOutputFormatter returns a new text writer for a given output.
 func NewTextOutputFormatter(options ...TextOutputFormatterOption) *TextOutputFormatter {
 	tf := &TextOutputFormatter{
-		BufferPool: NewBufferPool(DefaultBufferPoolSize),
+		BufferPool: bufferutil.NewPool(DefaultBufferPoolSize),
 		TimeFormat: DefaultTextTimeFormat,
 	}
 
@@ -53,7 +54,7 @@ type TextOutputFormatter struct {
 	NoColor       bool
 	TimeFormat    string
 
-	BufferPool *BufferPool
+	BufferPool *bufferutil.Pool
 }
 
 // Colorize (optionally) applies a color to a string.

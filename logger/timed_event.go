@@ -2,6 +2,7 @@ package logger
 
 import (
 	"context"
+	"encoding/json"
 	"fmt"
 	"io"
 	"time"
@@ -11,9 +12,8 @@ import (
 
 // these are compile time assertions
 var (
-	_ Event          = (*TimedEvent)(nil)
-	_ TextWritable   = (*TimedEvent)(nil)
-	_ FieldsProvider = (*TimedEvent)(nil)
+	_ Event        = (*TimedEvent)(nil)
+	_ TextWritable = (*TimedEvent)(nil)
 )
 
 // Timedf returns a timed message event.
@@ -36,10 +36,10 @@ func NewTimedEventListener(listener func(context.Context, *TimedEvent)) Listener
 
 // TimedEvent is a message event with an elapsed time.
 type TimedEvent struct {
-	*EventMeta
+	*EventMeta `json:",inline"`
 
-	Message string
-	Elapsed time.Duration
+	Message string        `json:"message"`
+	Elapsed time.Duration `json:"elapsed"`
 }
 
 // String implements fmt.Stringer
@@ -52,10 +52,10 @@ func (e TimedEvent) WriteText(tf TextFormatter, wr io.Writer) {
 	io.WriteString(wr, e.String())
 }
 
-// Fields implements FieldsProvider.
-func (e TimedEvent) Fields() Fields {
-	return Fields{
-		FieldMessage: e.Message,
-		FieldElapsed: timeutil.Milliseconds(e.Elapsed),
-	}
+// MarshalJSON implements json.Marshaler.
+func (e TimedEvent) MarshalJSON() ([]byte, error) {
+	return json.Marshal(MergeDecomposed(e.EventMeta.Decompose(), map[string]interface{}{
+		"message": e.Message,
+		"elapsed": timeutil.Milliseconds(e.Elapsed),
+	}))
 }

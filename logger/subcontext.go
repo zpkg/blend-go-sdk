@@ -2,6 +2,7 @@ package logger
 
 import (
 	"context"
+	"fmt"
 	"net/http"
 )
 
@@ -13,6 +14,19 @@ func NewContext(log WriteTriggerable, path ...string) *Context {
 	}
 }
 
+// ContextOption is an option for contexts.
+type ContextOption func(*Context)
+
+// OptContextField adds a context field.
+func OptContextField(key string, value interface{}) ContextOption {
+	return func(c *Context) {
+		if c.Fields == nil {
+			c.Fields = make(map[string]string)
+		}
+		c.Fields[key] = fmt.Sprint(value)
+	}
+}
+
 // Context is a logger context.
 // It is used to split a logger into functional concerns
 // but retain all the underlying machinery of logging.
@@ -20,11 +34,16 @@ type Context struct {
 	WriteTriggerable
 	Context        context.Context
 	SubContextPath []string
+	Fields         map[string]string
 }
 
 // SubContext returns a new sub context.
-func (sc *Context) SubContext(name string) *Context {
-	return NewContext(sc.WriteTriggerable, append(sc.SubContextPath, name)...)
+func (sc *Context) SubContext(name string, options ...ContextOption) *Context {
+	sc2 := NewContext(sc.WriteTriggerable, append(sc.SubContextPath, name)...)
+	for _, option := range options {
+		option(sc2)
+	}
+	return sc2
 }
 
 // Background returns the background context.

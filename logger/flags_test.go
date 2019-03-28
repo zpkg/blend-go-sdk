@@ -12,8 +12,10 @@ func TestEventFlagSetEnable(t *testing.T) {
 
 	set := NewFlags("FOO")
 	set.Enable("TEST")
-	assert.True(set.IsEnabled("TEST"))
-	assert.True(set.IsEnabled("FOO"))
+	assert.False(set.IsEnabled("TEST"))
+	assert.False(set.IsEnabled("FOO"))
+	assert.True(set.IsEnabled("test"))
+	assert.True(set.IsEnabled("foo"))
 	assert.False(set.IsEnabled("NOT_TEST"))
 }
 
@@ -22,9 +24,9 @@ func TestEventFlagSetDisable(t *testing.T) {
 
 	set := NewFlags()
 	set.Enable("TEST")
-	assert.True(set.IsEnabled("TEST"))
+	assert.True(set.IsEnabled("test"))
 	set.Disable("TEST")
-	assert.False(set.IsEnabled("TEST"))
+	assert.False(set.IsEnabled("test"))
 }
 
 func TestEventFlagSetEnableAll(t *testing.T) {
@@ -32,12 +34,12 @@ func TestEventFlagSetEnableAll(t *testing.T) {
 
 	set := NewFlags()
 	set.SetAll()
-	assert.True(set.IsEnabled("TEST"))
+	assert.True(set.IsEnabled("test"))
 	assert.True(set.IsEnabled("NOT_TEST"))
 	assert.True(set.IsEnabled("NOT_TEST"))
-	set.Disable("TEST")
+	set.Disable("test")
 	assert.True(set.IsEnabled("NOT_TEST"))
-	assert.False(set.IsEnabled("TEST"))
+	assert.False(set.IsEnabled("test"))
 }
 
 func TestEventFlagSetFromEnvironment(t *testing.T) {

@@ -7,26 +7,6 @@ import (
 	"github.com/blend/go-sdk/env"
 )
 
-// NewConfigFromEnv creates a new config from the environment.
-func NewConfigFromEnv() (*Config, error) {
-	var cfg Config
-	err := env.Env().ReadInto(&cfg)
-	if err != nil {
-		return nil, err
-	}
-	return &cfg, nil
-}
-
-// MustNewConfigFromEnv returns a new config from the environment
-// and panics if there is an error.
-func MustNewConfigFromEnv() *Config {
-	cfg, err := NewConfigFromEnv()
-	if err != nil {
-		panic(err)
-	}
-	return cfg
-}
-
 // Config is the config options.
 type Config struct {
 	// Secret is an encryption key used to verify oauth state.
@@ -49,8 +29,13 @@ func (c Config) IsZero() bool {
 	return len(c.ClientID) == 0 || len(c.ClientSecret) == 0
 }
 
-// GetSecret gets the secret if set or a default.
-func (c Config) GetSecret(defaults ...[]byte) ([]byte, error) {
+// Resolve adds extra steps to perform during `configutil.Read(...)`.
+func (c *Conig) Resolve() error {
+	return env.Env().ReadInto(c)
+}
+
+// DecodeSecret decodes the secret if set from base64 encoding.
+func (c Config) DecodeSecret(defaults ...[]byte) ([]byte, error) {
 	if len(c.Secret) > 0 {
 		decoded, err := base64.StdEncoding.DecodeString(c.Secret)
 		if err != nil {
@@ -64,27 +49,7 @@ func (c Config) GetSecret(defaults ...[]byte) ([]byte, error) {
 	return nil, nil
 }
 
-// GetRedirectURI returns a property or a default.
-func (c Config) GetRedirectURI(inherited ...string) string {
-	return configutil.CoalesceString(c.RedirectURI, "", inherited...)
-}
-
-// GetHostedDomain returns a property or a default.
-func (c Config) GetHostedDomain(inherited ...string) string {
-	return configutil.CoalesceString(c.HostedDomain, "", inherited...)
-}
-
-// GetScopes gets oauth scopes to authenticate with.
-func (c Config) GetScopes(inherited ...[]string) []string {
-	return configutil.CoalesceStrings(c.Scopes, DefaultScopes, inherited...)
-}
-
-// GetClientID returns a property or a default.
-func (c Config) GetClientID(inherited ...string) string {
-	return configutil.CoalesceString(c.ClientID, "", inherited...)
-}
-
-// GetClientSecret returns a property or a default.
-func (c Config) GetClientSecret(inherited ...string) string {
-	return configutil.CoalesceString(c.ClientSecret, "", inherited...)
+// ScopesOrDefault gets oauth scopes to authenticate with or a default set of scopes.
+func (c Config) ScopesOrDefault() []string {
+	return configutil.CoalesceStrings(c.Scopes, DefaultScopes)
 }

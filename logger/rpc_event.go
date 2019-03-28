@@ -2,6 +2,7 @@ package logger
 
 import (
 	"context"
+	"encoding/json"
 	"io"
 	"time"
 
@@ -46,7 +47,7 @@ type RPCEvent struct {
 }
 
 // WriteText implements TextWritable.
-func (e *RPCEvent) WriteText(tf TextFormatter, wr io.Writer) {
+func (e RPCEvent) WriteText(tf TextFormatter, wr io.Writer) {
 
 	if e.Engine != "" {
 		io.WriteString(wr, "[")
@@ -85,16 +86,16 @@ func (e *RPCEvent) WriteText(tf TextFormatter, wr io.Writer) {
 	}
 }
 
-// Fields implements FieldsProvier.
-func (e *RPCEvent) Fields() Fields {
-	return Fields{
+// MarshalJSON implements json.Marshaler.
+func (e RPCEvent) MarshalJSON() ([]byte, error) {
+	return json.Marshal(MergeDecomposed(e.EventMeta.Decompose(), map[string]interface{}{
 		"engine":      e.Engine,
 		"peer":        e.Peer,
 		"method":      e.Method,
-		"authority":   e.Authority,
 		"userAgent":   e.UserAgent,
+		"authority":   e.Authority,
 		"contentType": e.ContentType,
-		FieldElapsed:  timeutil.Milliseconds(e.Elapsed),
-		FieldErr:      e.Err,
-	}
+		"elapsed":     timeutil.Milliseconds(e.Elapsed),
+		"err":         e.Err,
+	}))
 }

@@ -9,18 +9,20 @@ import (
 
 	_ "net/http/pprof"
 
+	"github.com/blend/go-sdk/bufferutil"
 	"github.com/blend/go-sdk/logger"
+	"github.com/blend/go-sdk/webutil"
 )
 
-var pool = logger.NewBufferPool(16)
+var pool = bufferutil.NewPool(16)
 
 func logged(log logger.Log, handler http.HandlerFunc) http.HandlerFunc {
 	return func(res http.ResponseWriter, req *http.Request) {
 		start := time.Now()
-		log.Trigger(logger.NewHTTPRequestEvent(req))
+		log.Trigger(req.Context(), logger.NewHTTPRequestEvent(req))
 		rw := webutil.NewResponseWriter(res)
 		handler(rw, req)
-		log.Trigger(logger.NewHTTPResponseEvent(req).WithStatusCode(rw.StatusCode()).WithContentLength(rw.ContentLength()).WithElapsed(time.Now().Sub(start)))
+		log.Trigger(req.Context(), logger.NewHTTPResponseEvent(req).WithStatusCode(rw.StatusCode()).WithContentLength(rw.ContentLength()).WithElapsed(time.Now().Sub(start)))
 	}
 }
 

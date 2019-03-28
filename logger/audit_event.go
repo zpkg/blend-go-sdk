@@ -2,6 +2,7 @@ package logger
 
 import (
 	"context"
+	"encoding/json"
 	"fmt"
 	"io"
 	"strings"
@@ -13,13 +14,13 @@ import (
 var (
 	_ Event          = (*AuditEvent)(nil)
 	_ TextWritable   = (*AuditEvent)(nil)
-	_ FieldsProvider = (*AuditEvent)(nil)
+	_ json.Marshaler = (*AuditEvent)(nil)
 )
 
 // NewAuditEvent returns a new audit event.
-func NewAuditEvent(principal, verb string) *AuditEvent {
+func NewAuditEvent(principal, verb string, options ...EventMetaOption) *AuditEvent {
 	return &AuditEvent{
-		EventMeta: NewEventMeta(Audit),
+		EventMeta: NewEventMeta(Audit, options...),
 		Principal: principal,
 		Verb:      verb,
 	}
@@ -100,9 +101,9 @@ func (e AuditEvent) WriteText(formatter TextFormatter, wr io.Writer) {
 	}
 }
 
-// Fields returns the event fields.
-func (e AuditEvent) Fields() Fields {
-	return Fields{
+// MarshalJSON implements json.Marshaler.
+func (e AuditEvent) MarshalJSON() ([]byte, error) {
+	return json.Marshal(MergeDecomposed(e.EventMeta.Decompose(), map[string]interface{}{
 		"context":    e.Context,
 		"principal":  e.Principal,
 		"verb":       e.Verb,
@@ -112,5 +113,5 @@ func (e AuditEvent) Fields() Fields {
 		"remoteAddr": e.RemoteAddress,
 		"ua":         e.UserAgent,
 		"extra":      e.Extra,
-	}
+	}))
 }
