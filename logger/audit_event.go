@@ -50,6 +50,60 @@ type AuditEvent struct {
 	Extra         map[string]string
 }
 
+// WithContext sets a field.
+func (e *AuditEvent) WithContext(context string) *AuditEvent {
+	e.Context = context
+	return e
+}
+
+// WithPrincipal sets a field.
+func (e *AuditEvent) WithPrincipal(principal string) *AuditEvent {
+	e.Principal = principal
+	return e
+}
+
+// WithVerb sets a field.
+func (e *AuditEvent) WithVerb(verb string) *AuditEvent {
+	e.Verb = verb
+	return e
+}
+
+// WithNoun sets a field.
+func (e *AuditEvent) WithNoun(noun string) *AuditEvent {
+	e.Noun = noun
+	return e
+}
+
+// WithSubject sets a field.
+func (e *AuditEvent) WithSubject(subject string) *AuditEvent {
+	e.Subject = subject
+	return e
+}
+
+// WithProperty sets a field.
+func (e *AuditEvent) WithProperty(property string) *AuditEvent {
+	e.Property = property
+	return e
+}
+
+// WithRemoteAddress sets the remote address.
+func (e *AuditEvent) WithRemoteAddress(remoteAddr string) *AuditEvent {
+	e.RemoteAddress = remoteAddr
+	return e
+}
+
+// WithUserAgent sets the user agent.
+func (e *AuditEvent) WithUserAgent(userAgent string) *AuditEvent {
+	e.UserAgent = userAgent
+	return e
+}
+
+// WithExtra sets the extra info.
+func (e *AuditEvent) WithExtra(extra map[string]string) *AuditEvent {
+	e.Extra = extra
+	return e
+}
+
 // WriteText implements TextWritable.
 func (e AuditEvent) WriteText(formatter TextFormatter, wr io.Writer) {
 	if len(e.Context) > 0 {

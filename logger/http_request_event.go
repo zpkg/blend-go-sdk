@@ -41,6 +41,18 @@ type HTTPRequestEvent struct {
 	State      map[interface{}]interface{}
 }
 
+// WithRequest sets a field.
+func (e *HTTPRequestEvent) WithRequest(req *http.Request) *HTTPRequestEvent {
+	e.Request = req
+	return e
+}
+
+// WithRoute sets a field.
+func (e *HTTPRequestEvent) WithRoute(route string) *HTTPRequestEvent {
+	e.Route = route
+	return e
+}
+
 // WriteText implements TextWritable.
 func (e *HTTPRequestEvent) WriteText(formatter TextFormatter, wr io.Writer) {
 	WriteHTTPRequest(formatter, wr, e.Request)

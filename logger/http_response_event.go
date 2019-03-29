@@ -18,11 +18,15 @@ var (
 )
 
 // NewHTTPResponseEvent is an event representing a response to an http request.
-func NewHTTPResponseEvent(req *http.Request, options ...EventMetaOption) *HTTPResponseEvent {
-	return &HTTPResponseEvent{
-		EventMeta: NewEventMeta(HTTPResponse, options...),
+func NewHTTPResponseEvent(req *http.Request, options ...HTTPResponseEventOption) *HTTPResponseEvent {
+	hre := &HTTPResponseEvent{
+		EventMeta: NewEventMeta(HTTPResponse),
 		Request:   req,
 	}
+	for _, option := range options {
+		option(hre)
+	}
+	return hre
 }
 
 // NewHTTPResponseEventListener returns a new web request event listener.
@@ -34,18 +38,65 @@ func NewHTTPResponseEventListener(listener func(context.Context, *HTTPResponseEv
 	}
 }
 
+// HTTPResponseEventOption is a function that modifies an http response event.
+type HTTPResponseEventOption func(*HTTPResponseEvent)
+
+// OptHTTPResponseMetaOptions sets a fields on the event meta.
+func OptHTTPResponseMetaOptions(options ...EventMetaOption) HTTPResponseEventOption {
+	return func(hre *HTTPResponseEvent) {
+		for _, option := range options {
+			option(hre.EventMeta)
+		}
+	}
+}
+
+// OptHTTPResponseRequest sets a field.
+func OptHTTPResponseRequest(req *http.Request) HTTPResponseEventOption {
+	return func(hre *HTTPResponseEvent) { hre.Request = req }
+}
+
+// OptHTTPResponseRoute sets a field.
+func OptHTTPResponseRoute(route string) HTTPResponseEventOption {
+	return func(hre *HTTPResponseEvent) { hre.Route = route }
+}
+
+// OptHTTPResponseContentLength sets a field.
+func OptHTTPResponseContentLength(contentLength int) HTTPResponseEventOption {
+	return func(hre *HTTPResponseEvent) { hre.ContentLength = contentLength }
+}
+
+// OptHTTPResponseContentType sets a field.
+func OptHTTPResponseContentType(contentType string) HTTPResponseEventOption {
+	return func(hre *HTTPResponseEvent) { hre.ContentType = contentType }
+}
+
+// OptHTTPResponseContentEncoding sets a field.
+func OptHTTPResponseContentEncoding(contentEncoding string) HTTPResponseEventOption {
+	return func(hre *HTTPResponseEvent) { hre.ContentEncoding = contentEncoding }
+}
+
+// OptHTTPResponseStatusCode sets a field.
+func OptHTTPResponseStatusCode(statusCode int) HTTPResponseEventOption {
+	return func(hre *HTTPResponseEvent) { hre.StatusCode = statusCode }
+}
+
+// OptHTTPResponseElapsed sets a field.
+func OptHTTPResponseElapsed(elapsed time.Duration) HTTPResponseEventOption {
+	return func(hre *HTTPResponseEvent) { hre.Elapsed = elapsed }
+}
+
 // HTTPResponseEvent is an event type for responses.
 type HTTPResponseEvent struct {
-	*EventMeta `json:",inline"`
+	*EventMeta
 
-	Request         *http.Request               `json:"-"`
-	Route           string                      `json:"route"`
-	ContentLength   int                         `json:"contentLength"`
-	ContentType     string                      `json:"contentType"`
-	ContentEncoding string                      `json:"contentEncoding"`
-	StatusCode      int                         `json:"statusCode"`
-	Elapsed         time.Duration               `json:"elapsed"`
-	State           map[interface{}]interface{} `json:"state,omitempty"`
+	Request         *http.Request
+	Route           string
+	ContentLength   int
+	ContentType     string
+	ContentEncoding string
+	StatusCode      int
+	Elapsed         time.Duration
+	State           map[interface{}]interface{}
 }
 
 // WriteText implements TextWritable.

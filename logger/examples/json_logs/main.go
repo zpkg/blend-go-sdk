@@ -16,13 +16,21 @@ import (
 
 var pool = bufferutil.NewPool(16)
 
+func createResponseEvent(req *http.Request, rw *webutil.ResponseWriter, start time.Time) *logger.HTTPResponseEvent {
+	return logger.NewHTTPResponseEvent(req,
+		logger.OptHTTPResponseStatusCode(rw.StatusCode()),
+		logger.OptHTTPResponseContentLength(rw.ContentLength()),
+		logger.OptHTTPResponseElapsed(time.Now().Sub(start)),
+	)
+}
+
 func logged(log logger.Log, handler http.HandlerFunc) http.HandlerFunc {
 	return func(res http.ResponseWriter, req *http.Request) {
 		start := time.Now()
 		log.Trigger(req.Context(), logger.NewHTTPRequestEvent(req))
 		rw := webutil.NewResponseWriter(res)
 		handler(rw, req)
-		log.Trigger(req.Context(), logger.NewHTTPResponseEvent(req).WithStatusCode(rw.StatusCode()).WithContentLength(rw.ContentLength()).WithElapsed(time.Now().Sub(start)))
+		log.Trigger(req.Context(), createResponseEvent(req, rw, start))
 	}
 }
 
