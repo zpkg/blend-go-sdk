@@ -6,6 +6,7 @@ import (
 	awsutil "github.com/aws/aws-sdk-go/aws"
 	"github.com/aws/aws-sdk-go/aws/session"
 	awsSes "github.com/aws/aws-sdk-go/service/ses"
+
 	"github.com/blend/go-sdk/email"
 	"github.com/blend/go-sdk/exception"
 )

@@ -117,9 +117,27 @@ func (cb CertBundle) WriteCertPem(w io.Writer) error {
 	return nil
 }
 
+// CertPEM returns the cert portion of the certificate DERs as a byte array.
+func (cb CertBundle) CertPEM() ([]byte, error) {
+	buffer := new(bytes.Buffer)
+	if err := cb.WriteCertPem(buffer); err != nil {
+		return nil, err
+	}
+	return buffer.Bytes(), nil
+}
+
 // WriteKeyPem writes the certificate key as a pem.
 func (cb CertBundle) WriteKeyPem(w io.Writer) error {
 	return pem.Encode(w, &pem.Block{Type: BlockTypeRSAPrivateKey, Bytes: x509.MarshalPKCS1PrivateKey(cb.PrivateKey)})
+}
+
+// KeyPEM returns the cert portion of the certificate DERs as a byte array.
+func (cb CertBundle) KeyPEM() ([]byte, error) {
+	buffer := new(bytes.Buffer)
+	if err := cb.WriteKeyPem(buffer); err != nil {
+		return nil, err
+	}
+	return buffer.Bytes(), nil
 }
 
 // CommonNames returns the cert bundle common name(s).
