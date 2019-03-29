@@ -1,9 +1,13 @@
 package cron
 
 import (
-	"bytes"
+	"context"
+	"encoding/json"
 	"fmt"
+	"io"
 	"time"
+
+	"github.com/blend/go-sdk/timeutil"
 
 	"github.com/blend/go-sdk/ansi"
 	logger "github.com/blend/go-sdk/logger"
@@ -11,127 +15,85 @@ import (
 
 // these are compile time assertions
 var (
-	_ logger.Event            = &Event{}
-	_ logger.EventHeadings    = &Event{}
-	_ logger.EventLabels      = &Event{}
-	_ logger.EventAnnotations = &Event{}
+	_ logger.Event        = (*Event)(nil)
+	_ logger.TextWritable = (*Event)(nil)
+	_ json.Marshaler      = (*Event)(nil)
 )
 
 // NewEventListener returns a new event listener.
-func NewEventListener(listener func(e *Event)) logger.Listener {
-	return func(e logger.Event) {
+func NewEventListener(listener func(context.Context, *Event)) logger.Listener {
+	return func(ctx context.Context, e logger.Event) {
 		if typed, isTyped := e.(*Event); isTyped {
-			listener(typed)
+			listener(ctx, typed)
 		}
 	}
 }
 
-// NewEvent creates a new event.
-func NewEvent(flag logger.Flag, jobName string) *Event {
-	return &Event{
+// NewEvent creates a new event with a given set of optional options.
+func NewEvent(flag, jobName string, options ...EventOption) *Event {
+	e := &Event{
 		EventMeta: logger.NewEventMeta(flag),
-		jobName:   jobName,
-		enabled:   true,
-		writable:  true,
+		JobName:   jobName,
 	}
+
+	for _, option := range options {
+		option(e)
+	}
+	return e
+}
+
+// EventOption is an option for an Event.
+type EventOption func(*Event)
+
+// OptEventMetaOptions sets the event meta options for the event.
+func OptEventMetaOptions(options ...logger.EventMetaOption) EventOption {
+	return func(e *Event) {
+		for _, option := range options {
+			option(e.EventMeta)
+		}
+	}
+}
+
+// OptEventEnabled sets an enabled provider.
+func OptEventEnabled(enabled bool) EventOption {
+	return func(e *Event) {
+		e.EnabledProvider = func() bool { return enabled }
+	}
+}
+
+// OptEventWritable sets a writable provider.
+func OptEventWritable(enabled bool) EventOption {
+	return func(e *Event) {
+		e.EnabledProvider = func() bool { return enabled }
+	}
+}
+
+// OptEventJobInvocation sets a field.
+func OptEventJobInvocation(jobInvocation string) EventOption {
+	return func(e *Event) { e.JobInvocation = jobInvocation }
+}
+
+// OptEventErr sets a field.
+func OptEventErr(err error) EventOption {
+	return func(e *Event) { e.Err = err }
+}
+
+// OptEventElapsed sets a field.
+func OptEventElapsed(elapsed time.Duration) EventOption {
+	return func(e *Event) { e.Elapsed = elapsed }
 }
 
 // Event is an event.
 type Event struct {
 	*logger.EventMeta
 
-	enabled  bool
-	writable bool
+	EnabledProvider  func() bool
+	WritableProvider func() bool
 
-	jobName       string
-	jobInvocation string
-	err           error
-	elapsed       time.Duration
-}
-
-// WithHeadings sets the headings.
-func (e *Event) WithHeadings(headings ...string) *Event {
-	e.SetHeadings(headings...)
-	return e
-}
-
-// WithLabel sets a label on the event for later filtering.
-func (e *Event) WithLabel(key, value string) *Event {
-	e.AddLabelValue(key, value)
-	return e
-}
-
-// WithAnnotation adds an annotation to the event.
-func (e *Event) WithAnnotation(key, value string) *Event {
-	e.AddAnnotationValue(key, value)
-	return e
-}
-
-// WithFlag sets the event flag.
-func (e *Event) WithFlag(f logger.Flag) *Event {
-	e.SetFlag(f)
-	return e
-}
-
-// WithTimestamp sets the message timestamp.
-func (e *Event) WithTimestamp(ts time.Time) *Event {
-	e.SetTimestamp(ts)
-	return e
-}
-
-// WithIsEnabled sets if the event is enabled
-func (e *Event) WithIsEnabled(isEnabled bool) *Event {
-	e.enabled = isEnabled
-	return e
-}
-
-// IsEnabled determines if the event triggers listeners.
-func (e Event) IsEnabled() bool {
-	return e.enabled
-}
-
-// WithIsWritable sets if the event is writable.
-func (e *Event) WithIsWritable(isWritable bool) *Event {
-	e.writable = isWritable
-	return e
-}
-
-// IsWritable determines if the event is written to the logger output.
-func (e Event) IsWritable() bool {
-	return e.writable
-}
-
-// WithJobName sets the job name.
-func (e *Event) WithJobName(jobName string) *Event {
-	e.jobName = jobName
-	return e
-}
-
-// JobName returns the event job name.
-func (e Event) JobName() string {
-	return e.jobName
-}
-
-// WithJobInvocation sets the job invocation.
-func (e *Event) WithJobInvocation(jobInvocation string) *Event {
-	e.jobInvocation = jobInvocation
-	return e
-}
-
-// JobInvocation returns the event job invocation.
-func (e Event) JobInvocation() string {
-	return e.jobInvocation
-}
-
-// WithErr sets the error on the event.
-func (e *Event) WithErr(err error) *Event {
-	e.err = err
-	return e
-}
-
-// Err returns the event err (if any).
-func (e Event) Err() error {
-	return e.err
+	JobName       string
+	JobInvocation string
+	Err           error
+	Elapsed       time.Duration
 }
 
 // Complete returns if the event completed.
@@ -139,41 +101,41 @@ func (e Event) Complete() bool {
 	return e.Flag() == FlagComplete
 }
 
-// WithElapsed sets the elapsed time.
-func (e *Event) WithElapsed(d time.Duration) *Event {
-	e.elapsed = d
-	return e
+// IsEnabled is a
+func (e Event) IsEnabled() bool {
+	if e.EnabledProvider != nil {
+		return e.EnabledProvider()
+	}
+	return true
 }
 
-// Elapsed returns the elapsed time for the task.
-func (e Event) Elapsed() time.Duration {
-	return e.elapsed
+// IsWritable is a logger interface to disable writing the events.
+func (e Event) IsWritable() bool {
+	if e.WritableProvider != nil {
+		return e.WritableProvider()
+	}
+	return true
 }
 
 // WriteText implements logger.TextWritable.
-func (e Event) WriteText(tf logger.TextFormatter, buf *bytes.Buffer) {
-	if e.jobInvocation != "" {
-		buf.WriteString(fmt.Sprintf("[%s > %s]", tf.Colorize(e.jobName, ansi.ColorBlue), tf.Colorize(e.jobInvocation, ansi.ColorBlue)))
+func (e Event) WriteText(tf logger.TextFormatter, wr io.Writer) {
+	if e.JobInvocation != "" {
+		io.WriteString(wr, fmt.Sprintf("[%s > %s]", tf.Colorize(e.JobName, ansi.ColorBlue), tf.Colorize(e.JobInvocation, ansi.ColorBlue)))
 	} else {
-		buf.WriteString(fmt.Sprintf("[%s]", tf.Colorize(e.jobName, ansi.ColorBlue)))
+		io.WriteString(wr, fmt.Sprintf("[%s]", tf.Colorize(e.JobName, ansi.ColorBlue)))
 	}
 
-	if e.elapsed > 0 {
-		buf.WriteRune(logger.RuneSpace)
-		buf.WriteString(fmt.Sprintf("(%v)", e.elapsed))
+	if e.Elapsed > 0 {
+		io.WriteString(wr, logger.Space)
+		io.WriteString(wr, fmt.Sprintf("(%v)", e.Elapsed))
 	}
 }
 
-// WriteJSON implements logger.JSONWritable.
-func (e Event) WriteJSON() logger.JSONObj {
-	obj := logger.JSONObj{
-		"jobName": e.jobName,
-	}
-	if e.err != nil {
-		obj[logger.JSONFieldErr] = e.err
-	}
-	if e.elapsed > 0 {
-		obj[logger.JSONFieldElapsed] = logger.Milliseconds(e.elapsed)
-	}
-	return obj
+// MarshalJSON implements json.Marshaler
+func (e Event) MarshalJSON() ([]byte, error) {
+	return json.Marshal(logger.MergeDecomposed(e.EventMeta.Decompose(), map[string]interface{}{
+		"jobName": e.JobName,
+		"err":     e.Err,
+		"elapsed": timeutil.Milliseconds(e.Elapsed),
+	}))
 }

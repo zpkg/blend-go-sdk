@@ -31,7 +31,7 @@ type JobManager struct {
 
 	HistoryConfig HistoryConfig
 	Tracer        Tracer
-	Log           logger.FullReceiver
+	Log           logger.Log
 	Jobs          map[string]*JobScheduler
 }
 
@@ -46,7 +46,7 @@ func (jm *JobManager) LoadJobs(jobs ...Job) error {
 	for _, job := range jobs {
 		jobName := job.Name()
 		if _, hasJob := jm.Jobs[jobName]; hasJob {
-			return exception.New(ErrJobAlreadyLoaded).WithMessagef("job: %s", job.Name())
+			return exception.New(ErrJobAlreadyLoaded, exception.OptMessagef("job: %s", job.Name()))
 		}
 
 		jm.Jobs[jobName] = NewJobScheduler(job, OptJobSchedulerTracer(jm.Tracer), OptJobSchedulerLog(jm.Log), OptJobSchedulerHistoryConfig(jm.HistoryConfig))
@@ -63,7 +63,7 @@ func (jm *JobManager) DisableJobs(jobNames ...string) error {
 		if job, ok := jm.Jobs[jobName]; ok {
 			job.Disable()
 		} else {
-			return exception.New(ErrJobNotFound).WithMessagef("job: %s", jobName)
+			return exception.New(ErrJobNotFound, exception.OptMessagef("job: %s", jobName))
 		}
 	}
 	return nil
@@ -78,7 +78,7 @@ func (jm *JobManager) EnableJobs(jobNames ...string) error {
 		if job, ok := jm.Jobs[jobName]; ok {
 			job.Enable()
 		} else {
-			return exception.New(ErrJobNotFound).WithMessagef("job: %s", jobName)
+			return exception.New(ErrJobNotFound, exception.OptMessagef("job: %s", jobName))
 		}
 	}
 	return nil
@@ -99,7 +99,7 @@ func (jm *JobManager) Job(jobName string) (job *JobScheduler, err error) {
 	if jobScheduler, hasJob := jm.Jobs[jobName]; hasJob {
 		job = jobScheduler
 	} else {
-		err = exception.New(ErrJobNotLoaded).WithMessagef("job: %s", jobName)
+		err = exception.New(ErrJobNotLoaded, exception.OptMessagef("job: %s", jobName))
 	}
 	return
 }
@@ -138,7 +138,7 @@ func (jm *JobManager) RunJobs(jobNames ...string) error {
 		if job, ok := jm.Jobs[jobName]; ok {
 			job.Run()
 		} else {
-			return exception.New(ErrJobNotLoaded).WithMessagef("job: %s", jobName)
+			return exception.New(ErrJobNotLoaded, exception.OptMessagef("job: %s", jobName))
 		}
 	}
 	return nil
@@ -150,7 +150,7 @@ func (jm *JobManager) RunJob(jobName string) error {
 	defer jm.Unlock()
 	job, ok := jm.Jobs[jobName]
 	if !ok {
-		return exception.New(ErrJobNotLoaded).WithMessagef("job: %s", jobName)
+		return exception.New(ErrJobNotLoaded, exception.OptMessagef("job: %s", jobName))
 	}
 	go job.Run()
 	return nil
@@ -173,7 +173,7 @@ func (jm *JobManager) CancelJob(jobName string) (err error) {
 
 	job, ok := jm.Jobs[jobName]
 	if !ok {
-		err = exception.New(ErrJobNotFound).WithMessagef("job: %s", jobName)
+		err = exception.New(ErrJobNotFound, exception.OptMessagef("job: %s", jobName))
 		return
 	}
 	job.Cancel()

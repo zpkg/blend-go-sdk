@@ -25,11 +25,15 @@ func Errorf(flag, format string, args ...interface{}) *ErrorEvent {
 }
 
 // NewErrorEvent returns a new error event.
-func NewErrorEvent(flag string, err error, options ...EventMetaOption) *ErrorEvent {
-	return &ErrorEvent{
-		EventMeta: NewEventMeta(flag, options...),
+func NewErrorEvent(flag string, err error, options ...ErrorEventOption) *ErrorEvent {
+	ee := &ErrorEvent{
+		EventMeta: NewEventMeta(flag),
 		Err:       err,
 	}
+	for _, option := range options {
+		option(ee)
+	}
+	return ee
 }
 
 // NewErrorEventListener returns a new error event listener.
@@ -39,6 +43,28 @@ func NewErrorEventListener(listener func(context.Context, *ErrorEvent)) Listener
 			listener(ctx, typed)
 		}
 	}
+}
+
+// ErrorEventOption is an option for ErrorEvents.
+type ErrorEventOption func(*ErrorEvent)
+
+// OptErrorEventMetaOptions sets the event meta options.
+func OptErrorEventMetaOptions(options ...EventMetaOption) ErrorEventOption {
+	return func(e *ErrorEvent) {
+		for _, option := range options {
+			option(e.EventMeta)
+		}
+	}
+}
+
+// OptErrorEventErr sets the error on the error event.
+func OptErrorEventErr(err error) ErrorEventOption {
+	return func(e *ErrorEvent) { e.Err = err }
+}
+
+// OptErrorEventState sets the state on the error event.
+func OptErrorEventState(state interface{}) ErrorEventOption {
+	return func(e *ErrorEvent) { e.State = state }
 }
 
 // ErrorEvent is an event that wraps an error.

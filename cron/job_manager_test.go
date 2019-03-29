@@ -106,7 +106,7 @@ func TestFiresErrorOnTaskError(t *testing.T) {
 	a.StartTimeout(2000 * time.Millisecond)
 	defer a.EndTimeout()
 
-	agent := logger.New(logger.Error)
+	agent := logger.New(logger.OptEnabled(logger.Error))
 	defer agent.Close()
 
 	manager := New(OptLog(agent))
@@ -117,12 +117,12 @@ func TestFiresErrorOnTaskError(t *testing.T) {
 	wg := sync.WaitGroup{}
 	wg.Add(2)
 
-	agent.Listen(logger.Error, "foo", func(e logger.Event) {
+	agent.Listen(logger.Error, "foo", func(_ context.Context, e logger.Event) {
 		defer wg.Done()
 		errorDidFire = true
 		if typed, isTyped := e.(*logger.ErrorEvent); isTyped {
-			if typed.Err() != nil {
-				errorMatched = typed.Err().Error() == "this is only a test"
+			if typed.Err != nil {
+				errorMatched = typed.Err.Error() == "this is only a test"
 			}
 		}
 	})

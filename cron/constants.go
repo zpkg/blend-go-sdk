@@ -2,8 +2,6 @@ package cron
 
 import (
 	"time"
-
-	"github.com/blend/go-sdk/logger"
 )
 
 const (
@@ -35,21 +33,21 @@ const (
 
 const (
 	// FlagStarted is an event flag.
-	FlagStarted logger.Flag = "cron.started"
+	FlagStarted = "cron.started"
 	// FlagFailed is an event flag.
-	FlagFailed logger.Flag = "cron.failed"
+	FlagFailed = "cron.failed"
 	// FlagCancelled is an event flag.
-	FlagCancelled logger.Flag = "cron.cancelled"
+	FlagCancelled = "cron.cancelled"
 	// FlagComplete is an event flag.
-	FlagComplete logger.Flag = "cron.complete"
+	FlagComplete = "cron.complete"
 	// FlagBroken is an event flag.
-	FlagBroken logger.Flag = "cron.broken"
+	FlagBroken = "cron.broken"
 	// FlagFixed is an event flag.
-	FlagFixed logger.Flag = "cron.fixed"
+	FlagFixed = "cron.fixed"
 	// FlagEnabled is an event flag.
-	FlagEnabled logger.Flag = "cron.enabled"
+	FlagEnabled = "cron.enabled"
 	// FlagDisabled is an event flag.
-	FlagDisabled logger.Flag = "cron.disabled"
+	FlagDisabled = "cron.disabled"
 )
 
 // State is a job state.

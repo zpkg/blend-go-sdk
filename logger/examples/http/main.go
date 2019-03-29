@@ -9,11 +9,12 @@ import (
 
 	_ "net/http/pprof"
 
+	"github.com/blend/go-sdk/bufferutil"
 	"github.com/blend/go-sdk/logger"
 	"github.com/blend/go-sdk/webutil"
 )
 
-var pool = logger.NewBufferPool(16)
+var pool = bufferutil.NewPool(16)
 
 func logged(log logger.Log, handler http.HandlerFunc) http.HandlerFunc {
 	return func(res http.ResponseWriter, req *http.Request) {
@@ -24,10 +25,11 @@ func logged(log logger.Log, handler http.HandlerFunc) http.HandlerFunc {
 		rw := webutil.NewResponseWriter(res)
 		handler(rw, req)
 
-		resEvent := logger.NewHTTPResponseEvent(req)
-		resEvent.StatusCode = rw.StatusCode()
-		resEvent.ContentLength = rw.ContentLength()
-		resEvent.Elapsed = time.Now().Sub(start)
+		resEvent := logger.NewHTTPResponseEvent(req,
+			logger.OptHTTPResponseStatusCode(rw.StatusCode()),
+			logger.OptHTTPResponseContentLength(rw.ContentLength()),
+			logger.OptHTTPResponseElapsed(time.Now().Sub(start)),
+		)
 
 		log.Trigger(req.Context(), resEvent)
 	}

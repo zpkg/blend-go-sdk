@@ -18,12 +18,16 @@ var (
 )
 
 // NewAuditEvent returns a new audit event.
-func NewAuditEvent(principal, verb string, options ...EventMetaOption) *AuditEvent {
-	return &AuditEvent{
-		EventMeta: NewEventMeta(Audit, options...),
+func NewAuditEvent(principal, verb string, options ...AuditEventOption) *AuditEvent {
+	ae := &AuditEvent{
+		EventMeta: NewEventMeta(Audit),
 		Principal: principal,
 		Verb:      verb,
 	}
+	for _, option := range options {
+		option(ae)
+	}
+	return ae
 }
 
 // NewAuditEventListener returns a new audit event listener.
@@ -33,6 +37,63 @@ func NewAuditEventListener(listener func(context.Context, *AuditEvent)) Listener
 			listener(ctx, typed)
 		}
 	}
+}
+
+// AuditEventOption is an option for AuditEvents.
+type AuditEventOption func(*AuditEvent)
+
+// OptAuditEventMetaOptions sets options on the event metadata.
+func OptAuditEventMetaOptions(options ...EventMetaOption) AuditEventOption {
+	return func(ae *AuditEvent) {
+		for _, option := range options {
+			option(ae.EventMeta)
+		}
+	}
+}
+
+// OptAuditEventContext sets a field on an AuditEvent.
+func OptAuditEventContext(value string) AuditEventOption {
+	return func(ae *AuditEvent) { ae.Context = value }
+}
+
+// OptAuditEventPrincipal sets a field on an AuditEvent.
+func OptAuditEventPrincipal(value string) AuditEventOption {
+	return func(ae *AuditEvent) { ae.Principal = value }
+}
+
+// OptAuditEventVerb sets a field on an AuditEvent.
+func OptAuditEventVerb(value string) AuditEventOption {
+	return func(ae *AuditEvent) { ae.Verb = value }
+}
+
+// OptAuditEventNoun sets a field on an AuditEvent.
+func OptAuditEventNoun(value string) AuditEventOption {
+	return func(ae *AuditEvent) { ae.Noun = value }
+}
+
+// OptAuditEventSubject sets a field on an AuditEvent.
+func OptAuditEventSubject(value string) AuditEventOption {
+	return func(ae *AuditEvent) { ae.Subject = value }
+}
+
+// OptAuditEventProperty sets a field on an AuditEvent.
+func OptAuditEventProperty(value string) AuditEventOption {
+	return func(ae *AuditEvent) { ae.Property = value }
+}
+
+// OptAuditEventRemoteAddress sets a field on an AuditEvent.
+func OptAuditEventRemoteAddress(value string) AuditEventOption {
+	return func(ae *AuditEvent) { ae.RemoteAddress = value }
+}
+
+// OptAuditEventUserAgent sets a field on an AuditEvent.
+func OptAuditEventUserAgent(value string) AuditEventOption {
+	return func(ae *AuditEvent) { ae.UserAgent = value }
+}
+
+// OptAuditEventExtra sets a field on an AuditEvent.
+func OptAuditEventExtra(values map[string]string) AuditEventOption {
+	return func(ae *AuditEvent) { ae.Extra = values }
 }
 
 // AuditEvent is a common type of event detailing a business action by a subject.
@@ -48,60 +109,6 @@ type AuditEvent struct {
 	RemoteAddress string
 	UserAgent     string
 	Extra         map[string]string
-}
-
-// WithContext sets a field.
-func (e *AuditEvent) WithContext(context string) *AuditEvent {
-	e.Context = context
-	return e
-}
-
-// WithPrincipal sets a field.
-func (e *AuditEvent) WithPrincipal(principal string) *AuditEvent {
-	e.Principal = principal
-	return e
-}
-
-// WithVerb sets a field.
-func (e *AuditEvent) WithVerb(verb string) *AuditEvent {
-	e.Verb = verb
-	return e
-}
-
-// WithNoun sets a field.
-func (e *AuditEvent) WithNoun(noun string) *AuditEvent {
-	e.Noun = noun
-	return e
-}
-
-// WithSubject sets a field.
-func (e *AuditEvent) WithSubject(subject string) *AuditEvent {
-	e.Subject = subject
-	return e
-}
-
-// WithProperty sets a field.
-func (e *AuditEvent) WithProperty(property string) *AuditEvent {
-	e.Property = property
-	return e
-}
-
-// WithRemoteAddress sets the remote address.
-func (e *AuditEvent) WithRemoteAddress(remoteAddr string) *AuditEvent {
-	e.RemoteAddress = remoteAddr
-	return e
-}
-
-// WithUserAgent sets the user agent.
-func (e *AuditEvent) WithUserAgent(userAgent string) *AuditEvent {
-	e.UserAgent = userAgent
-	return e
-}
-
-// WithExtra sets the extra info.
-func (e *AuditEvent) WithExtra(extra map[string]string) *AuditEvent {
-	e.Extra = extra
-	return e
 }
 
 // WriteText implements TextWritable.

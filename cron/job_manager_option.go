@@ -11,7 +11,7 @@ func OptHistoryConfig(hc HistoryConfig) JobManagerOption {
 }
 
 // OptLog sets the job manager logger.
-func OptLog(log logger.FullReceiver) JobManagerOption {
+func OptLog(log logger.Log) JobManagerOption {
 	return func(jm *JobManager) { jm.Log = log }
 }
 

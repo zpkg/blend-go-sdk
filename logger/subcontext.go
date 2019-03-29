@@ -57,12 +57,12 @@ func (sc *Context) Background() context.Context {
 
 // Infof logs an informational message to the output stream.
 func (sc *Context) Infof(format string, args ...interface{}) {
-	sc.Trigger(sc.Background(), Messagef(Info, format, args...))
+	sc.Trigger(sc.Background(), NewMessageEvent(Info, fmt.Sprintf(format, args...)))
 }
 
 // Debugf logs a debug message to the output stream.
 func (sc *Context) Debugf(format string, args ...interface{}) {
-	sc.Trigger(sc.Background(), Messagef(Debug, format, args...))
+	sc.Trigger(sc.Background(), NewMessageEvent(Info, fmt.Sprintf(format, args...)))
 }
 
 // Warningf logs a debug message to the output stream.

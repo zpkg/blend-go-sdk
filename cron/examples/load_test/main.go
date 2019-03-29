@@ -18,7 +18,7 @@ const (
 	N = 2048
 
 	// Q is the total simulation time.
-	Q = 30 * time.Second
+	Q = 10 * time.Second
 
 	// JobRunEvery is the job interval.
 	JobRunEvery = 5 * time.Second
@@ -113,7 +113,7 @@ func main() {
 	}
 
 	for x := 0; x < N; x++ {
-		jm.LoadJob(&loadTestJob{id: x})
+		jm.LoadJobs(&loadTestJob{id: x})
 	}
 	fmt.Printf("Loaded %d Job Instances.\n\n", N)
 

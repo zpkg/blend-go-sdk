@@ -2,6 +2,7 @@ package main
 
 import (
 	"context"
+	"encoding/json"
 	"fmt"
 	"io"
 
@@ -40,15 +41,15 @@ func (ce CustomEvent) WriteText(tf logger.TextFormatter, wr io.Writer) {
 	io.WriteString(wr, ce.Context)
 }
 
-// Fields implements logger.FieldsProvider.
+// MarshalJSON implements json.Marshaler.
 // It is a function that returns just the custom fields on our object as a map,
 // to be serialized with the rest of the fields.
-func (ce CustomEvent) Fields() logger.Fields {
-	return logger.Fields{
+func (ce CustomEvent) MarshalJSON() ([]byte, error) {
+	return json.Marshal(logger.MergeDecomposed(ce.EventMeta.Decompose(), map[string]interface{}{
 		"userID":    ce.UserID,
 		"sessionID": ce.SessionID,
 		"context":   ce.Context,
-	}
+	}))
 }
 
 // NewCustomEventListener returns a type shim for the logger.

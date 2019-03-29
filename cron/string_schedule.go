@@ -45,14 +45,14 @@ func ParseString(cronString string) (Schedule, error) {
 	if strings.HasPrefix(cronString, "@every") {
 		duration, err := time.ParseDuration(strings.TrimSpace(strings.TrimPrefix(cronString, "@every")))
 		if err != nil {
-			return nil, exception.New(ErrStringScheduleInvalid).WithInner(err)
+			return nil, exception.New(ErrStringScheduleInvalid, exception.OptInner(err))
 		}
 		return Every(duration), nil
 	}
 
 	parts := stringutil.SplitSpace(cronString)
 	if len(parts) < 5 || len(parts) > 7 {
-		return nil, exception.New(ErrStringScheduleInvalid).WithInner(ErrStringScheduleComponents).WithMessagef("provided string; %s", cronString)
+		return nil, exception.New(ErrStringScheduleInvalid, exception.OptInner(ErrStringScheduleComponents), exception.OptMessagef("provided string; %s", cronString))
 	}
 	// fill in optional components
 	if len(parts) == 5 {
@@ -64,37 +64,37 @@ func ParseString(cronString string) (Schedule, error) {
 
 	seconds, err := parsePart(parts[0], parseInt, below(60))
 	if err != nil {
-		return nil, exception.New(ErrStringScheduleInvalid).WithInner(err).WithMessage("seconds invalid")
+		return nil, exception.New(ErrStringScheduleInvalid, exception.OptInner(err), exception.OptMessage("seconds invalid"))
 	}
 
 	minutes, err := parsePart(parts[1], parseInt, below(60))
 	if err != nil {
-		return nil, exception.New(ErrStringScheduleInvalid).WithInner(err).WithMessage("minutes invalid")
+		return nil, exception.New(ErrStringScheduleInvalid, exception.OptInner(err), exception.OptMessage("minutes invalid"))
 	}
 
 	hours, err := parsePart(parts[2], parseInt, below(24))
 	if err != nil {
-		return nil, exception.New(ErrStringScheduleInvalid).WithInner(err).WithMessage("hours invalid")
+		return nil, exception.New(ErrStringScheduleInvalid, exception.OptInner(err), exception.OptMessage("hours invalid"))
 	}
 
 	days, err := parsePart(parts[3], parseInt, between(1, 32))
 	if err != nil {
-		return nil, exception.New(ErrStringScheduleInvalid).WithInner(err).WithMessage("days invalid")
+		return nil, exception.New(ErrStringScheduleInvalid, exception.OptInner(err), exception.OptMessage("days invalid"))
 	}
 
 	months, err := parsePart(parts[4], parseMonth, between(1, 13))
 	if err != nil {
-		return nil, exception.New(ErrStringScheduleInvalid).WithInner(err).WithMessage("months invalid")
+		return nil, exception.New(ErrStringScheduleInvalid, exception.OptInner(err), exception.OptMessage("months invalid"))
 	}
 
 	daysOfWeek, err := parsePart(parts[5], parseDayOfWeek, between(0, 7))
 	if err != nil {
-		return nil, exception.New(ErrStringScheduleInvalid).WithInner(err).WithMessage("days of week invalid")
+		return nil, exception.New(ErrStringScheduleInvalid, exception.OptInner(err), exception.OptMessage("days of week invalid"))
 	}
 
 	years, err := parsePart(parts[6], parseInt, between(1970, 2100))
 	if err != nil {
-		return nil, exception.New(ErrStringScheduleInvalid).WithInner(err).WithMessage("years invalid")
+		return nil, exception.New(ErrStringScheduleInvalid, exception.OptInner(err), exception.OptMessage("years invalid"))
 	}
 
 	schedule := &StringSchedule{
@@ -402,7 +402,7 @@ func parseRange(values string, parser func(string) (int, error), validator func(
 	parts := strings.Split(values, string(cronSpecialDash))
 
 	if len(parts) != 2 {
-		return nil, exception.New(ErrStringScheduleInvalidRange).WithMessagef("invalid range: %s")
+		return nil, exception.New(ErrStringScheduleInvalidRange, exception.OptMessagef("invalid range: %s", values))
 	}
 
 	from, err := parser(parts[0])
@@ -415,14 +415,14 @@ func parseRange(values string, parser func(string) (int, error), validator func(
 	}
 
 	if validator != nil && !validator(from) {
-		return nil, exception.New(ErrStringScheduleValueOutOfRange).WithMessage("invalid range from")
+		return nil, exception.New(ErrStringScheduleValueOutOfRange, exception.OptMessage("invalid range from"))
 	}
 	if validator != nil && !validator(to) {
-		return nil, exception.New(ErrStringScheduleValueOutOfRange).WithMessage("invalid range to")
+		return nil, exception.New(ErrStringScheduleValueOutOfRange, exception.OptMessage("invalid range to"))
 	}
 
 	if from >= to {
-		return nil, exception.New(ErrStringScheduleInvalidRange).WithMessage("invalid range; from greater than to")
+		return nil, exception.New(ErrStringScheduleInvalidRange, exception.OptMessage("invalid range; from greater than to"))
 	}
 
 	var output []int
@@ -442,10 +442,10 @@ func parseMonth(s string) (int, error) {
 	}
 	value, err := strconv.Atoi(s)
 	if err != nil {
-		return 0, exception.New(err).WithMessage("month not a valid integer")
+		return 0, exception.New(err, exception.OptMessage("month not a valid integer"))
 	}
 	if value < 1 || value > 12 {
-		return 0, exception.New(ErrStringScheduleValueOutOfRange).WithMessagef("month out of range (1-12): %s", s)
+		return 0, exception.New(ErrStringScheduleValueOutOfRange, exception.OptMessagef("month out of range (1-12): %s", s))
 	}
 	return value, nil
 }
@@ -456,10 +456,10 @@ func parseDayOfWeek(s string) (int, error) {
 	}
 	value, err := strconv.Atoi(s)
 	if err != nil {
-		return 0, exception.New(err).WithMessage("day of week not a valid integer")
+		return 0, exception.New(err, exception.OptMessage("day of week not a valid integer"))
 	}
 	if value < 0 || value > 6 {
-		return 0, exception.New(ErrStringScheduleValueOutOfRange).WithMessagef("day of week out of range (0-6): %s", s)
+		return 0, exception.New(ErrStringScheduleValueOutOfRange, exception.OptMessagef("day of week out of range (0-6): %s", s))
 	}
 	return value, nil
 }

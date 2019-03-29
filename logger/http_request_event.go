@@ -17,11 +17,15 @@ var (
 )
 
 // NewHTTPRequestEvent creates a new web request event.
-func NewHTTPRequestEvent(req *http.Request) *HTTPRequestEvent {
-	return &HTTPRequestEvent{
+func NewHTTPRequestEvent(req *http.Request, options ...HTTPRequestEventOption) *HTTPRequestEvent {
+	hre := &HTTPRequestEvent{
 		EventMeta: NewEventMeta(HTTPRequest),
 		Request:   req,
 	}
+	for _, option := range options {
+		option(hre)
+	}
+	return hre
 }
 
 // NewHTTPRequestEventListener returns a new web request event listener.
@@ -33,24 +37,31 @@ func NewHTTPRequestEventListener(listener func(context.Context, *HTTPRequestEven
 	}
 }
 
+// HTTPRequestEventOption sets a field on an HTTPRequestEventOption.
+type HTTPRequestEventOption func(*HTTPRequestEvent)
+
+// OptHTTPRequestEventOptionMetaOptions sets a field on an HTTPRequestEvent.
+func OptHTTPRequestEventOptionMetaOptions(options ...EventMetaOption) HTTPRequestEventOption {
+	return func(hre *HTTPRequestEvent) {
+		for _, option := range options {
+			option(hre.EventMeta)
+		}
+	}
+}
+
+// OptHTTPRequestEventRequest sets a field on an HTTPRequestEvent.
+func OptHTTPRequestEventRequest(req *http.Request) HTTPRequestEventOption {
+	return func(hre *HTTPRequestEvent) {
+		hre.Request = req
+	}
+}
+
 // HTTPRequestEvent is an event type for http responses.
 type HTTPRequestEvent struct {
-	*EventMeta `json:",inline"`
-	Request    *http.Request
-	Route      string
-	State      map[interface{}]interface{}
-}
-
-// WithRequest sets a field.
-func (e *HTTPRequestEvent) WithRequest(req *http.Request) *HTTPRequestEvent {
-	e.Request = req
-	return e
-}
-
-// WithRoute sets a field.
-func (e *HTTPRequestEvent) WithRoute(route string) *HTTPRequestEvent {
-	e.Route = route
-	return e
+	*EventMeta
+	Request *http.Request
+	Route   string
+	State   map[interface{}]interface{}
 }
 
 // WriteText implements TextWritable.

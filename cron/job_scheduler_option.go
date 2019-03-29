@@ -11,7 +11,7 @@ func OptJobSchedulerTracer(tracer Tracer) JobSchedulerOption {
 }
 
 // OptJobSchedulerLog sets the job scheduler logger.
-func OptJobSchedulerLog(log logger.FullReceiver) JobSchedulerOption {
+func OptJobSchedulerLog(log logger.Log) JobSchedulerOption {
 	return func(js *JobScheduler) { js.Log = log }
 }
 

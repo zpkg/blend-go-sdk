@@ -12,7 +12,7 @@ import (
 func TestAuditEventMarshalJSON(t *testing.T) {
 	assert := assert.New(t)
 
-	ae := NewAuditEvent("bailey", "pooped", OptEventMetaTimestamp(time.Date(2016, 01, 02, 03, 04, 05, 06, time.UTC)))
+	ae := NewAuditEvent("bailey", "pooped", OptAuditEventMetaOptions(OptEventMetaTimestamp(time.Date(2016, 01, 02, 03, 04, 05, 06, time.UTC))))
 
 	contents, err := json.Marshal(ae)
 	assert.Nil(err)

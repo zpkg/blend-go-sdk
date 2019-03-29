@@ -3,7 +3,6 @@ package logger
 import (
 	"context"
 	"encoding/json"
-	"fmt"
 	"io"
 )
 
@@ -12,11 +11,11 @@ var (
 	_ Event = (*MessageEvent)(nil)
 )
 
-// Messagef returns a new Message Event.
-func Messagef(flag, format string, args ...interface{}) *MessageEvent {
+// NewMessageEvent returns a new message event.
+func NewMessageEvent(flag, message string, options ...EventMetaOption) *MessageEvent {
 	return &MessageEvent{
-		EventMeta: NewEventMeta(flag),
-		Message:   fmt.Sprintf(format, args...),
+		EventMeta: NewEventMeta(flag, options...),
+		Message:   message,
 	}
 }
 

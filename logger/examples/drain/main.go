@@ -1,6 +1,7 @@
 package main
 
 import (
+	"context"
 	"fmt"
 	"math/rand"
 	"os"
@@ -12,7 +13,7 @@ import (
 func main() {
 	log := logger.New(logger.OptAll())
 
-	log.Listen(logger.Info, "randomly_slow", func(e logger.Event) {
+	log.Listen(logger.Info, "randomly_slow", func(ctx context.Context, e logger.Event) {
 		if rand.Float64() < 0.1 {
 			fmt.Println("randomly slow start")
 			time.Sleep(500 * time.Millisecond)

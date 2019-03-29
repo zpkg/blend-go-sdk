@@ -27,7 +27,7 @@ func TestWorker(t *testing.T) {
 	<-w.NotifyStarted()
 	defer w.Stop()
 
-	w.Work <- EventWithContext{context.Background(), Messagef(Info, "test")}
+	w.Work <- EventWithContext{context.Background(), NewMessageEvent(Info, "test")}
 	wg.Wait()
 
 	assert.True(didFire)
@@ -44,10 +44,10 @@ func TestWorkerDrain(t *testing.T) {
 		didFire = true
 	})
 
-	w.Work <- EventWithContext{context.Background(), Messagef(Info, "test1")}
-	w.Work <- EventWithContext{context.Background(), Messagef(Info, "test2")}
-	w.Work <- EventWithContext{context.Background(), Messagef(Info, "test3")}
-	w.Work <- EventWithContext{context.Background(), Messagef(Info, "test4")}
+	w.Work <- EventWithContext{context.Background(), NewMessageEvent(Info, "test1")}
+	w.Work <- EventWithContext{context.Background(), NewMessageEvent(Info, "test2")}
+	w.Work <- EventWithContext{context.Background(), NewMessageEvent(Info, "test3")}
+	w.Work <- EventWithContext{context.Background(), NewMessageEvent(Info, "test4")}
 
 	go func() {
 		w.Drain()
