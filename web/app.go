@@ -166,7 +166,7 @@ func (a *App) Register(controllers ...Controller) {
 // SetStaticRewriteRule adds a rewrite rule for a specific statically served path.
 // It mutates the path for the incoming static file request to the fileserver according to the action.
 func (a *App) SetStaticRewriteRule(route, match string, action RewriteAction) error {
-	mountedRoute := a.createStaticMountRoute(route)
+	mountedRoute := a.formatStaticMountRoute(route)
 	if static, hasRoute := a.Statics[mountedRoute]; hasRoute {
 		return static.AddRewriteRule(match, action)
 	}
@@ -176,19 +176,9 @@ func (a *App) SetStaticRewriteRule(route, match string, action RewriteAction) er
 // SetStaticHeader adds a header for the given static path.
 // These headers are automatically added to any result that the static path fileserver sends.
 func (a *App) SetStaticHeader(route, key, value string) error {
-	mountedRoute := a.createStaticMountRoute(route)
+	mountedRoute := a.formatStaticMountRoute(route)
 	if static, hasRoute := a.Statics[mountedRoute]; hasRoute {
 		static.AddHeader(key, value)
-		return nil
-	}
-	return exception.New("no static fileserver mounted at route", exception.OptMessagef("route: %s", mountedRoute))
-}
-
-// SetStaticMiddleware adds static middleware for a given route.
-func (a *App) SetStaticMiddleware(route string, middlewares ...Middleware) error {
-	mountedRoute := a.createStaticMountRoute(route)
-	if static, hasRoute := a.Statics[mountedRoute]; hasRoute {
-		static.SetMiddleware(middlewares...)
 		return nil
 	}
 	return exception.New("no static fileserver mounted at route", exception.OptMessagef("route: %s", mountedRoute))
@@ -198,35 +188,34 @@ func (a *App) SetStaticMiddleware(route string, middlewares ...Middleware) error
 // If the path does not end with "/*filepath" that suffix will be added for you internally.
 // For example if root is "/etc" and *filepath is "passwd", the local file
 // "/etc/passwd" would be served.
-func (a *App) ServeStatic(route string, searchPaths ...string) {
+func (a *App) ServeStatic(route string, searchPaths []string, middleware ...Middleware) {
 	var searchPathFS []http.FileSystem
 	for _, searchPath := range searchPaths {
 		searchPathFS = append(searchPathFS, http.Dir(searchPath))
 	}
 	sfs := NewStaticFileServer(searchPathFS...)
-	sfs.Log = a.Log
+	sfs.Middleware = middleware
 	sfs.CacheDisabled = true
-	mountedRoute := a.createStaticMountRoute(route)
+	mountedRoute := a.formatStaticMountRoute(route)
 	a.Statics[mountedRoute] = sfs
-	a.Handle("GET", mountedRoute, a.RenderAction(a.Middleware(sfs.Action)))
+	a.Handle("GET", mountedRoute, a.RenderAction(a.Middleware(sfs.Action, middleware...)))
 }
 
 // ServeStaticCached serves files from the given file system root(s).
 // If the path does not end with "/*filepath" that suffix will be added for you internally.
-func (a *App) ServeStaticCached(route string, searchPaths ...string) {
-	var searchPathFS []http.FileSystem
+func (a *App) ServeStaticCached(route string, searchPaths []string, middleware ...Middleware) {
+	var searchPathFileSystems []http.FileSystem
 	for _, searchPath := range searchPaths {
-		searchPathFS = append(searchPathFS, http.Dir(searchPath))
+		searchPathFileSystems = append(searchPathFileSystems, http.Dir(searchPath))
 	}
-	sfs := NewStaticFileServer(searchPathFS...)
-	sfs.Log = a.Log
-	sfs.CacheDisabled = false
-	mountedRoute := a.createStaticMountRoute(route)
+	sfs := NewStaticFileServer(searchPathFileSystems...)
+	sfs.Middleware = middleware
+	mountedRoute := a.formatStaticMountRoute(route)
 	a.Statics[mountedRoute] = sfs
-	a.Handle("GET", mountedRoute, a.RenderAction(a.Middleware(sfs.Action)))
+	a.Handle("GET", mountedRoute, a.RenderAction(a.Middleware(sfs.Action, middleware...)))
 }
 
-func (a *App) createStaticMountRoute(route string) string {
+func (a *App) formatStaticMountRoute(route string) string {
 	mountedRoute := route
 	if !strings.HasSuffix(mountedRoute, "*"+RouteTokenFilepath) {
 		if strings.HasSuffix(mountedRoute, "/") {

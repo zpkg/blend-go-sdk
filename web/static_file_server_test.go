@@ -4,7 +4,6 @@ import (
 	"bytes"
 	"fmt"
 	"net/http"
-	"sync"
 	"testing"
 
 	"github.com/blend/go-sdk/assert"
@@ -63,48 +62,4 @@ func TestStaticFileserverRewriteRule(t *testing.T) {
 
 	assert.Nil(result)
 	assert.NotEmpty(buffer.Bytes(), "we should still have reached the file")
-}
-
-func TestStaticFileserverMiddleware(t *testing.T) {
-	assert := assert.New(t)
-
-	var didCallMiddleware bool
-	var didNestMiddleware bool
-	wg := sync.WaitGroup{}
-	wg.Add(1)
-	cfs := NewStaticFileServer(http.Dir("testdata"))
-	cfs.SetMiddleware(func(action Action) Action {
-		didNestMiddleware = true
-		return func(ctx *Ctx) Result {
-			defer wg.Done()
-			didCallMiddleware = true
-			return action(ctx)
-		}
-	})
-
-	buffer := bytes.NewBuffer(nil)
-	res := webutil.NewMockResponse(buffer)
-	req := webutil.NewMockRequest("GET", "/test_file.html")
-	result := cfs.Action(NewCtx(res, req, OptCtxRouteParams(RouteParameters{
-		RouteTokenFilepath: "test_file.html",
-	})))
-	wg.Wait()
-
-	assert.Nil(result)
-	assert.True(didNestMiddleware)
-	assert.True(didCallMiddleware)
-	assert.NotEmpty(buffer.Bytes())
-
-	didNestMiddleware = false
-	didCallMiddleware = false
-	wg.Add(1)
-	result = cfs.Action(NewCtx(res, req, OptCtxRouteParams(RouteParameters{
-		RouteTokenFilepath: "test_file.html",
-	})))
-	wg.Wait()
-
-	assert.Nil(result)
-	assert.False(didNestMiddleware)
-	assert.True(didCallMiddleware)
-	assert.NotEmpty(buffer.Bytes())
 }

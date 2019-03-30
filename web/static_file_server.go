@@ -7,8 +7,6 @@ import (
 	"os"
 	"regexp"
 	"sync"
-
-	"github.com/blend/go-sdk/logger"
 )
 
 // NewStaticFileServer returns a new static file cache.
@@ -21,15 +19,12 @@ func NewStaticFileServer(searchPaths ...http.FileSystem) *StaticFileServer {
 // StaticFileServer is a cache of static files.
 type StaticFileServer struct {
 	sync.Mutex
-
-	Log           logger.Log
-	CacheDisabled bool
 	SearchPaths   []http.FileSystem
 	RewriteRules  []RewriteRule
-	Middleware    Action
+	Middleware    []Middleware
 	Headers       http.Header
-
-	Cache map[string]*CachedStaticFile
+	CacheDisabled bool
+	Cache         map[string]*CachedStaticFile
 }
 
 // AddHeader adds a header to the static cache results.
@@ -54,11 +49,6 @@ func (sc *StaticFileServer) AddRewriteRule(match string, action RewriteAction) e
 	return nil
 }
 
-// SetMiddleware sets the middlewares.
-func (sc *StaticFileServer) SetMiddleware(middlewares ...Middleware) {
-	sc.Middleware = NestMiddleware(sc.Action, middlewares...)
-}
-
 // Action is the entrypoint for the static server.
 // It will run middleware if specified before serving the file.
 func (sc *StaticFileServer) Action(r *Ctx) Result {
@@ -67,20 +57,20 @@ func (sc *StaticFileServer) Action(r *Ctx) Result {
 		return r.DefaultProvider.BadRequest(err)
 	}
 
-	if sc.Middleware != nil {
-		return sc.Middleware(r)
-	}
-	return sc.ServeFile(r, filePath)
-}
-
-// ServeFile writes the file to the response without running middleware.
-func (sc *StaticFileServer) ServeFile(r *Ctx, filePath string) Result {
 	for key, values := range sc.Headers {
 		for _, value := range values {
 			r.Response.Header().Set(key, value)
 		}
 	}
 
+	if sc.CacheDisabled {
+		return sc.ServeFile(r, filePath)
+	}
+	return sc.ServeCachedFile(r, filePath)
+}
+
+// ServeFile writes the file to the response without running middleware.
+func (sc *StaticFileServer) ServeFile(r *Ctx, filePath string) Result {
 	f, err := sc.ResolveFile(filePath)
 	if f == nil || (err != nil && os.IsNotExist(err)) {
 		return r.DefaultProvider.NotFound()
@@ -95,6 +85,16 @@ func (sc *StaticFileServer) ServeFile(r *Ctx, filePath string) Result {
 		return r.DefaultProvider.InternalError(err)
 	}
 	http.ServeContent(r.Response, r.Request, filePath, finfo.ModTime(), f)
+	return nil
+}
+
+// ServeCachedFile writes the file to the response.
+func (sc *StaticFileServer) ServeCachedFile(r *Ctx, filepath string) Result {
+	file, err := sc.ResolveCachedFile(filepath)
+	if err != nil {
+		return r.DefaultProvider.InternalError(err)
+	}
+	http.ServeContent(r.Response, r.Request, filepath, file.ModTime, file.Contents)
 	return nil
 }
 

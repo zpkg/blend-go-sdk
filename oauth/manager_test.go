@@ -111,7 +111,7 @@ func TestManagerGetRedirectURIFullyQualifiedHTTP(t *testing.T) {
 
 	m := New()
 	m.ClientID = "test_client_id"
-	m.RedirectURI = "https://test.blend.com/oauth/google"
+	m.RedirectURI = "http://test.blend.com/oauth/google"
 
 	redirectURI := m.getRedirectURI(nil)
 
