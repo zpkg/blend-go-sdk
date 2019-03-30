@@ -103,17 +103,6 @@ func (js *JobScheduler) Start() error {
 	return nil
 }
 
-// StartAsync starts the job scheduler in the background.
-func (js *JobScheduler) StartAsync() error {
-	if !js.Latch.CanStart() {
-		return fmt.Errorf("already started")
-	}
-	js.Latch.Starting()
-	go js.RunLoop()
-	<-js.Latch.NotifyStarted()
-	return nil
-}
-
 // Stop stops the scheduler.
 func (js *JobScheduler) Stop() error {
 	if !js.Latch.CanStop() {
@@ -175,31 +164,32 @@ func (js *JobScheduler) Cancel() {
 // it alarms on the next runtime and forks a new routine to run the job.
 // It can be aborted with the scheduler's async.Latch.
 func (js *JobScheduler) RunLoop() {
-	js.Latch.Started()
+	js.Started()
+	defer func() {
+		js.Stopped()
+	}()
 
 	if js.Schedule != nil {
-		// sniff the schedule, see if a next runtime is called for (or if the job is on demand).
 		js.NextRuntime = js.Schedule.Next(js.NextRuntime)
 	}
 	if js.NextRuntime.IsZero() {
-		js.Latch.Stopped()
 		return
 	}
 
 	for {
 		if js.NextRuntime.IsZero() {
-			js.Latch.Stopped()
 			return
 		}
 		runAt := time.After(js.NextRuntime.UTC().Sub(Now()))
 		select {
 		case <-runAt:
-			// start the job
-			go js.Run()
+			if js.enabled() {
+				// start the job
+				go js.Run()
+			}
 			// set up the next runtime.
 			js.NextRuntime = js.Schedule.Next(js.NextRuntime)
-		case <-js.Latch.NotifyStopping():
-			js.Latch.Stopped()
+		case <-js.NotifyStopping():
 			return
 		}
 	}
@@ -210,7 +200,7 @@ func (js *JobScheduler) RunLoop() {
 // It blocks on the job execution to enforce or clear timeouts.
 func (js *JobScheduler) Run() {
 	// check if the job can run
-	if !js.canRun() {
+	if !js.enabled() {
 		return
 	}
 
@@ -309,15 +299,11 @@ func (js *JobScheduler) GetInvocationByID(id string) *JobInvocation {
 //
 
 func (js *JobScheduler) setCurrent(ji *JobInvocation) {
-	js.Lock()
 	js.Current = ji
-	js.Unlock()
 }
 
 func (js *JobScheduler) setLast(ji *JobInvocation) {
-	js.Lock()
 	js.Last = ji
-	js.Unlock()
 }
 
 // safeAsyncExec runs a given job's body and recovers panics.
@@ -341,11 +327,8 @@ func (js *JobScheduler) createContextWithTimeout(timeout time.Duration) (context
 	return context.WithCancel(context.Background())
 }
 
-// canRun returns if a job can execute.
-func (js *JobScheduler) canRun() bool {
-	js.Lock()
-	defer js.Unlock()
-
+// enabled returns if a job can execute.
+func (js *JobScheduler) enabled() bool {
 	if js.Disabled {
 		return false
 	}
@@ -436,8 +419,6 @@ func (js *JobScheduler) onFailure(ctx context.Context, ji *JobInvocation) {
 }
 
 func (js *JobScheduler) addHistory(ji JobInvocation) {
-	js.Lock()
-	defer js.Unlock()
 	js.History = append(js.cullHistory(), ji)
 }
 

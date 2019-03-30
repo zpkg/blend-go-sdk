@@ -7,7 +7,7 @@ type Fileserver interface {
 	AddHeader(key, value string)
 	AddRewriteRule(match string, rewriteAction RewriteAction) error
 	SetMiddleware(middleware ...Middleware)
-	Headers() http.Header
-	RewriteRules() []RewriteRule
+	GetHeaders() http.Header
+	GetRewriteRules() []RewriteRule
 	Action(*Ctx) Result
 }

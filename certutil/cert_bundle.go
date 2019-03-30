@@ -11,8 +11,9 @@ import (
 	"github.com/blend/go-sdk/exception"
 )
 
-// NewCertBundle returns a new cert bundle from bytes.
-// A "CertBundle" is the parsed public key, private key, and individual certificates for the pair.
+// NewCertBundle returns a new cert bundle from a given key pair, which can denote the raw PEM encoded
+// contents of the public and private key portions of the cert, or paths to files.
+// The CertBundle itself is the parsed public key, private key, and individual certificates for the pair.
 func NewCertBundle(keyPair KeyPair) (*CertBundle, error) {
 	certPEM, err := keyPair.CertBytes()
 	if err != nil {

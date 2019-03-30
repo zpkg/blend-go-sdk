@@ -9,7 +9,7 @@ import (
 )
 
 // NewCertManagerWithKeyPairs returns a new cert pool from key pairs.
-func NewCertManagerWithKeyPairs(server KeyPair, cas []KeyPair, clientPairs ...KeyPair) (*CertManager, error) {
+func NewCertManagerWithKeyPairs(server KeyPair, authorities []KeyPair, clients ...KeyPair) (*CertManager, error) {
 	serverCert, err := server.CertBytes()
 	if err != nil {
 		return nil, err
@@ -23,13 +23,13 @@ func NewCertManagerWithKeyPairs(server KeyPair, cas []KeyPair, clientPairs ...Ke
 	if err != nil {
 		return nil, err
 	}
-	caCertPool, err := ExtendSystemPoolWithKeyPairCerts(cas...)
+	caCertPool, err := ExtendSystemPoolWithKeyPairCerts(authorities...)
 	if err != nil {
 		return nil, err
 	}
 
 	clientCerts := map[string][]byte{}
-	for _, client := range clientPairs {
+	for _, client := range clients {
 		certPEM, err := client.CertBytes()
 		if err != nil {
 			return nil, err
@@ -44,15 +44,12 @@ func NewCertManagerWithKeyPairs(server KeyPair, cas []KeyPair, clientPairs ...Ke
 		clientCerts[commonNames[0]] = certPEM
 	}
 
-	cm := NewCertManager().
-		WithServerCertificates(serverCertificate).
-		WithRootCAs(caCertPool)
-
+	cm := NewCertManager(OptCertManagerServerCerts(serverCertificate), OptCertManagerRootCAs(caCertPool))
 	return cm, cm.UpdateClientCerts(clientCerts)
 }
 
 // NewCertManager returns a new cert manager.
-func NewCertManager() *CertManager {
+func NewCertManager(options ...CertManagerOption) *CertManager {
 	certManager := &CertManager{
 		TLSConfig: &tls.Config{
 			ClientAuth: tls.RequireAndVerifyClientCert,
@@ -60,7 +57,29 @@ func NewCertManager() *CertManager {
 		ClientCerts: map[string][]byte{},
 	}
 	certManager.TLSConfig.GetConfigForClient = certManager.GetConfigForClient
+
+	for _, option := range options {
+		option(certManager)
+	}
 	return certManager
+}
+
+// CertManagerOption is an option for a cert manager.
+type CertManagerOption func(*CertManager)
+
+// OptCertManagerRootCAs sets a field on the cert manager.
+func OptCertManagerRootCAs(pool *x509.CertPool) CertManagerOption {
+	return func(cm *CertManager) { cm.TLSConfig.RootCAs = pool }
+}
+
+// OptCertManagerServerCerts sets a field on the cert manager.
+func OptCertManagerServerCerts(server ...tls.Certificate) CertManagerOption {
+	return func(cm *CertManager) { cm.TLSConfig.Certificates = server }
+}
+
+// OptCertManagerClientCerts sets a field on the cert manager.
+func OptCertManagerClientCerts(client *x509.CertPool) CertManagerOption {
+	return func(cm *CertManager) { cm.TLSConfig.ClientCAs = client }
 }
 
 // CertManager is a pool of client certs.
@@ -68,24 +87,6 @@ type CertManager struct {
 	sync.Mutex
 	TLSConfig   *tls.Config
 	ClientCerts map[string][]byte
-}
-
-// WithRootCAs sets the root ca pool.
-func (cm *CertManager) WithRootCAs(pool *x509.CertPool) *CertManager {
-	cm.TLSConfig.RootCAs = pool
-	return cm
-}
-
-// WithServerCertificates sets the server certificates.
-func (cm *CertManager) WithServerCertificates(certs ...tls.Certificate) *CertManager {
-	cm.TLSConfig.Certificates = certs
-	return cm
-}
-
-// WithClientCertPool sets the client ca pool.
-func (cm *CertManager) WithClientCertPool(pool *x509.CertPool) *CertManager {
-	cm.TLSConfig.ClientCAs = pool
-	return cm
 }
 
 // ClientCertUIDs returns all the client cert uids.
@@ -117,7 +118,7 @@ func (cm *CertManager) AddClientCert(clientCert []byte) error {
 		return exception.New(ErrInvalidCertPEM)
 	}
 	cm.ClientCerts[commonNames[0].Subject.CommonName] = clientCert
-	return cm.refreshClientCerts()
+	return cm.RefreshClientCerts()
 }
 
 // RemoveClientCert removes a client cert by uid.
@@ -125,7 +126,7 @@ func (cm *CertManager) RemoveClientCert(uid string) error {
 	cm.Lock()
 	defer cm.Unlock()
 	delete(cm.ClientCerts, uid)
-	return cm.refreshClientCerts()
+	return cm.RefreshClientCerts()
 }
 
 // UpdateClientCerts sets the client cert bundle fully.
@@ -133,11 +134,11 @@ func (cm *CertManager) UpdateClientCerts(clientCerts map[string][]byte) error {
 	cm.Lock()
 	defer cm.Unlock()
 	cm.ClientCerts = clientCerts
-	return cm.refreshClientCerts()
+	return cm.RefreshClientCerts()
 }
 
-// refreshClientCerts reloads the client cert bundle.
-func (cm *CertManager) refreshClientCerts() error {
+// RefreshClientCerts reloads the client cert bundle.
+func (cm *CertManager) RefreshClientCerts() error {
 	pool := x509.NewCertPool()
 	for uid, cert := range cm.ClientCerts {
 		if ok := pool.AppendCertsFromPEM(cert); !ok {

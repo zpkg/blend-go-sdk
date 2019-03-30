@@ -7,8 +7,6 @@ import (
 	"fmt"
 	"net/smtp"
 
-	"github.com/blend/go-sdk/configutil"
-
 	"github.com/blend/go-sdk/exception"
 )
 
@@ -23,12 +21,18 @@ type SMTPSender struct {
 
 // PortOrDefault returns a property or a default.
 func (s SMTPSender) PortOrDefault() string {
-	return configutil.CoalesceString(s.Port, "465")
+	if s.Port != "" {
+		return s.Port
+	}
+	return "465"
 }
 
 // LocalNameOrDefault returns a property or a default.
 func (s SMTPSender) LocalNameOrDefault() string {
-	return configutil.CoalesceString(s.LocalName, "localhost")
+	if s.LocalName != "" {
+		return s.LocalName
+	}
+	return "localhost"
 }
 
 // Send sends an email via. smtp.

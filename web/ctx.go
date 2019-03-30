@@ -37,7 +37,7 @@ type Ctx struct {
 	App             *App
 	Auth            *AuthManager
 	Views           *ViewCache
-	Log             logger.FullReceiver
+	Log             logger.Log
 	Tracer          Tracer
 	Body            []byte
 	Form            url.Values

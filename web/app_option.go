@@ -36,7 +36,7 @@ func OptPort(port int32) AppOption {
 }
 
 // OptLog sets the logger.
-func OptLog(log logger.FullReceiver) AppOption {
+func OptLog(log logger.Log) AppOption {
 	return func(a *App) { a.Log = log }
 }
 

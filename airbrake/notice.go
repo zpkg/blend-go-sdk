@@ -17,15 +17,15 @@ func NewNotice(err interface{}, req *http.Request) *gobrake.Notice {
 		var errors []gobrake.Error
 		errors = append(errors, gobrake.Error{
 			Type:      exception.ErrClass(ex),
-			Message:   ex.Message(),
-			Backtrace: frames(ex.Stack()),
+			Message:   ex.Message,
+			Backtrace: frames(ex.Stack),
 		})
 
-		for inner := exception.As(ex.Inner()); inner != nil; inner = exception.As(inner.Inner()) {
+		for inner := exception.As(ex.Inner); inner != nil; inner = exception.As(inner.Inner) {
 			errors = append(errors, gobrake.Error{
 				Type:      exception.ErrClass(inner),
 				Message:   fmt.Sprintf("%+v", inner),
-				Backtrace: frames(inner.Stack()),
+				Backtrace: frames(inner.Stack),
 			})
 		}
 		notice = &gobrake.Notice{

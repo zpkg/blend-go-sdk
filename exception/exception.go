@@ -22,28 +22,35 @@ func New(class interface{}, options ...Option) error {
 }
 
 // NewWithStackDepth creates a new exception with a given start point of the stack.
-func NewWithStackDepth(class interface{}, startDepth int, options ...Option) *Ex {
+func NewWithStackDepth(class interface{}, startDepth int, options ...Option) error {
 	if class == nil {
 		return nil
 	}
 
+	var ex *Ex
 	if typed, isTyped := class.(*Ex); isTyped {
-		return typed
+		ex = typed
 	} else if err, ok := class.(error); ok {
-		return &Ex{
+		ex = &Ex{
 			Class: err,
 			Stack: callers(startDepth),
 		}
 	} else if str, ok := class.(string); ok {
-		return &Ex{
+		ex = &Ex{
 			Class: Class(str),
 			Stack: callers(startDepth),
 		}
+	} else {
+		ex = &Ex{
+			Class: Class(fmt.Sprint(class)),
+			Stack: callers(startDepth),
+		}
 	}
-	return &Ex{
-		Class: Class(fmt.Sprint(class)),
-		Stack: callers(startDepth),
+
+	for _, option := range options {
+		option(ex)
 	}
+	return ex
 }
 
 // Option is an exception option.

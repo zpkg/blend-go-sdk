@@ -1,7 +1,7 @@
 package exception
 
 // Nest nests an arbitrary number of exceptions.
-func Nest(err ...error) *Ex {
+func Nest(err ...error) error {
 	var ex *Ex
 	var last *Ex
 	var didSet bool

@@ -46,7 +46,7 @@ func OptCtxRouteParams(r RouteParameters) CtxOption {
 }
 
 // OptCtxLog sets the context logger.
-func OptCtxLog(log logger.FullReceiver) CtxOption {
+func OptCtxLog(log logger.Log) CtxOption {
 	return func(c *Ctx) { c.Log = log }
 }
 

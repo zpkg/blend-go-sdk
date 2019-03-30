@@ -46,6 +46,7 @@ func TestNewOfNil(t *testing.T) {
 	shouldBeNil := New(nil)
 	a.Nil(shouldBeNil)
 	a.Equal(nil, shouldBeNil)
+	a.True(nil == shouldBeNil)
 }
 
 func TestNewOfTypedNil(t *testing.T) {
@@ -86,6 +87,18 @@ func TestError(t *testing.T) {
 	ex := New(Class("this is a test"))
 	message := ex.Error()
 	a.NotEmpty(message)
+}
+
+func TestErrorOptions(t *testing.T) {
+	a := assert.New(t)
+
+	ex := New(Class("this is a test"), OptMessage("foo"))
+	message := ex.Error()
+	a.NotEmpty(message)
+
+	typed := As(ex)
+	a.NotNil(typed)
+	a.Equal("foo", typed.Message)
 }
 
 func TestCallers(t *testing.T) {
@@ -160,7 +173,7 @@ func TestNest(t *testing.T) {
 
 	ex1 := As(New("this is an error"))
 	ex2 := As(New("this is another error"))
-	err := Nest(ex1, ex2)
+	err := As(Nest(ex1, ex2))
 
 	a.NotNil(err)
 	a.NotNil(err.Inner)
@@ -180,6 +193,7 @@ func TestNestNil(t *testing.T) {
 	err := Nest(ex1, ex2, ex3)
 	a.Nil(err)
 	a.Equal(nil, err)
+	a.True(nil == err)
 }
 
 func TestExceptionPrintsInner(t *testing.T) {

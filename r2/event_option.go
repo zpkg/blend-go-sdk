@@ -11,16 +11,16 @@ import (
 type EventOption func(e *Event)
 
 // OptEventFlag sets the event flag.
-func OptEventFlag(flag logger.Flag) EventOption {
+func OptEventFlag(flag string) EventOption {
 	return func(e *Event) {
-		e.SetFlag(flag)
+		logger.OptEventMetaFlag(flag)(e.EventMeta)
 	}
 }
 
 // OptEventCompleted sets the event completed time.
 func OptEventCompleted(ts time.Time) EventOption {
 	return func(e *Event) {
-		e.SetTimestamp(ts)
+		logger.OptEventMetaTimestamp(ts)(e.EventMeta)
 	}
 }
 

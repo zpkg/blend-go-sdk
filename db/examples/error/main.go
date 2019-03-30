@@ -2,19 +2,20 @@ package main
 
 import (
 	"fmt"
-
-	_ "github.com/lib/pq"
+	"log"
 
 	"github.com/blend/go-sdk/db"
 )
 
 func main() {
 
-	conn := db.MustNewFromEnv()
+	conn, err := db.New(db.OptConfigFromEnv())
+	if err != nil {
+		log.Fatal(err)
+	}
 	conn.Open()
 
-	_, err := conn.Connection().Query("select * from foo")
-
+	_, err = conn.Connection.Query("select * from foo")
 	fmt.Printf("error: %#v\n", err)
 	fmt.Printf("parsed: %#v\n", db.Error(err))
 }

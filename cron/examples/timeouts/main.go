@@ -55,8 +55,8 @@ func (j *emptyJob) Schedule() cron.Schedule {
 }
 
 func main() {
-	jm := cron.New().WithLogger(logger.All())
-	jm.LoadJob(&emptyJob{})
+	jm := cron.New(cron.OptLog(logger.All()))
+	jm.LoadJobs(&emptyJob{})
 	if err := jm.StartAsync(); err != nil {
 		logger.FatalExit(err)
 	}
@@ -66,10 +66,10 @@ func main() {
 		for _, job := range status.Jobs {
 			if runningJobs, ok := status.Running[job.Name]; ok {
 				for _, runningJob := range runningJobs {
-					jm.Logger().Infof("job: %s > %s state: running elapsed: %v", job.Name, runningJob.ID, cron.Since(runningJob.Started))
+					jm.Log.Infof("job: %s > %s state: running elapsed: %v", job.Name, runningJob.ID, cron.Since(runningJob.Started))
 				}
 			} else {
-				jm.Logger().Infof("job: %s state: stopped", job.Name)
+				jm.Log.Infof("job: %s state: stopped", job.Name)
 			}
 		}
 

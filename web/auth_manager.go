@@ -33,10 +33,10 @@ func NewAuthManager(cfg *Config) (manager *AuthManager) {
 		panic("invalid auth manager mode")
 	}
 
-	manager.CookieHTTPSOnly = cfg.CookieHTTPSOnlyOrDefault()
+	manager.CookieHTTP = cfg.CookieHTTP
 	manager.CookieName = cfg.CookieNameOrDefault()
 	manager.CookiePath = cfg.CookiePathOrDefault()
-	manager.SessionTimeoutProvider = SessionTimeoutProvider(cfg.SessionTimeoutIsAbsoluteOrDefault(), cfg.SessionTimeoutOrDefault())
+	manager.SessionTimeoutProvider = SessionTimeoutProvider(!cfg.SessionTimeoutIsRelative, cfg.SessionTimeoutOrDefault())
 	return manager
 }
 
@@ -97,10 +97,10 @@ type AuthManagerRedirectHandler func(*Ctx) *url.URL
 
 // AuthManager is a manager for sessions.
 type AuthManager struct {
-	Mode            AuthManagerMode
-	CookieName      string
-	CookiePath      string
-	CookieHTTPSOnly bool
+	Mode       AuthManagerMode
+	CookieName string
+	CookiePath string
+	CookieHTTP bool
 
 	SerializeSessionValueHandler AuthManagerSerializeSessionValueHandler
 	ParseSessionValueHandler     AuthManagerParseSessionValueHandler
@@ -292,7 +292,7 @@ func (am AuthManager) shouldUpdateSessionExpiry() bool {
 
 // InjectCookie injects a session cookie into the context.
 func (am *AuthManager) injectCookie(ctx *Ctx, name, value string, expire time.Time) {
-	ctx.WriteNewCookie(name, value, expire, am.CookiePathOrDefault(), am.CookieHTTPSOnly)
+	ctx.WriteNewCookie(name, value, expire, am.CookiePathOrDefault(), am.CookieHTTP)
 }
 
 // readParam reads a param from a given request context from either the cookies or headers.

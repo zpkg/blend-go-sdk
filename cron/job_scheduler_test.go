@@ -88,7 +88,7 @@ func TestJobSchedulerEnableDisable(t *testing.T) {
 	js.Disable()
 	assert.True(js.Disabled)
 
-	assert.False(js.canRun())
+	assert.False(js.enabled())
 
 	js.Enable()
 	assert.False(js.Disabled)

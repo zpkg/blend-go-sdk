@@ -10,7 +10,7 @@ import (
 func TestCreateClient(t *testing.T) {
 	assert := assert.New(t)
 
-	ca, err := CreateCA()
+	ca, err := CreateCertificateAuthority()
 	assert.Nil(err)
 
 	uid := uuid.V4().String()

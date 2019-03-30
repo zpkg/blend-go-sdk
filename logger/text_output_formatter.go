@@ -116,9 +116,6 @@ func (tf TextOutputFormatter) WriteFormat(ctx context.Context, output io.Writer,
 
 	if typed, ok := e.(TextWritable); ok {
 		typed.WriteText(tf, buffer)
-	} else if fieldsProvider, ok := e.(FieldsProvider); ok {
-		fields := fieldsProvider.Fields()
-		WriteFields(tf, buffer, fields)
 	} else if stringer, ok := e.(fmt.Stringer); ok {
 		buffer.WriteString(stringer.String())
 	}

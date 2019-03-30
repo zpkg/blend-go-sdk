@@ -18,7 +18,7 @@ const (
 
 // NewParameterMissingError returns a new parameter missing error.
 func NewParameterMissingError(paramName string) error {
-	return exception.New(ErrParameterMissing).WithMessagef("`%s` parameter is missing", paramName)
+	return exception.New(ErrParameterMissing, exception.OptMessagef("`%s` parameter is missing", paramName))
 }
 
 // IsErrSessionInvalid returns if an error is a session invalid error.

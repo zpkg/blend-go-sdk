@@ -27,8 +27,8 @@ func NewSession(cfg *Config) (*session.Session, error) {
 	}
 
 	awsConfig := &aws.Config{
-		Region:      aws.String(cfg.GetRegion()),
-		Credentials: credentials.NewStaticCredentials(cfg.GetAccessKeyID(), cfg.GetSecretAccessKey(), cfg.GetToken()),
+		Region:      aws.String(cfg.Region),
+		Credentials: credentials.NewStaticCredentials(cfg.AccessKeyID, cfg.SecretAccessKey, cfg.SecurityToken),
 	}
 	session, err := session.NewSession(awsConfig)
 	if err != nil {

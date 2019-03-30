@@ -10,7 +10,7 @@ import (
 // Decrypt decrypts data with the given key.
 func Decrypt(key, cipherText []byte) ([]byte, error) {
 	if len(cipherText) < aes.BlockSize {
-		return nil, exception.New("cannot decrypt string: `cipherText` is smaller than AES block size").WithMessagef("block size: %v", aes.BlockSize)
+		return nil, exception.New("cannot decrypt string: `cipherText` is smaller than AES block size", exception.OptMessagef("block size: %v", aes.BlockSize))
 	}
 
 	iv := cipherText[:aes.BlockSize]

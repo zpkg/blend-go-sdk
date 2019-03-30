@@ -9,7 +9,7 @@ import (
 )
 
 func main() {
-	ca, err := certutil.CreateCA(
+	ca, err := certutil.CreateCertificateAuthority(
 		certutil.OptSubjectOrganization("go-sdk"),
 		certutil.OptNotAfter(time.Now().UTC().AddDate(0, 0, 30)),
 	)
@@ -17,7 +17,11 @@ func main() {
 		log.Fatal(err)
 	}
 
-	server, err := certutil.CreateServer("dev.local", ca, certutil.OptSubjectOrganization("go-sdk users"))
+	server, err := certutil.CreateServer(
+		"dev.local", ca,
+		certutil.OptSubjectOrganization("go-sdk users"),
+		certutil.OptNotAfter(time.Now().UTC().AddDate(0, 0, 15)),
+	)
 	if err != nil {
 		log.Fatal(err)
 	}

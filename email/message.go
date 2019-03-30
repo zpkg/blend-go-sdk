@@ -31,34 +31,34 @@ func (m Message) IsZero() bool {
 // Validate checks that a message can be sent.
 func (m Message) Validate() error {
 	if m.From == "" {
-		return exception.New(ErrMessageFieldUnset).WithMessage("field: from")
+		return exception.New(ErrMessageFieldUnset, exception.OptMessage("field: from"))
 	}
 	if strings.ContainsAny(m.From, "\r\n") {
-		return exception.New(ErrMessageFieldNewlines).WithMessagef("field: from")
+		return exception.New(ErrMessageFieldNewlines, exception.OptMessage("field: from"))
 	}
 	if len(m.To) == 0 {
-		return exception.New(ErrMessageFieldUnset).WithMessage("field: to")
+		return exception.New(ErrMessageFieldUnset, exception.OptMessage("field: to"))
 	}
 	for index, to := range m.To {
 		if strings.ContainsAny(to, "\r\n") {
-			return exception.New(ErrMessageFieldNewlines).WithMessagef("field: to[%d]", index)
+			return exception.New(ErrMessageFieldNewlines, exception.OptMessagef("field: to[%d]", index))
 		}
 	}
 	for index, cc := range m.CC {
 		if strings.ContainsAny(cc, "\r\n") {
-			return exception.New(ErrMessageFieldNewlines).WithMessagef("field: cc[%d]", index)
+			return exception.New(ErrMessageFieldNewlines, exception.OptMessagef("field: cc[%d]", index))
 		}
 	}
 	for index, bcc := range m.BCC {
 		if strings.ContainsAny(bcc, "\r\n") {
-			return exception.New(ErrMessageFieldNewlines).WithMessagef("field: bcc[%d]", index)
+			return exception.New(ErrMessageFieldNewlines, exception.OptMessagef("field: bcc[%d]", index))
 		}
 	}
 	if strings.ContainsAny(m.Subject, "\r\n") {
-		return exception.New(ErrMessageFieldNewlines).WithMessagef("field: subject")
+		return exception.New(ErrMessageFieldNewlines, exception.OptMessage("field: subject"))
 	}
 	if len(m.TextBody) == 0 && len(m.HTMLBody) == 0 {
-		return exception.New(ErrMessageFieldUnset).WithMessage("fields: textBody and htmlBody")
+		return exception.New(ErrMessageFieldUnset, exception.OptMessage("fields: textBody and htmlBody"))
 	}
 	return nil
 }

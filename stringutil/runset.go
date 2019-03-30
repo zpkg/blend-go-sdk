@@ -74,7 +74,7 @@ func (rs Runeset) Combine(other ...Runeset) Runeset {
 func (rs Runeset) Random(length int) string {
 	runes := make([]rune, length)
 	for index := range runes {
-		runes[index] = rs[provider.Intn(len(rs))]
+		runes[index] = rs[provider.Intn(len(rs)-1)]
 	}
 	return string(runes)
 }

@@ -6,6 +6,7 @@ import (
 	"sync"
 	"time"
 
+	"github.com/blend/go-sdk/bufferutil"
 	"github.com/blend/go-sdk/exception"
 	"github.com/blend/go-sdk/logger"
 )
@@ -62,7 +63,7 @@ type Connection struct {
 	StatementInterceptor StatementInterceptor
 	Connection           *sql.DB
 	Config               *Config
-	BufferPool           *BufferPool
+	BufferPool           *bufferutil.Pool
 	Log                  logger.Log
 	PlanCache            *PlanCache
 }
@@ -90,7 +91,7 @@ func (dbc *Connection) Open() error {
 		return Error(ErrConfigUnset)
 	}
 	if dbc.BufferPool == nil {
-		dbc.BufferPool = NewBufferPool(dbc.Config.GetBufferPoolSize())
+		dbc.BufferPool = bufferutil.NewPool(dbc.Config.GetBufferPoolSize())
 	}
 	if dbc.PlanCache == nil {
 		dbc.PlanCache = NewPlanCache()

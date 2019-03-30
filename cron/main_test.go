@@ -29,7 +29,10 @@ var (
 type runAt time.Time
 
 func (ra runAt) Next(after time.Time) time.Time {
-	return time.Time(ra)
+	if after.Before(time.Time(ra)) {
+		return time.Time(ra)
+	}
+	return time.Time{}
 }
 
 func (raj *runAtJob) Name() string {

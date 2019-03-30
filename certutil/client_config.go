@@ -7,8 +7,9 @@ import (
 	"github.com/blend/go-sdk/exception"
 )
 
-// NewClientConfig returns a new client config.
-func NewClientConfig(clientCert KeyPair, certificateAuthorities []KeyPair) (*tls.Config, error) {
+// NewClientTLSConfig returns a new client tls config.
+// This is useful for making mutual tls calls to servers that require it.
+func NewClientTLSConfig(clientCert KeyPair, certificateAuthorities []KeyPair) (*tls.Config, error) {
 	clientCertPEM, err := clientCert.CertBytes()
 	if err != nil {
 		return nil, exception.New(err)

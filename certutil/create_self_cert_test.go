@@ -14,6 +14,7 @@ func TestCreateSelfServerCert(t *testing.T) {
 	cert, err := CreateSelfServerCert("foo.bar.com", OptSubjectOrganization("the goods"), OptNotAfter(notAfter))
 	assert.Nil(err)
 	assert.NotNil(cert)
+	assert.Equal([]string{"the goods"}, cert.Certificates[0].Subject.Organization)
 	assert.Equal("foo.bar.com", cert.Certificates[0].Subject.CommonName)
 	assert.Equal(notAfter, cert.Certificates[0].NotAfter)
 }

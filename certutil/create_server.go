@@ -2,51 +2,29 @@ package certutil
 
 import (
 	"crypto/rand"
-	"crypto/rsa"
 	"crypto/x509"
-	"crypto/x509/pkix"
-	"math/big"
-	"time"
 
 	"github.com/blend/go-sdk/exception"
 )
 
 // CreateServer creates a ca cert bundle.
 func CreateServer(commonName string, ca *CertBundle, options ...CertOption) (*CertBundle, error) {
-	if ca == nil {
-		return nil, exception.New("must provide a ca cert bundle")
+	if ca == nil || ca.PrivateKey == nil || len(ca.Certificates) == 0 {
+		return nil, exception.New("provided certificate authority bundle is invalid")
+	}
+
+	createOptions := DefaultOptionsServer
+	createOptions.Subject.CommonName = commonName
+	createOptions.DNSNames = []string{commonName}
+
+	if err := ResolveCertOptions(&createOptions, options...); err != nil {
+		return nil, nil
 	}
 
 	var output CertBundle
-	var err error
-	output.PrivateKey, err = rsa.GenerateKey(rand.Reader, 2048)
-	if err != nil {
-		return nil, exception.New(err)
-	}
-	output.PublicKey = &output.PrivateKey.PublicKey
-
-	serialNumberLimit := new(big.Int).Lsh(big.NewInt(1), 128)
-	var serialNumber *big.Int
-	serialNumber, err = rand.Int(rand.Reader, serialNumberLimit)
-	if err != nil {
-		return nil, exception.New(err)
-	}
-	csr := x509.Certificate{
-		SerialNumber: serialNumber,
-		Subject: pkix.Name{
-			CommonName: commonName,
-		},
-		NotBefore:   time.Now().UTC(),
-		NotAfter:    time.Now().UTC().AddDate(DefaultServerNotAfterYears, 0, 0),
-		ExtKeyUsage: []x509.ExtKeyUsage{x509.ExtKeyUsageServerAuth},
-		KeyUsage:    x509.KeyUsageDigitalSignature,
-	}
-	csr.DNSNames = []string{commonName}
-	for _, option := range options {
-		option(&csr)
-	}
-
-	der, err := x509.CreateCertificate(rand.Reader, &csr, &ca.Certificates[0], output.PublicKey, ca.PrivateKey)
+	output.PrivateKey = createOptions.PrivateKey
+	output.PublicKey = &createOptions.PrivateKey.PublicKey
+	der, err := x509.CreateCertificate(rand.Reader, &createOptions.Certificate, &ca.Certificates[0], output.PublicKey, ca.PrivateKey)
 	if err != nil {
 		return nil, exception.New(err)
 	}

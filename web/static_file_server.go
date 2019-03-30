@@ -11,41 +11,30 @@ import (
 // NewStaticFileServer returns a new static file cache.
 func NewStaticFileServer(searchPaths ...http.FileSystem) *StaticFileServer {
 	return &StaticFileServer{
-		searchPaths: searchPaths,
+		SearchPaths: searchPaths,
 	}
 }
 
 // StaticFileServer is a cache of static files.
 type StaticFileServer struct {
-	log          logger.FullReceiver
-	searchPaths  []http.FileSystem
-	rewriteRules []RewriteRule
-	middleware   Action
-	headers      http.Header
+	Log          logger.Log
+	SearchPaths  []http.FileSystem
+	RewriteRules []RewriteRule
+	Middleware   Action
+	Headers      http.Header
 }
 
-// Log returns a logger reference.
-func (sc *StaticFileServer) Log() logger.FullReceiver {
-	return sc.log
-}
-
-// WithLogger sets the logger reference for the static file cache.
-func (sc *StaticFileServer) WithLogger(log logger.FullReceiver) *StaticFileServer {
-	sc.log = log
-	return sc
+// GetHeaders implements part of the fileserver spec.
+func (sc *StaticFileServer) GetHeaders() http.Header {
+	return sc.Headers
 }
 
 // AddHeader adds a header to the static cache results.
 func (sc *StaticFileServer) AddHeader(key, value string) {
-	if sc.headers == nil {
-		sc.headers = http.Header{}
+	if sc.Headers == nil {
+		sc.Headers = http.Header{}
 	}
-	sc.headers[key] = append(sc.headers[key], value)
-}
-
-// Headers returns the headers for the static server.
-func (sc *StaticFileServer) Headers() http.Header {
-	return sc.headers
+	sc.Headers[key] = append(sc.Headers[key], value)
 }
 
 // AddRewriteRule adds a static re-write rule.
@@ -54,7 +43,7 @@ func (sc *StaticFileServer) AddRewriteRule(match string, action RewriteAction) e
 	if err != nil {
 		return err
 	}
-	sc.rewriteRules = append(sc.rewriteRules, RewriteRule{
+	sc.RewriteRules = append(sc.RewriteRules, RewriteRule{
 		MatchExpression: match,
 		expr:            expr,
 		Action:          action,
@@ -62,21 +51,11 @@ func (sc *StaticFileServer) AddRewriteRule(match string, action RewriteAction) e
 	return nil
 }
 
-// SetMiddleware sets the middlewares.
-func (sc *StaticFileServer) SetMiddleware(middlewares ...Middleware) {
-	sc.middleware = NestMiddleware(sc.ServeFile, middlewares...)
-}
-
-// RewriteRules returns the rewrite rules
-func (sc *StaticFileServer) RewriteRules() []RewriteRule {
-	return sc.rewriteRules
-}
-
 // Action is the entrypoint for the static server.
 // It will run middleware if specified before serving the file.
 func (sc *StaticFileServer) Action(r *Ctx) Result {
-	if sc.middleware != nil {
-		return sc.middleware(r)
+	if sc.Middleware != nil {
+		return sc.Middleware(r)
 	}
 	return sc.ServeFile(r)
 }

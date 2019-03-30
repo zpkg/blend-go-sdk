@@ -1,6 +1,7 @@
 package r2
 
 import (
+	"encoding/json"
 	"fmt"
 	"io"
 	"net/http"
@@ -44,9 +45,9 @@ type Event struct {
 }
 
 // WriteText writes the event to a text writer.
-func (e *Event) WriteText(tf logger.Colorizer, wr io.Writer) {
+func (e *Event) WriteText(tf logger.TextFormatter, wr io.Writer) {
 	if e.Request != nil && e.Response != nil {
-		io.WriteString(wr, fmt.Sprintf("%s %s %s (%v)", e.Request.Method, e.Request.URL.String(), logger.ColorizeStatusCode(tf, e.Response.StatusCode), e.Timestamp().Sub(e.Started)))
+		io.WriteString(wr, fmt.Sprintf("%s %s %s (%v)", e.Request.Method, e.Request.URL.String(), logger.ColorizeStatusCodeWithFormatter(tf, e.Response.StatusCode), e.Timestamp().Sub(e.Started)))
 	} else if e.Request != nil {
 		io.WriteString(wr, fmt.Sprintf("%s %s", e.Request.Method, e.Request.URL.String()))
 	}
@@ -56,11 +57,11 @@ func (e *Event) WriteText(tf logger.Colorizer, wr io.Writer) {
 	}
 }
 
-// Fields implements logger.FieldsProvider.
-func (e *Event) Fields() logger.Fields {
-	output := make(logger.Fields)
+// MarshalJSON implements json.Marshaler.
+func (e *Event) MarshalJSON() ([]byte, error) {
+	output := make(map[string]interface{})
 	if e.Request != nil {
-		output["req"] = logger.Fields{
+		output["req"] = map[string]interface{}{
 			"startTime": e.Started,
 			"method":    e.Request.Method,
 			"url":       e.Request.URL.String(),
@@ -68,7 +69,7 @@ func (e *Event) Fields() logger.Fields {
 		}
 	}
 	if e.Response != nil {
-		output["res"] = logger.Fields{
+		output["res"] = map[string]interface{}{
 			"completeTime":    e.Timestamp(),
 			"statusCode":      e.Response.StatusCode,
 			"contentLength":   e.Response.ContentLength,
@@ -82,7 +83,7 @@ func (e *Event) Fields() logger.Fields {
 		output["body"] = string(e.Body)
 	}
 
-	return output
+	return json.Marshal(logger.MergeDecomposed(e.EventMeta.Decompose(), output))
 }
 
 func tryHeader(headers http.Header, keys ...string) string {

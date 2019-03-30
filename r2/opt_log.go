@@ -21,7 +21,7 @@ func OptLogRequest(log logger.Log) Option {
 	return OptOnRequest(func(req *http.Request) error {
 		event := NewEvent(Flag,
 			OptEventRequest(req))
-		log.Trigger(event)
+		log.Trigger(req.Context(), event)
 		return nil
 	})
 }
@@ -37,7 +37,7 @@ func OptLogResponse(log logger.Log) Option {
 			OptEventRequest(req),
 			OptEventResponse(res))
 
-		log.Trigger(event)
+		log.Trigger(req.Context(), event)
 		return nil
 	})
 }
@@ -66,7 +66,7 @@ func OptLogResponseWithBody(log logger.Log) Option {
 			OptEventResponse(res),
 			OptEventBody(buffer.Bytes()))
 
-		log.Trigger(event)
+		log.Trigger(req.Context(), event)
 		return nil
 	})
 }

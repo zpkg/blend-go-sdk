@@ -36,7 +36,7 @@ func New(options ...AppOption) *App {
 type App struct {
 	*async.Latch
 	Config                  *Config
-	Log                     logger.FullReceiver
+	Log                     logger.Log
 	Auth                    *AuthManager
 	Views                   *ViewCache
 	TLSConfig               *tls.Config
@@ -96,10 +96,10 @@ func (a *App) Start() (err error) {
 		serverProtocol = "https (tls)"
 	}
 
-	logger.MaybeSyncInfof(a.Log, "%s server started, listening on %s", serverProtocol, a.Config.BindAddrOrDefault())
+	logger.MaybeInfof(a.Log, "%s server started, listening on %s", serverProtocol, a.Config.BindAddrOrDefault())
 
 	if a.Server.TLSConfig != nil && a.Server.TLSConfig.ClientCAs != nil {
-		logger.MaybeSyncInfof(a.Log, "%s using client cert pool with (%d) client certs", serverProtocol, len(a.Server.TLSConfig.ClientCAs.Subjects()))
+		logger.MaybeInfof(a.Log, "%s using client cert pool with (%d) client certs", serverProtocol, len(a.Server.TLSConfig.ClientCAs.Subjects()))
 	}
 
 	var listener net.Listener
@@ -126,7 +126,7 @@ func (a *App) Start() (err error) {
 	if shutdownErr != nil && shutdownErr != http.ErrServerClosed {
 		err = exception.New(shutdownErr)
 	}
-	logger.MaybeSyncInfof(a.Log, "server exited")
+	logger.MaybeInfof(a.Log, "server exited")
 	a.Stopped()
 	return
 }
@@ -143,12 +143,12 @@ func (a *App) Stop() error {
 		ctx, cancel = context.WithTimeout(ctx, a.Config.ShutdownGracePeriodOrDefault())
 		defer cancel()
 	}
-	logger.MaybeSyncInfof(a.Log, "server shutting down")
+	logger.MaybeInfof(a.Log, "server shutting down")
 	a.Server.SetKeepAlivesEnabled(false)
 	if err := a.Server.Shutdown(ctx); err != nil {
 		return exception.New(err)
 	}
-	logger.MaybeSyncInfof(a.Log, "server shutdown complete")
+	logger.MaybeInfof(a.Log, "server shutdown complete")
 	return nil
 }
 
@@ -170,7 +170,7 @@ func (a *App) SetStaticRewriteRule(route, match string, action RewriteAction) er
 	if static, hasRoute := a.Statics[mountedRoute]; hasRoute {
 		return static.AddRewriteRule(match, action)
 	}
-	return exception.New("no static fileserver mounted at route").WithMessagef("route: %s", route)
+	return exception.New("no static fileserver mounted at route", exception.OptMessagef("route: %s", route))
 }
 
 // SetStaticHeader adds a header for the given static path.
@@ -181,7 +181,7 @@ func (a *App) SetStaticHeader(route, key, value string) error {
 		static.AddHeader(key, value)
 		return nil
 	}
-	return exception.New("no static fileserver mounted at route").WithMessagef("route: %s", mountedRoute)
+	return exception.New("no static fileserver mounted at route", exception.OptMessagef("route: %s", mountedRoute))
 }
 
 // SetStaticMiddleware adds static middleware for a given route.
@@ -191,7 +191,7 @@ func (a *App) SetStaticMiddleware(route string, middlewares ...Middleware) error
 		static.SetMiddleware(middlewares...)
 		return nil
 	}
-	return exception.New("no static fileserver mounted at route").WithMessagef("route: %s", mountedRoute)
+	return exception.New("no static fileserver mounted at route", exception.OptMessagef("route: %s", mountedRoute))
 }
 
 // ServeStatic serves files from the given file system root(s)..
@@ -203,7 +203,8 @@ func (a *App) ServeStatic(route string, searchPaths ...string) {
 	for _, searchPath := range searchPaths {
 		searchPathFS = append(searchPathFS, http.Dir(searchPath))
 	}
-	sfs := NewStaticFileServer(searchPathFS...).WithLogger(a.Log)
+	sfs := NewStaticFileServer(searchPathFS...)
+	sfs.Log = a.Log
 	mountedRoute := a.createStaticMountRoute(route)
 	a.Statics[mountedRoute] = sfs
 	a.Handle("GET", mountedRoute, a.RenderAction(a.Middleware(sfs.Action)))
@@ -216,7 +217,8 @@ func (a *App) ServeStaticCached(route string, searchPaths ...string) {
 	for _, searchPath := range searchPaths {
 		searchPathFS = append(searchPathFS, http.Dir(searchPath))
 	}
-	sfs := NewCachedStaticFileServer(searchPathFS...).WithLogger(a.Log)
+	sfs := NewCachedStaticFileServer(searchPathFS...)
+	sfs.Log = a.Log
 	mountedRoute := a.createStaticMountRoute(route)
 	a.Statics[mountedRoute] = sfs
 	a.Handle("GET", mountedRoute, a.RenderAction(a.Middleware(sfs.Action)))
@@ -315,7 +317,7 @@ func (a *App) Lookup(method, path string) (route *Route, params RouteParameters,
 
 // ServeHTTP makes the router implement the http.Handler interface.
 func (a *App) ServeHTTP(w http.ResponseWriter, req *http.Request) {
-	if a.Config.RecoverPanicsOrDefault() {
+	if !a.Config.DisablePanicRecovery {
 		defer a.recover(w, req)
 	}
 
@@ -330,7 +332,7 @@ func (a *App) ServeHTTP(w http.ResponseWriter, req *http.Request) {
 				code = http.StatusTemporaryRedirect // 307
 			}
 
-			if tsr && !a.Config.SkipRedirectTrailingSlashOrDefault() {
+			if tsr && !a.Config.SkipRedirectTrailingSlash {
 				if len(path) > 1 && path[len(path)-1] == '/' {
 					req.URL.Path = path[:len(path)-1]
 				} else {
@@ -344,7 +346,7 @@ func (a *App) ServeHTTP(w http.ResponseWriter, req *http.Request) {
 
 	if req.Method == MethodOptions {
 		// Handle OPTIONS requests
-		if a.Config.HandleOptionsOrDefault() {
+		if a.Config.HandleOptions {
 			if allow := a.allowed(path, req.Method); len(allow) > 0 {
 				w.Header().Set(HeaderAllow, allow)
 				return
@@ -352,7 +354,7 @@ func (a *App) ServeHTTP(w http.ResponseWriter, req *http.Request) {
 		}
 	} else {
 		// Handle 405
-		if a.Config.HandleMethodNotAllowedOrDefault() {
+		if a.Config.HandleMethodNotAllowed {
 			if allow := a.allowed(path, req.Method); len(allow) > 0 {
 				w.Header().Set(HeaderAllow, allow)
 				if a.MethodNotAllowedHandler != nil {
@@ -395,7 +397,7 @@ func (a *App) RenderAction(action Action) Handler {
 			tf = a.Tracer.Start(ctx)
 		}
 		if a.Log != nil {
-			a.Log.Trigger(a.httpRequestEvent(ctx))
+			a.Log.Trigger(r.Context(), a.httpRequestEvent(ctx))
 		}
 
 		if len(a.DefaultHeaders) > 0 {
@@ -434,7 +436,7 @@ func (a *App) RenderAction(action Action) Handler {
 			a.logFatal(err, r)
 		}
 		if a.Log != nil {
-			a.Log.Trigger(a.httpResponseEvent(ctx))
+			a.Log.Trigger(r.Context(), a.httpResponseEvent(ctx))
 		}
 		if tf != nil {
 			tf.Finish(ctx, err)
@@ -522,27 +524,26 @@ func (a *App) allowed(path, reqMethod string) (allow string) {
 
 func (a *App) httpRequestEvent(ctx *Ctx) *logger.HTTPRequestEvent {
 	event := logger.NewHTTPRequestEvent(ctx.Request)
-	event.SetEntity(ctx.ID)
 	if ctx.Route != nil {
-		event = event.WithRoute(ctx.Route.String())
+		event.Route = ctx.Route.String()
 	}
 	return event
 }
 
 func (a *App) httpResponseEvent(ctx *Ctx) *logger.HTTPResponseEvent {
-	event := logger.NewHTTPResponseEvent(ctx.Request).
-		WithStatusCode(ctx.Response.StatusCode()).
-		WithElapsed(ctx.Elapsed()).
-		WithContentLength(ctx.Response.ContentLength())
-	event.SetEntity(ctx.ID)
+	event := logger.NewHTTPResponseEvent(ctx.Request,
+		logger.OptHTTPResponseStatusCode(ctx.Response.StatusCode()),
+		logger.OptHTTPResponseContentLength(ctx.Response.ContentLength()),
+		logger.OptHTTPResponseElapsed(ctx.Elapsed()),
+	)
 
 	if ctx.Route != nil {
-		event = event.WithRoute(ctx.Route.String())
+		event.Route = ctx.Route.String()
 	}
 
 	if ctx.Response.Header() != nil {
-		event = event.WithContentType(ctx.Response.Header().Get(HeaderContentType))
-		event = event.WithContentEncoding(ctx.Response.Header().Get(HeaderContentEncoding))
+		event.ContentType = ctx.Response.Header().Get(HeaderContentType)
+		event.ContentEncoding = ctx.Response.Header().Get(HeaderContentEncoding)
 	}
 	return event
 }
@@ -573,6 +574,6 @@ func (a *App) logFatal(err error, req *http.Request) {
 		return
 	}
 	if err != nil {
-		a.Log.Trigger(logger.NewErrorEventWithState(logger.Fatal, err, req))
+		a.Log.Trigger(req.Context(), logger.NewErrorEvent(logger.Fatal, err, logger.OptErrorEventState(req)))
 	}
 }

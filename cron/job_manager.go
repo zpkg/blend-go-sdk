@@ -43,13 +43,17 @@ type JobManager struct {
 func (jm *JobManager) LoadJobs(jobs ...Job) error {
 	jm.Lock()
 	defer jm.Unlock()
+
 	for _, job := range jobs {
 		jobName := job.Name()
 		if _, hasJob := jm.Jobs[jobName]; hasJob {
 			return exception.New(ErrJobAlreadyLoaded, exception.OptMessagef("job: %s", job.Name()))
 		}
-
-		jm.Jobs[jobName] = NewJobScheduler(job, OptJobSchedulerTracer(jm.Tracer), OptJobSchedulerLog(jm.Log), OptJobSchedulerHistoryConfig(jm.HistoryConfig))
+		jm.Jobs[jobName] = NewJobScheduler(job,
+			OptJobSchedulerTracer(jm.Tracer),
+			OptJobSchedulerLog(jm.Log),
+			OptJobSchedulerHistoryConfig(jm.HistoryConfig),
+		)
 	}
 	return nil
 }
@@ -148,6 +152,7 @@ func (jm *JobManager) RunJobs(jobNames ...string) error {
 func (jm *JobManager) RunJob(jobName string) error {
 	jm.Lock()
 	defer jm.Unlock()
+
 	job, ok := jm.Jobs[jobName]
 	if !ok {
 		return exception.New(ErrJobNotLoaded, exception.OptMessagef("job: %s", jobName))
@@ -220,14 +225,12 @@ func (jm *JobManager) StartAsync() error {
 		return fmt.Errorf("already started")
 	}
 	jm.Starting()
-	var err error
 	for _, job := range jm.Jobs {
 		job.Log = jm.Log
 		job.Tracer = jm.Tracer
 		job.HistoryConfig = jm.HistoryConfig
-		if err = job.StartAsync(); err != nil {
-			return err
-		}
+		go job.Start()
+		<-job.NotifyStarted()
 	}
 	jm.Started()
 	return nil

@@ -2,31 +2,12 @@ package aws
 
 import (
 	"github.com/blend/go-sdk/configutil"
-	"github.com/blend/go-sdk/env"
 )
 
 const (
 	// DefaultAWSRegion is a default.
 	DefaultAWSRegion = "us-east-1"
 )
-
-// MustNewConfigFromEnv returns a new config from the environment and panics on error.
-func MustNewConfigFromEnv() *Config {
-	cfg, err := NewConfigFromEnv()
-	if err != nil {
-		panic(err)
-	}
-	return cfg
-}
-
-// NewConfigFromEnv returns a new aws config from the environment.
-func NewConfigFromEnv() (*Config, error) {
-	var config Config
-	if err := env.Env().ReadInto(&config); err != nil {
-		return nil, err
-	}
-	return &config, nil
-}
 
 // Config is a config object.
 type Config struct {
@@ -38,30 +19,15 @@ type Config struct {
 
 // Resolve adds extra resolution steps for the config.
 func (a *Config) Resolve() error {
-	return env.Env().ReadInto(a)
+	return configutil.AnyError(
+		configutil.SetString(&a.Region, configutil.String(a.Region), configutil.Env("AWS_REGION"), configutil.String(DefaultAWSRegion)),
+		configutil.SetString(&a.AccessKeyID, configutil.String(a.AccessKeyID), configutil.Env("AWS_ACCESS_KEY_ID")),
+		configutil.SetString(&a.SecretAccessKey, configutil.String(a.SecretAccessKey), configutil.Env("AWS_SECRET_ACCESS_KEY")),
+		configutil.SetString(&a.SecurityToken, configutil.String(a.SecurityToken), configutil.Env("AWS_SECURITY_TOKEN")),
+	)
 }
 
 // IsZero returns if the config is unset or not.
 func (a Config) IsZero() bool {
 	return len(a.AccessKeyID) == 0 || len(a.SecretAccessKey) == 0
-}
-
-// GetRegion gets a property or a default.
-func (a Config) GetRegion(defaults ...string) string {
-	return configutil.CoalesceString(a.Region, DefaultAWSRegion, defaults...)
-}
-
-// GetAccessKeyID gets a property or a default.
-func (a Config) GetAccessKeyID(defaults ...string) string {
-	return configutil.CoalesceString(a.AccessKeyID, "", defaults...)
-}
-
-// GetSecretAccessKey gets a property or a default.
-func (a Config) GetSecretAccessKey(defaults ...string) string {
-	return configutil.CoalesceString(a.SecretAccessKey, "", defaults...)
-}
-
-// GetToken returns a secret access token or a default.
-func (a Config) GetToken(defaults ...string) string {
-	return configutil.CoalesceString(a.SecurityToken, "", defaults...)
 }

@@ -22,10 +22,10 @@ func ArgsTrailer(args ...string) ([]string, error) {
 		}
 	}
 	if foundIndex == 0 {
-		return nil, exception.New(ErrFlagsNoTrailer).WithMessagef("args: %v", strings.Join(args, " "))
+		return nil, exception.New(ErrFlagsNoTrailer, exception.OptMessagef("args: %v", strings.Join(args, " ")))
 	}
 	if foundIndex == len(args)-1 {
-		return nil, exception.New(ErrFlagsNoTrailer).WithMessagef("cannot be the last flag argument")
+		return nil, exception.New(ErrFlagsNoTrailer, exception.OptMessage("cannot be the last flag argument"))
 	}
 	return args[foundIndex+1:], nil
 }
