@@ -153,6 +153,10 @@ func (sc *StaticFileServer) ResolveCachedFile(filepath string) (*CachedStaticFil
 		Size:     len(contents),
 	}
 
+	if sc.Cache == nil {
+		sc.Cache = make(map[string]*CachedStaticFile)
+	}
+
 	sc.Cache[filepath] = file
 	return file, nil
 }

@@ -3,6 +3,8 @@ package logger
 import (
 	"io"
 	"os"
+
+	"github.com/blend/go-sdk/env"
 )
 
 // Option is a logger option.
@@ -11,6 +13,20 @@ type Option func(*Logger)
 // OptConfig sets the logger based on a config.
 func OptConfig(cfg *Config) Option {
 	return func(l *Logger) {
+		l.Output = NewInterlockedWriter(os.Stdout)
+		l.Formatter = cfg.Formatter()
+		l.Flags = NewFlags(cfg.FlagsOrDefault()...)
+	}
+}
+
+// OptMustConfigFromEnv sets the logger based on a config read from the environment.
+// It will panic if there is an erro.
+func OptMustConfigFromEnv() Option {
+	return func(l *Logger) {
+		cfg := &Config{}
+		if err := env.Env().ReadInto(cfg); err != nil {
+			panic(err)
+		}
 		l.Output = NewInterlockedWriter(os.Stdout)
 		l.Formatter = cfg.Formatter()
 		l.Flags = NewFlags(cfg.FlagsOrDefault()...)

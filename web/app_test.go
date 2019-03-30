@@ -126,16 +126,16 @@ func TestAppCreateStaticMountedRoute(t *testing.T) {
 	assert := assert.New(t)
 	app := New()
 
-	assert.Equal("/testPath/*filepath", app.createStaticMountRoute("/testPath/*filepath"))
-	assert.Equal("/testPath/*filepath", app.createStaticMountRoute("/testPath/"))
-	assert.Equal("/testPath/*filepath", app.createStaticMountRoute("/testPath"))
+	assert.Equal("/testPath/*filepath", app.formatStaticMountRoute("/testPath/*filepath"))
+	assert.Equal("/testPath/*filepath", app.formatStaticMountRoute("/testPath/"))
+	assert.Equal("/testPath/*filepath", app.formatStaticMountRoute("/testPath"))
 }
 
 func TestAppStaticRewrite(t *testing.T) {
 	assert := assert.New(t)
 	app := New()
 
-	app.ServeStatic("/testPath", "_static")
+	app.ServeStatic("/testPath", []string{"_static"})
 	assert.NotEmpty(app.Statics)
 	assert.NotNil(app.Statics["/testPath/*filepath"])
 	assert.Nil(app.SetStaticRewriteRule("/testPath", "(.*)", func(path string, pieces ...string) string {
@@ -148,7 +148,7 @@ func TestAppStaticRewrite(t *testing.T) {
 func TestAppStaticRewriteBadExp(t *testing.T) {
 	assert := assert.New(t)
 	app := New()
-	app.ServeStatic("/testPath", "_static")
+	app.ServeStatic("/testPath", []string{"_static"})
 	assert.NotEmpty(app.Statics)
 	assert.NotNil(app.Statics["/testPath/*filepath"])
 
@@ -163,7 +163,7 @@ func TestAppStaticRewriteBadExp(t *testing.T) {
 func TestAppStaticHeader(t *testing.T) {
 	assert := assert.New(t)
 	app := New()
-	app.ServeStatic("/testPath", "_static")
+	app.ServeStatic("/testPath", []string{"_static"})
 	assert.NotEmpty(app.Statics)
 	assert.NotNil(app.Statics["/testPath/*filepath"])
 	assert.Nil(app.SetStaticHeader("/testPath/*filepath", "cache-control", "haha what is caching."))
@@ -198,7 +198,7 @@ func TestAppStatic(t *testing.T) {
 	assert := assert.New(t)
 
 	app := New()
-	app.ServeStatic("/static/*filepath", "testdata")
+	app.ServeStatic("/static/*filepath", []string{"testdata"})
 
 	index, err := MockBytes(MockGet(app, "/static/test_file.html"))
 	assert.Nil(err)

@@ -13,8 +13,8 @@ func main() {
 	app := web.New(web.OptLog(log))
 	csf := web.NewStaticFileServer(http.Dir("."))
 
-	app.ServeStatic("/static/*filepath", "_static")
-	app.ServeStaticCached("/static_cached/*filepath", "_static")
+	app.ServeStatic("/static/*filepath", []string{"_static"})
+	app.ServeStaticCached("/static_cached/*filepath", []string{"_static"})
 	app.GET("/", func(r *web.Ctx) web.Result {
 		return web.Static("index.html")
 	})

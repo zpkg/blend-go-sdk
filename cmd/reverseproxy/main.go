@@ -31,7 +31,7 @@ const (
 )
 
 func main() {
-	log := logger.MustNewFromEnv().WithEnabled(logger.HTTPRequest)
+	log := logger.New(logger.OptMustConfigFromEnv(), logger.OptEnabled(logger.HTTPRequest))
 
 	var upstreams Upstreams
 	flag.Var(&upstreams, "upstream", "An upstream server to proxy traffic to")
@@ -59,39 +59,43 @@ func main() {
 	}
 
 	if len(logEvents) > 0 {
-		eventSet := logger.NewFlagSetFromValues(strings.Split(logEvents, ",")...)
-		log.Flags().CoalesceWith(eventSet)
+		extraFlags := logger.NewFlags(strings.Split(logEvents, ",")...)
+		log.Flags.MergeWith(extraFlags)
 	}
 
-	reverseProxy := reverseproxy.New().WithLogger(log)
+	reverseProxy := reverseproxy.New()
+	reverseProxy.Log = log
 
 	for _, upstream := range upstreams {
-		log.SyncInfof("upstream: %s", upstream)
+		log.Infof("upstream: %s", upstream)
 		target, err := url.Parse(upstream)
 		if err != nil {
-			log.SyncFatalExit(err)
+			log.Fatal(err)
+			os.Exit(1)
 		}
 
-		proxyUpstream := reverseproxy.NewUpstream(target).
-			WithLogger(log)
-
+		proxyUpstream := reverseproxy.NewUpstream(target)
+		proxyUpstream.Log = log
 		reverseProxy.WithUpstream(proxyUpstream)
 	}
 
 	for _, header := range upstreamHeaders {
 		pieces := strings.SplitN(header, "=", 2)
 		if len(pieces) < 2 {
-			log.SyncFatalExit(fmt.Errorf("invalid header; must be in the form key=value"))
+			log.Fatal(fmt.Errorf("invalid header; must be in the form key=value"))
+			os.Exit(1)
 		}
-		log.SyncInfof("proxy using upstream header: %s=%s", pieces[0], pieces[1])
+		log.Infof("proxy using upstream header: %s=%s", pieces[0], pieces[1])
 		reverseProxy.WithUpstreamHeader(pieces[0], pieces[1])
 	}
 
 	if len(tlsCert) > 0 && len(tlsKey) == 0 {
-		log.SyncFatalExit(fmt.Errorf("`--tls-key` is unset, cannot continue"))
+		log.Fatal(fmt.Errorf("`--tls-key` is unset, cannot continue"))
+		os.Exit(1)
 	}
 	if len(tlsCert) == 0 && len(tlsKey) > 0 {
-		log.SyncFatalExit(fmt.Errorf("`--tls-key` is unset, cannot continue"))
+		log.Fatal(fmt.Errorf("`--tls-key` is unset, cannot continue"))
+		os.Exit(1)
 	}
 
 	server := &http.Server{}
@@ -101,15 +105,17 @@ func main() {
 
 	listener, err := net.Listen("tcp", bindAddr)
 	if err != nil {
-		log.SyncFatalExit(err)
+		log.Fatal(err)
+		os.Exit(1)
 	}
 
 	if len(tlsCert) > 0 && len(tlsKey) > 0 {
-		log.SyncInfof("proxy using tls cert: %s", tlsCert)
-		log.SyncInfof("proxy using tls key: %s", tlsKey)
+		log.Infof("proxy using tls cert: %s", tlsCert)
+		log.Infof("proxy using tls key: %s", tlsKey)
 		cert, err := tls.LoadX509KeyPair(tlsCert, tlsKey)
 		if err != nil {
-			log.SyncFatalExit(err)
+			log.Fatal(err)
+			os.Exit(1)
 		}
 		gs.Listener = tls.NewListener(listener, &tls.Config{
 			Certificates: []tls.Certificate{cert},
@@ -118,9 +124,10 @@ func main() {
 		gs.Listener = listener
 	}
 
-	log.SyncInfof("proxy listening: %s", bindAddr)
+	log.Infof("proxy listening: %s", bindAddr)
 	if err := graceful.Shutdown(gs); err != nil {
-		log.SyncFatalExit(err)
+		log.Fatal(err)
+		os.Exit(1)
 	}
 }
 

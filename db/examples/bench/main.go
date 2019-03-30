@@ -23,11 +23,11 @@ type benchObject struct {
 }
 
 func createTable(tableName string, log logger.Log, conn *db.Connection) error {
-	log.SyncInfof("creating %s", tableName)
+	log.Infof("creating %s", tableName)
 	return migration.New(
 		migration.Group(
 			migration.Step(
-				pg.TableNotExists(tableName),
+				migration.TableNotExists(tableName),
 				migration.Statements(
 					fmt.Sprintf("CREATE TABLE %s (id serial not null primary key, name varchar(255))", tableName),
 				),
@@ -37,11 +37,11 @@ func createTable(tableName string, log logger.Log, conn *db.Connection) error {
 }
 
 func dropTable(tableName string, log logger.Log, conn *db.Connection) error {
-	log.SyncInfof("dropping %s", tableName)
+	log.Infof("dropping %s", tableName)
 	return migration.New(
 		migration.Group(
 			migration.Step(
-				pg.TableExists(tableName),
+				migration.TableExists(tableName),
 				migration.Statements(
 					fmt.Sprintf("DROP TABLE %s", tableName),
 				),
@@ -62,18 +62,23 @@ func reportStats(log logger.Log, conn *db.Connection) {
 	for {
 		select {
 		case <-ticker:
-			log.SyncInfof("[%d] connections currently open", conn.Connection().Stats().OpenConnections)
-			log.SyncInfof("[%v] wait duration", conn.Connection().Stats().WaitDuration)
+			log.Infof("[%d] connections currently open", conn.Connection.Stats().OpenConnections)
+			log.Infof("[%v] wait duration", conn.Connection.Stats().WaitDuration)
 		}
 	}
 }
 
 func main() {
-	log := logger.All().WithDisabled(logger.Query)
-	conn := db.MustNewFromEnv()
+	log := logger.All(logger.OptDisabled(logger.Query))
+	conn, err := db.New(db.OptConfigFromEnv())
+	if err != nil {
+		log.Fatal(err)
+		os.Exit(1)
+	}
 
 	if err := conn.Open(); err != nil {
-		log.SyncFatalExit(err)
+		log.Fatal(err)
+		os.Exit(1)
 	}
 
 	go reportStats(log, conn)
@@ -85,7 +90,7 @@ func main() {
 
 	for x := 0; x < 1<<12; x++ {
 		ctx, cancel := context.WithTimeout(context.Background(), 250*time.Millisecond)
-		maybeFatal(conn.Invoke(ctx).Exec(fmt.Sprintf("INSERT INTO %s VALUES ($1)", tableName), strconv.Itoa(x)))
+		maybeFatal(conn.Invoke(db.OptContext(ctx)).Exec(fmt.Sprintf("INSERT INTO %s VALUES ($1)", tableName), strconv.Itoa(x)))
 		cancel()
 	}
 
@@ -96,7 +101,7 @@ func main() {
 			defer wg.Done()
 			for x := 0; x < 1<<10; x++ {
 				ctx, cancel := context.WithTimeout(context.Background(), 250*time.Millisecond)
-				if _, err := conn.Invoke(ctx).Query(fmt.Sprintf("select * from %s", tableName)).Any(); err != nil {
+				if _, err := conn.Invoke(db.OptContext(ctx)).Query(fmt.Sprintf("select * from %s", tableName)).Any(); err != nil {
 					maybeFatal(err)
 				}
 				cancel()
@@ -106,5 +111,5 @@ func main() {
 	wg.Wait()
 
 	maybeFatal(log.Drain())
-	log.SyncInfof("OK")
+	log.Infof("OK")
 }

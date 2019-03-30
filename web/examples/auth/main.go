@@ -21,17 +21,13 @@ func main() {
 	app := web.New(web.OptLog(logger.All()))
 	app.Auth = web.NewLocalAuthManager()
 
-	app.ServeStaticCached("/cached", "_static")
-	app.SetStaticMiddleware("/cached", web.SessionMiddleware(func(ctx *web.Ctx) web.Result {
+	app.ServeStaticCached("/cached", []string{"_static"}, web.SessionMiddleware(func(ctx *web.Ctx) web.Result {
 		return web.Text.NotAuthorized()
 	}))
-
-	app.ServeStatic("/static", "_static")
-	app.SetStaticMiddleware("/static", web.SessionMiddleware(func(ctx *web.Ctx) web.Result {
+	app.ServeStatic("/static", []string{"_static"}, web.SessionMiddleware(func(ctx *web.Ctx) web.Result {
 		return web.Text.NotAuthorized()
 	}))
-
-	app.ServeStatic("/static_unauthed", "_static")
+	app.ServeStatic("/static_unauthed", []string{"_static"})
 
 	app.Auth.ValidateHandler = func(_ context.Context, session *web.Session) error {
 		if session.UserID == "bailey" {
