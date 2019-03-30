@@ -11,7 +11,7 @@ import (
 
 const (
 	// FlagProxyRequest is a logger flag.
-	FlagProxyRequest logger.Flag = "proxy.request"
+	FlagProxyRequest = "proxy.request"
 )
 
 // New returns a new proxy.
@@ -21,48 +21,24 @@ func New() *Proxy {
 
 // Proxy is a factory for a simple reverse proxy.
 type Proxy struct {
-	upstreamHeaders http.Header
-	log             logger.Log
-	upstreams       []*Upstream
-	resolver        Resolver
-}
-
-// WithUpstreamHeaders sets headers to be added to all upstream requests.
-// Note: this will overwrite any existing headers.
-func (p *Proxy) WithUpstreamHeaders(headers http.Header) *Proxy {
-	p.upstreamHeaders = headers
-	return p
+	UpstreamHeaders http.Header
+	Log             logger.Log
+	Upstreams       []*Upstream
+	Resolver        Resolver
 }
 
 // WithUpstreamHeader adds a single upstream header.
 func (p *Proxy) WithUpstreamHeader(key, value string) *Proxy {
-	if p.upstreamHeaders == nil {
-		p.upstreamHeaders = http.Header{}
+	if p.UpstreamHeaders == nil {
+		p.UpstreamHeaders = http.Header{}
 	}
-	p.upstreamHeaders.Set(key, value)
-	return p
-}
-
-// UpstreamHeaders returns the upstream headers to add to all upstream requests.
-func (p *Proxy) UpstreamHeaders() http.Header {
-	return p.upstreamHeaders
-}
-
-// WithLogger sets a property and returns the proxy reference.
-func (p *Proxy) WithLogger(log logger.Log) *Proxy {
-	p.log = log
+	p.UpstreamHeaders.Set(key, value)
 	return p
 }
 
 // WithUpstream adds an upstream by URL.
 func (p *Proxy) WithUpstream(upstream *Upstream) *Proxy {
-	p.upstreams = append(p.upstreams, upstream)
-	return p
-}
-
-// WithResolver sets a property and returns the proxy reference.
-func (p *Proxy) WithResolver(resolver Resolver) *Proxy {
-	p.resolver = resolver
+	p.Upstreams = append(p.Upstreams, upstream)
 	return p
 }
 
@@ -70,8 +46,8 @@ func (p *Proxy) WithResolver(resolver Resolver) *Proxy {
 func (p *Proxy) ServeHTTP(rw http.ResponseWriter, req *http.Request) {
 	defer func() {
 		if r := recover(); r != nil {
-			if p.log != nil {
-				p.log.Fatalf("%v", r)
+			if p.Log != nil {
+				p.Log.Fatalf("%v", r)
 			} else {
 				fmt.Fprintf(os.Stderr, "%v\n", r)
 			}
@@ -79,14 +55,14 @@ func (p *Proxy) ServeHTTP(rw http.ResponseWriter, req *http.Request) {
 	}()
 
 	// set the default resolver if unset.
-	if p.resolver == nil {
-		p.resolver = RoundRobinResolver(p.upstreams)
+	if p.Resolver == nil {
+		p.Resolver = RoundRobinResolver(p.Upstreams)
 	}
 
-	upstream, err := p.resolver(req, p.upstreams)
+	upstream, err := p.Resolver(req, p.Upstreams)
 
 	if err != nil {
-		p.log.Error(err)
+		logger.MaybeError(p.Log, err)
 		rw.WriteHeader(http.StatusBadGateway)
 		return
 	}
@@ -107,7 +83,7 @@ func (p *Proxy) ServeHTTP(rw http.ResponseWriter, req *http.Request) {
 		req.Header.Add("X-Forwarded-Proto", proto)
 	}
 	// add upstream headers.
-	for key, values := range p.upstreamHeaders {
+	for key, values := range p.UpstreamHeaders {
 		for _, value := range values {
 			req.Header.Add(key, value)
 		}

@@ -8,7 +8,7 @@ import (
 )
 
 func main() {
-	log := logger.Sync()
+	log := logger.All()
 	client := secrets.Must(secrets.NewFromEnv()).WithLogger(log)
 
 	key := "cubbyhole/willtest"
@@ -16,20 +16,24 @@ func main() {
 	ctx := context.Background()
 
 	if err := client.Put(ctx, key, secrets.Values{"value": "THE FOOOS"}); err != nil {
-		log.SyncFatalExit(err)
+		log.Fatal(err)
+		return
 	}
 	if err := client.Put(ctx, key, secrets.Values{"value": "THE BUZZ"}); err != nil {
-		log.SyncFatalExit(err)
+		log.Fatal(err)
+		return
 	}
 
 	values, err := client.Get(ctx, key)
 	if err != nil {
-		log.SyncFatalExit(err)
+		log.Fatal(err)
+		return
 	}
-	log.SyncInfof("values: %#v", values)
+	log.Infof("values: %#v", values)
 
 	if err := client.Delete(ctx, key); err != nil {
-		log.SyncFatalExit(err)
+		log.Fatal(err)
+		return
 	}
-	log.SyncInfof("~fin~")
+	log.Infof("~fin~")
 }

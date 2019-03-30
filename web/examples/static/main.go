@@ -3,14 +3,15 @@ package main
 import (
 	"net/http"
 
+	"github.com/blend/go-sdk/graceful"
 	"github.com/blend/go-sdk/logger"
 	"github.com/blend/go-sdk/web"
 )
 
 func main() {
-	log := logger.MustNewFromEnv()
+	log := logger.All()
 	app := web.New(web.OptLog(log))
-	csf := web.NewCachedStaticFileServer(http.Dir("."))
+	csf := web.NewStaticFileServer(http.Dir("."))
 
 	app.ServeStatic("/static/*filepath", "_static")
 	app.ServeStaticCached("/static_cached/*filepath", "_static")
@@ -20,5 +21,5 @@ func main() {
 	app.GET("/cached", func(r *web.Ctx) web.Result {
 		return csf.ServeFile(r, "index.html")
 	})
-	log.SyncFatalExit(app.Start())
+	graceful.Shutdown(app)
 }

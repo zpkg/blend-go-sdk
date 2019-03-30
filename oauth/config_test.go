@@ -16,12 +16,13 @@ func TestNewConfigFromEnv(t *testing.T) {
 	env.Env().Set("OAUTH_CLIENT_ID", "foo")
 	env.Env().Set("OAUTH_CLIENT_SECRET", "bar")
 
-	cfg, err := NewConfigFromEnv()
+	cfg := &Config{}
+	err := cfg.Resolve()
 	assert.Nil(err)
-	assert.Equal("foo", cfg.GetClientID())
-	assert.Equal("bar", cfg.GetClientSecret())
-	assert.Equal("https://app.com/oauth/google", cfg.GetRedirectURI())
-	assert.Equal("foo.com", cfg.GetHostedDomain())
+	assert.Equal("foo", cfg.ClientID)
+	assert.Equal("bar", cfg.ClientSecret)
+	assert.Equal("https://app.com/oauth/google", cfg.RedirectURI)
+	assert.Equal("foo.com", cfg.HostedDomain)
 }
 
 func TestConfig(t *testing.T) {

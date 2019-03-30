@@ -31,12 +31,12 @@ func NewVaultClientFromConfig(cfg *Config) (*VaultClient, error) {
 	if err != nil {
 		return nil, err
 	}
-	remote, err := url.ParseRequestURI(cfg.GetAddr())
+	remote, err := url.ParseRequestURI(cfg.AddrOrDefault())
 	if err != nil {
 		return nil, err
 	}
 	var certPool *CertPool
-	if caPaths := cfg.GetRootCAs(); len(caPaths) > 0 {
+	if caPaths := cfg.RootCAs; len(caPaths) > 0 {
 		certPool, err = NewCertPool()
 		if err != nil {
 			return nil, err
@@ -51,12 +51,12 @@ func NewVaultClientFromConfig(cfg *Config) (*VaultClient, error) {
 	}
 	client := &VaultClient{
 		remote:     remote,
-		mount:      cfg.GetMount(),
+		mount:      cfg.MountOrDefault(),
 		bufferPool: NewBufferPool(DefaultBufferPoolSize),
-		token:      cfg.GetToken(),
+		token:      cfg.Token,
 		certPool:   certPool,
 		client: &http.Client{
-			Timeout:   cfg.GetTimeout(),
+			Timeout:   cfg.TimeoutOrDefault(),
 			Transport: xport,
 		},
 	}
@@ -291,7 +291,7 @@ func (c *VaultClient) createRequest(method, path string, options ...Option) *htt
 
 func (c *VaultClient) send(req *http.Request) (io.ReadCloser, error) {
 	if c.log != nil {
-		c.log.Trigger(NewEvent(req))
+		c.log.Trigger(req.Context(), NewEvent(req))
 	}
 	res, err := c.client.Do(req)
 	if err != nil {
@@ -301,7 +301,7 @@ func (c *VaultClient) send(req *http.Request) (io.ReadCloser, error) {
 		buf := c.bufferPool.Get()
 		defer buf.Close()
 		io.Copy(buf, res.Body)
-		return nil, exception.New(ExceptionClassForStatus(res.StatusCode)).WithMessagef("status: %d; %v", res.StatusCode, buf.String())
+		return nil, exception.New(ExceptionClassForStatus(res.StatusCode), exception.OptMessagef("status: %d; %v", res.StatusCode, buf.String()))
 	}
 	return res.Body, nil
 }

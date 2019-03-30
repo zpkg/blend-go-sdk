@@ -13,7 +13,7 @@ import (
 
 func TestNew(t *testing.T) {
 	assert := assert.New(t)
-	assert.Empty(New().Secret())
+	assert.Empty(New().Secret)
 }
 
 func TestNewFromConfig(t *testing.T) {
@@ -27,10 +27,10 @@ func TestNewFromConfig(t *testing.T) {
 	})
 
 	assert.Nil(err)
-	assert.Empty(m.Secret())
-	assert.Equal("https://app.com/oauth/google", m.RedirectURI())
-	assert.Equal("foo_client", m.ClientID())
-	assert.Equal("bar_secret", m.ClientSecret())
+	assert.Empty(m.Secret)
+	assert.Equal("https://app.com/oauth/google", m.RedirectURI)
+	assert.Equal("foo_client", m.ClientID)
+	assert.Equal("bar_secret", m.ClientSecret)
 }
 
 func TestNewFromConfigWithSecret(t *testing.T) {
@@ -41,17 +41,17 @@ func TestNewFromConfigWithSecret(t *testing.T) {
 	})
 
 	assert.Nil(err)
-	assert.NotEmpty(m.Secret())
-	assert.Equal("test string", string(m.Secret()))
+	assert.NotEmpty(m.Secret)
+	assert.Equal("test string", string(m.Secret))
 }
 
 func TestManagerOAuthURLWithFullyQualifiedRedirectURI(t *testing.T) {
 	assert := assert.New(t)
 
-	m := New().
-		WithClientID("test_client_id").
-		WithHostedDomain("test.blend.com").
-		WithRedirectURI("https://local.shortcut-service.centrio.com/oauth/google")
+	m := New()
+	m.ClientID = "test_client_id"
+	m.HostedDomain = "test.blend.com"
+	m.RedirectURI = "https://local.shortcut-service.centrio.com/oauth/google"
 
 	oauthURL, err := m.OAuthURL(nil)
 	assert.Nil(err)
@@ -64,9 +64,9 @@ func TestManagerOAuthURLWithFullyQualifiedRedirectURI(t *testing.T) {
 func TestManagerOAuthURL(t *testing.T) {
 	assert := assert.New(t)
 
-	m := New().
-		WithClientID("test_client_id").
-		WithRedirectURI("/oauth/google")
+	m := New()
+	m.ClientID = "test_client_id"
+	m.RedirectURI = "/oauth/google"
 
 	oauthURL, err := m.OAuthURL(&http.Request{RequestURI: "https://test.blend.com/foo"})
 	assert.Nil(err)
@@ -78,9 +78,9 @@ func TestManagerOAuthURL(t *testing.T) {
 func TestManagerGetRedirectURI(t *testing.T) {
 	assert := assert.New(t)
 
-	m := New().
-		WithClientID("test_client_id").
-		WithRedirectURI("/oauth/google")
+	m := New()
+	m.ClientID = "test_client_id"
+	m.RedirectURI = "/oauth/google"
 
 	redirectURI := m.getRedirectURI(&http.Request{Proto: "spdy", Host: "test.blend.com", Header: http.Header{webutil.HeaderXForwardedProto: {webutil.SchemeHTTPS}}})
 	parsedRedirectURI, err := url.Parse(redirectURI)
@@ -93,9 +93,9 @@ func TestManagerGetRedirectURI(t *testing.T) {
 func TestManagerGetRedirectURIFullyQualified(t *testing.T) {
 	assert := assert.New(t)
 
-	m := New().
-		WithClientID("test_client_id").
-		WithRedirectURI("https://test.blend.com/oauth/google")
+	m := New()
+	m.ClientID = "test_client_id"
+	m.RedirectURI = "https://test.blend.com/oauth/google"
 
 	redirectURI := m.getRedirectURI(nil)
 
@@ -109,9 +109,9 @@ func TestManagerGetRedirectURIFullyQualified(t *testing.T) {
 func TestManagerGetRedirectURIFullyQualifiedHTTP(t *testing.T) {
 	assert := assert.New(t)
 
-	m := New().
-		WithClientID("test_client_id").
-		WithRedirectURI("http://test.blend.com/oauth/google")
+	m := New()
+	m.ClientID = "test_client_id"
+	m.RedirectURI = "https://test.blend.com/oauth/google"
 
 	redirectURI := m.getRedirectURI(nil)
 
@@ -125,9 +125,9 @@ func TestManagerGetRedirectURIFullyQualifiedHTTP(t *testing.T) {
 func TestManagerGetRedirectURIFullyQualifiedSPDY(t *testing.T) {
 	assert := assert.New(t)
 
-	m := New().
-		WithClientID("test_client_id").
-		WithRedirectURI("spdy://test.blend.com/oauth/google")
+	m := New()
+	m.ClientID = "test_client_id"
+	m.RedirectURI = "spdy://test.blend.com/oauth/google"
 
 	redirectURI := m.getRedirectURI(nil)
 	parsedRedirectURI, err := url.Parse(redirectURI)
@@ -140,9 +140,9 @@ func TestManagerGetRedirectURIFullyQualifiedSPDY(t *testing.T) {
 func TestManagerOAuthURLRedirect(t *testing.T) {
 	assert := assert.New(t)
 
-	m := New().
-		WithClientID("test_client_id").
-		WithRedirectURI("https://local.shortcut-service.centrio.com/oauth/google")
+	m := New()
+	m.ClientID = "test_client_id"
+	m.RedirectURI = "https://local.shortcut-service.centrio.com/oauth/google"
 
 	urlFragment, err := m.OAuthURL(nil, OptRedirectURI("bar_foo"))
 	assert.Nil(err)
@@ -180,13 +180,15 @@ func TestManagerValidateProfile(t *testing.T) {
 	empty := New()
 	assert.Nil(empty.ValidateProfile(blender), "we should not error if the hosted domain is not configured")
 
-	hosted := New().WithHostedDomain("blend.com")
+	hosted := New()
+	hosted.HostedDomain = "blend.com"
 	assert.Nil(hosted.ValidateProfile(blender), "we should pass for @blend.com")
 	assert.NotNil(hosted.ValidateProfile(personal), "we fail for non-@blend.com emails")
 	assert.NotNil(hosted.ValidateProfile(suffixMatch), "we fail for non-@blend.com emails")
 	assert.NotNil(hosted.ValidateProfile(prefixMatch), "we fail for non-@blend.com emails")
 
-	hostedPrefixed := New().WithHostedDomain("@blend.com")
+	hostedPrefixed := New()
+	hostedPrefixed.HostedDomain = "@blend.com"
 	assert.Nil(hostedPrefixed.ValidateProfile(blender), "we should pass for @blend.com")
 	assert.NotNil(hostedPrefixed.ValidateProfile(personal), "we fail for non-@blend.com emails")
 	assert.NotNil(hostedPrefixed.ValidateProfile(suffixMatch), "we fail for non-@blend.com emails")
@@ -199,6 +201,7 @@ func TestManagerValidateState(t *testing.T) {
 	insecure := New()
 	assert.Nil(insecure.ValidateState(insecure.CreateState()))
 
-	secure := New().WithSecret(crypto.MustCreateKey(32))
+	secure := New()
+	secure.Secret = crypto.MustCreateKey(32)
 	assert.Nil(secure.ValidateState(secure.CreateState()))
 }

@@ -15,7 +15,7 @@ func main() {
 	})
 
 	app.POST("/reparse", func(r *web.Ctx) web.Result {
-		body, err := r.GetPostBody()
+		body, err := r.PostBody()
 		if err != nil {
 			return web.Text.BadRequest(err)
 		}

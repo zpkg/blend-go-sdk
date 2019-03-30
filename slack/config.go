@@ -1,6 +1,6 @@
 package slack
 
-import "github.com/blend/go-sdk/configutil"
+import "github.com/blend/go-sdk/env"
 
 // Config represents the required fields for the config.
 type Config struct {
@@ -12,32 +12,12 @@ type Config struct {
 	Webhook   string `json:"webhook,omitempty" yaml:"webhook,omitempty"  env:"SLACK_WEBHOOK"`
 }
 
+// Resolve includes extra steps on configutil.Read(...).
+func (c *Config) Resolve() error {
+	return env.Env().ReadInto(c)
+}
+
 // IsZero returns if the config is set or not.
 func (c Config) IsZero() bool {
 	return len(c.Channel) == 0 && len(c.Webhook) == 0
-}
-
-// UsernameOrDefault returns a property or a default.
-func (c Config) UsernameOrDefault(inherited ...string) string {
-	return configutil.CoalesceString(c.Username, "", inherited...)
-}
-
-// ChannelOrDefault returns a property or default.
-func (c Config) ChannelOrDefault(inherited ...string) string {
-	return configutil.CoalesceString(c.Channel, "", inherited...)
-}
-
-// IconURLOrDefault returns a property or default.
-func (c Config) IconURLOrDefault(inherited ...string) string {
-	return configutil.CoalesceString(c.IconURL, "", inherited...)
-}
-
-// IconEmojiOrDefault returns a property or default.
-func (c Config) IconEmojiOrDefault(inherited ...string) string {
-	return configutil.CoalesceString(c.IconEmoji, "", inherited...)
-}
-
-// WebhookOrDefault returns the webhook url.
-func (c Config) WebhookOrDefault(defaults ...string) string {
-	return configutil.CoalesceString(c.Webhook, "", defaults...)
 }

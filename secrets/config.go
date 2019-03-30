@@ -4,7 +4,6 @@ import (
 	"net/url"
 	"time"
 
-	"github.com/blend/go-sdk/configutil"
 	"github.com/blend/go-sdk/env"
 )
 
@@ -60,7 +59,10 @@ func (c *Config) Resolve() error {
 
 // AddrOrDefault returns the client addr.
 func (c Config) AddrOrDefault() string {
-	return configutil.CoalesceString(c.Addr, DefaultAddr)
+	if c.Addr != "" {
+		return c.Addr
+	}
+	return DefaultAddr
 }
 
 // MustParseAddr returns the addr as a url.
@@ -74,10 +76,16 @@ func (c Config) MustParseAddr() *url.URL {
 
 // MountOrDefault returns secrets mount or a default.
 func (c Config) MountOrDefault() string {
-	return configutil.CoalesceString(c.Mount, DefaultMount)
+	if c.Mount != "" {
+		return c.Mount
+	}
+	return DefaultMount
 }
 
 // TimeoutOrDefault returns the client timeout.
 func (c Config) TimeoutOrDefault() time.Duration {
-	return configutil.CoalesceDuration(c.Timeout, DefaultTimeout)
+	if c.Timeout > 0 {
+		return c.Timeout
+	}
+	return DefaultTimeout
 }

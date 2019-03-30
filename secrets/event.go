@@ -1,12 +1,19 @@
 package secrets
 
 import (
-	"bytes"
+	"encoding/json"
+	"io"
 	"net/http"
 	"strings"
 
 	"github.com/blend/go-sdk/ansi"
 	"github.com/blend/go-sdk/logger"
+)
+
+var (
+	_ logger.Event        = (*Event)(nil)
+	_ logger.TextWritable = (*Event)(nil)
+	_ json.Marshaler      = (*Event)(nil)
 )
 
 const (
@@ -18,68 +25,34 @@ const (
 func NewEvent(req *http.Request) *Event {
 	return &Event{
 		EventMeta: logger.NewEventMeta(Flag),
-		remote:    req.URL.Host,
-		method:    req.Method,
-		key:       strings.TrimPrefix(req.URL.Path, "/v1/"),
+		Remote:    req.URL.Host,
+		Method:    req.Method,
+		Key:       strings.TrimPrefix(req.URL.Path, "/v1/"),
 	}
 }
 
 // Event is an event.
 type Event struct {
 	*logger.EventMeta
-
-	remote string
-	method string
-	key    string
+	Remote string
+	Method string
+	Key    string
 }
 
-// WithRemote sets the event remote.
-func (e *Event) WithRemote(remote string) *Event {
-	e.remote = remote
-	return e
-}
-
-// Remote returns the remote.
-func (e *Event) Remote() string {
-	return e.remote
-}
-
-// WithMethod sets the event method.
-func (e *Event) WithMethod(method string) *Event {
-	e.method = method
-	return e
-}
-
-// Method returns the method.
-func (e *Event) Method() string {
-	return e.method
-}
-
-// WithKey sets the event method.
-func (e *Event) WithKey(key string) *Event {
-	e.key = key
-	return e
-}
-
-// Key returns the event key.
-func (e *Event) Key() string {
-	return e.key
-}
-
-// WriteJSON returns json values.
-func (e *Event) WriteJSON() map[string]interface{} {
-	return map[string]interface{}{
-		"remote": e.remote,
-		"method": e.method,
-		"key":    e.key,
-	}
+// MarshalJSON impements json.Marshaler.
+func (e *Event) MarshalJSON() ([]byte, error) {
+	return json.Marshal(logger.MergeDecomposed(e.EventMeta.Decompose(), map[string]interface{}{
+		"remote": e.Remote,
+		"method": e.Method,
+		"key":    e.Key,
+	}))
 }
 
 // WriteText writes text for the event.
-func (e *Event) WriteText(tf logger.TextFormatter, buf *bytes.Buffer) {
-	buf.WriteString("[" + tf.Colorize(e.method, ansi.ColorBlue) + "]")
-	buf.WriteRune(logger.RuneSpace)
-	buf.WriteString(e.remote)
-	buf.WriteRune(logger.RuneSpace)
-	buf.WriteString(e.key)
+func (e *Event) WriteText(tf logger.TextFormatter, wr io.Writer) {
+	io.WriteString(wr, "["+tf.Colorize(e.Method, ansi.ColorBlue)+"]")
+	io.WriteString(wr, logger.Space)
+	io.WriteString(wr, e.Remote)
+	io.WriteString(wr, logger.Space)
+	io.WriteString(wr, e.Key)
 }

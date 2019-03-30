@@ -1,8 +1,11 @@
 package main
 
 import (
+	"fmt"
+	"math/rand"
 	"sync"
 
+	"github.com/blend/go-sdk/graceful"
 	"github.com/blend/go-sdk/logger"
 	"github.com/blend/go-sdk/web"
 )
@@ -18,22 +21,26 @@ type APIController struct {
 
 // Register adds routes for the controller to the app.
 func (ac *APIController) Register(app *web.App) {
-	app.GET("/", ac.index)
-	app.GET("/api", ac.all)
-	app.GET("/api/:key", ac.get)
-	app.POST("/api/:key", ac.post)
-	app.PUT("/api/:key", ac.put)
-	app.DELETE("/api/:key", ac.delete)
+	app.GET("/api", ac.all, ac.randomFailure)
+	app.GET("/api/:key", ac.get, ac.randomFailure)
+	app.POST("/api/:key", ac.post, ac.randomFailure)
+	app.PUT("/api/:key", ac.put, ac.randomFailure)
+	app.DELETE("/api/:key", ac.delete, ac.randomFailure)
+}
+
+func (ac *APIController) randomFailure(action web.Action) web.Action {
+	return func(r *web.Ctx) web.Result {
+		if rand.Int()%2 == 0 {
+			return web.JSON.InternalError(fmt.Errorf("random error"))
+		}
+		return action(r)
+	}
 }
 
 func (ac *APIController) ensureDB() {
 	if ac.db == nil {
 		ac.db = map[string]Any{}
 	}
-}
-
-func (ac *APIController) index(r *web.Ctx) web.Result {
-	return web.JSON.OK()
 }
 
 func (ac *APIController) all(r *web.Ctx) web.Result {
@@ -49,12 +56,7 @@ func (ac *APIController) get(r *web.Ctx) web.Result {
 	defer ac.dbLock.Unlock()
 	ac.ensureDB()
 
-	key, err := r.Param("key")
-	if err != nil {
-		return web.JSON.BadRequest(err)
-	}
-
-	value, hasValue := ac.db[key]
+	value, hasValue := ac.db[web.StringValue(r.Param("key"))]
 	if !hasValue {
 		return web.JSON.NotFound()
 	}
@@ -66,16 +68,11 @@ func (ac *APIController) post(r *web.Ctx) web.Result {
 	defer ac.dbLock.Unlock()
 	ac.ensureDB()
 
-	body, err := r.GetPostBody()
+	body, err := r.PostBody()
 	if err != nil {
 		return web.JSON.InternalError(err)
 	}
-
-	key, err := r.Param("key")
-	if err != nil {
-		return web.JSON.BadRequest(err)
-	}
-	ac.db[key] = string(body)
+	ac.db[web.StringValue(r.Param("key"))] = string(body)
 	return web.JSON.OK()
 }
 
@@ -84,21 +81,16 @@ func (ac *APIController) put(r *web.Ctx) web.Result {
 	defer ac.dbLock.Unlock()
 	ac.ensureDB()
 
-	key, err := r.Param("key")
-	if err != nil {
-		return web.JSON.BadRequest(err)
-	}
-
-	_, hasValue := ac.db[key]
+	_, hasValue := ac.db[web.StringValue(r.Param("key"))]
 	if !hasValue {
 		return web.JSON.NotFound()
 	}
 
-	body, err := r.GetPostBody()
+	body, err := r.PostBody()
 	if err != nil {
 		return web.JSON.InternalError(err)
 	}
-	ac.db[key] = string(body)
+	ac.db[web.StringValue(r.Param("key"))] = string(body)
 
 	return web.JSON.OK()
 }
@@ -108,11 +100,7 @@ func (ac *APIController) delete(r *web.Ctx) web.Result {
 	defer ac.dbLock.Unlock()
 	ac.ensureDB()
 
-	key, err := r.Param("key")
-	if err != nil {
-		return web.JSON.BadRequest(err)
-	}
-
+	key := web.StringValue(r.Param("key"))
 	_, hasValue := ac.db[key]
 	if !hasValue {
 		return web.JSON.NotFound()
@@ -122,7 +110,8 @@ func (ac *APIController) delete(r *web.Ctx) web.Result {
 }
 
 func main() {
-	app := web.New(web.OptLog(logger.MustNewFromEnv()))
+	log := logger.All()
+	app := web.New(web.OptLog(log))
 	app.Register(new(APIController))
-	app.Start()
+	graceful.Shutdown(app)
 }

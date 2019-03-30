@@ -9,7 +9,7 @@ import (
 )
 
 func main() {
-	log := logger.MustNewFromEnv()
+	log := logger.All()
 	app := web.New(web.OptLog(log))
 	app.Views.AddPaths(
 		"_views/header.html",
@@ -17,18 +17,19 @@ func main() {
 		"_views/index.html",
 	)
 
-	app.Views.FuncMap()["foo"] = func() string {
+	app.Views.FuncMap["foo"] = func() string {
 		return "hello!"
 	}
 
 	if len(os.Getenv("LIVE_RELOAD")) > 0 {
-		app.Views.WithCached(false)
+		app.Views.LiveReload = true
 	}
 
 	app.GET("/", func(r *web.Ctx) web.Result {
 		return r.Views.View("index", nil)
 	})
 	if err := graceful.Shutdown(app); err != nil {
-		log.SyncFatalExit(err)
+		log.Fatal(err)
+		os.Exit(1)
 	}
 }

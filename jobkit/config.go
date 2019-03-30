@@ -3,7 +3,6 @@ package jobkit
 import (
 	"github.com/blend/go-sdk/airbrake"
 	"github.com/blend/go-sdk/aws"
-	"github.com/blend/go-sdk/configutil"
 	"github.com/blend/go-sdk/cron"
 	"github.com/blend/go-sdk/datadog"
 	"github.com/blend/go-sdk/email"
@@ -30,5 +29,8 @@ type Config struct {
 
 // MaxLogBytesOrDefault is a the maximum amount of log data to buffer.
 func (c Config) MaxLogBytesOrDefault() int {
-	return configutil.CoalesceInt(c.MaxLogBytes, DefaultMaxLogBytes)
+	if c.MaxLogBytes > 0 {
+		return c.MaxLogBytes
+	}
+	return DefaultMaxLogBytes
 }

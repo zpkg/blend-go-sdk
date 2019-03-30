@@ -56,25 +56,25 @@ func (sc *StaticFileServer) AddRewriteRule(match string, action RewriteAction) e
 
 // SetMiddleware sets the middlewares.
 func (sc *StaticFileServer) SetMiddleware(middlewares ...Middleware) {
-	sc.Middleware = NestMiddleware(sc.ServeFile, middlewares...)
+	sc.Middleware = NestMiddleware(sc.Action, middlewares...)
 }
 
 // Action is the entrypoint for the static server.
 // It will run middleware if specified before serving the file.
 func (sc *StaticFileServer) Action(r *Ctx) Result {
-	if sc.Middleware != nil {
-		return sc.Middleware(r)
-	}
-	return sc.ServeFile(r)
-}
-
-// ServeFile writes the file to the response without running middleware.
-func (sc *StaticFileServer) ServeFile(r *Ctx) Result {
 	filePath, err := r.RouteParam("filepath")
 	if err != nil {
 		return r.DefaultProvider.BadRequest(err)
 	}
 
+	if sc.Middleware != nil {
+		return sc.Middleware(r)
+	}
+	return sc.ServeFile(r, filePath)
+}
+
+// ServeFile writes the file to the response without running middleware.
+func (sc *StaticFileServer) ServeFile(r *Ctx, filePath string) Result {
 	for key, values := range sc.Headers {
 		for _, value := range values {
 			r.Response.Header().Set(key, value)

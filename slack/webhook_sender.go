@@ -3,7 +3,6 @@ package slack
 import (
 	"context"
 	"encoding/json"
-	"fmt"
 	"io/ioutil"
 
 	"net/http"
@@ -24,7 +23,7 @@ var (
 // New creates a new webhook sender.
 func New(cfg *Config) *WebhookSender {
 	return &WebhookSender{
-		RequestSender: webutil.NewRequestSender(webutil.MustParseURL(cfg.WebhookOrDefault())),
+		RequestSender: webutil.NewRequestSender(webutil.MustParseURL(cfg.Webhook)),
 		Config:        cfg,
 	}
 }
@@ -38,10 +37,10 @@ type WebhookSender struct {
 // Defaults returns default message options.
 func (whs WebhookSender) Defaults() []MessageOption {
 	return []MessageOption{
-		WithUsernameOrDefault(whs.Config.UsernameOrDefault()),
-		WithChannelOrDefault(whs.Config.ChannelOrDefault()),
-		WithIconEmojiOrDefault(whs.Config.IconEmojiOrDefault()),
-		WithIconURLOrDefault(whs.Config.IconURLOrDefault()),
+		WithUsernameOrDefault(whs.Config.Username),
+		WithChannelOrDefault(whs.Config.Channel),
+		WithIconEmojiOrDefault(whs.Config.IconEmoji),
+		WithIconURLOrDefault(whs.Config.IconURL),
 	}
 }
 
@@ -58,7 +57,7 @@ func (whs WebhookSender) Send(ctx context.Context, message Message) error {
 		if err != nil {
 			return exception.New(err)
 		}
-		return exception.New(ErrNon200).WithMessage(string(contents))
+		return exception.New(ErrNon200, exception.OptMessage(string(contents)))
 	}
 	return nil
 }
@@ -78,7 +77,7 @@ func (whs WebhookSender) SendAndReadResponse(ctx context.Context, message Messag
 	}
 
 	if res.StatusCode > http.StatusOK {
-		return &contents, exception.New(ErrNon200).WithMessage(fmt.Sprintf("%#v", contents))
+		return &contents, exception.New(ErrNon200, exception.OptMessagef("%#v", contents))
 	}
 
 	return &contents, nil

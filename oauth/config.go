@@ -3,7 +3,6 @@ package oauth
 import (
 	"encoding/base64"
 
-	"github.com/blend/go-sdk/configutil"
 	"github.com/blend/go-sdk/env"
 )
 
@@ -30,12 +29,12 @@ func (c Config) IsZero() bool {
 }
 
 // Resolve adds extra steps to perform during `configutil.Read(...)`.
-func (c *Conig) Resolve() error {
+func (c *Config) Resolve() error {
 	return env.Env().ReadInto(c)
 }
 
 // DecodeSecret decodes the secret if set from base64 encoding.
-func (c Config) DecodeSecret(defaults ...[]byte) ([]byte, error) {
+func (c Config) DecodeSecret() ([]byte, error) {
 	if len(c.Secret) > 0 {
 		decoded, err := base64.StdEncoding.DecodeString(c.Secret)
 		if err != nil {
@@ -43,13 +42,13 @@ func (c Config) DecodeSecret(defaults ...[]byte) ([]byte, error) {
 		}
 		return decoded, nil
 	}
-	if len(defaults) > 0 {
-		return defaults[0], nil
-	}
 	return nil, nil
 }
 
 // ScopesOrDefault gets oauth scopes to authenticate with or a default set of scopes.
 func (c Config) ScopesOrDefault() []string {
-	return configutil.CoalesceStrings(c.Scopes, DefaultScopes)
+	if len(c.Scopes) > 0 {
+		return c.Scopes
+	}
+	return DefaultScopes
 }
