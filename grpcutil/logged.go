@@ -17,13 +17,13 @@ func LoggedUnary(log logger.Triggerable) grpc.UnaryServerInterceptor {
 		result, err := handler(ctx, args)
 		if log != nil {
 			event := logger.NewRPCEvent(info.FullMethod, time.Now().UTC().Sub(startTime))
-			event = event.WithErr(err)
+			event.Err = err
 			if md, ok := metadata.FromIncomingContext(ctx); ok {
-				event = event.WithAuthority(MetaValue(md, MetaTagAuthority)).
-					WithUserAgent(MetaValue(md, MetaTagUserAgent)).
-					WithContentType(MetaValue(md, MetaTagContentType))
+				event.Authority = MetaValue(md, MetaTagAuthority)
+				event.UserAgent = MetaValue(md, MetaTagUserAgent)
+				event.ContentType = MetaValue(md, MetaTagContentType)
 			}
-			log.Trigger(event)
+			log.Trigger(ctx, event)
 		}
 		return result, err
 	}
@@ -35,13 +35,14 @@ func LoggedStreaming(log logger.Triggerable) grpc.StreamServerInterceptor {
 		startTime := time.Now().UTC()
 		err = handler(srv, stream)
 		if log != nil {
-			event := logger.NewRPCEvent(info.FullMethod, time.Now().UTC().Sub(startTime)).WithErr(err)
+			event := logger.NewRPCEvent(info.FullMethod, time.Now().UTC().Sub(startTime))
+			event.Err = err
 			if md, ok := metadata.FromIncomingContext(stream.Context()); ok {
-				event = event.WithAuthority(MetaValue(md, MetaTagAuthority)).
-					WithUserAgent(MetaValue(md, MetaTagUserAgent)).
-					WithContentType(MetaValue(md, MetaTagContentType))
+				event.Authority = MetaValue(md, MetaTagAuthority)
+				event.UserAgent = MetaValue(md, MetaTagUserAgent)
+				event.ContentType = MetaValue(md, MetaTagContentType)
 			}
-			log.Trigger(event)
+			log.Trigger(context.Background(), event)
 		}
 		return err
 	}

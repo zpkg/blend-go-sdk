@@ -6,7 +6,6 @@ import (
 	"strings"
 	"time"
 
-	"github.com/blend/go-sdk/configutil"
 	"github.com/blend/go-sdk/env"
 	"github.com/blend/go-sdk/exception"
 	"github.com/blend/go-sdk/stringutil"
@@ -93,7 +92,7 @@ type Config struct {
 	// SSLMode is the sslmode for the connection.
 	SSLMode string `json:"sslMode,omitempty" yaml:"sslMode,omitempty" env:"DB_SSLMODE"`
 	// PlanCacheDisabled indicates if we should use the prepared statement plan cache.
-	PlanCacheDisabled *bool `json:"planCacheDisabled,omitempty" yaml:"planCacheDisabled,omitempty" env:"DB_DISABLE_PLAN_CACHE"`
+	PlanCacheDisabled bool `json:"planCacheDisabled,omitempty" yaml:"planCacheDisabled,omitempty" env:"DB_DISABLE_PLAN_CACHE"`
 	// IdleConnections is the number of idle connections.
 	IdleConnections int `json:"idleConnections,omitempty" yaml:"idleConnections,omitempty" env:"DB_IDLE_CONNECTIONS"`
 	// MaxConnections is the maximum number of connections.
@@ -109,155 +108,93 @@ func (c Config) IsZero() bool {
 	return c.DSN == "" && c.Host == "" && c.Port == "" && c.Database == "" && c.Schema == "" && c.Username == "" && c.Password == "" && c.SSLMode == ""
 }
 
-// WithEngine sets the databse engine.
-func (c *Config) WithEngine(engine string) *Config {
-	c.Engine = engine
-	return c
+// EngineOrDefault returns the database engine.
+func (c Config) EngineOrDefault() string {
+	if c.Engine != "" {
+		return c.Engine
+	}
+	return DefaultEngine
 }
 
-// WithDSN sets the config dsn and returns a reference to the config.
-func (c *Config) WithDSN(dsn string) *Config {
-	c.DSN = dsn
-	return c
+// HostOrDefault returns the postgres host for the connection or a default.
+func (c Config) HostOrDefault() string {
+	if c.Host != "" {
+		return c.Host
+	}
+	return DefaultHost
 }
 
-// WithHost sets the config host and returns a reference to the config.
-func (c *Config) WithHost(host string) *Config {
-	c.Host = host
-	return c
+// PortOrDefault returns the port for a connection if it is not the standard postgres port.
+func (c Config) PortOrDefault() string {
+	if c.Port != "" {
+		return c.Port
+	}
+	return DefaultPort
 }
 
-// WithPort sets the config host and returns a reference to the config.
-func (c *Config) WithPort(port string) *Config {
-	c.Port = port
-	return c
+// DatabaseOrDefault returns the connection database or a default.
+func (c Config) DatabaseOrDefault(inherited ...string) string {
+	if c.Database != "" {
+		return c.Database
+	}
+	return DefaultDatabase
 }
 
-// WithDatabase sets the config database and returns a reference to the config.
-func (c *Config) WithDatabase(database string) *Config {
-	c.Database = database
-	return c
+// IdleConnectionsOrDefault returns the number of idle connections or a default.
+func (c Config) IdleConnectionsOrDefault(inherited ...int) int {
+	if c.IdleConnections > 0 {
+		return c.IdleConnections
+	}
+	return DefaultIdleConnections
 }
 
-// WithSchema sets the config schema and returns a reference to the config.
-func (c *Config) WithSchema(schema string) *Config {
-	c.Schema = schema
-	return c
+// MaxConnectionsOrDefault returns the maximum number of connections or a default.
+func (c Config) MaxConnectionsOrDefault(inherited ...int) int {
+	if c.MaxConnections > 0 {
+		return c.MaxConnections
+	}
+	return DefaultMaxConnections
 }
 
-// WithUsername sets the config username and returns a reference to the config.
-func (c *Config) WithUsername(username string) *Config {
-	c.Username = username
-	return c
+// MaxLifetimeOrDefault returns the maximum lifetime of a driver connection.
+func (c Config) MaxLifetimeOrDefault(inherited ...time.Duration) time.Duration {
+	if c.MaxLifetime > 0 {
+		return c.MaxLifetime
+	}
+	return DefaultMaxLifetime
 }
 
-// WithPassword sets the config password and returns a reference to the config.
-func (c *Config) WithPassword(password string) *Config {
-	c.Password = password
-	return c
-}
-
-// WithSSLMode sets the config sslMode and returns a reference to the config.
-func (c *Config) WithSSLMode(sslMode string) *Config {
-	c.SSLMode = sslMode
-	return c
-}
-
-// GetEngine returns the database engine.
-func (c Config) GetEngine(inherited ...string) string {
-	return configutil.CoalesceString(c.Engine, DefaultEngine, inherited...)
-}
-
-// GetDSN returns the postgres dsn (fully quallified url) for the config.
-// If unset, it's generated from the host, port and database.
-func (c Config) GetDSN(inherited ...string) string {
-	return configutil.CoalesceString(c.DSN, "", inherited...)
-}
-
-// GetHost returns the postgres host for the connection or a default.
-func (c Config) GetHost(inherited ...string) string {
-	return configutil.CoalesceString(c.Host, DefaultHost, inherited...)
-}
-
-// GetPort returns the port for a connection if it is not the standard postgres port.
-func (c Config) GetPort(inherited ...string) string {
-	return configutil.CoalesceString(c.Port, DefaultPort, inherited...)
-}
-
-// GetDatabase returns the connection database or a default.
-func (c Config) GetDatabase(inherited ...string) string {
-	return configutil.CoalesceString(c.Database, DefaultDatabase, inherited...)
-}
-
-// GetSchema returns the connection schema or a default.
-func (c Config) GetSchema(inherited ...string) string {
-	return configutil.CoalesceString(c.Schema, "", inherited...)
-}
-
-// GetUsername returns the connection username or a default.
-func (c Config) GetUsername(inherited ...string) string {
-	return configutil.CoalesceString(c.Username, "", inherited...)
-}
-
-// GetPassword returns the connection password or a default.
-func (c Config) GetPassword(inherited ...string) string {
-	return configutil.CoalesceString(c.Password, "", inherited...)
-}
-
-// GetSSLMode returns the connection ssl mode.
-// It defaults to unset, which will then use the driver defaults.
-func (c Config) GetSSLMode(inherited ...string) string {
-	return configutil.CoalesceString(c.SSLMode, "", inherited...)
-}
-
-// GetPlanCacheDisabled returns if we should disable the statement plan cache or a default.
-func (c Config) GetPlanCacheDisabled(inherited ...bool) bool {
-	return configutil.CoalesceBool(c.PlanCacheDisabled, DefaultPlanCacheDisabled, inherited...)
-}
-
-// GetIdleConnections returns the number of idle connections or a default.
-func (c Config) GetIdleConnections(inherited ...int) int {
-	return configutil.CoalesceInt(c.IdleConnections, DefaultIdleConnections, inherited...)
-}
-
-// GetMaxConnections returns the maximum number of connections or a default.
-func (c Config) GetMaxConnections(inherited ...int) int {
-	return configutil.CoalesceInt(c.MaxConnections, DefaultMaxConnections, inherited...)
-}
-
-// GetMaxLifetime returns the maximum lifetime of a driver connection.
-func (c Config) GetMaxLifetime(inherited ...time.Duration) time.Duration {
-	return configutil.CoalesceDuration(c.MaxLifetime, DefaultMaxLifetime, inherited...)
-}
-
-// GetBufferPoolSize returns the number of query buffers to maintain or a default.
-func (c Config) GetBufferPoolSize(inherited ...int) int {
-	return configutil.CoalesceInt(c.BufferPoolSize, DefaultBufferPoolSize, inherited...)
+// BufferPoolSizeOrDefault returns the number of query buffers to maintain or a default.
+func (c Config) BufferPoolSizeOrDefault(inherited ...int) int {
+	if c.BufferPoolSize > 0 {
+		return c.BufferPoolSize
+	}
+	return DefaultBufferPoolSize
 }
 
 // CreateDSN creates a postgres connection string from the config.
 func (c Config) CreateDSN() string {
-	if len(c.GetDSN()) > 0 {
-		return c.GetDSN()
+	if len(c.DSN) > 0 {
+		return c.DSN
 	}
 
 	var sslMode string
-	if len(c.GetSSLMode()) > 0 {
-		sslMode = fmt.Sprintf("?sslmode=%s", url.QueryEscape(c.GetSSLMode()))
+	if len(c.SSLMode) > 0 {
+		sslMode = fmt.Sprintf("?sslmode=%s", url.QueryEscape(c.SSLMode))
 	}
 
 	var port string
-	if len(c.GetPort()) > 0 {
-		port = fmt.Sprintf(":%s", c.GetPort())
+	if len(c.PortOrDefault()) > 0 {
+		port = fmt.Sprintf(":%s", c.PortOrDefault())
 	}
 
-	if len(c.GetUsername()) > 0 {
-		if len(c.GetPassword()) > 0 {
-			return fmt.Sprintf("postgres://%s:%s@%s%s/%s%s", url.QueryEscape(c.GetUsername()), url.QueryEscape(c.GetPassword()), c.GetHost(), port, c.GetDatabase(), sslMode)
+	if len(c.Username) > 0 {
+		if len(c.Password) > 0 {
+			return fmt.Sprintf("postgres://%s:%s@%s%s/%s%s", url.QueryEscape(c.Username), url.QueryEscape(c.Password), c.HostOrDefault(), port, c.DatabaseOrDefault(), sslMode)
 		}
-		return fmt.Sprintf("postgres://%s@%s%s/%s%s", url.QueryEscape(c.GetUsername()), c.GetHost(), port, c.GetDatabase(), sslMode)
+		return fmt.Sprintf("postgres://%s@%s%s/%s%s", url.QueryEscape(c.Username), c.HostOrDefault(), port, c.DatabaseOrDefault(), sslMode)
 	}
-	return fmt.Sprintf("postgres://%s%s/%s%s", c.GetHost(), port, c.GetDatabase(), sslMode)
+	return fmt.Sprintf("postgres://%s%s/%s%s", c.HostOrDefault(), port, c.DatabaseOrDefault(), sslMode)
 }
 
 // Resolve creates a DSN and reparses it, in case some values need to be coalesced.
@@ -277,17 +214,17 @@ func (c Config) MustResolve() *Config {
 
 // ValidateProduction validates production configuration for the config.
 func (c Config) ValidateProduction() error {
-	if !(len(c.GetSSLMode()) == 0 ||
-		stringutil.EqualsCaseless(c.GetSSLMode(), SSLModeRequire) ||
-		stringutil.EqualsCaseless(c.GetSSLMode(), SSLModeVerifyCA) ||
-		stringutil.EqualsCaseless(c.GetSSLMode(), SSLModeVerifyFull)) {
-		return exception.New(ErrUnsafeSSLMode, exception.OptMessagef("sslmode: %s", c.GetSSLMode()))
+	if !(len(c.SSLMode) == 0 ||
+		stringutil.EqualsCaseless(c.SSLMode, SSLModeRequire) ||
+		stringutil.EqualsCaseless(c.SSLMode, SSLModeVerifyCA) ||
+		stringutil.EqualsCaseless(c.SSLMode, SSLModeVerifyFull)) {
+		return exception.New(ErrUnsafeSSLMode, exception.OptMessagef("sslmode: %s", c.SSLMode))
 	}
 
-	if len(c.GetUsername()) == 0 {
+	if len(c.Username) == 0 {
 		return exception.New(ErrUsernameUnset)
 	}
-	if len(c.GetPassword()) == 0 {
+	if len(c.Password) == 0 {
 		return exception.New(ErrPasswordUnset)
 	}
 	return nil

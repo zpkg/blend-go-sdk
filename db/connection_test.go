@@ -170,5 +170,5 @@ func TestConnectionConfigSetsDatabase(t *testing.T) {
 	assert.Nil(err)
 	assert.Nil(conn.Open())
 	defer conn.Close()
-	assert.NotEmpty(conn.Config.GetDatabase())
+	assert.NotEmpty(conn.Config.DatabaseOrDefault())
 }

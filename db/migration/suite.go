@@ -9,14 +9,6 @@ import (
 	"github.com/blend/go-sdk/logger"
 )
 
-// Migration Stats
-const (
-	StatApplied = "applied"
-	StatFailed  = "failed"
-	StatSkipped = "skipped"
-	StatTotal   = "total"
-)
-
 // New returns a new suite of groups.
 func New(groups ...GroupedActions) *Suite {
 	return &Suite{

@@ -157,7 +157,7 @@ func Exists(c *db.Connection, tx *sql.Tx, selectStatement string) (bool, error) 
 	if !stringutil.HasPrefixCaseless(selectStatement, "select") {
 		return false, fmt.Errorf("statement must be a `SELECT`")
 	}
-	return c.QueryInTx(selectStatement, tx).Any()
+	return c.Invoke(db.OptTx(tx)).Query(selectStatement).Any()
 }
 
 // NotExists returns if a statement doesnt have results.
@@ -165,5 +165,5 @@ func NotExists(c *db.Connection, tx *sql.Tx, selectStatement string) (bool, erro
 	if !stringutil.HasPrefixCaseless(selectStatement, "select") {
 		return false, fmt.Errorf("statement must be a `SELECT`")
 	}
-	return c.QueryInTx(selectStatement, tx).None()
+	return c.Invoke(db.OptTx(tx)).Query(selectStatement).None()
 }

@@ -91,7 +91,7 @@ func (dbc *Connection) Open() error {
 		return Error(ErrConfigUnset)
 	}
 	if dbc.BufferPool == nil {
-		dbc.BufferPool = bufferutil.NewPool(dbc.Config.GetBufferPoolSize())
+		dbc.BufferPool = bufferutil.NewPool(dbc.Config.BufferPoolSizeOrDefault())
 	}
 	if dbc.PlanCache == nil {
 		dbc.PlanCache = NewPlanCache()
@@ -104,17 +104,17 @@ func (dbc *Connection) Open() error {
 	}
 
 	// open the connection
-	dbConn, err := sql.Open(dbc.Config.GetEngine(), namedValues)
+	dbConn, err := sql.Open(dbc.Config.EngineOrDefault(), namedValues)
 	if err != nil {
 		return Error(err)
 	}
 
 	dbc.PlanCache.WithConnection(dbConn)
-	dbc.PlanCache.WithEnabled(!dbc.Config.GetPlanCacheDisabled())
+	dbc.PlanCache.WithEnabled(!dbc.Config.PlanCacheDisabled)
 	dbc.Connection = dbConn
-	dbc.Connection.SetConnMaxLifetime(dbc.Config.GetMaxLifetime())
-	dbc.Connection.SetMaxIdleConns(dbc.Config.GetIdleConnections())
-	dbc.Connection.SetMaxOpenConns(dbc.Config.GetMaxConnections())
+	dbc.Connection.SetConnMaxLifetime(dbc.Config.MaxLifetimeOrDefault())
+	dbc.Connection.SetMaxIdleConns(dbc.Config.IdleConnectionsOrDefault())
+	dbc.Connection.SetMaxOpenConns(dbc.Config.MaxConnectionsOrDefault())
 	return nil
 }
 

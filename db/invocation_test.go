@@ -7,6 +7,8 @@ import (
 	"testing"
 	"time"
 
+	"github.com/blend/go-sdk/bufferutil"
+
 	"github.com/blend/go-sdk/assert"
 	"github.com/blend/go-sdk/uuid"
 )
@@ -408,7 +410,7 @@ func TestGenerateGet(t *testing.T) {
 
 	conn, err := New()
 	assert.Nil(err)
-	conn.BufferPool = NewBufferPool(1)
+	conn.BufferPool = bufferutil.NewPool(1)
 	conn.PlanCache = NewPlanCache()
 
 	var obj generateGetTest
@@ -424,7 +426,7 @@ func TestGenerateGetAll(t *testing.T) {
 
 	conn, err := New()
 	assert.Nil(err)
-	conn.BufferPool = NewBufferPool(1)
+	conn.BufferPool = bufferutil.NewPool(1)
 	conn.PlanCache = NewPlanCache()
 
 	objs := []generateGetTest{}

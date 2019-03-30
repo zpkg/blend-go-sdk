@@ -877,10 +877,10 @@ func (i *Invocation) Finish(statement string, r interface{}, err error) error {
 
 		qe := logger.NewQueryEvent(statement, time.Now().UTC().Sub(i.StartTime))
 
-		qe.Username = i.Conn.Config.GetUsername()
-		qe.Database = i.Conn.Config.GetDatabase()
+		qe.Username = i.Conn.Config.Username
+		qe.Database = i.Conn.Config.DatabaseOrDefault()
 		qe.QueryLabel = i.CachedPlanKey
-		qe.Engine = i.Conn.Config.GetEngine()
+		qe.Engine = i.Conn.Config.EngineOrDefault()
 		qe.Err = err
 
 		i.Conn.Log.Trigger(i.Context, qe)

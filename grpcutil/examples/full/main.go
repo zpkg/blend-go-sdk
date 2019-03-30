@@ -42,13 +42,13 @@ func main() {
 	if _, err := configutil.Read(&cfg); !configutil.IsIgnored(err) {
 		logger.FatalExit(err)
 	}
-
-	log := logger.NewFromConfig(&cfg.Logger)
+	log := logger.New(logger.OptConfig(&cfg.Logger))
 
 	log.Infof("using bind address: %s", cfg.BindAddr)
 	listener, err := grpcutil.Listener(cfg.BindAddr)
 	if err != nil {
-		log.SyncFatalExit(err)
+		log.Fatal(err)
+		os.Exit(1)
 	}
 
 	// grpc interceptors
@@ -70,7 +70,8 @@ func main() {
 	server := grpc.NewServer(opts...)
 	full.RegisterStatusServer(server, statusServer{})
 	if err := graceful.Shutdown(grpcutil.NewGraceful(listener, server).WithLogger(log)); err != nil {
-		log.SyncFatalExit(err)
+		log.Fatal(err)
+		os.Exit(1)
 	}
 }
 

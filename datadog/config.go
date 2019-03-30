@@ -3,7 +3,6 @@ package datadog
 import (
 	"fmt"
 
-	"github.com/blend/go-sdk/configutil"
 	"github.com/blend/go-sdk/env"
 )
 
@@ -53,55 +52,55 @@ type Config struct {
 
 // IsZero returns if the config is unset.
 func (c Config) IsZero() bool {
-	return len(c.GetHostname()) == 0
+	return len(c.Hostname) == 0
 }
 
-// GetHostname returns the datadog hostname.
-func (c Config) GetHostname(defaults ...string) string {
-	return configutil.CoalesceString(c.Hostname, "", defaults...)
+// PortOrDefault returns the datadog port.
+func (c Config) PortOrDefault() string {
+	if c.Port != "" {
+		return c.Port
+	}
+	return DefaultPort
 }
 
-// GetPort returns the datadog port.
-func (c Config) GetPort(defaults ...string) string {
-	return configutil.CoalesceString(c.Port, DefaultPort, defaults...)
+// TracePortOrDefault returns the datadog trace port.
+func (c Config) TracePortOrDefault(defaults ...string) string {
+	if c.TracePort != "" {
+		return c.TracePort
+	}
+	return DefaultTracePort
 }
 
-// GetTracePort returns the datadog trace port.
-func (c Config) GetTracePort(defaults ...string) string {
-	return configutil.CoalesceString(c.TracePort, DefaultTracePort, defaults...)
-}
-
-// GetTracingEnabled returns if tracing is enabled.
-func (c Config) GetTracingEnabled() bool {
-	return configutil.CoalesceBool(c.TracingEnabled, DefaultTracingEnabled)
+// TracingEnabledOrDefault returns if tracing is enabled.
+func (c Config) TracingEnabledOrDefault() bool {
+	if c.TracingEnabled != nil {
+		return *c.TracingEnabled
+	}
+	return DefaultTracingEnabled
 }
 
 // GetHost returns the datadog collector host:port string.
 func (c Config) GetHost() string {
-	return fmt.Sprintf("%s:%s", c.GetHostname(), c.GetPort())
+	return fmt.Sprintf("%s:%s", c.Hostname, c.PortOrDefault())
 }
 
 // GetTraceHost returns the datadog trace collector host:port string.
 func (c Config) GetTraceHost() string {
-	return fmt.Sprintf("%s:%s", c.GetHostname(), c.GetTracePort())
+	return fmt.Sprintf("%s:%s", c.Hostname, c.TracePortOrDefault())
 }
 
-// GetBuffered returns if the client should buffer messages or not.
-func (c Config) GetBuffered(defaults ...bool) bool {
-	return configutil.CoalesceBool(c.Buffered, false, defaults...)
+// BufferedOrDefault returns if the client should buffer messages or not.
+func (c Config) BufferedOrDefault() bool {
+	if c.Buffered != nil {
+		return *c.Buffered
+	}
+	return false
 }
 
-// GetBufferDepth returns the buffer depth.
-func (c Config) GetBufferDepth(defaults ...int) int {
-	return configutil.CoalesceInt(c.BufferDepth, DefaultDatadogBufferDepth, defaults...)
-}
-
-// GetNamespace returns the default prefix for metric names.
-func (c Config) GetNamespace(defaults ...string) string {
-	return configutil.CoalesceString(c.Namespace, "", defaults...)
-}
-
-// GetDefaultTags returns default tags for the client.
-func (c Config) GetDefaultTags(defaults ...[]string) []string {
-	return configutil.CoalesceStrings(c.DefaultTags, nil, defaults...)
+// BufferDepthOrDefault returns the buffer depth.
+func (c Config) BufferDepthOrDefault() int {
+	if c.BufferDepth > 0 {
+		return c.BufferDepth
+	}
+	return DefaultDatadogBufferDepth
 }

@@ -4,6 +4,7 @@ import (
 	"context"
 	"encoding/base64"
 	"fmt"
+	"os"
 
 	"github.com/blend/go-sdk/logger"
 	"github.com/blend/go-sdk/secrets"
@@ -27,18 +28,21 @@ func main() {
 		Secret:      base64.StdEncoding.EncodeToString([]byte("a super secure one")),
 	})
 	if err != nil {
-		log.SyncFatalExit(err)
+		log.Fatal(err)
+		os.Exit(1)
 	}
 
 	var cfg myConfig
 	err = client.ReadInto(context.TODO(), keyPath, &cfg)
 	if err != nil {
-		log.SyncFatalExit(err)
+		log.Fatal(err)
+		os.Exit(1)
 	}
 
 	contents, err := yaml.Marshal(cfg)
 	if err != nil {
-		log.SyncFatalExit(err)
+		log.Fatal(err)
+		os.Exit(1)
 	}
 	fmt.Printf("%v\n", string(contents))
 }

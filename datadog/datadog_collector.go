@@ -22,20 +22,20 @@ var (
 func NewCollector(cfg *Config) (*Collector, error) {
 	var client *statsd.Client
 	var err error
-	if cfg.GetBuffered() {
-		client, err = statsd.NewBuffered(cfg.GetHost(), cfg.GetBufferDepth())
+	if cfg.BufferedOrDefault() {
+		client, err = statsd.NewBuffered(cfg.GetHost(), cfg.BufferDepthOrDefault())
 	} else {
 		client, err = statsd.New(cfg.GetHost())
 	}
 	if err != nil {
 		return nil, err
 	}
-	if len(cfg.GetNamespace()) > 0 {
-		client.Namespace = strings.ToLower(cfg.GetNamespace()) + "."
+	if len(cfg.Namespace) > 0 {
+		client.Namespace = strings.ToLower(cfg.Namespace) + "."
 	}
 	collector := &Collector{
 		client:      client,
-		defaultTags: cfg.GetDefaultTags(),
+		defaultTags: cfg.DefaultTags,
 	}
 
 	collector.AddDefaultTag("service", env.Env().String(env.VarServiceName))
