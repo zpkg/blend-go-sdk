@@ -20,7 +20,7 @@ func New(options ...AppOption) *App {
 		Config:          &Config{},
 		Auth:            &AuthManager{},
 		State:           &SyncState{},
-		Statics:         map[string]Fileserver{},
+		Statics:         map[string]*StaticFileServer{},
 		DefaultHeaders:  DefaultHeaders,
 		Views:           views,
 		DefaultProvider: views,
@@ -44,7 +44,7 @@ type App struct {
 	Handler                 http.Handler
 	Listener                *net.TCPListener
 	DefaultHeaders          map[string]string
-	Statics                 map[string]Fileserver
+	Statics                 map[string]*StaticFileServer
 	Routes                  map[string]*RouteNode
 	NotFoundHandler         Handler
 	MethodNotAllowedHandler Handler
@@ -205,6 +205,7 @@ func (a *App) ServeStatic(route string, searchPaths ...string) {
 	}
 	sfs := NewStaticFileServer(searchPathFS...)
 	sfs.Log = a.Log
+	sfs.CacheDisabled = true
 	mountedRoute := a.createStaticMountRoute(route)
 	a.Statics[mountedRoute] = sfs
 	a.Handle("GET", mountedRoute, a.RenderAction(a.Middleware(sfs.Action)))
@@ -217,8 +218,9 @@ func (a *App) ServeStaticCached(route string, searchPaths ...string) {
 	for _, searchPath := range searchPaths {
 		searchPathFS = append(searchPathFS, http.Dir(searchPath))
 	}
-	sfs := NewCachedStaticFileServer(searchPathFS...)
+	sfs := NewStaticFileServer(searchPathFS...)
 	sfs.Log = a.Log
+	sfs.CacheDisabled = false
 	mountedRoute := a.createStaticMountRoute(route)
 	a.Statics[mountedRoute] = sfs
 	a.Handle("GET", mountedRoute, a.RenderAction(a.Middleware(sfs.Action)))

@@ -37,30 +37,48 @@ func (vcc *ViewCacheConfig) Resolve() error {
 
 // BufferPoolSizeOrDefault gets the buffer pool size or a default.
 func (vcc ViewCacheConfig) BufferPoolSizeOrDefault() int {
-	return configutil.CoalesceInt(vcc.BufferPoolSize, DefaultViewBufferPoolSize)
+	if vcc.BufferPoolSize > 0 {
+		return vcc.BufferPoolSize
+	}
+	return DefaultViewBufferPoolSize
 }
 
 // InternalErrorTemplateNameOrDefault returns the internal error template name for the app.
 func (vcc ViewCacheConfig) InternalErrorTemplateNameOrDefault() string {
-	return configutil.CoalesceString(vcc.InternalErrorTemplateName, DefaultTemplateNameInternalError)
+	if vcc.InternalErrorTemplateName != "" {
+		return vcc.InternalErrorTemplateName
+	}
+	return DefaultTemplateNameInternalError
 }
 
 // BadRequestTemplateNameOrDefault returns the bad request template name for the app.
 func (vcc ViewCacheConfig) BadRequestTemplateNameOrDefault() string {
-	return configutil.CoalesceString(vcc.BadRequestTemplateName, DefaultTemplateNameBadRequest)
+	if vcc.BadRequestTemplateName != "" {
+		return vcc.BadRequestTemplateName
+	}
+	return DefaultTemplateNameBadRequest
 }
 
 // NotFoundTemplateNameOrDefault returns the not found template name for the app.
 func (vcc ViewCacheConfig) NotFoundTemplateNameOrDefault() string {
-	return configutil.CoalesceString(vcc.NotFoundTemplateName, DefaultTemplateNameNotFound)
+	if vcc.NotFoundTemplateName != "" {
+		return vcc.NotFoundTemplateName
+	}
+	return DefaultTemplateNameNotFound
 }
 
 // NotAuthorizedTemplateNameOrDefault returns the not authorized template name for the app.
 func (vcc ViewCacheConfig) NotAuthorizedTemplateNameOrDefault() string {
-	return configutil.CoalesceString(vcc.NotAuthorizedTemplateName, DefaultTemplateNameNotAuthorized)
+	if vcc.NotAuthorizedTemplateName != "" {
+		return vcc.NotAuthorizedTemplateName
+	}
+	return DefaultTemplateNameNotAuthorized
 }
 
 // StatusTemplateNameOrDefault returns the not authorized template name for the app.
 func (vcc ViewCacheConfig) StatusTemplateNameOrDefault() string {
-	return configutil.CoalesceString(vcc.StatusTemplateName, DefaultTemplateNameStatus)
+	if vcc.StatusTemplateName != "" {
+		return vcc.StatusTemplateName
+	}
+	return DefaultTemplateNameStatus
 }
