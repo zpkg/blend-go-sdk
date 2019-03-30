@@ -1,9 +1,12 @@
 package web
 
 import (
+	"bytes"
+	"io/ioutil"
 	"net/http"
 	"os"
 	"regexp"
+	"sync"
 
 	"github.com/blend/go-sdk/logger"
 )
@@ -17,16 +20,16 @@ func NewStaticFileServer(searchPaths ...http.FileSystem) *StaticFileServer {
 
 // StaticFileServer is a cache of static files.
 type StaticFileServer struct {
-	Log          logger.Log
-	SearchPaths  []http.FileSystem
-	RewriteRules []RewriteRule
-	Middleware   Action
-	Headers      http.Header
-}
+	sync.Mutex
 
-// GetHeaders implements part of the fileserver spec.
-func (sc *StaticFileServer) GetHeaders() http.Header {
-	return sc.Headers
+	Log           logger.Log
+	CacheDisabled bool
+	SearchPaths   []http.FileSystem
+	RewriteRules  []RewriteRule
+	Middleware    Action
+	Headers       http.Header
+
+	Cache map[string]*CachedStaticFile
 }
 
 // AddHeader adds a header to the static cache results.
@@ -51,6 +54,11 @@ func (sc *StaticFileServer) AddRewriteRule(match string, action RewriteAction) e
 	return nil
 }
 
+// SetMiddleware sets the middlewares.
+func (sc *StaticFileServer) SetMiddleware(middlewares ...Middleware) {
+	sc.Middleware = NestMiddleware(sc.ServeFile, middlewares...)
+}
+
 // Action is the entrypoint for the static server.
 // It will run middleware if specified before serving the file.
 func (sc *StaticFileServer) Action(r *Ctx) Result {
@@ -60,29 +68,6 @@ func (sc *StaticFileServer) Action(r *Ctx) Result {
 	return sc.ServeFile(r)
 }
 
-// ResolveFile resolves a file from rewrite rules and search paths.
-func (sc *StaticFileServer) ResolveFile(filePath string) (f http.File, err error) {
-	for _, rule := range sc.rewriteRules {
-		if matched, newFilePath := rule.Apply(filePath); matched {
-			filePath = newFilePath
-		}
-	}
-
-	// for each searchpath, sniff if the file exists ...
-	var openErr error
-	for _, searchPath := range sc.searchPaths {
-		f, openErr = searchPath.Open(filePath)
-		if openErr == nil {
-			break
-		}
-	}
-	if openErr != nil && !os.IsNotExist(openErr) {
-		err = openErr
-		return
-	}
-	return
-}
-
 // ServeFile writes the file to the response without running middleware.
 func (sc *StaticFileServer) ServeFile(r *Ctx) Result {
 	filePath, err := r.RouteParam("filepath")
@@ -90,7 +75,7 @@ func (sc *StaticFileServer) ServeFile(r *Ctx) Result {
 		return r.DefaultProvider.BadRequest(err)
 	}
 
-	for key, values := range sc.headers {
+	for key, values := range sc.Headers {
 		for _, value := range values {
 			r.Response.Header().Set(key, value)
 		}
@@ -111,4 +96,63 @@ func (sc *StaticFileServer) ServeFile(r *Ctx) Result {
 	}
 	http.ServeContent(r.Response, r.Request, filePath, finfo.ModTime(), f)
 	return nil
+}
+
+// ResolveFile resolves a file from rewrite rules and search paths.
+func (sc *StaticFileServer) ResolveFile(filePath string) (f http.File, err error) {
+	for _, rule := range sc.RewriteRules {
+		if matched, newFilePath := rule.Apply(filePath); matched {
+			filePath = newFilePath
+		}
+	}
+
+	// for each searchpath, sniff if the file exists ...
+	var openErr error
+	for _, searchPath := range sc.SearchPaths {
+		f, openErr = searchPath.Open(filePath)
+		if openErr == nil {
+			break
+		}
+	}
+	if openErr != nil && !os.IsNotExist(openErr) {
+		err = openErr
+		return
+	}
+	return
+}
+
+// ResolveCachedFile returns a cached file at a given path.
+// It returns the cached instance of a file if it exists, and adds it to the cache if there is a miss.
+func (sc *StaticFileServer) ResolveCachedFile(filepath string) (*CachedStaticFile, error) {
+	sc.Lock()
+	defer sc.Unlock()
+
+	if file, ok := sc.Cache[filepath]; ok {
+		return file, nil
+	}
+
+	diskFile, err := sc.ResolveFile(filepath)
+	if err != nil {
+		return nil, err
+	}
+
+	finfo, err := diskFile.Stat()
+	if err != nil {
+		return nil, err
+	}
+
+	contents, err := ioutil.ReadAll(diskFile)
+	if err != nil {
+		return nil, err
+	}
+
+	file := &CachedStaticFile{
+		Path:     filepath,
+		Contents: bytes.NewReader(contents),
+		ModTime:  finfo.ModTime(),
+		Size:     len(contents),
+	}
+
+	sc.Cache[filepath] = file
+	return file, nil
 }

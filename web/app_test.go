@@ -2,6 +2,7 @@ package web
 
 import (
 	"bytes"
+	"context"
 	"fmt"
 	"net/http"
 	"strings"
@@ -13,7 +14,6 @@ import (
 	"github.com/blend/go-sdk/env"
 	"github.com/blend/go-sdk/graceful"
 	"github.com/blend/go-sdk/logger"
-	"github.com/blend/go-sdk/ref"
 )
 
 // assert an app is graceful
@@ -37,9 +37,9 @@ func TestAppNewFromConfig(t *testing.T) {
 	app := New(OptConfig(&Config{
 		BindAddr:               ":5555",
 		Port:                   5000,
-		HandleMethodNotAllowed: ref.Bool(true),
-		HandleOptions:          ref.Bool(true),
-		RecoverPanics:          ref.Bool(true),
+		HandleMethodNotAllowed: true,
+		HandleOptions:          true,
+		DisablePanicRecovery:   true,
 
 		MaxHeaderBytes:    128,
 		ReadHeaderTimeout: 5 * time.Second,
@@ -54,9 +54,9 @@ func TestAppNewFromConfig(t *testing.T) {
 	}))
 
 	assert.Equal(":5555", app.Config.BindAddr)
-	assert.True(*app.Config.HandleMethodNotAllowed)
-	assert.True(*app.Config.HandleOptions)
-	assert.True(*app.Config.RecoverPanics)
+	assert.True(app.Config.HandleMethodNotAllowed)
+	assert.True(app.Config.HandleOptions)
+	assert.True(app.Config.DisablePanicRecovery)
 	assert.Equal(128, app.Config.MaxHeaderBytes)
 	assert.Equal(5*time.Second, app.Config.ReadHeaderTimeout)
 	assert.Equal(6*time.Second, app.Config.ReadTimeout)
@@ -142,7 +142,7 @@ func TestAppStaticRewrite(t *testing.T) {
 		return path
 	}))
 
-	assert.NotEmpty(app.Statics["/testPath/*filepath"].RewriteRules())
+	assert.NotEmpty(app.Statics["/testPath/*filepath"].RewriteRules)
 }
 
 func TestAppStaticRewriteBadExp(t *testing.T) {
@@ -157,7 +157,7 @@ func TestAppStaticRewriteBadExp(t *testing.T) {
 	})
 
 	assert.NotNil(err)
-	assert.Empty(app.Statics["/testPath/*filepath"].RewriteRules())
+	assert.Empty(app.Statics["/testPath/*filepath"].RewriteRules)
 }
 
 func TestAppStaticHeader(t *testing.T) {
@@ -167,7 +167,7 @@ func TestAppStaticHeader(t *testing.T) {
 	assert.NotEmpty(app.Statics)
 	assert.NotNil(app.Statics["/testPath/*filepath"])
 	assert.Nil(app.SetStaticHeader("/testPath/*filepath", "cache-control", "haha what is caching."))
-	assert.NotEmpty(app.Statics["/testPath/*filepath"].Headers())
+	assert.NotEmpty(app.Statics["/testPath/*filepath"].Headers)
 }
 
 func TestAppMiddleWarePipeline(t *testing.T) {
@@ -321,7 +321,7 @@ func TestAppWritesLogs(t *testing.T) {
 	assert := assert.New(t)
 
 	buffer := bytes.NewBuffer(nil)
-	agent := logger.New().WithFlags(logger.AllFlags()).WithWriter(logger.NewTextWriter(buffer))
+	agent := logger.New(logger.OptAll(), logger.OptOutput(buffer))
 
 	app := New(OptLog(agent))
 	app.GET("/", func(r *Ctx) Result {
@@ -350,7 +350,7 @@ func TestAppNotFound(t *testing.T) {
 	assert := assert.New(t)
 
 	buffer := bytes.NewBuffer(nil)
-	agent := logger.New().WithFlags(logger.AllFlags()).WithWriter(logger.NewTextWriter(buffer).WithShowHeadings(true).WithUseColor(false).WithShowTimestamp(false))
+	agent := logger.New(logger.OptAll(), logger.OptOutput(buffer))
 	app := New(OptLog(agent))
 	app.GET("/", func(r *Ctx) Result {
 		return Raw([]byte("ok!"))
@@ -364,9 +364,9 @@ func TestAppNotFound(t *testing.T) {
 		return JSON.NotFound()
 	})
 
-	agent.Listen(logger.HTTPResponse, "foo", logger.NewHTTPResponseEventListener(func(wre *logger.HTTPResponseEvent) {
-		assert.NotNil(wre.Request())
-		assert.Empty(wre.Route())
+	agent.Listen(logger.HTTPResponse, "foo", logger.NewHTTPResponseEventListener(func(_ context.Context, wre *logger.HTTPResponseEvent) {
+		assert.NotNil(wre.Request)
+		assert.Empty(wre.Route)
 	}))
 
 	err := MockDiscard(MockGet(app, "/doesntexist"))

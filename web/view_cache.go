@@ -42,7 +42,7 @@ var (
 // NewViewCache returns a new view cache.
 func NewViewCache(options ...ViewCacheOption) *ViewCache {
 	vc := &ViewCache{
-		FuncMap:                   template.FuncMap(templatehelpers.Funcs),
+		FuncMap:                   template.FuncMap(templatehelpers.ViewFuncs{}.FuncMap()),
 		BufferPool:                bufferutil.NewPool(1024),
 		InternalErrorTemplateName: DefaultTemplateNameInternalError,
 		BadRequestTemplateName:    DefaultTemplateNameBadRequest,
@@ -225,7 +225,7 @@ func (vc *ViewCache) ViewStatus(statusCode int, viewName string, viewModel inter
 		return vc.viewError(err)
 	}
 	if t == nil {
-		return vc.InternalError(exception.New(ErrUnsetViewTemplate).WithMessagef("viewname: %s", viewName))
+		return vc.InternalError(exception.New(ErrUnsetViewTemplate, exception.OptMessagef("viewname: %s", viewName)))
 	}
 
 	return &ViewResult{
