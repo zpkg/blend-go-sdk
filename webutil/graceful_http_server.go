@@ -12,10 +12,14 @@ import (
 
 // NewGracefulHTTPServer returns a new graceful http server wrapper.
 func NewGracefulHTTPServer(server *http.Server, options ...GracefulHTTPServerOption) *GracefulHTTPServer {
-	return &GracefulHTTPServer{
+	gs := &GracefulHTTPServer{
 		Latch:  async.NewLatch(),
 		Server: server,
 	}
+	for _, option := range options {
+		option(gs)
+	}
+	return gs
 }
 
 // GracefulHTTPServerOption is an option for the graceful http server.
@@ -33,7 +37,7 @@ func OptGracefulHTTPServerListener(listener net.Listener) GracefulHTTPServerOpti
 
 // GracefulHTTPServer is a wrapper for an http server that implements the graceful interface.
 type GracefulHTTPServer struct {
-	*async.Latch
+	Latch               *async.Latch
 	Server              *http.Server
 	ShutdownGracePeriod time.Duration
 	Listener            net.Listener
@@ -42,13 +46,13 @@ type GracefulHTTPServer struct {
 // Start implements graceful.Graceful.Start.
 // It is expected to block.
 func (gs *GracefulHTTPServer) Start() (err error) {
-	if !gs.CanStart() {
+	if !gs.Latch.CanStart() {
 		err = exception.New(async.ErrCannotStart)
 		return
 	}
-	gs.Starting()
-	gs.Started()
-	defer gs.Stopped()
+	gs.Latch.Starting()
+	gs.Latch.Started()
+	defer gs.Latch.Stopped()
 
 	var shutdownErr error
 	if gs.Listener != nil {
@@ -64,10 +68,10 @@ func (gs *GracefulHTTPServer) Start() (err error) {
 
 // Stop implements graceful.Graceful.Stop.
 func (gs *GracefulHTTPServer) Stop() error {
-	if !gs.CanStop() {
+	if !gs.Latch.CanStop() {
 		return exception.New(async.ErrCannotStop)
 	}
-	gs.Stopping()
+	gs.Latch.Stopping()
 	gs.Server.SetKeepAlivesEnabled(false)
 	ctx := context.Background()
 	if gs.ShutdownGracePeriod > 0 {
@@ -76,4 +80,14 @@ func (gs *GracefulHTTPServer) Stop() error {
 		defer cancel()
 	}
 	return exception.New(gs.Server.Shutdown(ctx))
+}
+
+// NotifyStarted implements part of graceful.
+func (gs *GracefulHTTPServer) NotifyStarted() <-chan struct{} {
+	return gs.Latch.NotifyStarted()
+}
+
+// NotifyStopped implements part of graceful.
+func (gs *GracefulHTTPServer) NotifyStopped() <-chan struct{} {
+	return gs.Latch.NotifyStopped()
 }

@@ -12,6 +12,11 @@ type Triggerable interface {
 	Trigger(context.Context, Event)
 }
 
+// SubContexter is a type that can return a subcontext.
+type SubContexter interface {
+	SubContext(string, ...ContextOption) *Context
+}
+
 // Writable is an type that can write events.
 type Writable interface {
 	Write(context.Context, Event)
@@ -93,6 +98,7 @@ type Log interface {
 
 // FullLog is a logger that implements the full suite of logging methods.
 type FullLog interface {
+	SubContexter
 	Listenable
 	Log
 }

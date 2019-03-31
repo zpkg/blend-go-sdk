@@ -37,7 +37,7 @@ type Job struct {
 	timeout  time.Duration
 	action   func(context.Context) error
 
-	log         logger.FullReceiver
+	log         logger.Log
 	statsClient stats.Collector
 	slackClient slack.Sender
 	emailClient email.Sender
@@ -49,7 +49,7 @@ func (job Job) Name() string {
 	if job.name != "" {
 		return job.name
 	}
-	return job.config.NameOrDefault()
+	return job.config.Name
 }
 
 // WithName sets the name.
@@ -103,7 +103,7 @@ func (job *Job) WithTimeout(d time.Duration) *Job {
 }
 
 // WithLogger sets the job logger.
-func (job *Job) WithLogger(log logger.FullReceiver) *Job {
+func (job *Job) WithLogger(log logger.Log) *Job {
 	job.log = log
 	return job
 }
@@ -188,7 +188,7 @@ func (job Job) OnDisabled(ctx context.Context) {
 	}
 }
 
-func (job Job) notify(ctx context.Context, flag logger.Flag) {
+func (job Job) notify(ctx context.Context, flag string) {
 	if job.statsClient != nil {
 		job.statsClient.Increment(string(flag), fmt.Sprintf("%s:%s", stats.TagJob, job.Name()))
 		if ji := cron.GetJobInvocation(ctx); ji != nil {

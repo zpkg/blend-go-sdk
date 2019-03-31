@@ -22,19 +22,24 @@ func TestGracefulServer(t *testing.T) {
 	assert.Nil(err)
 	typedListener, ok := listener.(*net.TCPListener)
 	assert.True(ok)
+	assert.NotNil(typedListener)
 
-	server := &http.Server{}
-	server.Handler = http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		w.WriteHeader(http.StatusOK)
-		fmt.Fprintf(w, "OK!\n")
-	})
+	server := &http.Server{
+		Handler: http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+			w.WriteHeader(http.StatusOK)
+			fmt.Fprintf(w, "OK!\n")
+		}),
+	}
 	gs := NewGracefulHTTPServer(server, OptGracefulHTTPServerListener(typedListener))
 	stopSignal := make(chan os.Signal)
 	didShutdown := make(chan struct{})
+
 	go func() {
 		defer func() { close(didShutdown) }()
 		graceful.ShutdownBySignal(stopSignal, gs)
 	}()
+	<-gs.NotifyStarted()
+
 	res, err := http.Get("http://" + typedListener.Addr().String())
 	assert.Nil(err)
 	assert.Equal(http.StatusOK, res.StatusCode)

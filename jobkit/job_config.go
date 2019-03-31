@@ -2,8 +2,6 @@ package jobkit
 
 import (
 	"time"
-
-	"github.com/blend/go-sdk/configutil"
 )
 
 // JobConfig is something you can use to give your jobs some knobs to turn
@@ -35,57 +33,66 @@ type JobConfig struct {
 	NotifyOnDisabled *bool `json:"notifyOnDisabled" yaml:"notifyOnDisabled"`
 }
 
-// NameOrDefault returns the job name if it's set.
-func (jc JobConfig) NameOrDefault() string {
-	return configutil.CoalesceString(jc.Name, "")
-}
-
-// DescritionOrDefault returns the job description if it's set.
-func (jc JobConfig) DescritionOrDefault() string {
-	return configutil.CoalesceString(jc.Description, "")
-}
-
 // ScheduleOrDefault returns the schedule or a default (every 5 minutes).
 func (jc JobConfig) ScheduleOrDefault() string {
-	return configutil.CoalesceString(jc.Schedule, "* */5 * * * * *")
-}
-
-// TimeoutOrDefault the job timeout or a default
-func (jc JobConfig) TimeoutOrDefault() time.Duration {
-	return jc.Timeout
+	if jc.Schedule != "" {
+		return jc.Schedule
+	}
+	return "* */5 * * * * *"
 }
 
 // NotifyOnStartOrDefault returns a value or a default.
 func (jc JobConfig) NotifyOnStartOrDefault() bool {
-	return configutil.CoalesceBool(jc.NotifyOnStart, false)
+	if jc.NotifyOnStart != nil {
+		return *jc.NotifyOnStart
+	}
+	return false
 }
 
 // NotifyOnSuccessOrDefault returns a value or a default.
 func (jc JobConfig) NotifyOnSuccessOrDefault() bool {
-	return configutil.CoalesceBool(jc.NotifyOnSuccess, false)
+	if jc.NotifyOnSuccess != nil {
+		return *jc.NotifyOnSuccess
+	}
+	return false
 }
 
 // NotifyOnFailureOrDefault returns a value or a default.
 func (jc JobConfig) NotifyOnFailureOrDefault() bool {
-	return configutil.CoalesceBool(jc.NotifyOnFailure, false)
+	if jc.NotifyOnFailure != nil {
+		return *jc.NotifyOnFailure
+	}
+	return false
 }
 
 // NotifyOnBrokenOrDefault returns a value or a default.
 func (jc JobConfig) NotifyOnBrokenOrDefault() bool {
-	return configutil.CoalesceBool(jc.NotifyOnBroken, true)
+	if jc.NotifyOnBroken != nil {
+		return *jc.NotifyOnBroken
+	}
+	return false
 }
 
 // NotifyOnFixedOrDefault returns a value or a default.
 func (jc JobConfig) NotifyOnFixedOrDefault() bool {
-	return configutil.CoalesceBool(jc.NotifyOnFixed, true)
+	if jc.NotifyOnFixed != nil {
+		return *jc.NotifyOnFixed
+	}
+	return false
 }
 
 // NotifyOnEnabledOrDefault returns a value or a default.
 func (jc JobConfig) NotifyOnEnabledOrDefault() bool {
-	return configutil.CoalesceBool(jc.NotifyOnEnabled, true)
+	if jc.NotifyOnEnabled != nil {
+		return *jc.NotifyOnEnabled
+	}
+	return false
 }
 
 // NotifyOnDisabledOrDefault returns a value or a default.
 func (jc JobConfig) NotifyOnDisabledOrDefault() bool {
-	return configutil.CoalesceBool(jc.NotifyOnDisabled, true)
+	if jc.NotifyOnDisabled != nil {
+		return *jc.NotifyOnDisabled
+	}
+	return false
 }
