@@ -639,7 +639,7 @@ func TestConnectionCreateIfNotExists(t *testing.T) {
 	assert.Nil(err)
 
 	var verify upsertObj
-	err = Default().Invoke(OptTx(tx)).Get(&verify, tx, obj.UUID)
+	err = Default().Invoke(OptTx(tx)).Get(&verify, obj.UUID)
 	assert.Nil(err)
 	assert.Equal(obj.Category, verify.Category)
 

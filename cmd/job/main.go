@@ -93,12 +93,13 @@ func main() {
 		logger.FatalExit(err)
 	}
 
-	log := logger.NewFromConfig(&cfg.Logger)
-	log.WithEnabled(cron.FlagStarted, cron.FlagComplete, cron.FlagFixed, cron.FlagBroken, cron.FlagFailed, cron.FlagCancelled)
+	log := logger.New(logger.OptConfig(&cfg.Logger))
+	log.Flags.Enable(cron.FlagStarted, cron.FlagComplete, cron.FlagFixed, cron.FlagBroken, cron.FlagFailed, cron.FlagCancelled)
 
 	defaultJobCfg, err := createDefaultJobConfig()
 	if err != nil {
-		log.SyncFatalExit(err)
+		log.Fatal(err)
+		os.Exit(1)
 	}
 	if defaultJobCfg != nil {
 		cfg.Jobs = append(cfg.Jobs, *defaultJobCfg)
@@ -112,26 +113,27 @@ func main() {
 	var emailClient email.Sender
 	if !cfg.AWS.IsZero() {
 		emailClient = ses.New(aws.MustNewSession(&cfg.AWS))
-		log.SyncInfof("adding email notifications")
+		log.Infof("adding email notifications")
 	}
 	var slackClient slack.Sender
 	if !cfg.Slack.IsZero() {
 		slackClient = slack.New(&cfg.Slack)
-		log.SyncInfof("adding slack notifications")
+		log.Infof("adding slack notifications")
 	}
 	var statsClient stats.Collector
 	if !cfg.Datadog.IsZero() {
 		statsClient, err = datadog.NewCollector(&cfg.Datadog)
 		if err != nil {
-			log.SyncFatalExit(err)
+			log.Fatal(err)
+			os.Exit(1)
 		}
-		log.SyncInfof("adding datadog metrics")
+		log.Infof("adding datadog metrics")
 	}
 
 	var errorClient diagnostics.Notifier
 	if !cfg.Airbrake.IsZero() {
 		errorClient = airbrake.MustNew(&cfg.Airbrake)
-		log.SyncInfof("adding airbrake notifications")
+		log.Infof("adding airbrake notifications")
 	}
 
 	jobs := cron.New(cron.OptHistoryConfig(cfg.Config.HistoryConfig), cron.OptLog(log))
@@ -139,10 +141,11 @@ func main() {
 	for _, jobCfg := range cfg.Jobs {
 		job, err := createJob(&jobCfg)
 		if err != nil {
-			log.SyncFatalExit(err)
+			log.Fatal(err)
+			os.Exit(1)
 		}
 		job.WithLogger(log).WithEmailClient(emailClient).WithSlackClient(slackClient).WithStatsClient(statsClient).WithErrorClient(errorClient)
-		log.SyncInfof("loading job `%s` with schedule `%s`", jobCfg.NameOrDefault(), jobCfg.ScheduleOrDefault())
+		log.Infof("loading job `%s` with schedule `%s`", jobCfg.Name, jobCfg.ScheduleOrDefault())
 		jobs.LoadJobs(job)
 	}
 
@@ -174,7 +177,7 @@ func createDefaultJobConfig() (*jobConfig, error) {
 
 func createJob(cfg *jobConfig) (*jobkit.Job, error) {
 	if cfg.Exec == "" && len(cfg.Command) == 0 {
-		return nil, exception.New("job exec and command unset").WithMessagef("job: %s", cfg.NameOrDefault())
+		return nil, exception.New("job exec and command unset", exception.OptMessagef("job: %s", cfg.Name))
 	}
 	var command []string
 	if cfg.Exec != "" {

@@ -9,7 +9,6 @@ import (
 
 	"github.com/blend/go-sdk/assert"
 	"github.com/blend/go-sdk/db"
-	"github.com/blend/go-sdk/db/migration"
 )
 
 var (
@@ -28,36 +27,36 @@ func randomName() string {
 
 func createTestTable(tableName string, tx *sql.Tx) error {
 	body := fmt.Sprintf("CREATE TABLE %s (id int, name varchar(32));", tableName)
-	step := migration.Step(TableNotExists(tableName), migration.Statements(body))
+	step := Step(TableNotExists(tableName), Statements(body))
 	return step.Action(context.Background(), db.Default(), tx)
 }
 
 func insertTestValue(tableName string, id int, name string, tx *sql.Tx) error {
 	body := fmt.Sprintf("INSERT INTO %s (id, name) VALUES ($1, $2);", tableName)
-	return db.Default().Invoke(context.Background(), db.OptTx(tx)).Exec(body, id, name)
+	return db.Default().Invoke(db.OptTx(tx)).Exec(body, id, name)
 }
 
 func createTestColumn(tableName, columnName string, tx *sql.Tx) error {
 	body := fmt.Sprintf("ALTER TABLE %s ADD %s varchar(32);", tableName, columnName)
-	step := migration.Step(ColumnNotExists(tableName, columnName), migration.Statements(body))
+	step := Step(ColumnNotExists(tableName, columnName), Statements(body))
 	return step.Action(context.Background(), db.Default(), tx)
 }
 
 func createTestConstraint(tableName, constraintName string, tx *sql.Tx) error {
 	body := fmt.Sprintf("ALTER TABLE %s ADD CONSTRAINT %s UNIQUE (name);", tableName, constraintName)
-	step := migration.Step(ColumnNotExists(tableName, constraintName), migration.Statements(body))
+	step := Step(ColumnNotExists(tableName, constraintName), Statements(body))
 	return step.Action(context.Background(), db.Default(), tx)
 }
 
 func createTestIndex(tableName, indexName string, tx *sql.Tx) error {
 	body := fmt.Sprintf("CREATE INDEX %s ON %s (name);", indexName, tableName)
-	step := migration.Step(IndexNotExists(tableName, indexName), migration.Statements(body))
+	step := Step(IndexNotExists(tableName, indexName), Statements(body))
 	return step.Action(context.Background(), db.Default(), tx)
 }
 
 func createTestRole(roleName string, tx *sql.Tx) error {
 	body := fmt.Sprintf("CREATE ROLE %s;", roleName)
-	step := migration.Step(RoleNotExists(roleName), migration.Statements(body))
+	step := Step(RoleNotExists(roleName), Statements(body))
 	return step.Action(context.Background(), db.Default(), tx)
 }
 

@@ -62,7 +62,7 @@ func (sc *Context) Infof(format string, args ...interface{}) {
 
 // Debugf logs a debug message to the output stream.
 func (sc *Context) Debugf(format string, args ...interface{}) {
-	sc.Trigger(sc.Background(), NewMessageEvent(Info, fmt.Sprintf(format, args...)))
+	sc.Trigger(sc.Background(), NewMessageEvent(Debug, fmt.Sprintf(format, args...)))
 }
 
 // Warningf logs a debug message to the output stream.
@@ -108,8 +108,16 @@ func (sc *Context) ErrorWithReq(err error, req *http.Request) error {
 	return err
 }
 
-// Fatal logs the result of a panic to std err.
+// Fatal logs an error as fatal.
 func (sc *Context) Fatal(err error) error {
 	sc.Trigger(sc.Background(), NewErrorEvent(Fatal, err))
+	return err
+}
+
+// FatalWithReq logs an error as fatal with a request as state.
+func (sc *Context) FatalWithReq(err error, req *http.Request) error {
+	ee := NewErrorEvent(Fatal, err)
+	ee.State = req
+	sc.Trigger(sc.Background(), ee)
 	return err
 }

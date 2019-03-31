@@ -70,8 +70,8 @@ func TestConnectionStatementCacheExecute(t *testing.T) {
 	a.Nil(conn.Exec("select 'ok!'"))
 	a.False(conn.PlanCache.HasStatement("select 'ok!'"))
 
-	a.Nil(conn.Exec("select 'ok!'", "ping"))
-	a.Nil(conn.Exec("select 'ok!'", "ping"))
+	a.Nil(conn.Invoke(OptCachedPlanKey("ping")).Exec("select 'ok!'"))
+	a.Nil(conn.Invoke(OptCachedPlanKey("ping")).Exec("select 'ok!'"))
 	a.True(conn.PlanCache.HasStatement("ping"))
 }
 
