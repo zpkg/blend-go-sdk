@@ -21,7 +21,7 @@ func NewManagementServer(jm *cron.JobManager, cfg *Config) *web.App {
 		return r.Views.View("index", jm.Status())
 	})
 	app.GET("/healthz", func(_ *web.Ctx) web.Result {
-		if jm.IsRunning() {
+		if jm.IsStarted() {
 			return web.JSON.OK()
 		}
 		return web.JSON.InternalError(fmt.Errorf("job manager is stopped or in an inconsistent state"))

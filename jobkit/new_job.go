@@ -14,11 +14,11 @@ func NewJob(cfg *JobConfig, action func(context.Context) error) (*Job, error) {
 	}
 
 	job := (&Job{action: action}).
-		WithName(cfg.NameOrDefault()).
-		WithDescription(cfg.DescritionOrDefault()).
+		WithName(cfg.Name).
+		WithDescription(cfg.Description).
 		WithConfig(cfg).
 		WithSchedule(schedule).
-		WithTimeout(cfg.TimeoutOrDefault())
+		WithTimeout(cfg.Timeout)
 
 	return job, nil
 }
