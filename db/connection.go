@@ -43,6 +43,15 @@ func New(options ...Option) (*Connection, error) {
 	return c, nil
 }
 
+// MustNew returns a new connection and panics on error.
+func MustNew(options ...Option) *Connection {
+	c, err := New(options...)
+	if err != nil {
+		panic(err)
+	}
+	return c
+}
+
 // Open opens a connection, testing an error and returning it if not nil, and if nil, opening the connection.
 // It's designed ot be used in conjunction with a constructor, i.e.
 //    conn, err := db.Open(db.NewFromConfig(cfg))
