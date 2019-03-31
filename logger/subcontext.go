@@ -27,6 +27,13 @@ func OptContextField(key string, value interface{}) ContextOption {
 	}
 }
 
+// OptContext sets the context.
+func OptContext(ctx context.Context) ContextOption {
+	return func(c *Context) {
+		c.Context = ctx
+	}
+}
+
 // Context is a logger context.
 // It is used to split a logger into functional concerns
 // but retain all the underlying machinery of logging.
@@ -40,6 +47,7 @@ type Context struct {
 // SubContext returns a new sub context.
 func (sc *Context) SubContext(name string, options ...ContextOption) *Context {
 	sc2 := NewContext(sc.WriteTriggerable, append(sc.SubContextPath, name)...)
+	sc2.Context = sc.Context
 	for _, option := range options {
 		option(sc2)
 	}
