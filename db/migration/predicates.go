@@ -24,7 +24,7 @@ func PredicateConstraintExists(c *db.Connection, tx *sql.Tx, constraintName stri
 
 // PredicateIndexExists returns if a index exists on a table on the given connection.
 func PredicateIndexExists(c *db.Connection, tx *sql.Tx, tableName, indexName string) (bool, error) {
-	return c.Invoke(db.OptTx(tx)).Query(`SELECT 1 FROM pg_catalog.pg_index ix join pg_catalog.pg_class t on t.oid = ix.indrelid join pg_catalog.pg_class i on i.oid = ix.indexrelid WHERE t.relname = $1 and i.relname = $2 and t.relkind = 'r'`, tx, strings.ToLower(tableName), strings.ToLower(indexName)).Any()
+	return c.Invoke(db.OptTx(tx)).Query(`SELECT 1 FROM pg_catalog.pg_index ix join pg_catalog.pg_class t on t.oid = ix.indrelid join pg_catalog.pg_class i on i.oid = ix.indexrelid WHERE t.relname = $1 and i.relname = $2 and t.relkind = 'r'`, strings.ToLower(tableName), strings.ToLower(indexName)).Any()
 }
 
 // PredicateRoleExists returns if a role exists or not.

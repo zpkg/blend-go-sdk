@@ -20,14 +20,14 @@ type MockClient struct {
 }
 
 // Put puts a value.
-func (c *MockClient) Put(_ context.Context, key string, data Values, options ...Option) error {
+func (c *MockClient) Put(_ context.Context, key string, data Values, options ...RequestOption) error {
 	c.SecretValues[key] = data
 
 	return nil
 }
 
 // Get gets a value at a given key.
-func (c *MockClient) Get(_ context.Context, key string, options ...Option) (Values, error) {
+func (c *MockClient) Get(_ context.Context, key string, options ...RequestOption) (Values, error) {
 	val, exists := c.SecretValues[key]
 	if !exists {
 		return nil, fmt.Errorf("Key not found: %s", key)
@@ -37,7 +37,7 @@ func (c *MockClient) Get(_ context.Context, key string, options ...Option) (Valu
 }
 
 // Delete deletes a key.
-func (c *MockClient) Delete(_ context.Context, key string, options ...Option) error {
+func (c *MockClient) Delete(_ context.Context, key string, options ...RequestOption) error {
 	if _, exists := c.SecretValues[key]; !exists {
 		return fmt.Errorf("Key not found: %s", key)
 	}

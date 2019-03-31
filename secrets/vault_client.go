@@ -85,81 +85,20 @@ func Must(c *VaultClient, err error) *VaultClient {
 
 // VaultClient is a client to talk to the secrets store.
 type VaultClient struct {
-	remote *url.URL
-	token  string
-	mount  string
-	log    logger.Log
+	Remote *url.URL
+	Token  string
+	Mount  string
+	Log    logger.Log
 
-	kv1 *kv1
-	kv2 *kv2
+	KV1 *kv1
+	KV2 *kv2
 
-	bufferPool *BufferPool
-	client     HTTPClient
-	certPool   *CertPool
-}
-
-// WithRemote set the client remote url.
-func (c *VaultClient) WithRemote(remote *url.URL) *VaultClient {
-	c.remote = remote
-	return c
-}
-
-// Remote returns the client remote addr.
-func (c *VaultClient) Remote() *url.URL {
-	return c.remote
-}
-
-// WithToken sets the token.
-func (c *VaultClient) WithToken(token string) *VaultClient {
-	c.token = token
-	return c
-}
-
-// Token returns the token.
-func (c *VaultClient) Token() string {
-	return c.token
-}
-
-// WithMount sets the token.
-func (c *VaultClient) WithMount(mount string) *VaultClient {
-	c.mount = mount
-	return c
-}
-
-// Mount returns the mount.
-func (c *VaultClient) Mount() string {
-	return c.mount
-}
-
-// WithHTTPClient sets the http client.
-func (c *VaultClient) WithHTTPClient(hc HTTPClient) *VaultClient {
-	c.client = hc
-	return c
-}
-
-// HTTPClient sets the http client.
-func (c *VaultClient) HTTPClient() HTTPClient {
-	return c.client
-}
-
-// CertPool returns the cert pool.
-func (c *VaultClient) CertPool() *CertPool {
-	return c.certPool
-}
-
-// WithLogger sets the logger.
-func (c *VaultClient) WithLogger(log logger.Log) *VaultClient {
-	c.log = log
-	return c
-}
-
-// Logger returns the logger.
-func (c *VaultClient) Logger() logger.Log {
-	return c.log
+	Client   HTTPClient
+	CertPool *CertPool
 }
 
 // Put puts a value.
-func (c *VaultClient) Put(ctx context.Context, key string, data Values, options ...Option) error {
+func (c *VaultClient) Put(ctx context.Context, key string, data Values, options ...RequestOption) error {
 	backend, err := c.backend(ctx, key)
 	if err != nil {
 		return err
@@ -169,7 +108,7 @@ func (c *VaultClient) Put(ctx context.Context, key string, data Values, options 
 }
 
 // Get gets a value at a given key.
-func (c *VaultClient) Get(ctx context.Context, key string, options ...Option) (Values, error) {
+func (c *VaultClient) Get(ctx context.Context, key string, options ...RequestOption) (Values, error) {
 	backend, err := c.backend(ctx, key)
 	if err != nil {
 		return nil, err
@@ -179,7 +118,7 @@ func (c *VaultClient) Get(ctx context.Context, key string, options ...Option) (V
 }
 
 // Delete puts a key.
-func (c *VaultClient) Delete(ctx context.Context, key string, options ...Option) error {
+func (c *VaultClient) Delete(ctx context.Context, key string, options ...RequestOption) error {
 	backend, err := c.backend(ctx, key)
 	if err != nil {
 		return err
@@ -188,7 +127,7 @@ func (c *VaultClient) Delete(ctx context.Context, key string, options ...Option)
 }
 
 // ReadInto reads a secret into an object.
-func (c *VaultClient) ReadInto(ctx context.Context, key string, obj interface{}, options ...Option) error {
+func (c *VaultClient) ReadInto(ctx context.Context, key string, obj interface{}, options ...RequestOption) error {
 	response, err := c.Get(ctx, key, options...)
 	if err != nil {
 		return err
@@ -197,7 +136,7 @@ func (c *VaultClient) ReadInto(ctx context.Context, key string, obj interface{},
 }
 
 // WriteInto writes an object into a secret at a given key.
-func (c *VaultClient) WriteInto(ctx context.Context, key string, obj interface{}, options ...Option) error {
+func (c *VaultClient) WriteInto(ctx context.Context, key string, obj interface{}, options ...RequestOption) error {
 	data, err := DecomposeJSON(obj)
 	if err != nil {
 		return err
@@ -216,11 +155,11 @@ func (c *VaultClient) backend(ctx context.Context, key string) (KV, error) {
 	}
 	switch version {
 	case Version1:
-		return c.kv1, nil
+		return c.KV1, nil
 	case Version2:
-		return c.kv2, nil
+		return c.KV2, nil
 	default:
-		return c.kv1, nil
+		return c.KV1, nil
 	}
 }
 
@@ -269,13 +208,13 @@ func (c *VaultClient) copyRemote() *url.URL {
 }
 
 // applyOptions applies options to a request.
-func (c *VaultClient) applyOptions(req *http.Request, options ...Option) {
+func (c *VaultClient) applyOptions(req *http.Request, options ...RequestOption) {
 	for _, opt := range options {
 		opt(req)
 	}
 }
 
-func (c *VaultClient) createRequest(method, path string, options ...Option) *http.Request {
+func (c *VaultClient) createRequest(method, path string, options ...RequestOption) *http.Request {
 	remote := c.copyRemote()
 	remote.Path = path
 	req := &http.Request{

@@ -32,7 +32,6 @@ func TestLoggingDebugf(t *testing.T) {
 	}))
 
 	Debugf(ctx, log, "foo %s", "bar")
-
 	<-triggered
 	assert.Equal("foo bar", message)
 }

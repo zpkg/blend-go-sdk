@@ -30,7 +30,7 @@ func TestGuard(t *testing.T) {
 	})
 
 	err = Guard("test", func(c *db.Connection, itx *sql.Tx) (bool, error) {
-		return c.Invoke(context.Background(), db.OptTx(itx)).Query(fmt.Sprintf("select * from %s", tableName)).Any()
+		return c.Invoke(db.OptTx(itx)).Query(fmt.Sprintf("select * from %s", tableName)).Any()
 	})(
 		context.Background(),
 		db.Default(),

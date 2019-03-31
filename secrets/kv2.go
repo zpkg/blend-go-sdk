@@ -17,7 +17,7 @@ type kv2 struct {
 	client *VaultClient
 }
 
-func (kv2 kv2) Put(ctx context.Context, key string, data Values, options ...Option) error {
+func (kv2 kv2) Put(ctx context.Context, key string, data Values, options ...RequestOption) error {
 	contents, err := kv2.client.jsonBody(SecretData{Data: data})
 	if err != nil {
 		return err
@@ -32,7 +32,7 @@ func (kv2 kv2) Put(ctx context.Context, key string, data Values, options ...Opti
 	return nil
 }
 
-func (kv2 kv2) Get(ctx context.Context, key string, options ...Option) (Values, error) {
+func (kv2 kv2) Get(ctx context.Context, key string, options ...RequestOption) (Values, error) {
 	req := kv2.client.createRequest(MethodGet, filepath.Join("/v1/", kv2.fixSecretDataPrefix(key)), options...).WithContext(ctx)
 	res, err := kv2.client.send(req)
 	if err != nil {
@@ -48,7 +48,7 @@ func (kv2 kv2) Get(ctx context.Context, key string, options ...Option) (Values, 
 }
 
 // Delete puts a key.
-func (kv2 kv2) Delete(ctx context.Context, key string, options ...Option) error {
+func (kv2 kv2) Delete(ctx context.Context, key string, options ...RequestOption) error {
 	req := kv2.client.createRequest(MethodDelete, filepath.Join("/v1/", kv2.fixSecretDataPrefix(key)), options...).WithContext(ctx)
 
 	res, err := kv2.client.send(req)
