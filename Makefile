@@ -22,7 +22,7 @@ all: format vet profanity test
 
 ci: vet profanity cover
 
-new-install: deps install
+new-install: deps install-all
 
 deps:
 	@go get github.com/lib/pq
