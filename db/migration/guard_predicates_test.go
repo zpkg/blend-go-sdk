@@ -1,4 +1,4 @@
-package pg
+package migration
 
 import (
 	"context"
@@ -8,7 +8,6 @@ import (
 
 	"github.com/blend/go-sdk/assert"
 	"github.com/blend/go-sdk/db"
-	"github.com/blend/go-sdk/db/migration"
 )
 
 func TestGuard(t *testing.T) {
@@ -25,12 +24,12 @@ func TestGuard(t *testing.T) {
 	assert.Nil(err)
 
 	var didRun bool
-	action := migration.Actions(func(ctx context.Context, c *db.Connection, itx *sql.Tx) error {
+	action := Actions(func(ctx context.Context, c *db.Connection, itx *sql.Tx) error {
 		didRun = true
 		return nil
 	})
 
-	err = migration.Guard("test", func(c *db.Connection, itx *sql.Tx) (bool, error) {
+	err = Guard("test", func(c *db.Connection, itx *sql.Tx) (bool, error) {
 		return c.QueryInTx(fmt.Sprintf("select * from %s", tableName), itx).Any()
 	})(
 		context.Background(),

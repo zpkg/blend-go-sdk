@@ -1,4 +1,4 @@
-package pg
+package migration
 
 import (
 	"database/sql"
