@@ -133,8 +133,6 @@ clean-cache:
 clean-dist:
 	@rm -rf dist
 
-release: clean-dist tag push-tag release-ask release-coverage release-profanity release-proxy release-recover release-semver release-template
-
 tag:
 	@echo "Tagging v$(VERSION)"
 	@git tag -f v$(VERSION)
@@ -143,11 +141,16 @@ push-tag:
 	@echo "Pushing v$(VERSION) tag to remote"
 	@git push -f origin v$(VERSION)
 
+release-all: clean-dist release-ask release-coverage release-job release-profanity release-proxy release-recover release-semver release-shamir release-template
+
 release-ask:
 	@goreleaser release -f .goreleaser/ask.yml
 
 release-coverage:
 	@goreleaser release -f .goreleaser/coverage.yml
+
+release-job:
+	@goreleaser release -f .goreleaser/job.yml
 
 release-profanity:
 	@goreleaser release -f .goreleaser/profanity.yml
@@ -160,6 +163,9 @@ release-recover:
 
 release-semver:
 	@goreleaser release -f .goreleaser/semver.yml
+
+release-shamir:
+	@goreleaser release -f .goreleaser/shamir.yml
 
 release-template:
 	@goreleaser release -f .goreleaser/template.yml

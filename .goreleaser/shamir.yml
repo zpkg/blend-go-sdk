@@ -1,0 +1,43 @@
+project_name: shamir
+builds:
+- main: "./cmd/shamir/main.go"
+  binary: shamir
+  env:
+  - CGO_ENABLED=0
+  goos:
+  - darwin
+  - linux
+  - windows
+  goarch:
+  - amd64
+  - arm
+  - arm64
+
+archive:
+  name_template: "{{ .ProjectName }}_{{ .Version }}_{{ .Os }}_{{ .Arch }}"
+  format: "tar.gz"
+  format_overrides:
+  - goos: windows
+    format: zip
+  files:
+  - none*
+
+brew:
+  name: shamir
+  github:
+    owner: blend
+    name: homebrew-tap
+  folder: Formula
+  commit_author:
+    name: baileydog
+    email: baileydog@blend.com
+  homepage: "https://github.com/blend/go-sdk/tree/master/cmd/shamir/README.md"
+  description: "Split secrets according to the shamir secure sharing scheme"
+
+dist: dist/shamir
+
+checksum:
+  name_template: '{{ .ProjectName }}_checksums.txt'
+
+snapshot:
+  name_template: "{{ .ProjectName }}_SNAPSHOT_{{ .Commit }}"
