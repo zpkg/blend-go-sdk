@@ -1,4 +1,10 @@
 version: 2.1
+general:
+  branches:
+    only:
+     - master
+     - v1.0
+     - v2.0
 jobs:
   build-test:
     working_directory: /go/src/github.com/blend/go-sdk
