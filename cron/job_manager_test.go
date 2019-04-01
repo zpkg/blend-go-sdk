@@ -106,7 +106,7 @@ func TestFiresErrorOnTaskError(t *testing.T) {
 	a.StartTimeout(2000 * time.Millisecond)
 	defer a.EndTimeout()
 
-	agent := logger.New(logger.OptEnabled(logger.Error))
+	agent := logger.All()
 	defer agent.Close()
 
 	manager := New(OptLog(agent))

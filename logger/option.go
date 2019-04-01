@@ -8,80 +8,92 @@ import (
 )
 
 // Option is a logger option.
-type Option func(*Logger)
+type Option func(*Logger) error
 
 // OptConfig sets the logger based on a config.
 func OptConfig(cfg *Config) Option {
-	return func(l *Logger) {
+	return func(l *Logger) error {
 		l.Output = NewInterlockedWriter(os.Stdout)
 		l.Formatter = cfg.Formatter()
 		l.Flags = NewFlags(cfg.FlagsOrDefault()...)
+		return nil
 	}
 }
 
-// OptMustConfigFromEnv sets the logger based on a config read from the environment.
+// OptConfigFromEnv sets the logger based on a config read from the environment.
 // It will panic if there is an erro.
-func OptMustConfigFromEnv() Option {
-	return func(l *Logger) {
+func OptConfigFromEnv() Option {
+	return func(l *Logger) error {
 		cfg := &Config{}
 		if err := env.Env().ReadInto(cfg); err != nil {
-			panic(err)
+			return err
 		}
 		l.Output = NewInterlockedWriter(os.Stdout)
 		l.Formatter = cfg.Formatter()
 		l.Flags = NewFlags(cfg.FlagsOrDefault()...)
+		return nil
 	}
 }
 
-// OptOutput sets the output writer for the logger.
-// It will wrap the output with a synchronizer if it's not already wrapped.
-// You can also use this option to "unset" the output by passing in nil.
+/*
+OptOutput sets the output writer for the logger.
+
+It will wrap the output with a synchronizer if it's not already wrapped. You can also use this option to "unset" the output by passing in nil.
+
+To set the output to be both stdout and a file, use the following:
+
+	file, _ := os.Open("app.log")
+	combined := io.MultiWriter(os.Stdout, file)
+	log := logger.New(logger.OptOutput(combined))
+
+*/
 func OptOutput(output io.Writer) Option {
-	return func(l *Logger) {
+	return func(l *Logger) error {
 		if output != nil {
 			l.Output = NewInterlockedWriter(output)
 		} else {
 			l.Output = nil
 		}
+		return nil
 	}
 }
 
 // OptJSON sets the output formatter for the logger as json.
 func OptJSON() Option {
-	return func(l *Logger) { l.Formatter = NewJSONOutputFormatter() }
+	return func(l *Logger) error { l.Formatter = NewJSONOutputFormatter(); return nil }
 }
 
 // OptText sets the output formatter for the logger as json.
 func OptText() Option {
-	return func(l *Logger) { l.Formatter = NewTextOutputFormatter() }
+	return func(l *Logger) error { l.Formatter = NewTextOutputFormatter(); return nil }
 }
 
 // OptFormatter sets the output formatter.
 func OptFormatter(formatter WriteFormatter) Option {
-	return func(l *Logger) { l.Formatter = formatter }
+	return func(l *Logger) error { l.Formatter = formatter; return nil }
 }
 
 // OptFlags sets the flags on the logger.
 func OptFlags(flags *Flags) Option {
-	return func(l *Logger) { l.Flags = flags }
+	return func(l *Logger) error { l.Flags = flags; return nil }
 }
 
 // OptAll sets all flags enabled on the logger by default.
 func OptAll() Option {
-	return func(l *Logger) { l.Flags.SetAll() }
+	return func(l *Logger) error { l.Flags.SetAll(); return nil }
 }
 
 // OptNone sets no flags enabled on the logger by default.
 func OptNone() Option {
-	return func(l *Logger) { l.Flags.SetNone() }
+	return func(l *Logger) error { l.Flags.SetNone(); return nil }
 }
 
 // OptEnabled sets enabled flags on the logger.
 func OptEnabled(flags ...string) Option {
-	return func(l *Logger) { l.Flags.Enable(flags...) }
+	return func(l *Logger) error { l.Flags.Enable(flags...); return nil }
 }
 
 // OptDisabled sets disabled flags on the logger.
 func OptDisabled(flags ...string) Option {
-	return func(l *Logger) { l.Flags.Disable(flags...) }
+	return func(l *Logger) error { l.Flags.Disable(flags...); return nil }
 }

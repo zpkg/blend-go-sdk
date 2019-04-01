@@ -13,6 +13,6 @@ func MaybeFatalExit(err error) {
 
 // FatalExit will print the error and exit the process with exit(1).
 func FatalExit(err error) {
-	New(OptOutput(os.Stderr)).Fatal(err)
+	MustNew(OptOutput(os.Stderr)).Fatal(err)
 	os.Exit(1)
 }

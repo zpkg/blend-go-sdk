@@ -117,7 +117,7 @@ func TestAppPathParamsForked(t *testing.T) {
 func TestAppSetLogger(t *testing.T) {
 	assert := assert.New(t)
 
-	log := logger.New()
+	log := logger.MustNew()
 	app := New(OptLog(log))
 	assert.NotNil(app.Log)
 }
@@ -321,7 +321,7 @@ func TestAppWritesLogs(t *testing.T) {
 	assert := assert.New(t)
 
 	buffer := bytes.NewBuffer(nil)
-	agent := logger.New(logger.OptAll(), logger.OptOutput(buffer))
+	agent := logger.MustNew(logger.OptAll(), logger.OptOutput(buffer))
 
 	app := New(OptLog(agent))
 	app.GET("/", func(r *Ctx) Result {
@@ -350,7 +350,7 @@ func TestAppNotFound(t *testing.T) {
 	assert := assert.New(t)
 
 	buffer := bytes.NewBuffer(nil)
-	agent := logger.New(logger.OptAll(), logger.OptOutput(buffer))
+	agent := logger.MustNew(logger.OptAll(), logger.OptOutput(buffer))
 	app := New(OptLog(agent))
 	app.GET("/", func(r *Ctx) Result {
 		return Raw([]byte("ok!"))

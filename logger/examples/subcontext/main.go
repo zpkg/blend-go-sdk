@@ -7,7 +7,7 @@ import (
 )
 
 func main() {
-	all := logger.New(logger.OptAll())
+	all := logger.MustNew(logger.OptAll())
 	go func(log logger.Log) {
 		ticker := time.Tick(500 * time.Millisecond)
 		for {

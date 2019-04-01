@@ -11,7 +11,7 @@ import (
 )
 
 func main() {
-	log := logger.New(logger.OptAll())
+	log := logger.MustNew(logger.OptAll())
 
 	log.Listen(logger.Info, "randomly_slow", func(ctx context.Context, e logger.Event) {
 		if rand.Float64() < 0.1 {

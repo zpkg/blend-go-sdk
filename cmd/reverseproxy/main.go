@@ -31,7 +31,10 @@ const (
 )
 
 func main() {
-	log := logger.New(logger.OptMustConfigFromEnv(), logger.OptEnabled(logger.HTTPRequest))
+	log, err := logger.New(logger.OptConfigFromEnv(), logger.OptEnabled(logger.HTTPRequest))
+	if err != nil {
+		logger.FatalExit(err)
+	}
 
 	var upstreams Upstreams
 	flag.Var(&upstreams, "upstream", "An upstream server to proxy traffic to")

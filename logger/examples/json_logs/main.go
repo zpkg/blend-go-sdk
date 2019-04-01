@@ -93,7 +93,10 @@ func main() {
 		log.Println(http.ListenAndServe("localhost:6060", nil))
 	}()
 
-	log := logger.New(logger.OptJSON(), logger.OptAll())
+	log, err := logger.New(logger.OptJSON(), logger.OptAll())
+	if err != nil {
+		logger.FatalExit(err)
+	}
 
 	http.HandleFunc("/", logged(log, indexHandler))
 

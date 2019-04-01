@@ -93,7 +93,10 @@ func main() {
 		logger.FatalExit(err)
 	}
 
-	log := logger.New(logger.OptConfig(&cfg.Logger))
+	log, err := logger.New(logger.OptConfig(&cfg.Logger))
+	if err != nil {
+		logger.FatalExit(err)
+	}
 	log.Flags.Enable(cron.FlagStarted, cron.FlagComplete, cron.FlagFixed, cron.FlagBroken, cron.FlagFailed, cron.FlagCancelled)
 
 	defaultJobCfg, err := createDefaultJobConfig()

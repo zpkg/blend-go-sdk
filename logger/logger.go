@@ -20,7 +20,7 @@ const (
 
 // New returns a new logger with a given set of enabled flags.
 // By default it uses a text output formatter writing to stdout.
-func New(options ...Option) *Logger {
+func New(options ...Option) (*Logger, error) {
 	l := &Logger{
 		Latch:         async.NewLatch(),
 		Formatter:     NewTextOutputFormatter(),
@@ -29,26 +29,38 @@ func New(options ...Option) *Logger {
 		Flags:         NewFlags(),
 	}
 	l.Context = NewContext(l)
+	var err error
 	for _, option := range options {
-		option(l)
+		if err = option(l); err != nil {
+			return nil, err
+		}
 	}
-	return l
+	return l, nil
+}
+
+// MustNew creates a new logger with a given list of options and panics on error.
+func MustNew(options ...Option) *Logger {
+	log, err := New(options...)
+	if err != nil {
+		panic(err)
+	}
+	return log
 }
 
 // All returns a new logger with all flags enabled.
 func All(options ...Option) *Logger {
-	return New(append(options, OptAll())...)
+	return MustNew(append(options, OptAll())...)
 }
 
 // None returns a new logger with all flags enabled.
 func None() *Logger {
-	return New(OptNone(), OptOutput(nil))
+	return MustNew(OptNone(), OptOutput(nil))
 }
 
 // Prod returns a new logger tuned for production use.
 // It writes to os.Stderr with text output colorization disabled.
 func Prod(options ...Option) *Logger {
-	return New(
+	return MustNew(
 		append([]Option{
 			OptAll(),
 			OptOutput(os.Stderr),

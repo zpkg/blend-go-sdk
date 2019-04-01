@@ -62,6 +62,7 @@ func NewCustomEventListener(listener func(context.Context, *CustomEvent)) logger
 func main() {
 	// make a text logger.
 	text := logger.All(logger.OptText())
+
 	// make a json logger
 	js := logger.All(logger.OptJSON())
 
