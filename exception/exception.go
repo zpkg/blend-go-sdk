@@ -17,12 +17,20 @@ var (
 // Pragma: this violates the rule that you should take interfaces and return
 // concrete types intentionally; it is important for the semantics of typed pointers and nil
 // for this to return an interface because (*Ex)(nil) != nil, but (error)(nil) == nil.
-func New(class interface{}, options ...Option) error {
+func New(class interface{}, options ...Option) Exception {
 	return NewWithStackDepth(class, defaultNewStartDepth, options...)
 }
 
+// Exception is a meta interface for exceptions.
+type Exception interface {
+	error
+	WithMessage(...interface{}) Exception
+	WithMessagef(string, ...interface{}) Exception
+	WithInner(error) Exception
+}
+
 // NewWithStackDepth creates a new exception with a given start point of the stack.
-func NewWithStackDepth(class interface{}, startDepth int, options ...Option) error {
+func NewWithStackDepth(class interface{}, startDepth int, options ...Option) Exception {
 	if class == nil {
 		return nil
 	}
@@ -80,7 +88,7 @@ func OptStack(stack StackTrace) Option {
 // OptInner sets an inner or wrapped exception.
 func OptInner(inner error) Option {
 	return func(ex *Ex) {
-		ex.Inner = inner
+		ex.Inner = NewWithStackDepth(inner, defaultNewStartDepth)
 	}
 }
 
@@ -95,6 +103,27 @@ type Ex struct {
 	Inner error
 	// Stack is the call stack frames used to create the stack output.
 	Stack StackTrace
+}
+
+// WithMessage sets the exception message.
+// Deprecation notice: This method is included as a migraition path from v2, and will be removed after v3.
+func (e *Ex) WithMessage(args ...interface{}) Exception {
+	e.Message = fmt.Sprint(args...)
+	return e
+}
+
+// WithMessagef sets the exception message based on a format and arguments.
+// Deprecation notice: This method is included as a migraition path from v2, and will be removed after v3.
+func (e *Ex) WithMessagef(format string, args ...interface{}) Exception {
+	e.Message = fmt.Sprintf(format, args...)
+	return e
+}
+
+// WithInner sets the inner exception.
+// Deprecation notice: This method is included as a migraition path from v2, and will be removed after v3.
+func (e *Ex) WithInner(err error) Exception {
+	e.Inner = NewWithStackDepth(err, defaultNewStartDepth)
+	return e
 }
 
 // Format allows for conditional expansion in printf statements
