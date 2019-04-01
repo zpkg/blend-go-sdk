@@ -3,11 +3,11 @@ package logger
 import "context"
 
 // MaybeTrigger triggers an event if the logger is set.
-func MaybeTrigger(log Triggerable, e Event) {
+func MaybeTrigger(ctx context.Context, log Triggerable, e Event) {
 	if log == nil {
 		return
 	}
-	log.Trigger(context.Background(), e)
+	log.Trigger(ctx, e)
 }
 
 // MaybeInfof triggers Infof if the logger is set.

@@ -19,7 +19,7 @@ type myConfig struct {
 
 func main() {
 	log := logger.All()
-	client := secrets.Must(secrets.NewFromEnv()).WithLogger(log)
+	client := secrets.Must(secrets.New(secrets.OptConfigFromEnv(), secrets.OptLog(log)))
 
 	keyPath := "configTest"
 	err := client.WriteInto(context.TODO(), keyPath, myConfig{

@@ -1,7 +1,6 @@
 package secrets
 
 import (
-	"net/url"
 	"time"
 
 	"github.com/blend/go-sdk/env"
@@ -12,15 +11,6 @@ const (
 	EnvVarVaultAddr  = "VAULT_ADDR"
 	EnvVarVaultToken = "VAULT_TOKEN"
 )
-
-// MustNewConfigFromEnv returns a config set from the env, and panics on error.
-func MustNewConfigFromEnv() (cfg *Config) {
-	var err error
-	if cfg, err = NewConfigFromEnv(); err != nil {
-		panic(err)
-	}
-	return
-}
 
 // NewConfigFromEnv returns a config populated by the env.
 func NewConfigFromEnv() (*Config, error) {
@@ -63,15 +53,6 @@ func (c Config) AddrOrDefault() string {
 		return c.Addr
 	}
 	return DefaultAddr
-}
-
-// MustParseAddr returns the addr as a url.
-func (c Config) MustParseAddr() *url.URL {
-	remote, err := url.ParseRequestURI(c.AddrOrDefault())
-	if err != nil {
-		panic(err)
-	}
-	return remote
 }
 
 // MountOrDefault returns secrets mount or a default.

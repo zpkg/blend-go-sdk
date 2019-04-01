@@ -2,13 +2,14 @@ package secrets
 
 import (
 	"context"
-	"crypto/tls"
 	"encoding/json"
 	"io"
 	"io/ioutil"
 	"net/http"
 	"net/url"
 	"path/filepath"
+
+	"github.com/blend/go-sdk/bufferutil"
 
 	"golang.org/x/net/http2"
 
@@ -17,62 +18,40 @@ import (
 )
 
 // assert VaultClient implements Client
-var _ Client = &VaultClient{}
+var (
+	_ Client = (*VaultClient)(nil)
+)
 
-// NewVaultClient returns a new client.
-func NewVaultClient() (*VaultClient, error) {
-	return NewVaultClientFromConfig(&Config{})
-}
-
-// NewVaultClientFromConfig returns a new client from a config.
-func NewVaultClientFromConfig(cfg *Config) (*VaultClient, error) {
+// New creates a new vault client with a default set of options.
+func New(options ...Option) (*VaultClient, error) {
 	xport := &http.Transport{}
 	err := http2.ConfigureTransport(xport)
 	if err != nil {
 		return nil, err
 	}
-	remote, err := url.ParseRequestURI(cfg.AddrOrDefault())
+	remote, err := url.ParseRequestURI(DefaultAddr)
 	if err != nil {
 		return nil, err
 	}
-	var certPool *CertPool
-	if caPaths := cfg.RootCAs; len(caPaths) > 0 {
-		certPool, err = NewCertPool()
-		if err != nil {
-			return nil, err
-		}
-		err = certPool.AddPaths(caPaths...)
-		if err != nil {
-			return nil, err
-		}
-		xport.TLSClientConfig = &tls.Config{
-			RootCAs: certPool.Pool(),
-		}
-	}
 	client := &VaultClient{
-		remote:     remote,
-		mount:      cfg.MountOrDefault(),
-		bufferPool: NewBufferPool(DefaultBufferPoolSize),
-		token:      cfg.Token,
-		certPool:   certPool,
-		client: &http.Client{
-			Timeout:   cfg.TimeoutOrDefault(),
+		Remote:     remote,
+		Mount:      DefaultMount,
+		BufferPool: bufferutil.NewPool(DefaultBufferPoolSize),
+		Client: &http.Client{
 			Transport: xport,
 		},
 	}
 
-	client.kv1 = &kv1{client: client}
-	client.kv2 = &kv2{client: client}
-	return client, nil
-}
+	client.KV1 = &KV1{client: client}
+	client.KV2 = &KV2{client: client}
 
-// NewVaultClientFromEnv is a helper to create a client from a config read from the environment.
-func NewVaultClientFromEnv() (*VaultClient, error) {
-	cfg, err := NewConfigFromEnv()
-	if err != nil {
-		return nil, err
+	for _, option := range options {
+		if err = option(client); err != nil {
+			return nil, err
+		}
 	}
-	return NewVaultClientFromConfig(cfg)
+
+	return client, nil
 }
 
 // Must does things with the error such as panic.
@@ -85,16 +64,15 @@ func Must(c *VaultClient, err error) *VaultClient {
 
 // VaultClient is a client to talk to the secrets store.
 type VaultClient struct {
-	Remote *url.URL
-	Token  string
-	Mount  string
-	Log    logger.Log
-
-	KV1 *kv1
-	KV2 *kv2
-
-	Client   HTTPClient
-	CertPool *CertPool
+	Remote     *url.URL
+	Token      string
+	Mount      string
+	Log        logger.Log
+	BufferPool *bufferutil.Pool
+	KV1        *KV1
+	KV2        *KV2
+	Client     HTTPClient
+	CertPool   *CertPool
 }
 
 // Put puts a value.
@@ -164,7 +142,7 @@ func (c *VaultClient) backend(ctx context.Context, key string) (KV, error) {
 }
 
 func (c *VaultClient) getVersion(ctx context.Context, key string) (string, error) {
-	meta, err := c.getMountMeta(ctx, filepath.Join(c.mount, key))
+	meta, err := c.getMountMeta(ctx, filepath.Join(c.Mount, key))
 	if err != nil {
 		return "", err
 	}
@@ -175,7 +153,7 @@ func (c *VaultClient) getMountMeta(ctx context.Context, key string) (*MountRespo
 	req := c.createRequest(MethodGet, filepath.Join("/v1/sys/internal/ui/mounts/", key))
 	req = req.WithContext(ctx)
 
-	res, err := c.client.Do(req)
+	res, err := c.Client.Do(req)
 	if err != nil {
 		return nil, err
 	}
@@ -189,12 +167,12 @@ func (c *VaultClient) getMountMeta(ctx context.Context, key string) (*MountRespo
 }
 
 func (c *VaultClient) jsonBody(input interface{}) (io.ReadCloser, error) {
-	buf := c.bufferPool.Get()
+	buf := c.BufferPool.Get()
 	err := json.NewEncoder(buf).Encode(input)
 	if err != nil {
 		return nil, err
 	}
-	return buf, nil
+	return bufferutil.PutOnClose(buf, c.BufferPool), nil
 }
 
 func (c *VaultClient) readJSON(r io.Reader, output interface{}) error {
@@ -203,7 +181,7 @@ func (c *VaultClient) readJSON(r io.Reader, output interface{}) error {
 
 // copyRemote returns a copy of our remote.
 func (c *VaultClient) copyRemote() *url.URL {
-	remoteCopy := *c.remote
+	remoteCopy := *c.Remote
 	return &remoteCopy
 }
 
@@ -221,7 +199,7 @@ func (c *VaultClient) createRequest(method, path string, options ...RequestOptio
 		Method: method,
 		URL:    remote,
 		Header: http.Header{
-			HeaderVaultToken: []string{c.Token()},
+			HeaderVaultToken: []string{c.Token},
 		},
 	}
 	c.applyOptions(req, options...)
@@ -229,16 +207,15 @@ func (c *VaultClient) createRequest(method, path string, options ...RequestOptio
 }
 
 func (c *VaultClient) send(req *http.Request) (io.ReadCloser, error) {
-	if c.log != nil {
-		c.log.Trigger(req.Context(), NewEvent(req))
-	}
-	res, err := c.client.Do(req)
+	logger.MaybeTrigger(req.Context(), c.Log, NewEvent(req))
+	res, err := c.Client.Do(req)
 	if err != nil {
 		return nil, err
 	}
 	if res.StatusCode > 299 {
-		buf := c.bufferPool.Get()
-		defer buf.Close()
+		buf := c.BufferPool.Get()
+		defer c.BufferPool.Put(buf)
+
 		io.Copy(buf, res.Body)
 		return nil, exception.New(ExceptionClassForStatus(res.StatusCode), exception.OptMessagef("status: %d; %v", res.StatusCode, buf.String()))
 	}

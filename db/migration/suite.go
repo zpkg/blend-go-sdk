@@ -12,61 +12,46 @@ import (
 // New returns a new suite of groups.
 func New(groups ...GroupedActions) *Suite {
 	return &Suite{
-		ctx:    context.Background(),
-		groups: groups,
+		Groups: groups,
 	}
 }
 
 // Suite is a migration suite.
 type Suite struct {
-	ctx    context.Context
-	log    logger.Log
-	groups []GroupedActions
+	context context.Context
 
-	applied int
-	skipped int
-	failed  int
-	total   int
+	Log    logger.Log
+	Groups []GroupedActions
+
+	Applied int
+	Skipped int
+	Failed  int
+	Total   int
 }
 
-// WithContext sets the suite context.
-func (s *Suite) WithContext(ctx context.Context) *Suite {
-	s.ctx = ctx
-	return s
-}
-
-// Context returns the suite context.
+// Context returns a context for the suite.
 func (s *Suite) Context() context.Context {
-	return s.ctx
+	if s.context != nil {
+		return s.context
+	}
+	return context.Background()
 }
 
-// WithLogger sets the suite logger.
-func (s *Suite) WithLogger(log logger.Log) *Suite {
-	s.log = log
-	return s
-}
-
-// Logger returns the underlying logger.
-func (s *Suite) Logger() logger.Log {
-	return s.log
-}
-
-// WithGroups adds groups to the suite and returns the suite.
-func (s *Suite) WithGroups(groups ...GroupedActions) *Suite {
-	s.groups = append(s.groups, groups...)
-	return s
+// WithContext sets the context on the suite.
+func (s *Suite) WithContext(ctx context.Context) {
+	s.context = ctx
 }
 
 // Apply applies the suite.
 func (s *Suite) Apply(c *db.Connection) (err error) {
-	defer s.WriteStats()
+	defer s.WriteStats(s.Context())
 	defer func() {
 		if r := recover(); r != nil {
 			err = exception.New(r)
 		}
 	}()
 
-	for _, group := range s.groups {
+	for _, group := range s.Groups {
 		if err = group.Action(WithSuite(s.Context(), s), c); err != nil {
 			return
 		}
@@ -76,40 +61,38 @@ func (s *Suite) Apply(c *db.Connection) (err error) {
 
 // Applyf writes an applied step message.
 func (s *Suite) Applyf(ctx context.Context, format string, args ...interface{}) {
-	s.applied = s.applied + 1
-	s.total = s.total + 1
+	s.Applied = s.Applied + 1
+	s.Total = s.Total + 1
 	s.Write(ctx, StatApplied, fmt.Sprintf(format, args...))
 }
 
 // Skipf skips a given step.
 func (s *Suite) Skipf(ctx context.Context, format string, args ...interface{}) {
-	s.skipped = s.skipped + 1
-	s.total = s.total + 1
+	s.Skipped = s.Skipped + 1
+	s.Total = s.Total + 1
 	s.Write(ctx, StatSkipped, fmt.Sprintf(format, args...))
 }
 
 // Errorf writes an error for a given step.
 func (s *Suite) Errorf(ctx context.Context, format string, args ...interface{}) {
-	s.failed = s.failed + 1
-	s.total = s.total + 1
+	s.Failed = s.Failed + 1
+	s.Total = s.Total + 1
 	s.Write(ctx, StatFailed, fmt.Sprintf(format, args...))
 }
 
 // Error
 func (s *Suite) Error(ctx context.Context, err error) error {
-	s.failed = s.failed + 1
-	s.total = s.total + 1
+	s.Failed = s.Failed + 1
+	s.Total = s.Total + 1
 	s.Write(ctx, StatFailed, fmt.Sprintf("%v", err))
 	return err
 }
 
 func (s *Suite) Write(ctx context.Context, result, body string) {
-	logger.MaybeTrigger(s.log, NewEvent(result, body, GetContextLabels(ctx)...))
+	logger.MaybeTrigger(ctx, s.Log, NewEvent(result, body, GetContextLabels(ctx)...))
 }
 
 // WriteStats writes the stats if a logger is configured.
-func (s *Suite) WriteStats() {
-	if s.log != nil {
-		s.log.Trigger(context.Background(), NewStatsEvent(s.applied, s.skipped, s.failed, s.total))
-	}
+func (s *Suite) WriteStats(ctx context.Context) {
+	logger.MaybeTrigger(ctx, s.Log, NewStatsEvent(s.Applied, s.Skipped, s.Failed, s.Total))
 }

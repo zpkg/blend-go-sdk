@@ -24,7 +24,7 @@ type benchObject struct {
 
 func createTable(tableName string, log logger.Log, conn *db.Connection) error {
 	log.Infof("creating %s", tableName)
-	return migration.New(
+	suite := migration.New(
 		migration.Group(
 			migration.Step(
 				migration.TableNotExists(tableName),
@@ -33,12 +33,14 @@ func createTable(tableName string, log logger.Log, conn *db.Connection) error {
 				),
 			),
 		),
-	).WithLogger(log).Apply(conn)
+	)
+	suite.Log = log
+	return suite.Apply(conn)
 }
 
 func dropTable(tableName string, log logger.Log, conn *db.Connection) error {
 	log.Infof("dropping %s", tableName)
-	return migration.New(
+	suite := migration.New(
 		migration.Group(
 			migration.Step(
 				migration.TableExists(tableName),
@@ -47,7 +49,9 @@ func dropTable(tableName string, log logger.Log, conn *db.Connection) error {
 				),
 			),
 		),
-	).WithLogger(log).Apply(conn)
+	)
+	suite.Log = log
+	return suite.Apply(conn)
 }
 
 func maybeFatal(err error) {

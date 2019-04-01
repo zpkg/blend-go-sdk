@@ -14,13 +14,13 @@ func TestVaultClientBackend(t *testing.T) {
 	assert := assert.New(t)
 	todo := context.TODO()
 
-	client, err := NewVaultClient()
+	client, err := New()
 	assert.Nil(err)
 
 	mountMetaJSON := `{"request_id":"e114c628-6493-28ed-0975-418a75c7976f","lease_id":"","renewable":false,"lease_duration":0,"data":{"accessor":"kv_45f6a162","config":{"default_lease_ttl":0,"force_no_cache":false,"max_lease_ttl":0,"plugin_name":""},"description":"key/value secret storage","local":false,"options":{"version":"2"},"path":"secret/","seal_wrap":false,"type":"kv"},"wrap_info":null,"warnings":null,"auth":null}`
 
-	m := NewMockHTTPClient().WithString("GET", MustURL("%s/v1/sys/internal/ui/mounts/secret/foo/bar", client.Remote().String()), mountMetaJSON)
-	client.WithHTTPClient(m)
+	m := NewMockHTTPClient().WithString("GET", MustURL("%s/v1/sys/internal/ui/mounts/secret/foo/bar", client.Remote.String()), mountMetaJSON)
+	client.Client = m
 
 	backend, err := client.backend(todo, "foo/bar")
 	assert.Nil(err)
@@ -31,22 +31,22 @@ func TestVaultClientGetVersion(t *testing.T) {
 	assert := assert.New(t)
 	todo := context.TODO()
 
-	client, err := NewVaultClient()
+	client, err := New()
 	assert.Nil(err)
 
 	mountMetaJSONV1 := `{"request_id":"e114c628-6493-28ed-0975-418a75c7976f","lease_id":"","renewable":false,"lease_duration":0,"data":{"accessor":"kv_45f6a162","config":{"default_lease_ttl":0,"force_no_cache":false,"max_lease_ttl":0,"plugin_name":""},"description":"key/value secret storage","local":false,"options":{"version":"1"},"path":"secret/","seal_wrap":false,"type":"kv"},"wrap_info":null,"warnings":null,"auth":null}`
 	mountMetaJSONV2 := `{"request_id":"e114c628-6493-28ed-0975-418a75c7976f","lease_id":"","renewable":false,"lease_duration":0,"data":{"accessor":"kv_45f6a162","config":{"default_lease_ttl":0,"force_no_cache":false,"max_lease_ttl":0,"plugin_name":""},"description":"key/value secret storage","local":false,"options":{"version":"2"},"path":"secret/","seal_wrap":false,"type":"kv"},"wrap_info":null,"warnings":null,"auth":null}`
 
 	m := NewMockHTTPClient().
-		WithString("GET", MustURL("%s/v1/sys/internal/ui/mounts/secret/foo/bar", client.Remote().String()), mountMetaJSONV1)
+		WithString("GET", MustURL("%s/v1/sys/internal/ui/mounts/secret/foo/bar", client.Remote.String()), mountMetaJSONV1)
 
-	client.WithHTTPClient(m)
+	client.Client = m
 
 	version, err := client.getVersion(todo, "foo/bar")
 	assert.Nil(err)
 	assert.Equal(Version1, version)
 
-	m.WithString("GET", MustURL("%s/v1/sys/internal/ui/mounts/secret/foo/bar", client.Remote().String()), mountMetaJSONV2)
+	m.WithString("GET", MustURL("%s/v1/sys/internal/ui/mounts/secret/foo/bar", client.Remote.String()), mountMetaJSONV2)
 
 	version, err = client.getVersion(todo, "foo/bar")
 	assert.Nil(err)
@@ -57,13 +57,13 @@ func TestVaultClientGetMountMeta(t *testing.T) {
 	assert := assert.New(t)
 	todo := context.TODO()
 
-	client, err := NewVaultClient()
+	client, err := New()
 	assert.Nil(err)
 
 	mountMetaJSON := `{"request_id":"e114c628-6493-28ed-0975-418a75c7976f","lease_id":"","renewable":false,"lease_duration":0,"data":{"accessor":"kv_45f6a162","config":{"default_lease_ttl":0,"force_no_cache":false,"max_lease_ttl":0,"plugin_name":""},"description":"key/value secret storage","local":false,"options":{"version":"2"},"path":"secret/","seal_wrap":false,"type":"kv"},"wrap_info":null,"warnings":null,"auth":null}`
 
-	m := NewMockHTTPClient().WithString("GET", MustURL("%s/v1/sys/internal/ui/mounts/secret/foo/bar", client.Remote().String()), mountMetaJSON)
-	client.WithHTTPClient(m)
+	m := NewMockHTTPClient().WithString("GET", MustURL("%s/v1/sys/internal/ui/mounts/secret/foo/bar", client.Remote.String()), mountMetaJSON)
+	client.Client = m
 
 	mountMeta, err := client.getMountMeta(todo, "secret/foo/bar")
 	assert.Nil(err)
@@ -74,7 +74,7 @@ func TestVaultClientGetMountMeta(t *testing.T) {
 func TestVaultClientJSONBody(t *testing.T) {
 	assert := assert.New(t)
 
-	client, err := NewVaultClient()
+	client, err := New()
 	assert.Nil(err)
 
 	output, err := client.jsonBody(map[string]interface{}{
@@ -91,7 +91,7 @@ func TestVaultClientJSONBody(t *testing.T) {
 func TestVaultClientReadJSON(t *testing.T) {
 	assert := assert.New(t)
 
-	client, err := NewVaultClient()
+	client, err := New()
 	assert.Nil(err)
 
 	jsonBody := bytes.NewBuffer([]byte(`{"foo":"bar"}`))
@@ -104,7 +104,7 @@ func TestVaultClientReadJSON(t *testing.T) {
 func TestVaultClientCopyRemote(t *testing.T) {
 	assert := assert.New(t)
 
-	client, err := NewVaultClient()
+	client, err := New()
 	assert.Nil(err)
 
 	copy := client.copyRemote()
@@ -117,7 +117,7 @@ func TestVaultClientCopyRemote(t *testing.T) {
 func TestVaultClientDiscard(t *testing.T) {
 	assert := assert.New(t)
 
-	client, err := NewVaultClient()
+	client, err := New()
 	assert.Nil(err)
 
 	assert.NotNil(client.discard(nil, fmt.Errorf("this is only a test")))

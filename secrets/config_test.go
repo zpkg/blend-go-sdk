@@ -11,15 +11,13 @@ func TestNewConfigFromEnv(t *testing.T) {
 	assert := assert.New(t)
 	defer env.Restore()
 
-	env.Env().Set("VAULT_ADDR", "http://127.0.0.1:8100")
+	env.Env().Set("VAULT_ADDR", "http://127.0.0.2:8100")
 	env.Env().Set("VAULT_TOKEN", "thisisatest")
 
 	cfg, err := NewConfigFromEnv()
 	assert.Nil(err)
-	assert.Equal("http://127.0.0.1:8100", cfg.AddrOrDefault())
+	assert.Equal("http://127.0.0.2:8100", cfg.AddrOrDefault())
 	assert.Equal("thisisatest", cfg.Token)
-
-	assert.Equal("http://127.0.0.1:8100", cfg.MustParseAddr().String())
 }
 
 func TestConfigIsZero(t *testing.T) {

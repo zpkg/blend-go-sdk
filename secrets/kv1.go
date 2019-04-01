@@ -8,15 +8,16 @@ import (
 
 // assert kv1 implements kv.
 var (
-	_ KV = &kv1{}
+	_ KV = &KV1{}
 )
 
-// kv1 defines key value version 1 interactions
-type kv1 struct {
+// KV1 defines key value version 1 interactions
+type KV1 struct {
 	client *VaultClient
 }
 
-func (kv1 kv1) Put(ctx context.Context, key string, data Values, options ...RequestOption) error {
+// Put puts a secret.
+func (kv1 KV1) Put(ctx context.Context, key string, data Values, options ...RequestOption) error {
 	contents, err := kv1.client.jsonBody(data)
 	if err != nil {
 		return err
@@ -31,7 +32,8 @@ func (kv1 kv1) Put(ctx context.Context, key string, data Values, options ...Requ
 	return nil
 }
 
-func (kv1 kv1) Get(ctx context.Context, key string, options ...RequestOption) (Values, error) {
+// Get gets a secret..
+func (kv1 KV1) Get(ctx context.Context, key string, options ...RequestOption) (Values, error) {
 	req := kv1.client.createRequest(MethodGet, filepath.Join("/v1/", key), options...).WithContext(ctx)
 	res, err := kv1.client.send(req)
 	if err != nil {
@@ -46,8 +48,8 @@ func (kv1 kv1) Get(ctx context.Context, key string, options ...RequestOption) (V
 	return response.Data, nil
 }
 
-// Delete puts a key.
-func (kv1 kv1) Delete(ctx context.Context, key string, options ...RequestOption) error {
+// Delete deletes a secret.
+func (kv1 KV1) Delete(ctx context.Context, key string, options ...RequestOption) error {
 	req := kv1.client.createRequest(MethodDelete, filepath.Join("/v1/", key), options...).WithContext(ctx)
 	res, err := kv1.client.send(req)
 	if err != nil {
