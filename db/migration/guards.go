@@ -67,71 +67,71 @@ func IfNotExists(statement string) GuardFunc {
 	})
 }
 
-// ColumnNotExistsFromPredicate creates a table on the given connection if it does not exist.
-func ColumnNotExistsFromPredicate(predicate Predicate2, tableName, columnName string) GuardFunc {
+// ColumnNotExistsWithPredicate creates a table on the given connection if it does not exist.
+func ColumnNotExistsWithPredicate(predicate Predicate2, tableName, columnName string) GuardFunc {
 	return Guard(fmt.Sprintf("create column `%s` on `%s`", columnName, tableName), func(c *db.Connection, tx *sql.Tx) (bool, error) {
 		return Not(predicate(c, tx, tableName, columnName))
 	})
 }
 
-// ConstraintNotExistsFromPredicate creates a table on the given connection if it does not exist.
-func ConstraintNotExistsFromPredicate(predicate Predicate, constraintName string) GuardFunc {
+// ConstraintNotExistsWithPredicate creates a table on the given connection if it does not exist.
+func ConstraintNotExistsWithPredicate(predicate Predicate, constraintName string) GuardFunc {
 	return Guard(fmt.Sprintf("create constraint `%s`", constraintName), func(c *db.Connection, tx *sql.Tx) (bool, error) {
 		return Not(predicate(c, tx, constraintName))
 	})
 }
 
-// TableNotExistsFromPredicate creates a table on the given connection if it does not exist.
-func TableNotExistsFromPredicate(predicate Predicate, tableName string) GuardFunc {
+// TableNotExistsWithPredicate creates a table on the given connection if it does not exist.
+func TableNotExistsWithPredicate(predicate Predicate, tableName string) GuardFunc {
 	return Guard(fmt.Sprintf("create table `%s`", tableName), func(c *db.Connection, tx *sql.Tx) (bool, error) {
 		return Not(predicate(c, tx, tableName))
 	})
 }
 
-// IndexNotExistsFromPredicate creates a index on the given connection if it does not exist.
-func IndexNotExistsFromPredicate(predicate Predicate2, tableName, indexName string) GuardFunc {
+// IndexNotExistsWithPredicate creates a index on the given connection if it does not exist.
+func IndexNotExistsWithPredicate(predicate Predicate2, tableName, indexName string) GuardFunc {
 	return Guard(fmt.Sprintf("create index `%s` on `%s`", indexName, tableName), func(c *db.Connection, tx *sql.Tx) (bool, error) {
 		return Not(predicate(c, tx, tableName, indexName))
 	})
 }
 
-// RoleNotExistsFromPredicate creates a new role if it doesn't exist.
-func RoleNotExistsFromPredicate(predicate Predicate, roleName string) GuardFunc {
+// RoleNotExistsWithPredicate creates a new role if it doesn't exist.
+func RoleNotExistsWithPredicate(predicate Predicate, roleName string) GuardFunc {
 	return Guard(fmt.Sprintf("create role `%s`", roleName), func(c *db.Connection, tx *sql.Tx) (bool, error) {
 		return Not(predicate(c, tx, roleName))
 	})
 }
 
-// ColumnExistsFromPredicate alters an existing column, erroring if it doesn't exist
-func ColumnExistsFromPredicate(predicate Predicate2, tableName, columnName string) GuardFunc {
+// ColumnExistsWithPredicate alters an existing column, erroring if it doesn't exist
+func ColumnExistsWithPredicate(predicate Predicate2, tableName, columnName string) GuardFunc {
 	return Guard(fmt.Sprintf("alter column `%s` on `%s`", columnName, tableName), func(c *db.Connection, tx *sql.Tx) (bool, error) {
 		return predicate(c, tx, tableName, columnName)
 	})
 }
 
-// ConstraintExistsFromPredicate alters an existing constraint, erroring if it doesn't exist
-func ConstraintExistsFromPredicate(predicate Predicate, constraintName string) GuardFunc {
+// ConstraintExistsWithPredicate alters an existing constraint, erroring if it doesn't exist
+func ConstraintExistsWithPredicate(predicate Predicate, constraintName string) GuardFunc {
 	return Guard(fmt.Sprintf("alter constraint `%s`", constraintName), func(c *db.Connection, tx *sql.Tx) (bool, error) {
 		return predicate(c, tx, constraintName)
 	})
 }
 
-// TableExistsFromPredicate alters an existing table, erroring if it doesn't exist
-func TableExistsFromPredicate(predicate Predicate, tableName string) GuardFunc {
+// TableExistsWithPredicate alters an existing table, erroring if it doesn't exist
+func TableExistsWithPredicate(predicate Predicate, tableName string) GuardFunc {
 	return Guard(fmt.Sprintf("alter table `%s`", tableName), func(c *db.Connection, tx *sql.Tx) (bool, error) {
 		return predicate(c, tx, tableName)
 	})
 }
 
-// IndexExistsFromPredicate alters an existing index, erroring if it doesn't exist
-func IndexExistsFromPredicate(predicate Predicate2, tableName, indexName string) GuardFunc {
+// IndexExistsWithPredicate alters an existing index, erroring if it doesn't exist
+func IndexExistsWithPredicate(predicate Predicate2, tableName, indexName string) GuardFunc {
 	return Guard(fmt.Sprintf("alter index `%s` on `%s`", indexName, tableName), func(c *db.Connection, tx *sql.Tx) (bool, error) {
 		return predicate(c, tx, tableName, indexName)
 	})
 }
 
-// RoleExistsFromPredicate alters an existing role in the db
-func RoleExistsFromPredicate(predicate Predicate, roleName string) GuardFunc {
+// RoleExistsWithPredicate alters an existing role in the db
+func RoleExistsWithPredicate(predicate Predicate, roleName string) GuardFunc {
 	return Guard(fmt.Sprintf("alter role `%s`", roleName), func(c *db.Connection, tx *sql.Tx) (bool, error) {
 		return predicate(c, tx, roleName)
 	})

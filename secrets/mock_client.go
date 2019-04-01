@@ -3,9 +3,12 @@ package secrets
 import (
 	"context"
 	"fmt"
+	"strings"
 )
 
-var _ Client = &MockClient{}
+var (
+	_ Client = (*MockClient)(nil)
+)
 
 // NewMockClient creates a new mock client.
 func NewMockClient() *MockClient {
@@ -44,4 +47,29 @@ func (c *MockClient) Delete(_ context.Context, key string, options ...RequestOpt
 
 	delete(c.SecretValues, key)
 	return nil
+}
+
+// List lists keys on a path
+func (c *MockClient) List(_ context.Context, path string, options ...RequestOption) ([]string, error) {
+	keys := make([]string, 0)
+	folderSet := make(map[string]struct{})
+	p := path
+	if !strings.HasSuffix(path, "/") {
+		p = path + "/"
+	}
+	for k := range c.SecretValues {
+		if strings.HasPrefix(k, p) {
+			s := strings.TrimPrefix(k, p)
+			if strings.ContainsRune(s, '/') {
+				folder := fmt.Sprintf("%s/", strings.Split(s, "/")[0])
+				if _, ok := folderSet[folder]; !ok {
+					folderSet[folder] = struct{}{}
+					keys = append(keys, folder)
+				}
+			} else {
+				keys = append(keys, s)
+			}
+		}
+	}
+	return keys, nil
 }

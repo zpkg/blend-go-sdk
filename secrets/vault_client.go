@@ -42,8 +42,8 @@ func New(options ...Option) (*VaultClient, error) {
 		},
 	}
 
-	client.KV1 = &KV1{client: client}
-	client.KV2 = &KV2{client: client}
+	client.KV1 = &KV1{Client: client}
+	client.KV2 = &KV2{Client: client}
 
 	for _, option := range options {
 		if err = option(client); err != nil {
@@ -102,6 +102,16 @@ func (c *VaultClient) Delete(ctx context.Context, key string, options ...Request
 		return err
 	}
 	return backend.Delete(ctx, key, options...)
+}
+
+// List returns a slice of key and subfolder names at this path.
+func (c *VaultClient) List(ctx context.Context, path string, options ...RequestOption) ([]string, error) {
+	backend, err := c.backend(ctx, path)
+	if err != nil {
+		return nil, err
+	}
+
+	return backend.List(ctx, path, options...)
 }
 
 // ReadInto reads a secret into an object.
