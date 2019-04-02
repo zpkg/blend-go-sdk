@@ -6,15 +6,15 @@
   message: "do not include assert in non _test.go files"
   excludeAny:
   - "*_test.go"
-  containsAny:
+  importsContainAny:
   - "github.com/blend/go-sdk/assert"
 - id: GOLANG_DEPRECATED
   message: "please switch to using `github.com/blend/go-sdk`"
-  containsAny:
-  - "github.com/blendlabs/"
+  importsContainAny:
+  - "github.com/blendlabs/*"
 - id: GOLANG_YAML
   message: "please use `github.com/blend/go-sdk/yaml`"
-  containsAny:
+  importsContainAny:
   - "gopkg.in/yaml.v2"
 - id: GOLANG_PRINTLN
   message: "please remove debugging `println` statements"

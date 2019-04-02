@@ -9,7 +9,9 @@ import (
 	"strings"
 
 	"github.com/blend/go-sdk/ansi"
+	"github.com/blend/go-sdk/exception"
 	"github.com/blend/go-sdk/stringutil"
+	"github.com/blend/go-sdk/yaml"
 )
 
 // New creates a new profanity engine with a given set of config options.
@@ -193,9 +195,32 @@ func (p *Profanity) ReadRules(path string) ([]Rule, error) {
 	if p.Config.VerboseOrDefault() {
 		p.Printf("%s reading rules file %s\n", ansi.LightWhite(path), p.Config.RulesFileOrDefault())
 	}
-	rules, err := RulesFromPath(profanityPath)
+	rules, err := p.RulesFromPath(profanityPath)
 	if err != nil {
 		return nil, err
 	}
 	return rules, nil
+}
+
+// RulesFromPath reads rules from a path
+func (p *Profanity) RulesFromPath(path string) (rules []Rule, err error) {
+	var contents []byte
+	contents, err = ioutil.ReadFile(path)
+	if err != nil {
+		err = exception.New(err, exception.OptMessagef("file: %s", path))
+		return
+	}
+	var fileRules []Rule
+	err = yaml.Unmarshal(contents, &fileRules)
+	if err != nil {
+		err = exception.New(err, exception.OptMessagef("file: %s", path))
+		return
+	}
+	rules = make([]Rule, len(fileRules))
+	for index, fileRule := range fileRules {
+		rule := fileRule
+		rule.File = path
+		rules[index] = rule
+	}
+	return
 }

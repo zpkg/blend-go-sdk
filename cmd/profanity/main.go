@@ -1,11 +1,10 @@
 package main
 
 import (
-	"flag"
 	"fmt"
 	"os"
 
-	"github.com/blend/go-sdk/stringutil"
+	"github.com/spf13/cobra"
 
 	"github.com/blend/go-sdk/configutil"
 	"github.com/blend/go-sdk/profanity"
@@ -22,10 +21,9 @@ var (
 )
 
 var (
-	flagRulesFile = flag.String("rules", "", "the default rules to include for any sub-package.")
-	flagInclude   = flag.String("include", "", "the include file filter in glob form, can be a csv.")
-	flagExclude   = flag.String("exclude", "", "the exclude file filter in glob form, can be a csv.")
-	flagVerbose   = flag.Bool("v", false, "verbose output")
+	flagRulesFile            *string
+	flagInclude, flagExclude *[]string
+	flagVerbose              *bool
 )
 
 type config struct {
@@ -37,25 +35,69 @@ func (c *config) Resolve() error {
 	return configutil.AnyError(
 		configutil.SetBool(&c.Verbose, configutil.Bool(flagVerbose), configutil.Bool(c.Verbose), configutil.Bool(ref.Bool(false))),
 		configutil.SetString(&c.RulesFile, configutil.String(*flagRulesFile), configutil.String(c.RulesFile), configutil.String(profanity.DefaultRulesFile)),
-		configutil.SetStrings(&c.Include, configutil.Strings(stringutil.SplitCSV(*flagInclude)), configutil.Strings(c.Include)),
-		configutil.SetStrings(&c.Exclude, configutil.Strings(stringutil.SplitCSV(*flagExclude)), configutil.Strings(c.Exclude)),
+		configutil.SetStrings(&c.Include, configutil.Strings(*flagInclude), configutil.Strings(c.Include)),
+		configutil.SetStrings(&c.Exclude, configutil.Strings(*flagExclude), configutil.Strings(c.Exclude)),
 	)
 }
 
-func main() {
-	flag.Parse()
+func command() *cobra.Command {
+	root := &cobra.Command{
+		Use:   "profanity",
+		Short: "Enforce profanity rules in a directory tree.",
+		Long:  "Enforce profanity rules in a directory tree with inherited rules for each child directory.",
+		Example: `
+# Run a basic rules set
+profanity --rules=PROFANITY_RULES
 
-	var cfg config
-	if err := cfg.Resolve(); err != nil {
-		fmt.Fprintf(os.Stderr, "%+v\n\n", err)
-		os.Exit(1)
+# Run a basic rules set with excluded files by glob
+profanity --rules=PROFANITY_RULES --exclude="*_test.go"
+
+# Run a basic rules set with included and excluded files by glob
+profanity --rules=PROFANITY_RULES --include="*.go" --exclude="*_test.go"
+
+# An example rule file looks like
+
+""" yaml
+- id: "CONTAINS_EXAMPLE" # id is meant to be a de-duplicating identifier
+  message: "please use 'foo.Bar', not a concrete type reference" # message is a descriptive message for remediation steps
+  containsAny:
+  - "foo.Bar"
+- id: "MATCHES_EXAMPLE"
+"""
+
+For more example rule files, see https://github.com/blend/go-sdk/tree/master/profanity/examples/rules
+`,
 	}
 
-	engine := profanity.New(profanity.OptConfig(&cfg.Config))
-	engine.Stdout = os.Stdout
-	engine.Stderr = os.Stderr
-	if err := engine.Process(); err != nil {
-		fmt.Fprintf(os.Stderr, "%+v\n\n", err)
+	flagRulesFile = root.Flags().StringP("rules", "r", profanity.DefaultRulesFile, "The rules file to search for in each valid directory")
+	flagInclude = root.Flags().StringArrayP("include", "i", nil, "Files to include in glob matching format; can be a csv.")
+	flagExclude = root.Flags().StringArrayP("exclude", "e", nil, "Files to exclude in glob matching format; can be a csv.")
+	return root
+}
+
+func main() {
+	cmd := command()
+
+	cmd.Run = func(parent *cobra.Command, args []string) {
+		var cfg config
+		if err := cfg.Resolve(); err != nil {
+			fmt.Fprintf(os.Stderr, "%+v\n\n", err)
+			os.Exit(1)
+		}
+
+		engine := profanity.New(profanity.OptConfig(&cfg.Config))
+		engine.Stdout = os.Stdout
+		engine.Stderr = os.Stderr
+
+		if err := engine.Process(); err != nil {
+			fmt.Fprintf(os.Stderr, "%+v\n", err)
+			os.Exit(1)
+			return
+		}
+	}
+
+	if err := cmd.Execute(); err != nil {
+		fmt.Fprintf(os.Stderr, "%+v\n", err)
 		os.Exit(1)
 		return
 	}

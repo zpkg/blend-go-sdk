@@ -2,13 +2,10 @@ package profanity
 
 import (
 	"fmt"
-	"io/ioutil"
 	"strings"
 
 	"github.com/blend/go-sdk/ansi"
-	"github.com/blend/go-sdk/exception"
 	"github.com/blend/go-sdk/stringutil"
-	"github.com/blend/go-sdk/yaml"
 )
 
 // Rules are a list of rules.
@@ -21,29 +18,6 @@ func (r Rules) String() string {
 		output = output + rule.String() + "\n"
 	}
 	return output
-}
-
-// RulesFromPath reads rules from a path
-func RulesFromPath(path string) (rules []Rule, err error) {
-	var contents []byte
-	contents, err = ioutil.ReadFile(path)
-	if err != nil {
-		err = exception.New(err, exception.OptMessagef("file: %s", path))
-		return
-	}
-	var fileRules []Rule
-	err = yaml.Unmarshal(contents, &fileRules)
-	if err != nil {
-		err = exception.New(err, exception.OptMessagef("file: %s", path))
-		return
-	}
-	rules = make([]Rule, len(fileRules))
-	for index, fileRule := range fileRules {
-		rule := fileRule
-		rule.File = path
-		rules[index] = rule
-	}
-	return
 }
 
 // Rule is a serialized rule.
@@ -71,6 +45,9 @@ type Rule struct {
 	NotContainsAll []string `yaml:"notContainsAll,omitempty"`
 	// Matches implies we should fail if a file's content matches a given regex.
 	MatchesAny []string `yaml:"matchesAny,omitempty"`
+
+	// ImportsContainAny enforces that a given list of imports are used.
+	ImportsContainAny []string `yaml:"importsContainAny,omitempty"`
 }
 
 // ShouldInclude returns if we should include a file for a given rule.
@@ -101,6 +78,9 @@ func (r Rule) Apply(contents []byte) error {
 	}
 	if len(r.MatchesAny) > 0 {
 		return MatchesAny(r.MatchesAny...)(contents)
+	}
+	if len(r.ImportsContainAny) > 0 {
+		return ImportsContainAny(r.ImportsContainAny...)(contents)
 	}
 	return fmt.Errorf("no rule set")
 }
@@ -154,6 +134,9 @@ func (r Rule) String() string {
 	}
 	if len(r.MatchesAny) > 0 {
 		tokens = append(tokens, fmt.Sprintf("[matches any: %s]", strings.Join(r.MatchesAny, ",")))
+	}
+	if len(r.ImportsContainAny) > 0 {
+		tokens = append(tokens, fmt.Sprintf("[go imports contain any: %s]", strings.Join(r.ImportsContainAny, ",")))
 	}
 	return strings.Join(tokens, " ")
 }
