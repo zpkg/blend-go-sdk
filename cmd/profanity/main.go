@@ -34,7 +34,7 @@ type config struct {
 func (c *config) Resolve() error {
 	return configutil.AnyError(
 		configutil.SetBool(&c.Verbose, configutil.Bool(flagVerbose), configutil.Bool(c.Verbose), configutil.Bool(ref.Bool(false))),
-		configutil.SetString(&c.RulesFile, configutil.String(*flagRulesFile), configutil.String(c.RulesFile)),
+		configutil.SetString(&c.RulesFile, configutil.String(*flagRulesFile), configutil.String(c.RulesFile), configutil.String(profanity.DefaultRulesFile)),
 		configutil.SetString(&c.Include, configutil.String(*flagInclude), configutil.String(c.Include)),
 		configutil.SetString(&c.Exclude, configutil.String(*flagExclude), configutil.String(c.Exclude)),
 	)
