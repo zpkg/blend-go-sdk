@@ -1,8 +1,10 @@
 package main
 
 import (
+	"bufio"
 	"fmt"
 	"os"
+	"strings"
 
 	"github.com/blend/go-sdk/exception"
 	"github.com/blend/go-sdk/sh"
@@ -18,6 +20,7 @@ func command() *cobra.Command {
 	return root
 }
 
+// gitCommits returns a list of sha refs with the title line
 func gitCommits() ([]string, error) {
 	contents, err := sh.Output("git", "log", "--pretty=oneline")
 	if err != nil {
@@ -26,13 +29,50 @@ func gitCommits() ([]string, error) {
 	return stringutil.SplitLines(string(contents)), nil
 }
 
-// Root returns the root of the git repository.
+// gitRoot returns the root of the git repository.
 func gitRoot() (string, error) {
 	contents, err := sh.Output("git", "log", "--pretty=oneline")
 	if err != nil {
 		return "", exception.New(err, exception.OptMessage(string(contents)))
 	}
 	return string(contents), nil
+}
+
+// gitMerges returns a list of all revisions where a merge occurred.
+func gitMerges(revs ...string) ([]string, error) {
+	args := []string{"rev-list", "--reverse", "--min-parents=2"}
+	if len(revs) > 0 {
+		args = append(args, revs...)
+	} else {
+		args = append(args, "HEAD")
+	}
+	cmd, err := sh.Cmd("git", args...)
+	if err != nil {
+		return nil, err
+	}
+	r, err := cmd.StdoutPipe()
+	if err != nil {
+		return nil, exception.New("could not pipe output", exception.OptInner(err))
+	}
+	if err := cmd.Start(); err != nil {
+		return nil, exception.New(err)
+	}
+
+	var revisions []string
+	scanner := bufio.NewScanner(r)
+	for scanner.Scan() {
+		rev := strings.TrimSpace(scanner.Text())
+		revisions = append(revisions, rev)
+	}
+	if err := cmd.Wait(); err != nil {
+		return nil, exception.New(err)
+	}
+	return revisions, nil
+}
+
+// formatRange returns a string for specifying a range between two commits.
+func formatRange(start, end string) string {
+	return fmt.Sprintf("%s..%s", start, end)
 }
 
 func maybeFatal(err error) {
@@ -45,9 +85,8 @@ func maybeFatal(err error) {
 func main() {
 	cmd := command()
 	cmd.Run = func(parent *cobra.Command, args []string) {
-		commits, err := gitCommits()
+		commits, err := gitMerges()
 		maybeFatal(err)
-
 		for _, commit := range commits {
 			fmt.Fprintf(os.Stdout, "commit: %s\n", commit)
 		}
