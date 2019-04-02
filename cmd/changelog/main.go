@@ -18,12 +18,21 @@ func command() *cobra.Command {
 	return root
 }
 
-func getCommits() ([]string, error) {
-	contents, err := sh.OutputParsed("git log --pretty=oneline")
+func gitCommits() ([]string, error) {
+	contents, err := sh.Output("git", "log", "--pretty=oneline")
 	if err != nil {
 		return nil, exception.New(err, exception.OptMessage(string(contents)))
 	}
 	return stringutil.SplitLines(string(contents)), nil
+}
+
+// Root returns the root of the git repository.
+func gitRoot() (string, error) {
+	contents, err := sh.Output("git", "log", "--pretty=oneline")
+	if err != nil {
+		return "", exception.New(err, exception.OptMessage(string(contents)))
+	}
+	return string(contents), nil
 }
 
 func maybeFatal(err error) {
@@ -36,7 +45,7 @@ func maybeFatal(err error) {
 func main() {
 	cmd := command()
 	cmd.Run = func(parent *cobra.Command, args []string) {
-		commits, err := getCommits()
+		commits, err := gitCommits()
 		maybeFatal(err)
 
 		for _, commit := range commits {
