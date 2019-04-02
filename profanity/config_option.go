@@ -27,14 +27,14 @@ func OptRulesFile(rulesFile string) ConfigOption {
 }
 
 // OptInclude sets the include filter.
-func OptInclude(includes string) ConfigOption {
+func OptInclude(includes ...string) ConfigOption {
 	return func(c *Config) {
 		c.Include = includes
 	}
 }
 
 // OptExclude sets the exclude filter.
-func OptExclude(excludes string) ConfigOption {
+func OptExclude(excludes ...string) ConfigOption {
 	return func(c *Config) {
 		c.Exclude = excludes
 	}

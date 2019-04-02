@@ -2,11 +2,11 @@ package profanity
 
 // Config is the profanity rules parsing config.
 type Config struct {
-	Verbose   *bool  `yaml:"verbose"`
-	Root      string `yaml:"root"`
-	RulesFile string `yaml:"rulesFile"`
-	Include   string `yaml:"include"`
-	Exclude   string `yaml:"exclude"`
+	Verbose   *bool    `yaml:"verbose"`
+	Root      string   `yaml:"root"`
+	RulesFile string   `yaml:"rulesFile"`
+	Include   []string `yaml:"include,omitempty"`
+	Exclude   []string `yaml:"exclude,omitempty"`
 }
 
 // VerboseOrDefault returns an option or a default.

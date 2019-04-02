@@ -5,6 +5,8 @@ import (
 	"fmt"
 	"os"
 
+	"github.com/blend/go-sdk/stringutil"
+
 	"github.com/blend/go-sdk/configutil"
 	"github.com/blend/go-sdk/profanity"
 	"github.com/blend/go-sdk/ref"
@@ -35,8 +37,8 @@ func (c *config) Resolve() error {
 	return configutil.AnyError(
 		configutil.SetBool(&c.Verbose, configutil.Bool(flagVerbose), configutil.Bool(c.Verbose), configutil.Bool(ref.Bool(false))),
 		configutil.SetString(&c.RulesFile, configutil.String(*flagRulesFile), configutil.String(c.RulesFile), configutil.String(profanity.DefaultRulesFile)),
-		configutil.SetString(&c.Include, configutil.String(*flagInclude), configutil.String(c.Include)),
-		configutil.SetString(&c.Exclude, configutil.String(*flagExclude), configutil.String(c.Exclude)),
+		configutil.SetStrings(&c.Include, configutil.Strings(stringutil.SplitCSV(*flagInclude)), configutil.Strings(c.Include)),
+		configutil.SetStrings(&c.Exclude, configutil.Strings(stringutil.SplitCSV(*flagExclude)), configutil.Strings(c.Exclude)),
 	)
 }
 

@@ -271,7 +271,6 @@ func (l *Logger) Close() error {
 		l.Flags.SetNone()
 	}
 
-	println("stopping listeners")
 	for _, listeners := range l.Listeners {
 		for _, listener := range listeners {
 			listener.Stop()
@@ -286,7 +285,6 @@ func (l *Logger) Close() error {
 
 	l.Stopped()
 
-	println("stopped")
 	return nil
 }
 

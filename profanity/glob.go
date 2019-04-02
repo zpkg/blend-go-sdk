@@ -3,9 +3,8 @@ package profanity
 import "strings"
 
 // GlobAnyMatch tests if a file matches a (potentially) csv of glob filters.
-func GlobAnyMatch(filter, file string) bool {
-	parts := strings.Split(filter, ",")
-	for _, part := range parts {
+func GlobAnyMatch(filters []string, file string) bool {
+	for _, part := range filters {
 		if matches := Glob(strings.TrimSpace(part), file); matches {
 			return true
 		}

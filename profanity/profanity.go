@@ -9,6 +9,7 @@ import (
 	"strings"
 
 	"github.com/blend/go-sdk/ansi"
+	"github.com/blend/go-sdk/stringutil"
 )
 
 // New creates a new profanity engine with a given set of config options.
@@ -60,7 +61,6 @@ func (p *Profanity) Process() error {
 	}
 
 	ruleCache := map[string][]Rule{}
-	packageRules := map[string][]Rule{}
 
 	var fileBase string
 	return filepath.Walk(".", func(file string, info os.FileInfo, err error) error {
@@ -69,6 +69,9 @@ func (p *Profanity) Process() error {
 		}
 
 		if info.IsDir() && strings.HasSuffix(file, ".git") { // don't ever process git directories
+			if p.Config.VerboseOrDefault() {
+				fmt.Fprintf(os.Stdout, "%s ... skipping (is .git dir)\n", ansi.LightWhite(file))
+			}
 			return filepath.SkipDir
 		}
 		if info.IsDir() {
@@ -76,14 +79,11 @@ func (p *Profanity) Process() error {
 		}
 
 		fileBase = filepath.Base(file)
-		if p.Config.VerboseOrDefault() {
-			fmt.Fprintf(os.Stdout, "%s", ansi.LightWhite(file))
-		}
 
 		if len(p.Config.Include) > 0 {
 			if matches := GlobAnyMatch(p.Config.Include, file); !matches {
 				if p.Config.VerboseOrDefault() {
-					p.Printf(".. skipping\n")
+					p.Printf("%s ... skipping (does not match include filter)\n", ansi.LightWhite(file))
 				}
 				return nil
 			}
@@ -92,7 +92,7 @@ func (p *Profanity) Process() error {
 		if len(p.Config.Exclude) > 0 {
 			if matches := GlobAnyMatch(p.Config.Exclude, file); matches {
 				if p.Config.VerboseOrDefault() {
-					p.Printf(".. skipping\n")
+					p.Printf("%s ... skipping (matches exclude filter)\n", ansi.LightWhite(file))
 				}
 				return nil
 			}
@@ -102,20 +102,19 @@ func (p *Profanity) Process() error {
 			return err
 		} else if matches {
 			if p.Config.VerboseOrDefault() {
-				p.Printf(".. skipping\n")
+				p.Printf("%s ... skipping (is %s file)\n", ansi.LightWhite(file), p.Config.RulesFileOrDefault())
 			}
 			return nil
 		}
 
 		fullPath := filepath.Dir(file)
-		var rules []Rule
-		var ok bool
-		if rules, ok = ruleCache[fullPath]; !ok {
-			rules, err = p.RulesForPath(packageRules, fullPath)
-			if err != nil {
-				return err
-			}
-			ruleCache[fullPath] = rules
+		rules, err := p.RulesForPathOrCached(ruleCache, fullPath)
+		if err != nil {
+			return err
+		}
+
+		if p.Config.VerboseOrDefault() {
+			p.Printf("%s rules:\n%s", ansi.LightWhite(file), stringutil.Indent("\t", Rules(rules).String()))
 		}
 
 		contents, err := ioutil.ReadFile(file)
@@ -138,7 +137,7 @@ func (p *Profanity) Process() error {
 		}
 
 		if p.Config.VerboseOrDefault() {
-			p.Printf(" ... %s\n", ansi.Green("ok!"))
+			p.Printf("%s ... %s\n", ansi.LightWhite(file), ansi.Green("ok!"))
 		}
 
 		return nil
@@ -146,8 +145,9 @@ func (p *Profanity) Process() error {
 }
 
 // RulesForPathOrCached returns rules cached or rules from disk.
-func (p *Profanity) RulesForPathOrCached(ruleCache map[string][]Rule, packageRules map[string][]Rule, path string) ([]Rule, error) {
-	if rules, ok := ruleCache[path]; ok {
+// It prevents re-reading the full rules set for each file in a path.
+func (p *Profanity) RulesForPathOrCached(packageRules map[string][]Rule, path string) ([]Rule, error) {
+	if rules, ok := packageRules[path]; ok {
 		return rules, nil
 	}
 
@@ -155,11 +155,13 @@ func (p *Profanity) RulesForPathOrCached(ruleCache map[string][]Rule, packageRul
 	if err != nil {
 		return nil, err
 	}
-	ruleCache[path] = rules
+	packageRules[path] = rules
 	return rules, nil
 }
 
 // RulesForPath adds rules in a given path and child paths to an existing rule set.
+// `workingSet` are the current working rules keyed on the path they
+// came from, including '.' for the root rules.
 func (p *Profanity) RulesForPath(workingSet map[string][]Rule, path string) ([]Rule, error) {
 	pathRules, err := p.ReadRules(path)
 	if err != nil {
@@ -188,6 +190,9 @@ func (p *Profanity) ReadRules(path string) ([]Rule, error) {
 		return nil, nil
 	}
 
+	if p.Config.VerboseOrDefault() {
+		p.Printf("%s reading rules file %s\n", ansi.LightWhite(path), p.Config.RulesFileOrDefault())
+	}
 	rules, err := RulesFromPath(profanityPath)
 	if err != nil {
 		return nil, err

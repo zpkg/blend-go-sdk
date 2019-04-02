@@ -77,7 +77,7 @@ build:
 .PHONY: profanity
 profanity:
 	@echo "$(VERSION)/$(GIT_REF) >> profanity"
-	@go run cmd/profanity/main.go -rules PROFANITY_RULES --exclude="cmd/*,coverage.html,dist/*"
+	@go run cmd/profanity/main.go -rules PROFANITY_RULES --exclude="cmd/*,coverage.html,dist/*,*/node_modules/*"
 
 test-circleci:
 	@echo "$(VERSION)/$(GIT_REF) >> tests"
