@@ -6,7 +6,7 @@ import (
 	"os/exec"
 )
 
-// Put  runs a given command with a given reader as its stdin.
+// Put runs a given command with a given reader as its stdin.
 func Put(stdin io.Reader, command string, args ...string) error {
 	absoluteCommand, err := exec.LookPath(command)
 	if err != nil {

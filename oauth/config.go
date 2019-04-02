@@ -35,6 +35,7 @@ func (c *Config) Resolve() error {
 
 // DecodeSecret decodes the secret if set from base64 encoding.
 func (c Config) DecodeSecret() ([]byte, error) {
+	println("HIII")
 	if len(c.Secret) > 0 {
 		decoded, err := base64.StdEncoding.DecodeString(c.Secret)
 		if err != nil {

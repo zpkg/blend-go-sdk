@@ -53,13 +53,3 @@ workflows:
   build-test:
      jobs:
       - build-test
-  build-test-and-release:
-    jobs:
-      - build-test
-      - approval:
-          type: approval
-          requires:
-            - build-test
-      - release:
-          requires:
-            - approval

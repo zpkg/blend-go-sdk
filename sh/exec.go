@@ -3,7 +3,6 @@ package sh
 import (
 	"context"
 	"os"
-	"os/exec"
 )
 
 // ExecParsed parses a command string into binary and args.
@@ -34,11 +33,10 @@ func ExecParsedContext(ctx context.Context, command string) error {
 // It resolves the command name in your $PATH list for you.
 // It does not show output.
 func Exec(command string, args ...string) error {
-	absoluteCommand, err := exec.LookPath(command)
+	cmd, err := Cmd(command, args...)
 	if err != nil {
 		return err
 	}
-	cmd := exec.Command(absoluteCommand, args...)
 	cmd.Env = os.Environ()
 	return cmd.Run()
 }
@@ -47,11 +45,10 @@ func Exec(command string, args ...string) error {
 // It resolves the command name in your $PATH list for you.
 // It does not show output.
 func ExecContext(ctx context.Context, command string, args ...string) error {
-	absoluteCommand, err := exec.LookPath(command)
+	cmd, err := CmdContext(ctx, command, args...)
 	if err != nil {
 		return err
 	}
-	cmd := exec.CommandContext(ctx, absoluteCommand, args...)
 	cmd.Env = os.Environ()
 	return cmd.Run()
 }
