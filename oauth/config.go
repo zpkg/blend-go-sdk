@@ -14,9 +14,8 @@ type Config struct {
 	RedirectURI string `json:"redirectURI,omitempty" yaml:"redirectURI,omitempty" env:"OAUTH_REDIRECT_URI"`
 	// HostedDomain is a specific domain we want to filter identities to.
 	HostedDomain string `json:"hostedDomain,omitempty" yaml:"hostedDomain,omitempty" env:"OAUTH_HOSTED_DOMAIN"`
-
+	// Scopes are oauth scopes to request.
 	Scopes []string `json:"scopes,omitempty" yaml:"scopes,omitempty"`
-
 	// ClientID is part of the oauth credential pair.
 	ClientID string `json:"clientID,omitempty" yaml:"clientID,omitempty" env:"OAUTH_CLIENT_ID"`
 	// ClientSecret is part of the oauth credential pair.

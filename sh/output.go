@@ -61,7 +61,7 @@ func OutputCmd(cmd *exec.Cmd) ([]byte, error) {
 	cmd.Stdout = output
 	cmd.Stderr = output
 	if err := cmd.Run(); err != nil {
-		return nil, err
+		return output.Bytes(), err
 	}
 	return output.Bytes(), nil
 }
