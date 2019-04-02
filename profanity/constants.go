@@ -2,7 +2,7 @@ package profanity
 
 // Defaults
 const (
-	DefaultRulesFile = "PROFANITY_RULES"
+	DefaultRulesFile = "PROFANITY.yml"
 )
 
 // Glob constants
