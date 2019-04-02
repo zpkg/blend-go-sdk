@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"go/parser"
 	"go/token"
+	"strings"
 
 	"github.com/blend/go-sdk/exception"
 )
@@ -19,7 +20,7 @@ func ImportsContainAny(imports ...string) RuleFunc {
 		}
 		for _, fileImport := range ast.Imports {
 			for _, i := range imports {
-				if Glob(i, fileImport.Path.Value) {
+				if Glob(i, strings.Trim(fileImport.Path.Value, "\"")) {
 					return fmt.Errorf("go import match: \"%s\"", i)
 				}
 			}

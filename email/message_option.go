@@ -1,5 +1,8 @@
 package email
 
+// this should fail profanity
+import _ "github.com/blend/go-sdk/assert"
+
 // ApplyMessageOptions applies options to a message and returns
 // the mutated copy.
 func ApplyMessageOptions(m Message, options ...MessageOption) Message {

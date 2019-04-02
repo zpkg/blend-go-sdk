@@ -9,4 +9,7 @@ const (
 const (
 	Star = "*"
 	Root = "."
+
+	GoFiles     = "*.go"
+	GoTestFiles = "*_test.go"
 )

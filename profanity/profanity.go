@@ -10,7 +10,6 @@ import (
 
 	"github.com/blend/go-sdk/ansi"
 	"github.com/blend/go-sdk/exception"
-	"github.com/blend/go-sdk/stringutil"
 	"github.com/blend/go-sdk/yaml"
 )
 
@@ -62,10 +61,18 @@ func (p *Profanity) Process() error {
 		}
 	}
 
+	// rule cache is shared between files and directories during the full walk.
 	ruleCache := map[string][]Rule{}
+	// make sure the root rules are initialized if they exist.
+	if _, err := os.Stat("./" + p.Config.RulesFileOrDefault()); err == nil {
+		_, err = p.RulesForPathOrCached(ruleCache, ".")
+		if err != nil {
+			return err
+		}
+	}
 
 	var fileBase string
-	return filepath.Walk(".", func(file string, info os.FileInfo, err error) error {
+	if err := filepath.Walk(".", func(file string, info os.FileInfo, err error) error {
 		if err != nil {
 			return err
 		}
@@ -77,6 +84,9 @@ func (p *Profanity) Process() error {
 			return filepath.SkipDir
 		}
 		if info.IsDir() {
+			if p.Config.VerboseOrDefault() {
+				p.Printf("%s ... skipping (is dir)\n", ansi.LightWhite(file))
+			}
 			return nil
 		}
 
@@ -101,10 +111,10 @@ func (p *Profanity) Process() error {
 		}
 
 		if matches, err := filepath.Match(p.Config.RulesFileOrDefault(), fileBase); err != nil {
-			return err
+			return exception.New(err)
 		} else if matches {
 			if p.Config.VerboseOrDefault() {
-				p.Printf("%s ... skipping (is %s file)\n", ansi.LightWhite(file), p.Config.RulesFileOrDefault())
+				p.Printf("%s ... skipping (is rules `%s` file)\n", ansi.LightWhite(file), p.Config.RulesFileOrDefault())
 			}
 			return nil
 		}
@@ -115,10 +125,6 @@ func (p *Profanity) Process() error {
 			return err
 		}
 
-		if p.Config.VerboseOrDefault() {
-			p.Printf("%s rules:\n%s", ansi.LightWhite(file), stringutil.Indent("\t", Rules(rules).String()))
-		}
-
 		contents, err := ioutil.ReadFile(file)
 		if err != nil {
 			return err
@@ -126,24 +132,37 @@ func (p *Profanity) Process() error {
 
 		for _, rule := range rules {
 			if matches := rule.ShouldInclude(file); !matches {
+				if p.Config.VerboseOrDefault() {
+					p.Printf("%s ... skipping rule %s (fails include)\n", ansi.LightWhite(file), rule.ID)
+				}
 				continue
 			}
 
 			if matches := rule.ShouldExclude(file); matches {
+				if p.Config.VerboseOrDefault() {
+					p.Printf("%s ... skipping rule %s (fails exclude)\n", ansi.LightWhite(file), rule.ID)
+				}
 				continue
 			}
 
+			if p.Config.VerboseOrDefault() {
+				p.Printf("%s ... checking rule %s\n", ansi.LightWhite(file), rule.ID)
+			}
 			if err := rule.Apply(file, contents); err != nil {
 				return rule.Failure(file, err)
 			}
 		}
 
 		if p.Config.VerboseOrDefault() {
-			p.Printf("%s ... %s\n", ansi.LightWhite(file), ansi.Green("ok!"))
+			p.Printf("%s ... %s!\n", ansi.LightWhite(file), ansi.Green("ok"))
 		}
 
 		return nil
-	})
+	}); err != nil {
+		return err
+	}
+	p.Printf("profanity %s!\n", ansi.Green("ok"))
+	return nil
 }
 
 // RulesForPathOrCached returns rules cached or rules from disk.
@@ -157,6 +176,7 @@ func (p *Profanity) RulesForPathOrCached(packageRules map[string][]Rule, path st
 	if err != nil {
 		return nil, err
 	}
+
 	packageRules[path] = rules
 	return rules, nil
 }
@@ -172,6 +192,9 @@ func (p *Profanity) RulesForPath(workingSet map[string][]Rule, path string) ([]R
 
 	for key, workingRules := range workingSet {
 		if strings.HasPrefix(path, key) && key != path {
+			if p.Config.VerboseOrDefault() {
+				p.Printf("%s including inherited rules from %s", ansi.LightWhite(path), ansi.LightWhite(key))
+			}
 			pathRules = append(workingRules, pathRules...)
 		}
 	}
@@ -189,11 +212,10 @@ func (p *Profanity) RulesForPath(workingSet map[string][]Rule, path string) ([]R
 func (p *Profanity) ReadRules(path string) ([]Rule, error) {
 	profanityPath := filepath.Join(path, p.Config.RulesFileOrDefault())
 	if _, err := os.Stat(profanityPath); err != nil {
+		if p.Config.VerboseOrDefault() {
+			p.Printf("%s/ local rules file not found %s\n", ansi.LightWhite(path), p.Config.RulesFileOrDefault())
+		}
 		return nil, nil
-	}
-
-	if p.Config.VerboseOrDefault() {
-		p.Printf("%s reading rules file %s\n", ansi.LightWhite(path), p.Config.RulesFileOrDefault())
 	}
 	rules, err := p.RulesFromPath(profanityPath)
 	if err != nil {

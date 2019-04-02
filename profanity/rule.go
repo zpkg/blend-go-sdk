@@ -13,11 +13,14 @@ type Rules []Rule
 
 // String
 func (r Rules) String() string {
-	var output string
-	for _, rule := range r {
-		output = output + rule.String() + "\n"
+	if len(r) == 0 {
+		return "<empty>"
 	}
-	return output
+	var output []string
+	for _, rule := range r {
+		output = append(output, rule.String())
+	}
+	return strings.Join(output, "\n")
 }
 
 // Rule is a serialized rule.
@@ -26,61 +29,71 @@ type Rule struct {
 	ID string `yaml:"id"`
 	// File is the rules file path the rule came from.
 	File string `yaml:"-"`
-	// Message is a descriptive message for the rule.
-	Message string `yaml:"message,omitempty"`
+	// Description is a descriptive message for the rule.
+	Description string `yaml:"description,omitempty"`
 
-	// IncludeAny sets a glob filter for file inclusion by filename.
-	IncludeAny []string `yaml:"includeAny,omitempty"`
-	// ExcludeAny sets a glob filter for file exclusion by filename.
-	ExcludeAny []string `yaml:"excludeAny,omitempty"`
+	// IncludeFiles sets a glob filter for file inclusion by filename.
+	IncludeFiles []string `yaml:"includeFiles,omitempty"`
+	// ExcludeFiles sets a glob filter for file exclusion by filename.
+	ExcludeFiles []string `yaml:"excludeFiles,omitempty"`
 
 	//
 	// the below are matching rules.
 	// if these match, the rule will fail the profanity check
 	//
 
-	// ContainsAny implies we should fail if a file contains a given string.
-	ContainsAny []string `yaml:"containsAny,omitempty"`
-	// NotContainsAll implies we should fail if a file doesn't contains a given string.
-	NotContainsAll []string `yaml:"notContainsAll,omitempty"`
-	// Matches implies we should fail if a file's content matches a given regex.
-	MatchesAny []string `yaml:"matchesAny,omitempty"`
+	// Contains implies we should fail if a file contains a given string.
+	Contains []string `yaml:"contains,omitempty"`
+	// NotContains implies we should fail if a file doesn't contains a given string.
+	NotContains []string `yaml:"notContains,omitempty"`
 
-	// ImportsContainAny enforces that a given list of imports are used.
-	ImportsContainAny []string `yaml:"importsContainAny,omitempty"`
+	// Pattern implies we should fail if a file's content matches a given regex pattern.
+	Pattern []string `yaml:"pattern,omitempty"`
+
+	// ImportsContain enforces that a given list of imports are used.
+	ImportsContain []string `yaml:"importsContain,omitempty"`
 }
 
 // ShouldInclude returns if we should include a file for a given rule.
 // If the `.Include` field is unset, this will alway return true.
 func (r Rule) ShouldInclude(file string) bool {
-	if len(r.IncludeAny) == 0 {
+	if len(r.IncludeFiles) == 0 {
 		return true
 	}
-	return GlobAnyMatch(r.IncludeAny, file)
+	return GlobAnyMatch(r.IncludeFiles, file)
 }
 
 // ShouldExclude returns if we should include a file for a given rule.
 // If the `.Include` field is unset, this will alway return true.
 func (r Rule) ShouldExclude(file string) bool {
-	if len(r.ExcludeAny) == 0 {
+	// implicit rule:
+	// we should omit non-go files from the imports ast parse
+	if len(r.ImportsContain) > 0 {
+		if !Glob(GoFiles, file) {
+			return true
+		}
+	}
+
+	if len(r.ExcludeFiles) == 0 {
 		return false
 	}
-	return GlobAnyMatch(r.ExcludeAny, file)
+
+	return GlobAnyMatch(r.ExcludeFiles, file)
 }
 
 // Apply applies the rule.
 func (r Rule) Apply(filename string, contents []byte) error {
-	if len(r.ContainsAny) > 0 {
-		return ContainsAny(r.ContainsAny...)(filename, contents)
+	if len(r.Contains) > 0 {
+		return ContainsAny(r.Contains...)(filename, contents)
 	}
-	if len(r.NotContainsAll) > 0 {
-		return NotContainsAll(r.NotContainsAll...)(filename, contents)
+	if len(r.NotContains) > 0 {
+		return NotContainsAll(r.NotContains...)(filename, contents)
 	}
-	if len(r.MatchesAny) > 0 {
-		return MatchesAny(r.MatchesAny...)(filename, contents)
+	if len(r.Pattern) > 0 {
+		return MatchesAny(r.Pattern...)(filename, contents)
 	}
-	if len(r.ImportsContainAny) > 0 {
-		return ImportsContainAny(r.ImportsContainAny...)(filename, contents)
+	if len(r.ImportsContain) > 0 {
+		return ImportsContainAny(r.ImportsContain...)(filename, contents)
 	}
 	return fmt.Errorf("no rule set")
 }
@@ -94,17 +107,17 @@ func (r Rule) Failure(file string, err error) error {
 
 	tokens = append(tokens, fmt.Sprintf("%s %s: %+v", ansi.LightWhite(file), ansi.Red("failed"), err))
 
-	if len(r.Message) > 0 {
-		tokens = append(tokens, fmt.Sprintf("%s: %s", ansi.LightWhite("message"), r.Message))
+	if len(r.Description) > 0 {
+		tokens = append(tokens, fmt.Sprintf("%s: %s", ansi.LightWhite("message"), r.Description))
 	}
 	if len(r.File) > 0 {
 		tokens = append(tokens, fmt.Sprintf("%s: %s", ansi.LightWhite("rules file"), r.File))
 	}
-	if len(r.IncludeAny) > 0 {
-		tokens = append(tokens, fmt.Sprintf("%s: %s", ansi.LightWhite("includes"), stringutil.CSV(r.IncludeAny)))
+	if len(r.IncludeFiles) > 0 {
+		tokens = append(tokens, fmt.Sprintf("%s: %s", ansi.LightWhite("include files"), stringutil.CSV(r.IncludeFiles)))
 	}
-	if len(r.ExcludeAny) > 0 {
-		tokens = append(tokens, fmt.Sprintf("%s: %s", ansi.LightWhite("excludes"), stringutil.CSV(r.ExcludeAny)))
+	if len(r.ExcludeFiles) > 0 {
+		tokens = append(tokens, fmt.Sprintf("%s: %s", ansi.LightWhite("exclude files"), stringutil.CSV(r.ExcludeFiles)))
 	}
 
 	return fmt.Errorf(strings.Join(tokens, "\n"))
@@ -117,26 +130,26 @@ func (r Rule) String() string {
 	if len(r.ID) > 0 {
 		tokens = append(tokens, fmt.Sprintf("[%s]", r.ID))
 	}
-	if len(r.Message) > 0 {
-		tokens = append(tokens, "`"+r.Message+"`")
+	if len(r.Description) > 0 {
+		tokens = append(tokens, "`"+r.Description+"`")
 	}
-	if len(r.IncludeAny) > 0 {
-		tokens = append(tokens, fmt.Sprintf("[include any: %s]", strings.Join(r.IncludeAny, ", ")))
+	if len(r.IncludeFiles) > 0 {
+		tokens = append(tokens, fmt.Sprintf("[include files: %s]", strings.Join(r.IncludeFiles, ", ")))
 	}
-	if len(r.ExcludeAny) > 0 {
-		tokens = append(tokens, fmt.Sprintf("[exclude any: %s]", strings.Join(r.ExcludeAny, ",")))
+	if len(r.ExcludeFiles) > 0 {
+		tokens = append(tokens, fmt.Sprintf("[exclude files: %s]", strings.Join(r.ExcludeFiles, ",")))
 	}
-	if len(r.ContainsAny) > 0 {
-		tokens = append(tokens, fmt.Sprintf("[contains any: %s]", strings.Join(r.ContainsAny, ",")))
+	if len(r.Contains) > 0 {
+		tokens = append(tokens, fmt.Sprintf("[contains: %s]", strings.Join(r.Contains, ",")))
 	}
-	if len(r.NotContainsAll) > 0 {
-		tokens = append(tokens, fmt.Sprintf("[not contains all: %s]", strings.Join(r.NotContainsAll, ",")))
+	if len(r.NotContains) > 0 {
+		tokens = append(tokens, fmt.Sprintf("[not contains: %s]", strings.Join(r.NotContains, ",")))
 	}
-	if len(r.MatchesAny) > 0 {
-		tokens = append(tokens, fmt.Sprintf("[matches any: %s]", strings.Join(r.MatchesAny, ",")))
+	if len(r.Pattern) > 0 {
+		tokens = append(tokens, fmt.Sprintf("[matches patterns: %s]", strings.Join(r.Pattern, ",")))
 	}
-	if len(r.ImportsContainAny) > 0 {
-		tokens = append(tokens, fmt.Sprintf("[go imports contain any: %s]", strings.Join(r.ImportsContainAny, ",")))
+	if len(r.ImportsContain) > 0 {
+		tokens = append(tokens, fmt.Sprintf("[go imports contain any: %s]", strings.Join(r.ImportsContain, ",")))
 	}
 	return strings.Join(tokens, " ")
 }

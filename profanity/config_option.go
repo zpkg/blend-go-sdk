@@ -1,6 +1,8 @@
 package profanity
 
-import "github.com/blend/go-sdk/ref"
+import (
+	"github.com/blend/go-sdk/ref"
+)
 
 // ConfigOption is a function that modifies a config.
 type ConfigOption func(*Config)

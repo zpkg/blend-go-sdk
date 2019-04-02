@@ -59,10 +59,16 @@ profanity --rules=PROFANITY_RULES --include="*.go" --exclude="*_test.go"
 
 """ yaml
 - id: "CONTAINS_EXAMPLE" # id is meant to be a de-duplicating identifier
-  message: "please use 'foo.Bar', not a concrete type reference" # message is a descriptive message for remediation steps
-  containsAny:
+  description: "please use 'foo.Bar', not a concrete type reference" # description should include remediation steps
+  contains:
   - "foo.Bar"
-- id: "MATCHES_EXAMPLE"
+- id: "EXCLUDES_EXAMPLE"
+  message: "please dont use HerpDerp"
+  contains: [ "HerpDerp" ]
+  excludeFiles: [ "*_test.go" }
+- id: "IMPORTS_EXAMPLE" # you can assert a go AST doesnt contains a given import by glob
+  message: "dont include command stuff"
+  importsContain: [ "github.com/blend/go-sdk/cmd/*" ]
 """
 
 For more example rule files, see https://github.com/blend/go-sdk/tree/master/profanity/examples/rules
@@ -72,12 +78,12 @@ For more example rule files, see https://github.com/blend/go-sdk/tree/master/pro
 	flagRulesFile = root.Flags().StringP("rules", "r", profanity.DefaultRulesFile, "The rules file to search for in each valid directory")
 	flagInclude = root.Flags().StringArrayP("include", "i", nil, "Files to include in glob matching format; can be a csv.")
 	flagExclude = root.Flags().StringArrayP("exclude", "e", nil, "Files to exclude in glob matching format; can be a csv.")
+	flagVerbose = root.Flags().BoolP("verbose", "v", false, "If we should use verbose output.")
 	return root
 }
 
 func main() {
 	cmd := command()
-
 	cmd.Run = func(parent *cobra.Command, args []string) {
 		var cfg config
 		if err := cfg.Resolve(); err != nil {
