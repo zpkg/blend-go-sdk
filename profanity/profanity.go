@@ -70,7 +70,7 @@ func (p *Profanity) Process() error {
 
 		if info.IsDir() && strings.HasSuffix(file, ".git") { // don't ever process git directories
 			if p.Config.VerboseOrDefault() {
-				fmt.Fprintf(os.Stdout, "%s ... skipping (is .git dir)\n", ansi.LightWhite(file))
+				p.Printf("%s ... skipping (is .git dir)\n", ansi.LightWhite(file))
 			}
 			return filepath.SkipDir
 		}
