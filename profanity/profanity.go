@@ -133,7 +133,7 @@ func (p *Profanity) Process() error {
 				continue
 			}
 
-			if err := rule.Apply(contents); err != nil {
+			if err := rule.Apply(file, contents); err != nil {
 				return rule.Failure(file, err)
 			}
 		}

@@ -69,18 +69,18 @@ func (r Rule) ShouldExclude(file string) bool {
 }
 
 // Apply applies the rule.
-func (r Rule) Apply(contents []byte) error {
+func (r Rule) Apply(filename string, contents []byte) error {
 	if len(r.ContainsAny) > 0 {
-		return ContainsAny(r.ContainsAny...)(contents)
+		return ContainsAny(r.ContainsAny...)(filename, contents)
 	}
 	if len(r.NotContainsAll) > 0 {
-		return NotContainsAll(r.NotContainsAll...)(contents)
+		return NotContainsAll(r.NotContainsAll...)(filename, contents)
 	}
 	if len(r.MatchesAny) > 0 {
-		return MatchesAny(r.MatchesAny...)(contents)
+		return MatchesAny(r.MatchesAny...)(filename, contents)
 	}
 	if len(r.ImportsContainAny) > 0 {
-		return ImportsContainAny(r.ImportsContainAny...)(contents)
+		return ImportsContainAny(r.ImportsContainAny...)(filename, contents)
 	}
 	return fmt.Errorf("no rule set")
 }

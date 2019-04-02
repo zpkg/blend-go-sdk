@@ -10,10 +10,10 @@ import (
 
 // ImportsContainAny returns a profanity error if a given file contains any of a list of imports.
 func ImportsContainAny(imports ...string) RuleFunc {
-	return func(contents []byte) error {
+	return func(filename string, contents []byte) error {
 		fset := token.NewFileSet()
 
-		ast, err := parser.ParseFile(fset, "", contents, parser.ImportsOnly)
+		ast, err := parser.ParseFile(fset, filename, contents, parser.ImportsOnly)
 		if err != nil {
 			return exception.New(err)
 		}

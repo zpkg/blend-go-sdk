@@ -10,7 +10,7 @@ import (
 // ContainsAny creates a simple contains rule.
 // It acts as an OR; it fails if a corpus contains any given value.
 func ContainsAny(values ...string) RuleFunc {
-	return func(contents []byte) error {
+	return func(filename string, contents []byte) error {
 		scanner := bufio.NewScanner(bytes.NewBuffer(contents))
 		var line int
 		for scanner.Scan() {
