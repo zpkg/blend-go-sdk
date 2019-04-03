@@ -26,7 +26,7 @@ func New(options ...Option) (*Logger, error) {
 		Formatter:     NewTextOutputFormatter(),
 		Output:        NewInterlockedWriter(os.Stdout),
 		RecoverPanics: DefaultRecoverPanics,
-		Flags:         NewFlags(),
+		Flags:         NewFlags(DefaultFlags...),
 	}
 	l.Context = NewContext(l)
 	var err error
