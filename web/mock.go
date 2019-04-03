@@ -19,7 +19,7 @@ func MockCtx(method, path string, options ...CtxOption) *Ctx {
 }
 
 // Mock sends a mock request to an app.
-func Mock(app *App, req *http.Request, options ...func(*http.Request) error) (*http.Response, error) {
+func Mock(app *App, req *http.Request, options ...webutil.RequestOption) (*http.Response, error) {
 	var err error
 	for _, option := range options {
 		if err = option(req); err != nil {
@@ -51,7 +51,7 @@ func Mock(app *App, req *http.Request, options ...func(*http.Request) error) (*h
 }
 
 // MockGet sends a mock get request to an app.
-func MockGet(app *App, path string, options ...func(*http.Request) error) (*http.Response, error) {
+func MockGet(app *App, path string, options ...webutil.RequestOption) (*http.Response, error) {
 	req := &http.Request{
 		Method: "GET",
 	}
@@ -63,7 +63,7 @@ func MockGet(app *App, path string, options ...func(*http.Request) error) (*http
 }
 
 // MockPost sends a mock post request to an app.
-func MockPost(app *App, path string, body io.ReadCloser, options ...func(*http.Request) error) (*http.Response, error) {
+func MockPost(app *App, path string, body io.ReadCloser, options ...webutil.RequestOption) (*http.Response, error) {
 	req := &http.Request{
 		Method: "POST",
 		Body:   body,
