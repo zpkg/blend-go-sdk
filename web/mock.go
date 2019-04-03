@@ -75,8 +75,8 @@ func MockPost(app *App, path string, body io.ReadCloser, options ...webutil.Requ
 	return Mock(app, req)
 }
 
-// MockBytes reads the results of a mocked request.
-func MockBytes(res *http.Response, err error) ([]byte, error) {
+// MockReadBytes reads the results of a mocked request.
+func MockReadBytes(res *http.Response, err error) ([]byte, error) {
 	if err != nil {
 		return nil, err
 	}
@@ -84,8 +84,8 @@ func MockBytes(res *http.Response, err error) ([]byte, error) {
 	return ioutil.ReadAll(res.Body)
 }
 
-// MockBytesWithResponse reads the response of a mocked request and returns the response.
-func MockBytesWithResponse(res *http.Response, err error) ([]byte, *http.Response, error) {
+// MockReadBytesWithResponse reads the response of a mocked request and returns the response.
+func MockReadBytesWithResponse(res *http.Response, err error) ([]byte, *http.Response, error) {
 	if err != nil {
 		return nil, nil, err
 	}
@@ -97,8 +97,8 @@ func MockBytesWithResponse(res *http.Response, err error) ([]byte, *http.Respons
 	return contents, res, nil
 }
 
-// MockJSON reads the results of a mocked request as json.
-func MockJSON(res *http.Response, err error) func(interface{}) error {
+// MockReadJSON reads the results of a mocked request as json.
+func MockReadJSON(res *http.Response, err error) func(interface{}) error {
 	return func(ref interface{}) error {
 		if err != nil {
 			return err
@@ -108,8 +108,8 @@ func MockJSON(res *http.Response, err error) func(interface{}) error {
 	}
 }
 
-// MockJSONWithResponse reads the results of a mocked request as json and also returns the response.
-func MockJSONWithResponse(res *http.Response, err error) func(interface{}) (*http.Response, error) {
+// MockReadJSONWithResponse reads the results of a mocked request as json and also returns the response.
+func MockReadJSONWithResponse(res *http.Response, err error) func(interface{}) (*http.Response, error) {
 	return func(ref interface{}) (*http.Response, error) {
 		if err != nil {
 			return nil, err
@@ -122,8 +122,8 @@ func MockJSONWithResponse(res *http.Response, err error) func(interface{}) (*htt
 	}
 }
 
-// MockXML reads the results of a mocked request as xml.
-func MockXML(res *http.Response, err error) func(interface{}) error {
+// MockReadXML reads the results of a mocked request as xml.
+func MockReadXML(res *http.Response, err error) func(interface{}) error {
 	return func(ref interface{}) error {
 		if err != nil {
 			return err
@@ -133,8 +133,8 @@ func MockXML(res *http.Response, err error) func(interface{}) error {
 	}
 }
 
-// MockXMLWithResponse reads the results of a mocked request as xml and also returns the response.
-func MockXMLWithResponse(res *http.Response, err error) func(interface{}) (*http.Response, error) {
+// MockReadXMLWithResponse reads the results of a mocked request as xml and also returns the response.
+func MockReadXMLWithResponse(res *http.Response, err error) func(interface{}) (*http.Response, error) {
 	return func(ref interface{}) (*http.Response, error) {
 		if err != nil {
 			return nil, err
@@ -147,8 +147,8 @@ func MockXMLWithResponse(res *http.Response, err error) func(interface{}) (*http
 	}
 }
 
-// MockDiscard discards the results of a mocked request.
-func MockDiscard(res *http.Response, err error) error {
+// MockReadDiscard discards the results of a mocked request.
+func MockReadDiscard(res *http.Response, err error) error {
 	if err != nil {
 		return err
 	}
@@ -158,8 +158,8 @@ func MockDiscard(res *http.Response, err error) error {
 	return nil
 }
 
-// MockDiscardWithResonse discards the results of a mocked request and returns the response.
-func MockDiscardWithResonse(res *http.Response, err error) (*http.Response, error) {
+// MockReadDiscardWithResonse discards the results of a mocked request and returns the response.
+func MockReadDiscardWithResonse(res *http.Response, err error) (*http.Response, error) {
 	if err != nil {
 		return nil, err
 	}

@@ -22,7 +22,7 @@ func TestViewModelWrap(t *testing.T) {
 
 	meta, err := MockGet(app, "/")
 	assert.Nil(err)
-	contents, err := MockBytes(meta, err)
+	contents, err := MockReadBytes(meta, err)
 	assert.Equal(http.StatusOK, meta.StatusCode, string(contents))
 	assert.Equal("<div>foo</div><div>bar</div><div>baz</div>", string(contents))
 }

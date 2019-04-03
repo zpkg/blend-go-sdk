@@ -34,7 +34,7 @@ func TestManagementServer(t *testing.T) {
 	assert.Equal(http.StatusOK, meta.StatusCode)
 
 	var jobs cron.Status
-	meta, err = web.MockJSONWithResponse(web.MockGet(app, "/api/jobs"))(&jobs)
+	meta, err = web.MockReadJSONWithResponse(web.MockGet(app, "/api/jobs"))(&jobs)
 	assert.Nil(err)
 	assert.Equal(http.StatusOK, meta.StatusCode)
 	assert.Len(jobs.Jobs, 2)
@@ -55,13 +55,13 @@ func TestManagementServerHealthz(t *testing.T) {
 		},
 	})
 
-	meta, err := web.MockDiscardWithResonse(web.MockGet(app, "/healthz"))
+	meta, err := web.MockReadDiscardWithResonse(web.MockGet(app, "/healthz"))
 	assert.Nil(err)
 	assert.Equal(http.StatusOK, meta.StatusCode)
 
 	jm.Stop()
 
-	meta, err = web.MockDiscardWithResonse(web.MockGet(app, "/healthz"))
+	meta, err = web.MockReadDiscardWithResonse(web.MockGet(app, "/healthz"))
 	assert.Nil(err)
 	assert.Equal(http.StatusInternalServerError, meta.StatusCode)
 }
@@ -96,13 +96,13 @@ func TestManagementServerIndex(t *testing.T) {
 		},
 	})
 
-	contents, meta, err := web.MockBytesWithResponse(web.MockGet(app, "/"))
+	contents, meta, err := web.MockReadBytesWithResponse(web.MockGet(app, "/"))
 	assert.Nil(err)
 	assert.Equal(http.StatusOK, meta.StatusCode)
 	assert.Contains(string(contents), jobName)
 	assert.Contains(string(contents), invocationID)
 
-	contents, meta, err = web.MockBytesWithResponse(web.MockGet(app, fmt.Sprintf("/job.invocation/%s/%s", jobName, invocationID)))
+	contents, meta, err = web.MockReadBytesWithResponse(web.MockGet(app, fmt.Sprintf("/job.invocation/%s/%s", jobName, invocationID)))
 	assert.Nil(err)
 	assert.Equal(http.StatusOK, meta.StatusCode)
 	assert.Contains(string(contents), jobName)
