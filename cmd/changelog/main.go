@@ -40,7 +40,7 @@ func gitRoot() (string, error) {
 
 // gitMerges returns a list of all revisions where a merge occurred.
 func gitMerges(revs ...string) ([]string, error) {
-	args := []string{"rev-list", "--reverse", "--min-parents=2"}
+	args := []string{"rev-list", "--reverse", "--min-parents=2", "--pretty=oneline"}
 	if len(revs) > 0 {
 		args = append(args, revs...)
 	} else {
@@ -88,7 +88,7 @@ func main() {
 		commits, err := gitMerges()
 		maybeFatal(err)
 		for _, commit := range commits {
-			fmt.Fprintf(os.Stdout, "commit: %s\n", commit)
+			fmt.Fprintf(os.Stdout, "merge commit: %s\n", commit)
 		}
 	}
 
