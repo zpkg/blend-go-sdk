@@ -28,9 +28,19 @@ type WriteTriggerable interface {
 	Writable
 }
 
+// InfoReceiver is a type that defines Info.
+type InfoReceiver interface {
+	Info(...interface{})
+}
+
 // InfofReceiver is a type that defines Infof.
 type InfofReceiver interface {
 	Infof(string, ...interface{})
+}
+
+// DebugReceiver is a type that defines Debug.
+type DebugReceiver interface {
+	Debug(...interface{})
 }
 
 // DebugfReceiver is a type that defines Debugf.
@@ -40,7 +50,9 @@ type DebugfReceiver interface {
 
 // OutputReceiver is an interface
 type OutputReceiver interface {
+	InfoReceiver
 	InfofReceiver
+	DebugReceiver
 	DebugfReceiver
 }
 

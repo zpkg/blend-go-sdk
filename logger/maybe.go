@@ -10,12 +10,28 @@ func MaybeTrigger(ctx context.Context, log Triggerable, e Event) {
 	log.Trigger(ctx, e)
 }
 
+// MaybeInfo triggers Info if the logger is set.
+func MaybeInfo(log InfoReceiver, args ...interface{}) {
+	if log == nil {
+		return
+	}
+	log.Info(args...)
+}
+
 // MaybeInfof triggers Infof if the logger is set.
 func MaybeInfof(log InfofReceiver, format string, args ...interface{}) {
 	if log == nil {
 		return
 	}
 	log.Infof(format, args...)
+}
+
+// MaybeDebug triggers Debug if the logger is set.
+func MaybeDebug(log DebugReceiver, args ...interface{}) {
+	if log == nil {
+		return
+	}
+	log.Debug(args...)
 }
 
 // MaybeDebugf triggers Debugf if the logger is set.

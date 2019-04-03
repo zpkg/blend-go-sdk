@@ -42,6 +42,16 @@ func OptTextConfig(cfg *TextConfig) TextOutputFormatterOption {
 	}
 }
 
+// OptTextHideTimestamp hides the timestamp in output.
+func OptTextHideTimestamp() TextOutputFormatterOption {
+	return func(tf *TextOutputFormatter) { tf.HideTimestamp = true }
+}
+
+// OptTextHideFields hides the fields in output.
+func OptTextHideFields() TextOutputFormatterOption {
+	return func(tf *TextOutputFormatter) { tf.HideFields = true }
+}
+
 // OptTextNoColor disables colorizing text output.
 func OptTextNoColor() TextOutputFormatterOption {
 	return func(tf *TextOutputFormatter) { tf.NoColor = true }

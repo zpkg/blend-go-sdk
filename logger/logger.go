@@ -227,6 +227,8 @@ func (l *Logger) SyncTrigger(ctx context.Context, e Event) {
 	for _, listener := range listeners {
 		listener.Listener(ctx, e)
 	}
+
+	l.Write(ctx, e)
 }
 
 // Write writes an event synchronously to the writer either as a normal even or as an error.

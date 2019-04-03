@@ -1,6 +1,9 @@
 package logger
 
 import (
+	"bytes"
+	"context"
+	"fmt"
 	"testing"
 
 	"github.com/blend/go-sdk/assert"
@@ -28,4 +31,31 @@ func TestNew(t *testing.T) {
 	typed, ok := log.Formatter.(*JSONOutputFormatter)
 	assert.True(ok)
 	assert.NotNil(typed)
+}
+
+func TestLoggerE2ESubContext(t *testing.T) {
+	assert := assert.New(t)
+
+	output := new(bytes.Buffer)
+	formatter := NewTextOutputFormatter(OptTextHideTimestamp(), OptTextNoColor())
+	log, err := New(
+		OptOutput(output),
+		OptFormatter(formatter),
+	)
+	assert.Nil(err)
+
+	scID := uuid.V4().String()
+	sc := log.SubContext(scID)
+
+	sc.Infof("this is infof")
+	sc.Errorf("this is errorf")
+	sc.Fatalf("this is fatalf")
+
+	sc.Trigger(context.Background(), NewMessageEvent(Info, "this is a triggered message"))
+	assert.Nil(log.Drain())
+
+	assert.Contains(output.String(), fmt.Sprintf("[info] [%s] this is infof", scID))
+	assert.Contains(output.String(), fmt.Sprintf("[error] [%s] this is errorf", scID))
+	assert.Contains(output.String(), fmt.Sprintf("[fatal] [%s] this is fatalf", scID))
+	assert.Contains(output.String(), fmt.Sprintf("[info] [%s] this is a triggered message", scID))
 }
