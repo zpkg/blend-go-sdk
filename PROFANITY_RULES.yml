@@ -2,24 +2,34 @@ GOLANG_LOGGER:
   description: "please use `logger.Log`, not a type reference"
   contains:
   - "*logger.Logger"
+
 GOLANG_ASSERT_NON_TEST:
   description: "do not include assert in non _test.go files"
   excludeFiles:
   - "*_test.go"
   importsContain:
   - "github.com/blend/go-sdk/assert"
+
 GOLANG_DEPRECATED:
   message: "please switch to using `github.com/blend/go-sdk`"
   importsContain:
   - "github.com/blendlabs/*"
+
 GOLANG_YAML:
   message: "please use `github.com/blend/go-sdk/yaml`"
   importsContain:
   - "gopkg.in/yaml.v2"
+
+GOLANG_GOPKG_IN:
+  message: "please get specific approval for `gopkg.in` dependencies"
+  importsContain:
+  - "gopkg.in/*"
+
 GOLANG_PRINTLN:
   message: "please remove debugging `println` statements"
   contains:
   - "println"
+
 GOLANG_CMD_IMPORTS:
   message: "please don't reference cmd packages"
   importsContain:
