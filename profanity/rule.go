@@ -8,21 +8,6 @@ import (
 	"github.com/blend/go-sdk/stringutil"
 )
 
-// Rules are a list of rules.
-type Rules []Rule
-
-// String
-func (r Rules) String() string {
-	if len(r) == 0 {
-		return "<empty>"
-	}
-	var output []string
-	for _, rule := range r {
-		output = append(output, rule.String())
-	}
-	return strings.Join(output, "\n")
-}
-
 // Rule is a serialized rule.
 type Rule struct {
 	// ID is a unique identifier for the rule.

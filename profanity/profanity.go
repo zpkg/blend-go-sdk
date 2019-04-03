@@ -62,7 +62,7 @@ func (p *Profanity) Process() error {
 	}
 
 	// rule cache is shared between files and directories during the full walk.
-	ruleCache := map[string][]Rule{}
+	ruleCache := map[string]Rules{}
 	// make sure the root rules are initialized if they exist.
 	if _, err := os.Stat("./" + p.Config.RulesFileOrDefault()); err == nil {
 		_, err = p.RulesForPathOrCached(ruleCache, ".")
@@ -167,7 +167,7 @@ func (p *Profanity) Process() error {
 
 // RulesForPathOrCached returns rules cached or rules from disk.
 // It prevents re-reading the full rules set for each file in a path.
-func (p *Profanity) RulesForPathOrCached(packageRules map[string][]Rule, path string) ([]Rule, error) {
+func (p *Profanity) RulesForPathOrCached(packageRules map[string]Rules, path string) (Rules, error) {
 	if rules, ok := packageRules[path]; ok {
 		return rules, nil
 	}
@@ -184,7 +184,7 @@ func (p *Profanity) RulesForPathOrCached(packageRules map[string][]Rule, path st
 // RulesForPath adds rules in a given path and child paths to an existing rule set.
 // `workingSet` are the current working rules keyed on the path they
 // came from, including '.' for the root rules.
-func (p *Profanity) RulesForPath(workingSet map[string][]Rule, path string) ([]Rule, error) {
+func (p *Profanity) RulesForPath(workingSet map[string]Rules, path string) (Rules, error) {
 	pathRules, err := p.ReadRules(path)
 	if err != nil {
 		return nil, err
@@ -195,13 +195,13 @@ func (p *Profanity) RulesForPath(workingSet map[string][]Rule, path string) ([]R
 			if p.Config.VerboseOrDefault() {
 				p.Printf("%s including inherited rules from %s", ansi.LightWhite(path), ansi.LightWhite(key))
 			}
-			pathRules = append(workingRules, pathRules...)
+			pathRules = MergeRules(workingRules, pathRules)
 		}
 	}
 
 	// always include rules from "." if they were set
 	if rootRules, hasRootRules := workingSet[Root]; hasRootRules && path != Root {
-		pathRules = append(rootRules, pathRules...)
+		pathRules = MergeRules(rootRules, pathRules)
 	}
 
 	return pathRules, nil
@@ -209,7 +209,7 @@ func (p *Profanity) RulesForPath(workingSet map[string][]Rule, path string) ([]R
 
 // ReadRules reads rules at a given directory path.
 // Path is meant to be the slash terminated dir, which will have the configured rule path appended to it.
-func (p *Profanity) ReadRules(path string) ([]Rule, error) {
+func (p *Profanity) ReadRules(path string) (Rules, error) {
 	profanityPath := filepath.Join(path, p.Config.RulesFileOrDefault())
 	if _, err := os.Stat(profanityPath); err != nil {
 		if p.Config.VerboseOrDefault() {
@@ -225,24 +225,25 @@ func (p *Profanity) ReadRules(path string) ([]Rule, error) {
 }
 
 // RulesFromPath reads rules from a path
-func (p *Profanity) RulesFromPath(path string) (rules []Rule, err error) {
+func (p *Profanity) RulesFromPath(path string) (rules Rules, err error) {
 	var contents []byte
 	contents, err = ioutil.ReadFile(path)
 	if err != nil {
 		err = exception.New(err, exception.OptMessagef("file: %s", path))
 		return
 	}
-	var fileRules []Rule
+	var fileRules Rules
 	err = yaml.Unmarshal(contents, &fileRules)
 	if err != nil {
 		err = exception.New(err, exception.OptMessagef("file: %s", path))
 		return
 	}
-	rules = make([]Rule, len(fileRules))
-	for index, fileRule := range fileRules {
+	rules = make(Rules)
+	for id, fileRule := range fileRules {
 		rule := fileRule
+		rule.ID = id
 		rule.File = path
-		rules[index] = rule
+		rules[id] = rule
 	}
 	return
 }
