@@ -7,9 +7,10 @@ import (
 	"github.com/blend/go-sdk/exception"
 )
 
-// NewQueue returns a new parallel queue.
-func NewQueue(action WorkAction, options ...QueueOption) *Queue {
-	q := Queue{
+// NewErrorQueue returns a new parallel error queue worker.
+// It is meant to provide a way to get errors out of other parallel workers and process them.
+func NewErrorQueue(action ErrorWorkAction, options ...ErrorQueueOption) *ErrorQueue {
+	q := &ErrorQueue{
 		Latch:       NewLatch(),
 		Action:      action,
 		Context:     context.Background(),
@@ -17,59 +18,51 @@ func NewQueue(action WorkAction, options ...QueueOption) *Queue {
 		Parallelism: runtime.NumCPU(),
 	}
 	for _, option := range options {
-		option(&q)
+		option(q)
 	}
-	return &q
+	return q
 }
 
-// QueueOption is an option for the queue worker.
-type QueueOption func(*Queue)
+// ErrorQueueOption is an option for the error queue worker.
+type ErrorQueueOption func(*ErrorQueue)
 
-// OptQueueParallelism sets the queue worker parallelism.
-func OptQueueParallelism(parallelism int) QueueOption {
-	return func(q *Queue) {
-		q.Parallelism = parallelism
-	}
-}
-
-// OptQueueMaxWork sets the queue worker max work.
-func OptQueueMaxWork(maxWork int) QueueOption {
-	return func(q *Queue) {
+// OptErrorQueueMaxWork sets the queue worker count.
+func OptErrorQueueMaxWork(maxWork int) ErrorQueueOption {
+	return func(q *ErrorQueue) {
 		q.MaxWork = maxWork
 	}
 }
 
-// OptQueueErrors sets the queue worker start error channel.
-func OptQueueErrors(errors chan error) QueueOption {
-	return func(q *Queue) {
-		q.Errors = errors
+// OptErrorQueueParallelism sets the queue worker count.
+func OptErrorQueueParallelism(parallelism int) ErrorQueueOption {
+	return func(q *ErrorQueue) {
+		q.Parallelism = parallelism
 	}
 }
 
-// OptQueueContext sets the queue worker context.
-func OptQueueContext(ctx context.Context) QueueOption {
-	return func(q *Queue) {
+// OptErrorQueueContext sets the queue worker context.
+func OptErrorQueueContext(ctx context.Context) ErrorQueueOption {
+	return func(q *ErrorQueue) {
 		q.Context = ctx
 	}
 }
 
-// Queue is a queue with multiple workers.
-type Queue struct {
+// ErrorQueue is an error queue with multiple workers..
+type ErrorQueue struct {
 	*Latch
 
-	Action      WorkAction
+	Action      ErrorWorkAction
 	Context     context.Context
-	Errors      chan error
-	Parallelism int
 	MaxWork     int
+	Parallelism int
 
 	// these will typically be set by Start
-	Workers chan *Worker
-	Work    chan interface{}
+	Workers chan *ErrorWorker
+	Work    chan error
 }
 
 // Background returns a background context.
-func (pq *Queue) Background() context.Context {
+func (pq *ErrorQueue) Background() context.Context {
 	if pq.Context != nil {
 		return pq.Context
 	}
@@ -77,29 +70,29 @@ func (pq *Queue) Background() context.Context {
 }
 
 // Enqueue adds an item to the work queue.
-func (pq *Queue) Enqueue(obj interface{}) {
+func (pq *ErrorQueue) Enqueue(obj error) {
 	pq.Work <- obj
 }
 
 // Start starts the queue and its workers.
 // This call blocks.
-func (pq *Queue) Start() error {
+func (pq *ErrorQueue) Start() error {
 	if !pq.CanStart() {
 		return exception.New(ErrCannotStart)
 	}
 	pq.Starting()
 
 	// create channel(s)
-	pq.Work = make(chan interface{}, pq.MaxWork)
-	pq.Workers = make(chan *Worker, pq.Parallelism)
-
+	if pq.Work == nil {
+		pq.Work = make(chan error, pq.MaxWork)
+	}
+	if pq.Workers == nil {
+		pq.Workers = make(chan *ErrorWorker, pq.Parallelism)
+	}
 	for x := 0; x < pq.Parallelism; x++ {
-		worker := NewWorker(pq.Action)
+		worker := NewErrorWorker(pq.Action)
 		worker.Context = pq.Context
-		worker.Errors = pq.Errors
 		worker.Finalizer = pq.ReturnWorker
-
-		// start the worker on its own goroutine
 		go worker.Start()
 		<-worker.NotifyStarted()
 		pq.Workers <- worker
@@ -109,10 +102,10 @@ func (pq *Queue) Start() error {
 }
 
 // Dispatch processes work items in a loop.
-func (pq *Queue) Dispatch() {
+func (pq *ErrorQueue) Dispatch() {
 	pq.Started()
-	var workItem interface{}
-	var worker *Worker
+	var workItem error
+	var worker *ErrorWorker
 	for {
 		select {
 		case workItem = <-pq.Work:
@@ -140,7 +133,7 @@ func (pq *Queue) Dispatch() {
 }
 
 // Stop stops the queue
-func (pq *Queue) Stop() error {
+func (pq *ErrorQueue) Stop() error {
 	if !pq.CanStop() {
 		return exception.New(ErrCannotStop)
 	}
@@ -154,7 +147,7 @@ func (pq *Queue) Stop() error {
 
 // Close stops the queue.
 // Any work left in the queue will be discarded.
-func (pq *Queue) Close() error {
+func (pq *ErrorQueue) Close() error {
 	pq.Stopping()
 	<-pq.NotifyStopped()
 	return nil
@@ -162,7 +155,6 @@ func (pq *Queue) Close() error {
 
 // ReturnWorker creates an action handler that returns a given worker to the worker queue.
 // It wraps any action provided to the queue.
-func (pq *Queue) ReturnWorker(ctx context.Context, worker *Worker) error {
+func (pq *ErrorQueue) ReturnWorker(ctx context.Context, worker *ErrorWorker) {
 	pq.Workers <- worker
-	return nil
 }
