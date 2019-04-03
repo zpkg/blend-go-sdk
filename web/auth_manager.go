@@ -28,7 +28,7 @@ func NewAuthManager(cfg *Config) (manager *AuthManager) {
 	case AuthManagerModeLocal: // local should only be used for debugging.
 		manager = NewLocalAuthManager()
 	case AuthManagerModeRemote:
-		manager = &AuthManager{}
+		manager = NewRemoteAuthManager()
 	default:
 		panic("invalid auth manager mode")
 	}
@@ -38,6 +38,11 @@ func NewAuthManager(cfg *Config) (manager *AuthManager) {
 	manager.CookiePath = cfg.CookiePathOrDefault()
 	manager.SessionTimeoutProvider = SessionTimeoutProvider(!cfg.SessionTimeoutIsRelative, cfg.SessionTimeoutOrDefault())
 	return manager
+}
+
+// NewRemoteAuthManager returns an empty auth manager.
+func NewRemoteAuthManager() *AuthManager {
+	return &AuthManager{}
 }
 
 // NewLocalAuthManagerFromCache returns a new locally cached session manager that saves sessions to the cache provided
@@ -292,7 +297,7 @@ func (am AuthManager) shouldUpdateSessionExpiry() bool {
 
 // InjectCookie injects a session cookie into the context.
 func (am *AuthManager) injectCookie(ctx *Ctx, name, value string, expire time.Time) {
-	ctx.WriteNewCookie(name, value, expire, am.CookiePathOrDefault(), am.CookieHTTP)
+	ctx.WriteNewCookie(name, value, expire, am.CookiePathOrDefault(), !am.CookieHTTP)
 }
 
 // readParam reads a param from a given request context from either the cookies or headers.

@@ -50,6 +50,11 @@ func OptAuth(auth *AuthManager) AppOption {
 	return func(a *App) { a.Auth = auth }
 }
 
+// OptTracer sets the tracer.
+func OptTracer(tracer Tracer) AppOption {
+	return func(a *App) { a.Tracer = tracer }
+}
+
 // OptViews sets the view cache.
 func OptViews(views *ViewCache) AppOption {
 	return func(a *App) { a.Views = views }
