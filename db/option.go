@@ -1,7 +1,29 @@
 package db
 
+import (
+	"database/sql"
+
+	"github.com/blend/go-sdk/logger"
+)
+
 // Option is an option for database connections.
 type Option func(c *Connection) error
+
+// OptConnection sets the underlying driver connection.
+func OptConnection(conn *sql.DB) Option {
+	return func(c *Connection) error {
+		c.Connection = conn
+		return nil
+	}
+}
+
+// OptLog sets the tracer on the connection.
+func OptLog(log logger.Log) Option {
+	return func(c *Connection) error {
+		c.Log = log
+		return nil
+	}
+}
 
 // OptTracer sets the tracer on the connection.
 func OptTracer(tracer Tracer) Option {
