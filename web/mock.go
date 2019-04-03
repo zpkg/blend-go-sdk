@@ -50,6 +50,19 @@ func Mock(app *App, req *http.Request, options ...webutil.RequestOption) (*http.
 	}
 }
 
+// MockMethod sends a mock request with a given method to an app.
+// You should use request options to set the body of the request if it's a post or put etc.
+func MockMethod(app *App, method, path string, options ...webutil.RequestOption) (*http.Response, error) {
+	req := &http.Request{
+		Method: method,
+	}
+	req.URL = &url.URL{
+		Scheme: "http",
+		Path:   path,
+	}
+	return Mock(app, req, options...)
+}
+
 // MockGet sends a mock get request to an app.
 func MockGet(app *App, path string, options ...webutil.RequestOption) (*http.Response, error) {
 	req := &http.Request{
@@ -158,8 +171,8 @@ func MockReadDiscard(res *http.Response, err error) error {
 	return nil
 }
 
-// MockReadDiscardWithResonse discards the results of a mocked request and returns the response.
-func MockReadDiscardWithResonse(res *http.Response, err error) (*http.Response, error) {
+// MockReadDiscardWithResponse discards the results of a mocked request and returns the response.
+func MockReadDiscardWithResponse(res *http.Response, err error) (*http.Response, error) {
 	if err != nil {
 		return nil, err
 	}

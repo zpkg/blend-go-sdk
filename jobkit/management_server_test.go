@@ -55,13 +55,13 @@ func TestManagementServerHealthz(t *testing.T) {
 		},
 	})
 
-	meta, err := web.MockReadDiscardWithResonse(web.MockGet(app, "/healthz"))
+	meta, err := web.MockReadDiscardWithResponse(web.MockGet(app, "/healthz"))
 	assert.Nil(err)
 	assert.Equal(http.StatusOK, meta.StatusCode)
 
 	jm.Stop()
 
-	meta, err = web.MockReadDiscardWithResonse(web.MockGet(app, "/healthz"))
+	meta, err = web.MockReadDiscardWithResponse(web.MockGet(app, "/healthz"))
 	assert.Nil(err)
 	assert.Equal(http.StatusInternalServerError, meta.StatusCode)
 }
