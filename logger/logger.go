@@ -9,15 +9,6 @@ import (
 	"github.com/blend/go-sdk/exception"
 )
 
-const (
-
-	// DefaultListenerName is a default.
-	DefaultListenerName = "default"
-
-	// DefaultRecoverPanics is a default.
-	DefaultRecoverPanics = true
-)
-
 // New returns a new logger with a given set of enabled flags.
 // By default it uses a text output formatter writing to stdout.
 func New(options ...Option) (*Logger, error) {

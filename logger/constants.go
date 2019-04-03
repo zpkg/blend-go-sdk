@@ -26,14 +26,16 @@ const (
 
 // Default flags
 var (
-	DefaultFlags = []string{Info, Error, Fatal}
+	DefaultFlags         = []string{Info, Error, Fatal}
+	DefaultListenerName  = "default"
+	DefaultRecoverPanics = true
 )
 
 // Environment Variable Names
 const (
 	EnvVarFlags      = "LOG_FLAGS"
 	EnvVarFormat     = "LOG_FORMAT"
-	EnvVarNoColor    = "NOs_COLOR"
+	EnvVarNoColor    = "NO_COLOR"
 	EnvVarHideTime   = "LOG_HIDE_TIME"
 	EnvVarTimeFormat = "LOG_TIME_FORMAT"
 	EnvVarJSONPretty = "LOG_JSON_PRETTY"
