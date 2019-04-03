@@ -16,8 +16,8 @@ const (
 	maxLogBytes = 1 << 20
 )
 
-// OptLogRequest adds an OnResponse listener to log the response of a call.
-func OptLogRequest(log logger.Log) Option {
+// OptLog adds an OnRequest listener to log that a call was made.
+func OptLog(log logger.Log) Option {
 	return OptOnRequest(func(req *http.Request) error {
 		event := NewEvent(Flag,
 			OptEventRequest(req))
