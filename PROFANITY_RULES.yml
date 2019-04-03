@@ -1,4 +1,4 @@
-GOLANG_LOGGER:
+GOLANG_LOGGER: #note: this does not affect go-sdk/logger because of the package reference
   description: "please use `logger.Log`, not a type reference"
   contains:
   - "*logger.Logger"
