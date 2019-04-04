@@ -19,6 +19,8 @@ func MockCtx(method, path string, options ...CtxOption) *Ctx {
 }
 
 // Mock sends a mock request to an app.
+// It will reset the app Server, Listener, and will set the request host to the listener address
+// for a randomized local listener.
 func Mock(app *App, req *http.Request, options ...webutil.RequestOption) (*http.Response, error) {
 	var err error
 	for _, option := range options {
