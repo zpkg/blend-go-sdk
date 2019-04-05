@@ -58,7 +58,7 @@ type App struct {
 // CreateServer returns the basic http.Server for the app.
 func (a *App) CreateServer() *http.Server {
 	return &http.Server{
-		Handler:           a.Handler,
+		Handler:           a,
 		TLSConfig:         a.TLSConfig,
 		Addr:              a.Config.BindAddrOrDefault(),
 		MaxHeaderBytes:    a.Config.MaxHeaderBytesOrDefault(),
@@ -76,14 +76,8 @@ func (a *App) StartupTasks() error {
 
 // Start starts the server and binds to the given address.
 func (a *App) Start() (err error) {
-
-	if a.Server == nil {
-		a.Server = a.CreateServer()
-	}
-
-	if a.Server.Handler == nil {
-		a.Server.Handler = a
-	}
+	// set up the underlying server.
+	a.Server = a.CreateServer()
 
 	// initialize the view cache.
 	err = a.StartupTasks()
@@ -117,6 +111,7 @@ func (a *App) Start() (err error) {
 
 	keepAliveListener := TCPKeepAliveListener{a.Listener}
 	var shutdownErr error
+
 	a.Started()
 	if a.Server.TLSConfig != nil {
 		shutdownErr = a.Server.Serve(tls.NewListener(keepAliveListener, a.Server.TLSConfig))
@@ -128,6 +123,7 @@ func (a *App) Start() (err error) {
 	}
 	logger.MaybeInfof(a.Log, "server exited")
 	a.Stopped()
+
 	return
 }
 
@@ -137,6 +133,7 @@ func (a *App) Stop() error {
 		return exception.New(async.ErrCannotStop)
 	}
 	a.Stopping()
+
 	ctx := context.Background()
 	var cancel context.CancelFunc
 	if a.Config.ShutdownGracePeriodOrDefault() > 0 {
@@ -148,7 +145,11 @@ func (a *App) Stop() error {
 	if err := a.Server.Shutdown(ctx); err != nil {
 		return exception.New(err)
 	}
+
+	a.Server = nil
+	a.Listener = nil
 	logger.MaybeInfof(a.Log, "server shutdown complete")
+
 	return nil
 }
 

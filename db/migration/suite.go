@@ -18,8 +18,6 @@ func New(groups ...GroupedActions) *Suite {
 
 // Suite is a migration suite.
 type Suite struct {
-	context context.Context
-
 	Log    logger.Log
 	Groups []GroupedActions
 
@@ -29,22 +27,9 @@ type Suite struct {
 	Total   int
 }
 
-// Context returns a context for the suite.
-func (s *Suite) Context() context.Context {
-	if s.context != nil {
-		return s.context
-	}
-	return context.Background()
-}
-
-// WithContext sets the context on the suite.
-func (s *Suite) WithContext(ctx context.Context) {
-	s.context = ctx
-}
-
 // Apply applies the suite.
-func (s *Suite) Apply(c *db.Connection) (err error) {
-	defer s.WriteStats(s.Context())
+func (s *Suite) Apply(ctx context.Context, c *db.Connection) (err error) {
+	defer s.WriteStats(ctx)
 	defer func() {
 		if r := recover(); r != nil {
 			err = exception.New(r)
@@ -52,7 +37,7 @@ func (s *Suite) Apply(c *db.Connection) (err error) {
 	}()
 
 	for _, group := range s.Groups {
-		if err = group.Action(WithSuite(s.Context(), s), c); err != nil {
+		if err = group.Action(WithSuite(ctx, s), c); err != nil {
 			return
 		}
 	}

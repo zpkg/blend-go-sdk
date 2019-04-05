@@ -89,6 +89,8 @@ type Config struct {
 	Username string `json:"username,omitempty" yaml:"username,omitempty" env:"DB_USER"`
 	// Password is the password for the connection via password auth.
 	Password string `json:"password,omitempty" yaml:"password,omitempty" env:"DB_PASSWORD"`
+	// ConnectTimeout is the connection timeout in seconds.
+	ConnectTimeout int `json:"connectTimeout" yaml:"connectTimeout" env:"DB_CONNECT_TIMEOUT"`
 	// SSLMode is the sslmode for the connection.
 	SSLMode string `json:"sslMode,omitempty" yaml:"sslMode,omitempty" env:"DB_SSLMODE"`
 	// PlanCacheDisabled indicates if we should use the prepared statement plan cache.

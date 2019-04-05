@@ -24,6 +24,7 @@ func (ga GroupedActions) Action(ctx context.Context, c *db.Connection) (err erro
 	if err != nil {
 		return
 	}
+
 	// commit or rollback the transaction.
 	defer func() {
 		if err != nil {
