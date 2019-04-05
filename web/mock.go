@@ -38,12 +38,11 @@ func Mock(app *App, req *http.Request, options ...webutil.RequestOption) *MockRe
 	if !app.IsStarted() {
 		startupErrors := make(chan error)
 		app.Config.BindAddr = DefaultMockBindAddr
+		app.Config.ShutdownGracePeriod = time.Millisecond
 
 		// set the on response delegate to stop the app.
-		result.Request.OnResponse = []r2.OnResponseListener{
-			func(_ *http.Request, _ *http.Response, _ time.Time, _ error) error {
-				return result.finalize()
-			},
+		result.Request.Closer = func() error {
+			return result.Close()
 		}
 
 		go func() {
@@ -121,12 +120,14 @@ type MockResult struct {
 	App *App
 }
 
-// finalize stops the app.
-func (mr *MockResult) finalize() error {
-	if err := mr.App.Stop(); err != nil {
-		return err
+// Close stops the app.
+func (mr *MockResult) Close() error {
+	if mr.App.CanStop() {
+		if err := mr.App.Stop(); err != nil {
+			return err
+		}
+		<-mr.App.NotifyStopped()
 	}
-	<-mr.App.NotifyStopped()
 	return nil
 }
 

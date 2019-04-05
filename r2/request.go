@@ -43,6 +43,9 @@ type Request struct {
 	// It pre-empts the request going out.
 	Err error
 
+	// Closer is an optional step to run as part of the Close() function.
+	Closer func() error
+
 	// ResponseBodyInterceptor is an optional custom step to alter the response stream.
 	ResponseBodyInterceptor ReaderInterceptor
 	Tracer                  Tracer
@@ -96,29 +99,18 @@ func (r *Request) Do() (*http.Response, error) {
 	return res, nil
 }
 
-// Close executes and closes the response.
-// It does not read any data from the response.
+// Close closes the request if there is a closer specified.
 func (r *Request) Close() error {
-	res, err := r.Do()
-	if err != nil {
-		return err
+	if r.Closer != nil {
+		return r.Closer()
 	}
-	return exception.New(res.Body.Close())
-}
-
-// CloseWithResponse executes and closes the response.
-// It returns the response for metadata purposes.
-// It does not read any data from the response.
-func (r *Request) CloseWithResponse() (*http.Response, error) {
-	res, err := r.Do()
-	if err != nil {
-		return nil, err
-	}
-	return res, exception.New(res.Body.Close())
+	return nil
 }
 
 // Discard reads the response fully and discards all data it reads.
 func (r *Request) Discard() error {
+	defer r.Close()
+
 	res, err := r.Do()
 	if err != nil {
 		return err
@@ -130,6 +122,8 @@ func (r *Request) Discard() error {
 
 // DiscardWithResponse reads the response fully and discards all data it reads, and returns the response metadata.
 func (r *Request) DiscardWithResponse() (*http.Response, error) {
+	defer r.Close()
+
 	res, err := r.Do()
 	if err != nil {
 		return nil, err
@@ -141,6 +135,8 @@ func (r *Request) DiscardWithResponse() (*http.Response, error) {
 
 // CopyTo copies the response body to a given writer.
 func (r *Request) CopyTo(dst io.Writer) (int64, error) {
+	defer r.Close()
+
 	res, err := r.Do()
 	if err != nil {
 		return 0, err
@@ -155,6 +151,8 @@ func (r *Request) CopyTo(dst io.Writer) (int64, error) {
 
 // Bytes reads the response and returns it as a byte array.
 func (r *Request) Bytes() ([]byte, error) {
+	defer r.Close()
+
 	res, err := r.Do()
 	if err != nil {
 		return nil, err
@@ -169,6 +167,8 @@ func (r *Request) Bytes() ([]byte, error) {
 
 // BytesWithResponse reads the response and returns it as a byte array, along with the response metadata..
 func (r *Request) BytesWithResponse() ([]byte, *http.Response, error) {
+	defer r.Close()
+
 	res, err := r.Do()
 	if err != nil {
 		return nil, nil, err
@@ -183,6 +183,8 @@ func (r *Request) BytesWithResponse() ([]byte, *http.Response, error) {
 
 // JSON reads the response as json into a given object.
 func (r *Request) JSON(dst interface{}) error {
+	defer r.Close()
+
 	res, err := r.Do()
 	if err != nil {
 		return err
@@ -193,6 +195,8 @@ func (r *Request) JSON(dst interface{}) error {
 
 // JSONWithResponse reads the response as json into a given object and returns the response metadata.
 func (r *Request) JSONWithResponse(dst interface{}) (*http.Response, error) {
+	defer r.Close()
+
 	res, err := r.Do()
 	if err != nil {
 		return nil, err
@@ -203,6 +207,8 @@ func (r *Request) JSONWithResponse(dst interface{}) (*http.Response, error) {
 
 // XML reads the response as json into a given object.
 func (r *Request) XML(dst interface{}) error {
+	defer r.Close()
+
 	res, err := r.Do()
 	if err != nil {
 		return err
@@ -213,6 +219,8 @@ func (r *Request) XML(dst interface{}) error {
 
 // XMLWithResponse reads the response as json into a given object.
 func (r *Request) XMLWithResponse(dst interface{}) (*http.Response, error) {
+	defer r.Close()
+
 	res, err := r.Do()
 	if err != nil {
 		return nil, err

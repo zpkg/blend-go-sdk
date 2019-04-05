@@ -185,9 +185,10 @@ func TestAppStaticHeader(t *testing.T) {
 
 func TestAppMiddleWarePipeline(t *testing.T) {
 	assert := assert.New(t)
-	app := New()
 
 	didRun := false
+
+	app := New()
 	app.GET("/",
 		func(r *Ctx) Result { return Raw([]byte("OK!")) },
 		func(action Action) Action {

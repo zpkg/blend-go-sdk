@@ -1,8 +1,8 @@
 package db
 
 import (
-	"fmt"
 	"net/url"
+	"strconv"
 	"strings"
 	"time"
 
@@ -176,27 +176,39 @@ func (c Config) BufferPoolSizeOrDefault(inherited ...int) int {
 
 // CreateDSN creates a postgres connection string from the config.
 func (c Config) CreateDSN() string {
-	if len(c.DSN) > 0 {
+	if c.DSN != "" {
 		return c.DSN
 	}
 
-	var sslMode string
-	if len(c.SSLMode) > 0 {
-		sslMode = fmt.Sprintf("?sslmode=%s", url.QueryEscape(c.SSLMode))
+	host := c.HostOrDefault()
+	if c.PortOrDefault() != "" {
+		host = host + ":" + c.PortOrDefault()
 	}
 
-	var port string
-	if len(c.PortOrDefault()) > 0 {
-		port = fmt.Sprintf(":%s", c.PortOrDefault())
+	dsn := &url.URL{
+		Scheme: "postgres",
+		Host:   host,
+		Path:   c.DatabaseOrDefault(),
 	}
 
 	if len(c.Username) > 0 {
 		if len(c.Password) > 0 {
-			return fmt.Sprintf("postgres://%s:%s@%s%s/%s%s", url.QueryEscape(c.Username), url.QueryEscape(c.Password), c.HostOrDefault(), port, c.DatabaseOrDefault(), sslMode)
+			dsn.User = url.UserPassword(c.Username, c.Password)
+		} else {
+			dsn.User = url.User(c.Username)
 		}
-		return fmt.Sprintf("postgres://%s@%s%s/%s%s", url.QueryEscape(c.Username), c.HostOrDefault(), port, c.DatabaseOrDefault(), sslMode)
 	}
-	return fmt.Sprintf("postgres://%s%s/%s%s", c.HostOrDefault(), port, c.DatabaseOrDefault(), sslMode)
+
+	queryArgs := url.Values{}
+	if len(c.SSLMode) > 0 {
+		queryArgs.Add("sslmode", c.SSLMode)
+	}
+	if c.ConnectTimeout > 0 {
+		queryArgs.Add("connect_timeout", strconv.Itoa(c.ConnectTimeout))
+	}
+
+	dsn.RawQuery = queryArgs.Encode()
+	return dsn.String()
 }
 
 // Resolve creates a DSN and reparses it, in case some values need to be coalesced.
