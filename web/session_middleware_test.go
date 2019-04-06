@@ -27,14 +27,14 @@ func TestSessionAware(t *testing.T) {
 		return Text.Result("COOL")
 	}, SessionAware)
 
-	meta, err := MockGet(app, "/", webutil.OptCookieValue(app.Auth.CookieNameOrDefault(), sessionID))
+	meta, err := MockGet(app, "/", webutil.OptCookieValue(app.Auth.CookieNameOrDefault(), sessionID)).DiscardWithResponse()
 	assert.Nil(err)
 	assert.Equal(http.StatusOK, meta.StatusCode)
 	assert.Equal(ContentTypeText, meta.Header.Get(HeaderContentType))
 	assert.True(didExecuteHandler, "we should have triggered the hander")
 	assert.True(sessionWasSet, "the session should have been set by the middleware")
 
-	unsetMeta, err := MockGet(app, "/")
+	unsetMeta, err := MockGet(app, "/").DiscardWithResponse()
 	assert.Nil(err)
 	assert.Equal(http.StatusOK, unsetMeta.StatusCode)
 	assert.False(sessionWasSet)
@@ -54,12 +54,12 @@ func TestSessionRequired(t *testing.T) {
 		return Text.Result("COOL")
 	}, SessionRequired)
 
-	unsetMeta, err := MockGet(app, "/")
+	unsetMeta, err := MockGet(app, "/").DiscardWithResponse()
 	assert.Nil(err)
 	assert.Equal(http.StatusForbidden, unsetMeta.StatusCode)
 	assert.False(sessionWasSet)
 
-	meta, err := MockGet(app, "/", webutil.OptCookieValue(app.Auth.CookieNameOrDefault(), sessionID))
+	meta, err := MockGet(app, "/", webutil.OptCookieValue(app.Auth.CookieNameOrDefault(), sessionID)).DiscardWithResponse()
 	assert.Nil(err)
 	assert.Equal(http.StatusOK, meta.StatusCode)
 	assert.True(sessionWasSet)
@@ -80,17 +80,17 @@ func TestSessionRequiredCustomParamName(t *testing.T) {
 		return Text.Result("COOL")
 	}, SessionRequired)
 
-	unsetMeta, err := MockGet(app, "/")
+	unsetMeta, err := MockGet(app, "/").DiscardWithResponse()
 	assert.Nil(err)
 	assert.Equal(http.StatusForbidden, unsetMeta.StatusCode)
 	assert.False(sessionWasSet)
 
-	meta, err := MockGet(app, "/", webutil.OptCookieValue(app.Auth.CookieNameOrDefault(), sessionID))
+	meta, err := MockGet(app, "/", webutil.OptCookieValue(app.Auth.CookieNameOrDefault(), sessionID)).DiscardWithResponse()
 	assert.Nil(err)
 	assert.Equal(http.StatusOK, meta.StatusCode)
 	assert.True(sessionWasSet)
 
-	meta, err = MockGet(app, "/", webutil.OptCookieValue(DefaultCookieName, sessionID))
+	meta, err = MockGet(app, "/", webutil.OptCookieValue(DefaultCookieName, sessionID)).DiscardWithResponse()
 	assert.Nil(err)
 	assert.Equal(http.StatusForbidden, meta.StatusCode)
 	assert.True(sessionWasSet)
@@ -102,8 +102,12 @@ func TestSessionMiddleware(t *testing.T) {
 	sessionID := stringutil.Random(stringutil.LettersAndNumbers, 64)
 
 	var sessionWasSet bool
-	app := New(OptAuth(NewLocalAuthManager()))
+	app := New(OptAuth(NewLocalAuthManager()), OptBindAddr(DefaultMockBindAddr))
 	app.Auth.PersistHandler(context.TODO(), &Session{SessionID: sessionID, UserID: "bailey"})
+
+	go app.Start()
+	<-app.NotifyStarted()
+	defer app.Stop()
 
 	var calledCustom bool
 	app.GET("/", func(r *Ctx) Result {
@@ -114,15 +118,14 @@ func TestSessionMiddleware(t *testing.T) {
 		return NoContent
 	}))
 
-	unsetMeta, err := MockGet(app, "/")
+	unsetMeta, err := MockGet(app, "/").DiscardWithResponse()
 	assert.Nil(err)
 	assert.Equal(http.StatusNoContent, unsetMeta.StatusCode)
 	assert.False(sessionWasSet)
 
-	meta, err := MockGet(app, "/", webutil.OptCookieValue(app.Auth.CookieNameOrDefault(), sessionID))
+	meta, err := MockGet(app, "/", webutil.OptCookieValue(app.Auth.CookieNameOrDefault(), sessionID)).DiscardWithResponse()
 	assert.Nil(err)
 	assert.Equal(http.StatusOK, meta.StatusCode)
 	assert.True(sessionWasSet)
-
 	assert.True(calledCustom)
 }

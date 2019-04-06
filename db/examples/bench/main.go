@@ -35,7 +35,7 @@ func createTable(tableName string, log logger.Log, conn *db.Connection) error {
 		),
 	)
 	suite.Log = log
-	return suite.Apply(conn)
+	return suite.Apply(context.TODO(), conn)
 }
 
 func dropTable(tableName string, log logger.Log, conn *db.Connection) error {
@@ -51,7 +51,7 @@ func dropTable(tableName string, log logger.Log, conn *db.Connection) error {
 		),
 	)
 	suite.Log = log
-	return suite.Apply(conn)
+	return suite.Apply(context.TODO(), conn)
 }
 
 func maybeFatal(err error) {

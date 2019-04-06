@@ -3,6 +3,7 @@ package db
 import (
 	"context"
 	"database/sql"
+	"time"
 )
 
 // InvocationOption is an option for invocations.
@@ -23,11 +24,21 @@ func OptInvocationStatementInterceptor(interceptor StatementInterceptor) Invocat
 // OptContext sets a context on an invocation.
 func OptContext(ctx context.Context) InvocationOption {
 	return func(i *Invocation) {
-		if ctx == nil {
-			i.Context = context.Background()
-		} else {
-			i.Context = ctx
-		}
+		i.Context = ctx
+	}
+}
+
+// OptCancel sets the context cancel func..
+func OptCancel(cancel context.CancelFunc) InvocationOption {
+	return func(i *Invocation) {
+		i.Cancel = cancel
+	}
+}
+
+// OptTimeout sets a command timeout for the invocation.
+func OptTimeout(d time.Duration) InvocationOption {
+	return func(i *Invocation) {
+		i.Context, i.Cancel = context.WithTimeout(i.Context, d)
 	}
 }
 
