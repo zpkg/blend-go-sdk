@@ -38,8 +38,14 @@ func NewConfigFromDSN(dsn string) (*Config, error) {
 			config.Password = strings.TrimPrefix(piece, "password=")
 		} else if strings.HasPrefix(piece, "sslmode=") {
 			config.SSLMode = strings.TrimPrefix(piece, "sslmode=")
+		} else if strings.HasPrefix(piece, "connect_timeout=") {
+			config.ConnectTimeout, err = strconv.Atoi(strings.TrimPrefix(piece, "connect_timeout="))
+			if err != nil {
+				return nil, exception.New(err, exception.OptMessage("field: connect_timeout"))
+			}
 		}
 	}
+
 	return &config, nil
 }
 
