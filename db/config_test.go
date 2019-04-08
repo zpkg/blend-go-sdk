@@ -101,6 +101,32 @@ func TestConfigCreateDSN(t *testing.T) {
 	assert.Equal("postgres://localhost:5432/postgres", cfg.CreateDSN())
 }
 
+func TestNewConfigFromDSN(t *testing.T) {
+	assert := assert.New(t)
+
+	dsn := "postgres://bailey:dog@bar:1234/blend?connect_timeout=5&sslmode=verify-ca"
+
+	parsed, err := NewConfigFromDSN(dsn)
+	assert.Nil(err)
+
+	assert.Equal("bailey", parsed.Username)
+	assert.Equal("dog", parsed.Password)
+	assert.Equal("bar", parsed.Host)
+	assert.Equal("1234", parsed.Port)
+	assert.Equal("blend", parsed.Database)
+	assert.Equal("verify-ca", parsed.SSLMode)
+	assert.Equal(5, parsed.ConnectTimeout)
+}
+
+func TestNewConfigFromDSNConnectTimeoutParseError(t *testing.T) {
+	assert := assert.New(t)
+
+	dsn := "postgres://bailey:dog@bar:1234/blend?connect_timeout=abcd&sslmode=verify-ca"
+
+	_, err := NewConfigFromDSN(dsn)
+	assert.NotNil(err)
+}
+
 func TestConfigValidateProduction(t *testing.T) {
 	assert := assert.New(t)
 
