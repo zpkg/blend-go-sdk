@@ -10,6 +10,19 @@ func TestConfigCreateDSN(t *testing.T) {
 	assert := assert.New(t)
 
 	cfg := &Config{
+		Host:           "bar",
+		Port:           "1234",
+		Username:       "bailey",
+		Password:       "dog",
+		Database:       "blend",
+		Schema:         "mortgages",
+		SSLMode:        SSLModeVerifyCA,
+		ConnectTimeout: 5,
+	}
+
+	assert.Equal("postgres://bailey:dog@bar:1234/blend?connect_timeout=5&sslmode=verify-ca", cfg.CreateDSN())
+
+	cfg = &Config{
 		DSN:      "foo",
 		Host:     "bar",
 		Username: "bailey",
