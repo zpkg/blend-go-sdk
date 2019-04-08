@@ -2,7 +2,6 @@ package web
 
 import (
 	"bytes"
-	"context"
 	"fmt"
 	"net/http"
 	"strings"
@@ -360,9 +359,7 @@ func TestAppBindAddr(t *testing.T) {
 func TestAppNotFound(t *testing.T) {
 	assert := assert.New(t)
 
-	buffer := bytes.NewBuffer(nil)
-	agent := logger.MustNew(logger.OptAll(), logger.OptOutput(buffer))
-	app := New(OptLog(agent))
+	app := New()
 	app.GET("/", func(r *Ctx) Result {
 		return Raw([]byte("ok!"))
 	})
@@ -374,15 +371,8 @@ func TestAppNotFound(t *testing.T) {
 		defer wg.Done()
 		return JSON.NotFound()
 	})
-
-	agent.Listen(logger.HTTPResponse, "foo", logger.NewHTTPResponseEventListener(func(_ context.Context, wre *logger.HTTPResponseEvent) {
-		assert.NotNil(wre.Request)
-		assert.Empty(wre.Route)
-	}))
-
 	err := MockGet(app, "/doesntexist").Discard()
 	assert.Nil(err)
-	assert.Nil(agent.Drain())
 	wg.Wait()
 }
 

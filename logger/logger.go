@@ -179,6 +179,10 @@ func (l *Logger) RemoveListener(flag, listenerName string) {
 // There are no order guarantees on when these events will be processed across listeners.
 // This call will not block on the event listeners, but will block on the write.
 func (l *Logger) Trigger(ctx context.Context, e Event) {
+	if e == nil {
+		return
+	}
+
 	flag := e.Flag()
 	if !l.IsEnabled(flag) {
 		return
@@ -206,6 +210,10 @@ func (l *Logger) Trigger(ctx context.Context, e Event) {
 
 // SyncTrigger triggers an event synchronously.
 func (l *Logger) SyncTrigger(ctx context.Context, e Event) {
+	if e == nil {
+		return
+	}
+
 	flag := e.Flag()
 	if !l.IsEnabled(flag) {
 		return

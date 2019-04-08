@@ -2,11 +2,10 @@ package web
 
 import (
 	"bytes"
-	"errors"
 	"io"
 	"net/http"
+	"net/http/httptest"
 	"net/url"
-	"time"
 
 	"github.com/blend/go-sdk/r2"
 	"github.com/blend/go-sdk/webutil"
@@ -33,48 +32,20 @@ func Mock(app *App, req *http.Request, options ...webutil.RequestOption) *MockRe
 			Request: req,
 		},
 	}
-
-	// if the app isn't already started.
-	if !app.IsStarted() {
-		startupErrors := make(chan error)
-		app.Config.BindAddr = DefaultMockBindAddr
-		app.Config.ShutdownGracePeriod = time.Millisecond
-
-		// set the on response delegate to stop the app.
-		result.Request.Closer = func() error {
-			return result.Close()
-		}
-
-		go func() {
-			if err := app.Start(); err != nil {
-				startupErrors <- err
-			}
-		}()
-
-		select {
-		case <-app.NotifyStarted():
-		case err := <-startupErrors:
-			result.Err = err
-		}
-	}
-
-	if result.Request.URL == nil {
-		result.Request.URL = &url.URL{
-			Scheme: SchemeHTTP,
-		}
-	}
-	if app.TLSConfig != nil {
-		result.Request.URL.Scheme = SchemeHTTPS
-	} else {
-		result.Request.URL.Scheme = SchemeHTTP
-	}
-
-	if app.Listener == nil {
-		result.Err = errors.New("the app listener is unset")
+	if err := app.StartupTasks(); err != nil {
+		result.Err = err
 		return result
 	}
 
-	result.Request.URL.Host = app.Listener.Addr().String()
+	if result.Request.URL == nil {
+		result.Request.URL = &url.URL{}
+	}
+
+	result.Server = httptest.NewServer(app)
+
+	parsedServerURL := webutil.MustParseURL(result.Server.URL)
+	result.Request.URL.Scheme = parsedServerURL.Scheme
+	result.Request.URL.Host = parsedServerURL.Host
 
 	return result
 }
@@ -117,17 +88,13 @@ func MockPost(app *App, path string, body io.ReadCloser, options ...webutil.Requ
 // MockResult is a result of a mocked request.
 type MockResult struct {
 	*r2.Request
-	App *App
+	App    *App
+	Server *httptest.Server
 }
 
 // Close stops the app.
 func (mr *MockResult) Close() error {
-	if mr.App.CanStop() {
-		if err := mr.App.Stop(); err != nil {
-			return err
-		}
-		<-mr.App.NotifyStopped()
-	}
+	mr.Server.Close()
 	return nil
 }
 
