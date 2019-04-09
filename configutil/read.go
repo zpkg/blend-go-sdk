@@ -75,12 +75,15 @@ func Read(ref Any, options ...Option) (path string, err error) {
 	}
 
 	if typed, ok := ref.(ConfigResolver); ok {
-		if err = typed.Resolve(); err != nil {
+		if resolveErr := typed.Resolve(); resolveErr != nil {
+			err = resolveErr
 			return
 		}
 	}
+
 	if configOptions.Resolver != nil {
-		if err = configOptions.Resolver(ref); err != nil {
+		if resolveErr := configOptions.Resolver(ref); resolveErr != nil {
+			err = resolveErr
 			return
 		}
 	}

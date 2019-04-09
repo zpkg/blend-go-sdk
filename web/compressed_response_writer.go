@@ -5,6 +5,10 @@ import (
 	"net/http"
 )
 
+var (
+	_ ResponseWriter = (*RawResponseWriter)(nil)
+)
+
 // NewCompressedResponseWriter returns a new gzipped response writer.
 func NewCompressedResponseWriter(w http.ResponseWriter) *CompressedResponseWriter {
 	return &CompressedResponseWriter{
@@ -45,11 +49,6 @@ func (crw *CompressedResponseWriter) WriteHeader(code int) {
 	crw.innerResponse.WriteHeader(code)
 }
 
-// InnerResponse returns the backing http response.
-func (crw *CompressedResponseWriter) InnerResponse() http.ResponseWriter {
-	return crw.innerResponse
-}
-
 // StatusCode returns the status code for the request.
 func (crw *CompressedResponseWriter) StatusCode() int {
 	return crw.statusCode
@@ -61,9 +60,9 @@ func (crw *CompressedResponseWriter) ContentLength() int {
 }
 
 // Flush pushes any buffered data out to the response.
-func (crw *CompressedResponseWriter) Flush() error {
+func (crw *CompressedResponseWriter) Flush() {
 	crw.ensureCompressedStream()
-	return crw.gzipWriter.Flush()
+	crw.gzipWriter.Flush()
 }
 
 // Close closes any underlying resources.

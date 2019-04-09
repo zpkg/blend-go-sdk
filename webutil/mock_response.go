@@ -6,6 +6,11 @@ import (
 	"net/http"
 )
 
+var (
+	_ http.ResponseWriter = (*MockResponseWriter)(nil)
+	_ http.Flusher        = (*MockResponseWriter)(nil)
+)
+
 // NewMockResponse returns a mocked response writer.
 func NewMockResponse(buffer io.Writer) *MockResponseWriter {
 	return &MockResponseWriter{
@@ -65,9 +70,7 @@ func (res *MockResponseWriter) Bytes() []byte {
 }
 
 // Flush is a no-op.
-func (res *MockResponseWriter) Flush() error {
-	return nil
-}
+func (res *MockResponseWriter) Flush() {}
 
 // Close is a no-op.
 func (res *MockResponseWriter) Close() error {

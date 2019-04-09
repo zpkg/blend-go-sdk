@@ -33,9 +33,6 @@ func WithTimeout(d time.Duration) Middleware {
 			case res := <-resultChan:
 				return res
 			case <-ctx.Done():
-				if len(r.Response.InnerResponse().(http.CloseNotifier).CloseNotify()) > 0 {
-					return NoContent
-				}
 				return r.DefaultProvider.Status(http.StatusServiceUnavailable)
 			}
 		}
