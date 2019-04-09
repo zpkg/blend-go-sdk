@@ -63,7 +63,7 @@ func TestTryReadYAML(t *testing.T) {
 	assert := assert.New(t)
 
 	var cfg config
-	path, err := Read(&cfg, OptSetPaths("testdata/config.yaml"))
+	path, err := Read(&cfg, OptPaths("testdata/config.yaml"))
 	assert.Nil(err)
 	assert.Equal(path, "testdata/config.yaml")
 	assert.Equal("test_yaml", cfg.Environment)
@@ -74,7 +74,7 @@ func TestTryReadYML(t *testing.T) {
 	assert := assert.New(t)
 
 	var cfg config
-	path, err := Read(&cfg, OptSetPaths("testdata/config.yml"))
+	path, err := Read(&cfg, OptPaths("testdata/config.yml"))
 	assert.Nil(err)
 	assert.Equal(path, "testdata/config.yml")
 	assert.Equal("test_yml", cfg.Environment)
@@ -85,7 +85,7 @@ func TestTryReadJSON(t *testing.T) {
 	assert := assert.New(t)
 
 	var cfg config
-	path, err := Read(&cfg, OptSetPaths("testdata/config.json"))
+	path, err := Read(&cfg, OptPaths("testdata/config.json"))
 	assert.Nil(err)
 	assert.Equal(path, "testdata/config.json")
 	assert.Equal("test_json", cfg.Environment)
@@ -96,7 +96,7 @@ func TestReadUnset(t *testing.T) {
 	assert := assert.New(t)
 
 	var cfg config
-	path, err := Read(&cfg, OptSetPaths(""))
+	path, err := Read(&cfg, OptPaths(""))
 	assert.Nil(err)
 	assert.Empty(path)
 	assert.NotEqual("dev", cfg.Environment)
@@ -106,7 +106,7 @@ func TestReadPathNotFound(t *testing.T) {
 	assert := assert.New(t)
 
 	var cfg config
-	_, err := Read(&cfg, OptSetPaths(filepath.Join("testdata", uuid.V4().String())))
+	_, err := Read(&cfg, OptPaths(filepath.Join("testdata", uuid.V4().String())))
 	assert.True(IsNotExist(err))
 }
 
