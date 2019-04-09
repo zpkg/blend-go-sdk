@@ -165,20 +165,6 @@ func OptPostFormValue(key, value string) RequestOption {
 	}
 }
 
-// OptFormValue sets a form value on a request.
-func OptFormValue(key, value string) RequestOption {
-	return func(r *http.Request) error {
-		if r.Header == nil {
-			r.Header = http.Header{}
-		}
-		if r.Form == nil {
-			r.Form = make(url.Values)
-		}
-		r.Form.Set(key, value)
-		return nil
-	}
-}
-
 // OptCookie adds a cookie to a context.
 func OptCookie(cookie *http.Cookie) RequestOption {
 	return func(r *http.Request) error {

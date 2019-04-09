@@ -46,7 +46,7 @@ func TestCtxParamHeader(t *testing.T) {
 func TestCtxParamForm(t *testing.T) {
 	assert := assert.New(t)
 
-	context := MockCtx("GET", "/", OptCtxFormValue("foo", "bar"))
+	context := MockCtx("GET", "/", OptCtxPostFormValue("foo", "bar"))
 	param, err := context.Param("foo")
 	assert.Nil(err)
 	assert.Equal("bar", param)

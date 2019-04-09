@@ -87,9 +87,9 @@ func OptCtxHeaderValue(key, value string) CtxOption {
 	return CtxRequestOption(webutil.OptHeaderValue(key, value))
 }
 
-// OptCtxFormValue sets a form value on a context.
-func OptCtxFormValue(key, value string) CtxOption {
-	return CtxRequestOption(webutil.OptFormValue(key, value))
+// OptCtxPostFormValue sets a form value on a context.
+func OptCtxPostFormValue(key, value string) CtxOption {
+	return CtxRequestOption(webutil.OptPostFormValue(key, value))
 }
 
 // OptCtxCookieValue sets a cookie value on a context.

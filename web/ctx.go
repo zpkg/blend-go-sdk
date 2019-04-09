@@ -307,8 +307,8 @@ func (rc *Ctx) ensureForm() error {
 	if rc.Form != nil {
 		return nil
 	}
-	if rc.Request.Form != nil {
-		rc.Form = rc.Request.Form
+	if rc.Request.PostForm != nil {
+		rc.Form = rc.Request.PostForm
 		return nil
 	}
 
@@ -325,7 +325,7 @@ func (rc *Ctx) ensureForm() error {
 	if err := r.ParseForm(); err != nil {
 		return err
 	}
-	rc.Form = r.Form
+	rc.Form = r.PostForm
 	return nil
 }
 
