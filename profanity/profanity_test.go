@@ -9,9 +9,7 @@ import (
 func TestProfanityRulesFromPath(t *testing.T) {
 	assert := assert.New(t)
 
-	profanity := &Profanity{
-		Config: &Config{},
-	}
+	profanity := &Profanity{}
 
 	rules, err := profanity.RulesFromPath("../" + DefaultRulesFile)
 	assert.Nil(err)
@@ -22,7 +20,7 @@ func TestProfanityReadRules(t *testing.T) {
 	assert := assert.New(t)
 
 	profanity := &Profanity{
-		Config: &Config{
+		Config: Config{
 			RulesFile: DefaultRulesFile,
 		},
 	}

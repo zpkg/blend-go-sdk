@@ -9,9 +9,9 @@ import (
 func TestColorApply(t *testing.T) {
 	assert := assert.New(t)
 
-	escapedBlack := ColorBlack.Escaped()
-	assert.Equal("\033["+string(ColorBlack), escapedBlack)
+	escapedBlack := ColorBlack.Normal()
+	assert.Equal("\033[0;"+string(ColorBlack), escapedBlack)
 
 	appliedBlack := ColorBlack.Apply("test")
-	assert.Equal(ColorBlack.Escaped()+"test"+ColorReset.Escaped(), appliedBlack)
+	assert.Equal(ColorBlack.Normal()+"test"+ColorReset, appliedBlack)
 }

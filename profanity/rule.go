@@ -3,9 +3,6 @@ package profanity
 import (
 	"fmt"
 	"strings"
-
-	"github.com/blend/go-sdk/ansi"
-	"github.com/blend/go-sdk/stringutil"
 )
 
 // Rule is a serialized rule.
@@ -29,12 +26,8 @@ type Rule struct {
 
 	// Contains implies we should fail if a file contains a given string.
 	Contains []string `yaml:"contains,omitempty"`
-	// NotContains implies we should fail if a file doesn't contains a given string.
-	NotContains []string `yaml:"notContains,omitempty"`
-
 	// Pattern implies we should fail if a file's content matches a given regex pattern.
 	Pattern []string `yaml:"pattern,omitempty"`
-
 	// ImportsContain enforces that a given list of imports are used.
 	ImportsContain []string `yaml:"importsContain,omitempty"`
 }
@@ -67,45 +60,20 @@ func (r Rule) ShouldExclude(file string) bool {
 }
 
 // Apply applies the rule.
-func (r Rule) Apply(filename string, contents []byte) error {
+func (r Rule) Apply(filename string, contents []byte) (result RuleResult) {
 	if len(r.Contains) > 0 {
-		return ContainsAny(r.Contains...)(filename, contents)
-	}
-	if len(r.NotContains) > 0 {
-		return NotContainsAll(r.NotContains...)(filename, contents)
+		result = ContainsAny(r.Contains...)(filename, contents)
+		return
 	}
 	if len(r.Pattern) > 0 {
-		return MatchesAny(r.Pattern...)(filename, contents)
+		result = MatchesAny(r.Pattern...)(filename, contents)
+		return
 	}
 	if len(r.ImportsContain) > 0 {
-		return ImportsContainAny(r.ImportsContain...)(filename, contents)
+		result = ImportsContainAny(r.ImportsContain...)(filename, contents)
+		return
 	}
-	return fmt.Errorf("no rule set")
-}
-
-// Failure returns a failure error message for a given file and error.
-func (r Rule) Failure(file string, err error) error {
-	var tokens []string
-	if len(r.ID) > 0 {
-		tokens = append(tokens, fmt.Sprintf("%s: %s", ansi.LightWhite("rule"), r.ID))
-	}
-
-	tokens = append(tokens, fmt.Sprintf("%s %s: %+v", ansi.LightWhite(file), ansi.Red("failed"), err))
-
-	if len(r.Description) > 0 {
-		tokens = append(tokens, fmt.Sprintf("%s: %s", ansi.LightWhite("message"), r.Description))
-	}
-	if len(r.File) > 0 {
-		tokens = append(tokens, fmt.Sprintf("%s: %s", ansi.LightWhite("rules file"), r.File))
-	}
-	if len(r.IncludeFiles) > 0 {
-		tokens = append(tokens, fmt.Sprintf("%s: %s", ansi.LightWhite("include files"), stringutil.CSV(r.IncludeFiles)))
-	}
-	if len(r.ExcludeFiles) > 0 {
-		tokens = append(tokens, fmt.Sprintf("%s: %s", ansi.LightWhite("exclude files"), stringutil.CSV(r.ExcludeFiles)))
-	}
-
-	return fmt.Errorf(strings.Join(tokens, "\n"))
+	return
 }
 
 // String returns a string representation of the rule.
@@ -126,9 +94,6 @@ func (r Rule) String() string {
 	}
 	if len(r.Contains) > 0 {
 		tokens = append(tokens, fmt.Sprintf("[contains: %s]", strings.Join(r.Contains, ",")))
-	}
-	if len(r.NotContains) > 0 {
-		tokens = append(tokens, fmt.Sprintf("[not contains: %s]", strings.Join(r.NotContains, ",")))
 	}
 	if len(r.Pattern) > 0 {
 		tokens = append(tokens, fmt.Sprintf("[matches patterns: %s]", strings.Join(r.Pattern, ",")))

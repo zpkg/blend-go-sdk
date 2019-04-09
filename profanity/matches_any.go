@@ -1,6 +1,8 @@
 package profanity
 
 import (
+	"bufio"
+	"bytes"
 	"fmt"
 	"regexp"
 )
@@ -8,13 +10,22 @@ import (
 // MatchesAny creates a new regex filter rule.
 // It failes if any of the expressions match.
 func MatchesAny(exprs ...string) RuleFunc {
-	return func(filename string, contents []byte) error {
-		for _, expr := range exprs {
-			regex := regexp.MustCompile(expr)
-			if regex.Match(contents) {
-				return fmt.Errorf("regexp match: \"%s\"", expr)
+	return func(filename string, contents []byte) RuleResult {
+		scanner := bufio.NewScanner(bytes.NewBuffer(contents))
+		var line int
+		for scanner.Scan() {
+			line++
+			for _, expr := range exprs {
+				regex := regexp.MustCompile(expr)
+				if regex.Match([]byte(scanner.Text())) {
+					return RuleResult{
+						File:    filename,
+						Line:    line,
+						Message: fmt.Sprintf("regexp match: \"%s\"", expr),
+					}
+				}
 			}
 		}
-		return nil
+		return RuleResult{OK: true}
 	}
 }

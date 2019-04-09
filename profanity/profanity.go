@@ -20,14 +20,14 @@ func New(options ...ConfigOption) *Profanity {
 		option(&cfg)
 	}
 	return &Profanity{
-		Config: &cfg,
+		Config: cfg,
 	}
 }
 
 // Profanity parses rules from the filesystem and applies them to a given root path.
 // Creating a full rules set.
 type Profanity struct {
-	Config *Config
+	Config Config
 	Stdout io.Writer
 	Stderr io.Writer
 }
@@ -60,6 +60,8 @@ func (p *Profanity) Process() error {
 			p.Printf("using exclude filter: %s\n", p.Config.Exclude)
 		}
 	}
+
+	var didError bool
 
 	// rule cache is shared between files and directories during the full walk.
 	ruleCache := map[string]Rules{}
@@ -148,8 +150,20 @@ func (p *Profanity) Process() error {
 			if p.Config.VerboseOrDefault() {
 				p.Printf("%s ... checking rule %s\n", ansi.LightWhite(file), rule.ID)
 			}
-			if err := rule.Apply(file, contents); err != nil {
-				return rule.Failure(file, err)
+			if res := rule.Apply(file, contents); !res.OK {
+				didError = true
+
+				// check if there was an error with the rule ...
+				if res.Err != nil {
+					return res.Err
+				}
+
+				// handle the failure
+				failure := res.Failure(rule)
+				p.Errorf("%+v\n", failure)
+				if p.Config.FailFastOrDefault() {
+					return failure
+				}
 			}
 		}
 
@@ -160,6 +174,10 @@ func (p *Profanity) Process() error {
 		return nil
 	}); err != nil {
 		return err
+	}
+	if didError {
+		p.Printf("profanity %s!\n", ansi.Red("failed"))
+		return ErrFailure
 	}
 	p.Printf("profanity %s!\n", ansi.Green("ok"))
 	return nil

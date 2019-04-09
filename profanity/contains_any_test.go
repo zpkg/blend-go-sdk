@@ -1,6 +1,7 @@
 package profanity
 
 import (
+	"fmt"
 	"testing"
 
 	"github.com/blend/go-sdk/assert"
@@ -11,16 +12,23 @@ func TestContainsAny(t *testing.T) {
 
 	ruleFunc := ContainsAny("foo", "bar")
 
-	assert.NotNil(ruleFunc("", []byte(`aaa foo`)))
-	assert.NotNil(ruleFunc("", []byte(`foo aaa`)))
-	assert.NotNil(ruleFunc("", []byte(`aaa foo aaa`)))
+	assert.NotNil(ok(ruleFunc("", []byte(`aaa foo`))))
+	assert.NotNil(ok(ruleFunc("", []byte(`foo aaa`))))
+	assert.NotNil(ok(ruleFunc("", []byte(`aaa foo aaa`))))
 
-	assert.NotNil(ruleFunc("", []byte(`aaa bar`)))
-	assert.NotNil(ruleFunc("", []byte(`bar aaa`)))
-	assert.NotNil(ruleFunc("", []byte(`aaa bar aaa`)))
+	assert.NotNil(ok(ruleFunc("", []byte(`aaa bar`))))
+	assert.NotNil(ok(ruleFunc("", []byte(`bar aaa`))))
+	assert.NotNil(ok(ruleFunc("", []byte(`aaa bar aaa`))))
 
-	assert.Nil(ruleFunc("", []byte(``)))
-	assert.Nil(ruleFunc("", []byte(`aaa`)))
+	assert.Nil(ok(ruleFunc("", []byte(``))))
+	assert.Nil(ok(ruleFunc("", []byte(`aaa`))))
+}
+
+func ok(res RuleResult) error {
+	if !res.OK {
+		return fmt.Errorf("not ok")
+	}
+	return nil
 }
 
 func TestContainsAnyReportsLineNumber(t *testing.T) {
@@ -35,6 +43,6 @@ foo
 555
 `
 
-	err := ruleFunc("", []byte(file))
-	assert.Contains(err.Error(), "line: 3")
+	res := ruleFunc("", []byte(file))
+	assert.Equal(3, res.Line)
 }

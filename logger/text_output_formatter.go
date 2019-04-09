@@ -87,7 +87,7 @@ func (tf TextOutputFormatter) FormatTimestamp(ts time.Time) string {
 		timeFormat = tf.TimeFormat
 	}
 	value := ts.Format(timeFormat)
-	return tf.Colorize(fmt.Sprintf("%-30s", value), ansi.ColorGray)
+	return tf.Colorize(fmt.Sprintf("%-30s", value), ansi.ColorLightBlack)
 }
 
 // FormatSubContextPath returns the sub-context path section of the message.

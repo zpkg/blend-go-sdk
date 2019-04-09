@@ -11,26 +11,33 @@ GOLANG_ASSERT_NON_TEST:
   - "github.com/blend/go-sdk/assert"
 
 GOLANG_DEPRECATED:
-  message: "please switch to using `github.com/blend/go-sdk`"
+  description: "please switch to using `github.com/blend/go-sdk`"
   importsContain:
   - "github.com/blendlabs/*"
 
 GOLANG_YAML:
-  message: "please use `github.com/blend/go-sdk/yaml`"
+  description: "please use `github.com/blend/go-sdk/yaml`"
   importsContain:
   - "gopkg.in/yaml.v2"
 
 GOLANG_GOPKG_IN:
-  message: "please get specific approval for `gopkg.in` dependencies"
+  description: "please get specific approval for `gopkg.in` dependencies"
   importsContain:
   - "gopkg.in/*"
 
 GOLANG_PRINTLN:
-  message: "please remove debugging `println` statements"
+  description: "please remove debugging `println` statements"
+  excludeFiles:
+  - "examples/*"
   contains:
   - "println"
 
 GOLANG_CMD_IMPORTS:
-  message: "please don't reference cmd packages"
+  description: "please don't reference cmd packages"
   importsContain:
   - "github.com/blend/go-sdk/cmd*"
+
+GOLANG_EXAMPLES_IMPORTS:
+  description: "please don't reference example packages"
+  importsContain:
+  - "github.com/blend/go-sdk/example*"
