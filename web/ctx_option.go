@@ -21,7 +21,7 @@ func OptCtxApp(a *App) CtxOption {
 }
 
 // OptCtxAuth sets the context auth manager.
-func OptCtxAuth(a *AuthManager) CtxOption {
+func OptCtxAuth(a AuthManager) CtxOption {
 	return func(c *Ctx) { c.Auth = a }
 }
 

@@ -2,26 +2,16 @@ package web
 
 import (
 	"context"
+	"net/http"
 	"net/url"
 	"time"
 
 	"github.com/blend/go-sdk/webutil"
 )
 
-// AuthManagerMode is an auth manager mode.
-type AuthManagerMode string
-
-const (
-	// AuthManagerModeJWT is the jwt auth mode.
-	AuthManagerModeJWT AuthManagerMode = "jwt"
-	// AuthManagerModeRemote is the remote (i.e. database) managed auth mode.
-	AuthManagerModeRemote AuthManagerMode = "remote"
-	// AuthManagerModeLocal is the local map cache auth mode.
-	AuthManagerModeLocal AuthManagerMode = "local"
-)
-
 // NewAuthManager returns a new auth manager from a given config.
-func NewAuthManager(cfg *Config) (manager *AuthManager) {
+// For remote mode, you must provide a fetch, persist, and remove handler, and optionally a login redirect handler.
+func NewAuthManager(cfg Config) (manager AuthManager) {
 	switch cfg.AuthManagerModeOrDefault() {
 	case AuthManagerModeJWT:
 		manager = NewJWTAuthManager(cfg.MustAuthSecret())
@@ -33,21 +23,33 @@ func NewAuthManager(cfg *Config) (manager *AuthManager) {
 		panic("invalid auth manager mode")
 	}
 
-	manager.CookieHTTP = cfg.CookieHTTP
+	manager.CookieSecure = cfg.CookieSecureOrDefault()
+	manager.CookieHTTPOnly = cfg.CookieHTTPOnlyOrDefault()
 	manager.CookieName = cfg.CookieNameOrDefault()
 	manager.CookiePath = cfg.CookiePathOrDefault()
+	manager.CookieSameSite = cfg.CookieSameSiteOrDefault()
 	manager.SessionTimeoutProvider = SessionTimeoutProvider(!cfg.SessionTimeoutIsRelative, cfg.SessionTimeoutOrDefault())
 	return manager
 }
 
 // NewRemoteAuthManager returns an empty auth manager.
-func NewRemoteAuthManager() *AuthManager {
-	return &AuthManager{}
+// You must provide a fetch, persist, and remove handler, and optionally a login redirect handler.
+func NewRemoteAuthManager() AuthManager {
+	return AuthManager{
+		Mode:           AuthManagerModeRemote,
+		CookieSecure:   DefaultCookieSecure,
+		CookieHTTPOnly: DefaultCookieHTTPOnly,
+		CookieSameSite: DefaultCookieSameSite,
+	}
 }
 
 // NewLocalAuthManagerFromCache returns a new locally cached session manager that saves sessions to the cache provided
-func NewLocalAuthManagerFromCache(cache *LocalSessionCache) *AuthManager {
-	return &AuthManager{
+func NewLocalAuthManagerFromCache(cache *LocalSessionCache) AuthManager {
+	return AuthManager{
+		Mode:           AuthManagerModeLocal,
+		CookieSecure:   DefaultCookieSecure,
+		CookieHTTPOnly: DefaultCookieHTTPOnly,
+		CookieSameSite: DefaultCookieSameSite,
 		PersistHandler: cache.PersistHandler,
 		FetchHandler:   cache.FetchHandler,
 		RemoveHandler:  cache.RemoveHandler,
@@ -56,9 +58,13 @@ func NewLocalAuthManagerFromCache(cache *LocalSessionCache) *AuthManager {
 
 // NewLocalAuthManager returns a new locally cached session manager.
 // It saves sessions to a local store.
-func NewLocalAuthManager() *AuthManager {
+func NewLocalAuthManager() AuthManager {
 	cache := NewLocalSessionCache()
-	return &AuthManager{
+	return AuthManager{
+		Mode:           AuthManagerModeJWT,
+		CookieSecure:   DefaultCookieSecure,
+		CookieHTTPOnly: DefaultCookieHTTPOnly,
+		CookieSameSite: DefaultCookieSameSite,
 		PersistHandler: cache.PersistHandler,
 		FetchHandler:   cache.FetchHandler,
 		RemoveHandler:  cache.RemoveHandler,
@@ -67,9 +73,9 @@ func NewLocalAuthManager() *AuthManager {
 
 // NewJWTAuthManager returns a new jwt session manager.
 // It issues JWT tokens to identify users.
-func NewJWTAuthManager(key []byte) *AuthManager {
+func NewJWTAuthManager(key []byte) AuthManager {
 	jwtm := NewJWTManager(key)
-	return &AuthManager{
+	return AuthManager{
 		SerializeSessionValueHandler: jwtm.SerializeSessionValueHandler,
 		ParseSessionValueHandler:     jwtm.ParseSessionValueHandler,
 		SessionTimeoutProvider:       SessionTimeoutProviderAbsolute(DefaultSessionTimeout),
@@ -102,20 +108,23 @@ type AuthManagerRedirectHandler func(*Ctx) *url.URL
 
 // AuthManager is a manager for sessions.
 type AuthManager struct {
-	Mode       AuthManagerMode
-	CookieName string
-	CookiePath string
-	CookieHTTP bool
+	// Mode is the mechanism the auth manager tracks sessions.
+	// Possible values include local, remote, jwt.
+	Mode AuthManagerMode
+
+	CookieName     string
+	CookiePath     string
+	CookieSecure   bool
+	CookieHTTPOnly bool
+	CookieSameSite string
 
 	SerializeSessionValueHandler AuthManagerSerializeSessionValueHandler
 	ParseSessionValueHandler     AuthManagerParseSessionValueHandler
 
-	// these generally apply to server or local modes.
 	PersistHandler AuthManagerPersistHandler
 	FetchHandler   AuthManagerFetchHandler
 	RemoveHandler  AuthManagerRemoveHandler
 
-	// these generally apply to any mode.
 	ValidateHandler          AuthManagerValidateHandler
 	SessionTimeoutProvider   AuthManagerSessionTimeoutProvider
 	LoginRedirectHandler     AuthManagerRedirectHandler
@@ -127,7 +136,7 @@ type AuthManager struct {
 // --------------------------------------------------------------------------------
 
 // Login logs a userID in.
-func (am *AuthManager) Login(userID string, ctx *Ctx) (session *Session, err error) {
+func (am AuthManager) Login(userID string, ctx *Ctx) (session *Session, err error) {
 	// create a new session value
 	sessionValue := NewSessionID()
 	// userID and sessionID are required
@@ -160,7 +169,7 @@ func (am *AuthManager) Login(userID string, ctx *Ctx) (session *Session, err err
 }
 
 // Logout unauthenticates a session.
-func (am *AuthManager) Logout(ctx *Ctx) error {
+func (am AuthManager) Logout(ctx *Ctx) error {
 	sessionValue := am.readSessionValue(ctx)
 	// validate the sessionValue isn't unset
 	if len(sessionValue) == 0 {
@@ -180,7 +189,7 @@ func (am *AuthManager) Logout(ctx *Ctx) error {
 
 // VerifySession checks a sessionID to see if it's valid.
 // It also handles updating a rolling expiry.
-func (am *AuthManager) VerifySession(ctx *Ctx) (session *Session, err error) {
+func (am AuthManager) VerifySession(ctx *Ctx) (session *Session, err error) {
 	// pull the sessionID off the request
 	sessionValue := am.readSessionValue(ctx)
 	// validate the sessionValue isn't unset
@@ -236,7 +245,7 @@ func (am *AuthManager) VerifySession(ctx *Ctx) (session *Session, err error) {
 
 // LoginRedirect returns a redirect result for when auth fails and you need to
 // send the user to a login page.
-func (am *AuthManager) LoginRedirect(ctx *Ctx) Result {
+func (am AuthManager) LoginRedirect(ctx *Ctx) Result {
 	if am.LoginRedirectHandler != nil {
 		redirectTo := am.LoginRedirectHandler(ctx)
 		if redirectTo != nil {
@@ -248,7 +257,7 @@ func (am *AuthManager) LoginRedirect(ctx *Ctx) Result {
 
 // PostLoginRedirect returns a redirect result for when auth fails and you need to
 // send the user to a login page.
-func (am *AuthManager) PostLoginRedirect(ctx *Ctx) Result {
+func (am AuthManager) PostLoginRedirect(ctx *Ctx) Result {
 	if am.PostLoginRedirectHandler != nil {
 		redirectTo := am.PostLoginRedirectHandler(ctx)
 		if redirectTo != nil {
@@ -260,7 +269,7 @@ func (am *AuthManager) PostLoginRedirect(ctx *Ctx) Result {
 }
 
 // CookieNameOrDefault returns the cookie name or a default.
-func (am *AuthManager) CookieNameOrDefault() string {
+func (am AuthManager) CookieNameOrDefault() string {
 	if am.CookieName == "" {
 		return DefaultCookieName
 	}
@@ -268,7 +277,7 @@ func (am *AuthManager) CookieNameOrDefault() string {
 }
 
 // CookiePathOrDefault returns the session param path.
-func (am *AuthManager) CookiePathOrDefault() string {
+func (am AuthManager) CookiePathOrDefault() string {
 	if am.CookiePath == "" {
 		return DefaultCookiePath
 	}
@@ -296,12 +305,20 @@ func (am AuthManager) shouldUpdateSessionExpiry() bool {
 }
 
 // InjectCookie injects a session cookie into the context.
-func (am *AuthManager) injectCookie(ctx *Ctx, name, value string, expire time.Time) {
-	ctx.WriteNewCookie(name, value, expire, am.CookiePathOrDefault(), !am.CookieHTTP)
+func (am AuthManager) injectCookie(ctx *Ctx, name, value string, expire time.Time) {
+	ctx.WriteNewCookie(&http.Cookie{
+		Name:     name,
+		Value:    value,
+		Expires:  expire,
+		Path:     am.CookiePathOrDefault(),
+		HttpOnly: am.CookieHTTPOnly,
+		Secure:   am.CookieSecure,
+		SameSite: webutil.MustParseSameSite(am.CookieSameSite),
+	})
 }
 
 // readParam reads a param from a given request context from either the cookies or headers.
-func (am *AuthManager) readParam(name string, ctx *Ctx) (output string) {
+func (am AuthManager) readParam(name string, ctx *Ctx) (output string) {
 	if cookie := ctx.Cookie(name); cookie != nil {
 		output = cookie.Value
 	}
@@ -309,6 +326,6 @@ func (am *AuthManager) readParam(name string, ctx *Ctx) (output string) {
 }
 
 // ReadSessionID reads a session id from a given request context.
-func (am *AuthManager) readSessionValue(ctx *Ctx) string {
+func (am AuthManager) readSessionValue(ctx *Ctx) string {
 	return am.readParam(am.CookieNameOrDefault(), ctx)
 }

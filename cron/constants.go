@@ -11,8 +11,8 @@ const (
 
 // Retention defaults
 const (
-	DefaultMaxCount = 10
-	DefaultMaxAge   = 6 * time.Hour
+	DefaultHistoryMaxCount = 10
+	DefaultHistoryMaxAge   = 6 * time.Hour
 )
 
 const (

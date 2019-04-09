@@ -73,9 +73,9 @@ type JobScheduler struct {
 	Description string `json:"description"`
 	Job         Job    `json:"-"`
 
-	Tracer        Tracer        `json:"-"`
-	Log           logger.Log    `json:"-"`
-	HistoryConfig HistoryConfig `json:"-"`
+	Config Config     `json:"-"`
+	Tracer Tracer     `json:"-"`
+	Log    logger.Log `json:"-"`
 
 	// Meta Fields
 	Disabled    bool            `json:"disabled"`
@@ -424,8 +424,8 @@ func (js *JobScheduler) addHistory(ji JobInvocation) {
 
 func (js *JobScheduler) cullHistory() []JobInvocation {
 	count := len(js.History)
-	maxCount := js.HistoryConfig.MaxCountOrDefault()
-	maxAge := js.HistoryConfig.MaxAgeOrDefault()
+	maxCount := js.Config.HistoryMaxCountOrDefault()
+	maxAge := js.Config.HistoryMaxAgeOrDefault()
 	now := time.Now().UTC()
 	var filtered []JobInvocation
 	for index, h := range js.History {

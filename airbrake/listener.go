@@ -13,8 +13,8 @@ const (
 )
 
 // AddListeners adds airbrake listeners.
-func AddListeners(log logger.Listenable, cfg *Config) {
-	if log == nil || cfg == nil || cfg.IsZero() {
+func AddListeners(log logger.Listenable, cfg Config) {
+	if log == nil || cfg.IsZero() {
 		return
 	}
 	client := MustNew(cfg)

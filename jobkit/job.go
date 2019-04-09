@@ -31,7 +31,7 @@ var (
 type Job struct {
 	name        string
 	description string
-	config      *JobConfig
+	config      JobConfig
 
 	schedule cron.Schedule
 	timeout  time.Duration
@@ -81,12 +81,12 @@ func (job *Job) WithSchedule(schedule cron.Schedule) *Job {
 }
 
 // Config returns the job config.
-func (job Job) Config() *JobConfig {
+func (job Job) Config() JobConfig {
 	return job.config
 }
 
 // WithConfig sets the config.
-func (job *Job) WithConfig(cfg *JobConfig) *Job {
+func (job *Job) WithConfig(cfg JobConfig) *Job {
 	job.config = cfg
 	return job
 }
@@ -134,56 +134,56 @@ func (job *Job) WithErrorClient(client diagnostics.Notifier) *Job {
 
 // OnStart is a lifecycle event handler.
 func (job Job) OnStart(ctx context.Context) {
-	if job.config != nil && job.config.NotifyOnStartOrDefault() {
+	if job.config.NotifyOnStartOrDefault() {
 		job.notify(ctx, cron.FlagStarted)
 	}
 }
 
 // OnComplete is a lifecycle event handler.
 func (job Job) OnComplete(ctx context.Context) {
-	if job.config != nil && job.config.NotifyOnSuccessOrDefault() {
+	if job.config.NotifyOnSuccessOrDefault() {
 		job.notify(ctx, cron.FlagComplete)
 	}
 }
 
 // OnFailure is a lifecycle event handler.
 func (job Job) OnFailure(ctx context.Context) {
-	if job.config != nil && job.config.NotifyOnFailureOrDefault() {
+	if job.config.NotifyOnFailureOrDefault() {
 		job.notify(ctx, cron.FlagFailed)
 	}
 }
 
 // OnBroken is a lifecycle event handler.
 func (job Job) OnBroken(ctx context.Context) {
-	if job.config != nil && job.config.NotifyOnBrokenOrDefault() {
+	if job.config.NotifyOnBrokenOrDefault() {
 		job.notify(ctx, cron.FlagBroken)
 	}
 }
 
 // OnFixed is a lifecycle event handler.
 func (job Job) OnFixed(ctx context.Context) {
-	if job.config != nil && job.config.NotifyOnFixedOrDefault() {
+	if job.config.NotifyOnFixedOrDefault() {
 		job.notify(ctx, cron.FlagFixed)
 	}
 }
 
 // OnCancellation is a lifecycle event handler.
 func (job Job) OnCancellation(ctx context.Context) {
-	if job.config != nil && job.config.NotifyOnFailureOrDefault() {
+	if job.config.NotifyOnFailureOrDefault() {
 		job.notify(ctx, cron.FlagCancelled)
 	}
 }
 
 // OnEnabled is a lifecycle event handler.
 func (job Job) OnEnabled(ctx context.Context) {
-	if job.config != nil && job.config.NotifyOnEnabledOrDefault() {
+	if job.config.NotifyOnEnabledOrDefault() {
 		job.notify(ctx, cron.FlagEnabled)
 	}
 }
 
 // OnDisabled is a lifecycle event handler.
 func (job Job) OnDisabled(ctx context.Context) {
-	if job.config != nil && job.config.NotifyOnDisabledOrDefault() {
+	if job.config.NotifyOnDisabledOrDefault() {
 		job.notify(ctx, cron.FlagDisabled)
 	}
 }

@@ -29,10 +29,10 @@ type JobManager struct {
 	sync.Mutex
 	*async.Latch
 
-	HistoryConfig HistoryConfig
-	Tracer        Tracer
-	Log           logger.Log
-	Jobs          map[string]*JobScheduler
+	Config Config
+	Tracer Tracer
+	Log    logger.Log
+	Jobs   map[string]*JobScheduler
 }
 
 // --------------------------------------------------------------------------------
@@ -52,7 +52,7 @@ func (jm *JobManager) LoadJobs(jobs ...Job) error {
 		jm.Jobs[jobName] = NewJobScheduler(job,
 			OptJobSchedulerTracer(jm.Tracer),
 			OptJobSchedulerLog(jm.Log),
-			OptJobSchedulerHistoryConfig(jm.HistoryConfig),
+			OptJobSchedulerConfig(jm.Config),
 		)
 	}
 	return nil
@@ -228,7 +228,7 @@ func (jm *JobManager) StartAsync() error {
 	for _, job := range jm.Jobs {
 		job.Log = jm.Log
 		job.Tracer = jm.Tracer
-		job.HistoryConfig = jm.HistoryConfig
+		job.Config = jm.Config
 		go job.Start()
 		<-job.NotifyStarted()
 	}

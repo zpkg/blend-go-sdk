@@ -20,58 +20,26 @@ import (
 	"golang.org/x/oauth2/google"
 )
 
-// New returns a new manager.
-// By default it will error if you try and validate a profile.
-// You must either enable `SkipDomainvalidation` or provide valid domains.
-func New() *Manager {
-	return &Manager{}
+// New returns a new manager mutated by a given set of options.
+func New(options ...Option) (*Manager, error) {
+	manager := &Manager{}
+	for _, option := range options {
+		if err := option(manager); err != nil {
+			return nil, err
+		}
+	}
+	return manager, nil
 }
 
-// Must is a helper for handling NewFromEnv() and NewFromConfig().
-func Must(m *Manager, err error) *Manager {
+// MustNew returns a new manager mutated by a given set of options
+// and will panic on error.
+func MustNew(options ...Option) *Manager {
+	m, err := New(options...)
 	if err != nil {
 		panic(err)
 	}
 	return m
 }
-
-// NewFromEnv returns a new manager from the environment.
-func NewFromEnv() (*Manager, error) {
-	cfg := &Config{}
-	if err := cfg.Resolve(); err != nil {
-		return nil, err
-	}
-	return NewFromConfig(cfg)
-}
-
-// MustNewFromEnv returns a new manager from the environment
-// and will panic if there is an error.
-func MustNewFromEnv() *Manager {
-	mgr, err := NewFromEnv()
-	if err != nil {
-		panic(err)
-	}
-	return mgr
-}
-
-// NewFromConfig returns a new oauth manager from a config.
-func NewFromConfig(cfg *Config) (*Manager, error) {
-	secret, err := cfg.DecodeSecret()
-	if err != nil {
-		return nil, err
-	}
-	return &Manager{
-		Secret:       secret,
-		RedirectURI:  cfg.RedirectURI,
-		HostedDomain: cfg.HostedDomain,
-		Scopes:       cfg.ScopesOrDefault(),
-		ClientID:     cfg.ClientID,
-		ClientSecret: cfg.ClientSecret,
-	}, nil
-}
-
-// Option is an option for an oauth manager.
-type Option func(*Manager) error
 
 // Manager is the oauth manager.
 type Manager struct {

@@ -12,27 +12,31 @@ import (
 
 // Config is an object used to set up a web app.
 type Config struct {
-	Port                      int32             `json:"port,omitempty" yaml:"port,omitempty" env:"PORT"`
-	BindAddr                  string            `json:"bindAddr,omitempty" yaml:"bindAddr,omitempty" env:"BIND_ADDR"`
-	BaseURL                   string            `json:"baseURL,omitempty" yaml:"baseURL,omitempty" env:"BASE_URL"`
-	SkipRedirectTrailingSlash bool              `json:"skipRedirectTrailingSlash,omitempty" yaml:"skipRedirectTrailingSlash,omitempty"`
-	HandleOptions             bool              `json:"handleOptions,omitempty" yaml:"handleOptions,omitempty"`
-	HandleMethodNotAllowed    bool              `json:"handleMethodNotAllowed,omitempty" yaml:"handleMethodNotAllowed,omitempty"`
-	DisablePanicRecovery      bool              `json:"disablePanicRecovery,omitempty" yaml:"disablePanicRecovery,omitempty"`
-	AuthManagerMode           string            `json:"authManagerMode" yaml:"authManagerMode"`
-	AuthSecret                string            `json:"authSecret" yaml:"authSecret" env:"AUTH_SECRET"`
-	SessionTimeout            time.Duration     `json:"sessionTimeout,omitempty" yaml:"sessionTimeout,omitempty" env:"SESSION_TIMEOUT"`
-	SessionTimeoutIsRelative  bool              `json:"sessionTimeoutIsRelative,omitempty" yaml:"sessionTimeoutIsRelative,omitempty" env:"SESSION_TIMEOUT_RELATIVE"`
-	CookieHTTP                bool              `json:"cookieHTTP,omitempty" yaml:"cookieHTTP,omitempty" env:"COOKIE_HTTP"`
-	CookieName                string            `json:"cookieName,omitempty" yaml:"cookieName,omitempty" env:"COOKIE_NAME"`
-	CookiePath                string            `json:"cookiePath,omitempty" yaml:"cookiePath,omitempty" env:"COOKIE_PATH"`
-	DefaultHeaders            map[string]string `json:"defaultHeaders,omitempty" yaml:"defaultHeaders,omitempty"`
-	MaxHeaderBytes            int               `json:"maxHeaderBytes,omitempty" yaml:"maxHeaderBytes,omitempty" env:"MAX_HEADER_BYTES"`
-	ReadTimeout               time.Duration     `json:"readTimeout,omitempty" yaml:"readTimeout,omitempty" env:"READ_HEADER_TIMEOUT"`
-	ReadHeaderTimeout         time.Duration     `json:"readHeaderTimeout,omitempty" yaml:"readHeaderTimeout,omitempty" env:"READ_HEADER_TIMEOUT"`
-	WriteTimeout              time.Duration     `json:"writeTimeout,omitempty" yaml:"writeTimeout,omitempty" env:"WRITE_TIMEOUT"`
-	IdleTimeout               time.Duration     `json:"idleTimeout,omitempty" yaml:"idleTimeout,omitempty" env:"IDLE_TIMEOUT"`
-	ShutdownGracePeriod       time.Duration     `json:"shutdownGracePeriod" yaml:"shutdownGracePeriod" env:"SHUTDOWN_GRACE_PERIOD"`
+	Port                      int32         `json:"port,omitempty" yaml:"port,omitempty" env:"PORT"`
+	BindAddr                  string        `json:"bindAddr,omitempty" yaml:"bindAddr,omitempty" env:"BIND_ADDR"`
+	BaseURL                   string        `json:"baseURL,omitempty" yaml:"baseURL,omitempty" env:"BASE_URL"`
+	SkipRedirectTrailingSlash bool          `json:"skipRedirectTrailingSlash,omitempty" yaml:"skipRedirectTrailingSlash,omitempty"`
+	HandleOptions             bool          `json:"handleOptions,omitempty" yaml:"handleOptions,omitempty"`
+	HandleMethodNotAllowed    bool          `json:"handleMethodNotAllowed,omitempty" yaml:"handleMethodNotAllowed,omitempty"`
+	DisablePanicRecovery      bool          `json:"disablePanicRecovery,omitempty" yaml:"disablePanicRecovery,omitempty"`
+	AuthManagerMode           string        `json:"authManagerMode" yaml:"authManagerMode"`
+	AuthSecret                string        `json:"authSecret" yaml:"authSecret" env:"AUTH_SECRET"`
+	SessionTimeout            time.Duration `json:"sessionTimeout,omitempty" yaml:"sessionTimeout,omitempty" env:"SESSION_TIMEOUT"`
+	SessionTimeoutIsRelative  bool          `json:"sessionTimeoutIsRelative,omitempty" yaml:"sessionTimeoutIsRelative,omitempty" env:"SESSION_TIMEOUT_RELATIVE"`
+
+	CookieSecure   *bool  `json:"cookieSecure,omitempty" yaml:"cookieSecure,omitempty" env:"COOKIE_SECURE"`
+	CookieHTTPOnly *bool  `json:"cookieHTTPOnly,omitempty" yaml:"cookieHTTPOnly,omitempty" env:"COOKIE_HTTP_ONLY"`
+	CookieSameSite string `json:"cookieSameSite,omitempty" yaml:"cookieSameSite,omitempty" env:"COOKIE_SAME_SITE"`
+	CookieName     string `json:"cookieName,omitempty" yaml:"cookieName,omitempty" env:"COOKIE_NAME"`
+	CookiePath     string `json:"cookiePath,omitempty" yaml:"cookiePath,omitempty" env:"COOKIE_PATH"`
+
+	DefaultHeaders      map[string]string `json:"defaultHeaders,omitempty" yaml:"defaultHeaders,omitempty"`
+	MaxHeaderBytes      int               `json:"maxHeaderBytes,omitempty" yaml:"maxHeaderBytes,omitempty" env:"MAX_HEADER_BYTES"`
+	ReadTimeout         time.Duration     `json:"readTimeout,omitempty" yaml:"readTimeout,omitempty" env:"READ_HEADER_TIMEOUT"`
+	ReadHeaderTimeout   time.Duration     `json:"readHeaderTimeout,omitempty" yaml:"readHeaderTimeout,omitempty" env:"READ_HEADER_TIMEOUT"`
+	WriteTimeout        time.Duration     `json:"writeTimeout,omitempty" yaml:"writeTimeout,omitempty" env:"WRITE_TIMEOUT"`
+	IdleTimeout         time.Duration     `json:"idleTimeout,omitempty" yaml:"idleTimeout,omitempty" env:"IDLE_TIMEOUT"`
+	ShutdownGracePeriod time.Duration     `json:"shutdownGracePeriod" yaml:"shutdownGracePeriod" env:"SHUTDOWN_GRACE_PERIOD"`
 
 	Views ViewCacheConfig `json:"views,omitempty" yaml:"views,omitempty"`
 }
@@ -122,6 +126,33 @@ func (c Config) CookiePathOrDefault() string {
 		return c.CookiePath
 	}
 	return DefaultCookiePath
+}
+
+// CookieSecureOrDefault returns a property or a default.
+func (c Config) CookieSecureOrDefault() bool {
+	if c.CookieSecure != nil {
+		return *c.CookieSecure
+	}
+	if baseURL := c.BaseURLOrDefault(); baseURL != "" {
+		return strings.HasPrefix(baseURL, SchemeHTTPS) || strings.HasPrefix(baseURL, SchemeSPDY)
+	}
+	return DefaultCookieSecure
+}
+
+// CookieHTTPOnlyOrDefault returns a property or a default.
+func (c Config) CookieHTTPOnlyOrDefault() bool {
+	if c.CookieHTTPOnly != nil {
+		return *c.CookieHTTPOnly
+	}
+	return DefaultCookieHTTPOnly
+}
+
+// CookieSameSiteOrDefault returns a property or a default.
+func (c Config) CookieSameSiteOrDefault() string {
+	if c.CookieSameSite != "" {
+		return c.CookieSameSite
+	}
+	return DefaultCookieSameSite
 }
 
 // MaxHeaderBytesOrDefault returns the maximum header size in bytes or a default.

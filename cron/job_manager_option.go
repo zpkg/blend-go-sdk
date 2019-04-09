@@ -5,9 +5,9 @@ import "github.com/blend/go-sdk/logger"
 // JobManagerOption is a job manager option.
 type JobManagerOption func(*JobManager)
 
-// OptHistoryConfig sets the job manager history config.
-func OptHistoryConfig(hc HistoryConfig) JobManagerOption {
-	return func(jm *JobManager) { jm.HistoryConfig = hc }
+// OptConfig sets the job manager history config.
+func OptConfig(hc Config) JobManagerOption {
+	return func(jm *JobManager) { jm.Config = hc }
 }
 
 // OptLog sets the job manager logger.

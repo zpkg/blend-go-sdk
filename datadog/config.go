@@ -3,6 +3,8 @@ package datadog
 import (
 	"fmt"
 
+	"github.com/blend/go-sdk/configutil"
+
 	"github.com/blend/go-sdk/env"
 )
 
@@ -11,23 +13,9 @@ const (
 	DefaultDatadogBufferDepth = 128
 )
 
-// MustNewConfigFromEnv creates a new config from the environment and panics on error.
-func MustNewConfigFromEnv() (config *Config) {
-	var err error
-	if config, err = NewConfigFromEnv(); err != nil {
-		panic(err)
-	}
-	return
-}
-
-// NewConfigFromEnv returns a new config from the env.
-func NewConfigFromEnv() (*Config, error) {
-	var config Config
-	if err := env.Env().ReadInto(&config); err != nil {
-		return nil, err
-	}
-	return &config, nil
-}
+var (
+	_ configutil.ConfigResolver = (*Config)(nil)
+)
 
 // Config is the datadog config.
 type Config struct {
@@ -47,7 +35,12 @@ type Config struct {
 	// Namespace is an optional namespace.
 	Namespace string `json:"namespace,omitempty" yaml:"namespace,omitempty" env:"DATADOG_NAMESPACE"`
 	// DefaultTags are the default tags associated with any stat metric.
-	DefaultTags []string `json:"defaultTags,omitempty" yaml:"defaultTags,omitempty" env:"DATADOG_TAGS,csv"`
+	DefaultTags []string `json:"defaultTags,omitempty" yaml:"defaultTags,omitempty" env:"DATADOG_DEFAULT_TAGS,csv"`
+}
+
+// Resolve implements configutil.ConfigResolver.
+func (c *Config) Resolve() error {
+	return env.Env().ReadInto(c)
 }
 
 // IsZero returns if the config is unset.

@@ -8,7 +8,7 @@ import (
 )
 
 // MustNewSession creates a new aws session from a config and panics on error.
-func MustNewSession(cfg *Config) *session.Session {
+func MustNewSession(cfg Config) *session.Session {
 	session, err := NewSession(cfg)
 	if err != nil {
 		panic(err)
@@ -17,7 +17,7 @@ func MustNewSession(cfg *Config) *session.Session {
 }
 
 // NewSession creates a new aws session from a config.
-func NewSession(cfg *Config) (*session.Session, error) {
+func NewSession(cfg Config) (*session.Session, error) {
 	if cfg.IsZero() {
 		session, err := session.NewSession()
 		if err != nil {

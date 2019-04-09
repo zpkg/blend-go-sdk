@@ -11,11 +11,6 @@ import (
 	"github.com/blend/go-sdk/stringutil"
 )
 
-// NewConfig creates a new config.
-func NewConfig() *Config {
-	return &Config{}
-}
-
 // NewConfigFromDSN creates a new config from a dsn.
 func NewConfigFromDSN(dsn string) (*Config, error) {
 	parsed, err := ParseURL(dsn)
@@ -59,17 +54,16 @@ func NewConfigFromDSN(dsn string) (*Config, error) {
 //	-	DB_USER 		= Username
 //	-	DB_PASSWORD 	= Password
 //	-	DB_SSLMODE 		= SSLMode
-func NewConfigFromEnv() (*Config, error) {
-	var config Config
-	if err := env.Env().ReadInto(&config); err != nil {
-		return nil, err
+func NewConfigFromEnv() (config Config, err error) {
+	if err = env.Env().ReadInto(&config); err != nil {
+		return
 	}
-	return &config, nil
+	return
 }
 
 // MustNewConfigFromEnv returns a new config from the environment,
 // it will panic if there is an error.
-func MustNewConfigFromEnv() *Config {
+func MustNewConfigFromEnv() Config {
 	cfg, err := NewConfigFromEnv()
 	if err != nil {
 		panic(err)

@@ -13,12 +13,10 @@ import (
 )
 
 // New returns a new web app.
-func New(options ...AppOption) *App {
+func New(options ...Option) *App {
 	views := NewViewCache()
 	a := App{
 		Latch:           async.NewLatch(),
-		Config:          &Config{},
-		Auth:            &AuthManager{},
 		State:           &SyncState{},
 		Statics:         map[string]*StaticFileServer{},
 		DefaultHeaders:  DefaultHeaders,
@@ -35,13 +33,12 @@ func New(options ...AppOption) *App {
 // App is the server for the app.
 type App struct {
 	*async.Latch
-	Config                  *Config
+	Auth                    AuthManager
+	Config                  Config
 	Log                     logger.Log
-	Auth                    *AuthManager
 	Views                   *ViewCache
 	TLSConfig               *tls.Config
 	Server                  *http.Server
-	Handler                 http.Handler
 	Listener                *net.TCPListener
 	DefaultHeaders          map[string]string
 	Statics                 map[string]*StaticFileServer

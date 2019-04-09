@@ -18,7 +18,7 @@ func TestWebhookSender(t *testing.T) {
 	}))
 	defer ts.Close()
 
-	config := &Config{
+	config := Config{
 		Webhook: ts.URL,
 	}
 
@@ -36,7 +36,7 @@ func TestWebhookSenderStatusCode(t *testing.T) {
 	}))
 	defer ts.Close()
 
-	config := &Config{
+	config := Config{
 		Webhook: ts.URL,
 	}
 
@@ -49,7 +49,7 @@ func TestWebhookSenderStatusCode(t *testing.T) {
 func TestWebhookSenderDefaults(t *testing.T) {
 	assert := assert.New(t)
 
-	config := &Config{
+	config := Config{
 		Webhook:  "http://foo.com",
 		Channel:  "#bot-test",
 		Username: "default-test",
@@ -98,7 +98,7 @@ func TestWebhookSendAndReadResponse(t *testing.T) {
 	}))
 	defer ts.Close()
 
-	config := &Config{
+	config := Config{
 		Webhook: ts.URL,
 	}
 	sender := New(config)
@@ -124,7 +124,7 @@ func TestWebhookSendAndReadResponseStatusCode(t *testing.T) {
 	}))
 	defer ts.Close()
 
-	config := &Config{
+	config := Config{
 		Webhook: ts.URL,
 	}
 	sender := New(config)
@@ -171,7 +171,7 @@ func TestPostMessageAndReadResponse(t *testing.T) {
 	}))
 	defer ts.Close()
 
-	config := &Config{
+	config := Config{
 		Webhook: ts.URL,
 	}
 	sender := New(config)

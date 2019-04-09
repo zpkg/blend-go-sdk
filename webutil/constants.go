@@ -36,6 +36,18 @@ var (
 	HeaderStrictTransportSecurity = http.CanonicalHeaderKey("Strict-Transport-Security")
 )
 
+/*
+SameSite prevents the browser from sending this cookie along with cross-site requests.
+The main goal is mitigate the risk of cross-origin information leakage.
+It also provides some protection against cross-site request forgery attacks.
+Possible values for the flag are "lax", "strict" or "default".
+*/
+const (
+	SameSiteStrict  = "strict"
+	SameSiteLax     = "lax"
+	SameSiteDefault = "default"
+)
+
 var (
 	// Allows for a sub-match of the first value after 'for=' to the next
 	// comma, semi-colon or space. The match is case-insensitive.

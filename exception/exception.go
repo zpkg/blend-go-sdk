@@ -213,10 +213,10 @@ func (e *Ex) String() string {
 		fmt.Fprintf(s, "%s", e.Class)
 	}
 	if len(e.Message) > 0 {
-		io.WriteString(s, e.Message)
+		io.WriteString(s, " "+e.Message)
 	}
 	if e.Stack != nil {
-		io.WriteString(s, e.Stack.String())
+		io.WriteString(s, " "+e.Stack.String())
 	}
 	return s.String()
 }

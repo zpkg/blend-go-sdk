@@ -37,21 +37,23 @@ func New(remoteURL string, options ...Option) *Request {
 // Request is a combination of the http.Request options and the underlying client.
 type Request struct {
 	*http.Request
-	Client *http.Client
 
 	// Err is an error set on construction.
-	// It pre-empts the request going out.
+	// It is checked before sending the request, and will be returned from any of the
+	// methods that execute the request.
+	// It is typically set in `New(string,...Option)`.
 	Err error
-
+	// Client is the underlying http client used to make the requests.
+	Client *http.Client
 	// Closer is an optional step to run as part of the Close() function.
 	Closer func() error
-
 	// ResponseBodyInterceptor is an optional custom step to alter the response stream.
 	ResponseBodyInterceptor ReaderInterceptor
-	Tracer                  Tracer
-
-	// OnRequest and OnResponse are lifecycle hooks.
-	OnRequest  []OnRequestListener
+	// Tracer is used to report span contexts to a distributed tracing collector.
+	Tracer Tracer
+	// OnRequest is an array of request lifecycle hooks used for logging.
+	OnRequest []OnRequestListener
+	// OnResponse is an array of response lifecycle hooks used for logging.
 	OnResponse []OnResponseListener
 }
 

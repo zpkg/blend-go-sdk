@@ -33,7 +33,7 @@ func TestAppNew(t *testing.T) {
 func TestAppNewFromConfig(t *testing.T) {
 	assert := assert.New(t)
 
-	app := New(OptConfig(&Config{
+	app := New(OptConfig(Config{
 		BindAddr:               ":5555",
 		Port:                   5000,
 		HandleMethodNotAllowed: true,

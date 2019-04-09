@@ -31,7 +31,6 @@ const (
 // It will use very bare bones defaults for the config.
 func New(options ...Option) (*Connection, error) {
 	c := &Connection{
-		Config:    &Config{},
 		PlanCache: NewPlanCache(),
 	}
 	var err error
@@ -68,10 +67,10 @@ func Open(conn *Connection, err error) (*Connection, error) {
 // Connection is the basic wrapper for connection parameters and saves a reference to the created sql.Connection.
 type Connection struct {
 	sync.Mutex
+	Config               Config
 	Tracer               Tracer
 	StatementInterceptor StatementInterceptor
 	Connection           *sql.DB
-	Config               *Config
 	BufferPool           *bufferutil.Pool
 	Log                  logger.Log
 	PlanCache            *PlanCache
@@ -96,7 +95,7 @@ func (dbc *Connection) Open() error {
 	if dbc.Connection != nil {
 		return Error(ErrConnectionAlreadyOpen)
 	}
-	if dbc.Config == nil {
+	if dbc.Config.IsZero() {
 		return Error(ErrConfigUnset)
 	}
 	if dbc.BufferPool == nil {

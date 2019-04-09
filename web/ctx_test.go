@@ -1,6 +1,7 @@
 package web
 
 import (
+	"net/http"
 	"testing"
 	"time"
 
@@ -143,7 +144,13 @@ func TestCtxWriteNewCookie(t *testing.T) {
 	assert := assert.New(t)
 
 	context := MockCtx("GET", "/")
-	context.WriteNewCookie("foo", "bar", time.Time{}, "/foo/bar", true)
+	context.WriteNewCookie(&http.Cookie{
+		Name:     "foo",
+		Value:    "bar",
+		Path:     "/foo/bar",
+		HttpOnly: true,
+		Secure:   true,
+	})
 	assert.Equal("foo=bar; Path=/foo/bar; Domain=localhost; HttpOnly; Secure", context.Response.Header().Get("Set-Cookie"))
 }
 

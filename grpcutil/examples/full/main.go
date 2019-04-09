@@ -42,7 +42,7 @@ func main() {
 	if _, err := configutil.Read(&cfg); !configutil.IsIgnored(err) {
 		logger.FatalExit(err)
 	}
-	log := logger.MustNew(logger.OptConfig(&cfg.Logger))
+	log := logger.MustNew(logger.OptConfig(cfg.Logger))
 
 	log.Infof("using bind address: %s", cfg.BindAddr)
 	listener, err := grpcutil.Listener(cfg.BindAddr)

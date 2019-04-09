@@ -42,7 +42,7 @@ func OptStatementInterceptor(interceptor StatementInterceptor) Option {
 }
 
 // OptConfig sets the config on a connection.
-func OptConfig(cfg *Config) Option {
+func OptConfig(cfg Config) Option {
 	return func(c *Connection) error {
 		c.Config = cfg
 		return nil

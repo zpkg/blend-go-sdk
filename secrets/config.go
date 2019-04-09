@@ -13,12 +13,9 @@ const (
 )
 
 // NewConfigFromEnv returns a config populated by the env.
-func NewConfigFromEnv() (*Config, error) {
-	var cfg Config
-	if err := env.Env().ReadInto(&cfg); err != nil {
-		return nil, err
-	}
-	return &cfg, nil
+func NewConfigFromEnv() (cfg Config, err error) {
+	err = env.Env().ReadInto(&cfg)
+	return
 }
 
 // Config is the secrets config object.

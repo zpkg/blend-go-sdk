@@ -11,7 +11,7 @@ import (
 type Option func(*Logger) error
 
 // OptConfig sets the logger based on a config.
-func OptConfig(cfg *Config) Option {
+func OptConfig(cfg Config) Option {
 	return func(l *Logger) error {
 		l.Output = NewInterlockedWriter(os.Stdout)
 		l.Formatter = cfg.Formatter()
@@ -24,8 +24,8 @@ func OptConfig(cfg *Config) Option {
 // It will panic if there is an erro.
 func OptConfigFromEnv() Option {
 	return func(l *Logger) error {
-		cfg := &Config{}
-		if err := env.Env().ReadInto(cfg); err != nil {
+		cfg := Config{}
+		if err := env.Env().ReadInto(&cfg); err != nil {
 			return err
 		}
 		l.Output = NewInterlockedWriter(os.Stdout)

@@ -23,7 +23,7 @@ var (
 )
 
 // MustNew returns a new notifier and panics on error.
-func MustNew(cfg *Config) *Notifier {
+func MustNew(cfg Config) *Notifier {
 	notifier, err := New(cfg)
 	if err != nil {
 		panic(err)
@@ -32,7 +32,7 @@ func MustNew(cfg *Config) *Notifier {
 }
 
 // New returns a new notifier.
-func New(cfg *Config) (*Notifier, error) {
+func New(cfg Config) (*Notifier, error) {
 	parsedProjectID, err := strconv.ParseInt(cfg.ProjectID, 10, 64)
 	if err != nil {
 		return nil, exception.New(err)

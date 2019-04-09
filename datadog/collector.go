@@ -18,8 +18,8 @@ var (
 	_ stats.EventCollector = (*Collector)(nil)
 )
 
-// NewCollector returns a new stats collector from a config.
-func NewCollector(cfg *Config) (*Collector, error) {
+// New returns a new stats collector from a config.
+func New(cfg Config) (*Collector, error) {
 	var client *statsd.Client
 	var err error
 	if cfg.BufferedOrDefault() {
@@ -45,13 +45,13 @@ func NewCollector(cfg *Config) (*Collector, error) {
 	return collector, nil
 }
 
-// NewCollectorFromEnv returns a new Collector from a config.
-func NewCollectorFromEnv() (*Collector, error) {
-	cfg, err := NewConfigFromEnv()
+// MustNew returns a new stats collector from a config, but panics on error.
+func MustNew(cfg Config) *Collector {
+	collector, err := New(cfg)
 	if err != nil {
-		return nil, err
+		panic(err)
 	}
-	return NewCollector(cfg)
+	return collector
 }
 
 // Collector is a class that wraps the statsd collector we're using.

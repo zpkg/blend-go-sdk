@@ -13,7 +13,7 @@ import (
 
 // Config is the jobkit config.
 type Config struct {
-	cron.HistoryConfig `json:",inline" yaml:",inline"`
+	cron.Config `json:",inline" yaml:",inline"`
 
 	MaxLogBytes int `json:"maxLogBytes" yaml:"maxLogBytes"`
 

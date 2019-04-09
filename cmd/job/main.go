@@ -93,7 +93,7 @@ func main() {
 		logger.FatalExit(err)
 	}
 
-	log, err := logger.New(logger.OptConfig(&cfg.Logger))
+	log, err := logger.New(logger.OptConfig(cfg.Logger))
 	if err != nil {
 		logger.FatalExit(err)
 	}
@@ -115,17 +115,17 @@ func main() {
 	// set up myriad of notification targets
 	var emailClient email.Sender
 	if !cfg.AWS.IsZero() {
-		emailClient = ses.New(aws.MustNewSession(&cfg.AWS))
+		emailClient = ses.New(aws.MustNewSession(cfg.AWS))
 		log.Infof("adding email notifications")
 	}
 	var slackClient slack.Sender
 	if !cfg.Slack.IsZero() {
-		slackClient = slack.New(&cfg.Slack)
+		slackClient = slack.New(cfg.Slack)
 		log.Infof("adding slack notifications")
 	}
 	var statsClient stats.Collector
 	if !cfg.Datadog.IsZero() {
-		statsClient, err = datadog.NewCollector(&cfg.Datadog)
+		statsClient, err = datadog.New(cfg.Datadog)
 		if err != nil {
 			log.Fatal(err)
 			os.Exit(1)
@@ -135,11 +135,11 @@ func main() {
 
 	var errorClient diagnostics.Notifier
 	if !cfg.Airbrake.IsZero() {
-		errorClient = airbrake.MustNew(&cfg.Airbrake)
+		errorClient = airbrake.MustNew(cfg.Airbrake)
 		log.Infof("adding airbrake notifications")
 	}
 
-	jobs := cron.New(cron.OptHistoryConfig(cfg.Config.HistoryConfig), cron.OptLog(log))
+	jobs := cron.New(cron.OptConfig(cfg.Config.Config), cron.OptLog(log))
 
 	for _, jobCfg := range cfg.Jobs {
 		job, err := createJob(&jobCfg)
@@ -153,7 +153,7 @@ func main() {
 	}
 
 	if !*disableServer {
-		ws := jobkit.NewManagementServer(jobs, &cfg.Config)
+		ws := jobkit.NewManagementServer(jobs, cfg.Config)
 		ws.Log = log
 		go func() {
 			if err := graceful.Shutdown(ws); err != nil {
@@ -203,7 +203,7 @@ func createJob(cfg *jobConfig) (*jobkit.Job, error) {
 		return sh.ForkContext(ctx, command[0], args(command...)...)
 	}
 
-	job, err := jobkit.NewJob(&cfg.JobConfig, action)
+	job, err := jobkit.NewJob(cfg.JobConfig, action)
 	if err != nil {
 		return nil, err
 	}

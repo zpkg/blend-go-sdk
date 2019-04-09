@@ -8,11 +8,11 @@ import (
 	"github.com/blend/go-sdk/logger"
 )
 
-// AppOption is an option for an app.
-type AppOption func(*App)
+// Option is an option for an app.
+type Option func(*App)
 
 // OptConfig sets the config.
-func OptConfig(cfg *Config) AppOption {
+func OptConfig(cfg Config) Option {
 	return func(a *App) {
 		a.Config = cfg
 		a.Auth = NewAuthManager(cfg)
@@ -21,14 +21,14 @@ func OptConfig(cfg *Config) AppOption {
 }
 
 // OptBindAddr sets the config bind address
-func OptBindAddr(bindAddr string) AppOption {
+func OptBindAddr(bindAddr string) Option {
 	return func(a *App) {
 		a.Config.BindAddr = bindAddr
 	}
 }
 
 // OptPort sets the config bind address
-func OptPort(port int32) AppOption {
+func OptPort(port int32) Option {
 	return func(a *App) {
 		a.Config.Port = port
 		a.Config.BindAddr = fmt.Sprintf(":%v", port)
@@ -36,42 +36,37 @@ func OptPort(port int32) AppOption {
 }
 
 // OptLog sets the logger.
-func OptLog(log logger.Log) AppOption {
+func OptLog(log logger.Log) Option {
 	return func(a *App) { a.Log = log }
 }
 
 // OptServer sets the underlying server.
-func OptServer(server *http.Server) AppOption {
+func OptServer(server *http.Server) Option {
 	return func(a *App) { a.Server = server }
 }
 
 // OptAuth sets the auth manager.
-func OptAuth(auth *AuthManager) AppOption {
+func OptAuth(auth AuthManager) Option {
 	return func(a *App) { a.Auth = auth }
 }
 
 // OptTracer sets the tracer.
-func OptTracer(tracer Tracer) AppOption {
+func OptTracer(tracer Tracer) Option {
 	return func(a *App) { a.Tracer = tracer }
 }
 
 // OptViews sets the view cache.
-func OptViews(views *ViewCache) AppOption {
+func OptViews(views *ViewCache) Option {
 	return func(a *App) { a.Views = views }
 }
 
-// OptHandler sets the underlying handler
-func OptHandler(handler http.Handler) AppOption {
-	return func(a *App) { a.Handler = handler }
-}
-
 // OptTLSConfig sets the tls config.
-func OptTLSConfig(cfg *tls.Config) AppOption {
+func OptTLSConfig(cfg *tls.Config) Option {
 	return func(a *App) { a.TLSConfig = cfg }
 }
 
 // OptDefaultHeader sets a default header.
-func OptDefaultHeader(key, value string) AppOption {
+func OptDefaultHeader(key, value string) Option {
 	return func(a *App) {
 		if a.DefaultHeaders == nil {
 			a.DefaultHeaders = make(map[string]string)
@@ -81,16 +76,21 @@ func OptDefaultHeader(key, value string) AppOption {
 }
 
 // OptDefaultHeaders sets default headers.
-func OptDefaultHeaders(headers map[string]string) AppOption {
+func OptDefaultHeaders(headers map[string]string) Option {
 	return func(a *App) { a.DefaultHeaders = headers }
 }
 
+// OptDefaultMiddleware sets default middleware.
+func OptDefaultMiddleware(middleware ...Middleware) Option {
+	return func(a *App) { a.DefaultMiddleware = middleware }
+}
+
 // OptUse adds to the default middleware.
-func OptUse(m Middleware) AppOption {
+func OptUse(m Middleware) Option {
 	return func(a *App) { a.DefaultMiddleware = append(a.DefaultMiddleware, m) }
 }
 
 // OptNotFoundHandler sets default headers.
-func OptNotFoundHandler(action Action) AppOption {
+func OptNotFoundHandler(action Action) Option {
 	return func(a *App) { a.NotFoundHandler = a.RenderAction(action) }
 }

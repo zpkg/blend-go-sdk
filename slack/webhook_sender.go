@@ -21,7 +21,7 @@ var (
 )
 
 // New creates a new webhook sender.
-func New(cfg *Config) *WebhookSender {
+func New(cfg Config) *WebhookSender {
 	return &WebhookSender{
 		RequestSender: webutil.NewRequestSender(webutil.MustParseURL(cfg.Webhook)),
 		Config:        cfg,
@@ -31,7 +31,7 @@ func New(cfg *Config) *WebhookSender {
 // WebhookSender sends slack webhooks.
 type WebhookSender struct {
 	*webutil.RequestSender
-	Config *Config
+	Config Config
 }
 
 // Defaults returns default message options.

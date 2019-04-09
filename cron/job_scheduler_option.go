@@ -15,7 +15,7 @@ func OptJobSchedulerLog(log logger.Log) JobSchedulerOption {
 	return func(js *JobScheduler) { js.Log = log }
 }
 
-// OptJobSchedulerHistoryConfig sets the job scheduler history config.
-func OptJobSchedulerHistoryConfig(hc HistoryConfig) JobSchedulerOption {
-	return func(js *JobScheduler) { js.HistoryConfig = hc }
+// OptJobSchedulerConfig sets the job scheduler config.
+func OptJobSchedulerConfig(hc Config) JobSchedulerOption {
+	return func(js *JobScheduler) { js.Config = hc }
 }

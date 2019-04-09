@@ -12,9 +12,9 @@ var (
 // ViewCacheConfig is a config for the view cache.
 type ViewCacheConfig struct {
 	// LiveReload indicates if we should store compiled views in memory for re-use (default), or read them from disk each load.
-	LiveReload bool `json:"liveReload,omitempty" yaml:"liveReload,omitempty" env:"WEB_VIEW_LIVE_RELOAD"`
+	LiveReload bool `json:"liveReload,omitempty" yaml:"liveReload,omitempty" env:"LIVE_RELOAD"`
 	// Paths are a list of view paths to include in the templates list.
-	Paths []string `json:"paths,omitempty" yaml:"paths,omitempty" env:"WEB_VIEW_CACHE_PATHS,csv"`
+	Paths []string `json:"paths,omitempty" yaml:"paths,omitempty"`
 	// BufferPoolSize is the size of the re-usable buffer pool for rendering views.
 	BufferPoolSize int `json:"bufferPoolSize,omitempty" yaml:"bufferPoolSize,omitempty"`
 

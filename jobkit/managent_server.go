@@ -9,8 +9,8 @@ import (
 
 // NewManagementServer returns a new management server that lets you
 // trigger jobs or look at job statuses via. a json api.
-func NewManagementServer(jm *cron.JobManager, cfg *Config) *web.App {
-	app := web.New(web.OptConfig(&cfg.Web))
+func NewManagementServer(jm *cron.JobManager, cfg Config) *web.App {
+	app := web.New(web.OptConfig(cfg.Web))
 	app.Views.AddLiterals(
 		headerTemplate,
 		footerTemplate,

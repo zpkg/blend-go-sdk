@@ -32,10 +32,10 @@ func NewCtx(w ResponseWriter, r *http.Request, options ...CtxOption) *Ctx {
 // Ctx is the struct that represents the context for an hc request.
 type Ctx struct {
 	ID              string
+	Auth            AuthManager
 	Response        ResponseWriter
 	Request         *http.Request
 	App             *App
-	Auth            *AuthManager
 	Views           *ViewCache
 	Log             logger.Log
 	Tracer          Tracer
@@ -224,7 +224,7 @@ func (rc *Ctx) PostBodyAsXML(response interface{}) error {
 
 // CookieDomain returns the cookie domain for a request.
 func (rc *Ctx) CookieDomain() string {
-	if rc.App != nil && rc.App.Config != nil && rc.App.Config.BaseURL != "" {
+	if rc.App != nil && rc.App.Config.BaseURL != "" {
 		return webutil.MustParseURL(rc.App.Config.BaseURL).Host
 	}
 	return rc.Request.Host
@@ -240,17 +240,9 @@ func (rc *Ctx) Cookie(name string) *http.Cookie {
 }
 
 // WriteNewCookie is a helper method for WriteCookie.
-func (rc *Ctx) WriteNewCookie(name string, value string, expires time.Time, path string, secure bool) {
-	c := &http.Cookie{
-		Name:     name,
-		HttpOnly: true, // this is always on because javascript is bad.
-		Value:    value,
-		Path:     path,
-		Secure:   secure,
-		Domain:   rc.CookieDomain(),
-		Expires:  expires,
-	}
-	http.SetCookie(rc.Response, c)
+func (rc *Ctx) WriteNewCookie(cookie *http.Cookie) {
+	cookie.Domain = rc.CookieDomain()
+	http.SetCookie(rc.Response, cookie)
 }
 
 // ExtendCookieByDuration extends a cookie by a time duration (on the order of nanoseconds to hours).

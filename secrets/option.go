@@ -36,7 +36,7 @@ func OptConfigFromEnv() Option {
 }
 
 // OptConfig sets the vault client from a given configuration.
-func OptConfig(cfg *Config) Option {
+func OptConfig(cfg Config) Option {
 	return func(vc *VaultClient) error {
 		if err := OptRemote(cfg.AddrOrDefault())(vc); err != nil {
 			return err
