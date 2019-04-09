@@ -1,6 +1,7 @@
 package main
 
 import (
+	"fmt"
 	"os"
 
 	"github.com/blend/go-sdk/fileutil"
@@ -9,7 +10,7 @@ import (
 func main() {
 	go fileutil.Watch("file.yml", func(f *os.File) error {
 		defer f.Close()
-		println("file changed")
+		fmt.Printf("file changed\n")
 		return nil
 	})
 
