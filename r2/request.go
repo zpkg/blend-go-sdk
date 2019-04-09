@@ -7,6 +7,7 @@ import (
 	"io/ioutil"
 	"net/http"
 	"net/url"
+	"strings"
 	"time"
 
 	"github.com/blend/go-sdk/exception"
@@ -61,6 +62,13 @@ type Request struct {
 func (r *Request) Do() (*http.Response, error) {
 	if r.Err != nil {
 		return nil, r.Err
+	}
+
+	// reconcile post form values
+	if r.Request.PostForm != nil && len(r.Request.PostForm) > 0 {
+		if r.Request.Body == nil {
+			r.Request.Body = ioutil.NopCloser(strings.NewReader(r.Request.PostForm.Encode()))
+		}
 	}
 
 	var err error
