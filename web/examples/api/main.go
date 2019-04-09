@@ -15,8 +15,8 @@ type Any = interface{}
 
 // APIController implements a simple controller.
 type APIController struct {
-	db     map[string]Any
-	dbLock sync.Mutex
+	sync.Mutex
+	db map[string]Any
 }
 
 // Register adds routes for the controller to the app.
@@ -40,16 +40,16 @@ func (ac *APIController) index(r *web.Ctx) web.Result {
 }
 
 func (ac *APIController) all(r *web.Ctx) web.Result {
-	ac.dbLock.Lock()
-	defer ac.dbLock.Unlock()
+	ac.Lock()
+	defer ac.Unlock()
 	ac.ensureDB()
 
 	return web.JSON.Result(ac.db)
 }
 
 func (ac *APIController) get(r *web.Ctx) web.Result {
-	ac.dbLock.Lock()
-	defer ac.dbLock.Unlock()
+	ac.Lock()
+	defer ac.Unlock()
 	ac.ensureDB()
 
 	key, err := r.Param("key")
@@ -65,8 +65,8 @@ func (ac *APIController) get(r *web.Ctx) web.Result {
 }
 
 func (ac *APIController) post(r *web.Ctx) web.Result {
-	ac.dbLock.Lock()
-	defer ac.dbLock.Unlock()
+	ac.Lock()
+	defer ac.Unlock()
 	ac.ensureDB()
 
 	body, err := r.PostBody()
@@ -83,8 +83,8 @@ func (ac *APIController) post(r *web.Ctx) web.Result {
 }
 
 func (ac *APIController) put(r *web.Ctx) web.Result {
-	ac.dbLock.Lock()
-	defer ac.dbLock.Unlock()
+	ac.Lock()
+	defer ac.Unlock()
 	ac.ensureDB()
 
 	key, err := r.Param("key")
@@ -107,8 +107,8 @@ func (ac *APIController) put(r *web.Ctx) web.Result {
 }
 
 func (ac *APIController) delete(r *web.Ctx) web.Result {
-	ac.dbLock.Lock()
-	defer ac.dbLock.Unlock()
+	ac.Lock()
+	defer ac.Unlock()
 	ac.ensureDB()
 
 	key, err := r.Param("key")

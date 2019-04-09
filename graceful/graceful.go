@@ -9,7 +9,7 @@ import (
 
 // Graceful is a server that can start and shutdown.
 type Graceful interface {
-	// Start the service. This must block.
+	// Start the service. This _must_ block.
 	Start() error
 	// Stop the service.
 	Stop() error
@@ -19,8 +19,9 @@ type Graceful interface {
 	NotifyStopped() <-chan struct{}
 }
 
-// Shutdown starts an hosted process and responds to SIGINT and SIGTERM to shut the app down.
-// It will return any errors returned by app.Start() that are not caused by shutting down the server.
+// Shutdown racefully stops a set hosted processes based on SIGINT or SIGTERM received from the os.
+// It will return any errors returned by Start() that are not caused by shutting down the server.
+// A "Graceful" processes *must* block on start.
 func Shutdown(hosted ...Graceful) error {
 	terminateSignal := make(chan os.Signal, 1)
 	signal.Notify(terminateSignal, os.Interrupt, syscall.SIGTERM)
