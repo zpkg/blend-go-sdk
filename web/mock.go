@@ -14,24 +14,21 @@ import (
 // Mock sends a mock request to an app.
 // It will reset the app Server, Listener, and will set the request host to the listener address
 // for a randomized local listener.
-func Mock(app *App, req *http.Request, options ...webutil.RequestOption) *MockResult {
+func Mock(app *App, req *http.Request, options ...r2.Option) *MockResult {
 	var err error
-	for _, option := range options {
-		if err = option(req); err != nil {
-			return &MockResult{
-				Request: &r2.Request{
-					Err: err,
-				},
-			}
-		}
-	}
-
 	result := &MockResult{
 		App: app,
 		Request: &r2.Request{
 			Request: req,
 		},
 	}
+	for _, option := range options {
+		if err = option(result.Request); err != nil {
+			result.Err = err
+			return result
+		}
+	}
+
 	if err := app.StartupTasks(); err != nil {
 		result.Err = err
 		return result
@@ -52,7 +49,7 @@ func Mock(app *App, req *http.Request, options ...webutil.RequestOption) *MockRe
 
 // MockMethod sends a mock request with a given method to an app.
 // You should use request options to set the body of the request if it's a post or put etc.
-func MockMethod(app *App, method, path string, options ...webutil.RequestOption) *MockResult {
+func MockMethod(app *App, method, path string, options ...r2.Option) *MockResult {
 	req := &http.Request{
 		Method: method,
 		URL: &url.URL{
@@ -63,7 +60,7 @@ func MockMethod(app *App, method, path string, options ...webutil.RequestOption)
 }
 
 // MockGet sends a mock get request to an app.
-func MockGet(app *App, path string, options ...webutil.RequestOption) *MockResult {
+func MockGet(app *App, path string, options ...r2.Option) *MockResult {
 	req := &http.Request{
 		Method: "GET",
 		URL: &url.URL{
@@ -74,7 +71,7 @@ func MockGet(app *App, path string, options ...webutil.RequestOption) *MockResul
 }
 
 // MockPost sends a mock post request to an app.
-func MockPost(app *App, path string, body io.ReadCloser, options ...webutil.RequestOption) *MockResult {
+func MockPost(app *App, path string, body io.ReadCloser, options ...r2.Option) *MockResult {
 	req := &http.Request{
 		Method: "POST",
 		Body:   body,

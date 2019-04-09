@@ -6,8 +6,8 @@ import (
 	"testing"
 
 	"github.com/blend/go-sdk/assert"
+	"github.com/blend/go-sdk/r2"
 	"github.com/blend/go-sdk/stringutil"
-	"github.com/blend/go-sdk/webutil"
 )
 
 func TestSessionAware(t *testing.T) {
@@ -27,7 +27,7 @@ func TestSessionAware(t *testing.T) {
 		return Text.Result("COOL")
 	}, SessionAware)
 
-	meta, err := MockGet(app, "/", webutil.OptCookieValue(app.Auth.CookieNameOrDefault(), sessionID)).DiscardWithResponse()
+	meta, err := MockGet(app, "/", r2.OptCookieValue(app.Auth.CookieNameOrDefault(), sessionID)).DiscardWithResponse()
 	assert.Nil(err)
 	assert.Equal(http.StatusOK, meta.StatusCode)
 	assert.Equal(ContentTypeText, meta.Header.Get(HeaderContentType))
@@ -59,7 +59,7 @@ func TestSessionRequired(t *testing.T) {
 	assert.Equal(http.StatusForbidden, unsetMeta.StatusCode)
 	assert.False(sessionWasSet)
 
-	meta, err := MockGet(app, "/", webutil.OptCookieValue(app.Auth.CookieNameOrDefault(), sessionID)).DiscardWithResponse()
+	meta, err := MockGet(app, "/", r2.OptCookieValue(app.Auth.CookieNameOrDefault(), sessionID)).DiscardWithResponse()
 	assert.Nil(err)
 	assert.Equal(http.StatusOK, meta.StatusCode)
 	assert.True(sessionWasSet)
@@ -85,12 +85,12 @@ func TestSessionRequiredCustomParamName(t *testing.T) {
 	assert.Equal(http.StatusForbidden, unsetMeta.StatusCode)
 	assert.False(sessionWasSet)
 
-	meta, err := MockGet(app, "/", webutil.OptCookieValue(app.Auth.CookieNameOrDefault(), sessionID)).DiscardWithResponse()
+	meta, err := MockGet(app, "/", r2.OptCookieValue(app.Auth.CookieNameOrDefault(), sessionID)).DiscardWithResponse()
 	assert.Nil(err)
 	assert.Equal(http.StatusOK, meta.StatusCode)
 	assert.True(sessionWasSet)
 
-	meta, err = MockGet(app, "/", webutil.OptCookieValue(DefaultCookieName, sessionID)).DiscardWithResponse()
+	meta, err = MockGet(app, "/", r2.OptCookieValue(DefaultCookieName, sessionID)).DiscardWithResponse()
 	assert.Nil(err)
 	assert.Equal(http.StatusForbidden, meta.StatusCode)
 	assert.True(sessionWasSet)
@@ -123,7 +123,7 @@ func TestSessionMiddleware(t *testing.T) {
 	assert.Equal(http.StatusNoContent, unsetMeta.StatusCode)
 	assert.False(sessionWasSet)
 
-	meta, err := MockGet(app, "/", webutil.OptCookieValue(app.Auth.CookieNameOrDefault(), sessionID)).DiscardWithResponse()
+	meta, err := MockGet(app, "/", r2.OptCookieValue(app.Auth.CookieNameOrDefault(), sessionID)).DiscardWithResponse()
 	assert.Nil(err)
 	assert.Equal(http.StatusOK, meta.StatusCode)
 	assert.True(sessionWasSet)
