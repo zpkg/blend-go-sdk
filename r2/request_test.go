@@ -44,6 +44,25 @@ func TestRequestDoHeaders(t *testing.T) {
 	assert.Equal(http.StatusOK, res.StatusCode)
 }
 
+func TestRequestDoQuery(t *testing.T) {
+	assert := assert.New(t)
+
+	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		if value := r.URL.Query().Get("foo"); value != "bar" {
+			w.WriteHeader(http.StatusBadRequest)
+			fmt.Fprintf(w, "bad query value for foo: %#v\n", r.PostForm)
+			return
+		}
+		w.WriteHeader(http.StatusOK)
+		fmt.Fprintf(w, "OK!\n")
+	}))
+	defer server.Close()
+
+	res, err := New(server.URL, OptQueryValue("foo", "bar")).Do()
+	assert.Nil(err)
+	assert.Equal(http.StatusOK, res.StatusCode)
+}
+
 func TestRequestDoPostForm(t *testing.T) {
 	assert := assert.New(t)
 
