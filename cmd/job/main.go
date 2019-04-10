@@ -82,6 +82,9 @@ func command() *cobra.Command {
 		Short: "Job runs a command on a schedule, and tracks limited job history in memory.",
 		Long:  "Job runs a command on a schedule, and tracks limited job history in memory.",
 		Example: `
+# echo 'hello world' with the default schedule
+job -- echo 'hello world'
+
 # echo 'hello world' every 30 seconds
 job --schedule='*/30 * * * *' -- echo 'hello world'
 
