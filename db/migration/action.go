@@ -22,13 +22,20 @@ func NoOp(_ context.Context, _ *db.Connection, _ *sql.Tx, _ ...db.InvocationOpti
 func Statements(statements ...string) Action {
 	return func(ctx context.Context, c *db.Connection, tx *sql.Tx, options ...db.InvocationOption) (err error) {
 		opts := append([]db.InvocationOption{db.OptContext(ctx), db.OptTx(tx)}, options...)
-
 		for _, statement := range statements {
 			err = c.Invoke(opts...).Exec(statement)
 			if err != nil {
 				return
 			}
 		}
+		return
+	}
+}
+
+// Exec runs a statement with a given set of arguments.
+func Exec(statement string, args ...interface{}) Action {
+	return func(ctx context.Context, c *db.Connection, tx *sql.Tx, options ...db.InvocationOption) (err error) {
+		err = c.Invoke(db.OptContext(ctx), db.OptTx(tx)).Exec(statement, args...)
 		return
 	}
 }

@@ -33,6 +33,8 @@ func NewConfigFromDSN(dsn string) (*Config, error) {
 			config.Password = strings.TrimPrefix(piece, "password=")
 		} else if strings.HasPrefix(piece, "sslmode=") {
 			config.SSLMode = strings.TrimPrefix(piece, "sslmode=")
+		} else if strings.HasPrefix(piece, "schema=") {
+			config.Schema = strings.TrimPrefix(piece, "schema=")
 		} else if strings.HasPrefix(piece, "connect_timeout=") {
 			config.ConnectTimeout, err = strconv.Atoi(strings.TrimPrefix(piece, "connect_timeout="))
 			if err != nil {
@@ -159,7 +161,7 @@ func (c Config) MaxConnectionsOrDefault(inherited ...int) int {
 }
 
 // MaxLifetimeOrDefault returns the maximum lifetime of a driver connection.
-func (c Config) MaxLifetimeOrDefault(inherited ...time.Duration) time.Duration {
+func (c Config) MaxLifetimeOrDefault() time.Duration {
 	if c.MaxLifetime > 0 {
 		return c.MaxLifetime
 	}
@@ -167,7 +169,7 @@ func (c Config) MaxLifetimeOrDefault(inherited ...time.Duration) time.Duration {
 }
 
 // BufferPoolSizeOrDefault returns the number of query buffers to maintain or a default.
-func (c Config) BufferPoolSizeOrDefault(inherited ...int) int {
+func (c Config) BufferPoolSizeOrDefault() int {
 	if c.BufferPoolSize > 0 {
 		return c.BufferPoolSize
 	}

@@ -59,7 +59,7 @@ func (c *config) Resolve() error {
 
 type jobConfig struct {
 	// Exec is the command to execute.
-	Exec string `json:"exec" yaml:"exec"`
+	Exec []string `json:"exec" yaml:"exec"`
 	// DiscardOutput indicates if we should discard output.
 	DiscardOutput *bool `json:"discardOutput" yaml:"discardOutput"`
 
@@ -69,7 +69,6 @@ type jobConfig struct {
 func (jc *jobConfig) Resolve() error {
 	return configutil.AnyError(
 		configutil.SetString(&jc.Name, configutil.String(*flagDefaultJobName), configutil.String(env.Env().ServiceName()), configutil.String(jc.Name), configutil.String(stringutil.Letters.Random(8))),
-		configutil.SetString(&jc.Exec, configutil.String(*flagDefaultJobExec), configutil.String(jc.Exec)),
 		configutil.SetBool(&jc.DiscardOutput, configutil.Bool(flagDefaultJobDiscardOutput), configutil.Bool(jc.DiscardOutput), configutil.Bool(ref.Bool(false))),
 		configutil.SetString(&jc.Schedule, configutil.String(*flagDefaultJobSchedule), configutil.String(jc.Schedule)),
 		configutil.SetDuration(&jc.Timeout, configutil.Duration(*flagDefaultJobTimeout), configutil.Duration(jc.Timeout)),
@@ -99,10 +98,10 @@ job -c config.yml'
 jobs:
 - name: echo
   schedule: '*/30 * * * *'
-  exec: "echo 'hello world'"
+  exec: [echo, 'hello world']
 - name: echo2
   schedule: '*/30 * * * *'
-  exec: "echo 'hello again'"
+  exec: [echo, 'hello again']
 """
 `,
 	}
@@ -115,7 +114,6 @@ func main() {
 	flagBind = cmd.Flags().String("bind", "", "The management http server bind address.")
 	flagConfigPath = cmd.Flags().StringP("config", "c", "", "The config path.")
 	flagDefaultJobName = cmd.Flags().StringP("name", "n", "", "The job name (will default to a random string of 8 letters).")
-	flagDefaultJobExec = cmd.Flags().String("exec", "", "A shell command to run as the job action.")
 	flagDefaultJobSchedule = cmd.Flags().StringP("schedule", "s", "", "The job schedule in cron format (ex: '*/5 * * * *')")
 	flagDefaultJobTimeout = cmd.Flags().Duration("timeout", 0, "The job execution timeout as a duration (ex: 5s)")
 	flagDefaultJobDiscardOutput = cmd.Flags().Bool("discard-output", false, "If jobs should discard console output from the action.")
@@ -212,23 +210,21 @@ func createDefaultJobConfig(args ...string) (*jobConfig, error) {
 	if err := cfg.Resolve(); err != nil {
 		return nil, err
 	}
-	if cfg.Exec == "" && len(args) > 0 {
-		cfg.Exec = strings.Join(args, " ")
-	}
-	if cfg.Exec == "" {
+	cfg.Exec = args
+	if len(cfg.Exec) == 0 {
 		return nil, nil
 	}
 	return cfg, nil
 }
 
 func createJobFromConfig(cfg jobConfig) (*jobkit.Job, error) {
-	if cfg.Exec == "" {
+	if len(cfg.Exec) == 0 {
 		return nil, exception.New("job exec and command unset", exception.OptMessagef("job: %s", cfg.Name))
 	}
 	action := func(ctx context.Context) error {
 		if cfg.DiscardOutput == nil || (cfg.DiscardOutput != nil && !*cfg.DiscardOutput) {
 			if jis := jobkit.GetJobInvocationState(ctx); jis != nil {
-				cmd, err := sh.CmdParsedContext(ctx, cfg.Exec)
+				cmd, err := sh.CmdContext(ctx, cfg.Exec[0], cfg.Exec[1:]...)
 				if err != nil {
 					return err
 				}
@@ -237,7 +233,7 @@ func createJobFromConfig(cfg jobConfig) (*jobkit.Job, error) {
 				return exception.New(cmd.Run())
 			}
 		}
-		return sh.ForkParsedContext(ctx, cfg.Exec)
+		return sh.ForkContext(ctx, cfg.Exec[0], cfg.Exec[1:]...)
 	}
 
 	job, err := jobkit.NewJob(cfg.JobConfig, action)
@@ -245,7 +241,7 @@ func createJobFromConfig(cfg jobConfig) (*jobkit.Job, error) {
 		return nil, err
 	}
 	if job.Description() == "" {
-		job.WithDescription(cfg.Exec)
+		job.WithDescription(strings.Join(cfg.Exec, " "))
 	}
 	return job, nil
 }
