@@ -13,19 +13,9 @@ import (
 
 // UserNotExists creates a index on the given connection if it does not exist.
 func UserNotExists(username string) migration.GuardFunc {
-	return UserNotExistsWithPredicate(PredicateUserExists, username)
-}
-
-// UserNotExistsWithPredicate creates a user if it doesn't exist.
-func UserNotExistsWithPredicate(predicate migration.Predicate, username string) migration.GuardFunc {
 	return migration.Guard(fmt.Sprintf("create user `%s`", username), func(c *db.Connection, tx *sql.Tx) (bool, error) {
-		return migration.Not(predicate(c, tx, username))
+		return c.Invoke(db.OptTx(tx)).Query(`SELECT 1 FROM users WHERE username = $1`, strings.ToLower(username)).None()
 	})
-}
-
-// PredicateUserExists reutrns if a user exists.
-func PredicateUserExists(c *db.Connection, tx *sql.Tx, username string) (bool, error) {
-	return c.Invoke(db.OptTx(tx)).Query(`SELECT 1 FROM users WHERE username = $1`, strings.ToLower(username)).Any()
 }
 
 func main() {
@@ -48,6 +38,14 @@ func main() {
 			migration.Step(
 				UserNotExists("bailey"),
 				migration.Exec("INSERT INTO users (username) VALUES ($1)", "bailey"),
+			),
+		),
+		migration.Group(
+			migration.Step(
+				migration.TableExists("users"),
+				migration.Statements(
+					"DROP TABLE users;",
+				),
 			),
 		),
 	)
