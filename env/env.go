@@ -454,15 +454,12 @@ func (ev Vars) ServiceEnv(defaults ...string) string {
 
 // IsProduction returns if the ServiceEnv is a production environment.
 func (ev Vars) IsProduction() bool {
-	return ev.ServiceEnv() == ServiceEnvPreprod ||
-		ev.ServiceEnv() == ServiceEnvProd
+	return IsProduction(ev.ServiceEnv())
 }
 
 // IsProdlike returns if the ServiceEnv is "prodlike".
 func (ev Vars) IsProdlike() bool {
-	return ev.ServiceEnv() == ServiceEnvPreprod ||
-		ev.ServiceEnv() == ServiceEnvBeta ||
-		ev.ServiceEnv() == ServiceEnvProd
+	return IsProdlike(ev.ServiceEnv())
 }
 
 // ServiceName is a common environment variable for the service's name.
