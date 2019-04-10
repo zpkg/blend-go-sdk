@@ -8,7 +8,6 @@ import (
 	"time"
 
 	"github.com/blend/go-sdk/configutil"
-
 	"github.com/blend/go-sdk/graceful"
 	"github.com/blend/go-sdk/logger"
 	"github.com/blend/go-sdk/web"
@@ -76,6 +75,8 @@ func (c config) WebOptions() []web.Option {
 	}
 }
 
+// Resolve is called by configutil.Read, it sets up fields on the config from a precedence list of sources.
+// The list is read left to right, if a non-zero value is found the value is returned for that field.
 func (c *config) Resolve() error {
 	return configutil.AnyError(
 		configutil.SetString(&c.BindAddress, configutil.String(*flagBindAddress), configutil.Env("BIND_ADDR"), configutil.String(c.BindAddress)),
