@@ -60,20 +60,22 @@ profanity --rules=PROFANITY_RULES --include="*.go" --exclude="*_test.go"
 # An example rule file looks like
 
 """ yaml
-- id: "CONTAINS_EXAMPLE" # id is meant to be a de-duplicating identifier
+CONTAINS_EXAMPLE: # id is meant to be a de-duplicating identifier
   description: "please use 'foo.Bar', not a concrete type reference" # description should include remediation steps
   contains:
   - "foo.Bar"
-- id: "EXCLUDES_EXAMPLE"
-  message: "please dont use HerpDerp"
+
+EXCLUDES_EXAMPLE:
+  description: "please dont use HerpDerp"
   contains: [ "HerpDerp" ]
-  excludeFiles: [ "*_test.go" }
-- id: "IMPORTS_EXAMPLE" # you can assert a go AST doesnt contains a given import by glob
-  message: "dont include command stuff"
+  excludeFiles: [ "*_test.go" ]
+
+IMPORTS_EXAMPLE: # you can assert a go AST doesnt contains a given import by glob
+  description: "dont include command stuff"
   importsContain: [ "github.com/blend/go-sdk/cmd/*" ]
 """
 
-For more example rule files, see https://github.com/blend/go-sdk/tree/master/profanity/examples/rules
+For more example rule files, see https://github.com/blend/go-sdk/tree/master/PROFANITY_RULES.yml
 `,
 	}
 
