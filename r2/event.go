@@ -9,6 +9,7 @@ import (
 	"time"
 
 	"github.com/blend/go-sdk/logger"
+	"github.com/blend/go-sdk/webutil"
 )
 
 const (
@@ -76,7 +77,7 @@ func (e *Event) MarshalJSON() ([]byte, error) {
 			"contentType":     tryHeader(e.Response.Header, "Content-Type", "content-type"),
 			"contentEncoding": tryHeader(e.Response.Header, "Content-Encoding", "content-encoding"),
 			"headers":         e.Response.Header,
-			"cert":            ParseCertInfo(e.Response),
+			"cert":            webutil.ParseCertInfo(e.Response),
 		}
 	}
 	if e.Body != nil {
