@@ -6,7 +6,7 @@ import (
 	"os"
 
 	"github.com/blend/go-sdk/async"
-	"github.com/blend/go-sdk/exception"
+	"github.com/blend/go-sdk/ex"
 )
 
 // New returns a new logger with a given set of enabled flags.
@@ -183,7 +183,7 @@ func (l *Logger) Trigger(ctx context.Context, e Event) {
 		return
 	}
 
-	flag := e.Flag()
+	flag := e.GetFlag()
 	if !l.IsEnabled(flag) {
 		return
 	}
@@ -214,7 +214,7 @@ func (l *Logger) SyncTrigger(ctx context.Context, e Event) {
 		return
 	}
 
-	flag := e.Flag()
+	flag := e.GetFlag()
 	if !l.IsEnabled(flag) {
 		return
 	}
@@ -263,7 +263,7 @@ func (l *Logger) Write(ctx context.Context, e Event) {
 // Close releases shared resources for the agent.
 func (l *Logger) Close() error {
 	if !l.CanStop() {
-		return exception.New(async.ErrCannotStop)
+		return ex.New(async.ErrCannotStop)
 	}
 
 	l.Stopping()

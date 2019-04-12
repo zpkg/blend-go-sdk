@@ -14,9 +14,9 @@ import (
 
 const (
 	// Flag is a logger event flag.
-	Flag = "request"
+	Flag = "http.request"
 	// FlagResponse is a logger event flag.
-	FlagResponse = "request.response"
+	FlagResponse = "http.request.response"
 )
 
 // NewEvent returns a new event.
@@ -48,7 +48,7 @@ type Event struct {
 // WriteText writes the event to a text writer.
 func (e *Event) WriteText(tf logger.TextFormatter, wr io.Writer) {
 	if e.Request != nil && e.Response != nil {
-		io.WriteString(wr, fmt.Sprintf("%s %s %s (%v)", e.Request.Method, e.Request.URL.String(), logger.ColorizeStatusCodeWithFormatter(tf, e.Response.StatusCode), e.Timestamp().Sub(e.Started)))
+		io.WriteString(wr, fmt.Sprintf("%s %s %s (%v)", e.Request.Method, e.Request.URL.String(), logger.ColorizeStatusCodeWithFormatter(tf, e.Response.StatusCode), e.GetTimestamp().Sub(e.Started)))
 	} else if e.Request != nil {
 		io.WriteString(wr, fmt.Sprintf("%s %s", e.Request.Method, e.Request.URL.String()))
 	}
@@ -71,7 +71,7 @@ func (e *Event) MarshalJSON() ([]byte, error) {
 	}
 	if e.Response != nil {
 		output["res"] = map[string]interface{}{
-			"completeTime":    e.Timestamp(),
+			"completeTime":    e.GetTimestamp(),
 			"statusCode":      e.Response.StatusCode,
 			"contentLength":   e.Response.ContentLength,
 			"contentType":     tryHeader(e.Response.Header, "Content-Type", "content-type"),

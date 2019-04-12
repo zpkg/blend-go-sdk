@@ -112,11 +112,11 @@ func (tf TextOutputFormatter) WriteFormat(ctx context.Context, output io.Writer,
 	defer tf.BufferPool.Put(buffer)
 
 	if !tf.HideTimestamp {
-		buffer.WriteString(tf.FormatTimestamp(e.Timestamp()))
+		buffer.WriteString(tf.FormatTimestamp(e.GetTimestamp()))
 		buffer.WriteString(Space)
 	}
 
-	buffer.WriteString(tf.FormatFlag(e.Flag(), FlagTextColor(e.Flag())))
+	buffer.WriteString(tf.FormatFlag(e.GetFlag(), FlagTextColor(e.GetFlag())))
 	buffer.WriteString(Space)
 
 	if subContextPath := GetSubContextPath(ctx); subContextPath != nil {

@@ -6,7 +6,7 @@ import (
 	"fmt"
 	"io"
 
-	"github.com/blend/go-sdk/exception"
+	"github.com/blend/go-sdk/ex"
 )
 
 // these are compile time assertions
@@ -77,7 +77,7 @@ type ErrorEvent struct {
 // WriteText writes the text version of an error.
 func (e ErrorEvent) WriteText(formatter TextFormatter, output io.Writer) {
 	if e.Err != nil {
-		if typed, ok := e.Err.(*exception.Ex); ok {
+		if typed, ok := e.Err.(*ex.Ex); ok {
 			io.WriteString(output, typed.String())
 		} else {
 			io.WriteString(output, e.Err.Error())
