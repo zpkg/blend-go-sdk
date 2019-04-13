@@ -110,7 +110,7 @@ func (tf TextOutputFormatter) FormatPath(path ...string) string {
 func (tf TextOutputFormatter) FormatFields(fields Fields) string {
 	var output []string
 	for key, value := range fields {
-		output = append(output, fmt.Sprintf("%s=%s", key, value))
+		output = append(output, fmt.Sprintf("%s=%s", tf.Colorize(key, ansi.ColorBlue), value))
 	}
 	return strings.Join(output, " ")
 }
@@ -142,7 +142,7 @@ func (tf TextOutputFormatter) WriteFormat(ctx context.Context, output io.Writer,
 	}
 
 	if len(subContextFields) > 0 {
-		buffer.WriteString(Space)
+		buffer.WriteString("\t")
 		buffer.WriteString(tf.FormatFields(subContextFields))
 	}
 
