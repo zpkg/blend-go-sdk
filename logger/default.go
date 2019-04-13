@@ -15,7 +15,7 @@ func ensureLog() {
 }
 
 // SubContext returns a new default sub context.
-func SubContext(heading string, options ...ContextOption) *Context {
+func SubContext(heading string, options ...ContextOption) Context {
 	ensureLog()
 	return log.SubContext(heading, options...)
 }

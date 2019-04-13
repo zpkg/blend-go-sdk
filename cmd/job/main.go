@@ -181,7 +181,7 @@ func run(cmd *cobra.Command, args []string) error {
 		log.Infof("adding airbrake notifications")
 	}
 
-	jobs := cron.New(cron.OptConfig(cfg.Config.Config), cron.OptLog(log))
+	jobs := cron.New(cron.OptConfig(cfg.Config.Cron), cron.OptLog(log))
 
 	for _, jobCfg := range cfg.Jobs {
 		job, err := createJobFromConfig(jobCfg)
