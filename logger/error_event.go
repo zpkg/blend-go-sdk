@@ -3,7 +3,6 @@ package logger
 import (
 	"context"
 	"encoding/json"
-	"fmt"
 	"io"
 
 	"github.com/blend/go-sdk/ex"
@@ -15,14 +14,6 @@ var (
 	_ TextWritable   = (*ErrorEvent)(nil)
 	_ json.Marshaler = (*ErrorEvent)(nil)
 )
-
-// Errorf returns a new error event based on format and arguments.
-func Errorf(flag, format string, args ...interface{}) *ErrorEvent {
-	return &ErrorEvent{
-		EventMeta: NewEventMeta(flag),
-		Err:       fmt.Errorf(format, args...),
-	}
-}
 
 // NewErrorEvent returns a new error event.
 func NewErrorEvent(flag string, err error, options ...ErrorEventOption) *ErrorEvent {

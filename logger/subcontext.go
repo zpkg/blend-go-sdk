@@ -69,17 +69,17 @@ func (sc *Context) Debugf(format string, args ...interface{}) {
 
 // Warningf logs a warning message to the output stream.
 func (sc *Context) Warningf(format string, args ...interface{}) {
-	sc.Trigger(context.Background(), Errorf(Warning, format, args...))
+	sc.Trigger(context.Background(), NewErrorEvent(Warning, fmt.Errorf(format, args...)))
 }
 
 // Errorf writes an event to the log and triggers event listeners.
 func (sc *Context) Errorf(format string, args ...interface{}) {
-	sc.Trigger(context.Background(), Errorf(Error, format, args...))
+	sc.Trigger(context.Background(), NewErrorEvent(Error, fmt.Errorf(format, args...)))
 }
 
 // Fatalf writes an event to the log and triggers event listeners.
 func (sc *Context) Fatalf(format string, args ...interface{}) {
-	sc.Trigger(context.Background(), Errorf(Fatal, format, args...))
+	sc.Trigger(context.Background(), NewErrorEvent(Fatal, fmt.Errorf(format, args...)))
 }
 
 // Warning logs a warning error to std err.
