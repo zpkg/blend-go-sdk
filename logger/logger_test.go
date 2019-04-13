@@ -80,9 +80,9 @@ func TestLoggerE2ESubContextFields(t *testing.T) {
 	sc.Trigger(context.Background(), NewMessageEvent(Info, "this is a triggered message"))
 	assert.Nil(log.Drain())
 
-	assert.Contains(output.String(), fmt.Sprintf("[info] this is infof %s=%s", fieldKey, fieldValue))
-	assert.Contains(output.String(), fmt.Sprintf("[error] this is errorf %s=%s", fieldKey, fieldValue))
-	assert.Contains(output.String(), fmt.Sprintf("[fatal] this is fatalf %s=%s", fieldKey, fieldValue))
-	assert.Contains(output.String(), fmt.Sprintf("[info] this is a triggered message %s=%s", fieldKey, fieldValue))
+	assert.Contains(output.String(), fmt.Sprintf("[info] this is infof\t%s=%s", fieldKey, fieldValue))
+	assert.Contains(output.String(), fmt.Sprintf("[error] this is errorf\t%s=%s", fieldKey, fieldValue))
+	assert.Contains(output.String(), fmt.Sprintf("[fatal] this is fatalf\t%s=%s", fieldKey, fieldValue))
+	assert.Contains(output.String(), fmt.Sprintf("[info] this is a triggered message\t%s=%s", fieldKey, fieldValue))
 
 }
