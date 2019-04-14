@@ -93,7 +93,7 @@ func Table(wr io.Writer, columns []string, rows [][]string) error {
 	io.WriteString(wr, string(TableTopRight))
 	io.WriteString(wr, "\n")
 
-	// write column names
+	// draw column names
 	io.WriteString(wr, string(TableVertBar))
 	for index, column := range columns {
 		writeWidth(wr, maxWidths[index], column)
@@ -104,6 +104,7 @@ func Table(wr io.Writer, columns []string, rows [][]string) error {
 	io.WriteString(wr, string(TableVertBar))
 	io.WriteString(wr, "\n")
 
+	// draw bottom of column row
 	io.WriteString(wr, string(TableMidLeft))
 	for index := range columns {
 		for x := 0; x < maxWidths[index]+2; x++ {
