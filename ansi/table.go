@@ -32,7 +32,7 @@ func TableForSlice(wr io.Writer, collection interface{}) error {
 	}
 
 	if cv.Kind() != reflect.Slice {
-		return ex.New("table for array; cannot iterate over non-slice collection")
+		return ex.New("table for slice; cannot iterate over non-slice collection")
 	}
 
 	ct := cv.Type()
