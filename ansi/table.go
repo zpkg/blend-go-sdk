@@ -24,6 +24,8 @@ const (
 )
 
 // TableForSlice prints a table for a given slice.
+// It will infer column names from the struct fields.
+// If it is a mixed array (i.e. []interface{}) it will probably panic.
 func TableForSlice(wr io.Writer, collection interface{}) error {
 	// infer the column names from the fields
 	cv := reflect.ValueOf(collection)
@@ -62,7 +64,7 @@ func TableForSlice(wr io.Writer, collection interface{}) error {
 // Table writes a table to a given writer.
 func Table(wr io.Writer, columns []string, rows [][]string) error {
 	if len(columns) == 0 {
-		return ex.New("invalid columns; empty")
+		return ex.New("table; invalid columns; column set is empty")
 	}
 
 	/* begin establish max widths of columns */
