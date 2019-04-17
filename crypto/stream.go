@@ -73,11 +73,11 @@ type StreamDecryptor struct {
 func (s *StreamEncryptor) Read(p []byte) (int, error) {
 	n, readErr := s.Source.Read(p)
 	if n > 0 {
+		s.Stream.XORKeyStream(p[:n], p[:n])
 		err := writeHash(s.Mac, p[:n])
 		if err != nil {
 			return n, ex.New(err)
 		}
-		s.Stream.XORKeyStream(p[:n], p[:n])
 		return n, readErr
 	}
 	return 0, io.EOF
@@ -92,11 +92,11 @@ func (s *StreamEncryptor) Meta() StreamMeta {
 func (s *StreamDecryptor) Read(p []byte) (int, error) {
 	n, readErr := s.Source.Read(p)
 	if n > 0 {
-		s.Stream.XORKeyStream(p[:n], p[:n])
 		err := writeHash(s.Mac, p[:n])
 		if err != nil {
 			return n, ex.New(err)
 		}
+		s.Stream.XORKeyStream(p[:n], p[:n])
 		return n, readErr
 	}
 	return 0, io.EOF
