@@ -20,7 +20,7 @@ export DB_SSLMODE
 
 all: format vet profanity test
 
-ci: vet profanity cover
+ci: vet profanity cover-ci
 
 new-install: deps install-all
 
@@ -93,6 +93,10 @@ test-verbose:
 cover:
 	@echo "$(VERSION)/$(GIT_REF) >> coverage"
 	@go run cmd/coverage/main.go
+
+cover-ci:
+	@echo "$(VERSION)/$(GIT_REF) >> coverage"
+	@GOMAXPROCS=1 go run cmd/coverage/main.go
 
 cover-enforce:
 	@echo "$(VERSION)/$(GIT_REF) >> coverage"
