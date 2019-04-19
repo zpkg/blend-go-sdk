@@ -25,8 +25,7 @@ ci: vet profanity cover
 new-install: deps install-all
 
 deps:
-	@go get github.com/lib/pq
-	@go get -u ./...
+	@go get ./...
 
 dev-deps:
 	@go get -d github.com/goreleaser/goreleaser
