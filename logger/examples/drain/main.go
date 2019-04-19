@@ -8,7 +8,6 @@ import (
 	"time"
 
 	"github.com/blend/go-sdk/logger"
-	"github.com/blend/go-sdk/uuid"
 )
 
 func main() {
@@ -16,10 +15,9 @@ func main() {
 
 	log.Listen(logger.Info, "randomly_slow", func(ctx context.Context, e logger.Event) {
 		if rand.Float64() < 0.2 {
-			uid := uuid.V4().String()
-			fmt.Println("randomly slow start", uid)
+			fmt.Println("randomly slow start")
 			time.Sleep(2000 * time.Millisecond)
-			fmt.Println("randomly slow stop", uid)
+			fmt.Println("randomly slow stop")
 		}
 	})
 
