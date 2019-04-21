@@ -102,6 +102,7 @@ type Errorable interface {
 
 // Log is a logger that implements the full suite of logging methods.
 type Log interface {
+	SubContexter
 	Triggerable
 	OutputReceiver
 	ErrorOutputReceiver
@@ -110,7 +111,6 @@ type Log interface {
 
 // FullLog is a logger that implements the full suite of logging methods.
 type FullLog interface {
-	SubContexter
 	Listenable
 	Log
 }
