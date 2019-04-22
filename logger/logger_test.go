@@ -56,10 +56,10 @@ func TestLoggerE2ESubContext(t *testing.T) {
 	defer cancel()
 	assert.Nil(log.DrainContext(ctx))
 
-	assert.Contains(output.String(), fmt.Sprintf("[info] [%s] this is infof", scID))
-	assert.Contains(output.String(), fmt.Sprintf("[error] [%s] this is errorf", scID))
-	assert.Contains(output.String(), fmt.Sprintf("[fatal] [%s] this is fatalf", scID))
-	assert.Contains(output.String(), fmt.Sprintf("[info] [%s] this is a triggered message", scID))
+	assert.Contains(output.String(), fmt.Sprintf("[%s] [info] this is infof", scID))
+	assert.Contains(output.String(), fmt.Sprintf("[%s] [error] this is errorf", scID))
+	assert.Contains(output.String(), fmt.Sprintf("[%s] [fatal] this is fatalf", scID))
+	assert.Contains(output.String(), fmt.Sprintf("[%s] [info] this is a triggered message", scID))
 }
 
 func TestLoggerE2ESubContextFields(t *testing.T) {
