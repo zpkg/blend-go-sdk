@@ -15,7 +15,7 @@ func TestOptLog(t *testing.T) {
 	assert := assert.New(t)
 
 	buf := new(bytes.Buffer)
-	log, err := logger.New(logger.OptOutput(buf))
+	log, err := logger.New(logger.OptOutput(buf), logger.OptAll())
 	assert.Nil(err)
 
 	server := httptest.NewServer(http.HandlerFunc(func(rw http.ResponseWriter, r *http.Request) {
@@ -25,4 +25,5 @@ func TestOptLog(t *testing.T) {
 	defer server.Close()
 
 	assert.Nil(New(server.URL, OptLog(log)).Discard())
+	assert.NotEmpty(buf.String())
 }
