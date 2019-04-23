@@ -13,10 +13,11 @@ import (
 func makeRequest(path string, arguments ...r2.Option) (*http.Response, error) {
 	fullOptions := append(arguments,
 		r2.OptPath(path),
-		r2.OptQueryValue("alskdfjads", "a;slfkjasdlfj"),
+		r2.OptQueryValue("limit", "10"),
+		r2.OptQueryValue("offset", "100"),
 	)
 
-	return r2.New("https://localhost:5000", fullOptions...).Do()
+	return r2.New("http://localhost:5000", fullOptions...).Do()
 }
 
 func main() {
@@ -28,7 +29,7 @@ func main() {
 		r2.OptQueryValue("offset", strconv.Itoa(page*pageSize)),
 	}
 
-	res, err := makeRequest("/alskdfjdasf", opts...)
+	res, err := makeRequest("/headers", opts...)
 	if err != nil {
 		log.Fatal(err)
 	}
