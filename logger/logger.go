@@ -38,8 +38,8 @@ func MustNew(options ...Option) *Logger {
 // All returns a new logger with all flags enabled.
 func All(options ...Option) *Logger {
 	return MustNew(append([]Option{
-		OptAll(),
 		OptConfigFromEnv(),
+		OptAll(),
 	}, options...)...)
 }
 
