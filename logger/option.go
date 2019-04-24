@@ -24,7 +24,7 @@ func OptConfig(cfg Config) Option {
 // It will panic if there is an erro.
 func OptConfigFromEnv() Option {
 	return func(l *Logger) error {
-		cfg := Config{}
+		var cfg Config
 		if err := env.Env().ReadInto(&cfg); err != nil {
 			return err
 		}
@@ -56,6 +56,16 @@ func OptOutput(output io.Writer) Option {
 		}
 		return nil
 	}
+}
+
+// OptSubContext sets an initial sub-context path.
+func OptSubContext(path ...string) Option {
+	return func(l *Logger) error { l.Context.Path = path; return nil }
+}
+
+// OptFields sets an initial sub-context fields.
+func OptFields(fields Fields) Option {
+	return func(l *Logger) error { l.Context.Fields = fields; return nil }
 }
 
 // OptJSON sets the output formatter for the logger as json.
