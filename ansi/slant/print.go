@@ -41,6 +41,7 @@ func Print(output io.Writer, phrase string) error {
 					charRow, _ = trimLeftSpaceMax(charRow, left)
 				}
 			}
+			charRow = replaceRunes(charRow, font.Hardblank, ' ')
 			row = append(row, charRow...)
 		}
 		rows = append(rows, row)
@@ -162,4 +163,13 @@ func trimRight(row []rune, count int) []rune {
 		return row
 	}
 	return row[:len(row)-count]
+}
+
+func replaceRunes(row []rune, old, new rune) []rune {
+	for index := range row {
+		if row[index] == old {
+			row[index] = new
+		}
+	}
+	return row
 }

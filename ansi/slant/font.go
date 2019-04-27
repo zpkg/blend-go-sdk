@@ -9,7 +9,7 @@ type Font struct {
 	// Width of the widest char
 	Width int
 	// Hardblank symbol is the non-smushable space character.
-	Hardblank string
+	Hardblank rune
 	// A string for each line of the char
 	Letters [][]string
 }
