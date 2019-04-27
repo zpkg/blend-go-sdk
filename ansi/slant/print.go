@@ -3,7 +3,6 @@ package slant
 import (
 	"bytes"
 	"errors"
-	"fmt"
 	"io"
 	"unicode"
 )
@@ -48,7 +47,7 @@ func Print(output io.Writer, phrase string) error {
 
 	var err error
 	for _, row := range rows {
-		_, err = fmt.Fprintln(output, string(row))
+		_, err = io.WriteString(output, string(row)+"\n")
 		if err != nil {
 			return err
 		}
