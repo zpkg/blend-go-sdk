@@ -23,9 +23,9 @@ func Print(output io.Writer, phrase string) error {
 
 	phraseRunes := []rune(phrase)
 
-	var rows [][]rune
 	var row, charRow []rune
 	var trimCount, left int
+	var err error
 	for r := 0; r < font.Height; r++ {
 		row = nil
 		for index, char := range phraseRunes {
@@ -44,11 +44,6 @@ func Print(output io.Writer, phrase string) error {
 			charRow = replaceRunes(charRow, font.Hardblank, ' ')
 			row = append(row, charRow...)
 		}
-		rows = append(rows, row)
-	}
-
-	var err error
-	for _, row := range rows {
 		_, err = fmt.Fprintln(output, string(row))
 		if err != nil {
 			return err
