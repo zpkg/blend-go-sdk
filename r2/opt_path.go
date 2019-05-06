@@ -1,6 +1,8 @@
 package r2
 
-import "net/url"
+import (
+	"net/url"
+)
 
 // OptPath sets the url path.
 func OptPath(path string) Option {
