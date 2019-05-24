@@ -224,7 +224,7 @@ func (dbc *Connection) ExecContext(ctx context.Context, statement string, args .
 	return dbc.Invoke(OptContext(ctx)).Exec(statement, args...)
 }
 
-// ExecInTxContext is a helper stub for .Invoke(OptTx(tx)).Query(...).
+// ExecInTxContext is a helper stub for .Invoke(OptContext(ctx), OptTx(tx)).Exec(...).
 func (dbc *Connection) ExecInTxContext(ctx context.Context, statement string, tx *sql.Tx, args ...interface{}) error {
 	return dbc.Invoke(OptTx(tx), OptContext(ctx)).Exec(statement, args...)
 }
@@ -244,7 +244,7 @@ func (dbc *Connection) QueryContext(ctx context.Context, statement string, args 
 	return dbc.Invoke(OptContext(ctx)).Query(statement, args...)
 }
 
-// QueryInTxContext is a helper stub for .Invoke(OptContext(ctx), OptTx(tx).Query(...).
+// QueryInTxContext is a helper stub for .Invoke(OptContext(ctx), OptTx(tx)).Query(...).
 func (dbc *Connection) QueryInTxContext(ctx context.Context, statement string, tx *sql.Tx, args ...interface{}) *Query {
 	return dbc.Invoke(OptTx(tx),OptContext(ctx)).Query(statement, args...)
 }
