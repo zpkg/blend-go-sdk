@@ -33,8 +33,8 @@ func NewConfigFromDSN(dsn string) (*Config, error) {
 			config.Password = strings.TrimPrefix(piece, "password=")
 		} else if strings.HasPrefix(piece, "sslmode=") {
 			config.SSLMode = strings.TrimPrefix(piece, "sslmode=")
-		} else if strings.HasPrefix(piece, "schema=") {
-			config.Schema = strings.TrimPrefix(piece, "schema=")
+		} else if strings.HasPrefix(piece, "search_path=") {
+			config.Schema = strings.TrimPrefix(piece, "search_path=")
 		} else if strings.HasPrefix(piece, "connect_timeout=") {
 			config.ConnectTimeout, err = strconv.Atoi(strings.TrimPrefix(piece, "connect_timeout="))
 			if err != nil {
@@ -144,6 +144,14 @@ func (c Config) DatabaseOrDefault(inherited ...string) string {
 	return DefaultDatabase
 }
 
+// SchemaOrDefault returns the schema on the search_path or the default ("public")
+func (c Config) SchemaOrDefault(inherited ...string) string {
+	if c.Schema != "" {
+		return c.Schema
+	}
+	return DefaultSchema
+}
+
 // IdleConnectionsOrDefault returns the number of idle connections or a default.
 func (c Config) IdleConnectionsOrDefault(inherited ...int) int {
 	if c.IdleConnections > 0 {
@@ -207,6 +215,9 @@ func (c Config) CreateDSN() string {
 	}
 	if c.ConnectTimeout > 0 {
 		queryArgs.Add("connect_timeout", strconv.Itoa(c.ConnectTimeout))
+	}
+	if c.Schema != "" {
+		queryArgs.Add("search_path", c.Schema)
 	}
 
 	dsn.RawQuery = queryArgs.Encode()

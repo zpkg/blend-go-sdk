@@ -203,9 +203,20 @@ func (dbc *Connection) PingContext(context context.Context) (err error) {
 	return
 }
 
+// DefaultSchema returns the schema on the search_path for requests over this connection. It can be used to query
+// other schemas, but that must be done by manually specifying them in the query.
+func (dbc *Connection) DefaultSchema() string {
+	return dbc.Config.SchemaOrDefault()
+}
+
 // Exec is a helper stub for .Invoke(...).Exec(...).
 func (dbc *Connection) Exec(statement string, args ...interface{}) error {
 	return dbc.Invoke().Exec(statement, args...)
+}
+
+// ExecInTx is a helper stub for .Invoke(OptTx(tx)).Query(...).
+func (dbc *Connection) ExecInTx(statement string, tx *sql.Tx, args ...interface{}) error {
+	return dbc.Invoke(OptTx(tx)).Exec(statement, args...)
 }
 
 // ExecContext is a helper stub for .Invoke(OptContext(ctx)).Exec(...).
@@ -213,12 +224,27 @@ func (dbc *Connection) ExecContext(ctx context.Context, statement string, args .
 	return dbc.Invoke(OptContext(ctx)).Exec(statement, args...)
 }
 
+// ExecInTxContext is a helper stub for .Invoke(OptTx(tx)).Query(...).
+func (dbc *Connection) ExecInTxContext(ctx context.Context, statement string, tx *sql.Tx, args ...interface{}) error {
+	return dbc.Invoke(OptTx(tx), OptContext(ctx)).Exec(statement, args...)
+}
+
 // Query is a helper stub for .Invoke(...).Query(...).
 func (dbc *Connection) Query(statement string, args ...interface{}) *Query {
 	return dbc.Invoke().Query(statement, args...)
 }
 
+// QueryContext is a helper stub for .Invoke(OptTx(tx)).Query(...).
+func (dbc *Connection) QueryInTx(statement string, tx *sql.Tx, args ...interface{}) *Query {
+	return dbc.Invoke(OptTx(tx)).Query(statement, args...)
+}
+
 // QueryContext is a helper stub for .Invoke(OptContext(ctx)).Query(...).
 func (dbc *Connection) QueryContext(ctx context.Context, statement string, args ...interface{}) *Query {
 	return dbc.Invoke(OptContext(ctx)).Query(statement, args...)
+}
+
+// QueryInTxContext is a helper stub for .Invoke(OptContext(ctx), OptTx(tx).Query(...).
+func (dbc *Connection) QueryInTxContext(ctx context.Context, statement string, tx *sql.Tx, args ...interface{}) *Query {
+	return dbc.Invoke(OptTx(tx),OptContext(ctx)).Query(statement, args...)
 }

@@ -108,7 +108,7 @@ func TestCreateConstraint(t *testing.T) {
 	err = createTestConstraint(tableName, constraintName, tx)
 	assert.Nil(err)
 
-	exists, err := PredicateConstraintExists(db.Default(), tx, constraintName)
+	exists, err := PredicateConstraintExists(db.Default(), tx, tableName, constraintName)
 	assert.Nil(err)
 	assert.True(exists, "constraint does not exist")
 }
