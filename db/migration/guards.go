@@ -67,57 +67,57 @@ func IfNotExists(statement string) GuardFunc {
 	})
 }
 
-// GuardPredicate wraps a Predicate in a GuardFunc
-func GuardPredicate(description string, p Predicate, arg1 string) GuardFunc {
+// guardPredicate wraps a predicate in a GuardFunc
+func guardPredicate(description string, p predicate, arg1 string) GuardFunc {
 	return Guard(description, func(c *db.Connection, tx *sql.Tx) (bool, error) {
 		return p(c, tx, arg1)
 	})
 }
 
-// GuardNotPredicate inverts a Predicate, and wraps that in a GuardFunc
-func GuardNotPredicate(description string, p Predicate, arg1 string) GuardFunc {
+// guardNotPredicate inverts a predicate, and wraps that in a GuardFunc
+func guardNotPredicate(description string, p predicate, arg1 string) GuardFunc {
 	return Guard(description, func(c *db.Connection, tx *sql.Tx) (bool, error) {
 		return Not(p(c, tx, arg1))
 	})
 }
 
-// GuardPredicate2 wraps a Predicate2 in a GuardFunc
-func GuardPredicate2(description string, p Predicate2, arg1, arg2 string) GuardFunc {
+// guardPredicate2 wraps a predicate2 in a GuardFunc
+func guardPredicate2(description string, p predicate2, arg1, arg2 string) GuardFunc {
 	return Guard(description, func(c *db.Connection, tx *sql.Tx) (bool, error) {
 		return p(c, tx, arg1, arg2)
 	})
 }
 
-// GuardNotPredicate2 inverts a Predicate2, and wraps that in a GuardFunc
-func GuardNotPredicate2(description string, p Predicate2, arg1, arg2 string) GuardFunc {
+// guardNotPredicate2 inverts a predicate2, and wraps that in a GuardFunc
+func guardNotPredicate2(description string, p predicate2, arg1, arg2 string) GuardFunc {
 	return Guard(description, func(c *db.Connection, tx *sql.Tx) (bool, error) {
 		return Not(p(c, tx, arg1, arg2))
 	})
 }
 
-// GuardPredicate3 wraps a Predicate3 in a GuardFunc
-func GuardPredicate3(description string, p Predicate3, arg1, arg2, arg3 string) GuardFunc {
+// guardPredicate3 wraps a predicate3 in a GuardFunc
+func guardPredicate3(description string, p predicate3, arg1, arg2, arg3 string) GuardFunc {
 	return Guard(description, func(c *db.Connection, tx *sql.Tx) (bool, error) {
 		return p(c, tx, arg1, arg2, arg3)
 	})
 }
 
-// GuardNotPredicate3 inverts a Predicate3, and wraps that in a GuardFunc
-func GuardNotPredicate3(description string, p Predicate3, arg1, arg2, arg3 string) GuardFunc {
+// guardNotPredicate3 inverts a predicate3, and wraps that in a GuardFunc
+func guardNotPredicate3(description string, p predicate3, arg1, arg2, arg3 string) GuardFunc {
 	return Guard(description, func(c *db.Connection, tx *sql.Tx) (bool, error) {
 		return Not(p(c, tx, arg1, arg2, arg3))
 	})
 }
 
 
-// Predicate is a function that evaluates based on a string param.
-type Predicate func(*db.Connection, *sql.Tx, string) (bool, error)
+// predicate is a function that evaluates based on a string param.
+type predicate func(*db.Connection, *sql.Tx, string) (bool, error)
 
-// Predicate2 is a function that evaluates based on two string params.
-type Predicate2 func(*db.Connection, *sql.Tx, string, string) (bool, error)
+// predicate2 is a function that evaluates based on two string params.
+type predicate2 func(*db.Connection, *sql.Tx, string, string) (bool, error)
 
-// Predicate3 is a function that evaluates based on three string params.
-type Predicate3 func(*db.Connection, *sql.Tx, string, string, string) (bool, error)
+// predicate3 is a function that evaluates based on three string params.
+type predicate3 func(*db.Connection, *sql.Tx, string, string, string) (bool, error)
 
 // Not inverts the output of a predicate.
 func Not(proceed bool, err error) (bool, error) {
