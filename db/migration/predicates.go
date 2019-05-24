@@ -14,8 +14,8 @@ func PredicateTableExists(c *db.Connection, tx *sql.Tx, tableName string) (bool,
 
 // PredicateTableExistsInSchema returns if a table exists in a specific schema on the given connection.
 func PredicateTableExistsInSchema(c *db.Connection, tx *sql.Tx, schemaName, tableName string) (bool, error) {
-	return c.QueryInTx(`SELECT 1 FROM pg_catalog.pg_tables WHERE tablename = $1 AND schemaname = $2`,
-		tx, strings.ToLower(tableName), strings.ToLower(schemaName)).Any()
+	return c.Invoke(db.OptTx(tx)).Query(`SELECT 1 FROM pg_catalog.pg_tables WHERE tablename = $1 AND schemaname = $2`,
+		strings.ToLower(tableName), strings.ToLower(schemaName)).Any()
 }
 
 // PredicateColumnExists returns if a column exists on a table in the default schema of the given connection.
@@ -25,9 +25,9 @@ func PredicateColumnExists(c *db.Connection, tx *sql.Tx, tableName, columnName s
 
 // PredicateColumnExistsInSchema returns if a column exists on a table in a specific schema on the given connection.
 func PredicateColumnExistsInSchema(c *db.Connection, tx *sql.Tx, schemaName, tableName, columnName string) (bool, error) {
-	return c.QueryInTx(
+	return c.Invoke(db.OptTx(tx)).Query(
 		`SELECT 1 FROM information_schema.columns WHERE column_name = $1 AND table_name = $2 AND table_schema = $3`,
-		tx, strings.ToLower(columnName), strings.ToLower(tableName), strings.ToLower(schemaName)).Any()
+		strings.ToLower(columnName), strings.ToLower(tableName), strings.ToLower(schemaName)).Any()
 }
 
 // PredicateConstraintExists returns if a constraint exists on a table in the default schema of the given connection.
@@ -37,9 +37,9 @@ func PredicateConstraintExists(c *db.Connection, tx *sql.Tx, tableName, constrai
 
 // PredicateConstraintExistsInSchema returns if a constraint exists on a table in a specific schema on the given connection.
 func PredicateConstraintExistsInSchema(c *db.Connection, tx *sql.Tx, schemaName, tableName, constraintName string) (bool, error) {
-	return c.QueryInTx(
+	return c.Invoke(db.OptTx(tx)).Query(
 		`SELECT 1 FROM information_schema.constraint_column_usage WHERE constraint_name = $1 AND table_name = $2 AND table_schema = $3`,
-		tx, strings.ToLower(constraintName), strings.ToLower(tableName), strings.ToLower(schemaName)).Any()
+		strings.ToLower(constraintName), strings.ToLower(tableName), strings.ToLower(schemaName)).Any()
 }
 
 // PredicateIndexExists returns if a index exists on a table in the default schema of the given connection.
@@ -49,12 +49,12 @@ func PredicateIndexExists(c *db.Connection, tx *sql.Tx, tableName, indexName str
 
 // PredicateIndexExistsInSchema returns if a index exists on a table in a specific schema on the given connection.
 func PredicateIndexExistsInSchema(c *db.Connection, tx *sql.Tx, schemaName, tableName, indexName string) (bool, error) {
-	return c.QueryInTx(
+	return c.Invoke(db.OptTx(tx)).Query(
 		`SELECT 1 FROM pg_catalog.pg_indexes where indexname = $1 and tablename = $2 AND schemaname = $3`,
-		tx, strings.ToLower(indexName), strings.ToLower(tableName), strings.ToLower(schemaName)).Any()
+		strings.ToLower(indexName), strings.ToLower(tableName), strings.ToLower(schemaName)).Any()
 }
 
 // PredicateRoleExists returns if a role exists or not.
 func PredicateRoleExists(c *db.Connection, tx *sql.Tx, roleName string) (bool, error) {
-	return c.QueryInTx(`SELECT 1 FROM pg_catalog.pg_roles WHERE rolname ilike $1`, tx, roleName).Any()
+	return c.Invoke(db.OptTx(tx)).Query(`SELECT 1 FROM pg_catalog.pg_roles WHERE rolname ilike $1`, roleName).Any()
 }
