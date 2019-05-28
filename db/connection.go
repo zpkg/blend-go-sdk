@@ -3,6 +3,7 @@ package db
 import (
 	"context"
 	"database/sql"
+	"github.com/blend/go-sdk/env"
 	"sync"
 	"time"
 
@@ -12,7 +13,7 @@ import (
 )
 
 const (
-	//DBNilError is a common error
+	// DBNilError is a common error
 	DBNilError = "connection is nil"
 )
 
@@ -21,6 +22,8 @@ const (
 	runeNewline = rune('\n')
 	runeTab     = rune('\t')
 	runeSpace   = rune(' ')
+
+	publicSchemaWarning = "This application is using the public schema in production, which is bad practice. Please consider migrating your data to a schema owned by your service account"
 )
 
 // --------------------------------------------------------------------------------
@@ -115,6 +118,10 @@ func (dbc *Connection) Open() error {
 	dbConn, err := sql.Open(dbc.Config.EngineOrDefault(), namedValues)
 	if err != nil {
 		return Error(err)
+	}
+
+	if env.Env().IsProduction() && dbc.DefaultSchema() == DefaultSchema && dbc.Log != nil{
+		dbc.Log.Warningf(publicSchemaWarning)
 	}
 
 	dbc.PlanCache.WithConnection(dbConn)

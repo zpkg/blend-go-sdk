@@ -85,7 +85,15 @@ type Config struct {
 	Port string `json:"port,omitempty" yaml:"port,omitempty" env:"DB_PORT"`
 	// DBName is the database name
 	Database string `json:"database,omitempty" yaml:"database,omitempty" env:"DB_NAME"`
-	// Schema is the application schema within the database, defaults to `public`.
+	// Schema is the application schema within the database, defaults to `public`. This schema is used to set the
+	// Postgres "search_path" If you want to reference tables in other schemas, you'll need to specify those schemas
+	// in your queries e.g. "SELECT * FROM schema_two.table_one..."
+	// Using the public schema in a production application is considered bad practice as newly created roles will have
+	// visibility into this data by default. We strongly recommend specifying this option and using a schema that is
+	// owned by your service's role
+	// We recommend against setting a multi-schema search_path, but if you really want to, you can dbc.Invoke().Exec
+	// a SET statement on a newly opened connection such as "SET search_path = 'schema_one,schema_two';" Again, we
+	// recommend against this practice and encourage you to specify schema names not set in this field.
 	Schema string `json:"schema,omitempty" yaml:"schema,omitempty" env:"DB_SCHEMA"`
 	// Username is the username for the connection via password auth.
 	Username string `json:"username,omitempty" yaml:"username,omitempty" env:"DB_USER"`
@@ -144,7 +152,8 @@ func (c Config) DatabaseOrDefault(inherited ...string) string {
 	return DefaultDatabase
 }
 
-// SchemaOrDefault returns the schema on the search_path or the default ("public")
+// SchemaOrDefault returns the schema on the search_path or the default ("public"). It's considered bad practice to
+// use the public schema in production
 func (c Config) SchemaOrDefault(inherited ...string) string {
 	if c.Schema != "" {
 		return c.Schema
