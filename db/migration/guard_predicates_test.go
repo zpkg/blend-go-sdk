@@ -20,7 +20,7 @@ func TestGuardsReal(t *testing.T) {
 	iName := "index_foo"
 
 	var didRun bool
-	action := Actions(func(ctx context.Context, c *db.Connection, itx *sql.Tx, _ ...db.InvocationOption) error {
+	action := Actions(func(ctx context.Context, c *db.Connection, itx *sql.Tx) error {
 		didRun = true
 		return nil
 	})
@@ -109,7 +109,7 @@ func TestGuardsRealSchema(t *testing.T) {
 	assert.Nil(err)
 
 	var didRun bool
-	action := Actions(func(ctx context.Context, c *db.Connection, itx *sql.Tx, _ ...db.InvocationOption) error {
+	action := Actions(func(ctx context.Context, c *db.Connection, itx *sql.Tx) error {
 		didRun = true
 		return nil
 	})

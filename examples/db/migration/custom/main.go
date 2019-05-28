@@ -19,29 +19,29 @@ func UserNotExists(username string) migration.GuardFunc {
 }
 
 func main() {
-	suite := migration.New(
-		migration.Group(
-			migration.Step(
+	suite := migration.NewWithGroups(
+		migration.NewWithActions(
+			migration.NewStep(
 				migration.TableNotExists("users"),
 				migration.Statements(
 					"CREATE TABLE users (username varchar(255) primary key);",
 				),
 			),
 		),
-		migration.Group(
-			migration.Step(
+		migration.NewWithActions(
+			migration.NewStep(
 				UserNotExists("bailey"),
 				migration.Exec("INSERT INTO users (username) VALUES ($1)", "bailey"),
 			),
 		),
-		migration.Group(
-			migration.Step(
+		migration.NewWithActions(
+			migration.NewStep(
 				UserNotExists("bailey"),
 				migration.Exec("INSERT INTO users (username) VALUES ($1)", "bailey"),
 			),
 		),
-		migration.Group(
-			migration.Step(
+		migration.NewWithActions(
+			migration.NewStep(
 				migration.TableExists("users"),
 				migration.Statements(
 					"DROP TABLE users;",

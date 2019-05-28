@@ -27,7 +27,7 @@ func randomName() string {
 
 func createTestTable(tableName string, tx *sql.Tx) error {
 	body := fmt.Sprintf("CREATE TABLE %s (id int, name varchar(32));", tableName)
-	step := Step(TableNotExists(tableName), Statements(body))
+	step := NewStep(TableNotExists(tableName), Statements(body))
 	return step.Action(context.Background(), defaultDB(), tx)
 }
 
@@ -38,25 +38,25 @@ func insertTestValue(tableName string, id int, name string, tx *sql.Tx) error {
 
 func createTestColumn(tableName, columnName string, tx *sql.Tx) error {
 	body := fmt.Sprintf("ALTER TABLE %s ADD %s varchar(32);", tableName, columnName)
-	step := Step(ColumnNotExists(tableName, columnName), Statements(body))
+	step := NewStep(ColumnNotExists(tableName, columnName), Statements(body))
 	return step.Action(context.Background(), defaultDB(), tx)
 }
 
 func createTestConstraint(tableName, constraintName string, tx *sql.Tx) error {
 	body := fmt.Sprintf("ALTER TABLE %s ADD CONSTRAINT %s UNIQUE (name);", tableName, constraintName)
-	step := Step(ColumnNotExists(tableName, constraintName), Statements(body))
+	step := NewStep(ColumnNotExists(tableName, constraintName), Statements(body))
 	return step.Action(context.Background(), defaultDB(), tx)
 }
 
 func createTestIndex(tableName, indexName string, tx *sql.Tx) error {
 	body := fmt.Sprintf("CREATE INDEX %s ON %s (name);", indexName, tableName)
-	step := Step(IndexNotExists(tableName, indexName), Statements(body))
+	step := NewStep(IndexNotExists(tableName, indexName), Statements(body))
 	return step.Action(context.Background(), defaultDB(), tx)
 }
 
 func createTestRole(roleName string, tx *sql.Tx) error {
 	body := fmt.Sprintf("CREATE ROLE %s;", roleName)
-	step := Step(RoleNotExists(roleName), Statements(body))
+	step := NewStep(RoleNotExists(roleName), Statements(body))
 	return step.Action(context.Background(), defaultDB(), tx)
 }
 
