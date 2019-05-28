@@ -91,9 +91,10 @@ type Config struct {
 	// Using the public schema in a production application is considered bad practice as newly created roles will have
 	// visibility into this data by default. We strongly recommend specifying this option and using a schema that is
 	// owned by your service's role
-	// We recommend against setting a multi-schema search_path, but if you really want to, you can dbc.Invoke().Exec
-	// a SET statement on a newly opened connection such as "SET search_path = 'schema_one,schema_two';" Again, we
-	// recommend against this practice and encourage you to specify schema names not set in this field.
+	// We recommend against setting a multi-schema search_path, but if you really want to, you provide multiple comma-
+	// separated schema names as the value for this config, or you can dbc.Invoke().Exec a SET statement on a newly
+	// opened connection such as "SET search_path = 'schema_one,schema_two';" Again, we recommend against this practice
+	// and encourage you to specify schema names beyond the first in your queries.
 	Schema string `json:"schema,omitempty" yaml:"schema,omitempty" env:"DB_SCHEMA"`
 	// Username is the username for the connection via password auth.
 	Username string `json:"username,omitempty" yaml:"username,omitempty" env:"DB_USER"`
