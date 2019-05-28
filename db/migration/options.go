@@ -7,7 +7,7 @@ type SuiteOption func(s *Suite)
 
 // OptGroups allows you to add groups to the Suite. If you want, multiple OptGroups can be applied to the same Suite.
 // They are additive.
-func OptGroups(groups ...*GroupedActions) SuiteOption {
+func OptGroups(groups ...*Group) SuiteOption {
 	return func(s *Suite) {
 		if len(s.Groups) == 0 {
 			s.Groups = groups
@@ -25,13 +25,13 @@ func OptLog(log logger.Log) SuiteOption {
 	}
 }
 
-// GroupOption is an option for migration Groups (GroupedActions)
-type GroupOption func(g *GroupedActions)
+// GroupOption is an option for migration Groups (Group)
+type GroupOption func(g *Group)
 
 // OptActions allows you to add actions to the NewGroup. If you want, multiple OptActions can be applied to the same NewGroup.
 // They are additive.
 func OptActions(actions ...Actionable) GroupOption {
-	return func(g *GroupedActions) {
+	return func(g *Group) {
 		if len(g.Actions) == 0 {
 			g.Actions = actions
 		} else {
@@ -43,7 +43,7 @@ func OptActions(actions ...Actionable) GroupOption {
 // OptNoTransaction will allow this group to be run outside of a transaction. Use this to concurrently create indices
 // and perform other actions that cannot be executed in a Tx
 func OptNoTransaction() GroupOption {
-	return func(g *GroupedActions) {
+	return func(g *Group) {
 		g.NoTransaction = true
 	}
 }

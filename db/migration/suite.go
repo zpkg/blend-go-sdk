@@ -11,22 +11,22 @@ import (
 
 // New returns a new suite of groups.
 func New(options ...SuiteOption) *Suite {
-	s := &Suite{}
+	s := Suite{}
 	for _, option := range options {
-		option(s)
+		option(&s)
 	}
-	return s
+	return &s
 }
 
-// NewWithGroups is a helper for "New(OptGroups(groups ...*GroupedActions))"
-func NewWithGroups(actions ...*GroupedActions) *Suite {
+// NewWithGroups is a helper for "New(OptGroups(groups ...*Group))"
+func NewWithGroups(actions ...*Group) *Suite {
 	return New(OptGroups(actions...))
 }
 
 // Suite is a migration suite.
 type Suite struct {
 	Log    logger.Log
-	Groups []*GroupedActions
+	Groups []*Group
 
 	applied int
 	skipped int

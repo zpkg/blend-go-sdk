@@ -8,29 +8,31 @@ import (
 	"github.com/blend/go-sdk/ex"
 )
 
-// NewGroup creates a new GroupedActions from a given list of actionable.
-func NewGroup(options ...GroupOption) *GroupedActions {
-	g := &GroupedActions{}
+// NewGroup creates a new Group from a given list of actionable.
+func NewGroup(options ...GroupOption) *Group {
+	g := Group{}
 	for _, o := range options {
-		o(g)
+		o(&g)
 	}
-	return g
+	return &g
 }
 
-// NewWithActions is a helper for "migrations.NewGroup(migrations.OptActions(actions ...migration.Actionable))"
-func NewWithActions(actions ...Actionable) *GroupedActions {
+// NewGroupWithActions is a helper for "migrations.NewGroup(migrations.OptActions(actions ...migration.Actionable))"
+func NewGroupWithActions(actions ...Actionable) *Group {
 	return NewGroup(OptActions(actions...))
 }
 
-// GroupedActions is an atomic series of migration actions.
-// It uses transactions to apply these actions as an atomic unit.
-type GroupedActions struct{
+// Group is an series of migration actions.
+// It uses normally transactions to apply these actions as an atomic unit, but this transaction can be bypassed by
+// setting the NoTransaction flag to true. This allows the use of CONCURRENT index creation and other operations that
+// postgres will not allow within a transaction.
+type Group struct{
 	Actions []Actionable
 	NoTransaction bool
 }
 
 // Action runs the groups actions within a transaction.
-func (ga *GroupedActions) Action(ctx context.Context, c *db.Connection) (err error) {
+func (ga *Group) Action(ctx context.Context, c *db.Connection) (err error) {
 	var tx *sql.Tx = nil
 	if !ga.NoTransaction {
 		tx, err = c.Begin()

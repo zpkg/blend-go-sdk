@@ -20,7 +20,7 @@ func UserNotExists(username string) migration.GuardFunc {
 
 func main() {
 	suite := migration.NewWithGroups(
-		migration.NewWithActions(
+		migration.NewGroupWithActions(
 			migration.NewStep(
 				migration.TableNotExists("users"),
 				migration.Statements(
@@ -28,19 +28,19 @@ func main() {
 				),
 			),
 		),
-		migration.NewWithActions(
+		migration.NewGroupWithActions(
 			migration.NewStep(
 				UserNotExists("bailey"),
 				migration.Exec("INSERT INTO users (username) VALUES ($1)", "bailey"),
 			),
 		),
-		migration.NewWithActions(
+		migration.NewGroupWithActions(
 			migration.NewStep(
 				UserNotExists("bailey"),
 				migration.Exec("INSERT INTO users (username) VALUES ($1)", "bailey"),
 			),
 		),
-		migration.NewWithActions(
+		migration.NewGroupWithActions(
 			migration.NewStep(
 				migration.TableExists("users"),
 				migration.Statements(
