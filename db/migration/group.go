@@ -24,17 +24,17 @@ func NewGroupWithActions(actions ...Actionable) *Group {
 
 // Group is an series of migration actions.
 // It uses normally transactions to apply these actions as an atomic unit, but this transaction can be bypassed by
-// setting the NoTransaction flag to true. This allows the use of CONCURRENT index creation and other operations that
+// setting the SkipTransaction flag to true. This allows the use of CONCURRENT index creation and other operations that
 // postgres will not allow within a transaction.
 type Group struct{
-	Actions []Actionable
-	NoTransaction bool
+	Actions         []Actionable
+	SkipTransaction bool
 }
 
 // Action runs the groups actions within a transaction.
 func (ga *Group) Action(ctx context.Context, c *db.Connection) (err error) {
 	var tx *sql.Tx = nil
-	if !ga.NoTransaction {
+	if !ga.SkipTransaction {
 		tx, err = c.Begin()
 		if err != nil {
 			return

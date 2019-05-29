@@ -40,10 +40,10 @@ func OptActions(actions ...Actionable) GroupOption {
 	}
 }
 
-// OptNoTransaction will allow this group to be run outside of a transaction. Use this to concurrently create indices
+// OptSkipTransaction will allow this group to be run outside of a transaction. Use this to concurrently create indices
 // and perform other actions that cannot be executed in a Tx
-func OptNoTransaction() GroupOption {
+func OptSkipTransaction() GroupOption {
 	return func(g *Group) {
-		g.NoTransaction = true
+		g.SkipTransaction = true
 	}
 }
