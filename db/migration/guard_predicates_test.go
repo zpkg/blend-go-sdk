@@ -25,6 +25,15 @@ func TestGuardPredicatesReal(t *testing.T) {
 		return nil
 	})
 
+	err = SchemaExists("public")(context.Background(), defaultDB(), tx, action)
+	assert.Nil(err)
+	assert.True(didRun)
+
+	didRun = false
+	err = SchemaNotExists("public")(context.Background(), defaultDB(), tx, action)
+	assert.Nil(err)
+	assert.False(didRun)
+
 	err = TableExists(tName)(context.Background(), defaultDB(), tx, action)
 	assert.Nil(err)
 	assert.False(didRun)
