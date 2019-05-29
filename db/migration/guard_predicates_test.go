@@ -8,7 +8,7 @@ import (
 	"testing"
 )
 
-func TestGuardsReal(t *testing.T) {
+func TestGuardPredicatesReal(t *testing.T) {
 	assert := assert.New(t)
 	tx, err := defaultDB().Begin()
 	assert.Nil(err)
@@ -93,7 +93,7 @@ func TestGuardsReal(t *testing.T) {
 	assert.True(didRun)
 }
 
-func TestGuardsRealSchema(t *testing.T) {
+func TestGuardPredicatsRealSchema(t *testing.T) {
 	assert := assert.New(t)
 	tx, err := defaultDB().Begin()
 	assert.Nil(err)
