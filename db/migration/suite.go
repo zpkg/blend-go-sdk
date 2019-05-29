@@ -11,7 +11,7 @@ import (
 
 // New returns a new suite of groups.
 func New(options ...SuiteOption) *Suite {
-	s := Suite{}
+	var s Suite
 	for _, option := range options {
 		option(&s)
 	}
