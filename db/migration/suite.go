@@ -28,10 +28,10 @@ type Suite struct {
 	Log    logger.Log
 	Groups []*Group
 
-	applied int
-	skipped int
-	failed  int
-	total   int
+	Applied int
+	Skipped int
+	Failed  int
+	Total   int
 }
 
 // Apply applies the suite.
@@ -53,29 +53,29 @@ func (s *Suite) Apply(ctx context.Context, c *db.Connection) (err error) {
 
 // Applyf writes an applied step message.
 func (s *Suite) Applyf(ctx context.Context, format string, args ...interface{}) {
-	s.applied = s.applied + 1
-	s.total = s.total + 1
+	s.Applied = s.Applied + 1
+	s.Total = s.Total + 1
 	s.Write(ctx, StatApplied, fmt.Sprintf(format, args...))
 }
 
 // Skipf skips a given step.
 func (s *Suite) Skipf(ctx context.Context, format string, args ...interface{}) {
-	s.skipped = s.skipped + 1
-	s.total = s.total + 1
+	s.Skipped = s.Skipped + 1
+	s.Total = s.Total + 1
 	s.Write(ctx, StatSkipped, fmt.Sprintf(format, args...))
 }
 
 // Errorf writes an error for a given step.
 func (s *Suite) Errorf(ctx context.Context, format string, args ...interface{}) {
-	s.failed = s.failed + 1
-	s.total = s.total + 1
+	s.Failed = s.Failed + 1
+	s.Total = s.Total + 1
 	s.Write(ctx, StatFailed, fmt.Sprintf(format, args...))
 }
 
 // Error
 func (s *Suite) Error(ctx context.Context, err error) error {
-	s.failed = s.failed + 1
-	s.total = s.total + 1
+	s.Failed = s.Failed + 1
+	s.Total = s.Total + 1
 	s.Write(ctx, StatFailed, fmt.Sprintf("%v", err))
 	return err
 }
@@ -86,10 +86,10 @@ func (s *Suite) Write(ctx context.Context, result, body string) {
 
 // WriteStats writes the stats if a logger is configured.
 func (s *Suite) WriteStats(ctx context.Context) {
-	logger.MaybeTrigger(ctx, s.Log, NewStatsEvent(s.applied, s.skipped, s.failed, s.total))
+	logger.MaybeTrigger(ctx, s.Log, NewStatsEvent(s.Applied, s.Skipped, s.Failed, s.Total))
 }
 
 // Results provides a window into the results of this migration
 func (s *Suite) Results() (applied, skipped, failed, total int) {
-	return s.applied, s.skipped, s.failed, s.total
+	return s.Applied, s.Skipped, s.Failed, s.Total
 }
