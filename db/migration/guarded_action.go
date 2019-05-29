@@ -22,6 +22,6 @@ type Step struct {
 }
 
 // Action implements the Actionable interface and runs the body if the provided guard passes.
-func (ga Step) Action(ctx context.Context, c *db.Connection, tx *sql.Tx) error {
+func (ga *Step) Action(ctx context.Context, c *db.Connection, tx *sql.Tx) error {
 	return ga.Guard(ctx, c, tx, ga.Body)
 }

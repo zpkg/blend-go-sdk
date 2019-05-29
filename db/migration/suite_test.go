@@ -46,16 +46,17 @@ func createTestMigrations(testSchemaName string) []*Group {
 		NewGroupWithActions(
 			NewStep(
 				SchemaNotExists(testSchemaName),
-				// pq can't parameterize Create
-				func(i context.Context, connection *db.Connection, tx *sql.Tx) error {
-					err := connection.Exec(fmt.Sprintf("CREATE SCHEMA %s;", testSchemaName))
-					if err != nil {
-						return err
-					}
-					(&connection.Config).Schema = testSchemaName
-					return nil
-				},
-			)),
+				Actions(
+					// pq can't parameterize Create
+					func(i context.Context, connection *db.Connection, tx *sql.Tx) error {
+						err := connection.Exec(fmt.Sprintf("CREATE SCHEMA %s;", testSchemaName))
+						if err != nil {
+							return err
+						}
+						(&connection.Config).Schema = testSchemaName
+						return nil
+					},
+			))),
 		NewGroupWithActions(
 			NewStep(
 				TableNotExists("table_test_foo"),
@@ -63,12 +64,12 @@ func createTestMigrations(testSchemaName string) []*Group {
 				),
 			NewStep(
 				ColumnNotExists("table_test_foo", "created_foo"),
-				Exec(fmt.Sprintf("ALTER TABLE %s.table_test_foo ADD COLUMN created_foo timestamp not null;",testSchemaName)),
+				Statements(fmt.Sprintf("ALTER TABLE %s.table_test_foo ADD COLUMN created_foo timestamp not null;",testSchemaName)),
 				)),
 		NewGroup(OptSkipTransaction(), OptActions(
 			NewStep(
 				IndexNotExists("table_test_foo","idx_created_foo"),
-				Exec(fmt.Sprintf("CREATE INDEX CONCURRENTLY idx_created_foo ON %s.table_test_foo(created_foo);", testSchemaName)),
+				Statements(fmt.Sprintf("CREATE INDEX CONCURRENTLY idx_created_foo ON %s.table_test_foo(created_foo);", testSchemaName)),
 				))),
 		NewGroupWithActions(
 			NewStep(
