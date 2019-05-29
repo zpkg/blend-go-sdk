@@ -43,7 +43,7 @@ func TestSuite_ApplyFails(t *testing.T) {
 	err := defaultDB().Exec(fmt.Sprintf("DROP SCHEMA IF EXISTS %s CASCADE;", testSchemaName))
 	a.Nil(err)
 	s := New(OptLog(logger.None()), OptGroups(createTestMigrations(testSchemaName)...))
-	s.Groups = append(s.Groups, NewGroupWithActions(NewStep(Always(), Statements(`INSERT INTO tab_not_exists VALUES (1, 'blah', CURRENT_TIMESTAMP');`))))
+	s.Groups = append(s.Groups, NewGroupWithActions(NewStep(Always(), Actions(Statements(`INSERT INTO tab_not_exists VALUES (1, 'blah', CURRENT_TIMESTAMP');`)))))
 	defer func() {
 		// pq can't parameterize Drop
 		err := defaultDB().Exec(fmt.Sprintf("DROP SCHEMA IF EXISTS %s CASCADE;", testSchemaName))
@@ -81,6 +81,8 @@ func createTestMigrations(testSchemaName string) []*Group {
 						}
 						return nil
 					},
+					// Test NoOp
+					NoOp,
 					func(i context.Context, connection *db.Connection, tx *sql.Tx) error {
 						// This is a hack to set the schema on the connection
 						(&connection.Config).Schema = testSchemaName
