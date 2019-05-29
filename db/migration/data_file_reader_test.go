@@ -135,6 +135,13 @@ func TestCopyIn(t *testing.T) {
 	a.Equal(`COPY "test_table" ("col_1", "col_2", "col_3", "col_4") FROM STDIN`, s)
 }
 
+type Data struct {
+	Col1 string `db:"col_1"`
+	Col2 string `db:"col_2"`
+	Col3 string `db:"col_3"`
+	Col4 string `db:"col_4"`
+}
+
 func TestDataFileReaderAction(t *testing.T) {
 	a := assert.New(t)
 	conn := getSchemaConnection(db.DefaultSchema, a)
@@ -167,6 +174,15 @@ func TestDataFileReaderAction(t *testing.T) {
 	err = conn.Query("Select count(1) from test_table_one").Scan(&count)
 	a.Nil(err)
 	a.Equal(3, count)
+
+	var data []Data
+	err = conn.Query("Select * from test_table_one ORDER BY col_1 ASC").OutMany(&data)
+	for i, d := range data {
+		a.Equal(fmt.Sprintf("data_%d_1", i+1), d.Col1)
+		a.Equal(fmt.Sprintf("data_%d_2", i+1), d.Col2)
+		a.Equal(fmt.Sprintf("data_%d_3", i+1), d.Col3)
+		a.Equal(fmt.Sprintf("data_%d_4", i+1), d.Col4)
+	}
 }
 
 func createDataFileMigrations(testSchemaName string) []*Group {
@@ -192,7 +208,7 @@ func createDataFileMigrations(testSchemaName string) []*Group {
 		NewGroupWithActions(
 			NewStep(
 				TableNotExists("test_table_one"),
-				Exec(fmt.Sprintf("CREATE TABLE %s.test_table_one (col_1 varchar(16), col_2 varchar(16), col_3 varchar(16), col_4 varchar(16));", testSchemaName)),
+				Exec(fmt.Sprintf("CREATE TABLE %s.test_table_one (col_1 varchar(16) not null, col_2 varchar(16) not null, col_3 varchar(16) not null, col_4 varchar(16) not null);", testSchemaName)),
 			)),
 	}
 }
