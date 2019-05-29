@@ -53,6 +53,10 @@ func createTestMigrations(testSchemaName string) []*Group {
 						if err != nil {
 							return err
 						}
+						return nil
+					},
+					func(i context.Context, connection *db.Connection, tx *sql.Tx) error {
+						// This is a hack to set the schema on the connection
 						(&connection.Config).Schema = testSchemaName
 						return nil
 					},
