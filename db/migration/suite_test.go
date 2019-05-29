@@ -37,6 +37,32 @@ func TestSuite_Apply(t *testing.T) {
 	a.Equal(5, tot)
 }
 
+func TestSuite_ApplyFails(t *testing.T) {
+	a := assert.New(t)
+	testSchemaName := buildTestSchemaName()
+	err := defaultDB().Exec(fmt.Sprintf("DROP SCHEMA IF EXISTS %s CASCADE;", testSchemaName))
+	a.Nil(err)
+	s := New(OptLog(logger.None()), OptGroups(createTestMigrations(testSchemaName)...))
+	s.Groups = append(s.Groups, NewGroupWithActions(NewStep(Always(), Statements(`INSERT INTO tab_not_exists VALUES (1, 'blah', CURRENT_TIMESTAMP');`))))
+	defer func() {
+		// pq can't parameterize Drop
+		err := defaultDB().Exec(fmt.Sprintf("DROP SCHEMA IF EXISTS %s CASCADE;", testSchemaName))
+		a.Nil(err)
+	}()
+	err = s.Apply(context.Background(), defaultDB())
+	a.NotNil(err)
+
+	ok, err := defaultDB().Query("SELECT 1 FROM pg_catalog.pg_indexes where indexname = $1 and tablename = $2", "idx_created_foo", "table_test_foo").Any()
+	a.Nil(err)
+	a.True(ok)
+
+	ap, sk, fl, tot := s.Results()
+	a.Equal(4, ap)
+	a.Equal(1, sk)
+	a.Equal(1, fl)
+	a.Equal(6, tot)
+}
+
 func buildTestSchemaName() string {
 	return fmt.Sprintf("test_sch_%s", stringutil.Random(stringutil.LowerLetters, 10))
 }
