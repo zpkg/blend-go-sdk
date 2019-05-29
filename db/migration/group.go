@@ -33,7 +33,7 @@ type Group struct{
 
 // Action runs the groups actions within a transaction.
 func (ga *Group) Action(ctx context.Context, c *db.Connection) (err error) {
-	var tx *sql.Tx = nil
+	var tx *sql.Tx
 	if !ga.SkipTransaction {
 		tx, err = c.Begin()
 		if err != nil {
