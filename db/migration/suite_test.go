@@ -7,7 +7,6 @@ import (
 	"github.com/blend/go-sdk/assert"
 	"github.com/blend/go-sdk/db"
 	"github.com/blend/go-sdk/logger"
-	"github.com/blend/go-sdk/stringutil"
 	"testing"
 )
 
@@ -61,10 +60,6 @@ func TestSuite_ApplyFails(t *testing.T) {
 	a.Equal(1, sk)
 	a.Equal(1, fl)
 	a.Equal(6, tot)
-}
-
-func buildTestSchemaName() string {
-	return fmt.Sprintf("test_sch_%s", stringutil.Random(stringutil.LowerLetters, 10))
 }
 
 func createTestMigrations(testSchemaName string) []*Group {

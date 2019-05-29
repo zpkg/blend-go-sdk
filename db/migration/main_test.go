@@ -1,6 +1,8 @@
 package migration
 
 import (
+	"fmt"
+	"github.com/blend/go-sdk/stringutil"
 	"os"
 	"testing"
 
@@ -41,4 +43,8 @@ func openDefaultDB(conn *db.Connection) error {
 	}
 	setDefaultDB(conn)
 	return nil
+}
+
+func buildTestSchemaName() string {
+	return fmt.Sprintf("test_sch_%s", stringutil.Random(stringutil.LowerLetters, 10))
 }
