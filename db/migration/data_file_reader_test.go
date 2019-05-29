@@ -124,3 +124,9 @@ this is a line that ends in a tab	`))
 	assert.Len(pieces, 1)
 	assert.Equal("this is a line that ends in a tab", pieces[0])
 }
+
+func TestCopyIn(t *testing.T) {
+	a := assert.New(t)
+	s := CopyIn("test_table", "col_1", "col_2", "col_3", "col_4")
+	a.Equal(`COPY "test_table" ("col_1", "col_2", "col_3", "col_4") FROM STDIN`, s)
+}
