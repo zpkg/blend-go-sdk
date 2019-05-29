@@ -6,7 +6,6 @@ import (
 	"database/sql"
 	"fmt"
 	"github.com/blend/go-sdk/db"
-	"github.com/blend/go-sdk/env"
 	"github.com/blend/go-sdk/logger"
 	"io"
 	"testing"
@@ -138,40 +137,34 @@ func TestCopyIn(t *testing.T) {
 
 func TestDataFileReaderAction(t *testing.T) {
 	a := assert.New(t)
+	conn := getSchemaConnection(db.DefaultSchema, a)
 	testSchemaName := buildTestSchemaName()
-	err := defaultDB().Exec(fmt.Sprintf("DROP SCHEMA IF EXISTS %s CASCADE;", testSchemaName))
+	err := conn.Exec(fmt.Sprintf("DROP SCHEMA IF EXISTS %s CASCADE;", testSchemaName))
 	a.Nil(err)
 	dfr := ReadDataFile("./testdata/data_file_reader_test.sql")
 	s := New(OptLog(logger.None()), OptGroups(createDataFileMigrations(testSchemaName)...))
 	defer func() {
+		c := conn
+		if c == nil {
+			c = defaultDB()
+		}
 		// pq can't parameterize Drop
-		err := defaultDB().Exec(fmt.Sprintf("DROP SCHEMA IF EXISTS %s CASCADE;", testSchemaName))
+		err := c.Exec(fmt.Sprintf("DROP SCHEMA IF EXISTS %s CASCADE;", testSchemaName))
 		a.Nil(err)
 	}()
-	err = s.Apply(context.Background(), defaultDB())
+	err = s.Apply(context.Background(), conn)
 	a.Nil(err)
 	app, _, _, _ := s.Results()
 	a.Equal(2, app)
-
-	defaultDB().Close()
-	defer env.Restore()
-	env.Env().Set("DB_SCHEMA", testSchemaName)
-
-	conn, err := db.New(db.OptConfigFromEnv())
-	if err != nil {
-		logger.FatalExit(err)
-	}
-	err = openDefaultDB(conn)
-	if err != nil {
-		logger.FatalExit(err)
-	}
+	conn.Close()
+	conn = getSchemaConnection(testSchemaName, a)
 
 	s = New(OptLog(logger.None()), OptGroups(NewGroupWithActions(NewStep(Always(), dfr.Action))))
-	err = s.Apply(context.Background(), defaultDB())
+	err = s.Apply(context.Background(), conn)
 	a.Nil(err)
 
 	var count int
-	err = defaultDB().Query("Select count(1) from test_table_one").Scan(&count)
+	err = conn.Query("Select count(1) from test_table_one").Scan(&count)
 	a.Nil(err)
 	a.Equal(3, count)
 }
@@ -202,4 +195,16 @@ func createDataFileMigrations(testSchemaName string) []*Group {
 				Exec(fmt.Sprintf("CREATE TABLE %s.test_table_one (col_1 varchar(16), col_2 varchar(16), col_3 varchar(16), col_4 varchar(16));", testSchemaName)),
 			)),
 	}
+}
+
+func getSchemaConnection(schema string, a *assert.Assertions) *db.Connection {
+	var conn *db.Connection
+	cfg, err := db.NewConfigFromEnv()
+	a.Nil(err)
+	(&cfg).Schema = schema
+	conn, err = db.New(db.OptConfig(cfg))
+	a.Nil(err)
+	err = conn.Open()
+	a.Nil(err)
+	return conn
 }

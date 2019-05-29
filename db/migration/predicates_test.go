@@ -67,10 +67,10 @@ func TestCreateTable(t *testing.T) {
 	defer tx.Rollback()
 
 	tableName := randomName()
-	err = createTestTable(tableName, nil)
+	err = createTestTable(tableName, tx)
 	assert.Nil(err)
 
-	exists, err := PredicateTableExists(defaultDB(), nil, tableName)
+	exists, err := PredicateTableExists(defaultDB(), tx, tableName)
 	assert.Nil(err)
 	assert.True(exists, "table does not exist")
 }

@@ -2,13 +2,12 @@ package migration
 
 import (
 	"fmt"
+	"github.com/blend/go-sdk/logger"
 	"github.com/blend/go-sdk/stringutil"
 	"os"
 	"testing"
 
 	"github.com/blend/go-sdk/db"
-	"github.com/blend/go-sdk/logger"
-
 	_ "github.com/lib/pq"
 )
 
@@ -21,6 +20,7 @@ func TestMain(m *testing.M) {
 	if err != nil {
 		logger.FatalExit(err)
 	}
+	defer conn.Close()
 	os.Exit(m.Run())
 }
 
