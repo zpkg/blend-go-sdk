@@ -72,6 +72,7 @@ func (c Column) SetValue(object interface{}, value interface{}) error {
 
 	valueReflected := ReflectValue(value)
 	if !valueReflected.IsValid() {
+		field.Set(reflect.Zero(ReflectType(value)))
 		return nil
 	}
 
