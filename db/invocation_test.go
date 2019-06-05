@@ -666,3 +666,49 @@ func TestInvocationEarlyExitOnError(t *testing.T) {
 	i.Err = fmt.Errorf("this is a test")
 	assert.Equal("this is a test", i.Exec("select 1").Error())
 }
+
+type benchWithPointer struct {
+	ID        int       `db:"id,pk,auto"`
+	UUID      string    `db:"uuid,nullable,uk"`
+	Name      string    `db:"name"`
+	Timestamp *time.Time `db:"timestamp_utc"`
+	Amount    float32   `db:"amount"`
+	Pending   bool      `db:"pending"`
+	Category  string    `db:"category"`
+}
+
+func (t benchWithPointer) TableName() string {
+	return "bench_object"
+}
+
+func TestOutWithDirtyStructs(t *testing.T) {
+	assert := assert.New(t)
+	tx, err := defaultDB().Begin()
+	assert.Nil(err)
+	defer tx.Rollback()
+
+	err = createTable(tx)
+	assert.Nil(err)
+
+	uniq := uuid.V4().ToFullString()
+
+	err = defaultDB().Invoke(OptTx(tx)).Exec("INSERT INTO bench_object (uuid, name, category) VALUES ($1, $2, $3)",
+		uniq, "Foo", "Bar")
+	assert.Nil(err)
+
+	timeObj := time.Now()
+
+	dirty := benchWithPointer{
+		ID: 192,
+		UUID: uuid.V4().ToFullString(),
+		Name: "Widget",
+		Timestamp: &timeObj,
+		Amount: 4.99,
+		Category: "Baz",
+	}
+
+	err = defaultDB().Invoke(OptTx(tx)).Query("SELECT * FROM bench_object WHERE uuid = $1", uniq).Out(&dirty)
+	assert.Nil(err)
+	assert.Nil(dirty.Timestamp)
+	assert.True(dirty.Amount == 0)
+}
