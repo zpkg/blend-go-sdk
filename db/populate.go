@@ -34,10 +34,10 @@ func PopulateByName(object interface{}, row Rows, cols *ColumnCollection, clearE
 	}
 
 	err = row.Scan(values...)
+	if clearEmpty {
+		PopulateEmpty(object, cols)
+	}
 	if err != nil {
-		if err == sql.ErrNoRows && clearEmpty {
-			PopulateEmpty(object, cols)
-		}
 		return Error(err)
 	}
 
@@ -67,12 +67,11 @@ func PopulateInOrder(object DatabaseMapped, row Scanner, cols *ColumnCollection,
 		initColumnValue(i, values, &col)
 	}
 
+	if clearEmpty {
+		PopulateEmpty(object, cols)
+	}
 	if err = row.Scan(values...); err != nil {
-		if err == sql.ErrNoRows && clearEmpty {
-			PopulateEmpty(object, cols)
-		}
-		err = ex.New(err)
-		return
+		return Error(err)
 	}
 
 	columns := cols.Columns()
