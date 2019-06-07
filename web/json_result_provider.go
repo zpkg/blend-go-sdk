@@ -30,6 +30,14 @@ func (jrp JSONResultProvider) NotAuthorized() Result {
 	}
 }
 
+// Forbidden returns a 403 Forbidden response.
+func (jrp JSONResultProvider) Forbidden() Result {
+	return &JSONResult{
+		StatusCode: http.StatusForbidden,
+		Response:   "Forbidden",
+	}
+}
+
 // InternalError returns a service response.
 func (jrp JSONResultProvider) InternalError(err error) Result {
 	if err != nil {
