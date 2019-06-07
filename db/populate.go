@@ -57,36 +57,6 @@ func PopulateByName(object interface{}, row Rows, cols *ColumnCollection, clearE
 	return nil
 }
 
-// PopulateInOrder sets the values of an object in order from a sql.Rows object.
-// Only use this method if you're certain of the column order. It is faster than populateByName.
-// Optionally if your object implements Populatable this process will be skipped completely, which is even faster.
-func PopulateInOrder(object DatabaseMapped, row Scanner, cols *ColumnCollection, clearEmpty bool) (err error) {
-	var values = make([]interface{}, cols.Len())
-
-	for i, col := range cols.Columns() {
-		initColumnValue(i, values, &col)
-	}
-
-	if clearEmpty {
-		PopulateEmpty(object, cols)
-	}
-	if err = row.Scan(values...); err != nil {
-		return Error(err)
-	}
-
-	columns := cols.Columns()
-	var field Column
-	for i, v := range values {
-		field = columns[i]
-		if err = field.SetValue(object, v, clearEmpty); err != nil {
-			err = ex.New(err)
-			return
-		}
-	}
-
-	return
-}
-
 // initColumnValue inserts the correct placeholder in the scan array of values.
 // it will use `sql.Null` forms where appropriate.
 // JSON fields are implicitly nullable.
