@@ -27,6 +27,11 @@ func PopulateByName(object interface{}, row Rows, cols *ColumnCollection) error 
 
 	err = row.Scan(values...)
 	if err != nil {
+		if err == sql.ErrNoRows {
+			for _, v := range columnLookup {
+				v.EmptyValue(object)
+			}
+		}
 		return Error(err)
 	}
 
@@ -57,6 +62,11 @@ func PopulateInOrder(object DatabaseMapped, row Scanner, cols *ColumnCollection)
 	}
 
 	if err = row.Scan(values...); err != nil {
+		if err == sql.ErrNoRows {
+			for _, v := range cols.Columns() {
+				v.EmptyValue(object)
+			}
+		}
 		err = ex.New(err)
 		return
 	}

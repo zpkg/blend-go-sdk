@@ -61,6 +61,14 @@ type Column struct {
 	Inline       bool
 }
 
+// EmptyValue sets the empty value on a field on a database mapped object
+func (c Column) EmptyValue(object interface{}) error {
+	objValue := ReflectValue(object)
+	field := objValue.FieldByName(c.FieldName)
+	field.Set(reflect.Zero(field.Type()))
+	return nil
+}
+
 // SetValue sets the field on a database mapped object to the instance of `value`.
 func (c Column) SetValue(object interface{}, value interface{}) error {
 	objValue := ReflectValue(object)
