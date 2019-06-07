@@ -11,7 +11,7 @@ import (
 func PopulateEmpty(object interface{}, cols *ColumnCollection) {
 	var columnLookup = cols.Lookup()
 	for _, v := range columnLookup {
-		v.EmptyValue(object)
+		v.SetZero(object)
 	}
 }
 
