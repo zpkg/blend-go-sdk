@@ -15,7 +15,7 @@ func TestSetValue(t *testing.T) {
 	value = 10
 	meta := CachedColumnCollectionFromInstance(obj)
 	pk := meta.Columns()[0]
-	a.Nil(pk.SetValue(&obj, value))
+	a.Nil(pk.SetValue(&obj, value, true))
 	a.Equal(10, obj.PrimaryKeyCol)
 }
 
@@ -26,7 +26,7 @@ func TestSetValueConverted(t *testing.T) {
 	meta := CachedColumnCollectionFromInstance(obj)
 	col := meta.Lookup()["big_int"]
 	a.NotNil(col)
-	err := col.SetValue(&obj, int(21))
+	err := col.SetValue(&obj, int(21), true)
 	a.Nil(err)
 	a.Equal(21, obj.BigIntColumn)
 }
@@ -38,7 +38,7 @@ func TestSetValueJSON(t *testing.T) {
 
 	col := meta.Lookup()["json_col"]
 	a.NotNil(col)
-	err := col.SetValue(&obj, sql.NullString{String: `{"foo":"bar"}`, Valid: true})
+	err := col.SetValue(&obj, sql.NullString{String: `{"foo":"bar"}`, Valid: true}, true)
 	a.Nil(err)
 	a.Equal("bar", obj.JSONColumn.Foo)
 }
@@ -51,7 +51,7 @@ func TestSetValuePtr(t *testing.T) {
 	col := meta.Lookup()["pointer_col"]
 	a.NotNil(col)
 	myValue := 21
-	err := col.SetValue(&obj, &myValue)
+	err := col.SetValue(&obj, &myValue, true)
 	a.Nil(err)
 	a.NotNil(obj.PointerColumn)
 	a.Equal(21, *obj.PointerColumn)

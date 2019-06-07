@@ -7,8 +7,16 @@ import (
 	"github.com/blend/go-sdk/ex"
 )
 
+// PopulateEmpty populates all the column fields of a struct with empty value
+func PopulateEmpty(object interface{}, cols *ColumnCollection) {
+	var columnLookup = cols.Lookup()
+	for _, v := range columnLookup {
+		v.EmptyValue(object)
+	}
+}
+
 // PopulateByName sets the values of an object from the values of a sql.Rows object using column names.
-func PopulateByName(object interface{}, row Rows, cols *ColumnCollection) error {
+func PopulateByName(object interface{}, row Rows, cols *ColumnCollection, clearEmpty bool) error {
 	rowColumns, err := row.Columns()
 	if err != nil {
 		return Error(err)
@@ -27,10 +35,8 @@ func PopulateByName(object interface{}, row Rows, cols *ColumnCollection) error 
 
 	err = row.Scan(values...)
 	if err != nil {
-		if err == sql.ErrNoRows {
-			for _, v := range columnLookup {
-				v.EmptyValue(object)
-			}
+		if err == sql.ErrNoRows && clearEmpty {
+			PopulateEmpty(object, cols)
 		}
 		return Error(err)
 	}
@@ -41,7 +47,7 @@ func PopulateByName(object interface{}, row Rows, cols *ColumnCollection) error 
 	for i, v := range values {
 		colName = rowColumns[i]
 		if field, ok = columnLookup[colName]; ok {
-			err = field.SetValue(object, v)
+			err = field.SetValue(object, v, clearEmpty)
 			if err != nil {
 				return ex.New(Error(err), ex.OptMessagef("column: %s", colName))
 			}
@@ -54,7 +60,7 @@ func PopulateByName(object interface{}, row Rows, cols *ColumnCollection) error 
 // PopulateInOrder sets the values of an object in order from a sql.Rows object.
 // Only use this method if you're certain of the column order. It is faster than populateByName.
 // Optionally if your object implements Populatable this process will be skipped completely, which is even faster.
-func PopulateInOrder(object DatabaseMapped, row Scanner, cols *ColumnCollection) (err error) {
+func PopulateInOrder(object DatabaseMapped, row Scanner, cols *ColumnCollection, clearEmpty bool) (err error) {
 	var values = make([]interface{}, cols.Len())
 
 	for i, col := range cols.Columns() {
@@ -62,10 +68,8 @@ func PopulateInOrder(object DatabaseMapped, row Scanner, cols *ColumnCollection)
 	}
 
 	if err = row.Scan(values...); err != nil {
-		if err == sql.ErrNoRows {
-			for _, v := range cols.Columns() {
-				v.EmptyValue(object)
-			}
+		if err == sql.ErrNoRows && clearEmpty {
+			PopulateEmpty(object, cols)
 		}
 		err = ex.New(err)
 		return
@@ -75,7 +79,7 @@ func PopulateInOrder(object DatabaseMapped, row Scanner, cols *ColumnCollection)
 	var field Column
 	for i, v := range values {
 		field = columns[i]
-		if err = field.SetValue(object, v); err != nil {
+		if err = field.SetValue(object, v, clearEmpty); err != nil {
 			err = ex.New(err)
 			return
 		}

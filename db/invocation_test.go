@@ -29,12 +29,18 @@ func (jt jsonTest) TableName() string {
 	return "json_test"
 }
 
+func secondArgErr(_ interface{}, err error) error {
+	return err
+}
+
 func createJSONTestTable(tx *sql.Tx) error {
-	return defaultDB().Invoke(OptTx(tx)).Exec("create table json_test (id serial primary key, name varchar(255), not_null json, nullable json)")
+	_, err := defaultDB().Invoke(OptTx(tx)).Exec("create table json_test (id serial primary key, name varchar(255), not_null json, nullable json)")
+	return err
 }
 
 func dropJSONTextTable(tx *sql.Tx) error {
-	return defaultDB().Invoke(OptTx(tx)).Exec("drop table if exists json_test")
+	_, err := defaultDB().Invoke(OptTx(tx)).Exec("drop table if exists json_test")
+	return err
 }
 
 func TestInvocationJSONNulls(t *testing.T) {
@@ -51,7 +57,8 @@ func TestInvocationJSONNulls(t *testing.T) {
 	assert.Nil(defaultDB().Invoke(OptTx(tx)).Create(&obj0))
 
 	var verify0 jsonTest
-	assert.Nil(defaultDB().Invoke(OptTx(tx)).Get(&verify0, obj0.ID))
+	_, err = defaultDB().Invoke(OptTx(tx)).Get(&verify0, obj0.ID)
+	assert.Nil(err)
 
 	assert.Equal(obj0.ID, verify0.ID)
 	assert.Equal(obj0.Name, verify0.Name)
@@ -70,7 +77,8 @@ func TestInvocationJSONNulls(t *testing.T) {
 	assert.Nil(defaultDB().Invoke(OptTx(tx)).Create(&obj1))
 
 	var verify1 jsonTest
-	assert.Nil(defaultDB().Invoke(OptTx(tx)).Get(&verify1, obj1.ID))
+	_, err = defaultDB().Invoke(OptTx(tx)).Get(&verify1, obj1.ID)
+	assert.Nil(err)
 
 	assert.Equal(obj1.ID, verify1.ID)
 	assert.Equal(obj1.Name, verify1.Name)
@@ -82,10 +90,12 @@ func TestInvocationJSONNulls(t *testing.T) {
 	assert.True(any, "we should have written a sql null, not a literal string 'null'")
 
 	// set it to literal 'null' to test this is backward compatible
-	assert.Nil(defaultDB().Invoke(OptTx(tx)).Exec("update json_test set nullable = 'null' where id = $1", obj1.ID))
+	_, err = defaultDB().Invoke(OptTx(tx)).Exec("update json_test set nullable = 'null' where id = $1", obj1.ID)
+	assert.Nil(err)
 
 	var verify2 jsonTest
-	assert.Nil(defaultDB().Invoke(OptTx(tx)).Get(&verify2, obj1.ID))
+	_, err = defaultDB().Invoke(OptTx(tx)).Get(&verify2, obj1.ID)
+	assert.Nil(err)
 	assert.Equal(obj1.ID, verify2.ID)
 	assert.Equal(obj1.Name, verify2.Name)
 	assert.Nil(verify2.Nullable, "even if we set it to literal 'null' it should come out golang nil")
@@ -109,10 +119,12 @@ func TestInvocationCreateRepeatInTx(t *testing.T) {
 	assert.Nil(err)
 	defer tx.Rollback()
 
-	assert.Nil(defaultDB().Invoke(OptTx(tx)).Exec("CREATE TABLE IF NOT EXISTS unique_obj (id int not null primary key, name varchar)"))
+	assert.Nil(secondArgErr(defaultDB().Invoke(OptTx(tx)).Exec("CREATE TABLE IF NOT EXISTS unique_obj (id int not null primary key, name varchar)")))
 	assert.Nil(defaultDB().Invoke(OptTx(tx)).Create(&uniqueObj{ID: 1, Name: "one"}))
 	var verify uniqueObj
-	assert.Nil(defaultDB().Invoke(OptTx(tx)).Get(&verify, 1))
+	assert.Nil(secondArgErr(defaultDB().Invoke(OptTx(tx)).Get(&verify, 1)))
+	// Make sure it fails if we collide on keys
+	assert.NotNil(defaultDB().Invoke(OptTx(tx)).Create(&uniqueObj{ID: 1, Name: "one"}))
 	assert.Equal("one", verify.Name)
 	assert.NotNil(defaultDB().Invoke(OptTx(tx)).Create(&uniqueObj{ID: 1, Name: "two"}))
 }
@@ -283,20 +295,6 @@ func TestInvocationDeleteError(t *testing.T) {
 	assert.NotNil(conn.Invoke(OptCachedPlanKey("delete_error_test")).Delete(&mustError))
 }
 
-func TestTruncateError(t *testing.T) {
-	assert := assert.New(t)
-
-	var mustError modelTableNameError
-	conn, err := New(OptConfigFromEnv())
-	assert.Nil(err)
-	conn.PlanCache.WithEnabled(false)
-	assert.Nil(conn.Open())
-	assert.NotNil(conn.Invoke().Truncate(&mustError))
-	conn.PlanCache.WithEnabled(true)
-	assert.NotNil(conn.Invoke().Truncate(&mustError))
-	assert.NotNil(conn.Invoke(OptCachedPlanKey("truncate_error_test")).Truncate(&mustError))
-}
-
 type uuidTest struct {
 	ID   uuid.UUID `db:"id"`
 	Name string    `db:"name"`
@@ -312,7 +310,7 @@ func TestInvocationUUIDs(t *testing.T) {
 	assert.Nil(err)
 	defer tx.Rollback()
 
-	assert.Nil(defaultDB().Invoke(OptTx(tx)).Exec("CREATE TABLE IF NOT EXISTS uuid_test (id uuid not null, name varchar(255) not null)"))
+	assert.Nil(secondArgErr(defaultDB().Invoke(OptTx(tx)).Exec("CREATE TABLE IF NOT EXISTS uuid_test (id uuid not null, name varchar(255) not null)")))
 
 	assert.Nil(defaultDB().Invoke(OptTx(tx)).Create(&uuidTest{ID: uuid.V4(), Name: "foo"}))
 	assert.Nil(defaultDB().Invoke(OptTx(tx)).Create(&uuidTest{ID: uuid.V4(), Name: "foo2"}))
@@ -358,7 +356,7 @@ func TestInlineMeta(t *testing.T) {
 
 	id0 := uuid.V4()
 	id1 := uuid.V4()
-	assert.Nil(defaultDB().Invoke(OptTx(tx)).Exec("CREATE TABLE IF NOT EXISTS embedded_test (id uuid not null primary key, timestamp_utc timestamp not null, name varchar(255) not null)"))
+	assert.Nil(secondArgErr(defaultDB().Invoke(OptTx(tx)).Exec("CREATE TABLE IF NOT EXISTS embedded_test (id uuid not null primary key, timestamp_utc timestamp not null, name varchar(255) not null)")))
 	assert.Nil(defaultDB().Invoke(OptTx(tx)).Create(&embeddedTest{EmbeddedTestMeta: EmbeddedTestMeta{ID: id0, TimestampUTC: time.Now().UTC()}, Name: "foo"}))
 	assert.Nil(defaultDB().Invoke(OptTx(tx)).Create(&embeddedTest{EmbeddedTestMeta: EmbeddedTestMeta{ID: id1, TimestampUTC: time.Now().UTC()}, Name: "foo2"}))
 
@@ -394,7 +392,7 @@ func TestInvocationStatementInterceptor(t *testing.T) {
 	}))
 	assert.NotNil(invocation.StatementInterceptor)
 
-	err = invocation.Exec("select 'ok!'")
+	_, err = invocation.Exec("select 'ok!'")
 	assert.NotNil(err)
 	assert.Equal("only a test", err.Error())
 }
@@ -414,9 +412,8 @@ func TestGenerateGet(t *testing.T) {
 	conn.PlanCache = NewPlanCache()
 
 	var obj generateGetTest
-	label, queryBody, cols, err := conn.Invoke().generateGet(&obj)
+	label, queryBody, err := conn.Invoke().generateGet(&obj)
 	assert.Nil(err)
-	assert.Equal(cols.Len(), 2)
 	assert.NotEmpty(queryBody)
 	assert.Equal("generategettest_get", label)
 }
@@ -430,9 +427,7 @@ func TestGenerateGetAll(t *testing.T) {
 	conn.PlanCache = NewPlanCache()
 
 	objs := []generateGetTest{}
-	label, queryBody, cols, ct := conn.Invoke().generateGetAll(&objs)
-	assert.NotNil(ct)
-	assert.Equal(cols.Len(), 2)
+	label, queryBody := conn.Invoke().generateGetAll(&objs)
 	assert.NotEmpty(queryBody)
 	assert.Equal("generategettest_get_all", label)
 }
@@ -485,6 +480,126 @@ func TestConnectionCreateParallel(t *testing.T) {
 	wg.Wait()
 }
 
+func TestConnectionGetMiss(t *testing.T) {
+	assert := assert.New(t)
+	tx, err := defaultDB().Begin()
+	assert.Nil(err)
+	defer tx.Rollback()
+
+	err = createUpserObjectTable(tx)
+	assert.Nil(err)
+
+	obj := &upsertObj{
+		UUID:      uuid.V4().String(),
+		Timestamp: time.Now().UTC(),
+		Category:  uuid.V4().String(),
+	}
+	found, err := defaultDB().Invoke(OptTx(tx)).Get(obj, uuid.V4().String())
+	assert.Nil(err)
+	assert.False(found)
+	assert.Equal("", obj.UUID)
+	assert.True(obj.Timestamp.IsZero())
+	assert.Equal("", obj.Category)
+}
+
+func TestConnectionDelete(t *testing.T) {
+	assert := assert.New(t)
+	tx, err := defaultDB().Begin()
+	assert.Nil(err)
+	defer tx.Rollback()
+
+	err = createUpserObjectTable(tx)
+	assert.Nil(err)
+
+	obj := &upsertObj{
+		UUID:      uuid.V4().String(),
+		Timestamp: time.Now().UTC(),
+		Category:  uuid.V4().String(),
+	}
+	err = defaultDB().Invoke(OptTx(tx)).Create(obj)
+	assert.Nil(err)
+
+	var verify upsertObj
+	_, err = defaultDB().Invoke(OptTx(tx)).Get(&verify, obj.UUID)
+	assert.Nil(err)
+	assert.Equal(obj.Category, verify.Category)
+
+	deleted, err := defaultDB().Invoke(OptTx(tx)).Delete(obj)
+	assert.Nil(err)
+	assert.True(deleted)
+}
+
+func TestConnectionDeleteMiss(t *testing.T) {
+	assert := assert.New(t)
+	tx, err := defaultDB().Begin()
+	assert.Nil(err)
+	defer tx.Rollback()
+
+	err = createUpserObjectTable(tx)
+	assert.Nil(err)
+
+	obj := &upsertObj{
+		UUID:      uuid.V4().String(),
+		Timestamp: time.Now().UTC(),
+		Category:  uuid.V4().String(),
+	}
+	deleted, err := defaultDB().Invoke(OptTx(tx)).Delete(obj)
+	assert.Nil(err)
+	assert.False(deleted)
+}
+
+func TestConnectionUpdate(t *testing.T) {
+	assert := assert.New(t)
+	tx, err := defaultDB().Begin()
+	assert.Nil(err)
+	defer tx.Rollback()
+
+	err = createUpserObjectTable(tx)
+	assert.Nil(err)
+
+	obj := &upsertObj{
+		UUID:      uuid.V4().String(),
+		Timestamp: time.Now().UTC(),
+		Category:  uuid.V4().String(),
+	}
+	err = defaultDB().Invoke(OptTx(tx)).Create(obj)
+	assert.Nil(err)
+
+	var verify upsertObj
+	_, err = defaultDB().Invoke(OptTx(tx)).Get(&verify, obj.UUID)
+	assert.Nil(err)
+	assert.Equal(obj.Category, verify.Category)
+
+	obj.Category = "test"
+
+	updated, err := defaultDB().Invoke(OptTx(tx)).Update(obj)
+	assert.Nil(err)
+	assert.True(updated)
+
+	_, err = defaultDB().Invoke(OptTx(tx)).Get(&verify, obj.UUID)
+	assert.Nil(err)
+	assert.Equal(obj.Category, verify.Category)
+}
+
+func TestConnectionUpdateMiss(t *testing.T) {
+	assert := assert.New(t)
+	tx, err := defaultDB().Begin()
+	assert.Nil(err)
+	defer tx.Rollback()
+
+	err = createUpserObjectTable(tx)
+	assert.Nil(err)
+
+	obj := &upsertObj{
+		UUID:      uuid.V4().String(),
+		Timestamp: time.Now().UTC(),
+		Category:  uuid.V4().String(),
+	}
+	updated, err := defaultDB().Invoke(OptTx(tx)).Update(obj)
+	assert.Nil(err)
+	assert.False(updated)
+}
+
 func TestConnectionUpsert(t *testing.T) {
 	assert := assert.New(t)
 	tx, err := defaultDB().Begin()
@@ -503,7 +618,7 @@ func TestConnectionUpsert(t *testing.T) {
 	assert.Nil(err)
 
 	var verify upsertObj
-	err = defaultDB().Invoke(OptTx(tx)).Get(&verify, obj.UUID)
+	_, err = defaultDB().Invoke(OptTx(tx)).Get(&verify, obj.UUID)
 	assert.Nil(err)
 	assert.Equal(obj.Category, verify.Category)
 
@@ -512,7 +627,7 @@ func TestConnectionUpsert(t *testing.T) {
 	err = defaultDB().Invoke(OptTx(tx)).Upsert(obj)
 	assert.Nil(err)
 
-	err = defaultDB().Invoke(OptTx(tx)).Get(&verify, obj.UUID)
+	_, err = defaultDB().Invoke(OptTx(tx)).Get(&verify, obj.UUID)
 	assert.Nil(err)
 	assert.Equal(obj.Category, verify.Category)
 }
@@ -539,7 +654,7 @@ func TestConnectionUpsertWithSerial(t *testing.T) {
 	assert.NotZero(obj.ID)
 
 	var verify benchObj
-	err = defaultDB().Invoke(OptTx(tx)).Get(&verify, obj.ID)
+	_, err = defaultDB().Invoke(OptTx(tx)).Get(&verify, obj.ID)
 	assert.Nil(err)
 	assert.Equal(obj.Category, verify.Category)
 
@@ -549,7 +664,7 @@ func TestConnectionUpsertWithSerial(t *testing.T) {
 	assert.Nil(err)
 	assert.NotZero(obj.ID)
 
-	err = defaultDB().Invoke(OptTx(tx)).Get(&verify, obj.ID)
+	_, err = defaultDB().Invoke(OptTx(tx)).Get(&verify, obj.ID)
 	assert.Nil(err)
 	assert.Equal(obj.Category, verify.Category)
 }
@@ -584,43 +699,6 @@ func TestConnectionCreateMany(t *testing.T) {
 	assert.NotEmpty(verify)
 }
 
-func TestConnectionTruncate(t *testing.T) {
-	assert := assert.New(t)
-	tx, err := defaultDB().Begin()
-	assert.Nil(err)
-	defer tx.Rollback()
-
-	err = createTable(tx)
-	assert.Nil(err)
-
-	var objects []DatabaseMapped
-	for x := 0; x < 10; x++ {
-		objects = append(objects, benchObj{
-			Name:      fmt.Sprintf("test_object_%d", x),
-			UUID:      uuid.V4().String(),
-			Timestamp: time.Now().UTC(),
-			Amount:    1005.0,
-			Pending:   true,
-			Category:  fmt.Sprintf("category_%d", x),
-		})
-	}
-
-	err = defaultDB().Invoke(OptTx(tx)).CreateMany(objects)
-	assert.Nil(err)
-
-	var count int
-	err = defaultDB().Invoke(OptTx(tx)).Query(`select count(*) from bench_object`).Scan(&count)
-	assert.Nil(err)
-	assert.NotZero(count)
-
-	err = defaultDB().Invoke(OptTx(tx)).Truncate(benchObj{})
-	assert.Nil(err)
-
-	err = defaultDB().Invoke(OptTx(tx)).Query(`select count(*) from bench_object`).Scan(&count)
-	assert.Nil(err)
-	assert.Zero(count)
-}
-
 func TestConnectionCreateIfNotExists(t *testing.T) {
 	assert := assert.New(t)
 	tx, err := defaultDB().Begin()
@@ -639,7 +717,7 @@ func TestConnectionCreateIfNotExists(t *testing.T) {
 	assert.Nil(err)
 
 	var verify upsertObj
-	err = defaultDB().Invoke(OptTx(tx)).Get(&verify, obj.UUID)
+	_, err = defaultDB().Invoke(OptTx(tx)).Get(&verify, obj.UUID)
 	assert.Nil(err)
 	assert.Equal(obj.Category, verify.Category)
 
@@ -649,7 +727,7 @@ func TestConnectionCreateIfNotExists(t *testing.T) {
 	err = defaultDB().Invoke(OptTx(tx)).CreateIfNotExists(obj)
 	assert.Nil(err)
 
-	err = defaultDB().Invoke(OptTx(tx)).Get(&verify, obj.UUID)
+	_, err = defaultDB().Invoke(OptTx(tx)).Get(&verify, obj.UUID)
 	assert.Nil(err)
 	assert.Equal(oldCategory, verify.Category)
 }
@@ -661,54 +739,9 @@ func TestInvocationEarlyExitOnError(t *testing.T) {
 	defer tx.Rollback()
 
 	i := defaultDB().Invoke(OptTx(tx))
-	assert.Nil(i.Exec("select 1"))
+	assert.Nil(secondArgErr(i.Exec("select 1")))
 
 	i.Err = fmt.Errorf("this is a test")
-	assert.Equal("this is a test", i.Exec("select 1").Error())
-}
-
-type benchWithPointer struct {
-	ID        int       `db:"id,pk,auto"`
-	UUID      string    `db:"uuid,nullable,uk"`
-	Name      string    `db:"name"`
-	Timestamp *time.Time `db:"timestamp_utc"`
-	Amount    float32   `db:"amount"`
-	Pending   bool      `db:"pending"`
-	Category  string    `db:"category"`
-}
-
-func (t benchWithPointer) TableName() string {
-	return "bench_object"
-}
-
-func TestOutWithDirtyStructs(t *testing.T) {
-	assert := assert.New(t)
-	tx, err := defaultDB().Begin()
-	assert.Nil(err)
-	defer tx.Rollback()
-
-	err = createTable(tx)
-	assert.Nil(err)
-
-	uniq := uuid.V4().ToFullString()
-
-	err = defaultDB().Invoke(OptTx(tx)).Exec("INSERT INTO bench_object (uuid, name, category) VALUES ($1, $2, $3)",
-		uniq, "Foo", "Bar")
-	assert.Nil(err)
-
-	timeObj := time.Now()
-
-	dirty := benchWithPointer{
-		ID: 192,
-		UUID: uuid.V4().ToFullString(),
-		Name: "Widget",
-		Timestamp: &timeObj,
-		Amount: 4.99,
-		Category: "Baz",
-	}
-
-	err = defaultDB().Invoke(OptTx(tx)).Query("SELECT * FROM bench_object WHERE uuid = $1", uniq).Out(&dirty)
-	assert.Nil(err)
-	assert.Nil(dirty.Timestamp)
-	assert.True(dirty.Amount == 0)
+	_, err = i.Exec("select 1")
+	assert.Equal("this is a test", err.Error())
 }

@@ -62,15 +62,14 @@ type Column struct {
 }
 
 // EmptyValue sets the empty value on a field on a database mapped object
-func (c Column) EmptyValue(object interface{}) error {
+func (c Column) EmptyValue(object interface{}) {
 	objValue := ReflectValue(object)
 	field := objValue.FieldByName(c.FieldName)
 	field.Set(reflect.Zero(field.Type()))
-	return nil
 }
 
 // SetValue sets the field on a database mapped object to the instance of `value`.
-func (c Column) SetValue(object interface{}, value interface{}) error {
+func (c Column) SetValue(object interface{}, value interface{}, clearEmpty bool) error {
 	objValue := ReflectValue(object)
 	field := objValue.FieldByName(c.FieldName)
 	fieldType := field.Type()
@@ -80,7 +79,9 @@ func (c Column) SetValue(object interface{}, value interface{}) error {
 
 	valueReflected := ReflectValue(value)
 	if !valueReflected.IsValid() {
-		field.Set(reflect.Zero(field.Type()))
+		if clearEmpty {
+			field.Set(reflect.Zero(field.Type()))
+		}
 		return nil
 	}
 
