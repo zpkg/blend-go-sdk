@@ -39,7 +39,7 @@ func (i *Invocation) Prepare(statement string) (stmt *sql.Stmt, err error) {
 }
 
 // Exec executes a sql statement with a given set of arguments.
-func (i *Invocation) Exec(statement string, args ...interface{}) (rowsAffected int, err error) {
+func (i *Invocation) Exec(statement string, args ...interface{}) (rowsAffected int64, err error) {
 	var stmt *sql.Stmt
 	statement, err = i.Start(statement)
 	defer func() { err = i.Finish(statement, recover(), err) }()
@@ -61,8 +61,7 @@ func (i *Invocation) Exec(statement string, args ...interface{}) (rowsAffected i
 	}
 	// The error here is intentionally ignored. Postgres supports this. We'd need to revisit swallowing this error
 	// for other drivers
-	ra64, _ := res.RowsAffected()
-	rowsAffected = int(ra64)
+	rowsAffected, _ = res.RowsAffected()
 	return
 }
 
@@ -252,11 +251,11 @@ func (i *Invocation) Update(object DatabaseMapped) (updated bool, err error) {
 	}
 	// The error here is intentionally ignored. Postgres supports this. We'd need to revisit swallowing this error
 	// for other drivers
-	ra64, _ := res.RowsAffected()
-	if ra64 > 0 {
+	rowCount, _ := res.RowsAffected()
+	if rowCount > 0 {
 		updated = true
 	}
-	if ra64 > 1 {
+	if rowCount > 1 {
 		err = Error(ErrTooManyRows)
 	}
 	return
