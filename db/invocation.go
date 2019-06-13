@@ -39,7 +39,7 @@ func (i *Invocation) Prepare(statement string) (stmt *sql.Stmt, err error) {
 }
 
 // Exec executes a sql statement with a given set of arguments.
-func (i *Invocation) Exec(statement string, args ...interface{}) (err error) {
+func (i *Invocation) Exec(statement string, args ...interface{}) (rowsAffected int64, err error) {
 	var stmt *sql.Stmt
 	statement, err = i.Start(statement)
 	defer func() { err = i.Finish(statement, recover(), err) }()
@@ -54,10 +54,14 @@ func (i *Invocation) Exec(statement string, args ...interface{}) (err error) {
 	}
 	defer func() { err = i.CloseStatement(stmt, err) }()
 
-	if _, err = stmt.ExecContext(i.Context, args...); err != nil {
+	res, err := stmt.ExecContext(i.Context, args...)
+	if err != nil {
 		err = Error(err)
 		return
 	}
+	// The error here is intentionally ignored. Postgres supports this. We'd need to revisit swallowing this error
+	// for other drivers
+	rowsAffected, _ = res.RowsAffected()
 	return
 }
 
@@ -78,96 +82,29 @@ func (i *Invocation) Query(statement string, args ...interface{}) *Query {
 }
 
 // Get returns a given object based on a group of primary key ids within a transaction.
-func (i *Invocation) Get(object DatabaseMapped, ids ...interface{}) (err error) {
+func (i *Invocation) Get(object DatabaseMapped, ids ...interface{}) (found bool, err error) {
 	if len(ids) == 0 {
 		err = Error(ErrInvalidIDs)
 		return
 	}
 
 	var queryBody string
-	var stmt *sql.Stmt
-	var cols *ColumnCollection
-	defer func() { err = i.Finish(queryBody, recover(), err) }()
-
-	if i.CachedPlanKey, queryBody, cols, err = i.generateGet(object); err != nil {
+	if i.CachedPlanKey, queryBody, err = i.generateGet(object); err != nil {
 		err = Error(err)
 		return
 	}
 
-	queryBody, err = i.Start(queryBody)
-	if err != nil {
-		return
-	}
-	if stmt, err = i.Prepare(queryBody); err != nil {
-		err = ex.New(err)
-		return
-	}
-	defer func() { err = i.CloseStatement(stmt, err) }()
-
-	row := stmt.QueryRowContext(i.Context, ids...)
-	var populateErr error
-	if typed, ok := object.(Populatable); ok {
-		populateErr = typed.Populate(row)
-	} else {
-		populateErr = PopulateInOrder(object, row, cols)
-	}
-	if populateErr != nil && !ex.Is(populateErr, sql.ErrNoRows) {
-		err = Error(populateErr)
-		return
-	}
-
-	return
+	return i.Query(queryBody, ids...).Out(object)
 }
 
 // All returns all rows of an object mapped table wrapped in a transaction.
 func (i *Invocation) All(collection interface{}) (err error) {
 	var queryBody string
-	var stmt *sql.Stmt
-	var rows *sql.Rows
-	var cols *ColumnCollection
-	var collectionType reflect.Type
 	defer func() { err = i.Finish(queryBody, recover(), err) }()
 
-	i.CachedPlanKey, queryBody, cols, collectionType = i.generateGetAll(collection)
+	i.CachedPlanKey, queryBody = i.generateGetAll(collection)
 
-	queryBody, err = i.Start(queryBody)
-	if err != nil {
-		return
-	}
-	if stmt, err = i.Prepare(queryBody); err != nil {
-		err = Error(err)
-		return
-	}
-	defer func() { err = i.CloseStatement(stmt, err) }()
-
-	if rows, err = stmt.QueryContext(i.Context); err != nil {
-		err = Error(err)
-		return
-	}
-	defer func() { err = ex.Nest(err, rows.Close()) }()
-
-	collectionValue := ReflectValue(collection)
-	for rows.Next() {
-		var obj interface{}
-		if obj, err = MakeNewDatabaseMapped(collectionType); err != nil {
-			err = ex.New(err)
-			return
-		}
-
-		if typed, ok := obj.(Populatable); ok {
-			err = typed.Populate(rows)
-		} else {
-			err = PopulateInOrder(obj, rows, cols)
-		}
-		if err != nil {
-			err = Error(err)
-			return
-		}
-
-		objValue := ReflectValue(obj)
-		collectionValue.Set(reflect.Append(collectionValue, objValue))
-	}
-	return
+	return i.Query(queryBody).OutMany(collection)
 }
 
 // Create writes an object to the database within a transaction.
@@ -286,8 +223,11 @@ func (i *Invocation) CreateMany(objects interface{}) (err error) {
 	return
 }
 
-// Update updates an object wrapped in a transaction.
-func (i *Invocation) Update(object DatabaseMapped) (err error) {
+// Update updates an object wrapped in a transaction. Returns whether or not any rows have been updated and potentially
+// an error. If ErrTooManyRows is returned, it's important to note that due to https://github.com/golang/go/issues/7898,
+// the Update HAS BEEN APPLIED. Its on the developer using UPDATE to ensure his tags are correct and/or execute it in a
+// transaction and roll back on this error
+func (i *Invocation) Update(object DatabaseMapped) (updated bool, err error) {
 	var queryBody string
 	var stmt *sql.Stmt
 	var pks, writeCols *ColumnCollection
@@ -304,10 +244,19 @@ func (i *Invocation) Update(object DatabaseMapped) (err error) {
 		return
 	}
 	defer func() { err = i.CloseStatement(stmt, err) }()
-
-	if _, err = stmt.ExecContext(i.Context, append(writeCols.ColumnValues(object), pks.ColumnValues(object)...)...); err != nil {
+	res, err := stmt.ExecContext(i.Context, append(writeCols.ColumnValues(object), pks.ColumnValues(object)...)...)
+	if err != nil {
 		err = Error(err)
 		return
+	}
+	// The error here is intentionally ignored. Postgres supports this. We'd need to revisit swallowing this error
+	// for other drivers
+	rowCount, _ := res.RowsAffected()
+	if rowCount > 0 {
+		updated = true
+	}
+	if rowCount > 1 {
+		err = Error(ErrTooManyRows)
 	}
 	return
 }
@@ -383,8 +332,11 @@ func (i *Invocation) Exists(object DatabaseMapped) (exists bool, err error) {
 	return
 }
 
-// Delete deletes an object from the database wrapped in a transaction.
-func (i *Invocation) Delete(object DatabaseMapped) (err error) {
+// Delete deletes an object from the database wrapped in a transaction. Returns whether or not any rows have been deleted
+// and potentially an error. If ErrTooManyRows is returned, it's important to note that due to
+// https://github.com/golang/go/issues/7898, the Delete HAS BEEN APPLIED on the current transaction. Its on the
+// developer using Delete to ensure their tags are correct and/or ensure theit Tx rolls back on this error.
+func (i *Invocation) Delete(object DatabaseMapped) (deleted bool, err error) {
 	var queryBody string
 	var stmt *sql.Stmt
 	var pks *ColumnCollection
@@ -403,35 +355,19 @@ func (i *Invocation) Delete(object DatabaseMapped) (err error) {
 		return
 	}
 	defer func() { err = i.CloseStatement(stmt, err) }()
-
-	if _, err = stmt.ExecContext(i.Context, pks.ColumnValues(object)...); err != nil {
-		err = Error(err)
-		return
-	}
-	return
-}
-
-// Truncate completely empties a table in a single command.
-func (i *Invocation) Truncate(object DatabaseMapped) (err error) {
-	var queryBody string
-	var stmt *sql.Stmt
-	defer func() { err = i.Finish(queryBody, recover(), err) }()
-
-	i.CachedPlanKey, queryBody = i.generateTruncate(object)
-
-	queryBody, err = i.Start(queryBody)
+	res, err := stmt.ExecContext(i.Context, pks.ColumnValues(object)...);
 	if err != nil {
-		return
-	}
-	if stmt, err = i.Prepare(queryBody); err != nil {
 		err = Error(err)
 		return
 	}
-	defer func() { err = i.CloseStatement(stmt, err) }()
-
-	if _, err = stmt.ExecContext(i.Context); err != nil {
-		err = Error(err)
-		return
+	// The error here is intentionally ignored. Postgres supports this. We'd need to revisit swallowing this error
+	// for other drivers
+	ra64, _ := res.RowsAffected()
+	if ra64 > 0 {
+		deleted = true
+	}
+	if ra64 > 1 {
+		err = Error(ErrTooManyRows)
 	}
 	return
 }
@@ -440,10 +376,10 @@ func (i *Invocation) Truncate(object DatabaseMapped) (err error) {
 // query body generators
 // --------------------------------------------------------------------------------
 
-func (i *Invocation) generateGet(object DatabaseMapped) (statementLabel, queryBody string, cols *ColumnCollection, err error) {
+func (i *Invocation) generateGet(object DatabaseMapped) (cachePlan, queryBody string, err error) {
 	tableName := TableName(object)
 
-	cols = CachedColumnCollectionFromInstance(object).NotReadOnly()
+	cols := CachedColumnCollectionFromInstance(object).NotReadOnly()
 	pks := cols.PrimaryKeys()
 	if pks.Len() == 0 {
 		err = Error(ErrNoPrimaryKey)
@@ -474,17 +410,17 @@ func (i *Invocation) generateGet(object DatabaseMapped) (statementLabel, queryBo
 		}
 	}
 
-	statementLabel = tableName + "_get"
+	cachePlan = fmt.Sprintf("%s_get", tableName)
 	queryBody = queryBodyBuffer.String()
 	i.Conn.BufferPool.Put(queryBodyBuffer)
 	return
 }
 
-func (i *Invocation) generateGetAll(collection interface{}) (statementLabel, queryBody string, cols *ColumnCollection, collectionType reflect.Type) {
-	collectionType = ReflectSliceType(collection)
+func (i *Invocation) generateGetAll(collection interface{}) (statementLabel, queryBody string) {
+	collectionType := ReflectSliceType(collection)
 	tableName := TableNameByType(collectionType)
 
-	cols = CachedColumnCollectionFromType(tableName, ReflectSliceType(collection)).NotReadOnly()
+	cols := CachedColumnCollectionFromType(tableName, ReflectSliceType(collection)).NotReadOnly()
 
 	queryBodyBuffer := i.Conn.BufferPool.Get()
 	queryBodyBuffer.WriteString("SELECT ")
@@ -799,19 +735,6 @@ func (i *Invocation) generateDelete(object DatabaseMapped) (statementLabel, quer
 	return
 }
 
-func (i *Invocation) generateTruncate(object DatabaseMapped) (statmentLabel, queryBody string) {
-	tableName := TableName(object)
-
-	queryBodyBuffer := i.Conn.BufferPool.Get()
-	queryBodyBuffer.WriteString("TRUNCATE ")
-	queryBodyBuffer.WriteString(tableName)
-
-	queryBody = queryBodyBuffer.String()
-	statmentLabel = tableName + "_truncate"
-	i.Conn.BufferPool.Put(queryBodyBuffer)
-	return
-}
-
 // --------------------------------------------------------------------------------
 // helpers
 // --------------------------------------------------------------------------------
@@ -828,7 +751,7 @@ func (i *Invocation) AutoValues(autos *ColumnCollection) []interface{} {
 // SetAutos sets the automatic values for a given object.
 func (i *Invocation) SetAutos(object DatabaseMapped, autos *ColumnCollection, autoValues []interface{}) (err error) {
 	for index := 0; index < len(autoValues); index++ {
-		err = autos.Columns()[index].SetValue(object, autoValues[index])
+		err = autos.Columns()[index].SetValue(object, autoValues[index], false)
 		if err != nil {
 			err = Error(err)
 			return

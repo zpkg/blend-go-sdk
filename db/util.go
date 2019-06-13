@@ -5,9 +5,6 @@ import (
 	"reflect"
 	"strconv"
 	"strings"
-	"time"
-
-	"github.com/blend/go-sdk/ex"
 )
 
 // --------------------------------------------------------------------------------
@@ -131,15 +128,6 @@ func ParamTokensCSV(num int) string {
 	return str
 }
 
-// MakeNewDatabaseMapped returns a new instance of a database mapped type.
-func MakeNewDatabaseMapped(t reflect.Type) (DatabaseMapped, error) {
-	newInterface := reflect.New(t).Interface()
-	if typed, isTyped := newInterface.(DatabaseMapped); isTyped {
-		return typed.(DatabaseMapped), nil
-	}
-	return nil, ex.New("type does not implement DatabaseMapped", ex.OptMessagef("type: %s", t.Name()))
-}
-
 // makeNew creates a new object.
 func makeNew(t reflect.Type) interface{} {
 	return reflect.New(t).Interface()
@@ -147,12 +135,4 @@ func makeNew(t reflect.Type) interface{} {
 
 func makeSliceOfType(t reflect.Type) interface{} {
 	return reflect.New(reflect.SliceOf(t)).Interface()
-}
-
-func now() time.Time {
-	return time.Now().UTC()
-}
-
-func since(ts time.Time) time.Duration {
-	return now().Sub(ts)
 }

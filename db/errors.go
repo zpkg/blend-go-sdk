@@ -31,6 +31,8 @@ const (
 	ErrNoPrimaryKey ex.Class = "db: no primary key on object"
 	// ErrRowsNotColumnsProvider is returned by `PopulateByName` if you do not pass in `sql.Rows` as the scanner.
 	ErrRowsNotColumnsProvider ex.Class = "db: rows is not a columns provider"
+	// ErrTooManyRows is returned by Out if there is more than one row returned by the query
+	ErrTooManyRows ex.Class = "db: too many rows returned to map to single object"
 )
 
 // IsConfigUnset returns if the error is an `ErrConfigUnset`.

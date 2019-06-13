@@ -1,6 +1,8 @@
 package db
 
-import "time"
+import (
+	"time"
+)
 
 const (
 	// DefaultEngine is the default database engine.
