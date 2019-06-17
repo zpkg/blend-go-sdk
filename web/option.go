@@ -4,6 +4,7 @@ import (
 	"crypto/tls"
 	"fmt"
 	"net/http"
+	"time"
 
 	"github.com/blend/go-sdk/env"
 	"github.com/blend/go-sdk/logger"
@@ -110,4 +111,9 @@ func OptMethodNotAllowedHandler(action Action) Option {
 // OptNotFoundHandler sets default headers.
 func OptNotFoundHandler(action Action) Option {
 	return func(a *App) { a.NotFoundHandler = a.RenderAction(action) }
+}
+
+// OptShutdownGracePeriod sets the shutdown grace period.
+func OptShutdownGracePeriod(d time.Duration) Option {
+	return func(a *App) { a.Config.ShutdownGracePeriod = d }
 }

@@ -10,11 +10,6 @@ import (
 // CtxOption is an option for a context.
 type CtxOption func(*Ctx)
 
-// OptCtxID sets the context request id.
-func OptCtxID(id string) CtxOption {
-	return func(c *Ctx) { c.ID = id }
-}
-
 // OptCtxApp sets the context app.
 func OptCtxApp(a *App) CtxOption {
 	return func(c *Ctx) { c.App = a }

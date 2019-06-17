@@ -18,7 +18,6 @@ import (
 // NewCtx returns a new ctx.
 func NewCtx(w ResponseWriter, r *http.Request, options ...CtxOption) *Ctx {
 	ctx := Ctx{
-		ID:       NewRequestID(),
 		Response: w,
 		Request:  r,
 		State:    &SyncState{},
@@ -31,7 +30,6 @@ func NewCtx(w ResponseWriter, r *http.Request, options ...CtxOption) *Ctx {
 
 // Ctx is the struct that represents the context for an hc request.
 type Ctx struct {
-	ID              string
 	Auth            AuthManager
 	Response        ResponseWriter
 	Request         *http.Request

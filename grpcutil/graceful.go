@@ -11,6 +11,7 @@ import (
 // NewGraceful returns a new graceful host for a grpc server.
 func NewGraceful(listener net.Listener, server *grpc.Server) *Graceful {
 	return &Graceful{
+		Latch:    async.NewLatch(),
 		Listener: listener,
 		Server:   server,
 	}
@@ -18,7 +19,7 @@ func NewGraceful(listener net.Listener, server *grpc.Server) *Graceful {
 
 // Graceful is a shim for graceful hosting grpc servers.
 type Graceful struct {
-	async.Latch
+	*async.Latch
 	Log      logger.Log
 	Listener net.Listener
 	Server   *grpc.Server
