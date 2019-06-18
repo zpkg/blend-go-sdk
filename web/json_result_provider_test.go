@@ -18,7 +18,7 @@ func TestJSONResultProvider(t *testing.T) {
 
 	notAuthorized, ok := JSON.NotAuthorized().(*JSONResult)
 	assert.True(ok)
-	assert.Equal(http.StatusForbidden, notAuthorized.StatusCode)
+	assert.Equal(http.StatusUnauthorized, notAuthorized.StatusCode)
 	assert.Equal("Not Authorized", notAuthorized.Response)
 
 	forbidden, ok := JSON.Forbidden().(*JSONResult)
