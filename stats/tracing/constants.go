@@ -59,8 +59,10 @@ const (
 	OperationSQLQuery = "sql.query"
 	// OperationJob is a job operation.
 	OperationJob = "job"
-	// Operatation rpc is an rpc operation.
+	// OperationRPC is an rpc operation.
 	OperationRPC = "rpc"
+	// OperationVaultAPI is a call to the vault API
+	OperationVaultAPI = "vault.api.request"
 )
 
 // Span types have similar behaviour to "app types" and help categorize
@@ -92,6 +94,8 @@ const (
 	SpanTypeJob = "job"
 	// SpanTypeGRPC is a span type used by grpc services.
 	SpanTypeGRPC = "grpc"
+	// SpanTypeVault is a span type used by go-sdk/secrets calls to vault
+	SpanTypeVault = "vault"
 )
 
 // Priority is a hint given to the backend so that it knows which traces to reject or kept.

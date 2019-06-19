@@ -13,7 +13,7 @@ func TestMockClient(t *testing.T) {
 
 	client := NewMockClient()
 
-	err := client.Put(todo, "testo", map[string]string{"key_123": "value_xyz"})
+	err := client.Put(todo, "testo", map[string]interface{}{"key_123": "value_xyz"})
 	assert.Nil(err)
 
 	vals, err := client.Get(todo, "testo")
@@ -37,7 +37,7 @@ func TestMockClientList(t *testing.T) {
 	assert := assert.New(t)
 	todo := context.TODO()
 	client := NewMockClient()
-	data := map[string]string{"key_123": "value_xyz"}
+	data := map[string]interface{}{"key_123": "value_xyz"}
 
 	f := func(path string) []string {
 		vals, _ := client.List(todo, path)
@@ -93,7 +93,7 @@ func TestMockClientTransitEncrypt(t *testing.T) {
 	assert := assert.New(t)
 	client := NewMockClient()
 
-	err := client.CreateTransitKey(context.TODO(), "key1", map[string]interface{}{"mock_option": true})
+	err := client.CreateTransitKey(context.TODO(), "key1", TransitKeyCreation{})
 	assert.Nil(err)
 
 	cipher, err := client.Encrypt(context.TODO(), "key1", []byte(""), []byte("testo"))
@@ -115,7 +115,7 @@ func TestMockClientTransitKeyOperations(t *testing.T) {
 	assert := assert.New(t)
 	client := NewMockClient()
 
-	err := client.CreateTransitKey(context.TODO(), "key1", map[string]interface{}{"mock_option": true})
+	err := client.CreateTransitKey(context.TODO(), "key1", TransitKeyCreation{})
 	assert.Nil(err)
 
 	// Error when deleting a non deletion_allowed key
@@ -123,13 +123,8 @@ func TestMockClientTransitKeyOperations(t *testing.T) {
 	assert.NotNil(err)
 
 	// Configure Key
-	err = client.ConfigureTransitKey(context.TODO(), "key1", map[string]interface{}{"deletion_allowed": true})
+	err = client.ConfigureTransitKey(context.TODO(), "key1", TransitKeyUpdate{DeletionAllowed:true})
 	assert.Nil(err)
-
-	// Read Key
-	keyData, err := client.ReadTransitKey(context.TODO(), "key1")
-	assert.Nil(err)
-	assert.Equal(true, keyData["deletion_allowed"])
 
 	// Successfully delete key
 	err = client.DeleteTransitKey(context.TODO(), "key1")
@@ -145,7 +140,7 @@ func TestMockClientTransitNoKeyFailures(t *testing.T) {
 	assert.NotNil(err)
 
 	// Error configuring nonexistent key
-	err = client.ConfigureTransitKey(context.TODO(), "key1", map[string]interface{}{"deletion_allowed": true})
+	err = client.ConfigureTransitKey(context.TODO(), "key1", TransitKeyUpdate{DeletionAllowed:true})
 	assert.NotNil(err)
 
 	// Error reading nonexistent key

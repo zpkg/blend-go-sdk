@@ -18,18 +18,10 @@ type VaultTransit struct {
 }
 
 // CreateTransitKey creates a transit key path
-func (vt VaultTransit) CreateTransitKey(ctx context.Context, key string, params map[string]interface{}) error {
+func (vt VaultTransit) CreateTransitKey(ctx context.Context, key string, config TransitKeyCreation) error {
 	req := vt.Client.createRequest(MethodPost, filepath.Join("/v1/transit/keys/", key)).WithContext(ctx)
 
-	if _, ok := params["type"]; !ok {
-		params["type"] = "aes256-gcm96"
-	}
-
-	if _, ok := params["derived"]; !ok {
-		params["derived"] = true
-	}
-
-	body, err := vt.Client.jsonBody(params)
+	body, err := vt.Client.jsonBody(config)
 	if err != nil {
 		return err
 	}
@@ -45,7 +37,7 @@ func (vt VaultTransit) CreateTransitKey(ctx context.Context, key string, params 
 }
 
 // ConfigureTransitKey configures a transit key path
-func (vt VaultTransit) ConfigureTransitKey(ctx context.Context, key string, config map[string]interface{}) error {
+func (vt VaultTransit) ConfigureTransitKey(ctx context.Context, key string, config TransitKeyUpdate) error {
 	req := vt.Client.createRequest(MethodPost, filepath.Join("/v1/transit/keys/", key, "config")).WithContext(ctx)
 
 	body, err := vt.Client.jsonBody(config)

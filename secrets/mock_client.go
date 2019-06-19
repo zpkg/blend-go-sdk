@@ -14,7 +14,8 @@ var (
 
 // MockTransitKey is a mocked transit key
 type MockTransitKey struct {
-	Properties map[string]interface{}
+	CreationProps *TransitKeyCreation
+	UpdateProps *TransitKeyUpdate
 	Keys       map[string][]byte
 }
 
@@ -84,9 +85,8 @@ func (c *MockClient) List(_ context.Context, path string, options ...RequestOpti
 }
 
 // CreateTransitKey creates a new transit key.
-func (c *MockClient) CreateTransitKey(ctx context.Context, key string, params map[string]interface{}) error {
+func (c *MockClient) CreateTransitKey(ctx context.Context, key string, params TransitKeyCreation) error {
 	c.TransitKeys[key] = MockTransitKey{
-		Properties: make(map[string]interface{}),
 		Keys:       make(map[string][]byte),
 	}
 
@@ -94,15 +94,13 @@ func (c *MockClient) CreateTransitKey(ctx context.Context, key string, params ma
 }
 
 // ConfigureTransitKey configures a transit key path
-func (c *MockClient) ConfigureTransitKey(ctx context.Context, key string, config map[string]interface{}) error {
+func (c *MockClient) ConfigureTransitKey(ctx context.Context, key string, config TransitKeyUpdate) error {
 	keyPath, ok := c.TransitKeys[key]
 	if !ok {
 		return fmt.Errorf("No key")
 	}
 
-	for opt, value := range config {
-		keyPath.Properties[opt] = value
-	}
+	keyPath.UpdateProps = &config
 
 	c.TransitKeys[key] = keyPath
 	return nil
@@ -110,12 +108,12 @@ func (c *MockClient) ConfigureTransitKey(ctx context.Context, key string, config
 
 // ReadTransitKey returns data about a transit key path
 func (c *MockClient) ReadTransitKey(ctx context.Context, key string) (map[string]interface{}, error) {
-	keyPath, ok := c.TransitKeys[key]
+	_, ok := c.TransitKeys[key]
 	if !ok {
 		return map[string]interface{}{}, fmt.Errorf("No key")
 	}
 
-	return keyPath.Properties, nil
+	return map[string]interface{} {"SampleIntProp": 1, "SampleBoolProp": true, "SampleStringProp": "Foo"}, nil
 }
 
 // DeleteTransitKey deletes a transit key path
@@ -125,7 +123,7 @@ func (c *MockClient) DeleteTransitKey(ctx context.Context, key string) error {
 		return fmt.Errorf("No key")
 	}
 
-	if keyPath.Properties["deletion_allowed"] != true {
+	if keyPath.UpdateProps == nil || !keyPath.UpdateProps.DeletionAllowed {
 		return fmt.Errorf("Deletion is not allowed for key")
 	}
 
