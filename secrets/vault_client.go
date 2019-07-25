@@ -157,12 +157,12 @@ func (c *VaultClient) WriteInto(ctx context.Context, key string, obj interface{}
 }
 
 // CreateTransitKey creates a transit key path
-func (c *VaultClient) CreateTransitKey(ctx context.Context, key string, options ...TKCreateOption) error {
+func (c *VaultClient) CreateTransitKey(ctx context.Context, key string, options ...CreateTransitKeyOption) error {
 	return c.Transit.CreateTransitKey(ctx, key, options...)
 }
 
 // ConfigureTransitKey configures a transit key path
-func (c *VaultClient) ConfigureTransitKey(ctx context.Context, key string, options ...TKUpdateOption) error {
+func (c *VaultClient) ConfigureTransitKey(ctx context.Context, key string, options ...UpdateTransitKeyOption) error {
 	return c.Transit.ConfigureTransitKey(ctx, key, options...)
 }
 

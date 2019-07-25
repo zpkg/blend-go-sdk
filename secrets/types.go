@@ -210,8 +210,8 @@ type TransitResult struct {
 	} `json:"data"`
 }
 
-// TKCreateConfig is the configuration data for creating a TransitKey
-type TKCreateConfig struct {
+// CreateTransitKeyConfig is the configuration data for creating a TransitKey
+type CreateTransitKeyConfig struct {
 	// Convergent - If enabled, the key will support convergent encryption, where the same plaintext creates the same
 	// ciphertext. This requires derived to be set to true. When enabled, each encryption(/decryption/rewrap/datakey)
 	// operation will derive a nonce value rather than randomly generate it.
@@ -237,8 +237,8 @@ type TKCreateConfig struct {
 	Type string `json:"type"`
 }
 
-// TKUpdateConfig is the configuration data for modifying a TransitKey
-type TKUpdateConfig struct {
+// UpdateTransitKeyConfig is the configuration data for modifying a TransitKey
+type UpdateTransitKeyConfig struct {
 	// MinDecryptionVersion -  Specifies the minimum version of ciphertext allowed to be decrypted. Adjusting this as
 	// part of a key rotation policy can prevent old copies of ciphertext from being decrypted, should they fall into
 	// the wrong hands. For signatures, this value controls the minimum version of signature that can be verified

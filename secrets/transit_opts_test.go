@@ -7,12 +7,12 @@ import (
 
 func TestTransitCreateOptConfig(t *testing.T) {
 	a := assert.New(t)
-	cfg := TKCreateConfig{
+	cfg := CreateTransitKeyConfig{
 		Derived: true,
 		Convergent: true,
 	}
 
-	empty := &TKCreateConfig{}
+	empty := &CreateTransitKeyConfig{}
 
 	TKCreateOptConfig(cfg)(empty)
 
@@ -22,12 +22,12 @@ func TestTransitCreateOptConfig(t *testing.T) {
 
 func TestTransitUpdateOptConfig(t *testing.T) {
 	a := assert.New(t)
-	cfg := TKUpdateConfig{
+	cfg := UpdateTransitKeyConfig{
 		Exportable: true,
 		AllowPlaintextBackup: true,
 	}
 
-	empty := &TKUpdateConfig{}
+	empty := &UpdateTransitKeyConfig{}
 
 	TKUpdateOptConfig(cfg)(empty)
 
@@ -37,7 +37,7 @@ func TestTransitUpdateOptConfig(t *testing.T) {
 
 func TestTransitCreateOptMisc(t *testing.T) {
 	a := assert.New(t)
-	empty := &TKCreateConfig{}
+	empty := &CreateTransitKeyConfig{}
 
 	TKCreateOptDerived()(empty)
 	a.True(empty.Derived)
@@ -64,7 +64,7 @@ func TestTransitCreateOptMisc(t *testing.T) {
 
 func TestTransitUpdateOptMisc(t *testing.T) {
 	a := assert.New(t)
-	empty := &TKUpdateConfig{}
+	empty := &UpdateTransitKeyConfig{}
 
 	TKUpdateOptDeletionAllowed(true)(empty)
 	a.True(*empty.DeletionAllowed)
