@@ -45,7 +45,7 @@ const (
 	// TagSecretsOperation is the operation being performed in the secrets API
 	TagSecretsOperation = "secrets.operation"
 	// TagSecretsMethod is the http method being hit on the vault API
-	TagSecretsMethod = "secrets.method"
+	TagSecretKey = "secrets.key"
 )
 
 // Operations are actions represented by spans.

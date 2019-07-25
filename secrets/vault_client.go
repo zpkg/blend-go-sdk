@@ -270,15 +270,23 @@ func (c *VaultClient) createRequest(method, path string, options ...RequestOptio
 	return req
 }
 
-func (c *VaultClient) send(req *http.Request) (io.ReadCloser, error) {
+func (c *VaultClient) send(req *http.Request, traceOptions ...TraceOption) (io.ReadCloser, error) {
 	logger.MaybeTrigger(req.Context(), c.Log, NewEvent(req))
 	var finisher TraceFinisher
 	if c.Tracer != nil {
-		finisher = c.Tracer.Start(req)
+		var traceErr error
+		finisher, traceErr = c.Tracer.Start(req.Context(), traceOptions...)
+		if traceErr != nil {
+			logger.MaybeError(c.Log, traceErr)
+		}
 	}
 	res, err := c.Client.Do(req)
 	if finisher != nil {
-		finisher.Finish(req, res, err)
+		var statusCode = 500
+		if res != nil {
+			statusCode = res.StatusCode
+		}
+		finisher.Finish(req.Context(), statusCode, err)
 	}
 	if err != nil {
 		return nil, err

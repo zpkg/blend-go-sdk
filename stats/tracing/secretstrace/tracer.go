@@ -1,6 +1,7 @@
 package secretstrace
 
 import (
+	"context"
 	"github.com/blend/go-sdk/secrets"
 	"github.com/blend/go-sdk/stats/tracing"
 	"github.com/opentracing/opentracing-go"
@@ -18,31 +19,40 @@ type secretsTracer struct {
 	tracer opentracing.Tracer
 }
 
-func (st secretsTracer) Start(req *http.Request) secrets.TraceFinisher {
+func (st secretsTracer) Start(ctx context.Context, options ...secrets.TraceOption) (secrets.TraceFinisher, error) {
+	var config secrets.SecretTraceConfig
+	for _, opt := range options {
+		err := opt(&config)
+		if err != nil {
+			return secretsTraceFinisher{}, nil
+		}
+	}
 	startOptions := []opentracing.StartSpanOption{
 		opentracing.Tag{Key: tracing.TagKeySpanType, Value: tracing.SpanTypeVault},
-		opentracing.Tag{Key: tracing.TagSecretsOperation, Value: parseOperation(req)},
-		opentracing.Tag{Key: tracing.TagSecretsMethod, Value: parseMethod(req)},
 		opentracing.StartTime(time.Now().UTC()),
 	}
-	span, _ := tracing.StartSpanFromContext(req.Context(), st.tracer, tracing.OperationVaultAPI, startOptions...)
-	if req.Header == nil {
-		req.Header = make(http.Header)
+	if config.VaultOperation != "" {
+		startOptions = append(startOptions, opentracing.Tag{Key: tracing.TagSecretsOperation, Value: config.VaultOperation})
 	}
-	st.tracer.Inject(span.Context(), opentracing.HTTPHeaders, opentracing.HTTPHeadersCarrier(req.Header))
-	return secretsTraceFinisher{span: span}
+	if config.KeyName != "" {
+		startOptions = append(startOptions, opentracing.Tag{Key: tracing.TagSecretKey, Value: config.KeyName})
+	}
+	span, _ := tracing.StartSpanFromContext(ctx, st.tracer, tracing.OperationVaultAPI, startOptions...)
+	return secretsTraceFinisher{span: span}, nil
 }
 
 type secretsTraceFinisher struct {
 	span opentracing.Span
 }
 
-func (stf secretsTraceFinisher) Finish(req *http.Request, res *http.Response, err error) {
+func (stf secretsTraceFinisher) Finish(_ context.Context, vaultStatusCode int, vaultError error) {
 	if stf.span == nil {
 		return
 	}
-	tracing.SpanError(stf.span, err)
-	stf.span.SetTag(tracing.TagKeyHTTPCode, strconv.Itoa(res.StatusCode))
+	if vaultError != nil {
+		tracing.SpanError(stf.span, vaultError)
+	}
+	stf.span.SetTag(tracing.TagKeyHTTPCode, strconv.Itoa(vaultStatusCode))
 	stf.span.Finish()
 }
 
