@@ -21,6 +21,8 @@ type secretsTracer struct {
 func (st secretsTracer) Start(req *http.Request) secrets.TraceFinisher {
 	startOptions := []opentracing.StartSpanOption{
 		opentracing.Tag{Key: tracing.TagKeySpanType, Value: tracing.SpanTypeVault},
+		opentracing.Tag{Key: tracing.TagSecretsOperation, Value: parseOperation(req)},
+		opentracing.Tag{Key: tracing.TagSecretsMethod, Value: parseMethod(req)},
 		opentracing.StartTime(time.Now().UTC()),
 	}
 	span, _ := tracing.StartSpanFromContext(req.Context(), st.tracer, tracing.OperationVaultAPI, startOptions...)
@@ -44,4 +46,17 @@ func (stf secretsTraceFinisher) Finish(req *http.Request, res *http.Response, er
 	stf.span.Finish()
 }
 
+func parseMethod(req *http.Request) string {
+	if req != nil && req.URL != nil {
+		return req.Method
+	}
+	return "UNKNOWN"
+}
 
+
+func parseOperation(req *http.Request) string {
+	if req != nil && req.URL != nil {
+		return req.URL.Path
+	}
+	return "UNKNOWN"
+}

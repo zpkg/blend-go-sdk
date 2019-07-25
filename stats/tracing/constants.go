@@ -42,6 +42,10 @@ const (
 	TagKeyGRPCUserAgent = "grpc.user_agent"
 	// TagKeyGRPCContentType is the grpc content type.
 	TagKeyGRPCContentType = "grpc.content_type"
+	// TagSecretsOperation is the operation being performed in the secrets API
+	TagSecretsOperation = "secrets.operation"
+	// TagSecretsMethod is the http method being hit on the vault API
+	TagSecretsMethod = "secrets.method"
 )
 
 // Operations are actions represented by spans.
