@@ -35,7 +35,7 @@ func (vt VaultTransit) CreateTransitKey(ctx context.Context, key string, options
 	}
 	req.Body = body
 
-	res, err := vt.Client.send(req, TraceOptVaultOperation("transit.create"), TraceOptKeyName(key))
+	res, err := vt.Client.send(req, OptTraceVaultOperation("transit.create"), OptTraceKeyName(key))
 	if err != nil {
 		return err
 	}
@@ -62,7 +62,7 @@ func (vt VaultTransit) ConfigureTransitKey(ctx context.Context, key string, opti
 	}
 	req.Body = body
 
-	res, err := vt.Client.send(req, TraceOptVaultOperation("transit.configure"), TraceOptKeyName(key))
+	res, err := vt.Client.send(req, OptTraceVaultOperation("transit.configure"), OptTraceKeyName(key))
 	if err != nil {
 		return err
 	}
@@ -75,7 +75,7 @@ func (vt VaultTransit) ConfigureTransitKey(ctx context.Context, key string, opti
 func (vt VaultTransit) ReadTransitKey(ctx context.Context, key string) (map[string]interface{}, error) {
 	req := vt.Client.createRequest(MethodGet, filepath.Join("/v1/transit/keys/", key)).WithContext(ctx)
 
-	res, err := vt.Client.send(req, TraceOptVaultOperation("transit.read"), TraceOptKeyName(key))
+	res, err := vt.Client.send(req, OptTraceVaultOperation("transit.read"), OptTraceKeyName(key))
 	if err != nil {
 		return map[string]interface{}{}, err
 	}
@@ -93,7 +93,7 @@ func (vt VaultTransit) ReadTransitKey(ctx context.Context, key string) (map[stri
 func (vt VaultTransit) DeleteTransitKey(ctx context.Context, key string) error {
 	req := vt.Client.createRequest(MethodDelete, filepath.Join("/v1/transit/keys/", key)).WithContext(ctx)
 
-	res, err := vt.Client.send(req, TraceOptVaultOperation("transit.delete"), TraceOptKeyName(key))
+	res, err := vt.Client.send(req, OptTraceVaultOperation("transit.delete"), OptTraceKeyName(key))
 	if err != nil {
 		return err
 	}
@@ -119,7 +119,7 @@ func (vt VaultTransit) Encrypt(ctx context.Context, key string, context, data []
 	}
 	req.Body = body
 
-	res, err := vt.Client.send(req, TraceOptVaultOperation("transit.encrypt"), TraceOptKeyName(key))
+	res, err := vt.Client.send(req, OptTraceVaultOperation("transit.encrypt"), OptTraceKeyName(key))
 	if err != nil {
 		return "", err
 	}
@@ -150,7 +150,7 @@ func (vt VaultTransit) Decrypt(ctx context.Context, key string, context []byte, 
 	}
 	req.Body = body
 
-	res, err := vt.Client.send(req, TraceOptVaultOperation("transit.decrypt"), TraceOptKeyName(key))
+	res, err := vt.Client.send(req, OptTraceVaultOperation("transit.decrypt"), OptTraceKeyName(key))
 	if err != nil {
 		return nil, err
 	}
