@@ -93,7 +93,7 @@ func TestMockClientTransitEncrypt(t *testing.T) {
 	assert := assert.New(t)
 	client := NewMockClient()
 
-	err := client.CreateTransitKey(context.TODO(), "key1", TransitKeyCreation{})
+	err := client.CreateTransitKey(context.TODO(), "key1")
 	assert.Nil(err)
 
 	cipher, err := client.Encrypt(context.TODO(), "key1", []byte(""), []byte("testo"))
@@ -115,7 +115,7 @@ func TestMockClientTransitKeyOperations(t *testing.T) {
 	assert := assert.New(t)
 	client := NewMockClient()
 
-	err := client.CreateTransitKey(context.TODO(), "key1", TransitKeyCreation{})
+	err := client.CreateTransitKey(context.TODO(), "key1")
 	assert.Nil(err)
 
 	// Error when deleting a non deletion_allowed key
@@ -123,7 +123,7 @@ func TestMockClientTransitKeyOperations(t *testing.T) {
 	assert.NotNil(err)
 
 	// Configure Key
-	err = client.ConfigureTransitKey(context.TODO(), "key1", TransitKeyUpdate{DeletionAllowed:true})
+	err = client.ConfigureTransitKey(context.TODO(), "key1", TKUpdateOptDeletionAllowed(true))
 	assert.Nil(err)
 
 	// Successfully delete key
@@ -140,7 +140,7 @@ func TestMockClientTransitNoKeyFailures(t *testing.T) {
 	assert.NotNil(err)
 
 	// Error configuring nonexistent key
-	err = client.ConfigureTransitKey(context.TODO(), "key1", TransitKeyUpdate{DeletionAllowed:true})
+	err = client.ConfigureTransitKey(context.TODO(), "key1", TKUpdateOptDeletionAllowed(true))
 	assert.NotNil(err)
 
 	// Error reading nonexistent key

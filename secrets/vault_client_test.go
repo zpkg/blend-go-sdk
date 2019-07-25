@@ -148,7 +148,7 @@ func TestVaultCreateTransitKey(t *testing.T) {
 		)
 	client.Client = m
 
-	err = client.CreateTransitKey(todo, "key", TransitKeyCreation{})
+	err = client.CreateTransitKey(todo, "key")
 	assert.Nil(err)
 }
 
@@ -172,7 +172,7 @@ func TestVaultConfigureTransitKey(t *testing.T) {
 		)
 	client.Client = m
 
-	err = client.ConfigureTransitKey(todo, "key", TransitKeyUpdate{DeletionAllowed:true})
+	err = client.ConfigureTransitKey(todo, "key", TKUpdateOptDeletionAllowed(true))
 	assert.Nil(err)
 }
 

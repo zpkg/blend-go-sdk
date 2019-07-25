@@ -210,8 +210,8 @@ type TransitResult struct {
 	} `json:"data"`
 }
 
-// TransitKeyCreation is the configuration data for creating a TransitKey
-type TransitKeyCreation struct {
+// TKCreateConfig is the configuration data for creating a TransitKey
+type TKCreateConfig struct {
 	// Convergent - If enabled, the key will support convergent encryption, where the same plaintext creates the same
 	// ciphertext. This requires derived to be set to true. When enabled, each encryption(/decryption/rewrap/datakey)
 	// operation will derive a nonce value rather than randomly generate it.
@@ -237,8 +237,8 @@ type TransitKeyCreation struct {
 	Type string `json:"type"`
 }
 
-// TransitKeyUpdate is the configuration data for modifying a TransitKey
-type TransitKeyUpdate struct {
+// TKUpdateConfig is the configuration data for modifying a TransitKey
+type TKUpdateConfig struct {
 	// MinDecryptionVersion -  Specifies the minimum version of ciphertext allowed to be decrypted. Adjusting this as
 	// part of a key rotation policy can prevent old copies of ciphertext from being decrypted, should they fall into
 	// the wrong hands. For signatures, this value controls the minimum version of signature that can be verified
@@ -249,7 +249,7 @@ type TransitKeyUpdate struct {
 	// min_decryption_version.
 	MinEncryptionVersion int `json:"min_encryption_version,omitempty"`
 	// DeletionAllowed - Specifies if the key is allowed to be deleted.
-	DeletionAllowed bool `json:"derived,omitempty"`
+	DeletionAllowed *bool `json:"derived,omitempty"`
 	// Exportable - Enables keys to be exportable. This allows for all the valid keys in the key ring to be exported.
 	// Once set, this cannot be disabled.
 	Exportable bool `json:"exportable,omitempty"`

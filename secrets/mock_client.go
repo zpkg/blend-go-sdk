@@ -14,8 +14,8 @@ var (
 
 // MockTransitKey is a mocked transit key
 type MockTransitKey struct {
-	CreationProps *TransitKeyCreation
-	UpdateProps *TransitKeyUpdate
+	CreationProps *TKCreateConfig
+	UpdateProps *TKUpdateConfig
 	Keys       map[string][]byte
 }
 
@@ -85,7 +85,7 @@ func (c *MockClient) List(_ context.Context, path string, options ...RequestOpti
 }
 
 // CreateTransitKey creates a new transit key.
-func (c *MockClient) CreateTransitKey(ctx context.Context, key string, params TransitKeyCreation) error {
+func (c *MockClient) CreateTransitKey(ctx context.Context, key string, options ...TKCreateOption) error {
 	c.TransitKeys[key] = MockTransitKey{
 		Keys:       make(map[string][]byte),
 	}
@@ -94,13 +94,17 @@ func (c *MockClient) CreateTransitKey(ctx context.Context, key string, params Tr
 }
 
 // ConfigureTransitKey configures a transit key path
-func (c *MockClient) ConfigureTransitKey(ctx context.Context, key string, config TransitKeyUpdate) error {
+func (c *MockClient) ConfigureTransitKey(ctx context.Context, key string, options ...TKUpdateOption) error {
 	keyPath, ok := c.TransitKeys[key]
 	if !ok {
 		return fmt.Errorf("No key")
 	}
+	config := &TKUpdateConfig{}
+	for _, o := range options {
+		o(config)
+	}
 
-	keyPath.UpdateProps = &config
+	keyPath.UpdateProps = config
 
 	c.TransitKeys[key] = keyPath
 	return nil
@@ -123,7 +127,7 @@ func (c *MockClient) DeleteTransitKey(ctx context.Context, key string) error {
 		return fmt.Errorf("No key")
 	}
 
-	if keyPath.UpdateProps == nil || !keyPath.UpdateProps.DeletionAllowed {
+	if keyPath.UpdateProps == nil || keyPath.UpdateProps.DeletionAllowed == nil || !*keyPath.UpdateProps.DeletionAllowed {
 		return fmt.Errorf("Deletion is not allowed for key")
 	}
 

@@ -18,7 +18,15 @@ type VaultTransit struct {
 }
 
 // CreateTransitKey creates a transit key path
-func (vt VaultTransit) CreateTransitKey(ctx context.Context, key string, config TransitKeyCreation) error {
+func (vt VaultTransit) CreateTransitKey(ctx context.Context, key string, options ...TKCreateOption) error {
+	config := &TKCreateConfig{}
+	for _, o := range options {
+		err := o(config)
+		if err != nil {
+			return err
+		}
+	}
+
 	req := vt.Client.createRequest(MethodPost, filepath.Join("/v1/transit/keys/", key)).WithContext(ctx)
 
 	body, err := vt.Client.jsonBody(config)
@@ -37,10 +45,18 @@ func (vt VaultTransit) CreateTransitKey(ctx context.Context, key string, config 
 }
 
 // ConfigureTransitKey configures a transit key path
-func (vt VaultTransit) ConfigureTransitKey(ctx context.Context, key string, config TransitKeyUpdate) error {
+func (vt VaultTransit) ConfigureTransitKey(ctx context.Context, key string, options ...TKUpdateOption) error {
+	config := &TKUpdateConfig{}
+	for _, o := range options {
+		err := o(config)
+		if err != nil {
+			return err
+		}
+	}
+
 	req := vt.Client.createRequest(MethodPost, filepath.Join("/v1/transit/keys/", key, "config")).WithContext(ctx)
 
-	body, err := vt.Client.jsonBody(config)
+	body, err := vt.Client.jsonBody(*config)
 	if err != nil {
 		return err
 	}
