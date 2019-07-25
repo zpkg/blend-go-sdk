@@ -14,7 +14,7 @@ func TestTransitCreateOptConfig(t *testing.T) {
 
 	empty := &CreateTransitKeyConfig{}
 
-	TKCreateOptConfig(cfg)(empty)
+	OptCreateTransitConfig(cfg)(empty)
 
 	a.True(empty.Derived)
 	a.True(empty.Convergent)
@@ -29,7 +29,7 @@ func TestTransitUpdateOptConfig(t *testing.T) {
 
 	empty := &UpdateTransitKeyConfig{}
 
-	TKUpdateOptConfig(cfg)(empty)
+	OptUpdateTransitConfig(cfg)(empty)
 
 	a.True(empty.Exportable)
 	a.True(empty.AllowPlaintextBackup)
@@ -39,25 +39,25 @@ func TestTransitCreateOptMisc(t *testing.T) {
 	a := assert.New(t)
 	empty := &CreateTransitKeyConfig{}
 
-	TKCreateOptDerived()(empty)
+	OptCreateTransitDerived()(empty)
 	a.True(empty.Derived)
 
 	empty.Derived = false
 
-	TKCreateOptConvergent()(empty)
+	OptCreateTransitConvergent()(empty)
 	a.True(empty.Derived)
 	a.True(empty.Convergent)
 
-	TKCreateOptAllowPlaintextBackup()(empty)
+	OptCreateTransitAllowPlaintextBackup()(empty)
 	a.True(empty.AllowPlaintextBackup)
 
-	TKCreateOptExportable()(empty)
+	OptCreateTransitExportable()(empty)
 	a.True(empty.Exportable)
 
-	err := TKCreateOptType("not a real type")(empty)
+	err := OptCreateTransitType("not a real type")(empty)
 	a.NotNil(err)
 
-	err = TKCreateOptType(TypeCHACHA20POLY1305)(empty)
+	err = OptCreateTransitType(TypeCHACHA20POLY1305)(empty)
 	a.Nil(err)
 	a.Equal(TypeCHACHA20POLY1305, empty.Type)
 }
@@ -66,21 +66,21 @@ func TestTransitUpdateOptMisc(t *testing.T) {
 	a := assert.New(t)
 	empty := &UpdateTransitKeyConfig{}
 
-	TKUpdateOptDeletionAllowed(true)(empty)
+	OptUpdateTransitDeletionAllowed(true)(empty)
 	a.True(*empty.DeletionAllowed)
 
-	TKUpdateOptDeletionAllowed(false)(empty)
+	OptUpdateTransitDeletionAllowed(false)(empty)
 	a.False(*empty.DeletionAllowed)
 
-	TKUpdateOptAllowPlaintextBackup()(empty)
+	OptUpdateTransitAllowPlaintextBackup()(empty)
 	a.True(empty.AllowPlaintextBackup)
 
-	TKUpdateOptExportable()(empty)
+	OptUpdateTransitExportable()(empty)
 	a.True(empty.Exportable)
 
-	TKUpdateOptMinDecryptionVersion(4)(empty)
+	OptUpdateTransitMinDecryptionVer(4)(empty)
 	a.Equal(4, empty.MinDecryptionVersion)
 
-	TKUpdateOptMinEncryptionnVersion(5)(empty)
+	OptUpdateTransitMinEncryptionVer(5)(empty)
 	a.Equal(5, empty.MinEncryptionVersion)
 }
