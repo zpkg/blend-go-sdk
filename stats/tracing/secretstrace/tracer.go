@@ -5,7 +5,6 @@ import (
 	"github.com/blend/go-sdk/secrets"
 	"github.com/blend/go-sdk/stats/tracing"
 	"github.com/opentracing/opentracing-go"
-	"net/http"
 	"strconv"
 	"time"
 )
@@ -54,19 +53,4 @@ func (stf secretsTraceFinisher) Finish(_ context.Context, vaultStatusCode int, v
 	}
 	stf.span.SetTag(tracing.TagKeyHTTPCode, strconv.Itoa(vaultStatusCode))
 	stf.span.Finish()
-}
-
-func parseMethod(req *http.Request) string {
-	if req != nil && req.URL != nil {
-		return req.Method
-	}
-	return "UNKNOWN"
-}
-
-
-func parseOperation(req *http.Request) string {
-	if req != nil && req.URL != nil {
-		return req.URL.Path
-	}
-	return "UNKNOWN"
 }
