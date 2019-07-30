@@ -7,6 +7,7 @@ import (
 	"testing"
 
 	"github.com/blend/go-sdk/assert"
+	"github.com/blend/go-sdk/logger"
 )
 
 func TestUpstreamWithoutHopHeaders(t *testing.T) {
@@ -27,7 +28,7 @@ func TestUpstreamServeHTTP(t *testing.T) {
 
 	u := NewUpstream(MustParseURL(srv.URL))
 	assert.NotNil(u.ReverseProxy)
-	u.Log = nil
+	u.Log = logger.None()
 
 	proxy := NewProxy()
 	proxy.Upstreams = append(proxy.Upstreams, u)
