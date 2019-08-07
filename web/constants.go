@@ -3,8 +3,6 @@ package web
 import (
 	"net/http"
 	"time"
-
-	"github.com/blend/go-sdk/webutil"
 )
 
 const (
@@ -116,18 +114,6 @@ const (
 	ContentEncodingIdentity = "identity"
 	// ContentEncodingGZIP is the gzip (compressed) content encoding.
 	ContentEncodingGZIP = "gzip"
-)
-
-// AuthManagerMode is an auth manager mode.
-type AuthManagerMode string
-
-const (
-	// AuthManagerModeJWT is the jwt auth mode.
-	AuthManagerModeJWT AuthManagerMode = "jwt"
-	// AuthManagerModeRemote is the remote (i.e. database) managed auth mode.
-	AuthManagerModeRemote AuthManagerMode = "remote"
-	// AuthManagerModeLocal is the local map cache auth mode.
-	AuthManagerModeLocal AuthManagerMode = "local"
 )
 
 const (
@@ -242,8 +228,6 @@ const (
 	DefaultCookieSecure = true
 	// DefaultCookieHTTPOnly returns what the default value for the `HTTPOnly` bit of issued cookies will be.
 	DefaultCookieHTTPOnly = true
-	// DefaultCookieSameSite returns what the default value for the `SameSite` bit of issued cookies will be.
-	DefaultCookieSameSite = webutil.SameSiteDefault
 	// DefaultSessionTimeout is the default absolute timeout for a session (24 hours as a sane default).
 	DefaultSessionTimeout time.Duration = 24 * time.Hour
 	// DefaultUseSessionCache is the default if we should use the auth manager session cache.

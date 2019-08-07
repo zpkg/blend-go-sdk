@@ -46,6 +46,8 @@ const (
 	TagSecretsOperation = "secrets.operation"
 	// TagSecretsMethod is the http method being hit on the vault API
 	TagSecretKey = "secrets.key"
+	// TagKeyOAuthUsername defines the oauth Username name for the Span.
+	TagKeyOAuthUsername = "oauth.username"
 )
 
 // Operations are actions represented by spans.
