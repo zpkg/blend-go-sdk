@@ -2,6 +2,8 @@ package env
 
 import (
 	"fmt"
+	"unicode"
+
 	"github.com/blend/go-sdk/ex"
 )
 
@@ -75,9 +77,10 @@ func Parse(s string, separator PairDelimiter) (Vars, error) {
 	var value string
 	var buffer string
 	state := 0
-	s = ensureTrailingDelim(s, separator)
 
 	for _, c := range s {
+		// Having a string is convenient so we can do quality comparisons with
+		// the tokens defined in the constants section
 		char := string(c)
 
 		switch state {
@@ -91,8 +94,20 @@ func Parse(s string, separator PairDelimiter) (Vars, error) {
 				if _, exists := ret[key]; exists {
 					return ret, ex.New("Duplicate keys are not allowed")
 				}
+
+				// It is illegal to have an empty key
+				if len(key) == 0 {
+					return ret, ex.New("Empty keys are not allowed")
+				}
+
+				// It is illegal to have an empty value
+				if len(buffer) == 0 {
+					return ret, ex.New("Empty values are not allowed")
+				}
 				value = buffer
 				ret[key] = value
+
+				// clear out the buffers and start over
 				buffer = ""
 				key = ""
 				value = ""
@@ -102,27 +117,32 @@ func Parse(s string, separator PairDelimiter) (Vars, error) {
 				state = 2
 			} else if char == QuoteDelimiter {
 				state = 3
-			} else if char == SpaceDelimiter {
+			} else if unicode.IsSpace(c) {
 				continue
 			} else {
 				buffer += char
 			}
-
-		// Escape literal: we want to take whatever the next token is, goes back to the root mode
 		case 1:
+			// Escape literal: we want to take whatever the next token is, goes back to the root mode
 			buffer += char
 			state = 0
-
+		case 2:
+			// It is illegal to have an empty key
+			if len(buffer) == 0 {
+				return ret, ex.New("Empty keys are not allowed")
+			}
 			// Previous value was an equals sign, so we want to assign the key and
 			// clear the buffer and add the current character
-		case 2:
 			key = buffer
-			// clear the buffer and add the current character
-			buffer = char
-			state = 0
+			// clear the buffer and add the current character (excluding whitespace)
+			buffer = ""
 
-			// Quote mode: accept all text except for the end quote (excluding anything that is escaped)
+			if !unicode.IsSpace(c) {
+				buffer += char
+			}
+			state = 0
 		case 3:
+			// Quote mode: accept all text except for the end quote (excluding anything that is escaped)
 			if char == EscapeDelimiter {
 				// ignore the escape and continue
 				state = 4
@@ -132,16 +152,24 @@ func Parse(s string, separator PairDelimiter) (Vars, error) {
 			} else {
 				buffer += char
 			}
-
-		// Escape literal within a quote, goes back to quote mode
 		case 4:
+			// Escape literal within a quote, goes back to quote mode
 			buffer += char
 			state = 3
 		}
 	}
 
+	// This handles the case where the key-value pair doesn't have a separator
+	// (which is valid grammar). We could go about the option of inserting an
+	// extra separator, but that is difficult to do as a preprocessing step
+	// because you could have a scenario where there are trailing spaces, or even
+	if state == 0 && len(buffer) > 0 {
+		ret[key] = buffer
+	}
+
 	// State 0 is the only valid ending state. If this is not the case, then
-	// show the user a parsing error.
+	// show the user a parsing error. In the event the input wasn't terminated,
+	// we can mitigate by taking the last key-val pair from the buffers.
 	switch state {
 	case 1:
 		return ret, ex.New("Ended input on an escape delimiter (`\\`)")
@@ -153,13 +181,4 @@ func Parse(s string, separator PairDelimiter) (Vars, error) {
 		return ret, ex.New("Ended input on an escape delimiter (`\\`)")
 	}
 	return ret, nil
-}
-
-// ensureTrailingDelim adds a trailing separator to the input if it doesn't
-// exist, to aid with parsing
-func ensureTrailingDelim(input string, separator PairDelimiter) string {
-	if input[len(input)-1:] != separator {
-		return input + separator
-	}
-	return input
 }
