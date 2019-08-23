@@ -70,20 +70,22 @@ func (ev Vars) DelimitedString(separator PairDelimiter) string {
 // <space> ::= ' '
 // <escape_quote> ::= '\"'
 func Parse(s string, separator PairDelimiter) (Vars, error) {
-	var ret Vars
+	ret := make(Vars)
 	var key string
 	var value string
 	var buffer string
 	state := 0
+	s = ensureTrailingDelim(s, separator)
 
-	for c := range s {
+	for _, c := range s {
 		char := string(c)
 
 		switch state {
 		// The "root" case, which simply evaluates each character from the
 		// initial state. This is the only valid ending state.
 		case 0:
-			// in the case where we have a key-value pair, we want to add that to the map
+			// In the case where we have a key-value pair, we want to add that
+			// to the map and clear out our buffers
 			if char == separator {
 				// check that we don't have a duplicate
 				if _, exists := ret[key]; exists {
@@ -92,6 +94,8 @@ func Parse(s string, separator PairDelimiter) (Vars, error) {
 				value = buffer
 				ret[key] = value
 				buffer = ""
+				key = ""
+				value = ""
 			} else if char == EscapeDelimiter {
 				state = 1
 			} else if char == ValueDelimiter {
@@ -109,10 +113,12 @@ func Parse(s string, separator PairDelimiter) (Vars, error) {
 			buffer += char
 			state = 0
 
-		// Previous value was an equals sign, so we want to assign the key and clear the buffer
+			// Previous value was an equals sign, so we want to assign the key and
+			// clear the buffer and add the current character
 		case 2:
 			key = buffer
-			buffer = ""
+			// clear the buffer and add the current character
+			buffer = char
 			state = 0
 
 			// Quote mode: accept all text except for the end quote (excluding anything that is escaped)
@@ -147,4 +153,13 @@ func Parse(s string, separator PairDelimiter) (Vars, error) {
 		return ret, ex.New("Ended input on an escape delimiter (`\\`)")
 	}
 	return ret, nil
+}
+
+// ensureTrailingDelim adds a trailing separator to the input if it doesn't
+// exist, to aid with parsing
+func ensureTrailingDelim(input string, separator PairDelimiter) string {
+	if input[len(input)-1:] != separator {
+		return input + separator
+	}
+	return input
 }
