@@ -2,6 +2,7 @@ package env
 
 import (
 	"fmt"
+	"github.com/blend/go-sdk/ex"
 	"strings"
 )
 
@@ -14,6 +15,10 @@ const (
 	// gives the user the option to have spaces, for example, in their
 	// environment variable values.
 	QuoteDelimiter = "\""
+
+	// EscapeDelimiter ("\") is used to escape the next character so it is
+	// accepted as a part of the input value.
+	EscapeDelimiter = "\\"
 )
 
 // PairDelimiter is the type of delimiter that separates different env var key-value pairs
@@ -29,7 +34,7 @@ const (
 
 // Parse environment variables from from semicolon delimited strings
 // We define semicolon delimited as: "KEY_1=VAL;KEY_2=VAL;..."
-// TODO(afnan) check to ensure that an empty input returns
+// TODO(afnan) delete this and use a proper parsing construct instead
 func FromSemi(input string) Vars {
 	vars := make(Vars)
 
@@ -74,8 +79,7 @@ func (ev Vars) delimitedString(separator PairDelimiter) string {
 }
 
 // Parse uses a state machine to parse an input string into the `Vars` type.
-// The user can choose which delimiter to use between key-value pairs. This is
-// an LL(1) recursive descent parser.
+// The user can choose which delimiter to use between key-value pairs.
 //
 // We define the grammar as such (in BNF notation):
 // <expr> ::= (<pair> <sep>)* <pair>
@@ -87,73 +91,79 @@ func (ev Vars) delimitedString(separator PairDelimiter) string {
 // <literal> ::= [-A-Za-z_0-9]+
 // <space> ::= ' '
 // <escape_quote> ::= '\"'
-//
-// We also define a DFA, which corresponds to the switch-cases in the parsing
-// routine.
-func Parse(input string, separator PairDelimiter) (Vars, error) {
-	// TODO(afnan)
-	var ret Vars
-
-	// If the last character isn't a delimiter, inject it at the end to make
-	// parsing easier.
-	if input[len(input)-1:] != separator {
-		input = input + separator
-	}
-	return ret, nil
-}
-
-// expr is a subroutine for the `Parse` method
-func expr(s string, separator PairDelimiter) (Vars, error) {
+func Parse(s string, separator PairDelimiter) (Vars, error) {
 	var ret Vars
 	var key string
 	var value string
-	var literal string
-	//startIdx := 0
+	var buffer string
 	state := 0
 
 	for c := range s {
 		char := string(c)
 
 		switch state {
-		// the "root" case, which simply evaluates each character from the initial state
+		// The "root" case, which simply evaluates each character from the
+		// initial state. This is the only valid ending state.
 		case 0:
+			// in the case where we have a key-value pair, we want to add that to the map
 			if char == separator {
+				// check that we don't have a duplicate
+				if _, exists := ret[key]; exists {
+					return ret, ex.New("Duplicate keys are not allowed")
+				}
+				value = buffer
 				ret[key] = value
-			} else if char == "\\" {
+				buffer = ""
+			} else if char == EscapeDelimiter {
 				state = 1
+			} else if char == ValueDelimiter {
+				state = 2
+			} else if char == QuoteDelimiter {
+				state = 3
+			} else {
+				buffer += char
+			}
+		// Escape literal, we want to take WHATEVER the next token is, goes back to the root mode
+		case 1:
+			buffer += char
+			state = 0
+
+		// Previous value was an equals sign, so we want to assign the key and clear the buffer
+		case 2:
+			key = buffer
+			buffer = ""
+			state = 0
+
+			// Quote mode: accept all text except for the end quote (excluding anything that is escaped)
+		case 3:
+			if char == EscapeDelimiter {
+				// ignore the escape and continue
+				state = 4
+			} else if char == QuoteDelimiter {
+				// go back to the default state
+				state = 0
+			} else {
+				buffer += char
 			}
 
-			literal += char
-			// with an escape literal, we want to take WHATEVER the next token is
-		case 1:
-			literal += char
+		// Escape literal within a quote, goes back to quote mode
+		case 4:
+			buffer += char
+			state = 3
 		}
 	}
-	for _, char := range s {
-		charString := string(char)
-		if charString == separator {
 
-		}
+	// State 0 is the only valid ending state. If this is not the case, then
+	// show the user a parsing error.
+	switch state {
+	case 1:
+		return ret, ex.New("Ended input on an escape delimiter")
+	case 2:
+		return ret, ex.New("Failed to assign a value")
+	case 3:
+		return ret, ex.New("Unclosed quote")
+	case 4:
+		return ret, ex.New("Ended input on an escape delimiter")
 	}
 	return ret, nil
-}
-
-// pair is a subroutine for the `Parse` method. This function will return an
-// environment variable key-value pair.
-func pair(s string) (string, string, error) {
-	// return an environment variable pair
-	return "", "", nil
-}
-
-// term is a subroutine for the `Parse` method that determines whether the
-// input is parsing a valid term, with optional quotes.
-func term(s string) (string, error) {
-	return "", nil
-}
-
-// literal is a subroutine for the `Parse` method. This function determines
-// whether a character is a valid literal.
-// TODO(afnan) remove since this is a noop
-func literal(s string) bool {
-	return true
 }
