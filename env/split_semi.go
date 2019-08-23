@@ -3,7 +3,6 @@ package env
 import (
 	"fmt"
 	"github.com/blend/go-sdk/ex"
-	"strings"
 )
 
 const (
@@ -19,6 +18,10 @@ const (
 	// EscapeDelimiter ("\") is used to escape the next character so it is
 	// accepted as a part of the input value.
 	EscapeDelimiter = "\\"
+
+	// SpaceDelimiter (" ") is a delimiter that simply represents a space. It
+	// is generally ignored, unless quoted.
+	SpaceDelimiter = " "
 )
 
 // PairDelimiter is the type of delimiter that separates different env var key-value pairs
@@ -42,7 +45,7 @@ func (ev Vars) DelimitedString(separator PairDelimiter) string {
 	// continue appending to the output string for each pair
 	for k, v := range ev {
 		if k != "" {
-			serializedPair := fmt.Sprintf("%s%s%s;", k, separator, v)
+			serializedPair := fmt.Sprintf("%s=%s%s", k, v, separator)
 			res += serializedPair
 		}
 	}
@@ -51,6 +54,10 @@ func (ev Vars) DelimitedString(separator PairDelimiter) string {
 
 // Parse uses a state machine to parse an input string into the `Vars` type.
 // The user can choose which delimiter to use between key-value pairs.
+//
+// An example of this format:
+//
+// ENV_VAR_1=VALUE_1;ENV_VAR_2=VALUE_2;
 //
 // We define the grammar as such (in BNF notation):
 // <expr> ::= (<pair> <sep>)* <pair>
@@ -91,10 +98,13 @@ func Parse(s string, separator PairDelimiter) (Vars, error) {
 				state = 2
 			} else if char == QuoteDelimiter {
 				state = 3
+			} else if char == SpaceDelimiter {
+				continue
 			} else {
 				buffer += char
 			}
-		// Escape literal, we want to take WHATEVER the next token is, goes back to the root mode
+
+		// Escape literal: we want to take whatever the next token is, goes back to the root mode
 		case 1:
 			buffer += char
 			state = 0
@@ -128,13 +138,13 @@ func Parse(s string, separator PairDelimiter) (Vars, error) {
 	// show the user a parsing error.
 	switch state {
 	case 1:
-		return ret, ex.New("Ended input on an escape delimiter")
+		return ret, ex.New("Ended input on an escape delimiter (`\\`)")
 	case 2:
-		return ret, ex.New("Failed to assign a value")
+		return ret, ex.New("Failed to assign a value to some key")
 	case 3:
 		return ret, ex.New("Unclosed quote")
 	case 4:
-		return ret, ex.New("Ended input on an escape delimiter")
+		return ret, ex.New("Ended input on an escape delimiter (`\\`)")
 	}
 	return ret, nil
 }
