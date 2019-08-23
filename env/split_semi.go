@@ -32,39 +32,10 @@ const (
 	CommaDelimiter PairDelimiter = ","
 )
 
-// Parse environment variables from from semicolon delimited strings
-// We define semicolon delimited as: "KEY_1=VAL;KEY_2=VAL;..."
-// TODO(afnan) delete this and use a proper parsing construct instead
-func FromSemi(input string) Vars {
-	vars := make(Vars)
-
-	// Tokenize by semicolon to separate key-value pairs
-	keyVals := strings.Split(input, ";")
-
-	// Tokenize by '=' to separate keys and values.
-	for _, pair := range keyVals {
-		// We use `SplitN` so that people can have env vars with a '=' in the
-		// value, otherwise there will be issues with any value that contains '='
-		tokenizedPair := strings.SplitN(pair, "=", 2)
-		key := tokenizedPair[0]
-
-		// set the default value just in case the input is deformed -- if for
-		// some reason we have no actual value, this will at least indicate
-		// that there was some environment variable set
-		value := ""
-
-		if len(tokenizedPair) > 1 {
-			value = tokenizedPair[1]
-		}
-		vars[key] = value
-	}
-	return vars
-}
-
 // delimitedString converts environment variables to a particular string
 // representation, allowing the user to specify which delimiter to use between
 // different environment variable pairs.
-func (ev Vars) delimitedString(separator PairDelimiter) string {
+func (ev Vars) DelimitedString(separator PairDelimiter) string {
 	res := ""
 
 	// For each key, value pair, convert it into a "key=value;" pair and
