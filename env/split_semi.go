@@ -78,6 +78,9 @@ func Parse(s string, separator PairDelimiter) (Vars, error) {
 	var buffer string
 	state := 0
 
+	// indicates whether the value delimiter has been encountered for the current pair
+	valueFlag := false
+
 	for _, c := range s {
 		// Having a string is convenient so we can do quality comparisons with
 		// the tokens defined in the constants section
@@ -90,20 +93,19 @@ func Parse(s string, separator PairDelimiter) (Vars, error) {
 			// In the case where we have a key-value pair, we want to add that
 			// to the map and clear out our buffers
 			if char == separator {
-				// check that we don't have a duplicate
 				if _, exists := ret[key]; exists {
 					return ret, ex.New("Duplicate keys are not allowed")
 				}
 
-				// It is illegal to have an empty key
 				if len(key) == 0 {
 					return ret, ex.New("Empty keys are not allowed")
 				}
 
-				// It is illegal to have an empty value
-				if len(buffer) == 0 {
-					return ret, ex.New("Empty values are not allowed")
+				// This means that we have a term with no '=', which is illegal
+				if !valueFlag {
+					return ret, ex.New("Expected '='")
 				}
+
 				value = buffer
 				ret[key] = value
 
@@ -111,6 +113,7 @@ func Parse(s string, separator PairDelimiter) (Vars, error) {
 				buffer = ""
 				key = ""
 				value = ""
+				valueFlag = false
 			} else if char == EscapeDelimiter {
 				state = 1
 			} else if char == ValueDelimiter {
@@ -123,26 +126,28 @@ func Parse(s string, separator PairDelimiter) (Vars, error) {
 				buffer += char
 			}
 		case 1:
-			// Escape literal: we want to take whatever the next token is, goes back to the root mode
+			// State 1: escape literal -- we want to take whatever the next
+			// token is no matter what, goes back to the root mode
 			buffer += char
 			state = 0
 		case 2:
-			// It is illegal to have an empty key
+			// State 2: process the '=' character. We need to reset the buffer,
+			// store the key, and start storing characters in the buffer that
+			// will go to the value
 			if len(buffer) == 0 {
 				return ret, ex.New("Empty keys are not allowed")
 			}
-			// Previous value was an equals sign, so we want to assign the key and
-			// clear the buffer and add the current character
 			key = buffer
-			// clear the buffer and add the current character (excluding whitespace)
 			buffer = ""
 
 			if !unicode.IsSpace(c) {
 				buffer += char
 			}
+			valueFlag = true
 			state = 0
 		case 3:
-			// Quote mode: accept all text except for the end quote (excluding anything that is escaped)
+			// State 3: quote mode -- accept all text except for the end quote
+			// (excluding anything that is escaped)
 			if char == EscapeDelimiter {
 				// ignore the escape and continue
 				state = 4
@@ -159,18 +164,22 @@ func Parse(s string, separator PairDelimiter) (Vars, error) {
 		}
 	}
 
-	// This handles the case where the key-value pair doesn't have a separator
-	// (which is valid grammar). We could go about the option of inserting an
-	// extra separator, but that is difficult to do as a preprocessing step
-	// because you could have a scenario where there are trailing spaces, or even
-	if state == 0 && len(buffer) > 0 {
-		ret[key] = buffer
-	}
-
 	// State 0 is the only valid ending state. If this is not the case, then
 	// show the user a parsing error. In the event the input wasn't terminated,
 	// we can mitigate by taking the last key-val pair from the buffers.
 	switch state {
+	case 0:
+		// This handles the case where the key-value pair doesn't have a
+		// separator (which is valid grammar). We could go about the option of
+		// inserting an extra separator, but that is difficult to do as a
+		// preprocessing step because you could have a scenario where there are
+		// trailing spaces, or even an escaped ending delimiter.
+		if len(buffer) > 0 || len(key) > 0 {
+			if !valueFlag {
+				return ret, ex.New("Expected '='")
+			}
+			ret[key] = buffer
+		}
 	case 1:
 		return ret, ex.New("Ended input on an escape delimiter (`\\`)")
 	case 2:
