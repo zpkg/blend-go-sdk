@@ -181,13 +181,13 @@ func Parse(s string, separator PairDelimiter) (Vars, error) {
 			ret[key] = buffer
 		}
 	case 1:
-		return ret, ex.New("Ended input on an escape delimiter (`\\`)")
+		return ret, ex.New("Ended input on an escape delimiter ('\\')")
 	case 2:
 		return ret, ex.New("Failed to assign a value to some key")
 	case 3:
 		return ret, ex.New("Unclosed quote")
 	case 4:
-		return ret, ex.New("Ended input on an escape delimiter (`\\`)")
+		return ret, ex.New("Ended input on an escape delimiter ('\\')")
 	}
 	return ret, nil
 }
