@@ -29,8 +29,8 @@ var (
 func main() {
 	log, err := logger.New(
 		logger.OptConfigFromEnv(),
-		logger.OptEnabled(logger.HTTPRequest),
-		logger.OptEnabled(logger.HTTPResponse),
+		logger.OptEnabled(webutil.HTTPRequest),
+		logger.OptEnabled(webutil.HTTPResponse),
 		logger.OptPath("reverse-proxy"),
 	)
 	if err != nil {
@@ -134,7 +134,7 @@ func main() {
 	}
 
 	proxyServer := &http.Server{
-		Handler: webutil.NestMiddleware(proxy.ServeHTTP, logger.HTTPLogged(log)),
+		Handler: webutil.NestMiddleware(proxy.ServeHTTP, webutil.HTTPLogged(log)),
 	}
 	servers = append(servers,
 		webutil.NewGracefulHTTPServer(proxyServer, webutil.OptGracefulHTTPServerListener(proxyServerListener)),
@@ -145,7 +145,7 @@ func main() {
 		upgrader := reverseproxy.HTTPRedirect{}
 		servers = append(servers, webutil.NewGracefulHTTPServer(&http.Server{
 			Addr:    upgradeAddr,
-			Handler: webutil.NestMiddleware(upgrader.ServeHTTP, logger.HTTPLogged(log)),
+			Handler: webutil.NestMiddleware(upgrader.ServeHTTP, webutil.HTTPLogged(log)),
 		}))
 	}
 
