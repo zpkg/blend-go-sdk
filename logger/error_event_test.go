@@ -5,21 +5,26 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
+	"net/http"
 	"testing"
 
-	"github.com/blend/go-sdk/ansi"
 	"github.com/blend/go-sdk/assert"
+	"github.com/blend/go-sdk/ex"
 )
 
 func TestNewErrorEvent(t *testing.T) {
 	assert := assert.New(t)
 
 	/// stuff
-	ee := NewErrorEvent(Fatal, fmt.Errorf("not a test"), OptErrorEventErr(fmt.Errorf("only a test")), OptErrorEventState("foo"), OptErrorEventMetaOptions(OptEventMetaFlagColor(ansi.ColorBlue)))
+	ee := NewErrorEvent(
+		Fatal,
+		fmt.Errorf("not a test"),
+		OptErrorEventState(&http.Request{Method: "POST"}),
+	)
 	assert.Equal(Fatal, ee.GetFlag())
-	assert.Equal("only a test", ee.Err.Error())
-	assert.Equal("foo", ee.State)
-	assert.Equal(ansi.ColorBlue, ee.GetFlagColor())
+	assert.Equal("not a test", ee.Err.Error())
+	assert.NotNil(ee.State)
+	assert.Equal("POST", ee.State.(*http.Request).Method)
 
 	buf := new(bytes.Buffer)
 	tf := TextOutputFormatter{
@@ -27,11 +32,16 @@ func TestNewErrorEvent(t *testing.T) {
 	}
 
 	ee.WriteText(tf, buf)
-	assert.Equal("only a test", buf.String())
+	assert.Equal("not a test", buf.String())
 
-	contents, err := json.Marshal(ee)
+	contents, err := json.Marshal(ee.Decompose())
 	assert.Nil(err)
-	assert.Contains(string(contents), "only a test")
+	assert.Contains(string(contents), "not a test")
+
+	ee = NewErrorEvent(Fatal, ex.New("this is only a test"))
+	contents, err = json.Marshal(ee.Decompose())
+	assert.Nil(err)
+	assert.Contains(string(contents), "this is only a test")
 }
 
 func TestErrorEventListener(t *testing.T) {
@@ -40,7 +50,7 @@ func TestErrorEventListener(t *testing.T) {
 	ee := NewErrorEvent(Fatal, fmt.Errorf("only a test"))
 
 	var didCall bool
-	ml := NewErrorEventListener(func(ctx context.Context, e *ErrorEvent) {
+	ml := NewErrorEventListener(func(ctx context.Context, e ErrorEvent) {
 		didCall = true
 	})
 

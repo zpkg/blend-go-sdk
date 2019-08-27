@@ -16,7 +16,7 @@ func TestNew(t *testing.T) {
 
 	log, err := New()
 	assert.Nil(err)
-	assert.NotNil(log.Context)
+	assert.NotNil(log.Scope)
 	assert.NotNil(log.Formatter)
 	assert.NotNil(log.Output)
 	assert.True(log.RecoverPanics)
@@ -44,7 +44,7 @@ func TestLoggerE2ESubContext(t *testing.T) {
 	assert.Nil(err)
 
 	scID := uuid.V4().String()
-	sc := log.SubContext(scID)
+	sc := log.WithPath(scID)
 
 	sc.Infof("this is infof")
 	sc.Errorf("this is errorf")
@@ -74,7 +74,7 @@ func TestLoggerE2ESubContextFields(t *testing.T) {
 
 	fieldKey := uuid.V4().String()
 	fieldValue := uuid.V4().String()
-	sc := log.WithFields(Fields{fieldKey: fieldValue})
+	sc := log.WithLabels(Labels{fieldKey: fieldValue})
 
 	sc.Infof("this is infof")
 	sc.Errorf("this is errorf")
@@ -147,23 +147,23 @@ func TestLoggerListeners(t *testing.T) {
 	defer log.Close()
 
 	assert.Empty(log.Listeners)
-	log.Listen(Info, "foo", NewMessageEventListener(func(_ context.Context, me *MessageEvent) {}))
+	log.Listen(Info, "foo", NewMessageEventListener(func(_ context.Context, me MessageEvent) {}))
 	assert.NotEmpty(log.Listeners)
 	assert.True(log.HasListeners(Info))
 	assert.True(log.HasListener(Info, "foo"))
 	assert.False(log.HasListener(Info, "bar"))
 
-	log.Listen(Error, "foo", NewMessageEventListener(func(_ context.Context, me *MessageEvent) {}))
+	log.Listen(Error, "foo", NewMessageEventListener(func(_ context.Context, me MessageEvent) {}))
 	assert.True(log.HasListeners(Error))
 	assert.True(log.HasListener(Error, "foo"))
 	assert.False(log.HasListener(Error, "bar"))
 
-	log.Listen(Info, "bar", NewMessageEventListener(func(_ context.Context, me *MessageEvent) {}))
+	log.Listen(Info, "bar", NewMessageEventListener(func(_ context.Context, me MessageEvent) {}))
 	assert.True(log.HasListeners(Info))
 	assert.True(log.HasListener(Info, "foo"))
 	assert.True(log.HasListener(Info, "bar"))
 
-	log.Listen(Error, "bar", NewMessageEventListener(func(_ context.Context, me *MessageEvent) {}))
+	log.Listen(Error, "bar", NewMessageEventListener(func(_ context.Context, me MessageEvent) {}))
 	assert.True(log.HasListeners(Error))
 	assert.True(log.HasListener(Error, "foo"))
 	assert.True(log.HasListener(Error, "bar"))

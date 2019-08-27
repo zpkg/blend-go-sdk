@@ -18,9 +18,9 @@ func AddListeners(log logger.Listenable, cfg Config) {
 		return
 	}
 	client := MustNew(cfg)
-	listener := logger.NewErrorEventListener(func(_ context.Context, ee *logger.ErrorEvent) {
-		if req, ok := ee.State.(*http.Request); ok {
-			client.NotifyWithRequest(ee.Err, req)
+	listener := logger.NewErrorEventListener(func(_ context.Context, ee logger.ErrorEvent) {
+		if ee.State != nil {
+			client.NotifyWithRequest(ee.Err, ee.State.(*http.Request))
 		} else {
 			client.Notify(ee.Err)
 		}

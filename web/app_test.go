@@ -11,6 +11,7 @@ import (
 
 	"github.com/blend/go-sdk/assert"
 	"github.com/blend/go-sdk/env"
+	"github.com/blend/go-sdk/ex"
 	"github.com/blend/go-sdk/graceful"
 	"github.com/blend/go-sdk/logger"
 )
@@ -563,6 +564,7 @@ func (mvf mockViewTraceFinisher) FinishView(ctx *Ctx, vr *ViewResult, err error)
 }
 
 func ok(_ *Ctx) Result            { return JSON.OK() }
+func doPanic(_ *Ctx) Result       { panic("this is only a test") }
 func internalError(_ *Ctx) Result { return JSON.InternalError(fmt.Errorf("only a test")) }
 func viewOK(ctx *Ctx) Result      { return ctx.Views.View("ok", nil) }
 
@@ -748,4 +750,20 @@ func TestAppAllowed(t *testing.T) {
 	app.PATCH("/hello", controllerNoOp)
 	allowed = strings.Split(app.allowed("/hello", ""), ", ")
 	assert.Len(allowed, 7)
+}
+
+func TestAppNilLoggerPanic(t *testing.T) {
+	assert := assert.New(t)
+
+	app, err := New(OptLog(nil))
+	assert.Nil(err)
+	app.PanicAction = func(r *Ctx, err interface{}) Result {
+		return r.DefaultProvider.InternalError(ex.New(err))
+	}
+	assert.Nil(err)
+	app.GET("/", doPanic, ViewProviderAsDefault)
+
+	res, err := MockGet(app, "/").Discard()
+	assert.Nil(err)
+	assert.Equal(http.StatusInternalServerError, res.StatusCode)
 }

@@ -41,6 +41,16 @@ func OptJSONPretty() JSONOutputFormatterOption {
 	return func(jso *JSONOutputFormatter) { jso.Pretty = true }
 }
 
+// OptJSONPrettyPrefix sets the json output formatter to indent output.
+func OptJSONPrettyPrefix(prettyPrefix string) JSONOutputFormatterOption {
+	return func(jso *JSONOutputFormatter) { jso.PrettyPrefix = prettyPrefix }
+}
+
+// OptJSONPrettyIndent sets the json output formatter to indent output.
+func OptJSONPrettyIndent(prettyIndent string) JSONOutputFormatterOption {
+	return func(jso *JSONOutputFormatter) { jso.PrettyIndent = prettyIndent }
+}
+
 // JSONOutputFormatter is a json output formatter.
 type JSONOutputFormatter struct {
 	BufferPool   *bufferutil.Pool
@@ -74,9 +84,51 @@ func (jw JSONOutputFormatter) WriteFormat(ctx context.Context, output io.Writer,
 	if jw.Pretty {
 		encoder.SetIndent(jw.PrettyPrefixOrDefault(), jw.PrettyIndentOrDefault())
 	}
-	if err := encoder.Encode(e); err != nil {
-		return err
+	if decomposer, ok := e.(JSONWritable); ok {
+		fields := jw.CombineFields(jw.GetScopeFields(ctx, e), decomposer.Decompose())
+		if err := encoder.Encode(fields); err != nil {
+			return err
+		}
+	} else {
+		if err := encoder.Encode(e); err != nil {
+			return err
+		}
 	}
 	_, err := io.Copy(output, buffer)
 	return err
+}
+
+// CombineFields combines a variadic set of fields.
+func (jw JSONOutputFormatter) CombineFields(fields ...map[string]interface{}) map[string]interface{} {
+	if len(fields) == 0 {
+		return nil
+	}
+	output := make(map[string]interface{})
+	for _, set := range fields {
+		if set == nil {
+			continue
+		}
+		for key, value := range set {
+			output[key] = value
+		}
+	}
+	return output
+}
+
+// GetScopeFields gets scope fields from a context.
+func (jw JSONOutputFormatter) GetScopeFields(ctx context.Context, e Event) map[string]interface{} {
+	output := map[string]interface{}{
+		FieldFlag:      e.GetFlag(),
+		FieldTimestamp: GetEventTimestamp(ctx, e),
+	}
+	if path := GetScopePath(ctx); len(path) > 0 {
+		output[FieldScopePath] = path
+	}
+	if labels := GetLabels(ctx); len(labels) > 0 {
+		output[FieldLabels] = labels
+	}
+	if annotations := GetAnnotations(ctx); len(annotations) > 0 {
+		output[FieldAnnotations] = annotations
+	}
+	return output
 }
