@@ -9,46 +9,78 @@ import (
 const (
 	// ValueDelimiter ("=") is the delimiter between a key and a value for an
 	// environment variable.
-	ValueDelimiter = "="
+	valueDelimiter = "="
 
 	// QuoteDelimiter (`"`) is a delimiter indicating a string literal. This
 	// gives the user the option to have spaces, for example, in their
 	// environment variable values.
-	QuoteDelimiter = "\""
+	quoteDelimiter = "\""
 
 	// EscapeDelimiter ("\") is used to escape the next character so it is
 	// accepted as a part of the input value.
-	EscapeDelimiter = "\\"
+	escapeDelimiter = "\\"
 
 	// SpaceDelimiter (" ") is a delimiter that simply represents a space. It
 	// is generally ignored, unless quoted.
-	SpaceDelimiter = " "
+	spaceDelimiter = " "
+)
+
+// DFAState is a wrapper type for the standard enum integer type, representing
+// the state of the parsing table for the DFA. We create a new type so that we
+// can use a switch case on this particular enum type and not worry about
+// accidentally setting the state to an invalid value.
+type dfaState int
+
+const (
+	// rootState is the "default" starting state state. It processes text
+	// normally, performing actions on tokens and excluding whitespace.
+	rootState dfaState = iota
+
+	// escapeState represents the state encountered after the parser processes
+	// the escape delimiter. The next character will be stored in the buffer no
+	// matter what, and no actions will be dispatched, even if the next
+	// character is a token.
+	escapeState dfaState = iota
+
+	// valueState is the state encountered after encountering the value
+	// delimiter ('='). Being in this state indicates that buffer is no longer
+	// storing values for the key.
+	valueState dfaState = iota
+
+	// quotedState is the state encountered after the parser encounters a
+	// quote. This means that all characters except for the literal escape
+	// value will be input into the buffer.
+	quotedState dfaState = iota
+
+	// quotedLiteralState is the state encountered after the parser encounters
+	// an from `quotedState`.
+	quotedLiteralState dfaState = iota
 )
 
 // PairDelimiter is a type of delimiter that separates different env var key-value pairs
-type PairDelimiter = string
+type EnvPairDelimiter = string
 
 const (
 	// SemicolonDelimiter (";") is a delimiter between key-value pairs
-	SemicolonDelimiter PairDelimiter = ";"
+	SemicolonDelimiter EnvPairDelimiter = ";"
 
 	// CommaDelimiter (",") is a delimiter betewen key-value pairs
-	CommaDelimiter PairDelimiter = ","
+	CommaDelimiter EnvPairDelimiter = ","
 )
 
 // delimitedString converts environment variables to a particular string
 // representation, allowing the user to specify which delimiter to use between
 // different environment variable pairs.
-func (ev Vars) DelimitedString(separator PairDelimiter) string {
+func (ev Vars) DelimitedString(separator EnvPairDelimiter) string {
 	res := ""
 
 	// For each key, value pair, convert it into a "key=value;" pair and
 	// continue appending to the output string for each pair
 	for k, v := range ev {
 		if k != "" {
-			serializedPair := QuoteDelimiter + escapeString(k, separator) +
-				QuoteDelimiter + ValueDelimiter + QuoteDelimiter +
-				escapeString(v, separator) + QuoteDelimiter + separator
+			serializedPair := quoteDelimiter + escapeString(k, separator) +
+				quoteDelimiter + valueDelimiter + quoteDelimiter +
+				escapeString(v, separator) + quoteDelimiter + separator
 			res += serializedPair
 		}
 	}
@@ -72,12 +104,12 @@ func (ev Vars) DelimitedString(separator PairDelimiter) string {
 // <literal> ::= [-A-Za-z_0-9]+
 // <space> ::= ' '
 // <escape_quote> ::= '\"'
-func Parse(s string, separator PairDelimiter) (Vars, error) {
+func Parse(s string, separator EnvPairDelimiter) (Vars, error) {
 	ret := make(Vars)
 	var key string
 	var value string
 	var buffer string
-	state := 0
+	state := rootState
 
 	// indicates whether the value delimiter has been encountered for the current pair
 	valueFlag := false
@@ -90,7 +122,7 @@ func Parse(s string, separator PairDelimiter) (Vars, error) {
 		switch state {
 		// The "root" case, which simply evaluates each character from the
 		// initial state. This is the only valid ending state.
-		case 0:
+		case rootState:
 			// In the case where we have a key-value pair, we want to add that
 			// to the map and clear out our buffers
 			if char == separator {
@@ -115,23 +147,23 @@ func Parse(s string, separator PairDelimiter) (Vars, error) {
 				key = ""
 				value = ""
 				valueFlag = false
-			} else if char == EscapeDelimiter {
-				state = 1
-			} else if char == ValueDelimiter {
-				state = 2
-			} else if char == QuoteDelimiter {
-				state = 3
+			} else if char == escapeDelimiter {
+				state = escapeState
+			} else if char == valueDelimiter {
+				state = valueState
+			} else if char == quoteDelimiter {
+				state = quotedState
 			} else if unicode.IsSpace(c) {
 				continue
 			} else {
 				buffer += char
 			}
-		case 1:
+		case escapeState:
 			// State 1: escape literal -- we want to take whatever the next
 			// token is no matter what, goes back to the root mode
 			buffer += char
-			state = 0
-		case 2:
+			state = rootState
+		case valueState:
 			// State 2: process the '=' character. We need to reset the buffer,
 			// store the key, and start storing characters in the buffer that
 			// will go to the value
@@ -142,30 +174,29 @@ func Parse(s string, separator PairDelimiter) (Vars, error) {
 			buffer = ""
 			valueFlag = true
 
-			if char == QuoteDelimiter {
-				state = 3
+			if char == quoteDelimiter {
+				state = quotedState
 			} else {
 				if !unicode.IsSpace(c) {
 					buffer += char
 				}
-				state = 0
+				state = rootState
 			}
-		case 3:
+		case quotedState:
 			// State 3: quote mode -- accept all text except for the end quote
 			// (excluding anything that is escaped)
-			if char == EscapeDelimiter {
+			if char == escapeDelimiter {
 				// ignore the escape and continue
-				state = 4
-			} else if char == QuoteDelimiter {
-				// go back to the default state
-				state = 0
+				state = quotedLiteralState
+			} else if char == quoteDelimiter {
+				state = rootState
 			} else {
 				buffer += char
 			}
-		case 4:
+		case quotedLiteralState:
 			// Escape literal within a quote, goes back to quote mode
 			buffer += char
-			state = 3
+			state = quotedState
 		}
 	}
 
@@ -199,12 +230,12 @@ func Parse(s string, separator PairDelimiter) (Vars, error) {
 
 // isToken returns whether a string is a special token that would need to be
 // escaped
-func isToken(s string, delimiter PairDelimiter) bool {
+func isToken(s string, delimiter EnvPairDelimiter) bool {
 	switch s {
 	case delimiter,
-		ValueDelimiter,
-		QuoteDelimiter,
-		EscapeDelimiter:
+		valueDelimiter,
+		quoteDelimiter,
+		escapeDelimiter:
 		return true
 	}
 	return false
@@ -213,14 +244,14 @@ func isToken(s string, delimiter PairDelimiter) bool {
 // escapeString takes a string and escapes any special characters so that the
 // string can be serialized properly. The user must supply the delimiter used
 // separate key-value pairs.
-func escapeString(s string, delimiter PairDelimiter) string {
+func escapeString(s string, delimiter EnvPairDelimiter) string {
 	var escaped string
 
 	for _, r := range s {
 		char := string(r)
 
 		if isToken(char, delimiter) {
-			escaped += EscapeDelimiter
+			escaped += escapeDelimiter
 		}
 		escaped += char
 	}
