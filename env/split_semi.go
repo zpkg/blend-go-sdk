@@ -25,7 +25,7 @@ const (
 	SpaceDelimiter = " "
 )
 
-// PairDelimiter is the type of delimiter that separates different env var key-value pairs
+// PairDelimiter is a type of delimiter that separates different env var key-value pairs
 type PairDelimiter = string
 
 const (
