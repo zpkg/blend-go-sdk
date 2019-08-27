@@ -1,7 +1,6 @@
 package env
 
 import (
-	"fmt"
 	"unicode"
 
 	"github.com/blend/go-sdk/ex"
@@ -47,7 +46,9 @@ func (ev Vars) DelimitedString(separator PairDelimiter) string {
 	// continue appending to the output string for each pair
 	for k, v := range ev {
 		if k != "" {
-			serializedPair := fmt.Sprintf("%s=%s%s", k, v, separator)
+			serializedPair := QuoteDelimiter + escapeString(k, separator) +
+				QuoteDelimiter + ValueDelimiter + QuoteDelimiter +
+				escapeString(v, separator) + QuoteDelimiter + separator
 			res += serializedPair
 		}
 	}
@@ -139,12 +140,16 @@ func Parse(s string, separator PairDelimiter) (Vars, error) {
 			}
 			key = buffer
 			buffer = ""
-
-			if !unicode.IsSpace(c) {
-				buffer += char
-			}
 			valueFlag = true
-			state = 0
+
+			if char == QuoteDelimiter {
+				state = 3
+			} else {
+				if !unicode.IsSpace(c) {
+					buffer += char
+				}
+				state = 0
+			}
 		case 3:
 			// State 3: quote mode -- accept all text except for the end quote
 			// (excluding anything that is escaped)
@@ -190,4 +195,34 @@ func Parse(s string, separator PairDelimiter) (Vars, error) {
 		return ret, ex.New("Ended input on an escape delimiter ('\\')")
 	}
 	return ret, nil
+}
+
+// isToken returns whether a string is a special token that would need to be
+// escaped
+func isToken(s string, delimiter PairDelimiter) bool {
+	switch s {
+	case delimiter,
+		ValueDelimiter,
+		QuoteDelimiter,
+		EscapeDelimiter:
+		return true
+	}
+	return false
+}
+
+// escapeString takes a string and escapes any special characters so that the
+// string can be serialized properly. The user must supply the delimiter used
+// separate key-value pairs.
+func escapeString(s string, delimiter PairDelimiter) string {
+	var escaped string
+
+	for _, r := range s {
+		char := string(r)
+
+		if isToken(char, delimiter) {
+			escaped += EscapeDelimiter
+		}
+		escaped += char
+	}
+	return escaped
 }
