@@ -263,6 +263,36 @@ func TestParseAndBack(t *testing.T) {
 	assert.Equal(groundTruth, res)
 }
 
+func TestEscapeString(t *testing.T) {
+	assert := assert.New(t)
+
+	// no escapes
+	input := "some test string"
+	expected := "some test string"
+	res := escapeString(input, SemicolonDelimiter)
+	assert.Equal(expected, res)
+
+	input = `some \test string`
+	expected = `some \\test string`
+	res = escapeString(input, SemicolonDelimiter)
+	assert.Equal(expected, res)
+
+	input = `some \=test string`
+	expected = `some \\\=test string`
+	res = escapeString(input, SemicolonDelimiter)
+	assert.Equal(expected, res)
+
+	input = `test; string`
+	expected = `test\; string`
+	res = escapeString(input, SemicolonDelimiter)
+	assert.Equal(expected, res)
+
+	input = `test; " string`
+	expected = `test\; \" string`
+	res = escapeString(input, SemicolonDelimiter)
+	assert.Equal(expected, res)
+}
+
 // matchOne checks to see if the input string is an exact match of a number of
 // candidate ground truths
 func matchOne(input string, groundTruths ...string) bool {
