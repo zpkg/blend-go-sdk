@@ -1,8 +1,9 @@
 package env
 
 import (
-	"github.com/blend/go-sdk/assert"
 	"testing"
+
+	"github.com/blend/go-sdk/assert"
 )
 
 func TestDelimitedString(t *testing.T) {
@@ -10,27 +11,34 @@ func TestDelimitedString(t *testing.T) {
 	testVars := make(Vars)
 	testVars["var_1"] = "val_1"
 	res := testVars.DelimitedString(SemicolonDelimiter)
-	groundTruth := "var_1=val_1;"
-
+	groundTruth := `"var_1"="val_1";`
 	assert.Equal(groundTruth, res)
 
 	// Now try with multiple key-val pairs
 	testVars["var_2"] = "val_2"
-	groundTruths := []string{"var_1=val_1;var_2=val_2", "var_2=val_2;var_1=val_1"}
-
-	if !matchOne(assert, t, res, groundTruths...) {
-	}
+	res = testVars.DelimitedString(SemicolonDelimiter)
+	groundTruths := []string{`"var_1"="val_1";"var_2"="val_2";`, `"var_2"="val_2";"var_1"="val_1";`}
+	t.Log(res)
+	assert.True(matchOne(res, groundTruths...))
 }
 
 func TestParseGoodInputs(t *testing.T) {
 	assert := assert.New(t)
 
-	// Single valid key-val pair
-	input := "var_1=val_1;"
+	// Empty string, which is valid
+	input := ""
 	res, err := Parse(input, SemicolonDelimiter)
 	assert.Equal(nil, err)
 
 	groundTruth := make(Vars)
+	assert.Equal(groundTruth, res)
+
+	// Single valid key-val pair
+	input = "var_1=val_1;"
+	res, err = Parse(input, SemicolonDelimiter)
+	assert.Equal(nil, err)
+
+	groundTruth = make(Vars)
 	groundTruth["var_1"] = "val_1"
 	assert.Equal(groundTruth, res)
 
@@ -85,7 +93,7 @@ func TestParseGoodInputs(t *testing.T) {
 
 	// Two valid key-val pairs with an escaped quote and arbitrary whitespace
 	// and no trailing separator
-	input = `var_1 = val_1; var_2 = \" val_2  `
+	input = `  var_1     = val_1  ; var_2 =   \" val_2  `
 	res, err = Parse(input, SemicolonDelimiter)
 	assert.Equal(nil, err)
 
@@ -104,11 +112,160 @@ func TestParseGoodInputs(t *testing.T) {
 	groundTruth["var_1"] = "=val_1"
 	groundTruth["var_2"] = `"val_2;`
 	assert.Equal(groundTruth, res)
+
+	// two valid key-val pairs where both the key and value for each pair is
+	// enclosed in quotes
+	input = `"var_1"="val_1";"var_2"="val_2";`
+	input = `var_1=val_1;var_2=val_2;`
+	res, err = Parse(input, SemicolonDelimiter)
+	assert.Equal(nil, err)
+
+	groundTruth = make(Vars)
+	groundTruth["var_1"] = "val_1"
+	groundTruth["var_2"] = "val_2"
+	assert.Equal(groundTruth, res)
+
+	// A valid key-val pair consisting of a single quote inside a quoted block
+	input = `var_1 = "\""`
+	res, err = Parse(input, SemicolonDelimiter)
+	assert.Equal(nil, err)
+
+	groundTruth = make(Vars)
+	groundTruth["var_1"] = `"`
+	assert.Equal(groundTruth, res)
+}
+
+func TestParseBadInputs(t *testing.T) {
+	assert := assert.New(t)
+
+	input := "="
+	_, err := Parse(input, SemicolonDelimiter)
+	assert.NotEqual(nil, err)
+
+	input = ";"
+	_, err = Parse(input, SemicolonDelimiter)
+	assert.NotEqual(nil, err)
+
+	input = `\;`
+	_, err = Parse(input, SemicolonDelimiter)
+	assert.NotEqual(nil, err)
+
+	input = "=;"
+	_, err = Parse(input, SemicolonDelimiter)
+	assert.NotEqual(nil, err)
+
+	input = "=some_val;"
+	_, err = Parse(input, SemicolonDelimiter)
+	assert.NotEqual(nil, err)
+
+	input = ";=some_val;"
+	_, err = Parse(input, SemicolonDelimiter)
+	assert.NotEqual(nil, err)
+
+	input = `;\=some_val;`
+	_, err = Parse(input, SemicolonDelimiter)
+	assert.NotEqual(nil, err)
+
+	input = "some"
+	res, err := Parse(input, SemicolonDelimiter)
+	t.Log(res)
+	assert.NotEqual(nil, err)
+
+	input = `some\=val`
+	_, err = Parse(input, SemicolonDelimiter)
+	assert.NotEqual(nil, err)
+
+	input = `key = "`
+	_, err = Parse(input, SemicolonDelimiter)
+	assert.NotEqual(nil, err)
+
+	input = `key "= "`
+	_, err = Parse(input, SemicolonDelimiter)
+	assert.NotEqual(nil, err)
+
+	input = `key \"= "`
+	_, err = Parse(input, SemicolonDelimiter)
+	assert.NotEqual(nil, err)
+
+	input = `key "= \""`
+	_, err = Parse(input, SemicolonDelimiter)
+	assert.NotEqual(nil, err)
+
+	input = `var_1 = =val_1; var_2 = \" val_2 \;  `
+	_, err = Parse(input, SemicolonDelimiter)
+	assert.NotEqual(nil, err)
+
+	input = `var_1 \= val_1; var_2 = " val_2 ";`
+	_, err = Parse(input, SemicolonDelimiter)
+	assert.NotEqual(nil, err)
+
+	input = `var_1 = val_1; var_2 = \" val_2 ";`
+	_, err = Parse(input, SemicolonDelimiter)
+	assert.NotEqual(nil, err)
+
+	input = `var_1 = =val_1; var_1 = \" val_2 \;  `
+	_, err = Parse(input, SemicolonDelimiter)
+	assert.NotEqual(nil, err)
+
+	input = `var_1 \= val_1; var_1 = " val_2 ";`
+	_, err = Parse(input, SemicolonDelimiter)
+	assert.NotEqual(nil, err)
+
+	input = `var_1 = val_1; var_1 = \" val_2 ";`
+	_, err = Parse(input, SemicolonDelimiter)
+	assert.NotEqual(nil, err)
+}
+
+// TestParseAndBack is an integration test to sanity check that our
+// serialization/deserialization methods are at least consistent with each
+// other
+func TestParseAndBack(t *testing.T) {
+	assert := assert.New(t)
+	delimiter := SemicolonDelimiter
+
+	// Single valid key-val pair
+	groundTruth := make(Vars)
+	groundTruth["var_1"] = "val_1"
+	serialized := groundTruth.DelimitedString(delimiter)
+	res, err := Parse(serialized, SemicolonDelimiter)
+	assert.Equal(nil, err)
+	assert.Equal(groundTruth, res)
+
+	// Single valid key-val pair with no trailing delimiter
+	groundTruth = make(Vars)
+	groundTruth["var_1"] = "val_1"
+	groundTruth["var_2"] = "val_2"
+	serialized = groundTruth.DelimitedString(delimiter)
+	res, _ = Parse(serialized, SemicolonDelimiter)
+	assert.Equal(groundTruth, res)
+
+	// Single valid key-val pair with no trailing delimiter
+	groundTruth = make(Vars)
+	groundTruth[`"`] = "val_1"
+	groundTruth[`=`] = "val_2"
+	serialized = groundTruth.DelimitedString(delimiter)
+	res, _ = Parse(serialized, SemicolonDelimiter)
+	assert.Equal(groundTruth, res)
+
+	// More special characters
+	groundTruth = make(Vars)
+	groundTruth[`\"`] = "val_1"
+	groundTruth[`=`] = "val_2"
+	serialized = groundTruth.DelimitedString(delimiter)
+	res, _ = Parse(serialized, SemicolonDelimiter)
+	assert.Equal(groundTruth, res)
+
+	groundTruth = make(Vars)
+	groundTruth[`"val_1"="val_2";`] = `"what;a\tricky=value!`
+	groundTruth[`=`] = "val_2"
+	serialized = groundTruth.DelimitedString(delimiter)
+	res, _ = Parse(serialized, SemicolonDelimiter)
+	assert.Equal(groundTruth, res)
 }
 
 // matchOne checks to see if the input string is an exact match of a number of
 // candidate ground truths
-func matchOne(a *assert.Assertions, t *testing.T, input string, groundTruths ...string) bool {
+func matchOne(input string, groundTruths ...string) bool {
 	for _, groundTruth := range groundTruths {
 		if groundTruth == input {
 			return true
