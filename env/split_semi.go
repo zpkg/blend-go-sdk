@@ -119,9 +119,9 @@ func Parse(s string, separator EnvPairDelimiter) (Vars, error) {
 		// the tokens defined in the constants section
 		char := string(c)
 
+		// The explanations for each state and what actions should occur in the
+		// DFA are found in the comments for each enum
 		switch state {
-		// The "root" case, which simply evaluates each character from the
-		// initial state. This is the only valid ending state.
 		case rootState:
 			// In the case where we have a key-value pair, we want to add that
 			// to the map and clear out our buffers
@@ -159,14 +159,9 @@ func Parse(s string, separator EnvPairDelimiter) (Vars, error) {
 				buffer += char
 			}
 		case escapeState:
-			// State 1: escape literal -- we want to take whatever the next
-			// token is no matter what, goes back to the root mode
 			buffer += char
 			state = rootState
 		case valueState:
-			// State 2: process the '=' character. We need to reset the buffer,
-			// store the key, and start storing characters in the buffer that
-			// will go to the value
 			if len(buffer) == 0 {
 				return ret, ex.New("Empty keys are not allowed")
 			}
@@ -183,8 +178,6 @@ func Parse(s string, separator EnvPairDelimiter) (Vars, error) {
 				state = rootState
 			}
 		case quotedState:
-			// State 3: quote mode -- accept all text except for the end quote
-			// (excluding anything that is escaped)
 			if char == escapeDelimiter {
 				// ignore the escape and continue
 				state = quotedLiteralState
