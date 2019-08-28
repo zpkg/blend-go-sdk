@@ -11,13 +11,13 @@ func TestDelimitedString(t *testing.T) {
 	testVars := make(Vars)
 	testVars["var_1"] = "val_1"
 	res := testVars.DelimitedString(SemicolonDelimiter)
-	groundTruth := `"var_1"="val_1";`
+	groundTruth := `"var_1"="val_1"`
 	assert.Equal(groundTruth, res)
 
 	// Now try with multiple key-val pairs
 	testVars["var_2"] = "val_2"
 	res = testVars.DelimitedString(SemicolonDelimiter)
-	groundTruths := []string{`"var_1"="val_1";"var_2"="val_2";`, `"var_2"="val_2";"var_1"="val_1";`}
+	groundTruths := []string{`"var_1"="val_1";"var_2"="val_2"`, `"var_2"="val_2";"var_1"="val_1"`}
 	t.Log(res)
 	assert.True(matchOne(res, groundTruths...))
 }

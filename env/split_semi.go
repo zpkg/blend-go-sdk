@@ -1,8 +1,12 @@
 package env
 
 import (
+	"fmt"
 	"unicode"
 
+	"strings"
+
+	"bytes"
 	"github.com/blend/go-sdk/ex"
 )
 
@@ -19,10 +23,6 @@ const (
 	// EscapeDelimiter ("\") is used to escape the next character so it is
 	// accepted as a part of the input value.
 	escapeDelimiter = "\\"
-
-	// SpaceDelimiter (" ") is a delimiter that simply represents a space. It
-	// is generally ignored, unless quoted.
-	spaceDelimiter = " "
 )
 
 // DFAState is a wrapper type for the standard enum integer type, representing
@@ -52,8 +52,8 @@ const (
 	// value will be input into the buffer.
 	quotedState dfaState = iota
 
-	// quotedLiteralState is the state encountered after the parser encounters
-	// an from `quotedState`.
+	// quotedLiteralState is invoked after the parser encounters
+	// a `quoteDelimiter` from `quotedState`.
 	quotedLiteralState dfaState = iota
 )
 
@@ -72,19 +72,19 @@ const (
 // representation, allowing the user to specify which delimiter to use between
 // different environment variable pairs.
 func (ev Vars) DelimitedString(separator EnvPairDelimiter) string {
-	res := ""
+	var serializedPairs []string
 
 	// For each key, value pair, convert it into a "key=value;" pair and
 	// continue appending to the output string for each pair
 	for k, v := range ev {
 		if k != "" {
-			serializedPair := quoteDelimiter + escapeString(k, separator) +
+			pair := quoteDelimiter + escapeString(k, separator) +
 				quoteDelimiter + valueDelimiter + quoteDelimiter +
-				escapeString(v, separator) + quoteDelimiter + separator
-			res += serializedPair
+				escapeString(v, separator) + quoteDelimiter
+			serializedPairs = append(serializedPairs, pair)
 		}
 	}
-	return res
+	return strings.Join(serializedPairs, separator)
 }
 
 // Parse uses a state machine to parse an input string into the `Vars` type.
@@ -127,7 +127,7 @@ func Parse(s string, separator EnvPairDelimiter) (Vars, error) {
 			// to the map and clear out our buffers
 			if char == separator {
 				if _, exists := ret[key]; exists {
-					return ret, ex.New("Duplicate keys are not allowed")
+					return ret, ex.New(fmt.Sprintf("Duplicate keys are not allowed (%s)", key))
 				}
 
 				if len(key) == 0 {
@@ -197,7 +197,7 @@ func Parse(s string, separator EnvPairDelimiter) (Vars, error) {
 	// show the user a parsing error. In the event the input wasn't terminated,
 	// we can mitigate by taking the last key-val pair from the buffers.
 	switch state {
-	case 0:
+	case rootState:
 		// This handles the case where the key-value pair doesn't have a
 		// separator (which is valid grammar). We could go about the option of
 		// inserting an extra separator, but that is difficult to do as a
@@ -209,13 +209,13 @@ func Parse(s string, separator EnvPairDelimiter) (Vars, error) {
 			}
 			ret[key] = buffer
 		}
-	case 1:
+	case escapeState:
 		return ret, ex.New("Ended input on an escape delimiter ('\\')")
-	case 2:
+	case valueState:
 		return ret, ex.New("Failed to assign a value to some key")
-	case 3:
+	case quotedState:
 		return ret, ex.New("Unclosed quote")
-	case 4:
+	case quotedLiteralState:
 		return ret, ex.New("Ended input on an escape delimiter ('\\')")
 	}
 	return ret, nil
@@ -234,19 +234,20 @@ func isToken(s string, delimiter EnvPairDelimiter) bool {
 	return false
 }
 
-// escapeString takes a string and escapes any special characters so that the
+// escapeString takes an string and escapes any special characters so that the
 // string can be serialized properly. The user must supply the delimiter used
-// separate key-value pairs.
+// to separate key-value pairs.
 func escapeString(s string, delimiter EnvPairDelimiter) string {
-	var escaped string
+	var escaped bytes.Buffer
+	escaped.Reset()
 
 	for _, r := range s {
 		char := string(r)
 
 		if isToken(char, delimiter) {
-			escaped += escapeDelimiter
+			escaped.WriteString(escapeDelimiter)
 		}
-		escaped += char
+		escaped.WriteRune(r)
 	}
-	return escaped
+	return escaped.String()
 }
