@@ -7,25 +7,26 @@ import (
 	"strings"
 
 	"bytes"
+
 	"github.com/blend/go-sdk/ex"
 )
 
 const (
-	// ValueDelimiter ("=") is the delimiter between a key and a value for an
+	// valueDelimiter ("=") is the delimiter between a key and a value for an
 	// environment variable.
 	valueDelimiter = "="
 
-	// QuoteDelimiter (`"`) is a delimiter indicating a string literal. This
+	// quoteDelimiter (`"`) is a delimiter indicating a string literal. This
 	// gives the user the option to have spaces, for example, in their
 	// environment variable values.
 	quoteDelimiter = "\""
 
-	// EscapeDelimiter ("\") is used to escape the next character so it is
+	// escapeDelimiter ("\") is used to escape the next character so it is
 	// accepted as a part of the input value.
 	escapeDelimiter = "\\"
 )
 
-// DFAState is a wrapper type for the standard enum integer type, representing
+// dfaState is a wrapper type for the standard enum integer type, representing
 // the state of the parsing table for the DFA. We create a new type so that we
 // can use a switch case on this particular enum type and not worry about
 // accidentally setting the state to an invalid value.
@@ -68,7 +69,7 @@ const (
 	CommaDelimiter EnvPairDelimiter = ","
 )
 
-// delimitedString converts environment variables to a particular string
+// DelimitedString converts environment variables to a particular string
 // representation, allowing the user to specify which delimiter to use between
 // different environment variable pairs.
 func (ev Vars) DelimitedString(separator EnvPairDelimiter) string {
