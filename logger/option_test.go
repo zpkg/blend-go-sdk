@@ -65,14 +65,6 @@ func TestOptions(t *testing.T) {
 	assert.Nil(OptOutput(new(bytes.Buffer))(log))
 	assert.NotNil(log.Output)
 
-	assert.Empty(log.Path)
-	assert.Nil(OptPath("path", "segment")(log))
-	assert.Equal([]string{"path", "segment"}, log.Path)
-
-	assert.Empty(log.Fields)
-	assert.Nil(OptFields(Fields{"foo": "bar"})(log))
-	assert.Equal("bar", log.Fields["foo"])
-
 	assert.Nil(log.Formatter)
 	assert.Nil(OptText(OptTextNoColor())(log))
 	assert.NotNil(log.Formatter)
