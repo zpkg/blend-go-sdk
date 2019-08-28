@@ -79,9 +79,13 @@ func (ev Vars) DelimitedString(separator EnvPairDelimiter) string {
 	// continue appending to the output string for each pair
 	for k, v := range ev {
 		if k != "" {
-			pair := quoteDelimiter + escapeString(k, separator) +
-				quoteDelimiter + valueDelimiter + quoteDelimiter +
-				escapeString(v, separator) + quoteDelimiter
+			pair := quoteDelimiter +
+				escapeString(k, separator) +
+				quoteDelimiter +
+				valueDelimiter +
+				quoteDelimiter +
+				escapeString(v, separator) +
+				quoteDelimiter
 			serializedPairs = append(serializedPairs, pair)
 		}
 	}
