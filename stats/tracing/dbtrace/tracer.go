@@ -2,6 +2,7 @@ package dbtrace
 
 import (
 	"context"
+	"database/sql"
 	"database/sql/driver"
 	"time"
 
@@ -23,22 +24,11 @@ type dbTracer struct {
 	tracer opentracing.Tracer
 }
 
-func (dbt dbTracer) Ping(ctx context.Context, conn *db.Connection) db.TraceFinisher {
+func (dbt dbTracer) Prepare(ctx context.Context, cfg db.Config, statement string) db.TraceFinisher {
 	startOptions := []opentracing.StartSpanOption{
 		opentracing.Tag{Key: tracing.TagKeySpanType, Value: tracing.SpanTypeSQL},
-		opentracing.Tag{Key: tracing.TagKeyDBName, Value: conn.Config.DatabaseOrDefault()},
-		opentracing.Tag{Key: tracing.TagKeyDBUser, Value: conn.Config.Username},
-		opentracing.StartTime(time.Now().UTC()),
-	}
-	span, _ := tracing.StartSpanFromContext(ctx, dbt.tracer, tracing.OperationSQLPing, startOptions...)
-	return dbTraceFinisher{span: span}
-}
-
-func (dbt dbTracer) Prepare(ctx context.Context, conn *db.Connection, statement string) db.TraceFinisher {
-	startOptions := []opentracing.StartSpanOption{
-		opentracing.Tag{Key: tracing.TagKeySpanType, Value: tracing.SpanTypeSQL},
-		opentracing.Tag{Key: tracing.TagKeyDBName, Value: conn.Config.DatabaseOrDefault()},
-		opentracing.Tag{Key: tracing.TagKeyDBUser, Value: conn.Config.Username},
+		opentracing.Tag{Key: tracing.TagKeyDBName, Value: cfg.DatabaseOrDefault()},
+		opentracing.Tag{Key: tracing.TagKeyDBUser, Value: cfg.Username},
 		opentracing.Tag{Key: TagKeyQuery, Value: statement},
 		opentracing.StartTime(time.Now().UTC()),
 	}
@@ -46,14 +36,14 @@ func (dbt dbTracer) Prepare(ctx context.Context, conn *db.Connection, statement 
 	return dbTraceFinisher{span: span}
 }
 
-func (dbt dbTracer) Query(ctx context.Context, conn *db.Connection, inv *db.Invocation, statement string) db.TraceFinisher {
+func (dbt dbTracer) Query(ctx context.Context, cfg db.Config, label, statement string) db.TraceFinisher {
 	startOptions := []opentracing.StartSpanOption{
-		opentracing.Tag{Key: tracing.TagKeyResourceName, Value: inv.CachedPlanKey},
+		opentracing.Tag{Key: tracing.TagKeyResourceName, Value: label},
 		opentracing.Tag{Key: tracing.TagKeySpanType, Value: tracing.SpanTypeSQL},
-		opentracing.Tag{Key: tracing.TagKeyDBName, Value: conn.Config.DatabaseOrDefault()},
-		opentracing.Tag{Key: tracing.TagKeyDBUser, Value: conn.Config.Username},
+		opentracing.Tag{Key: tracing.TagKeyDBName, Value: cfg.DatabaseOrDefault()},
+		opentracing.Tag{Key: tracing.TagKeyDBUser, Value: cfg.Username},
 		opentracing.Tag{Key: TagKeyQuery, Value: statement},
-		opentracing.StartTime(inv.StartTime),
+		opentracing.StartTime(time.Now().UTC()),
 	}
 	span, _ := tracing.StartSpanFromContext(ctx, dbt.tracer, tracing.OperationSQLQuery, startOptions...)
 	return dbTraceFinisher{span: span}
@@ -63,14 +53,28 @@ type dbTraceFinisher struct {
 	span opentracing.Span
 }
 
-func (dbtf dbTraceFinisher) Finish(err error) {
+func (dbtf dbTraceFinisher) FinishPrepare(ctx context.Context, err error) {
 	if dbtf.span == nil {
 		return
 	}
 	if err == driver.ErrSkip {
 		return
 	}
+	tracing.SpanError(dbtf.span, err)
+	dbtf.span.Finish()
+}
 
+func (dbtf dbTraceFinisher) FinishQuery(ctx context.Context, res sql.Result, err error) {
+	if dbtf.span == nil {
+		return
+	}
+	if err == driver.ErrSkip {
+		return
+	}
+	if res != nil {
+		affected, _ := res.RowsAffected()
+		dbtf.span.SetTag(tracing.TagKeyDBRowsAffected, affected)
+	}
 	tracing.SpanError(dbtf.span, err)
 	dbtf.span.Finish()
 }

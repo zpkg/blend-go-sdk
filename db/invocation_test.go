@@ -1,13 +1,15 @@
 package db
 
 import (
+	"context"
 	"database/sql"
 	"fmt"
+	"io/ioutil"
 	"sync"
 	"testing"
 	"time"
 
-	"github.com/blend/go-sdk/bufferutil"
+	"github.com/blend/go-sdk/logger"
 
 	"github.com/blend/go-sdk/assert"
 	"github.com/blend/go-sdk/uuid"
@@ -127,172 +129,6 @@ func TestInvocationCreateRepeatInTx(t *testing.T) {
 	assert.NotNil(defaultDB().Invoke(OptTx(tx)).Create(&uniqueObj{ID: 1, Name: "two"}))
 }
 
-func TestInvocationExecError(t *testing.T) {
-	assert := assert.New(t)
-
-	conn, err := New(OptConfigFromEnv())
-	assert.Nil(err)
-	conn.PlanCache.WithEnabled(false)
-	assert.Nil(conn.Open())
-	assert.NotNil(IgnoreExecResult(conn.Invoke().Exec("not a select")))
-	conn.PlanCache.WithEnabled(true)
-	assert.NotNil(IgnoreExecResult(conn.Invoke().Exec("not a select")))
-	assert.NotNil(IgnoreExecResult(conn.Invoke(OptCachedPlanKey("exec_error_test")).Exec("not a select")))
-}
-
-type modelTableNameError struct {
-	ID string `db:"id,pk"`
-}
-
-func (mtne modelTableNameError) TableName() string {
-	return uuid.V4().String()
-}
-
-func TestInvocationGetError(t *testing.T) {
-	assert := assert.New(t)
-
-	var getError modelTableNameError
-	conn, err := New(OptConfigFromEnv())
-	assert.Nil(err)
-	conn.PlanCache.WithEnabled(false)
-	assert.Nil(conn.Open())
-	assert.NotNil(conn.Invoke().Get(&getError, uuid.V4().String()))
-	conn.PlanCache.WithEnabled(true)
-	assert.NotNil(conn.Invoke().Get(&getError, uuid.V4().String()))
-	assert.NotNil(conn.Invoke(OptCachedPlanKey("get_error_test")).Get(&getError, uuid.V4().String()))
-}
-
-func TestInvocationGetAllError(t *testing.T) {
-	assert := assert.New(t)
-
-	var mustError []modelTableNameError
-	conn, err := New(OptConfigFromEnv())
-	assert.Nil(err)
-	conn.PlanCache.WithEnabled(false)
-	assert.Nil(conn.Open())
-	assert.NotNil(conn.Invoke().All(&mustError))
-	conn.PlanCache.WithEnabled(true)
-	assert.NotNil(conn.Invoke().All(&mustError))
-	assert.NotNil(conn.Invoke(OptCachedPlanKey("get_all_error_test")).All(&mustError))
-}
-
-func TestInvocationCreateError(t *testing.T) {
-	assert := assert.New(t)
-
-	var mustError modelTableNameError
-	conn, err := New(OptConfigFromEnv())
-	assert.Nil(err)
-	conn.PlanCache.WithEnabled(false)
-	assert.Nil(conn.Open())
-	assert.NotNil(conn.Invoke().Create(&mustError))
-	conn.PlanCache.WithEnabled(true)
-	assert.NotNil(conn.Invoke().Create(&mustError))
-	assert.NotNil(conn.Invoke(OptCachedPlanKey("create_error_test")).Create(&mustError))
-}
-
-func TestInvocationCreateIfNotExistsError(t *testing.T) {
-	assert := assert.New(t)
-
-	var mustError modelTableNameError
-	conn, err := New(OptConfigFromEnv())
-	assert.Nil(err)
-	conn.PlanCache.WithEnabled(false)
-	assert.Nil(conn.Open())
-	assert.NotNil(conn.Invoke().CreateIfNotExists(&mustError))
-	conn.PlanCache.WithEnabled(true)
-	assert.NotNil(conn.Invoke().CreateIfNotExists(&mustError))
-	assert.NotNil(conn.Invoke(OptCachedPlanKey("cne_error_test")).CreateIfNotExists(&mustError))
-}
-
-func TestInvocationUpdateError(t *testing.T) {
-	assert := assert.New(t)
-
-	var mustError modelTableNameError
-	conn, err := New(OptConfigFromEnv())
-	assert.Nil(err)
-	conn.PlanCache.WithEnabled(false)
-	assert.Nil(conn.Open())
-	assert.NotNil(conn.Invoke().Update(&mustError))
-	conn.PlanCache.WithEnabled(true)
-	assert.NotNil(conn.Invoke().Update(&mustError))
-	assert.NotNil(conn.Invoke(OptCachedPlanKey("update_error_test")).Update(&mustError))
-}
-
-func TestInvocationUpsertError(t *testing.T) {
-	assert := assert.New(t)
-
-	var mustError modelTableNameError
-	conn, err := New(OptConfigFromEnv())
-	assert.Nil(err)
-	conn.PlanCache.WithEnabled(false)
-	assert.Nil(conn.Open())
-	assert.NotNil(conn.Invoke().Upsert(&mustError))
-	conn.PlanCache.WithEnabled(true)
-	assert.NotNil(conn.Invoke().Upsert(&mustError))
-	assert.NotNil(conn.Invoke(OptCachedPlanKey("upsert_error_test")).Upsert(&mustError))
-}
-
-func boolErr(_ bool, err error) error {
-	return err
-}
-
-func TestInvocationExistsError(t *testing.T) {
-	assert := assert.New(t)
-
-	var mustError modelTableNameError
-	conn, err := New(OptConfigFromEnv())
-	assert.Nil(err)
-	conn.PlanCache.WithEnabled(false)
-	assert.Nil(conn.Open())
-	assert.NotNil(boolErr(conn.Invoke().Exists(mustError)))
-	conn.PlanCache.WithEnabled(true)
-	assert.NotNil(boolErr(conn.Invoke().Exists(mustError)))
-	assert.NotNil(boolErr(conn.Invoke(OptCachedPlanKey("exists_error_test")).Exists(mustError)))
-}
-
-func TestInvocationCreateManyEmpty(t *testing.T) {
-	assert := assert.New(t)
-
-	var objs []uniqueObj
-
-	conn, err := New(OptConfigFromEnv())
-	assert.Nil(err)
-	conn.PlanCache.WithEnabled(false)
-	assert.Nil(conn.Open())
-	assert.Nil(conn.Invoke().CreateMany(objs))
-}
-
-func TestInvocationCreateManyError(t *testing.T) {
-	assert := assert.New(t)
-
-	mustError := []modelTableNameError{
-		{uuid.V4().String()},
-		{uuid.V4().String()},
-	}
-	conn, err := New(OptConfigFromEnv())
-	assert.Nil(err)
-	conn.PlanCache.WithEnabled(false)
-	assert.Nil(conn.Open())
-	assert.NotNil(conn.Invoke().CreateMany(mustError))
-	conn.PlanCache.WithEnabled(true)
-	assert.NotNil(conn.Invoke().CreateMany(mustError))
-	assert.NotNil(conn.Invoke(OptCachedPlanKey("cm_error_test")).CreateMany(mustError))
-}
-
-func TestInvocationDeleteError(t *testing.T) {
-	assert := assert.New(t)
-
-	var mustError modelTableNameError
-	conn, err := New(OptConfigFromEnv())
-	assert.Nil(err)
-	conn.PlanCache.WithEnabled(false)
-	assert.Nil(conn.Open())
-	assert.NotNil(conn.Invoke().Delete(&mustError))
-	conn.PlanCache.WithEnabled(true)
-	assert.NotNil(conn.Invoke().Delete(&mustError))
-	assert.NotNil(conn.Invoke(OptCachedPlanKey("delete_error_test")).Delete(&mustError))
-}
-
 type uuidTest struct {
 	ID   uuid.UUID `db:"id"`
 	Name string    `db:"name"`
@@ -385,49 +221,13 @@ func TestInvocationStatementInterceptor(t *testing.T) {
 	assert.Nil(err)
 	defer tx.Rollback()
 
-	invocation := defaultDB().Invoke(OptInvocationStatementInterceptor(func(statementID, statement string) (string, error) {
-		return "", fmt.Errorf("only a test")
+	invocation := defaultDB().Invoke(OptInvocationStatementInterceptor(func(statementID, statement string) string {
+		return statement + "; -- foo"
 	}))
 	assert.NotNil(invocation.StatementInterceptor)
 
 	err = IgnoreExecResult(invocation.Exec("select 'ok!'"))
-	assert.NotNil(err)
-	assert.Equal("only a test", err.Error())
-}
-
-type generateGetTest struct {
-	ID       int    `db:"id,pk,serial"`
-	Name     string `db:"name"`
-	ReadOnly string `db:"bad,readonly"`
-}
-
-func TestGenerateGet(t *testing.T) {
-	assert := assert.New(t)
-
-	conn, err := New()
 	assert.Nil(err)
-	conn.BufferPool = bufferutil.NewPool(1)
-	conn.PlanCache = NewPlanCache()
-
-	var obj generateGetTest
-	label, queryBody, err := conn.Invoke().generateGet(&obj)
-	assert.Nil(err)
-	assert.NotEmpty(queryBody)
-	assert.Equal("generategettest_get", label)
-}
-
-func TestGenerateGetAll(t *testing.T) {
-	assert := assert.New(t)
-
-	conn, err := New()
-	assert.Nil(err)
-	conn.BufferPool = bufferutil.NewPool(1)
-	conn.PlanCache = NewPlanCache()
-
-	objs := []generateGetTest{}
-	label, queryBody := conn.Invoke().generateGetAll(&objs)
-	assert.NotEmpty(queryBody)
-	assert.Equal("generategettest_get_all", label)
 }
 
 func TestConnectionCreate(t *testing.T) {
@@ -730,16 +530,21 @@ func TestConnectionCreateIfNotExists(t *testing.T) {
 	assert.Equal(oldCategory, verify.Category)
 }
 
-func TestInvocationEarlyExitOnError(t *testing.T) {
+func TestInvocationMetrics(t *testing.T) {
 	assert := assert.New(t)
-	tx, err := defaultDB().Begin()
+
+	log := logger.All(logger.OptOutput(ioutil.Discard))
+	defer log.Close()
+
+	done := make(chan struct{})
+	var elapsed time.Duration
+	log.Listen(QueryFlag, "test", NewQueryEventListener(func(ctx context.Context, qe QueryEvent) {
+		elapsed = qe.Elapsed
+		close(done)
+	}))
+
+	_, err := defaultDB().Invoke(OptInvocationLog(log)).Query("select 'ok!'").Any()
 	assert.Nil(err)
-	defer tx.Rollback()
-
-	i := defaultDB().Invoke(OptTx(tx))
-	assert.Nil(IgnoreExecResult(i.Exec("select 1")))
-
-	i.Err = fmt.Errorf("this is a test")
-	err = IgnoreExecResult(i.Exec("select 1"))
-	assert.Equal("this is a test", err.Error())
+	<-done
+	assert.NotZero(elapsed)
 }

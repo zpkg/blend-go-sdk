@@ -154,49 +154,44 @@ func main() {
 		return
 	}
 
-	results, err := conn.Connection.Query("select * from book; select * from person; select * from ledger")
+	results, err := conn.Query("select * from book; select * from person; select * from ledger").Do()
 	if err != nil {
 		log.Fatal(err)
 		return
 	}
 
-	var b book
-	bookColumns := db.Columns(b)
-	for results.Next() {
-		if err = db.PopulateInOrder(&b, results, bookColumns); err != nil {
-			log.Fatal(err)
-			return
-		}
-		fmt.Printf("%#v\n", b)
+	var b []book
+	if err = db.OutMany(results, &b); err != nil {
+		log.Fatal(err)
+		return
 	}
-
 	if !results.NextResultSet() {
 		log.Fatalf("no person result set, cannot continue")
 		return
 	}
 
-	var p person
-	personColumns := db.Columns(p)
-	for results.Next() {
-		if err = db.PopulateInOrder(&p, results, personColumns); err != nil {
-			log.Fatal(err)
-			return
-		}
-		fmt.Printf("%#v\n", p)
+	var p []person
+	if err = db.OutMany(results, &p); err != nil {
+		log.Fatal(err)
+		return
 	}
-
 	if !results.NextResultSet() {
 		log.Fatalf("no ledger result set, cannot continue")
 		return
 	}
 
-	var l ledger
-	ledgerColumns := db.Columns(l)
-	for results.Next() {
-		if err = db.PopulateInOrder(&l, results, ledgerColumns); err != nil {
-			log.Fatal(err)
-			return
-		}
-		fmt.Printf("%#v\n", l)
+	var l []ledger
+	if err = db.OutMany(results, &l); err != nil {
+		log.Fatal(err)
+		return
+	}
+	for _, book := range b {
+		fmt.Printf("%#v\n", book)
+	}
+	for _, person := range p {
+		fmt.Printf("%#v\n", person)
+	}
+	for _, ledger := range l {
+		fmt.Printf("%#v\n", ledger)
 	}
 }

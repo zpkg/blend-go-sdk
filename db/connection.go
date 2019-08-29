@@ -3,8 +3,6 @@ package db
 import (
 	"context"
 	"database/sql"
-	"sync"
-	"time"
 
 	"github.com/blend/go-sdk/bufferutil"
 	"github.com/blend/go-sdk/ex"
@@ -12,8 +10,8 @@ import (
 )
 
 const (
-	// DBNilError is a common error
-	DBNilError = "connection is nil"
+	// ConnectionNilError is a common error
+	ConnectionNilError = "connection is nil"
 )
 
 const (
@@ -30,16 +28,14 @@ const (
 // New returns a new Connection.
 // It will use very bare bones defaults for the config.
 func New(options ...Option) (*Connection, error) {
-	c := &Connection{
-		PlanCache: NewPlanCache(),
-	}
+	var c Connection
 	var err error
-	for _, o := range options {
-		if err = o(c); err != nil {
+	for _, opt := range options {
+		if err = opt(&c); err != nil {
 			return nil, err
 		}
 	}
-	return c, nil
+	return &c, nil
 }
 
 // MustNew returns a new connection and panics on error.
@@ -66,31 +62,21 @@ func Open(conn *Connection, err error) (*Connection, error) {
 
 // Connection is the basic wrapper for connection parameters and saves a reference to the created sql.Connection.
 type Connection struct {
-	sync.Mutex
-	Config               Config
-	Tracer               Tracer
-	StatementInterceptor StatementInterceptor
 	Connection           *sql.DB
 	BufferPool           *bufferutil.Pool
+	Config               Config
 	Log                  logger.Log
-	PlanCache            *PlanCache
+	Tracer               Tracer
+	StatementInterceptor StatementInterceptor
 }
 
 // Close implements a closer.
 func (dbc *Connection) Close() error {
-	if dbc.PlanCache != nil {
-		if err := dbc.PlanCache.Close(); err != nil {
-			return err
-		}
-	}
 	return dbc.Connection.Close()
 }
 
 // Open returns a connection object, either a cached connection object or creating a new one in the process.
 func (dbc *Connection) Open() error {
-	dbc.Lock()
-	defer dbc.Unlock()
-
 	// bail if we've already opened the connection.
 	if dbc.Connection != nil {
 		return Error(ErrConnectionAlreadyOpen)
@@ -100,9 +86,6 @@ func (dbc *Connection) Open() error {
 	}
 	if dbc.BufferPool == nil {
 		dbc.BufferPool = bufferutil.NewPool(dbc.Config.BufferPoolSizeOrDefault())
-	}
-	if dbc.PlanCache == nil {
-		dbc.PlanCache = NewPlanCache()
 	}
 
 	dsn := dbc.Config.CreateDSN()
@@ -117,8 +100,6 @@ func (dbc *Connection) Open() error {
 		return Error(err)
 	}
 
-	dbc.PlanCache.WithConnection(dbConn)
-	dbc.PlanCache.WithEnabled(!dbc.Config.PlanCacheDisabled)
 	dbc.Connection = dbConn
 	dbc.Connection.SetConnMaxLifetime(dbc.Config.MaxLifetimeOrDefault())
 	dbc.Connection.SetMaxIdleConns(dbc.Config.IdleConnectionsOrDefault())
@@ -144,20 +125,18 @@ func (dbc *Connection) BeginContext(context context.Context, opts ...*sql.TxOpti
 	return tx, Error(err)
 }
 
-// PrepareContext prepares a statement potentially returning a cached version of the statement.
-func (dbc *Connection) PrepareContext(context context.Context, cachedPlanKey, statement string, tx *sql.Tx) (stmt *sql.Stmt, err error) {
+// PrepareContext prepares a statement within a given context.
+// If a tx is provided, the tx is the target for the prepare.
+// This will trigger tracing on prepare.
+func (dbc *Connection) PrepareContext(context context.Context, statement string, tx *sql.Tx) (stmt *sql.Stmt, err error) {
 	if dbc.Tracer != nil {
-		tf := dbc.Tracer.Prepare(context, dbc, statement)
+		tf := dbc.Tracer.Prepare(context, dbc.Config, statement)
 		if tf != nil {
-			defer func() { tf.Finish(err) }()
+			defer func() { tf.FinishPrepare(context, err) }()
 		}
 	}
 	if tx != nil {
 		stmt, err = tx.PrepareContext(context, statement)
-		return
-	}
-	if dbc.PlanCache != nil && dbc.PlanCache.Enabled() && cachedPlanKey != "" {
-		stmt, err = dbc.PlanCache.PrepareContext(context, cachedPlanKey, statement)
 		return
 	}
 	stmt, err = dbc.Connection.PrepareContext(context, statement)
@@ -170,43 +149,19 @@ func (dbc *Connection) PrepareContext(context context.Context, cachedPlanKey, st
 
 // Invoke returns a new invocation.
 func (dbc *Connection) Invoke(options ...InvocationOption) *Invocation {
-	i := &Invocation{
+	i := Invocation{
+		DB:                   dbc.Connection,
+		Config:               dbc.Config,
+		BufferPool:           dbc.BufferPool,
 		Context:              context.Background(),
+		Log:                  dbc.Log,
 		Tracer:               dbc.Tracer,
 		StatementInterceptor: dbc.StatementInterceptor,
-		Conn:                 dbc,
-		StartTime:            time.Now().UTC(),
 	}
 	for _, option := range options {
-		option(i)
+		option(&i)
 	}
-	return i
-}
-
-// Ping checks the db connection.
-func (dbc *Connection) Ping() error {
-	return Error(dbc.Connection.Ping())
-}
-
-// PingContext checks the db connection.
-func (dbc *Connection) PingContext(context context.Context) (err error) {
-	if dbc.Tracer != nil {
-		tf := dbc.Tracer.Ping(context, dbc)
-		if tf != nil {
-			defer func() {
-				tf.Finish(err)
-			}()
-		}
-	}
-
-	err = Error(dbc.Connection.PingContext(context))
-	return
-}
-
-// DefaultSchema returns the schema on the search_path for requests over this connection. It can be used to query
-// other schemas, but that must be done by manually specifying them in the query.
-func (dbc *Connection) DefaultSchema() string {
-	return dbc.Config.SchemaOrDefault()
+	return &i
 }
 
 // Exec is a helper stub for .Invoke(...).Exec(...).

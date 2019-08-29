@@ -4,21 +4,28 @@ import (
 	"context"
 	"database/sql"
 	"time"
+
+	"github.com/blend/go-sdk/logger"
 )
 
 // InvocationOption is an option for invocations.
 type InvocationOption func(*Invocation)
 
-// OptCachedPlanKey sets the CachedPlanKey on the invocation.
-func OptCachedPlanKey(cacheKey string) InvocationOption {
+// OptLabel sets the Label on the invocation.
+func OptLabel(label string) InvocationOption {
 	return func(i *Invocation) {
-		i.CachedPlanKey = cacheKey
+		i.Label = label
 	}
 }
 
 // OptInvocationStatementInterceptor sets the invocation statement interceptor.
 func OptInvocationStatementInterceptor(interceptor StatementInterceptor) InvocationOption {
 	return func(i *Invocation) { i.StatementInterceptor = interceptor }
+}
+
+// OptInvocationLog sets the invocation logger.
+func OptInvocationLog(log logger.Log) InvocationOption {
+	return func(i *Invocation) { i.Log = log }
 }
 
 // OptContext sets a context on an invocation.
@@ -45,6 +52,15 @@ func OptTimeout(d time.Duration) InvocationOption {
 // OptTx is an invocation option that sets the invocation transaction.
 func OptTx(tx *sql.Tx) InvocationOption {
 	return func(i *Invocation) {
-		i.Tx = tx
+		if tx != nil {
+			i.DB = tx
+		}
+	}
+}
+
+// OptDB is an invocation option that sets the underlying invocation db.
+func OptDB(db DB) InvocationOption {
+	return func(i *Invocation) {
+		i.DB = db
 	}
 }
