@@ -16,10 +16,9 @@ const (
 	TagEnv       string = "env"
 	TagHostname  string = "hostname"
 	TagContainer string = "container"
-
-	TagSeverity string = "severity"
-	TagError    string = "error"
-	TagClass    string = "class"
+	TagSeverity  string = "severity"
+	TagError     string = "error"
+	TagClass     string = "class"
 )
 
 // Specialized / default values
