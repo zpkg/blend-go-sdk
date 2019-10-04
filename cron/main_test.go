@@ -2,6 +2,7 @@ package cron
 
 import (
 	"context"
+	"sync"
 	"testing"
 	"time"
 
@@ -95,24 +96,29 @@ func (tj *testJobInterval) Execute(ctx context.Context) error {
 	return tj.RunDelegate(ctx)
 }
 
-type testWithEnabled struct {
-	isEnabled bool
-	action    func()
+var (
+	_ Job              = (*testWithDisabled)(nil)
+	_ DisabledProvider = (*testWithDisabled)(nil)
+)
+
+type testWithDisabled struct {
+	disabled bool
+	action   func()
 }
 
-func (twe testWithEnabled) Name() string {
+func (twe testWithDisabled) Name() string {
 	return "testWithEnabled"
 }
 
-func (twe testWithEnabled) Schedule() Schedule {
+func (twe testWithDisabled) Schedule() Schedule {
 	return nil
 }
 
-func (twe testWithEnabled) Enabled() bool {
-	return twe.isEnabled
+func (twe testWithDisabled) Disabled() bool {
+	return twe.disabled
 }
 
-func (twe testWithEnabled) Execute(ctx context.Context) error {
+func (twe testWithDisabled) Execute(ctx context.Context) error {
 	twe.action()
 	return nil
 }
@@ -149,28 +155,31 @@ var (
 
 func newBrokenFixedTest(action func(context.Context) error) *brokenFixedTest {
 	return &brokenFixedTest{
-		BrokenSignal: make(chan struct{}),
-		FixedSignal:  make(chan struct{}),
-		Action:       action,
+		CompleteSignal: make(chan struct{}),
+		BrokenSignal:   make(chan struct{}),
+		FixedSignal:    make(chan struct{}),
+		Action:         action,
 	}
 }
 
 type brokenFixedTest struct {
-	Starts       int
-	Completes    int
-	Failures     int
-	BrokenSignal chan struct{}
-	FixedSignal  chan struct{}
-	Action       func(context.Context) error
+	sync.Mutex
+	Starts         int
+	Completes      int
+	Failures       int
+	CompleteSignal chan struct{}
+	BrokenSignal   chan struct{}
+	FixedSignal    chan struct{}
+	Action         func(context.Context) error
 }
 
-func (job brokenFixedTest) Name() string { return "broken-fixed" }
+func (job *brokenFixedTest) Name() string { return "broken-fixed" }
 
-func (job brokenFixedTest) Execute(ctx context.Context) error {
+func (job *brokenFixedTest) Execute(ctx context.Context) error {
 	return job.Action(ctx)
 }
 
-func (job brokenFixedTest) Schedule() Schedule { return nil }
+func (job *brokenFixedTest) Schedule() Schedule { return nil }
 
 func (job *brokenFixedTest) OnStart(ctx context.Context) {
 	job.Starts++
@@ -181,15 +190,27 @@ func (job *brokenFixedTest) OnFailure(ctx context.Context) {
 }
 
 func (job *brokenFixedTest) OnComplete(ctx context.Context) {
+	job.Lock()
+	defer job.Unlock()
+
+	close(job.CompleteSignal)
+	job.CompleteSignal = make(chan struct{})
 	job.Completes++
 }
 
 func (job *brokenFixedTest) OnBroken(ctx context.Context) {
+	job.Lock()
+	defer job.Unlock()
+
 	close(job.BrokenSignal)
+	job.BrokenSignal = make(chan struct{})
 }
 
 func (job *brokenFixedTest) OnFixed(ctx context.Context) {
+	job.Lock()
+	defer job.Unlock()
 	close(job.FixedSignal)
+	job.BrokenSignal = make(chan struct{})
 }
 
 type loadJobTestMinimum struct{}

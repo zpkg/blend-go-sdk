@@ -4,31 +4,28 @@ import (
 	"time"
 )
 
+// Constats and defaults
 const (
-	// EnvVarHeartbeatInterval is an environment variable name.
-	EnvVarHeartbeatInterval = "CRON_HEARTBEAT_INTERVAL"
+	DefaultTimeout               time.Duration = 0
+	DefaultHistoryRestoreTimeout               = 5 * time.Second
+	DefaultShutdownGracePeriod   time.Duration = 0
 )
 
-// Retention defaults
 const (
+	// DefaultDisabled is a default.
+	DefaultDisabled = false
+	// DefaultShouldSkipLoggerListeners is a default.
+	DefaultShouldSkipLoggerListeners = false
+	// DefaultShouldSkipLoggerOutput is a default.
+	DefaultShouldSkipLoggerOutput = false
+	// DefaultHistoryDisabled is a default.
+	DefaultHistoryDisabled = false
+	// DefaultHistoryPersistenceDisabled is a default.
+	DefaultHistoryPersistenceDisabled = false
+	// DefaultHistoryMaxCount is the default number of history items to track.
 	DefaultHistoryMaxCount = 10
-	DefaultHistoryMaxAge   = 6 * time.Hour
-)
-
-const (
-	// DefaultHeartbeatInterval is the interval between schedule next run checks.
-	DefaultHeartbeatInterval = 50 * time.Millisecond
-)
-
-const (
-	// DefaultEnabled is a default.
-	DefaultEnabled = true
-	// DefaultSerial is a default.
-	DefaultSerial = false
-	// DefaultShouldWriteOutput is a default.
-	DefaultShouldWriteOutput = true
-	// DefaultShouldTriggerListeners is a default.
-	DefaultShouldTriggerListeners = true
+	// DefaultHistoryMaxAge is the default maximum age of history items.
+	DefaultHistoryMaxAge = 6 * time.Hour
 )
 
 const (
@@ -50,25 +47,34 @@ const (
 	FlagDisabled = "cron.disabled"
 )
 
-// State is a job state.
-type State string
+// JobManagerState is a job manager status.
+type JobManagerState string
 
+// JobManagerState values.
 const (
-	//StateRunning is the running state.
-	StateRunning State = "running"
-	// StateEnabled is the enabled state.
-	StateEnabled State = "enabled"
-	// StateDisabled is the disabled state.
-	StateDisabled State = "disabled"
+	JobManagerStateUnknown JobManagerState = "unknown"
+	JobManagerStateRunning JobManagerState = "started"
+	JobManagerStatePaused  JobManagerState = "paused"
+	JobManagerStateStopped JobManagerState = "stopped"
 )
 
-// JobStatus is a job status.
-type JobStatus string
+// JobSchedulerState is a job manager status.
+type JobSchedulerState string
 
-// Status values.
+// JobManagerState values.
 const (
-	JobStatusRunning   JobStatus = "running"
-	JobStatusCancelled JobStatus = "cancelled"
-	JobStatusFailed    JobStatus = "failed"
-	JobStatusComplete  JobStatus = "complete"
+	JobSchedulerStateUnknown JobSchedulerState = "unknown"
+	JobSchedulerStateRunning JobSchedulerState = "started"
+	JobSchedulerStateStopped JobSchedulerState = "stopped"
+)
+
+// JobInvocationState is a job status.
+type JobInvocationState string
+
+// JobInvocationState values.
+const (
+	JobInvocationStateRunning   JobInvocationState = "running"
+	JobInvocationStateCancelled JobInvocationState = "cancelled"
+	JobInvocationStateFailed    JobInvocationState = "failed"
+	JobInvocationStateComplete  JobInvocationState = "complete"
 )

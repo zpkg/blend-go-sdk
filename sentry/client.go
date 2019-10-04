@@ -12,6 +12,10 @@ import (
 	"github.com/blend/go-sdk/logger"
 )
 
+var (
+	_ Sender = (*Client)(nil)
+)
+
 // MustNew returns a new client and panics on error.
 func MustNew(cfg Config) *Client {
 	c, err := New(cfg)
@@ -74,7 +78,7 @@ func errEvent(ctx context.Context, ee logger.ErrorEvent) *raven.Event {
 			{
 				Type:       ex.ErrClass(ee.Err).Error(),
 				Value:      ex.ErrMessage(ee.Err),
-				Stacktrace: &raven.Stacktrace{Frames: errFrames(ee.Err)},
+				Stacktrace: errStackTrace(ee.Err),
 			},
 		},
 	}
@@ -98,6 +102,13 @@ func errRequest(ee logger.ErrorEvent) (requestMeta raven.Request) {
 	}
 	requestMeta = requestMeta.FromHTTPRequest(typed)
 	return
+}
+
+func errStackTrace(err error) *raven.Stacktrace {
+	if err != nil {
+		return &raven.Stacktrace{Frames: errFrames(err)}
+	}
+	return nil
 }
 
 func errFrames(err error) []raven.Frame {

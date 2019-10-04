@@ -3,9 +3,11 @@ package cron
 // NOTE: ALL TIMES ARE IN UTC. JUST USE UTC.
 
 import (
+	"context"
 	"fmt"
 	"sort"
 	"sync"
+	"time"
 
 	"github.com/blend/go-sdk/async"
 	"github.com/blend/go-sdk/ex"
@@ -27,12 +29,13 @@ func New(options ...JobManagerOption) *JobManager {
 // JobManager is the main orchestration and job management object.
 type JobManager struct {
 	sync.Mutex
-	*async.Latch
-
-	Config Config
-	Tracer Tracer
-	Log    logger.Log
-	Jobs   map[string]*JobScheduler
+	Latch   *async.Latch
+	Tracer  Tracer
+	Log     logger.Log
+	Started time.Time
+	Paused  time.Time
+	Stopped time.Time
+	Jobs    map[string]*JobScheduler
 }
 
 // --------------------------------------------------------------------------------
@@ -49,11 +52,17 @@ func (jm *JobManager) LoadJobs(jobs ...Job) error {
 		if _, hasJob := jm.Jobs[jobName]; hasJob {
 			return ex.New(ErrJobAlreadyLoaded, ex.OptMessagef("job: %s", job.Name()))
 		}
-		jm.Jobs[jobName] = NewJobScheduler(job,
+
+		scheduler := NewJobScheduler(job,
 			OptJobSchedulerTracer(jm.Tracer),
 			OptJobSchedulerLog(jm.Log),
-			OptJobSchedulerConfig(jm.Config),
 		)
+
+		if err := scheduler.RestoreHistory(context.Background()); err != nil {
+			logger.MaybeError(jm.Log, err)
+			continue
+		}
+		jm.Jobs[jobName] = scheduler
 	}
 	return nil
 }
@@ -100,6 +109,7 @@ func (jm *JobManager) HasJob(jobName string) (hasJob bool) {
 func (jm *JobManager) Job(jobName string) (job *JobScheduler, err error) {
 	jm.Lock()
 	defer jm.Unlock()
+
 	if jobScheduler, hasJob := jm.Jobs[jobName]; hasJob {
 		job = jobScheduler
 	} else {
@@ -115,20 +125,20 @@ func (jm *JobManager) IsJobDisabled(jobName string) (value bool) {
 
 	if job, hasJob := jm.Jobs[jobName]; hasJob {
 		value = job.Disabled
-		if job.EnabledProvider != nil {
-			value = value || !job.EnabledProvider()
+		if job.DisabledProvider != nil {
+			value = value || job.DisabledProvider()
 		}
 	}
 	return
 }
 
-// IsJobRunning returns if a task is currently running.
+// IsJobRunning returns if a job is currently running.
 func (jm *JobManager) IsJobRunning(jobName string) (isRunning bool) {
 	jm.Lock()
 	defer jm.Unlock()
 
 	if job, ok := jm.Jobs[jobName]; ok {
-		isRunning = job.Current != nil
+		isRunning = !job.Idle()
 	}
 	return
 }
@@ -149,26 +159,15 @@ func (jm *JobManager) RunJobs(jobNames ...string) error {
 }
 
 // RunJob runs a job by jobName on demand.
-func (jm *JobManager) RunJob(jobName string) error {
+func (jm *JobManager) RunJob(jobName string) (*JobInvocation, error) {
 	jm.Lock()
 	defer jm.Unlock()
 
 	job, ok := jm.Jobs[jobName]
 	if !ok {
-		return ex.New(ErrJobNotLoaded, ex.OptMessagef("job: %s", jobName))
+		return nil, ex.New(ErrJobNotLoaded, ex.OptMessagef("job: %s", jobName))
 	}
-	go job.Run()
-	return nil
-}
-
-// RunAllJobs runs every job that has been loaded in the JobManager at once.
-func (jm *JobManager) RunAllJobs() {
-	jm.Lock()
-	defer jm.Unlock()
-
-	for _, job := range jm.Jobs {
-		go job.Run()
-	}
+	return job.RunAsync()
 }
 
 // CancelJob cancels (sends the cancellation signal) to a running job.
@@ -176,33 +175,52 @@ func (jm *JobManager) CancelJob(jobName string) (err error) {
 	jm.Lock()
 	defer jm.Unlock()
 
-	job, ok := jm.Jobs[jobName]
+	jobScheduler, ok := jm.Jobs[jobName]
 	if !ok {
 		err = ex.New(ErrJobNotFound, ex.OptMessagef("job: %s", jobName))
 		return
 	}
-	job.Cancel()
+	jobScheduler.Cancel()
 	return
 }
 
+// State returns the job manager state.
+func (jm *JobManager) State() JobManagerState {
+	if jm.Latch.IsStarted() {
+		if !jm.Paused.IsZero() {
+			return JobManagerStatePaused
+		}
+		return JobManagerStateRunning
+	} else if jm.Latch.IsStopped() {
+		return JobManagerStateStopped
+	}
+	return JobManagerStateUnknown
+}
+
 // Status returns a status object.
-func (jm *JobManager) Status() *Status {
+func (jm *JobManager) Status() JobManagerStatus {
 	jm.Lock()
 	defer jm.Unlock()
 
-	status := Status{
-		Running: map[string][]*JobInvocation{},
+	status := JobManagerStatus{
+		State:   jm.State(),
+		Started: jm.Started,
+		Stopped: jm.Stopped,
+		Running: map[string]JobInvocation{},
 	}
-
 	for _, job := range jm.Jobs {
-		status.Jobs = append(status.Jobs, job)
-
+		status.Jobs = append(status.Jobs, job.Status())
+		if job.Last != nil {
+			if job.Last.Started.After(status.JobLastStarted) {
+				status.JobLastStarted = job.Last.Started
+			}
+		}
 		if job.Current != nil {
-			status.Running[job.Name] = append(status.Running[job.Name], job.Current)
+			status.Running[job.Name()] = *job.Current
 		}
 	}
-	sort.Sort(JobSchedulersByJobNameAsc(status.Jobs))
-	return &status
+	sort.Sort(JobSchedulerStatusesByJobNameAsc(status.Jobs))
+	return status
 }
 
 //
@@ -211,40 +229,88 @@ func (jm *JobManager) Status() *Status {
 
 // Start starts the job manager and blocks.
 func (jm *JobManager) Start() error {
+	stopped := jm.Latch.NotifyStopped()
 	if err := jm.StartAsync(); err != nil {
 		return err
 	}
-	<-jm.NotifyStopped()
+	<-stopped
 	return nil
 }
 
 // StartAsync starts the job manager and the loaded jobs.
 // It does not block.
 func (jm *JobManager) StartAsync() error {
-	if !jm.CanStart() {
-		return fmt.Errorf("already started")
+	if !jm.Latch.CanStart() {
+		return async.ErrCannotStart
 	}
-	jm.Starting()
+	jm.Latch.Starting()
+	logger.MaybeInfo(jm.Log, "job manager starting")
 	for _, job := range jm.Jobs {
 		job.Log = jm.Log
 		job.Tracer = jm.Tracer
-		job.Config = jm.Config
 		go job.Start()
 		<-job.NotifyStarted()
 	}
-	jm.Started()
+	jm.Latch.Started()
+	jm.Started = time.Now().UTC()
+	logger.MaybeInfo(jm.Log, "job manager started")
+	return nil
+}
+
+// Pause stops the job manager's job schedulers but does not
+// shut down the job manager.
+func (jm *JobManager) Pause() error {
+	jm.Lock()
+	defer jm.Unlock()
+
+	if !jm.Paused.IsZero() {
+		return fmt.Errorf("cannot pause; already paused")
+	}
+	jm.Paused = time.Now().UTC()
+	logger.MaybeInfo(jm.Log, "job manager pausing")
+	for _, job := range jm.Jobs {
+		job.Stop()
+	}
+
+	logger.MaybeInfo(jm.Log, "job manager paused")
+	return nil
+}
+
+// Resume restarts the job manager's job schedulers.
+// This call is asynchronous and does not block.
+func (jm *JobManager) Resume() error {
+	jm.Lock()
+	defer jm.Unlock()
+
+	if jm.Paused.IsZero() {
+		return fmt.Errorf("cannot resume; not paused")
+	}
+	jm.Paused = time.Time{}
+	logger.MaybeInfo(jm.Log, "job manager pausing")
+	for _, job := range jm.Jobs {
+		go func() {
+			if err := job.Start(); err != nil {
+				logger.MaybeError(jm.Log, err)
+			}
+		}()
+		<-job.NotifyStarted()
+	}
+	logger.MaybeInfo(jm.Log, "job manager resumed")
 	return nil
 }
 
 // Stop stops the schedule runner for a JobManager.
 func (jm *JobManager) Stop() error {
-	if !jm.CanStop() {
-		return fmt.Errorf("already stopped")
+	if !jm.Latch.CanStop() {
+		return async.ErrCannotStop
 	}
-	jm.Stopping()
+	jm.Latch.Stopping()
+	logger.MaybeInfo(jm.Log, "job manager shutting down")
 	for _, job := range jm.Jobs {
 		job.Stop()
 	}
-	jm.Stopped()
+	jm.Latch.Stopped()
+	jm.Stopped = time.Now().UTC()
+	logger.MaybeInfo(jm.Log, "job manager shutdown complete")
 	return nil
 }

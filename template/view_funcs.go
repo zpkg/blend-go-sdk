@@ -68,6 +68,7 @@ func (vf ViewFuncs) FuncMap() map[string]interface{} {
 		"date_month_day": vf.DateMonthDay,
 		"date_short_rev": vf.DateShortRev,
 		"unix":           vf.Unix,
+		"unix_nano":      vf.UnixNano,
 		"rfc3339":        vf.RFC3339,
 		"time_short":     vf.TimeShort,
 		"time_medium":    vf.TimeMedium,
@@ -83,6 +84,10 @@ func (vf ViewFuncs) FuncMap() map[string]interface{} {
 		"minute":         vf.Minute,
 		"second":         vf.Second,
 		"millisecond":    vf.Millisecond,
+		/* duration */
+		"duration_round":         vf.DurationRound,
+		"duration_round_millis":  vf.DurationRoundMillis,
+		"duration_round_seconds": vf.DurationRoundSeconds,
 		/* numbers */
 		"format_money": vf.FormatMoney,
 		"format_pct":   vf.FormatPct,
@@ -117,7 +122,7 @@ func (vf ViewFuncs) FuncMap() map[string]interface{} {
 		"matches":                     vf.Matches,
 		"quote":                       vf.Quote,
 		"strip_quotes":                vf.StripQuotes,
-		/* arrays */
+		/* arrays or maps */
 		"reverse":  vf.Reverse,
 		"slice":    vf.Slice,
 		"first":    vf.First,
@@ -127,6 +132,7 @@ func (vf ViewFuncs) FuncMap() map[string]interface{} {
 		"csv":      vf.CSV,
 		"tsv":      vf.TSV,
 		/* urls */
+		"urlencode":          vf.URLEncode,
 		"url_scheme":         vf.URLScheme,
 		"with_url_scheme":    vf.WithURLScheme,
 		"url_host":           vf.URLHost,
@@ -192,7 +198,14 @@ func (vf ViewFuncs) Process(vm Viewmodel, contents string) (string, error) {
 
 // ToString attempts to return a string representation of a value.
 func (vf ViewFuncs) ToString(v interface{}) string {
-	return fmt.Sprintf("%v", v)
+	switch c := v.(type) {
+	case []byte:
+		return string(c)
+	case string:
+		return c
+	default:
+		return fmt.Sprintf("%v", v)
+	}
 }
 
 // ToBytes attempts to return a bytes representation of a value.
@@ -226,8 +239,13 @@ func (vf ViewFuncs) NowUTC() time.Time {
 }
 
 // Unix returns the unix format for a timestamp.
-func (vf ViewFuncs) Unix(t time.Time) string {
-	return fmt.Sprintf("%d", t.Unix())
+func (vf ViewFuncs) Unix(t time.Time) int64 {
+	return t.Unix()
+}
+
+// UnixNano returns the timetamp as nanoseconds from 1970-01-01.
+func (vf ViewFuncs) UnixNano(t time.Time) int64 {
+	return t.UnixNano()
 }
 
 // RFC3339 returns the RFC3339 format for a timestamp.
@@ -351,6 +369,21 @@ func (vf ViewFuncs) Since(t time.Time) time.Duration {
 // It is relative, meaning the value returned can be negative.
 func (vf ViewFuncs) SinceUTC(t time.Time) time.Duration {
 	return time.Now().UTC().Sub(t.UTC())
+}
+
+// DurationRound rounds a duration value.
+func (vf ViewFuncs) DurationRound(d time.Duration, to time.Duration) time.Duration {
+	return d.Round(to)
+}
+
+// DurationRoundMillis rounds a duration value to milliseconds.
+func (vf ViewFuncs) DurationRoundMillis(d time.Duration) time.Duration {
+	return d.Round(time.Millisecond)
+}
+
+// DurationRoundSeconds rounds a duration value to seconds.
+func (vf ViewFuncs) DurationRoundSeconds(d time.Duration) time.Duration {
+	return d.Round(time.Millisecond)
 }
 
 // ParseBool attempts to parse a value as a bool.
@@ -526,13 +559,25 @@ func (vf ViewFuncs) Slice(from, to int, collection interface{}) (interface{}, er
 // First returns the first element of a collection.
 func (vf ViewFuncs) First(collection interface{}) (interface{}, error) {
 	value := reflect.ValueOf(collection)
-	if value.Type().Kind() != reflect.Slice {
-		return nil, fmt.Errorf("input must be a slice")
+	kind := value.Type().Kind()
+	if kind != reflect.Slice && kind != reflect.Map && kind != reflect.Array {
+		return nil, fmt.Errorf("input must be a slice or map")
 	}
 	if value.Len() == 0 {
 		return nil, nil
 	}
-	return value.Index(0).Interface(), nil
+	switch kind {
+	case reflect.Slice, reflect.Array:
+		return value.Index(0).Interface(), nil
+	case reflect.Map:
+		iter := value.MapRange()
+		if iter.Next() {
+			return iter.Value().Interface(), nil
+		}
+	default:
+	}
+
+	return nil, nil
 }
 
 // AtIndex returns an element at a given index.
@@ -640,6 +685,11 @@ func (vf ViewFuncs) StripQuotes(v string) string {
 // ParseURL parses a url.
 func (vf ViewFuncs) ParseURL(v string) (*url.URL, error) {
 	return url.Parse(v)
+}
+
+// URLEncode encodes a value as a url token.
+func (vf ViewFuncs) URLEncode(value string) string {
+	return url.QueryEscape(value)
 }
 
 // URLScheme returns the scheme of a url.

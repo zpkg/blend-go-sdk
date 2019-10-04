@@ -127,6 +127,7 @@ func TestMarshalJSON(t *testing.T) {
 	type ReadableStackTrace struct {
 		Class   string   `json:"Class"`
 		Message string   `json:"Message"`
+		Inner   error    `json:"Inner"`
 		Stack   []string `json:"StackTrace"`
 	}
 
@@ -169,6 +170,28 @@ func TestMarshalJSON(t *testing.T) {
 	a.Equal(message, ex2.Class)
 }
 
+func TestJSON(t *testing.T) {
+	assert := assert.New(t)
+
+	ex := New("this is a test",
+		OptMessage("test message"),
+		OptInner(New("inner exception", OptMessagef("inner test message"))),
+	)
+
+	contents, err := json.Marshal(ex)
+	assert.Nil(err)
+
+	var verify Ex
+	err = json.Unmarshal(contents, &verify)
+	assert.Nil(err)
+
+	assert.Equal(ErrClass(ex), ErrClass(verify))
+	assert.Equal(ErrMessage(ex), ErrMessage(verify))
+	assert.NotNil(verify.Inner)
+	assert.Equal(ErrClass(ErrInner(ex)), ErrClass(ErrInner(verify)))
+	assert.Equal(ErrMessage(ErrInner(ex)), ErrMessage(ErrInner(verify)))
+}
+
 func TestNest(t *testing.T) {
 	a := assert.New(t)
 
@@ -195,6 +218,28 @@ func TestNestNil(t *testing.T) {
 	a.Nil(err)
 	a.Equal(nil, err)
 	a.True(nil == err)
+}
+
+func TestExceptionFormat(t *testing.T) {
+	assert := assert.New(t)
+
+	e := &Ex{Class: fmt.Errorf("this is only a test")}
+	output := fmt.Sprintf("%v", e)
+	assert.Equal("this is only a test", output)
+
+	output = fmt.Sprintf("%+v", e)
+	assert.Equal("this is only a test", output)
+
+	e = &Ex{
+		Class: fmt.Errorf("this is only a test"),
+		StackTrace: StackStrings([]string{
+			"foo",
+			"bar",
+		}),
+	}
+
+	output = fmt.Sprintf("%+v", e)
+	assert.Equal("this is only a test\nfoo\nbar", output)
 }
 
 func TestExceptionPrintsInner(t *testing.T) {

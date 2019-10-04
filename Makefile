@@ -34,6 +34,7 @@ deps:
 
 dev-deps:
 	@go get -u golang.org/x/lint/golint
+	@go get -d github.com/goreleaser/goreleaser
 
 install-all: install-ask install-bindata install-coverage install-profanity install-reverseproxy install-recover install-semver install-shamir install-template
 
@@ -104,11 +105,11 @@ test-verbose:
 
 cover:
 	@echo "$(VERSION)/$(GIT_REF) >> coverage"
-	@go run cmd/coverage/main.go --exclude="examples/*"
+	@go run cmd/coverage/main.go --exclude="examples/*,cmd/*" --timeout="10s"
 
 cover-ci:
 	@echo "$(VERSION)/$(GIT_REF) >> coverage"
-	@go run cmd/coverage/main.go --keep-coverage-out --covermode=atomic --coverprofile=coverage.txt --exclude="examples/*"
+	@go run cmd/coverage/main.go --keep-coverage-out --covermode=atomic --coverprofile=coverage.txt --exclude="examples/*,cmd/*" --timeout="10s"
 
 cover-enforce:
 	@echo "$(VERSION)/$(GIT_REF) >> coverage"

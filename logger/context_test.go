@@ -16,14 +16,14 @@ func TestContextWithTimestamp(t *testing.T) {
 	assert.True(GetTimestamp(context.Background()).IsZero())
 }
 
-func TestContextWithScopePath(t *testing.T) {
+func TestContextWithPath(t *testing.T) {
 	assert := assert.New(t)
 
 	path := []string{"one", "two"}
 	path2 := []string{"two", "three"}
-	assert.Equal(path, GetScopePath(WithScopePath(context.Background(), path...)))
-	assert.Equal(path, GetScopePath(WithScopePath(WithScopePath(context.Background(), path2...), path...)))
-	assert.Nil(GetScopePath(context.Background()))
+	assert.Equal(path, GetPath(WithPath(context.Background(), path...)))
+	assert.Equal(path, GetPath(WithPath(WithPath(context.Background(), path2...), path...)))
+	assert.Nil(GetPath(context.Background()))
 }
 
 func TestContextWithLabels(t *testing.T) {

@@ -5,6 +5,7 @@ import (
 	"time"
 
 	"github.com/blend/go-sdk/ex"
+	"github.com/blend/go-sdk/stringutil"
 )
 
 var (
@@ -21,6 +22,23 @@ func Parse(source StringSource) Parser {
 // Parser parses an int.
 type Parser struct {
 	Source StringSource
+}
+
+// Bool returns the bool value.
+func (p Parser) Bool() (*bool, error) {
+	value, err := p.Source.String()
+	if err != nil {
+		return nil, err
+	}
+	if value == nil {
+		return nil, nil
+	}
+
+	parsed, err := stringutil.ParseBool(*value)
+	if err != nil {
+		return nil, err
+	}
+	return &parsed, nil
 }
 
 // Int returns the int value.
