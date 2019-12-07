@@ -19,7 +19,7 @@ func TestForbidden(t *testing.T) {
 
 	verr = Any("foo").Forbidden()()
 	assert.NotNil(verr)
-	assert.Equal(ErrForbidden, Cause(verr))
+	assert.Equal(ErrForbidden, ErrCause(verr))
 }
 
 func TestRequired(t *testing.T) {
@@ -31,11 +31,11 @@ func TestRequired(t *testing.T) {
 
 	verr = Any(nil).Required()()
 	assert.NotNil(verr)
-	assert.Equal(ErrRequired, Cause(verr))
+	assert.Equal(ErrRequired, ErrCause(verr))
 
 	verr = Any((*string)(nil)).Required()()
 	assert.NotNil(verr)
-	assert.Equal(ErrRequired, Cause(verr))
+	assert.Equal(ErrRequired, ErrCause(verr))
 }
 
 func TestNotZero(t *testing.T) {
@@ -47,14 +47,14 @@ func TestNotZero(t *testing.T) {
 
 	verr = Any(nil).NotZero()()
 	assert.NotNil(verr)
-	assert.Equal(ErrNotZero, Cause(verr))
+	assert.Equal(ErrNotZero, ErrCause(verr))
 
 	verr = Any((*string)(nil)).NotZero()()
 	assert.NotNil(verr)
-	assert.Equal(ErrNotZero, Cause(verr))
+	assert.Equal(ErrNotZero, ErrCause(verr))
 }
 
-func TestZero(t *testing.T) {
+func TestAnyRefZero(t *testing.T) {
 	assert := assert.New(t)
 
 	type zeroTest struct {
@@ -102,11 +102,11 @@ func TestZero(t *testing.T) {
 
 	for index, tc := range testCases {
 		verr := Any(tc.Input).Zero()()
-		assert.Equal(tc.Expected, Cause(verr), index)
+		assert.Equal(tc.Expected, ErrCause(verr), index)
 	}
 }
 
-func TestEmpty(t *testing.T) {
+func TestAnyRefEmpty(t *testing.T) {
 	assert := assert.New(t)
 
 	testCases := [...]struct {
@@ -165,11 +165,11 @@ func TestEmpty(t *testing.T) {
 
 	for index, tc := range testCases {
 		verr := Any(tc.Input).Empty()()
-		assert.Equal(tc.Expected, Cause(verr), index)
+		assert.Equal(tc.Expected, ErrCause(verr), index)
 	}
 }
 
-func TestNotEmpty(t *testing.T) {
+func TestAnyRefNotEmpty(t *testing.T) {
 	assert := assert.New(t)
 
 	testCases := [...]struct {
@@ -228,11 +228,11 @@ func TestNotEmpty(t *testing.T) {
 
 	for index, tc := range testCases {
 		verr := Any(tc.Input).NotEmpty()()
-		assert.Equal(tc.Expected, Cause(verr), index)
+		assert.Equal(tc.Expected, ErrCause(verr), index)
 	}
 }
 
-func TestLen(t *testing.T) {
+func TestAnyRefLen(t *testing.T) {
 	assert := assert.New(t)
 
 	var err error
@@ -249,10 +249,10 @@ func TestLen(t *testing.T) {
 
 	verr = Any([]int{}).Len(4)()
 	assert.NotNil(verr)
-	assert.Equal(ErrLen, Cause(verr))
+	assert.Equal(ErrLen, ErrCause(verr))
 }
 
-func TestNil(t *testing.T) {
+func TestAnyRefNil(t *testing.T) {
 	assert := assert.New(t)
 
 	var verr error
@@ -265,10 +265,10 @@ func TestNil(t *testing.T) {
 
 	verr = Any("foo").Nil()()
 	assert.NotNil(verr)
-	assert.Equal(ErrNil, Cause(verr))
+	assert.Equal(ErrNil, ErrCause(verr))
 }
 
-func TestNotNil(t *testing.T) {
+func TestAnyRefNotNil(t *testing.T) {
 	assert := assert.New(t)
 
 	var verr error
@@ -277,12 +277,12 @@ func TestNotNil(t *testing.T) {
 
 	verr = Any(nil).NotNil()()
 	assert.NotNil(verr)
-	assert.Equal(ErrNotNil, Cause(verr))
+	assert.Equal(ErrNotNil, ErrCause(verr))
 
 	var nilPtr *string
 	verr = Any(nilPtr).NotNil()()
 	assert.NotNil(verr)
-	assert.Equal(ErrNotNil, Cause(verr))
+	assert.Equal(ErrNotNil, ErrCause(verr))
 }
 
 func TestEquals(t *testing.T) {
@@ -297,14 +297,14 @@ func TestEquals(t *testing.T) {
 
 	verr = Any("foo").Equals("bar")()
 	assert.NotNil(verr)
-	assert.Equal(ErrEquals, Cause(verr))
+	assert.Equal(ErrEquals, ErrCause(verr))
 
 	verr = Any(nil).Equals("foo")()
 	assert.NotNil(verr)
-	assert.Equal(ErrEquals, Cause(verr))
+	assert.Equal(ErrEquals, ErrCause(verr))
 }
 
-func TestNotEquals(t *testing.T) {
+func TestAnyRefNotEquals(t *testing.T) {
 	assert := assert.New(t)
 
 	var verr error
@@ -316,14 +316,14 @@ func TestNotEquals(t *testing.T) {
 
 	verr = Any("foo").NotEquals("foo")()
 	assert.NotNil(verr)
-	assert.Equal(ErrNotEquals, Cause(verr))
+	assert.Equal(ErrNotEquals, ErrCause(verr))
 
 	verr = Any(nil).NotEquals(nil)()
 	assert.NotNil(verr)
-	assert.Equal(ErrNotEquals, Cause(verr))
+	assert.Equal(ErrNotEquals, ErrCause(verr))
 }
 
-func TestAllow(t *testing.T) {
+func TestAnyRefAllow(t *testing.T) {
 	assert := assert.New(t)
 
 	var verr error
@@ -336,10 +336,10 @@ func TestAllow(t *testing.T) {
 
 	verr = Any("what").Allow("foo", "bar", "baz")()
 	assert.NotNil(verr)
-	assert.Equal(ErrAllowed, Cause(verr))
+	assert.Equal(ErrAllowed, ErrCause(verr))
 }
 
-func TestDisallow(t *testing.T) {
+func TestAnyRefDisallow(t *testing.T) {
 	assert := assert.New(t)
 
 	var verr error
@@ -348,11 +348,11 @@ func TestDisallow(t *testing.T) {
 
 	verr = Any("foo").Disallow("foo", "bar", "baz")()
 	assert.NotNil(verr)
-	assert.Equal(ErrDisallowed, Cause(verr))
+	assert.Equal(ErrDisallowed, ErrCause(verr))
 	verr = Any("bar").Disallow("foo", "bar", "baz")()
 	assert.NotNil(verr)
-	assert.Equal(ErrDisallowed, Cause(verr))
+	assert.Equal(ErrDisallowed, ErrCause(verr))
 	verr = Any("baz").Disallow("foo", "bar", "baz")()
 	assert.NotNil(verr)
-	assert.Equal(ErrDisallowed, Cause(verr))
+	assert.Equal(ErrDisallowed, ErrCause(verr))
 }
