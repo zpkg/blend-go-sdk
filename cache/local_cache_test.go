@@ -166,6 +166,25 @@ func TestLocalCacheGetOrSetDoubleCheckRace(t *testing.T) {
 	assert.Equal("bar2", found)
 }
 
+func TestLocalCacheSetUpdatesLRU(t *testing.T) {
+	assert := assert.New(t)
+
+	c := NewLocalCache()
+	c.Set("k1", "v1", OptValueTTL(0))
+	c.Set("k2", "v2", OptValueTTL(0))
+	assert.Equal("k1", c.LRU.Peek().Key)
+
+	time.Sleep(time.Millisecond)
+	// Should trigger sorting of underlying LRU so k2 can be
+	// deleted in next sweep
+	c.Set("k1", "v3", OptValueTTL(time.Second))
+	assert.Equal("k2", c.LRU.Peek().Key)
+
+	c.Sweep(context.Background())
+	assert.True(c.Has("k1"))
+	assert.False(c.Has("k2"))
+}
+
 func TestLocalCacheSweep(t *testing.T) {
 	assert := assert.New(t)
 
