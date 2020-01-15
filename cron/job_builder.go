@@ -12,19 +12,21 @@ var (
 	_ Job                               = (*JobBuilder)(nil)
 	_ LabelsProvider                    = (*JobBuilder)(nil)
 	_ ScheduleProvider                  = (*JobBuilder)(nil)
+	_ OnLoadHandler                     = (*JobBuilder)(nil)
+	_ OnUnloadHandler                   = (*JobBuilder)(nil)
 	_ TimeoutProvider                   = (*JobBuilder)(nil)
 	_ ShutdownGracePeriodProvider       = (*JobBuilder)(nil)
 	_ DisabledProvider                  = (*JobBuilder)(nil)
 	_ ShouldSkipLoggerListenersProvider = (*JobBuilder)(nil)
 	_ ShouldSkipLoggerOutputProvider    = (*JobBuilder)(nil)
-	_ OnStartReceiver                   = (*JobBuilder)(nil)
-	_ OnCancellationReceiver            = (*JobBuilder)(nil)
-	_ OnCompleteReceiver                = (*JobBuilder)(nil)
-	_ OnFailureReceiver                 = (*JobBuilder)(nil)
-	_ OnBrokenReceiver                  = (*JobBuilder)(nil)
-	_ OnFixedReceiver                   = (*JobBuilder)(nil)
-	_ OnEnabledReceiver                 = (*JobBuilder)(nil)
-	_ OnDisabledReceiver                = (*JobBuilder)(nil)
+	_ OnBeginHandler                    = (*JobBuilder)(nil)
+	_ OnCancellationHandler             = (*JobBuilder)(nil)
+	_ OnCompleteHandler                 = (*JobBuilder)(nil)
+	_ OnFailureHandler                  = (*JobBuilder)(nil)
+	_ OnBrokenHandler                   = (*JobBuilder)(nil)
+	_ OnFixedHandler                    = (*JobBuilder)(nil)
+	_ OnEnabledHandler                  = (*JobBuilder)(nil)
+	_ OnDisabledHandler                 = (*JobBuilder)(nil)
 	_ HistoryEnabledProvider            = (*JobBuilder)(nil)
 	_ HistoryPersistenceEnabledProvider = (*JobBuilder)(nil)
 	_ HistoryMaxCountProvider           = (*JobBuilder)(nil)
@@ -57,6 +59,16 @@ func OptJobAction(action func(context.Context) error) JobBuilderOption {
 	return func(jb *JobBuilder) { jb.Action = action }
 }
 
+// OptJobOnLoad sets the job on load handler.
+func OptJobOnLoad(handler func() error) JobBuilderOption {
+	return func(jb *JobBuilder) { jb.OnLoadHandler = handler }
+}
+
+// OptJobOnUnload sets the job on unload handler.
+func OptJobOnUnload(handler func() error) JobBuilderOption {
+	return func(jb *JobBuilder) { jb.OnUnloadHandler = handler }
+}
+
 // OptJobLabels is a job builder sets the job labels.
 func OptJobLabels(labels map[string]string) JobBuilderOption {
 	return func(jb *JobBuilder) { jb.LabelsProvider = func() map[string]string { return labels } }
@@ -82,33 +94,33 @@ func OptJobDisabled(provider func() bool) JobBuilderOption {
 	return func(jb *JobBuilder) { jb.DisabledProvider = provider }
 }
 
-// OptJobOnStart is a job builder option implementation.
-func OptJobOnStart(handler func(*JobInvocation)) JobBuilderOption {
-	return func(jb *JobBuilder) { jb.OnStartHandler = handler }
+// OptJobOnBegin is a job builder option implementation.
+func OptJobOnBegin(handler func(context.Context)) JobBuilderOption {
+	return func(jb *JobBuilder) { jb.OnBeginHandler = handler }
 }
 
 // OptJobOnCancellation is a job builder option implementation.
-func OptJobOnCancellation(handler func(*JobInvocation)) JobBuilderOption {
+func OptJobOnCancellation(handler func(context.Context)) JobBuilderOption {
 	return func(jb *JobBuilder) { jb.OnCancellationHandler = handler }
 }
 
 // OptJobOnComplete is a job builder option implementation.
-func OptJobOnComplete(handler func(*JobInvocation)) JobBuilderOption {
+func OptJobOnComplete(handler func(context.Context)) JobBuilderOption {
 	return func(jb *JobBuilder) { jb.OnCompleteHandler = handler }
 }
 
 // OptJobOnFailure is a job builder option implementation.
-func OptJobOnFailure(handler func(*JobInvocation)) JobBuilderOption {
+func OptJobOnFailure(handler func(context.Context)) JobBuilderOption {
 	return func(jb *JobBuilder) { jb.OnFailureHandler = handler }
 }
 
 // OptJobOnBroken is a job builder option implementation.
-func OptJobOnBroken(handler func(*JobInvocation)) JobBuilderOption {
+func OptJobOnBroken(handler func(context.Context)) JobBuilderOption {
 	return func(jb *JobBuilder) { jb.OnBrokenHandler = handler }
 }
 
 // OptJobOnFixed is a job builder option implementation.
-func OptJobOnFixed(handler func(*JobInvocation)) JobBuilderOption {
+func OptJobOnFixed(handler func(context.Context)) JobBuilderOption {
 	return func(jb *JobBuilder) { jb.OnFixedHandler = handler }
 }
 
@@ -142,6 +154,16 @@ func OptJobHistoryMaxAge(provider func() time.Duration) JobBuilderOption {
 	return func(jb *JobBuilder) { jb.HistoryMaxAgeProvider = provider }
 }
 
+// OptJobRestoreHistory is a job builder option implementation.
+func OptJobRestoreHistory(handler func(context.Context) ([]JobInvocation, error)) JobBuilderOption {
+	return func(jb *JobBuilder) { jb.RestoreHistoryHandler = handler }
+}
+
+// OptJobPersistHistory is a job builder option implementation.
+func OptJobPersistHistory(handler func(context.Context, []JobInvocation) error) JobBuilderOption {
+	return func(jb *JobBuilder) { jb.PersistHistoryHandler = handler }
+}
+
 // JobBuilder allows for job creation w/o a fully formed struct.
 type JobBuilder struct {
 	Action Action
@@ -159,12 +181,14 @@ type JobBuilder struct {
 	HistoryMaxAgeProvider             func() time.Duration
 	HistoryPersistenceEnabledProvider func() bool
 
-	OnStartHandler        func(*JobInvocation)
-	OnCancellationHandler func(*JobInvocation)
-	OnCompleteHandler     func(*JobInvocation)
-	OnFailureHandler      func(*JobInvocation)
-	OnBrokenHandler       func(*JobInvocation)
-	OnFixedHandler        func(*JobInvocation)
+	OnLoadHandler         func() error
+	OnUnloadHandler       func() error
+	OnBeginHandler        func(context.Context)
+	OnCancellationHandler func(context.Context)
+	OnCompleteHandler     func(context.Context)
+	OnFailureHandler      func(context.Context)
+	OnBrokenHandler       func(context.Context)
+	OnFixedHandler        func(context.Context)
 	OnEnabledHandler      func(context.Context)
 	OnDisabledHandler     func(context.Context)
 
@@ -187,6 +211,22 @@ func (jb *JobBuilder) Labels() map[string]string {
 		return jb.LabelsProvider()
 	}
 	return jb.Config.Labels
+}
+
+// OnLoad implements OnLoadHandler
+func (jb *JobBuilder) OnLoad() error {
+	if jb.OnLoadHandler != nil {
+		return jb.OnLoadHandler()
+	}
+	return nil
+}
+
+// OnUnload implements OnUnloadHandler
+func (jb *JobBuilder) OnUnload() error {
+	if jb.OnUnloadHandler != nil {
+		return jb.OnUnloadHandler()
+	}
+	return nil
 }
 
 // Schedule returns the job schedule if a provider is set.
@@ -269,45 +309,45 @@ func (jb *JobBuilder) HistoryMaxAge() time.Duration {
 	return jb.Config.HistoryMaxAgeOrDefault()
 }
 
-// OnStart is a lifecycle hook.
-func (jb *JobBuilder) OnStart(ctx context.Context) {
-	if jb.OnStartHandler != nil {
-		jb.OnStartHandler(GetJobInvocation(ctx))
+// OnBegin is a lifecycle hook.
+func (jb *JobBuilder) OnBegin(ctx context.Context) {
+	if jb.OnBeginHandler != nil {
+		jb.OnBeginHandler(ctx)
 	}
 }
 
 // OnCancellation is a lifecycle hook.
 func (jb *JobBuilder) OnCancellation(ctx context.Context) {
 	if jb.OnCancellationHandler != nil {
-		jb.OnCancellationHandler(GetJobInvocation(ctx))
+		jb.OnCancellationHandler(ctx)
 	}
 }
 
 // OnComplete is a lifecycle hook.
 func (jb *JobBuilder) OnComplete(ctx context.Context) {
 	if jb.OnCompleteHandler != nil {
-		jb.OnCompleteHandler(GetJobInvocation(ctx))
+		jb.OnCompleteHandler(ctx)
 	}
 }
 
 // OnFailure is a lifecycle hook.
 func (jb *JobBuilder) OnFailure(ctx context.Context) {
 	if jb.OnFailureHandler != nil {
-		jb.OnFailureHandler(GetJobInvocation(ctx))
+		jb.OnFailureHandler(ctx)
 	}
 }
 
 // OnFixed is a lifecycle hook.
 func (jb *JobBuilder) OnFixed(ctx context.Context) {
 	if jb.OnFixedHandler != nil {
-		jb.OnFixedHandler(GetJobInvocation(ctx))
+		jb.OnFixedHandler(ctx)
 	}
 }
 
 // OnBroken is a lifecycle hook.
 func (jb *JobBuilder) OnBroken(ctx context.Context) {
 	if jb.OnBrokenHandler != nil {
-		jb.OnBrokenHandler(GetJobInvocation(ctx))
+		jb.OnBrokenHandler(ctx)
 	}
 }
 

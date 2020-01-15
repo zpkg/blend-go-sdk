@@ -95,3 +95,31 @@ func IsWeekDay(day time.Weekday) bool {
 func IsWeekendDay(day time.Weekday) bool {
 	return day == time.Saturday || day == time.Sunday
 }
+
+// ConstBool returns a value provider for a constant.
+func ConstBool(value bool) func() bool {
+	return func() bool {
+		return value
+	}
+}
+
+// ConstInt returns a value provider for a constant.
+func ConstInt(value int) func() int {
+	return func() int {
+		return value
+	}
+}
+
+// ConstDuration returns a value provider for a constant.
+func ConstDuration(value time.Duration) func() time.Duration {
+	return func() time.Duration {
+		return value
+	}
+}
+
+// ConstLabels returns a value provider for a constant.
+func ConstLabels(labels map[string]string) func() map[string]string {
+	return func() map[string]string {
+		return labels
+	}
+}

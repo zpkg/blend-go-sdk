@@ -2,6 +2,7 @@ package async
 
 import (
 	"context"
+	"sync"
 	"time"
 
 	"github.com/blend/go-sdk/collections"
@@ -65,7 +66,8 @@ func OptAutoflushBufferFlushOnStop(flushOnStop bool) AutoflushBufferOption {
 // A handler should be provided but without one the buffer will just clear.
 // Adds that would cause fixed length flushes do not block on the flush handler.
 type AutoflushBuffer struct {
-	*Latch
+	sync.Mutex
+	Latch       *Latch
 	Context     context.Context
 	MaxLen      int
 	Interval    time.Duration
@@ -91,10 +93,10 @@ This call blocks. To call it asynchronously:
 	<-afb.NotifyStarted()
 */
 func (ab *AutoflushBuffer) Start() error {
-	if !ab.CanStart() {
+	if !ab.Latch.CanStart() {
 		return ex.New(ErrCannotStart)
 	}
-	ab.Starting()
+	ab.Latch.Starting()
 	ab.Contents = collections.NewRingBufferWithCapacity(ab.MaxLen)
 	ab.Dispatch()
 	return nil
@@ -102,11 +104,11 @@ func (ab *AutoflushBuffer) Start() error {
 
 // Dispatch is the main run loop.
 func (ab *AutoflushBuffer) Dispatch() {
-	ab.Started()
+	ab.Latch.Started()
 	ticker := time.Tick(ab.Interval)
 	var stopping <-chan struct{}
 	for {
-		stopping = ab.NotifyStopping()
+		stopping = ab.Latch.NotifyStopping()
 		select {
 		case <-ticker:
 			ab.FlushAsync(ab.Background())
@@ -114,7 +116,7 @@ func (ab *AutoflushBuffer) Dispatch() {
 			if ab.FlushOnStop {
 				ab.Flush(ab.Background())
 			}
-			ab.Stopped()
+			ab.Latch.Stopped()
 			return
 		}
 	}
@@ -122,12 +124,22 @@ func (ab *AutoflushBuffer) Dispatch() {
 
 // Stop stops the buffer flusher.
 func (ab *AutoflushBuffer) Stop() error {
-	if !ab.CanStop() {
+	if !ab.Latch.CanStop() {
 		return ex.New(ErrCannotStop)
 	}
-	ab.Stopping()
-	<-ab.NotifyStopped()
+	ab.Latch.Stopping()
+	<-ab.Latch.NotifyStopped()
 	return nil
+}
+
+// NotifyStarted implements graceful.Graceful.
+func (ab *AutoflushBuffer) NotifyStarted() <-chan struct{} {
+	return ab.Latch.NotifyStarted()
+}
+
+// NotifyStopped implements graceful.Graceful.
+func (ab *AutoflushBuffer) NotifyStopped() <-chan struct{} {
+	return ab.Latch.NotifyStopped()
 }
 
 // Add adds a new object to the buffer, blocking if it triggers a flush.

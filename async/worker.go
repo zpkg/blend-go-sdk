@@ -19,7 +19,7 @@ func NewWorker(action WorkAction) *Worker {
 // It is used by other work distribution types (i.e. queue and batch)
 // but can also be used independently.
 type Worker struct {
-	*Latch
+	Latch     *Latch
 	Context   context.Context
 	Action    WorkAction
 	Finalizer WorkerFinalizer
@@ -28,105 +28,107 @@ type Worker struct {
 }
 
 // Background returns the queue worker background context.
-func (qw *Worker) Background() context.Context {
-	if qw.Context != nil {
-		return qw.Context
+func (w *Worker) Background() context.Context {
+	if w.Context != nil {
+		return w.Context
 	}
 	return context.Background()
 }
 
+// NotifyStarted returns the underlying latch signal.
+func (w *Worker) NotifyStarted() <-chan struct{} {
+	return w.Latch.NotifyStarted()
+}
+
+// NotifyStopped returns the underlying latch signal.
+func (w *Worker) NotifyStopped() <-chan struct{} {
+	return w.Latch.NotifyStarted()
+}
+
 // Enqueue adds an item to the work queue.
-func (qw *Worker) Enqueue(obj interface{}) {
-	qw.Work <- obj
+func (w *Worker) Enqueue(obj interface{}) {
+	w.Work <- obj
 }
 
 // Start starts the worker with a given context.
-func (qw *Worker) Start() error {
-	if !qw.CanStart() {
+func (w *Worker) Start() error {
+	if !w.Latch.CanStart() {
 		return ex.New(ErrCannotStart)
 	}
-	qw.Starting()
-	qw.Dispatch()
+	w.Latch.Starting()
+	w.Dispatch()
 	return nil
 }
 
 // Dispatch starts the listen loop for work.
-func (qw *Worker) Dispatch() {
-	qw.Started()
+func (w *Worker) Dispatch() {
+	w.Latch.Started()
 	var workItem interface{}
 	var stopping <-chan struct{}
 	for {
-		stopping = qw.NotifyStopping()
-
+		stopping = w.Latch.NotifyStopping()
 		select {
-		case workItem = <-qw.Work:
-			qw.Execute(qw.Background(), workItem)
+		case workItem = <-w.Work:
+			w.Execute(w.Background(), workItem)
 		case <-stopping:
-			qw.Stopped()
+			w.Latch.Stopped()
 			return
 		}
 	}
 }
 
 // Execute invokes the action and recovers panics.
-func (qw *Worker) Execute(ctx context.Context, workItem interface{}) {
+func (w *Worker) Execute(ctx context.Context, workItem interface{}) {
 	defer func() {
 		if r := recover(); r != nil {
-			if qw.Errors != nil {
-				qw.Errors <- ex.New(r)
-			}
+			w.HandleError(ex.New(r))
 		}
-		if qw.Finalizer != nil {
-			if err := qw.Finalizer(ctx, qw); err != nil {
-				if qw.Errors != nil {
-					qw.Errors <- ex.New(err)
-				}
-			}
+		if w.Finalizer != nil {
+			w.HandleError(w.Finalizer(ctx, w))
 		}
 	}()
-	if qw.Action != nil {
-		if err := qw.Action(ctx, workItem); err != nil {
-			if qw.Errors != nil {
-				qw.Errors <- ex.New(err)
-			}
-		}
+	if w.Action != nil {
+		w.HandleError(w.Action(ctx, workItem))
 	}
-
 }
 
 // Stop stop the worker.
 // The work left in the queue will remain.
-func (qw *Worker) Stop() error {
-	if !qw.CanStop() {
+func (w *Worker) Stop() error {
+	if !w.Latch.CanStop() {
 		return ex.New(ErrCannotStop)
 	}
-	qw.Stopping()
-	<-qw.NotifyStopped()
+	w.Latch.Stopping()
+	<-w.Latch.NotifyStopped()
 	return nil
 }
 
 // Drain stops the worker and synchronously drains the the remaining work
 // with a given context.
-func (qw *Worker) Drain(ctx context.Context) {
-	qw.Stopping()
-	<-qw.NotifyStopped()
+func (w *Worker) Drain(ctx context.Context) {
+	w.Latch.Stopping()
+	<-w.Latch.NotifyStopped()
 
 	// create a signal that we've completed draining.
 	stopped := make(chan struct{})
-	remaining := len(qw.Work)
+	remaining := len(w.Work)
 	go func() {
 		defer close(stopped)
 		for x := 0; x < remaining; x++ {
-			qw.Execute(qw.Background(), <-qw.Work)
+			w.Execute(w.Background(), <-w.Work)
 		}
 	}()
 	<-stopped
 }
 
-// Close stops the worker and cleans up resources.
-func (qw *Worker) Close() error {
-	qw.Stopping()
-	<-qw.NotifyStopped()
-	close(qw.Work)
-	return nil
+// HandleError sends a non-nil err to the error
+// collector if one is provided.
+func (w *Worker) HandleError(err error) {
+	if err == nil {
+		return
+	}
+	if w.Errors == nil {
+		return
+	}
+	w.Errors <- err
 }
