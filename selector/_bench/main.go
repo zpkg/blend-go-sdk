@@ -4,8 +4,9 @@ import (
 	"fmt"
 	"time"
 
-	selector "github.com/blend/go-sdk/selector"
 	k8s "k8s.io/apimachinery/pkg/labels"
+
+	"github.com/blend/go-sdk/selector"
 )
 
 func benchSelector(sel string, labels []map[string]string, binder func(string, map[string]string) (bool, error)) (d time.Duration, err error) {

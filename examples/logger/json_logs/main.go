@@ -4,10 +4,9 @@ import (
 	"fmt"
 	"log"
 	"net/http"
+	_ "net/http/pprof"
 	"os"
 	"time"
-
-	_ "net/http/pprof"
 
 	"github.com/blend/go-sdk/bufferutil"
 	"github.com/blend/go-sdk/logger"

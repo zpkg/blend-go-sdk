@@ -5,8 +5,9 @@ import (
 	"fmt"
 	"testing"
 
-	"github.com/blend/go-sdk/assert"
 	"google.golang.org/grpc"
+
+	"github.com/blend/go-sdk/assert"
 )
 
 func TestRecoverUnary(t *testing.T) {

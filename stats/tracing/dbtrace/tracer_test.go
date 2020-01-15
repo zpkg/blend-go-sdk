@@ -6,10 +6,11 @@ import (
 	"fmt"
 	"testing"
 
-	"github.com/blend/go-sdk/assert"
-	"github.com/blend/go-sdk/stats/tracing"
 	opentracing "github.com/opentracing/opentracing-go"
 	"github.com/opentracing/opentracing-go/mocktracer"
+
+	"github.com/blend/go-sdk/assert"
+	"github.com/blend/go-sdk/stats/tracing"
 )
 
 func TestPrepare(t *testing.T) {

@@ -2,14 +2,12 @@ package template
 
 import (
 	"bytes"
+	"fmt"
+	"strings"
 	"testing"
 	"time"
 
-	"fmt"
-
-	"strings"
-
-	assert "github.com/blend/go-sdk/assert"
+	"github.com/blend/go-sdk/assert"
 	"github.com/blend/go-sdk/env"
 	"github.com/blend/go-sdk/uuid"
 )

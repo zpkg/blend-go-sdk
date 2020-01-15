@@ -4,8 +4,9 @@ import (
 	"context"
 	"fmt"
 
-	"github.com/blend/go-sdk/ex"
 	opentracing "github.com/opentracing/opentracing-go"
+
+	"github.com/blend/go-sdk/ex"
 )
 
 // StartSpanFromContext creates a new span from a given context.

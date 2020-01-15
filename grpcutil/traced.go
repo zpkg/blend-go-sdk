@@ -6,7 +6,6 @@ import (
 	"time"
 
 	opentracing "github.com/opentracing/opentracing-go"
-
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/metadata"
 

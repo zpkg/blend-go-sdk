@@ -8,9 +8,10 @@ import (
 	"regexp"
 	"strings"
 
+	"github.com/spf13/cobra"
+
 	"github.com/blend/go-sdk/bindata"
 	"github.com/blend/go-sdk/ex"
-	"github.com/spf13/cobra"
 )
 
 func main() {

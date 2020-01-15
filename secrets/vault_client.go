@@ -10,10 +10,9 @@ import (
 	"path/filepath"
 	"time"
 
-	"github.com/blend/go-sdk/bufferutil"
-
 	"golang.org/x/net/http2"
 
+	"github.com/blend/go-sdk/bufferutil"
 	"github.com/blend/go-sdk/ex"
 	"github.com/blend/go-sdk/logger"
 )
@@ -58,7 +57,7 @@ func New(options ...Option) (*VaultClient, error) {
 
 	client.Client = &http.Client{
 		Transport: xport,
-		Timeout: client.Timeout,
+		Timeout:   client.Timeout,
 	}
 
 	return client, nil
@@ -86,7 +85,7 @@ type VaultClient struct {
 	Transit    TransitClient
 	Client     HTTPClient
 	CertPool   *CertPool
-	Tracer 	   Tracer
+	Tracer     Tracer
 }
 
 // Put puts a value.

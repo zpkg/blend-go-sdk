@@ -4,7 +4,6 @@ import (
 	"context"
 	"encoding/json"
 	"io/ioutil"
-
 	"net/http"
 
 	"github.com/blend/go-sdk/ex"

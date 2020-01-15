@@ -3,8 +3,9 @@ package grpcutil
 import (
 	"testing"
 
-	"github.com/blend/go-sdk/assert"
 	"google.golang.org/grpc/metadata"
+
+	"github.com/blend/go-sdk/assert"
 )
 
 func TestMetaValue(t *testing.T) {

@@ -6,9 +6,10 @@ import (
 	"database/sql/driver"
 	"time"
 
+	opentracing "github.com/opentracing/opentracing-go"
+
 	"github.com/blend/go-sdk/db"
 	"github.com/blend/go-sdk/stats/tracing"
-	opentracing "github.com/opentracing/opentracing-go"
 )
 
 var (

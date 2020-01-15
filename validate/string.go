@@ -8,9 +8,8 @@ import (
 	"strings"
 	"unicode"
 
-	"github.com/blend/go-sdk/uuid"
-
 	"github.com/blend/go-sdk/ex"
+	"github.com/blend/go-sdk/uuid"
 )
 
 // String errors

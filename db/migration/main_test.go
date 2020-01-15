@@ -2,13 +2,14 @@ package migration
 
 import (
 	"fmt"
-	"github.com/blend/go-sdk/logger"
-	"github.com/blend/go-sdk/stringutil"
 	"os"
 	"testing"
 
-	"github.com/blend/go-sdk/db"
 	_ "github.com/lib/pq"
+
+	"github.com/blend/go-sdk/db"
+	"github.com/blend/go-sdk/logger"
+	"github.com/blend/go-sdk/stringutil"
 )
 
 func TestMain(m *testing.M) {

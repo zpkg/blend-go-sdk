@@ -9,11 +9,10 @@ import (
 	"net/http/httptest"
 	"time"
 
-	"github.com/blend/go-sdk/ex"
-	"github.com/blend/go-sdk/webutil"
-
 	"github.com/blend/go-sdk/breaker"
+	"github.com/blend/go-sdk/ex"
 	"github.com/blend/go-sdk/r2"
+	"github.com/blend/go-sdk/webutil"
 )
 
 // Result is a json thingy.

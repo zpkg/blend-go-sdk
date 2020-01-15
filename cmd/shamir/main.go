@@ -7,9 +7,10 @@ import (
 	"os"
 	"strings"
 
+	"github.com/spf13/cobra"
+
 	"github.com/blend/go-sdk/shamir"
 	"github.com/blend/go-sdk/stringutil"
-	"github.com/spf13/cobra"
 )
 
 func main() {
