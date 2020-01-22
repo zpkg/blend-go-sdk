@@ -28,11 +28,12 @@ func NewProxy(opts ...ProxyOption) *Proxy {
 
 // Proxy is a factory for a simple reverse proxy.
 type Proxy struct {
-	Headers   http.Header
-	Log       logger.Log
-	Upstreams []*Upstream
-	Resolver  Resolver
-	Tracer    webutil.HTTPTracer
+	Headers          http.Header
+	Log              logger.Log
+	Upstreams        []*Upstream
+	Resolver         Resolver
+	Tracer           webutil.HTTPTracer
+	TransformRequest TransformRequest
 }
 
 // ServeHTTP is the http entrypoint.
@@ -104,6 +105,9 @@ func (p *Proxy) ServeHTTP(rw http.ResponseWriter, req *http.Request) {
 		for _, value := range values {
 			req.Header.Add(key, value)
 		}
+	}
+	if p.TransformRequest != nil {
+		p.TransformRequest(req)
 	}
 
 	upstream.ServeHTTP(rw, req)
