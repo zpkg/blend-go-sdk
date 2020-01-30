@@ -19,14 +19,13 @@ var (
 )
 
 // New returns a new stats collector from a config.
-func New(cfg Config) (*Collector, error) {
+func New(cfg Config, opts ...statsd.Option) (*Collector, error) {
 	var client *statsd.Client
 	var err error
 	if cfg.BufferedOrDefault() {
-		client, err = statsd.NewBuffered(cfg.GetHost(), cfg.BufferDepthOrDefault())
-	} else {
-		client, err = statsd.New(cfg.GetHost())
+		opts = append(opts, statsd.WithMaxMessagesPerPayload(cfg.BufferDepthOrDefault()))
 	}
+	client, err = statsd.New(cfg.GetHost(), opts...)
 	if err != nil {
 		return nil, err
 	}
