@@ -44,11 +44,11 @@ func TestCollectorFlush(t *testing.T) {
 
 	// `client` is `nil`
 	c := Collector{}
-	asser.Nil(c.Flush())
+	assert.Nil(c.Flush())
 
 	// `client` is not `nil`
 	client, err := statsd.New("localhost:8125")
-	asser.Nil(err)
+	assert.Nil(err)
 	defer client.Close()
 
 	c = Collector{client: client}
