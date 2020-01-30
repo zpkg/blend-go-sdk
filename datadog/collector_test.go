@@ -4,6 +4,8 @@ import (
 	"testing"
 	"time"
 
+	"github.com/blend/go-sdk/ref"
+
 	"github.com/DataDog/datadog-go/statsd"
 	"github.com/blend/go-sdk/assert"
 	"github.com/blend/go-sdk/stats"
@@ -38,17 +40,45 @@ func TestConvertEvent(t *testing.T) {
 }
 
 func TestCollectorFlush(t *testing.T) {
-	it := assert.New(t)
+	assert := assert.New(t)
 
 	// `client` is `nil`
 	c := Collector{}
-	it.Nil(c.Flush())
+	asser.Nil(c.Flush())
 
 	// `client` is not `nil`
 	client, err := statsd.New("localhost:8125")
-	it.Nil(err)
+	asser.Nil(err)
 	defer client.Close()
 
 	c = Collector{client: client}
-	it.Nil(c.Flush())
+	assert.Nil(c.Flush())
+}
+
+func TestCollectorNew(t *testing.T) {
+	assert := assert.New(t)
+	cfg := Config{
+		Hostname: "localhost",
+		Port:     "8125",
+	}
+	c, err := New(cfg)
+	assert.Nil(err)
+	assert.NotNil(c)
+	assert.NotNil(c.client)
+	assert.NotEmpty(c.defaultTags)
+
+	c, err = New(cfg, statsd.WithNamespace("hello"))
+	assert.Nil(err)
+	assert.NotNil(c)
+	assert.NotNil(c.client)
+	assert.Equal("hello", c.client.Namespace)
+
+	cfg.BufferDepth = 10
+	cfg.Buffered = ref.Bool(true)
+
+	c, err = New(cfg, statsd.WithNamespace("hello"))
+	assert.Nil(err)
+	assert.NotNil(c)
+	assert.NotNil(c.client)
+	assert.Equal("hello", c.client.Namespace)
 }
