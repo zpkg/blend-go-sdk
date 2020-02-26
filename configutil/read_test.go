@@ -2,10 +2,12 @@ package configutil
 
 import (
 	"bytes"
+	"context"
 	"path/filepath"
 	"testing"
 
 	"github.com/blend/go-sdk/assert"
+	"github.com/blend/go-sdk/env"
 	"github.com/blend/go-sdk/ex"
 	"github.com/blend/go-sdk/uuid"
 )
@@ -13,6 +15,26 @@ import (
 type config struct {
 	Environment string `json:"env" yaml:"env" env:"SERVICE_ENV"`
 	Other       string `json:"other" yaml:"other" env:"OTHER"`
+}
+
+type bareResolvedConfig struct {
+	config
+}
+
+// Resolve implements configutil.BareResolver.
+func (br *bareResolvedConfig) Resolve() error {
+	br.Environment = "bare resolved"
+	return nil
+}
+
+type resolvedConfig struct {
+	config
+}
+
+// Resolve implements configutil.BareResolver.
+func (r *resolvedConfig) Resolve(ctx context.Context) error {
+	r.Environment = GetEnvVars(ctx).String("ENVIRONMENT")
+	return nil
 }
 
 func TestTryReadYAML(t *testing.T) {
@@ -121,4 +143,27 @@ func TestDeserializeJSON(t *testing.T) {
 	assert.Nil(deserialize(ExtensionJSON, bytes.NewBuffer([]byte(`{"env": "test", "other": "foo"}`)), &cfg))
 	assert.Equal("test", cfg.Environment)
 	assert.Equal("foo", cfg.Other)
+}
+
+func TestReadBareResolve(t *testing.T) {
+	assert := assert.New(t)
+
+	var cfg bareResolvedConfig
+	path, err := Read(&cfg, OptFilePaths(""))
+	assert.Nil(err)
+	assert.Empty(path)
+	assert.Equal("bare resolved", cfg.Environment)
+}
+
+func TestReadResolver(t *testing.T) {
+	assert := assert.New(t)
+
+	var cfg resolvedConfig
+	path, err := Read(&cfg,
+		OptFilePaths(""),
+		OptEnv(env.Vars{"ENVIRONMENT": "resolved"}),
+	)
+	assert.Nil(err)
+	assert.Empty(path)
+	assert.Equal("resolved", cfg.Environment)
 }
