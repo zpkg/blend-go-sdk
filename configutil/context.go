@@ -20,7 +20,7 @@ func GetEnvVars(ctx context.Context) env.Vars {
 			return typed
 		}
 	}
-	return nil
+	return env.Env()
 }
 
 type configFilePathsKey struct{}
