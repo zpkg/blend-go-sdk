@@ -84,6 +84,11 @@ func (mc MockCollector) TimeInMilliseconds(name string, value time.Duration, tag
 	return nil
 }
 
+// Flush does nothing on a MockCollector.
+func (mc MockCollector) Flush() error {
+	return nil
+}
+
 // MockMetric is a mock metric.
 type MockMetric struct {
 	Name               string
