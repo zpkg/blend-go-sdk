@@ -86,6 +86,9 @@ func (mc MockCollector) TimeInMilliseconds(name string, value time.Duration, tag
 
 // Flush does nothing on a MockCollector.
 func (mc MockCollector) Flush() error {
+	if len(mc.Errors) > 0 {
+		return <-mc.Errors
+	}
 	return nil
 }
 
