@@ -132,7 +132,7 @@ func TestMockCollectorFlush(t *testing.T) {
 	assert.Nil(err)
 
 	expectedErr := fmt.Errorf("err")
-	collector.Errors <- expectedErr
+	collector.FlushErrors <- expectedErr
 	err = collector.Flush()
 	assert.Equal(expectedErr.Error(), err.Error())
 }

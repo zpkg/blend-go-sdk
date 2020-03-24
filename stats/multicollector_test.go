@@ -184,7 +184,7 @@ func TestFlush(t *testing.T) {
 	assert.Nil(err)
 
 	expectedError := fmt.Errorf("err")
-	c2.Errors <- expectedError
+	c2.FlushErrors <- expectedError
 	err = mc.Flush()
 	assert.Equal(expectedError.Error(), err.Error())
 }
