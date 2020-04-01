@@ -55,6 +55,21 @@ func TestCollectorFlush(t *testing.T) {
 	assert.Nil(c.Flush())
 }
 
+func TestCollectorClose(t *testing.T) {
+	assert := assert.New(t)
+
+	// `client` is `nil`
+	c := Collector{}
+	assert.Nil(c.Close())
+
+	// `client` is not `nil`
+	client, err := statsd.New("localhost:8125")
+	assert.Nil(err)
+
+	c = Collector{client: client}
+	assert.Nil(c.Close())
+}
+
 func TestCollectorNew(t *testing.T) {
 	assert := assert.New(t)
 	cfg := Config{
