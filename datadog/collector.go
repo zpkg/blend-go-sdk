@@ -102,6 +102,14 @@ func (dc *Collector) Flush() error {
 	return dc.client.Flush()
 }
 
+// Close closes the statsd client.
+func (dc *Collector) Close() error {
+	if dc.client == nil {
+		return nil
+	}
+	return dc.client.Close()
+}
+
 // SimpleEvent sends an event w/ title and text
 func (dc *Collector) SimpleEvent(title, text string) error {
 	return dc.client.SimpleEvent(title, text)

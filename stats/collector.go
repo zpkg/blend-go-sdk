@@ -11,4 +11,5 @@ type Collector interface {
 	Histogram(name string, value float64, tags ...string) error
 	TimeInMilliseconds(name string, value time.Duration, tags ...string) error
 	Flush() error
+	Close() error
 }

@@ -136,3 +136,17 @@ func TestMockCollectorFlush(t *testing.T) {
 	err = collector.Flush()
 	assert.Equal(expectedErr.Error(), err.Error())
 }
+
+func TestMockCollectorClose(t *testing.T) {
+	assert := assert.New(t)
+
+	collector := NewMockCollector()
+
+	err := collector.Close()
+	assert.Nil(err)
+
+	expectedErr := fmt.Errorf("err")
+	collector.CloseErrors <- expectedErr
+	err = collector.Close()
+	assert.Equal(expectedErr.Error(), err.Error())
+}
