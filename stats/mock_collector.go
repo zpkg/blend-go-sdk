@@ -18,6 +18,7 @@ func NewMockCollector() *MockCollector {
 		Events:      make(chan MockMetric, 32),
 		Errors:      make(chan error, 32),
 		FlushErrors: make(chan error, 32),
+		CloseErrors: make(chan error, 32),
 	}
 }
 
@@ -29,6 +30,7 @@ type MockCollector struct {
 	Events      chan MockMetric
 	Errors      chan error
 	FlushErrors chan error
+	CloseErrors chan error
 }
 
 // AddDefaultTag adds a default tag.
@@ -96,8 +98,8 @@ func (mc MockCollector) Flush() error {
 
 // Close returns an error from the errors channel if any.
 func (mc MockCollector) Close() error {
-	if len(mc.Errors) > 0 {
-		return <-mc.Errors
+	if len(mc.CloseErrors) > 0 {
+		return <-mc.CloseErrors
 	}
 	return nil
 }

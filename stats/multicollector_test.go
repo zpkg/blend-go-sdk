@@ -202,7 +202,7 @@ func TestClose(t *testing.T) {
 	assert.Nil(err)
 
 	expectedError := fmt.Errorf("err")
-	c2.Errors <- expectedError
+	c2.CloseErrors <- expectedError
 	err = mc.Close()
 	assert.Equal(expectedError.Error(), err.Error())
 }

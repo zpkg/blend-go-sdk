@@ -146,7 +146,7 @@ func TestMockCollectorClose(t *testing.T) {
 	assert.Nil(err)
 
 	expectedErr := fmt.Errorf("err")
-	collector.Errors <- expectedErr
+	collector.CloseErrors <- expectedErr
 	err = collector.Close()
 	assert.Equal(expectedErr.Error(), err.Error())
 }
