@@ -94,6 +94,14 @@ func (mc MockCollector) Flush() error {
 	return nil
 }
 
+// Close returns an error from the errors channel if any.
+func (mc MockCollector) Close() error {
+	if len(mc.Errors) > 0 {
+		return <-mc.Errors
+	}
+	return nil
+}
+
 // MockMetric is a mock metric.
 type MockMetric struct {
 	Name               string

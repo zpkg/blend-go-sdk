@@ -95,3 +95,13 @@ func (collectors MultiCollector) Flush() error {
 	}
 	return nil
 }
+
+// Close closes all collectors.
+func (collectors MultiCollector) Close() error {
+	for _, collector := range collectors {
+		if err := collector.Close(); err != nil {
+			return ex.New(err)
+		}
+	}
+	return nil
+}
