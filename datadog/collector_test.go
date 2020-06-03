@@ -85,7 +85,7 @@ func TestCollectorNew(t *testing.T) {
 	assert.Nil(err)
 	assert.NotNil(c)
 	assert.NotNil(c.client)
-	assert.Equal("hello", c.client.Namespace)
+	assert.Equal("hello.", c.client.Namespace)
 
 	cfg.BufferDepth = 10
 	cfg.Buffered = ref.Bool(true)
@@ -94,5 +94,5 @@ func TestCollectorNew(t *testing.T) {
 	assert.Nil(err)
 	assert.NotNil(c)
 	assert.NotNil(c.client)
-	assert.Equal("hello", c.client.Namespace)
+	assert.Equal("hello.", c.client.Namespace)
 }
