@@ -85,6 +85,9 @@ func (c Config) GetTraceAddress() string {
 	if c.TraceHostname != "" {
 		return fmt.Sprintf("%s:%s", c.TraceHostname, c.TracePortOrDefault())
 	}
+	if c.Hostname != "" {
+		return fmt.Sprintf("%s:%s", c.Hostname, c.TracePortOrDefault())
+	}
 	return ""
 }
 
