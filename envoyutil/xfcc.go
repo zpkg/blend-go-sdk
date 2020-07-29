@@ -9,7 +9,6 @@ import (
 
 	"github.com/blend/go-sdk/certutil"
 	"github.com/blend/go-sdk/ex"
-	"github.com/blend/go-sdk/stringutil"
 )
 
 // XFCC represents a proxy header containing certificate information for the client
@@ -48,7 +47,7 @@ type XFCCElement struct {
 func (xe XFCCElement) DecodeBy() (*url.URL, error) {
 	u, err := url.Parse(xe.By)
 	if err != nil {
-		return nil, ex.New(err)
+		return nil, ex.New(ErrXFCCParsing).WithInner(err)
 	}
 
 	return u, nil
@@ -58,7 +57,7 @@ func (xe XFCCElement) DecodeBy() (*url.URL, error) {
 func (xe XFCCElement) DecodeHash() ([]byte, error) {
 	bs, err := hex.DecodeString(xe.Hash)
 	if err != nil {
-		return nil, ex.New(err)
+		return nil, ex.New(ErrXFCCParsing).WithInner(err)
 	}
 
 	return bs, nil
@@ -73,12 +72,12 @@ func (xe XFCCElement) DecodeCert() (*x509.Certificate, error) {
 
 	value, err := url.QueryUnescape(xe.Cert)
 	if err != nil {
-		return nil, ex.New(err)
+		return nil, ex.New(ErrXFCCParsing).WithInner(err)
 	}
 
 	parsed, err := certutil.ParseCertPEM([]byte(value))
 	if err != nil {
-		return nil, ex.New(err)
+		return nil, ex.New(ErrXFCCParsing).WithInner(err)
 	}
 
 	if len(parsed) != 1 {
@@ -101,12 +100,12 @@ func (xe XFCCElement) DecodeChain() ([]*x509.Certificate, error) {
 
 	value, err := url.QueryUnescape(xe.Chain)
 	if err != nil {
-		return nil, ex.New(err)
+		return nil, ex.New(ErrXFCCParsing).WithInner(err)
 	}
 
 	parsed, err := certutil.ParseCertPEM([]byte(value))
 	if err != nil {
-		return nil, ex.New(err)
+		return nil, ex.New(ErrXFCCParsing).WithInner(err)
 	}
 
 	return parsed, nil
@@ -117,7 +116,7 @@ func (xe XFCCElement) DecodeChain() ([]*x509.Certificate, error) {
 func (xe XFCCElement) DecodeURI() (*url.URL, error) {
 	u, err := url.Parse(xe.URI)
 	if err != nil {
-		return nil, ex.New(err)
+		return nil, ex.New(ErrXFCCParsing).WithInner(err)
 	}
 
 	return u, nil
@@ -171,6 +170,9 @@ const (
 	// ErrXFCCParsing is the class of error returned when parsing XFCC fails
 	ErrXFCCParsing = ex.Class("Error Parsing X-Forwarded-Client-Cert")
 
+	// initialValueCapacity is the capacity used for a key in a key-value
+	// pair from an XFCC header.
+	initialKeyCapacity = 4
 	// initialValueCapacity is the capacity used for a value in a key-value
 	// pair from an XFCC header.
 	initialValueCapacity = 8
@@ -180,105 +182,231 @@ type parseXFCCState int
 
 const (
 	parseXFCCKey parseXFCCState = iota
+	parseXFCCValueStart
 	parseXFCCValue
+	parseXFCCValueQuoted
 )
 
-// ParseXFCC parses the XFCC header
+// xfccParser holds state while an XFCC header is being parsed.
+type xfccParser struct {
+	Header  []rune
+	Index   int
+	State   parseXFCCState
+	Key     []rune
+	Value   []rune
+	Element XFCCElement
+	Parsed  XFCC
+}
+
+// ParseXFCC parses the XFCC header.
 func ParseXFCC(header string) (XFCC, error) {
-	xfcc := XFCC{}
-	elements := stringutil.SplitCSV(header)
-	for _, element := range elements {
-		ele, err := ParseXFCCElement(element)
-		if err != nil {
-			return XFCC{}, err
-		}
-		xfcc = append(xfcc, ele)
+	if header == "" {
+		return XFCC{}, nil
 	}
-	return xfcc, nil
-}
 
-// ParseXFCCElement parses an element out of the given string. An error is returned if the parser
-// encounters a key not in the valid list or the string is malformed
-func ParseXFCCElement(element string) (XFCCElement, error) {
-	state := parseXFCCKey
-	ele := XFCCElement{}
-	key := ""
-	value := make([]rune, 0, initialValueCapacity)
-	for _, char := range element {
-		switch state {
+	xp := &xfccParser{
+		Header: []rune(header),
+		Index:  0,
+		State:  parseXFCCKey,
+		Key:    make([]rune, 0, initialKeyCapacity),
+		Value:  make([]rune, 0, initialValueCapacity),
+	}
+	lastCharacter := xp.Header[len(xp.Header)-1]
+	if lastCharacter == ',' || lastCharacter == ';' {
+		return XFCC{}, ex.New(ErrXFCCParsing).WithMessage("Ends with separator character")
+	}
+
+	for xp.Index < len(xp.Header) {
+		char := xp.Header[xp.Index]
+		switch xp.State {
 		case parseXFCCKey:
-			if char == '=' {
-				state = parseXFCCValue
-			} else {
-				key += string(char)
-			}
+			xp.HandleKeyCharacter(char)
+		case parseXFCCValueStart:
+			xp.HandleValueStartCharacter(char)
 		case parseXFCCValue:
-			if char == ';' {
-				if len(key) == 0 || len(value) == 0 {
-					return XFCCElement{}, ex.New(ErrXFCCParsing).WithMessage("Key or Value missing")
-				}
-				err := fillXFCCKeyValue(key, element, value, &ele)
-				if err != nil {
-					return XFCCElement{}, err
-				}
-
-				key = ""
-				value = make([]rune, 0, initialValueCapacity)
-				state = parseXFCCKey
-			} else {
-				value = append(value, char)
+			err := xp.HandleValueCharacter(char)
+			if err != nil {
+				return XFCC{}, err
+			}
+		case parseXFCCValueQuoted:
+			err := xp.HandleQuotedValueCharacter(char)
+			if err != nil {
+				return XFCC{}, err
 			}
 		}
+
+		// Increment the index for the next iteration. (Note that branches of the
+		// `switch` statement may have already incremented `i` as well.)
+		xp.Index++
 	}
 
-	if len(key) > 0 && len(value) > 0 {
-		return ele, fillXFCCKeyValue(key, element, value, &ele)
+	err := xp.Finalize()
+	if err != nil {
+		return XFCC{}, err
 	}
 
-	if len(key) > 0 || len(value) > 0 {
-		return XFCCElement{}, ex.New(ErrXFCCParsing).WithMessage("Key or value found but not both")
-	}
-
-	return ele, nil
+	return xp.Parsed, nil
 }
 
-func fillXFCCKeyValue(key, element string, value []rune, ele *XFCCElement) (err error) {
-	key = strings.ToLower(key)
-	switch key {
+// FillKeyValue takes the currently active `.Key` and `.Value` and populates
+// the current `.Element`.
+func (xp *xfccParser) FillKeyValue() error {
+	keyLower := strings.ToLower(string(xp.Key))
+	switch keyLower {
 	case "by":
-		if ele.By != "" {
-			return ex.New(ErrXFCCParsing).WithMessagef("Key already encountered %q", key)
+		if xp.Element.By != "" {
+			return ex.New(ErrXFCCParsing).WithMessagef("Key already encountered %q", keyLower)
 		}
-		ele.By = string(value)
+		xp.Element.By = string(xp.Value)
 	case "hash":
-		if len(ele.Hash) > 0 {
-			return ex.New(ErrXFCCParsing).WithMessagef("Key already encountered %q", key)
+		if len(xp.Element.Hash) > 0 {
+			return ex.New(ErrXFCCParsing).WithMessagef("Key already encountered %q", keyLower)
 		}
-		ele.Hash = string(value)
+		xp.Element.Hash = string(xp.Value)
 	case "cert":
-		if len(ele.Cert) > 0 {
-			return ex.New(ErrXFCCParsing).WithMessagef("Key already encountered %q", key)
+		if len(xp.Element.Cert) > 0 {
+			return ex.New(ErrXFCCParsing).WithMessagef("Key already encountered %q", keyLower)
 		}
-		ele.Cert = string(value)
+		xp.Element.Cert = string(xp.Value)
 	case "chain":
-		if len(ele.Chain) > 0 {
-			return ex.New(ErrXFCCParsing).WithMessagef("Key already encountered %q", key)
+		if len(xp.Element.Chain) > 0 {
+			return ex.New(ErrXFCCParsing).WithMessagef("Key already encountered %q", keyLower)
 		}
-		ele.Chain = string(value)
+		xp.Element.Chain = string(xp.Value)
 	case "subject":
-		if len(ele.Subject) > 0 {
-			return ex.New(ErrXFCCParsing).WithMessagef("Key already encountered %q", key)
+		if len(xp.Element.Subject) > 0 {
+			return ex.New(ErrXFCCParsing).WithMessagef("Key already encountered %q", keyLower)
 		}
-		ele.Subject = string(value)
+		xp.Element.Subject = string(xp.Value)
 	case "uri":
-		if ele.URI != "" {
-			return ex.New(ErrXFCCParsing).WithMessagef("Key already encountered %q", key)
+		if xp.Element.URI != "" {
+			return ex.New(ErrXFCCParsing).WithMessagef("Key already encountered %q", keyLower)
 		}
-		ele.URI = string(value)
+		xp.Element.URI = string(xp.Value)
 	case "dns":
-		ele.DNS = append(ele.DNS, string(value))
+		xp.Element.DNS = append(xp.Element.DNS, string(xp.Value))
 	default:
-		return ex.New(ErrXFCCParsing).WithMessagef("Unknown key %q", key)
+		return ex.New(ErrXFCCParsing).WithMessagef("Unknown key %q", keyLower)
 	}
+
+	return nil
+}
+
+// HandleKeyCharacter advances the state machine if the current state is
+// `parseXFCCKey`.
+func (xp *xfccParser) HandleKeyCharacter(char rune) {
+	if char == '=' {
+		xp.State = parseXFCCValueStart
+	} else {
+		xp.Key = append(xp.Key, char)
+	}
+}
+
+// HandleValueStartCharacter advances the state machine if the current state is
+// `parseXFCCValueStart`.
+func (xp *xfccParser) HandleValueStartCharacter(char rune) {
+	if char == '"' {
+		xp.State = parseXFCCValueQuoted
+	} else {
+		xp.Value = append(xp.Value, char)
+		xp.State = parseXFCCValue
+	}
+}
+
+// HandleValueCharacter advances the state machine if the current state is
+// `parseXFCCValue`.
+func (xp *xfccParser) HandleValueCharacter(char rune) error {
+	if char == ',' || char == ';' {
+		if len(xp.Key) == 0 || len(xp.Value) == 0 {
+			return ex.New(ErrXFCCParsing).WithMessage("Key or Value missing")
+		}
+		err := xp.FillKeyValue()
+		if err != nil {
+			return err
+		}
+
+		xp.Key = make([]rune, 0, initialKeyCapacity)
+		xp.Value = make([]rune, 0, initialValueCapacity)
+		xp.State = parseXFCCKey
+		if char == ',' {
+			xp.Parsed = append(xp.Parsed, xp.Element)
+			xp.Element = XFCCElement{}
+		}
+	} else {
+		xp.Value = append(xp.Value, char)
+	}
+
+	return nil
+}
+
+// HandleQuotedValueCharacter advances the state machine if the current state is
+// `parseXFCCValueQuoted`.
+func (xp *xfccParser) HandleQuotedValueCharacter(char rune) error {
+	if char == '\\' {
+		nextIndex := xp.Index + 1
+		if nextIndex < len(xp.Header) && xp.Header[nextIndex] == '"' {
+			// Consume two characters at once here (since we have an
+			// escaped quote).
+			xp.Value = append(xp.Value, '"')
+			xp.Index = nextIndex
+		} else {
+			xp.Value = append(xp.Value, char)
+		}
+	} else if char == '"' {
+		// Since the **escaped quote** case `\"` has already been
+		// covered, this case should only occur in the closing quote
+		// case.
+		nextIndex := xp.Index + 1
+		if nextIndex < len(xp.Header) {
+			if xp.Header[nextIndex] == ';' || xp.Header[nextIndex] == ',' {
+				// Consume two characters at once here (since we have an
+				// closing quote).
+				xp.Index = nextIndex
+
+				if len(xp.Key) == 0 {
+					// Quoted values, e.g. `""`, are allowed to be empty.
+					return ex.New(ErrXFCCParsing).WithMessage("Key missing")
+				}
+				err := xp.FillKeyValue()
+				if err != nil {
+					return err
+				}
+
+				xp.Key = make([]rune, 0, initialKeyCapacity)
+				xp.Value = make([]rune, 0, initialValueCapacity)
+				xp.State = parseXFCCKey
+				if xp.Header[nextIndex] == ',' {
+					xp.Parsed = append(xp.Parsed, xp.Element)
+					xp.Element = XFCCElement{}
+				}
+			} else {
+				return ex.New(ErrXFCCParsing).WithMessage("Closing quote not followed by `;`.")
+			}
+		} else {
+			// NOTE: If `nextIndex >= len(xp.Header)` then we are at the end,
+			//       which is a no-op here.
+			xp.State = parseXFCCKey
+		}
+	} else {
+		xp.Value = append(xp.Value, char)
+	}
+
+	return nil
+}
+
+// Finalize runs when the state machine has exhausted the `.Header`. It consumes
+// any remaining `.Key` or `.Value` slices and adds them to the return value
+// if need be.
+func (xp *xfccParser) Finalize() error {
+	if len(xp.Key) > 0 && len(xp.Value) > 0 {
+		err := xp.FillKeyValue()
+		if err != nil {
+			return err
+		}
+	} else if len(xp.Key) > 0 || len(xp.Value) > 0 {
+		return ex.New(ErrXFCCParsing).WithMessage("Key or value found but not both")
+	}
+
+	xp.Parsed = append(xp.Parsed, xp.Element)
 	return nil
 }
