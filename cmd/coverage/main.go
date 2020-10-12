@@ -41,6 +41,7 @@ var covermode = flag.String("covermode", "atomic", "the go test covermode.")
 var coverprofile = flag.String("coverprofile", "coverage.cov", "the intermediate cover profile.")
 var keepCoverageOut = flag.Bool("keep-coverage-out", false, "if we should keep coverage.out")
 var v = flag.Bool("v", false, "show verbose output")
+var exitOnFirstCoverageFailure = flag.Bool("exit-first", true, "exit on first coverage failure; when disabled this will produce full coverage reports even on coverage failures")
 
 var (
 	includes Paths
@@ -87,9 +88,12 @@ func main() {
 		paths = []string{"./..."}
 	}
 
+	var allPathCoverageErrors []error
 	for _, path := range paths {
 		fmt.Fprintf(os.Stdout, "walking path: %s\n", path)
-		walkPath(path, fullCoverageData)
+		if coverageErrors := walkPath(path, fullCoverageData); len(coverageErrors) > 0 {
+			allPathCoverageErrors = append(allPathCoverageErrors, coverageErrors...)
+		}
 	}
 
 	// close the coverage data handle
@@ -111,17 +115,31 @@ func main() {
 		maybeFatal(removeIfExists(*coverprofile))
 	}
 
+	if len(allPathCoverageErrors) > 0 {
+		fmt.Fprintln(os.Stderr, "coverage thresholds not met")
+		for _, coverageError := range allPathCoverageErrors {
+			fmt.Fprintf(os.Stderr, "%+v\n", coverageError)
+		}
+		os.Exit(1)
+	}
+
 	fmt.Fprintln(os.Stdout, "coverage complete")
 }
 
-func walkPath(walkedPath string, fullCoverageData *os.File) {
+func walkPath(walkedPath string, fullCoverageData *os.File) []error {
 	recursive := strings.HasSuffix(walkedPath, expand)
 	rootPath := filepath.Dir(walkedPath)
+	var coverageErrors []error
 
 	maybeFatal(filepath.Walk(rootPath, func(currentPath string, info os.FileInfo, fileErr error) error {
 		packageCoverReport, err := getPackageCoverage(currentPath, info, fileErr)
-		if err != nil {
+
+		if err != nil && *exitOnFirstCoverageFailure {
 			return err
+		}
+
+		if err != nil && len(packageCoverReport) > 0 {
+			coverageErrors = append(coverageErrors, err)
 		}
 
 		if len(packageCoverReport) == 0 {
@@ -143,6 +161,7 @@ func walkPath(walkedPath string, fullCoverageData *os.File) {
 		}
 		return nil
 	}))
+	return coverageErrors
 }
 
 // gets coverage for a directory and returns the path to the coverage file for that directory
@@ -208,7 +227,7 @@ func getPackageCoverage(currentPath string, info os.FileInfo, err error) (string
 		vf("enforcing coverage minimums")
 		err = enforceCoverage(currentPath, coverage)
 		if err != nil {
-			return "", err
+			return packageCoverReport, err
 		}
 	}
 
