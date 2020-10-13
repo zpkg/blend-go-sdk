@@ -43,7 +43,7 @@ func All(options ...Option) *Logger {
 	}, options...)...)
 }
 
-// None returns a new logger with all flags enabled.
+// None returns a new logger with all flags disabled.
 func None() *Logger {
 	return MustNew(
 		OptNone(),
