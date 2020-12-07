@@ -7,7 +7,7 @@ type Tokens = map[string]string
 
 // Tokenize replaces a given set of tokens in a corpus.
 // Tokens should appear in the corpus in the form ${[KEY]} where [KEY] is the key in the map.
-// Examples: corpus: "foo/${bar}/baz", { "bar": "bailey" } => "foo/bailey/baz"
+// Examples: corpus: "foo/${bar}/baz", { "bar": "example-string" } => "foo/example-string/baz"
 // UTF-8 is handled via. runes.
 func Tokenize(corpus string, tokens Tokens) string {
 	// there is no way to escape anything smaller than [3] b/c len("${}") == 3
@@ -15,7 +15,7 @@ func Tokenize(corpus string, tokens Tokens) string {
 		return corpus
 	}
 	// sanity check on tokens collection.
-	if tokens == nil || len(tokens) == 0 {
+	if len(tokens) == 0 {
 		return corpus
 	}
 

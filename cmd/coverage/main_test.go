@@ -12,12 +12,6 @@ type coverProfileTestCase struct {
 	Expected string
 }
 
-func TestGopath(t *testing.T) {
-	assert := assert.New(t)
-
-	assert.Contains(gopath(), "/go")
-}
-
 func TestGlob(t *testing.T) {
 	assert := assert.New(t)
 
@@ -43,9 +37,9 @@ func TestJoinCoverPath(t *testing.T) {
 			"/users/foo/bar/baz.go",
 		},
 		{
-			"/users/bailey/workspace/go/src/github.com/blend/go-sdk/",
+			"/users/example-string/workspace/go/src/github.com/blend/go-sdk/",
 			"github.com/blend/go-sdk/assert/assert.go",
-			"/users/bailey/workspace/go/src/github.com/blend/go-sdk/assert/assert.go",
+			"/users/example-string/workspace/go/src/github.com/blend/go-sdk/assert/assert.go",
 		},
 		{
 			"/go/src/git.blendlabs.com/blend/fees",
@@ -76,16 +70,16 @@ func TestEnforceCoverage(t *testing.T) {
 	assert.NotNil(enforceCoverage("./", "asdf"))
 	assert.NotNil(enforceCoverage("/usr/lib", "50"))
 
-	writeCoverage("/tmp", "")
+	assert.Nil(writeCoverage("/tmp", ""))
 	assert.NotNil(enforceCoverage("/tmp", "90"))
 
-	writeCoverage("/tmp", "90")
+	assert.Nil(writeCoverage("/tmp", "90"))
 	assert.NotNil(enforceCoverage("/tmp", "70"))
 
-	writeCoverage("/tmp", "0")
+	assert.Nil(writeCoverage("/tmp", "0"))
 	assert.Nil(enforceCoverage("/tmp", "0"))
 
-	writeCoverage("/tmp", "70")
+	assert.Nil(writeCoverage("/tmp", "70"))
 	assert.Nil(enforceCoverage("/tmp", "90"))
 }
 
