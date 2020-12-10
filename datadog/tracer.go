@@ -49,6 +49,11 @@ func TraceAppNameCron(serviceName string) string {
 	return fmt.Sprintf("%s-cron", serviceName)
 }
 
+// TraceAppNameKafka returns an app name.
+func TraceAppNameKafka(serviceName string) string {
+	return fmt.Sprintf("%s-kafka", serviceName)
+}
+
 // OptTraceServiceEnv returns a dd tracer start option that sets the service environment.
 func OptTraceServiceEnv(serviceEnv string) ddtracer.StartOption {
 	return ddtracer.WithGlobalTag(tracing.TagKeyEnvironment, serviceEnv)

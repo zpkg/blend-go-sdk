@@ -26,6 +26,7 @@ var (
 // NewRPCEvent creates a new rpc event.
 func NewRPCEvent(method string, elapsed time.Duration, options ...RPCEventOption) RPCEvent {
 	rpe := RPCEvent{
+		Engine:  EngineGRPC,
 		Method:  method,
 		Elapsed: elapsed,
 	}

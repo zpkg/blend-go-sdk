@@ -17,7 +17,7 @@ func TestMain(m *testing.M) {
 	if err != nil {
 		logger.FatalExit(err)
 	}
-	defer conn.Close()
+	defer func() { _ = conn.Close() }()
 	os.Exit(m.Run())
 }
 

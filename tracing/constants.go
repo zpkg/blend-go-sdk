@@ -54,6 +54,12 @@ const (
 	TagSecretKey = "secrets.key"
 	// TagKeyOAuthUsername defines the oauth Username name for the Span.
 	TagKeyOAuthUsername = "oauth.username"
+	// TagKeyKafkaTopic is the kafka topic.
+	TagKeyKafkaTopic = "kafka.topic"
+	// TagKeyKafkaPartition is the kafka topic partition.
+	TagKeyKafkaPartition = "kafka.partition"
+	// TagKeyKafkaOffset is the kafka topic partition offset.
+	TagKeyKafkaOffset = "kafka.offset"
 )
 
 // Operations are actions represented by spans.
@@ -75,6 +81,8 @@ const (
 	OperationRPC = "rpc"
 	// OperationVaultAPI is a call to the vault API
 	OperationVaultAPI = "vault.api.request"
+	// OperationKafkaPublish is a publish to a kafka topic.
+	OperationKafkaPublish = "kafka.publish"
 )
 
 // Span types have similar behaviour to "app types" and help categorize
@@ -106,6 +114,8 @@ const (
 	SpanTypeJob = "job"
 	// SpanTypeGRPC is a span type used by grpc services.
 	SpanTypeGRPC = "grpc"
+	// SpanTypeKafka is a span type used by kafka services.
+	SpanTypeKafka = "kafka"
 	// SpanTypeVault is a span type used by go-sdk/secrets calls to vault
 	SpanTypeVault = "vault"
 )

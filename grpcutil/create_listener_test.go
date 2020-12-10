@@ -13,7 +13,7 @@ func TestListener(t *testing.T) {
 
 	tcpln, err := CreateListener("127.0.0.1:")
 	assert.Nil(err)
-	defer tcpln.Close()
+	defer func() { _ = tcpln.Close() }()
 	assert.Equal("tcp", tcpln.Addr().Network())
 	assert.Contains(tcpln.Addr().String(), "127.0.0.1:")
 
@@ -21,7 +21,7 @@ func TestListener(t *testing.T) {
 	socketAddress := fmt.Sprintf("unix://" + socketPath)
 	unixln, err := CreateListener(socketAddress)
 	assert.Nil(err)
-	defer unixln.Close()
+	defer func() { _ = unixln.Close() }()
 	assert.Equal("unix", unixln.Addr().Network())
 	assert.Equal(socketPath, unixln.Addr().String())
 }

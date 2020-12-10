@@ -27,7 +27,7 @@ func Test_Tracing_ServerUnary(t *testing.T) {
 	// start mocked server with tracing enabled
 	socketListener, err := net.Listen("tcp", "127.0.0.1:")
 	assert.Nil(err)
-	defer socketListener.Close()
+	defer func() { _ = socketListener.Close() }()
 
 	server := grpc.NewServer(grpc.UnaryInterceptor(grpcutil.TracedServerUnary(tracer)))
 	v1.RegisterCalculatorServer(server, new(calculator.Server))
@@ -55,7 +55,7 @@ func Test_Tracing_ServerStream(t *testing.T) {
 	// start mocked server with tracing enabled
 	socketListener, err := net.Listen("tcp", "127.0.0.1:")
 	assert.Nil(err)
-	defer socketListener.Close()
+	defer func() { _ = socketListener.Close() }()
 
 	server := grpc.NewServer(grpc.StreamInterceptor(grpcutil.TracedServerStream(tracer)))
 	v1.RegisterCalculatorServer(server, new(calculator.Server))
@@ -91,7 +91,7 @@ func Test_Tracing_ClientServerUnary(t *testing.T) {
 	// start mocked server with tracing enabled
 	socketListener, err := net.Listen("tcp", "127.0.0.1:")
 	assert.Nil(err)
-	defer socketListener.Close()
+	defer func() { _ = socketListener.Close() }()
 
 	server := grpc.NewServer(grpc.UnaryInterceptor(grpcutil.TracedServerUnary(tracer)))
 	v1.RegisterCalculatorServer(server, new(calculator.Server))
@@ -129,7 +129,7 @@ func Test_Tracing_ClientServerStream(t *testing.T) {
 	// start mocked server with tracing enabled
 	socketListener, err := net.Listen("tcp", "127.0.0.1:")
 	assert.Nil(err)
-	defer socketListener.Close()
+	defer func() { _ = socketListener.Close() }()
 
 	server := grpc.NewServer(grpc.StreamInterceptor(grpcutil.TracedServerStream(tracer)))
 	v1.RegisterCalculatorServer(server, new(calculator.Server))
@@ -171,7 +171,7 @@ func Test_Tracing_ParentClientServerUnary(t *testing.T) {
 	// start mocked server with tracing enabled
 	socketListener, err := net.Listen("tcp", "127.0.0.1:")
 	assert.Nil(err)
-	defer socketListener.Close()
+	defer func() { _ = socketListener.Close() }()
 
 	server := grpc.NewServer(grpc.UnaryInterceptor(grpcutil.TracedServerUnary(tracer)))
 	v1.RegisterCalculatorServer(server, new(calculator.Server))
@@ -218,7 +218,7 @@ func Test_Tracing_ParentClientServerStream(t *testing.T) {
 	// start mocked server with tracing enabled
 	socketListener, err := net.Listen("tcp", "127.0.0.1:")
 	assert.Nil(err)
-	defer socketListener.Close()
+	defer func() { _ = socketListener.Close() }()
 
 	server := grpc.NewServer(grpc.StreamInterceptor(grpcutil.TracedServerStream(tracer)))
 	v1.RegisterCalculatorServer(server, new(calculator.Server))

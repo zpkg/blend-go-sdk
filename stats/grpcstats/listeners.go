@@ -15,8 +15,13 @@ func AddListeners(log logger.Listenable, collector stats.Collector) {
 		return
 	}
 
-	log.Listen(grpcutil.FlagRPC, stats.ListenerNameStats, grpcutil.NewRPCEventListener(func(_ context.Context, re grpcutil.RPCEvent) {
+	log.Listen(grpcutil.FlagRPC, stats.ListenerNameStats, grpcutil.NewRPCEventListener(func(ctx context.Context, re grpcutil.RPCEvent) {
 		var tags []string
+
+		labels := logger.GetLabels(ctx)
+		for key, value := range labels {
+			tags = append(tags, stats.Tag(key, value))
+		}
 
 		if len(re.Method) > 0 {
 			tags = append(tags, stats.Tag(TagRPCMethod, re.Method))
@@ -37,5 +42,37 @@ func AddListeners(log logger.Listenable, collector stats.Collector) {
 		_ = collector.Increment(MetricNameRPC, tags...)
 		_ = collector.Gauge(MetricNameRPCElapsed, timeutil.Milliseconds(re.Elapsed), tags...)
 		_ = collector.TimeInMilliseconds(MetricNameRPCElapsed, re.Elapsed, tags...)
+	}))
+
+	log.Listen(grpcutil.FlagRPCStreamMessage, stats.ListenerNameStats, grpcutil.NewRPCStreamMessageEventListener(func(ctx context.Context, re grpcutil.RPCStreamMessageEvent) {
+		var tags []string
+
+		labels := logger.GetLabels(ctx)
+		for key, value := range labels {
+			tags = append(tags, stats.Tag(key, value))
+		}
+
+		if len(re.Method) > 0 {
+			tags = append(tags, stats.Tag(TagRPCMethod, re.Method))
+		} else {
+			tags = append(tags, stats.Tag(TagRPCMethod, RPCMethodUnknown))
+		}
+
+		if re.Engine != "" {
+			tags = append(tags, stats.Tag(TagRPCEngine, re.Engine))
+		}
+		if re.Peer != "" {
+			tags = append(tags, stats.Tag(TagRPCPeer, re.Peer))
+		}
+
+		if re.Direction != "" {
+			tags = append(tags, stats.Tag(TagRPCStreamMessageDirection, string(re.Direction)))
+		}
+		if re.Err != nil {
+			tags = append(tags, stats.TagError)
+		}
+		_ = collector.Increment(MetricNameRPCStreamMessage, tags...)
+		_ = collector.Gauge(MetricNameRPCStreamMessageElapsed, timeutil.Milliseconds(re.Elapsed), tags...)
+		_ = collector.TimeInMilliseconds(MetricNameRPCStreamMessageElapsed, re.Elapsed, tags...)
 	}))
 }
