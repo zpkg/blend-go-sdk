@@ -8,7 +8,11 @@ func All(validators ...Validator) Validator {
 		var err error
 		for _, validator := range validators {
 			if err = validator(); err != nil {
-				output = append(output, err)
+				if errs, hasMany := err.(ValidationErrors); hasMany {
+					output = append(output, errs...)
+				} else {
+					output = append(output, err)
+				}
 			}
 		}
 		if len(output) > 0 {

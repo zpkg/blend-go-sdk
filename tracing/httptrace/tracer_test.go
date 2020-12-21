@@ -37,6 +37,7 @@ func TestStartHTTPSpan(t *testing.T) {
 	assert.Equal(tracing.OperationHTTPRequest, mockSpan.OperationName)
 
 	expectedTags := map[string]interface{}{
+		tracing.TagKeyMeasured:     1,
 		tracing.TagKeyResourceName: resource,
 		tracing.TagKeySpanType:     tracing.SpanTypeWeb,
 		tracing.TagKeyHTTPMethod:   "GET",
@@ -65,6 +66,7 @@ func TestStart(t *testing.T) {
 	assert.Equal(tracing.OperationHTTPRequest, mockSpan.OperationName)
 
 	expectedTags := map[string]interface{}{
+		tracing.TagKeyMeasured:     1,
 		tracing.TagKeyResourceName: path,
 		tracing.TagKeySpanType:     tracing.SpanTypeWeb,
 		tracing.TagKeyHTTPMethod:   "GET",

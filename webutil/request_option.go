@@ -277,3 +277,11 @@ func OptXMLBody(obj interface{}) RequestOption {
 		return nil
 	}
 }
+
+// OptHTTPClientTrace sets the http trace on the outgoing request.
+func OptHTTPClientTrace(ht *HTTPTrace) RequestOption {
+	return func(r *http.Request) error {
+		*r = *WithClientHTTPTrace(r, ht)
+		return nil
+	}
+}

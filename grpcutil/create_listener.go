@@ -14,6 +14,9 @@ func CreateListener(bindAddr string) (net.Listener, error) {
 	var err error
 	if strings.HasPrefix(bindAddr, "unix://") {
 		socketListener, err = net.Listen("unix", strings.TrimPrefix(bindAddr, "unix://"))
+		if typed, ok := socketListener.(*net.UnixListener); ok {
+			typed.SetUnlinkOnClose(true)
+		}
 	} else {
 		socketListener, err = net.Listen("tcp", bindAddr)
 	}

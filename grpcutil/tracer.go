@@ -20,8 +20,8 @@ type ServerTracer interface {
 
 // ClientTracer is a type that starts traces.
 type ClientTracer interface {
-	StartClientUnary(ctx context.Context, method string) (context.Context, TraceFinisher, error)
-	StartClientStream(ctx context.Context, method string) (context.Context, TraceFinisher, error)
+	StartClientUnary(ctx context.Context, remoteAddr, method string) (context.Context, TraceFinisher, error)
+	StartClientStream(ctx context.Context, remoteAddr, method string) (context.Context, TraceFinisher, error)
 }
 
 // TraceFinisher is a finisher for traces
@@ -94,7 +94,7 @@ func TracedClientUnary(tracer ClientTracer) grpc.UnaryClientInterceptor {
 			return
 		}
 		var finisher TraceFinisher
-		ctx, finisher, err = tracer.StartClientUnary(ctx, method)
+		ctx, finisher, err = tracer.StartClientUnary(ctx, cc.Target(), method)
 		if err != nil {
 			return
 		}
@@ -114,7 +114,7 @@ func TracedClientStream(tracer ClientTracer) grpc.StreamClientInterceptor {
 			return
 		}
 		var finisher TraceFinisher
-		ctx, finisher, err = tracer.StartClientStream(ctx, method)
+		ctx, finisher, err = tracer.StartClientStream(ctx, cc.Target(), method)
 		if err != nil {
 			return
 		}

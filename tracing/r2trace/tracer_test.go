@@ -32,7 +32,7 @@ func TestStart(t *testing.T) {
 	assert.Equal(mockSpanContext.SpanID, mockSpan.SpanContext.SpanID)
 	assert.Equal(tracing.OperationHTTPRequest, mockSpan.OperationName)
 
-	assert.Len(mockSpan.Tags(), 4)
+	assert.Len(mockSpan.Tags(), 5)
 	assert.Equal(tracing.SpanTypeHTTP, mockSpan.Tags()[tracing.TagKeySpanType])
 	assert.True(mockSpan.FinishTime.IsZero())
 }
@@ -54,7 +54,7 @@ func TestStartNoHeader(t *testing.T) {
 	assert.Equal(mockSpanContext.SpanID, mockSpan.SpanContext.SpanID)
 	assert.Equal(tracing.OperationHTTPRequest, mockSpan.OperationName)
 
-	assert.Len(mockSpan.Tags(), 4)
+	assert.Len(mockSpan.Tags(), 5)
 	assert.Equal(tracing.SpanTypeHTTP, mockSpan.Tags()[tracing.TagKeySpanType])
 	assert.True(mockSpan.FinishTime.IsZero())
 }

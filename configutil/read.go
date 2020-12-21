@@ -16,44 +16,47 @@ import (
 // Read reads a config from optional path(s).
 // Paths will be tested from a standard set of defaults (ex. config.yml)
 // and optionally a csv named in the `CONFIG_PATH` environment variable.
-func Read(ref Any, options ...Option) (path string, err error) {
+func Read(ref Any, options ...Option) (paths []string, err error) {
 	var configOptions ConfigOptions
 	configOptions, err = createConfigOptions(options...)
 	if err != nil {
 		return
 	}
 
-	if configOptions.Contents != nil {
-		MaybeDebugf(configOptions.Log, "reading reader contents with extension `%s`", configOptions.ContentsExt)
-		err = deserialize(configOptions.ContentsExt, configOptions.Contents, ref)
+	for _, contents := range configOptions.Contents {
+		MaybeDebugf(configOptions.Log, "reading config contents with extension `%s`", contents.Ext)
+		err = deserialize(contents.Ext, contents.Contents, ref)
 		if err != nil {
 			return
 		}
-	} else {
-		// for each of the paths
-		// if the path doesn't exist, continue, read the path that is found.
-		var f *os.File
-		for _, path = range configOptions.FilePaths {
-			if path == "" {
-				continue
-			}
-			MaybeDebugf(configOptions.Log, "checking for config file %s", path)
-			f, err = os.Open(path)
-			if IsNotExist(err) {
-				continue
-			}
-			if err != nil {
-				err = ex.New(err)
-				break
-			}
-			defer f.Close()
-			MaybeDebugf(configOptions.Log, "reading config file %s", path)
-			err = deserialize(filepath.Ext(path), f, ref)
+	}
+
+	var f *os.File
+	var path string
+	var resolveErr error
+	for _, path = range configOptions.FilePaths {
+		if path == "" {
+			continue
+		}
+		MaybeDebugf(configOptions.Log, "checking for config file: %s", path)
+		f, resolveErr = os.Open(path)
+		if IsNotExist(resolveErr) {
+			continue
+		}
+		if resolveErr != nil {
+			err = ex.New(resolveErr)
 			break
 		}
-		if err != nil && !IsNotExist(err) {
+		defer f.Close()
+
+		MaybeDebugf(configOptions.Log, "reading config file: %s", path)
+		resolveErr = deserialize(filepath.Ext(path), f, ref)
+		if resolveErr != nil {
+			err = ex.New(resolveErr)
 			return
 		}
+
+		paths = append(paths, path)
 	}
 
 	if typed, ok := ref.(BareResolver); ok {

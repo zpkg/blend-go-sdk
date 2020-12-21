@@ -36,5 +36,6 @@ func AddListeners(log logger.Listenable, collector stats.Collector) {
 		_ = collector.Increment(MetricNameDBQuery, tags...)
 		_ = collector.Gauge(MetricNameDBQueryElapsed, timeutil.Milliseconds(qe.Elapsed), tags...)
 		_ = collector.TimeInMilliseconds(MetricNameDBQueryElapsed, qe.Elapsed, tags...)
+		_ = collector.Distribution(MetricNameDBQueryElapsed, timeutil.Milliseconds(qe.Elapsed), tags...)
 	}))
 }

@@ -34,6 +34,15 @@ type MockCollector struct {
 	CloseErrors chan error
 }
 
+// AllMetrics returns all the metrics from the collector.
+func (mc *MockCollector) AllMetrics() (output []MockMetric) {
+	metricCount := len(mc.Metrics)
+	for x := 0; x < metricCount; x++ {
+		output = append(output, <-mc.Metrics)
+	}
+	return
+}
+
 // GetCount returns the number of events logged for a given metric name.
 func (mc *MockCollector) GetCount(metricName string) (count int) {
 	var metric MockMetric
@@ -106,6 +115,15 @@ func (mc MockCollector) Histogram(name string, value float64, tags ...string) er
 	return nil
 }
 
+// Distribution adds a mock count event to the event stream with value (1).
+func (mc MockCollector) Distribution(name string, value float64, tags ...string) error {
+	mc.Metrics <- MockMetric{Name: mc.makeName(name), Distribution: value, Tags: append(mc.Field.DefaultTags, tags...)}
+	if len(mc.Errors) > 0 {
+		return <-mc.Errors
+	}
+	return nil
+}
+
 // TimeInMilliseconds adds a mock time in millis event to the event stream with a value.
 func (mc MockCollector) TimeInMilliseconds(name string, value time.Duration, tags ...string) error {
 	mc.Metrics <- MockMetric{Name: mc.makeName(name), TimeInMilliseconds: timeutil.Milliseconds(value), Tags: append(mc.Field.DefaultTags, tags...)}
@@ -137,6 +155,7 @@ type MockMetric struct {
 	Count              int64
 	Gauge              float64
 	Histogram          float64
+	Distribution       float64
 	TimeInMilliseconds float64
 	Tags               []string
 }

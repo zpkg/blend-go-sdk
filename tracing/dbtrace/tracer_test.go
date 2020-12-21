@@ -26,7 +26,7 @@ func TestPrepare(t *testing.T) {
 	mockSpan := span.(*mocktracer.MockSpan)
 	assert.Equal(tracing.OperationSQLPrepare, mockSpan.OperationName)
 
-	assert.Len(mockSpan.Tags(), 4)
+	assert.Len(mockSpan.Tags(), 6)
 	assert.Equal(tracing.SpanTypeSQL, mockSpan.Tags()[tracing.TagKeySpanType])
 	assert.Equal(dbCfg.Database, mockSpan.Tags()[tracing.TagKeyDBName])
 	assert.Equal(dbCfg.Username, mockSpan.Tags()[tracing.TagKeyDBUser])
@@ -71,7 +71,7 @@ func TestQuery(t *testing.T) {
 	mockSpan := span.(*mocktracer.MockSpan)
 	assert.Equal(tracing.OperationSQLQuery, mockSpan.OperationName)
 
-	assert.Len(mockSpan.Tags(), 5)
+	assert.Len(mockSpan.Tags(), 7)
 	assert.Equal("test_table_exists", mockSpan.Tags()[tracing.TagKeyResourceName])
 	assert.Equal(tracing.SpanTypeSQL, mockSpan.Tags()[tracing.TagKeySpanType])
 	assert.Equal(dbCfg.Database, mockSpan.Tags()[tracing.TagKeyDBName])

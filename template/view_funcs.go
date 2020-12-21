@@ -3,9 +3,7 @@ package template
 import (
 	"bytes"
 	"crypto/hmac"
-	"crypto/md5"
 	"crypto/rand"
-	"crypto/sha1"
 	"crypto/sha256"
 	"crypto/sha512"
 	"encoding/base64"
@@ -147,8 +145,6 @@ func (vf ViewFuncs) FuncMap() map[string]interface{} {
 		"url_query":          vf.URLQuery,
 		"with_url_query":     vf.WithURLQuery,
 		/* cryptography */
-		"md5":    vf.MD5,
-		"sha1":   vf.SHA1,
 		"sha256": vf.SHA256,
 		"sha512": vf.SHA512,
 		"hmac":   vf.HMAC512,
@@ -761,20 +757,6 @@ func (vf ViewFuncs) URLQuery(name string, v *url.URL) string {
 // WithURLQuery returns a url query param.
 func (vf ViewFuncs) WithURLQuery(key, value string, v *url.URL) *url.URL {
 	return webutil.URLWithQuery(v, key, value)
-}
-
-// MD5 returns the md5 sum of a string.
-func (vf ViewFuncs) MD5(v string) string {
-	h := md5.New()
-	fmt.Fprint(h, v)
-	return hex.EncodeToString(h.Sum(nil))
-}
-
-// SHA1 returns the sha1 sum of a string.
-func (vf ViewFuncs) SHA1(v string) string {
-	h := sha1.New()
-	fmt.Fprint(h, v)
-	return hex.EncodeToString(h.Sum(nil))
 }
 
 // SHA256 returns the sha256 sum of a string.

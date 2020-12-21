@@ -1,6 +1,7 @@
 package configutil
 
 import (
+	"bytes"
 	"context"
 	"io"
 
@@ -26,11 +27,32 @@ func OptContext(ctx context.Context) Option {
 	}
 }
 
-// OptContents sets the contents on the options.
-func OptContents(ext string, contents io.Reader) Option {
+// OptContents sets contents on the options.
+func OptContents(contents []ConfigContents) Option {
 	return func(co *ConfigOptions) error {
-		co.ContentsExt = ext
 		co.Contents = contents
+		return nil
+	}
+}
+
+// OptAddContent adds contents to the options.
+func OptAddContent(ext string, content io.Reader) Option {
+	return func(co *ConfigOptions) error {
+		co.Contents = append(co.Contents, ConfigContents{
+			Ext:      ext,
+			Contents: content,
+		})
+		return nil
+	}
+}
+
+// OptAddContentString adds contents to the options as a string.
+func OptAddContentString(ext string, contents string) Option {
+	return func(co *ConfigOptions) error {
+		co.Contents = append(co.Contents, ConfigContents{
+			Ext:      ext,
+			Contents: bytes.NewReader([]byte(contents)),
+		})
 		return nil
 	}
 }

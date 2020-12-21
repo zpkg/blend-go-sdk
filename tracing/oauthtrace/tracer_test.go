@@ -22,7 +22,7 @@ func TestStart(t *testing.T) {
 	mockSpan := span.(*mocktracer.MockSpan)
 	assert.Equal(tracing.OperationHTTPRequest, mockSpan.OperationName)
 
-	assert.Len(mockSpan.Tags(), 1)
+	assert.Len(mockSpan.Tags(), 2)
 	assert.Equal(tracing.SpanTypeHTTP, mockSpan.Tags()[tracing.TagKeySpanType])
 	assert.True(mockSpan.FinishTime.IsZero())
 }

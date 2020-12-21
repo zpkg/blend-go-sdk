@@ -105,6 +105,16 @@ type Logger struct {
 	Listeners map[string]map[string]*Worker
 }
 
+// GetFlags returns the flags.
+func (l *Logger) GetFlags() *Flags {
+	return l.Flags
+}
+
+// GetWritable returns the writable flags.
+func (l *Logger) GetWritable() *Flags {
+	return l.Writable
+}
+
 // HasListeners returns if there are registered listener for an event.
 func (l *Logger) HasListeners(flag string) bool {
 	l.Lock()

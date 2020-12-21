@@ -20,6 +20,8 @@ type Config struct {
 	// TraceAddress is the address of the datadog collector in the form of "hostname:port" or "unix:///path/to/trace-socket"
 	// It will supercede `TraceHostname` and `TracePort`
 	TraceAddress string `json:"traceAddress,omitempty" yaml:"traceAddress,omitempty" env:"DATADOG_TRACE_ADDRESS"`
+	// ProfilerAddress is the address of the datadog collector in the form of "hostname:port" or "unix:///path/to/profiler-socket"
+	ProfilerAddress string `json:"profilerAddress,omitempty" yaml:"profilerAddress,omitempty" env:"DATADOG_PROFILER_ADDRESS"`
 
 	// Hostname is the host portion of a <host>:<port> address. It will be used in conjunction with `Port`
 	// to form the default `Address`.
@@ -39,6 +41,9 @@ type Config struct {
 	TracingEnabled *bool `json:"tracingEnabled,omitempty" yaml:"tracingEnabled,omitempty" env:"DATADOG_APM_ENABLED"`
 	// TracingSampleRate is the default tracing sample rate, on the interval [0-1]
 	TraceSampleRate *float64 `json:"traceSampleRate,omitempty" yaml:"traceSampleRate,omitempty" env:"DATADOG_APM_SAMPLE_RATE"`
+
+	// ProfilingEnabled returns if we should use profiling or not.
+	ProfilingEnabled *bool `json:"profilingEnabled,omitempty" yaml:"profilingEnabled,omitempty" env:"DATADOG_PROFILING_ENABLED"`
 
 	// Buffered indicates if we should buffer statsd metrics.
 	Buffered *bool `json:"buffered,omitempty" yaml:"buffered,omitempty" env:"DATADOG_BUFFERED"`
@@ -87,6 +92,14 @@ func (c Config) GetTraceAddress() string {
 	return ""
 }
 
+// GetProfilerAddress gets the profiler address.
+func (c Config) GetProfilerAddress() string {
+	if c.ProfilerAddress != "" {
+		return c.ProfilerAddress
+	}
+	return c.GetTraceAddress()
+}
+
 // PortOrDefault returns the port or a default.
 func (c Config) PortOrDefault() string {
 	if c.Port != "" {
@@ -117,6 +130,14 @@ func (c Config) TraceSampleRateOrDefault() float64 {
 		return *c.TraceSampleRate
 	}
 	return DefaultTraceSampleRate
+}
+
+// ProfilingEnabledOrDefault returns if tracing is enabled.
+func (c Config) ProfilingEnabledOrDefault() bool {
+	if c.ProfilingEnabled != nil {
+		return *c.ProfilingEnabled
+	}
+	return DefaultProfilingEnabled
 }
 
 // BufferedOrDefault returns if the client should buffer messages or not.

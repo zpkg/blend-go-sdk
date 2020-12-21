@@ -61,6 +61,37 @@ func TestErrEvent(t *testing.T) {
 	assert.NotEmpty(event.Exception[0].Stacktrace.Frames)
 }
 
+func TestErrEvent_Inner(t *testing.T) {
+	assert := assert.New(t)
+
+	inner0 := ex.New("this is inner exception 0", ex.OptMessage("inner message 0"))
+	inner1 := ex.New("this is inner exception 1", ex.OptMessage("inner message 1"))
+	inner2 := ex.New("this is inner exception 2", ex.OptMessage("inner message 2"))
+	err := ex.New("this is a test", ex.OptMessage("a message"))
+
+	event := errEvent(context.Background(), logger.ErrorEvent{
+		Flag: logger.Fatal,
+		Err:  ex.Nest(err, inner0, inner1, inner2),
+		State: &http.Request{
+			Method: "POST",
+			Host:   "example.org",
+			TLS:    &tls.ConnectionState{},
+			URL:    webutil.MustParseURL("https://example.org/foo"),
+		},
+	})
+
+	assert.NotNil(event)
+	assert.NotZero(event.Timestamp)
+	assert.Equal(logger.Fatal, event.Level)
+	assert.Equal("go", event.Platform)
+	assert.Equal(SDK, event.Sdk.Name)
+	assert.Equal("this is a test", event.Message)
+	assert.Len(event.Exception, 4)
+	assert.NotEmpty(event.Fingerprint)
+	assert.NotNil(event.Exception[0].Stacktrace)
+	assert.NotEmpty(event.Exception[0].Stacktrace.Frames)
+}
+
 func TestErrRequest(t *testing.T) {
 	assert := assert.New(t)
 

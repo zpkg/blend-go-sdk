@@ -100,7 +100,7 @@ func FetchPublicKeys(ctx context.Context, opts ...r2.Option) (*PublicKeysRespons
 		return nil, err
 	}
 
-	expiresHeader := meta.Header.Get(http.CanonicalHeaderKey("Expires"))
+	expiresHeader := meta.Header.Get("Expires")
 	if expiresHeader == "" {
 		return nil, ex.New("invalid google keys response; expires unset")
 	}
@@ -111,7 +111,7 @@ func FetchPublicKeys(ctx context.Context, opts ...r2.Option) (*PublicKeysRespons
 	}
 	res := &PublicKeysResponse{
 		Keys:         jwkLookup(jwks.Keys),
-		CacheControl: meta.Header.Get(http.CanonicalHeaderKey("Cache-Control")),
+		CacheControl: meta.Header.Get("Cache-Control"),
 		Expires:      expires,
 	}
 	return res, nil

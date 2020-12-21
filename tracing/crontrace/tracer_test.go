@@ -25,7 +25,7 @@ func TestStart(t *testing.T) {
 	mockSpan := span.(*mocktracer.MockSpan)
 	assert.Equal(tracing.OperationJob, mockSpan.OperationName)
 
-	assert.Len(mockSpan.Tags(), 2)
+	assert.Len(mockSpan.Tags(), 3)
 	assert.Equal("test_job", mockSpan.Tags()[tracing.TagKeyResourceName])
 	assert.Equal(tracing.SpanTypeJob, mockSpan.Tags()[tracing.TagKeySpanType])
 	assert.True(mockSpan.FinishTime.IsZero())

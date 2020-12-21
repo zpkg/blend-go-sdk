@@ -32,12 +32,12 @@ func Test_Manager_Finish(t *testing.T) {
 		createJWK(pk1),
 	}
 	keysResponder := httptest.NewServer(http.HandlerFunc(func(rw http.ResponseWriter, req *http.Request) {
-		rw.Header().Set(http.CanonicalHeaderKey("Content-Type"), "application/json; charset=UTF-8")
-		rw.Header().Set(http.CanonicalHeaderKey("Cache-Control"), "public, max-age=23196, must-revalidate, no-transform") // set cache control
-		rw.Header().Set(http.CanonicalHeaderKey("Expires"), time.Now().UTC().AddDate(0, 1, 0).Format(http.TimeFormat))    // set expires
-		rw.Header().Set(http.CanonicalHeaderKey("Date"), time.Now().UTC().Format(http.TimeFormat))                        // set date
+		rw.Header().Set("Content-Type", "application/json; charset=UTF-8")
+		rw.Header().Set("Cache-Control", "public, max-age=23196, must-revalidate, no-transform") // set cache control
+		rw.Header().Set("Expires", time.Now().UTC().AddDate(0, 1, 0).Format(http.TimeFormat))    // set expires
+		rw.Header().Set("Date", time.Now().UTC().Format(http.TimeFormat))                        // set date
 		rw.WriteHeader(200)
-		json.NewEncoder(rw).Encode(struct {
+		_ = json.NewEncoder(rw).Encode(struct {
 			Keys []jwt.JWK `json:"keys"`
 		}{
 			Keys: keys,
@@ -49,9 +49,9 @@ func Test_Manager_Finish(t *testing.T) {
 	it.Nil(err)
 
 	codeResponder := httptest.NewServer(http.HandlerFunc(func(rw http.ResponseWriter, req *http.Request) {
-		rw.Header().Set(http.CanonicalHeaderKey("Content-Type"), "application/json; charset=UTF-8")
+		rw.Header().Set("Content-Type", "application/json; charset=UTF-8")
 		rw.WriteHeader(200)
-		rw.Write(codeResponse)
+		_, _ = rw.Write(codeResponse)
 	}))
 	defer codeResponder.Close()
 
@@ -61,7 +61,7 @@ func Test_Manager_Finish(t *testing.T) {
 			return
 		}
 
-		rw.Header().Set(http.CanonicalHeaderKey("Content-Type"), "application/json; charset=UTF-8")
+		rw.Header().Set("Content-Type", "application/json; charset=UTF-8")
 		rw.WriteHeader(200)
 		fmt.Fprintf(rw, `{
 			"id": "12012312390931",
@@ -124,12 +124,12 @@ func Test_Manager_Finish_DisallowedDomain(t *testing.T) {
 		createJWK(pk1),
 	}
 	keysResponder := httptest.NewServer(http.HandlerFunc(func(rw http.ResponseWriter, req *http.Request) {
-		rw.Header().Set(http.CanonicalHeaderKey("Content-Type"), "application/json; charset=UTF-8")
-		rw.Header().Set(http.CanonicalHeaderKey("Cache-Control"), "public, max-age=23196, must-revalidate, no-transform") // set cache control
-		rw.Header().Set(http.CanonicalHeaderKey("Expires"), time.Now().UTC().AddDate(0, 1, 0).Format(http.TimeFormat))    // set expires
-		rw.Header().Set(http.CanonicalHeaderKey("Date"), time.Now().UTC().Format(http.TimeFormat))                        // set date
+		rw.Header().Set("Content-Type", "application/json; charset=UTF-8")
+		rw.Header().Set("Cache-Control", "public, max-age=23196, must-revalidate, no-transform") // set cache control
+		rw.Header().Set("Expires", time.Now().UTC().AddDate(0, 1, 0).Format(http.TimeFormat))    // set expires
+		rw.Header().Set("Date", time.Now().UTC().Format(http.TimeFormat))                        // set date
 		rw.WriteHeader(200)
-		json.NewEncoder(rw).Encode(struct {
+		_ = json.NewEncoder(rw).Encode(struct {
 			Keys []jwt.JWK `json:"keys"`
 		}{
 			Keys: keys,
@@ -141,9 +141,9 @@ func Test_Manager_Finish_DisallowedDomain(t *testing.T) {
 	it.Nil(err)
 
 	codeResponder := httptest.NewServer(http.HandlerFunc(func(rw http.ResponseWriter, req *http.Request) {
-		rw.Header().Set(http.CanonicalHeaderKey("Content-Type"), "application/json; charset=UTF-8")
+		rw.Header().Set("Content-Type", "application/json; charset=UTF-8")
 		rw.WriteHeader(200)
-		rw.Write(codeResponse)
+		_, _ = rw.Write(codeResponse)
 	}))
 	defer codeResponder.Close()
 
@@ -153,7 +153,7 @@ func Test_Manager_Finish_DisallowedDomain(t *testing.T) {
 			return
 		}
 
-		rw.Header().Set(http.CanonicalHeaderKey("Content-Type"), "application/json; charset=UTF-8")
+		rw.Header().Set("Content-Type", "application/json; charset=UTF-8")
 		rw.WriteHeader(200)
 		fmt.Fprintf(rw, `{
 			"id": "12012312390931",
@@ -212,12 +212,12 @@ func Test_Manager_Finish_FailsAudience(t *testing.T) {
 		createJWK(pk1),
 	}
 	keysResponder := httptest.NewServer(http.HandlerFunc(func(rw http.ResponseWriter, req *http.Request) {
-		rw.Header().Set(http.CanonicalHeaderKey("Content-Type"), "application/json; charset=UTF-8")
-		rw.Header().Set(http.CanonicalHeaderKey("Cache-Control"), "public, max-age=23196, must-revalidate, no-transform") // set cache control
-		rw.Header().Set(http.CanonicalHeaderKey("Expires"), time.Now().UTC().AddDate(0, 1, 0).Format(http.TimeFormat))    // set expires
-		rw.Header().Set(http.CanonicalHeaderKey("Date"), time.Now().UTC().Format(http.TimeFormat))                        // set date
+		rw.Header().Set("Content-Type", "application/json; charset=UTF-8")
+		rw.Header().Set("Cache-Control", "public, max-age=23196, must-revalidate, no-transform") // set cache control
+		rw.Header().Set("Expires", time.Now().UTC().AddDate(0, 1, 0).Format(http.TimeFormat))    // set expires
+		rw.Header().Set("Date", time.Now().UTC().Format(http.TimeFormat))                        // set date
 		rw.WriteHeader(200)
-		json.NewEncoder(rw).Encode(struct {
+		_ = json.NewEncoder(rw).Encode(struct {
 			Keys []jwt.JWK `json:"keys"`
 		}{
 			Keys: keys,
@@ -229,9 +229,9 @@ func Test_Manager_Finish_FailsAudience(t *testing.T) {
 	it.Nil(err)
 
 	codeResponder := httptest.NewServer(http.HandlerFunc(func(rw http.ResponseWriter, req *http.Request) {
-		rw.Header().Set(http.CanonicalHeaderKey("Content-Type"), "application/json; charset=UTF-8")
+		rw.Header().Set("Content-Type", "application/json; charset=UTF-8")
 		rw.WriteHeader(200)
-		rw.Write(codeResponse)
+		_, _ = rw.Write(codeResponse)
 	}))
 	defer codeResponder.Close()
 
@@ -277,12 +277,12 @@ func Test_Manager_Finish_FailsVerification(t *testing.T) {
 		createJWK(pk1),
 	}
 	keysResponder := httptest.NewServer(http.HandlerFunc(func(rw http.ResponseWriter, req *http.Request) {
-		rw.Header().Set(http.CanonicalHeaderKey("Content-Type"), "application/json; charset=UTF-8")
-		rw.Header().Set(http.CanonicalHeaderKey("Cache-Control"), "public, max-age=23196, must-revalidate, no-transform") // set cache control
-		rw.Header().Set(http.CanonicalHeaderKey("Expires"), time.Now().UTC().AddDate(0, 1, 0).Format(http.TimeFormat))    // set expires
-		rw.Header().Set(http.CanonicalHeaderKey("Date"), time.Now().UTC().Format(http.TimeFormat))                        // set date
+		rw.Header().Set("Content-Type", "application/json; charset=UTF-8")
+		rw.Header().Set("Cache-Control", "public, max-age=23196, must-revalidate, no-transform") // set cache control
+		rw.Header().Set("Expires", time.Now().UTC().AddDate(0, 1, 0).Format(http.TimeFormat))    // set expires
+		rw.Header().Set("Date", time.Now().UTC().Format(http.TimeFormat))                        // set date
 		rw.WriteHeader(200)
-		json.NewEncoder(rw).Encode(struct {
+		_ = json.NewEncoder(rw).Encode(struct {
 			Keys []jwt.JWK `json:"keys"`
 		}{
 			Keys: keys,
@@ -294,9 +294,9 @@ func Test_Manager_Finish_FailsVerification(t *testing.T) {
 	it.Nil(err)
 
 	codeResponder := httptest.NewServer(http.HandlerFunc(func(rw http.ResponseWriter, req *http.Request) {
-		rw.Header().Set(http.CanonicalHeaderKey("Content-Type"), "application/json; charset=UTF-8")
+		rw.Header().Set("Content-Type", "application/json; charset=UTF-8")
 		rw.WriteHeader(200)
-		rw.Write(codeResponse)
+		_, _ = rw.Write(codeResponse)
 	}))
 	defer codeResponder.Close()
 
@@ -306,7 +306,7 @@ func Test_Manager_Finish_FailsVerification(t *testing.T) {
 			return
 		}
 
-		rw.Header().Set(http.CanonicalHeaderKey("Content-Type"), "application/json; charset=UTF-8")
+		rw.Header().Set("Content-Type", "application/json; charset=UTF-8")
 		rw.WriteHeader(200)
 		fmt.Fprintf(rw, `{
 			"id": "12012312390931",

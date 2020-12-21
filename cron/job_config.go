@@ -1,6 +1,16 @@
 package cron
 
-import "time"
+import (
+	"context"
+	"time"
+
+	"github.com/blend/go-sdk/configutil"
+	"github.com/blend/go-sdk/ref"
+)
+
+var (
+	_ configutil.Resolver = (*JobConfig)(nil)
+)
 
 // JobConfig is a configuration set for a job.
 type JobConfig struct {
@@ -18,6 +28,15 @@ type JobConfig struct {
 	ShutdownGracePeriod time.Duration `json:"shutdownGracePeriod" yaml:"shutdownGracePeriod"`
 	// SkipLoggerTrigger skips triggering logger events if it is set to true.
 	SkipLoggerTrigger bool `json:"skipLoggerTrigger" yaml:"skipLoggerTrigger"`
+}
+
+// Resolve implements configutil.Resolver.
+func (jc *JobConfig) Resolve(ctx context.Context) error {
+	return configutil.Resolve(ctx,
+		configutil.SetBool(&jc.Disabled, configutil.Bool(jc.Disabled), configutil.Bool(ref.Bool(DefaultDisabled))),
+		configutil.SetDuration(&jc.Timeout, configutil.Duration(jc.Timeout), configutil.Duration(DefaultTimeout)),
+		configutil.SetDuration(&jc.ShutdownGracePeriod, configutil.Duration(jc.ShutdownGracePeriod), configutil.Duration(DefaultShutdownGracePeriod)),
+	)
 }
 
 // DisabledOrDefault returns a value or a default.

@@ -175,6 +175,11 @@ func (c *Client) Histogram(name string, value float64, tags ...string) error {
 	return c.sendFloat(MetricTypeHistogram, name, value, tags...)
 }
 
+// Distribution is an no-op for raw statsd.
+func (c *Client) Distribution(name string, value float64, tags ...string) error {
+	return c.sendFloat(MetricTypeDistribution, name, value, tags...)
+}
+
 // Flush is a no-op.
 func (c *Client) Flush() error {
 	c.bufferMu.Lock()

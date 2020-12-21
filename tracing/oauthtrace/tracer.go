@@ -28,6 +28,7 @@ type oauthTracer struct {
 func (t oauthTracer) Start(ctx context.Context, config *oauth2.Config) oauth.TraceFinisher {
 	startOptions := []opentracing.StartSpanOption{
 		opentracing.Tag{Key: tracing.TagKeySpanType, Value: tracing.SpanTypeHTTP},
+		tracing.TagMeasured(),
 		opentracing.StartTime(time.Now().UTC()),
 	}
 	span, _ := tracing.StartSpanFromContext(ctx, t.tracer, tracing.OperationHTTPRequest, startOptions...)

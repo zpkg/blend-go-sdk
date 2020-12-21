@@ -2,7 +2,9 @@ package web
 
 import (
 	"bytes"
+	"encoding/json"
 	"io"
+	"io/ioutil"
 	"net/http"
 	"net/http/httptest"
 	"net/url"
@@ -75,6 +77,19 @@ func MockPost(app *App, path string, body io.ReadCloser, options ...r2.Option) *
 	req := &http.Request{
 		Method: "POST",
 		Body:   body,
+		URL: &url.URL{
+			Path: path,
+		},
+	}
+	return Mock(app, req, options...)
+}
+
+// MockPostJSON sends a mock post request with a json body to an app.
+func MockPostJSON(app *App, path string, body interface{}, options ...r2.Option) *MockResult {
+	contents, _ := json.Marshal(body)
+	req := &http.Request{
+		Method: "POST",
+		Body:   ioutil.NopCloser(bytes.NewReader(contents)),
 		URL: &url.URL{
 			Path: path,
 		},

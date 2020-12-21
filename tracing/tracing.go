@@ -46,10 +46,17 @@ func SpanError(span opentracing.Span, err error) {
 	if err != nil {
 		if typed := ex.As(err); typed != nil {
 			span.SetTag(TagKeyError, typed.Class)
+			span.SetTag(TagKeyErrorType, typed.Class)
 			span.SetTag(TagKeyErrorMessage, typed.Message)
 			span.SetTag(TagKeyErrorStack, typed.StackTrace.String())
+			span.SetTag(TagKeyErrorDetails, fmt.Sprintf("%+v", err))
 		} else {
 			span.SetTag(TagKeyError, fmt.Sprintf("%v", err))
 		}
 	}
+}
+
+// TagMeasured returns an opentracing tag to indicate the span should be measured.
+func TagMeasured() opentracing.Tag {
+	return opentracing.Tag{Key: TagKeyMeasured, Value: 1}
 }

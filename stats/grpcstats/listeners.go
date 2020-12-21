@@ -42,6 +42,7 @@ func AddListeners(log logger.Listenable, collector stats.Collector) {
 		_ = collector.Increment(MetricNameRPC, tags...)
 		_ = collector.Gauge(MetricNameRPCElapsed, timeutil.Milliseconds(re.Elapsed), tags...)
 		_ = collector.TimeInMilliseconds(MetricNameRPCElapsed, re.Elapsed, tags...)
+		_ = collector.Distribution(MetricNameRPCElapsed, timeutil.Milliseconds(re.Elapsed), tags...)
 	}))
 
 	log.Listen(grpcutil.FlagRPCStreamMessage, stats.ListenerNameStats, grpcutil.NewRPCStreamMessageEventListener(func(ctx context.Context, re grpcutil.RPCStreamMessageEvent) {
@@ -74,5 +75,6 @@ func AddListeners(log logger.Listenable, collector stats.Collector) {
 		_ = collector.Increment(MetricNameRPCStreamMessage, tags...)
 		_ = collector.Gauge(MetricNameRPCStreamMessageElapsed, timeutil.Milliseconds(re.Elapsed), tags...)
 		_ = collector.TimeInMilliseconds(MetricNameRPCStreamMessageElapsed, re.Elapsed, tags...)
+		_ = collector.Distribution(MetricNameRPCStreamMessageElapsed, timeutil.Milliseconds(re.Elapsed), tags...)
 	}))
 }

@@ -30,6 +30,7 @@ func (vt vaultTracer) Start(ctx context.Context, options ...vault.TraceOption) (
 	}
 	startOptions := []opentracing.StartSpanOption{
 		opentracing.Tag{Key: tracing.TagKeySpanType, Value: tracing.SpanTypeVault},
+		tracing.TagMeasured(),
 		opentracing.StartTime(time.Now().UTC()),
 	}
 	if config.VaultOperation != "" {

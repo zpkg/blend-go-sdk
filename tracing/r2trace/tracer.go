@@ -32,6 +32,7 @@ func (rt r2Tracer) Start(req *http.Request) r2.TraceFinisher {
 		opentracing.Tag{Key: tracing.TagKeyResourceName, Value: req.URL.String()},
 		opentracing.Tag{Key: tracing.TagKeyHTTPMethod, Value: strings.ToUpper(req.Method)},
 		opentracing.Tag{Key: tracing.TagKeyHTTPURL, Value: req.URL.String()},
+		tracing.TagMeasured(),
 		opentracing.StartTime(time.Now().UTC()),
 	}
 	span, _ := tracing.StartSpanFromContext(req.Context(), rt.tracer, tracing.OperationHTTPRequest, startOptions...)

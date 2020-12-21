@@ -80,7 +80,7 @@ func TestCollectorNew(t *testing.T) {
 	assert.Nil(err)
 	assert.NotNil(c)
 	assert.NotNil(c.client)
-	assert.NotEmpty(c.defaultTags)
+	assert.Empty(c.defaultTags)
 
 	c, err = New(cfg, statsd.WithNamespace("hello"))
 	assert.Nil(err)

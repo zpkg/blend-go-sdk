@@ -1,6 +1,9 @@
 package stats
 
-import "unicode"
+import (
+	"strings"
+	"unicode"
+)
 
 // Tag formats a tag with a given key and value.
 // For tags in the form `key` use an empty string for the value.
@@ -8,6 +11,18 @@ func Tag(key, value string) string {
 	key = cleanTagElement(key)
 	value = cleanTagElement(value)
 	return key + ":" + value
+}
+
+// SplitTag splits a given tag in a key and a value
+func SplitTag(tag string) (key, value string) {
+	parts := strings.SplitN(tag, ":", 2)
+	if len(parts) > 0 {
+		key = parts[0]
+	}
+	if len(parts) > 1 {
+		value = parts[1]
+	}
+	return
 }
 
 // cleansTagElement cleans up tag elements as best as it can

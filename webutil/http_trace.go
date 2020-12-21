@@ -2,12 +2,19 @@ package webutil
 
 import (
 	"crypto/tls"
+	"net/http"
 	"net/http/httptrace"
 	"time"
 )
 
+// WithClientHTTPTrace adds the http client trace to the request.
+func WithClientHTTPTrace(req *http.Request, trace *HTTPTrace) *http.Request {
+	return req.WithContext(httptrace.WithClientTrace(req.Context(), trace.Trace()))
+}
+
 // HTTPTrace is timing information for the full http call.
 type HTTPTrace struct {
+	Start       time.Time `json:"start"`
 	GetConn     time.Time `json:"getConn"`
 	GotConn     time.Time `json:"gotConn"`
 	PutIdleConn time.Time `json:"putIdleConn"`
@@ -37,6 +44,7 @@ func (ht *HTTPTrace) Trace() *httptrace.ClientTrace {
 	now := func() time.Time {
 		return time.Now().UTC()
 	}
+	ht.Start = now()
 	return &httptrace.ClientTrace{
 		GetConn: func(_ string) {
 			ht.GetConn = now()

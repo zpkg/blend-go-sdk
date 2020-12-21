@@ -6,7 +6,6 @@ import (
 
 	dogstatsd "github.com/DataDog/datadog-go/statsd"
 
-	"github.com/blend/go-sdk/env"
 	"github.com/blend/go-sdk/stats"
 	"github.com/blend/go-sdk/timeutil"
 )
@@ -35,9 +34,6 @@ func New(cfg Config, opts ...dogstatsd.Option) (*Collector, error) {
 		client:      client,
 		defaultTags: cfg.DefaultTags,
 	}
-
-	collector.AddDefaultTags("service", env.Env().String(env.VarServiceName))
-	collector.AddDefaultTags("env", env.Env().String(env.VarServiceEnv))
 	return collector, nil
 }
 
@@ -86,9 +82,14 @@ func (dc *Collector) Gauge(name string, value float64, tags ...string) error {
 	return dc.client.Gauge(name, value, dc.tagsWithDefaults(tags...), 1.0)
 }
 
-// Histogram sets a gauge value.
+// Histogram sets a gauge value that statistics are computed on the agent.
 func (dc *Collector) Histogram(name string, value float64, tags ...string) error {
 	return dc.client.Histogram(name, value, dc.tagsWithDefaults(tags...), 1.0)
+}
+
+// Distribution sets a gauge value that statistics are computed on the server.
+func (dc *Collector) Distribution(name string, value float64, tags ...string) error {
+	return dc.client.Distribution(name, value, dc.tagsWithDefaults(tags...), 1.0)
 }
 
 // TimeInMilliseconds sets a timing value.

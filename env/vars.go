@@ -453,3 +453,13 @@ func (ev Vars) IsDevlike() bool {
 func (ev Vars) ServiceName(defaults ...string) string {
 	return ev.String(VarServiceName, defaults...)
 }
+
+// Hostname is a common environment variable for the machine's hostname.
+func (ev Vars) Hostname(defaults ...string) string {
+	return ev.String(VarHostname, defaults...)
+}
+
+// Version is a common environment variable for the service version.
+func (ev Vars) Version(defaults ...string) string {
+	return ev.String(VarVersion, defaults...)
+}

@@ -600,28 +600,6 @@ func TestTemplateViewFuncMatches(t *testing.T) {
 	assert.Equal("nope", buffer.String())
 }
 
-func TestTemplateViewFuncSha1(t *testing.T) {
-	assert := assert.New(t)
-
-	test := `{{ .Var "foo" | sha1 }}`
-	temp := New().WithBody(test).WithVar("foo", "this is only a test")
-	buffer := bytes.NewBuffer(nil)
-	err := temp.Process(buffer)
-	assert.Nil(err)
-	assert.Equal("e7ee879d16c08f616c32e5bbe2253bdba18cf003", buffer.String())
-}
-
-func TestTemplateViewFuncMD5(t *testing.T) {
-	assert := assert.New(t)
-
-	test := `{{ .Var "foo" | md5 }}`
-	temp := New().WithBody(test).WithVar("foo", "this is only a test")
-	buffer := bytes.NewBuffer(nil)
-	err := temp.Process(buffer)
-	assert.Nil(err)
-	assert.Equal("e668034188ba397a9b6ff95d2a8e7203", buffer.String())
-}
-
 func TestTemplateViewFuncSha256(t *testing.T) {
 	assert := assert.New(t)
 

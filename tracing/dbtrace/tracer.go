@@ -31,6 +31,8 @@ func (dbt dbTracer) Prepare(ctx context.Context, cfg db.Config, statement string
 		opentracing.Tag{Key: tracing.TagKeyDBName, Value: cfg.DatabaseOrDefault()},
 		opentracing.Tag{Key: tracing.TagKeyDBUser, Value: cfg.Username},
 		opentracing.Tag{Key: TagKeyQuery, Value: statement},
+		opentracing.Tag{Key: TagKeySQLCommand, Value: statement},
+		tracing.TagMeasured(),
 		opentracing.StartTime(time.Now().UTC()),
 	}
 	span, _ := tracing.StartSpanFromContext(ctx, dbt.tracer, tracing.OperationSQLPrepare, startOptions...)
@@ -44,6 +46,8 @@ func (dbt dbTracer) Query(ctx context.Context, cfg db.Config, label, statement s
 		opentracing.Tag{Key: tracing.TagKeyDBName, Value: cfg.DatabaseOrDefault()},
 		opentracing.Tag{Key: tracing.TagKeyDBUser, Value: cfg.Username},
 		opentracing.Tag{Key: TagKeyQuery, Value: statement},
+		opentracing.Tag{Key: TagKeySQLCommand, Value: statement},
+		tracing.TagMeasured(),
 		opentracing.StartTime(time.Now().UTC()),
 	}
 	span, _ := tracing.StartSpanFromContext(ctx, dbt.tracer, tracing.OperationSQLQuery, startOptions...)

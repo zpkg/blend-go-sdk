@@ -2,6 +2,7 @@ package web
 
 import (
 	"fmt"
+	"net/http"
 	"testing"
 	"time"
 
@@ -196,7 +197,7 @@ func TestMergeHeaders(t *testing.T) {
 
 	assert.Equal(
 		[]string{"dog"},
-		merged["example-string"],
+		merged[http.CanonicalHeaderKey("example-string")],
 	)
 
 	assert.Equal(

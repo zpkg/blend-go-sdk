@@ -2,5 +2,6 @@ package dbtrace
 
 // Tag key constants
 const (
-	TagKeyQuery = "db.query"
+	TagKeyQuery      = "db.query"
+	TagKeySQLCommand = "sql.command"
 )

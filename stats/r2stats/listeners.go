@@ -58,6 +58,7 @@ func AddListeners(log logger.FilterListenable, collector stats.Collector, opts .
 			_ = collector.Increment(MetricNameHTTPClientRequest, tags...)
 			_ = collector.Gauge(MetricNameHTTPClientRequestElapsed, timeutil.Milliseconds(r2e.Elapsed), tags...)
 			_ = collector.TimeInMilliseconds(MetricNameHTTPClientRequestElapsed, r2e.Elapsed, tags...)
+			_ = collector.Distribution(MetricNameHTTPClientRequestElapsed, timeutil.Milliseconds(r2e.Elapsed), tags...)
 		}),
 	)
 }

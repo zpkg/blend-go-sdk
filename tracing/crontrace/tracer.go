@@ -23,6 +23,7 @@ func (t tracer) Start(ctx context.Context, jobName string) (context.Context, cro
 	startOptions := []opentracing.StartSpanOption{
 		opentracing.Tag{Key: tracing.TagKeyResourceName, Value: jobName},
 		opentracing.Tag{Key: tracing.TagKeySpanType, Value: tracing.SpanTypeJob},
+		tracing.TagMeasured(),
 		opentracing.StartTime(time.Now().UTC()),
 	}
 	span, spanCtx := tracing.StartSpanFromContext(ctx, t.tracer, tracing.OperationJob, startOptions...)

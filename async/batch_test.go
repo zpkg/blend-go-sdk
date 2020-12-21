@@ -80,10 +80,8 @@ func TestBatchCancel(t *testing.T) {
 		if result := atomic.AddInt32(&processed, 1); int(result) > workItems>>1 {
 			if !didCancel {
 				close(countReached)
-				select {
-				case <-ctx.Done():
-					didCancel = true
-				}
+				<-ctx.Done()
+				didCancel = true
 			}
 		}
 		return nil

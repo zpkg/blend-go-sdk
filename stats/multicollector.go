@@ -2,6 +2,7 @@ package stats
 
 import (
 	"sort"
+	"strings"
 	"time"
 )
 
@@ -26,7 +27,7 @@ func (collectors MultiCollector) AddDefaultTags(tags ...string) {
 	}
 }
 
-// DefaultTags returns the unique default tags for the collector group.
+// DefaultTags returns the unique default tags for the collectors.
 func (collectors MultiCollector) DefaultTags() (output []string) {
 	values := map[string]bool{}
 	for _, collector := range collectors {
@@ -41,7 +42,22 @@ func (collectors MultiCollector) DefaultTags() (output []string) {
 	return
 }
 
-// Count increments a counter by a value and writes to the different hosts
+// HasTagKey returns if the collector has a given tag key
+// in *any* collector's default tags.
+func (collectors MultiCollector) HasTagKey(tagKey string) bool {
+	var key, value string
+	for _, collector := range collectors {
+		for _, tag := range collector.DefaultTags() {
+			key, value = SplitTag(tag)
+			if strings.EqualFold(tagKey, key) && value != "" {
+				return true
+			}
+		}
+	}
+	return false
+}
+
+// Count increments a counter by a value and writes to the collectors.
 func (collectors MultiCollector) Count(name string, value int64, tags ...string) (err error) {
 	for _, collector := range collectors {
 		err = collector.Count(name, value, tags...)
@@ -52,7 +68,7 @@ func (collectors MultiCollector) Count(name string, value int64, tags ...string)
 	return
 }
 
-// Increment increments a counter by 1 and writes to the different hosts
+// Increment increments a counter by 1 and writes to the collectors.
 func (collectors MultiCollector) Increment(name string, tags ...string) (err error) {
 	for _, collector := range collectors {
 		err = collector.Increment(name, tags...)
@@ -63,7 +79,7 @@ func (collectors MultiCollector) Increment(name string, tags ...string) (err err
 	return
 }
 
-// Gauge sets a gauge value and writes to the different hosts
+// Gauge sets a gauge value and writes to the collectors.
 func (collectors MultiCollector) Gauge(name string, value float64, tags ...string) (err error) {
 	for _, collector := range collectors {
 		err = collector.Gauge(name, value, tags...)
@@ -74,10 +90,21 @@ func (collectors MultiCollector) Gauge(name string, value float64, tags ...strin
 	return
 }
 
-// Histogram sets a histogram value and writes to the different hosts
+// Histogram sets a histogram value and writes to the collectors.
 func (collectors MultiCollector) Histogram(name string, value float64, tags ...string) (err error) {
 	for _, collector := range collectors {
 		err = collector.Histogram(name, value, tags...)
+		if err != nil {
+			return
+		}
+	}
+	return
+}
+
+// Distribution sets a distribution value and writes to the collectors.
+func (collectors MultiCollector) Distribution(name string, value float64, tags ...string) (err error) {
+	for _, collector := range collectors {
+		err = collector.Distribution(name, value, tags...)
 		if err != nil {
 			return
 		}

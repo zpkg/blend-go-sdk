@@ -13,6 +13,13 @@ func IsLoggerSet(log interface{}) bool {
 	return log != nil
 }
 
+// MaybeDrainContext drains a logger if it's a valid reference and can be drained.
+func MaybeDrainContext(ctx context.Context, log interface{}) {
+	if typed, ok := log.(*Logger); ok && typed != nil {
+		typed.DrainContext(ctx)
+	}
+}
+
 // MaybeTrigger triggers an event if the logger is set.
 //
 // DEPRECATION(1.2021*): this method will be changed to drop the context and use `context.Background()`.

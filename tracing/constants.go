@@ -14,10 +14,14 @@ const (
 	TagKeyPID = "system.pid"
 	// TagKeyError is the error tag key. It is usually of type `error`.
 	TagKeyError = "error"
+	// TagKeyErrorType is the error type tag key. It is usually of type `error`.
+	TagKeyErrorType = "error.type"
 	// TagKeyErrorMessage is the error message tag key.
 	TagKeyErrorMessage = "error.message"
 	// TagKeyErrorStack is the error stack tag key.
 	TagKeyErrorStack = "error.stack"
+	// TagKeyErrorDetails is the error details tag key.
+	TagKeyErrorDetails = "error.details"
 	// TagKeyHTTPMethod is the verb on the request.
 	TagKeyHTTPMethod = "http.method"
 	// TagKeyHTTPCode is the result status code.
@@ -34,6 +38,8 @@ const (
 	TagKeyDBUser = "db.user"
 	// TagKeyJobName is the job name.
 	TagKeyJobName = "job.name"
+	// TagKeyGRPCRemoteAddr is the grpc remote addr (i.e. the remote addr).
+	TagKeyGRPCRemoteAddr = "grpc.remote_addr"
 	// TagKeyGRPCRole is the grpc role (i.e. client or server).
 	TagKeyGRPCRole = "grpc.role"
 	// TagKeyGRPCCallingConvention is the grpc calling convention (i.e. unary or streaming).
@@ -60,6 +66,8 @@ const (
 	TagKeyKafkaPartition = "kafka.partition"
 	// TagKeyKafkaOffset is the kafka topic partition offset.
 	TagKeyKafkaOffset = "kafka.offset"
+	// TagKeyMeaured indicates a span should also emit metrics.
+	TagKeyMeasured = "_dd.measured"
 )
 
 // Operations are actions represented by spans.
@@ -77,8 +85,14 @@ const (
 	OperationSQLQuery = "sql.query"
 	// OperationJob is a job operation.
 	OperationJob = "job"
-	// OperationRPC is an rpc operation.
-	OperationRPC = "rpc"
+	// OperationGRPCClientUnary is an rpc operation.
+	OperationGRPCClientUnary = "grpc.client.unary"
+	// OperationGRPCClientStreaming is an rpc operation.
+	OperationGRPCClientStream = "grpc.client.stream"
+	// OperationGRPCClientUnary is an rpc operation.
+	OperationGRPCServerUnary = "grpc.server.unary"
+	// OperationGRPCServerStreaming is an rpc operation.
+	OperationGRPCServerStream = "grpc.server.stream"
 	// OperationVaultAPI is a call to the vault API
 	OperationVaultAPI = "vault.api.request"
 	// OperationKafkaPublish is a publish to a kafka topic.
@@ -112,8 +126,8 @@ const (
 	SpanTypeElasticSearch = "elasticsearch"
 	// SpanTypeJob is a span type used by cron jobs.
 	SpanTypeJob = "job"
-	// SpanTypeGRPC is a span type used by grpc services.
-	SpanTypeGRPC = "grpc"
+	// SpanTypeRPC is a span type used by grpc services.
+	SpanTypeRPC = "rpc"
 	// SpanTypeKafka is a span type used by kafka services.
 	SpanTypeKafka = "kafka"
 	// SpanTypeVault is a span type used by go-sdk/secrets calls to vault

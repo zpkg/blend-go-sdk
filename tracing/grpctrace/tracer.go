@@ -30,20 +30,23 @@ type tracer struct {
 }
 
 // StartClientUnary starts a unary client trace.
-func (t tracer) StartClientUnary(ctx context.Context, method string) (context.Context, grpcutil.TraceFinisher, error) {
-	var finisher TraceFinisher
-	finisher.ctx = ctx
-	finisher.startTime = time.Now().UTC()
+func (t tracer) StartClientUnary(ctx context.Context, remoteAddr, method string) (context.Context, grpcutil.TraceFinisher, error) {
+	finisher := TraceFinisher{
+		startTime: time.Now().UTC(),
+	}
 
 	startOptions := []opentracing.StartSpanOption{
-		opentracing.Tag{Key: tracing.TagKeySpanType, Value: tracing.SpanTypeGRPC},
+		opentracing.Tag{Key: tracing.TagKeySpanType, Value: tracing.SpanTypeRPC},
 		opentracing.Tag{Key: tracing.TagKeyResourceName, Value: method},
+		opentracing.Tag{Key: tracing.TagKeyGRPCRemoteAddr, Value: remoteAddr},
 		opentracing.Tag{Key: tracing.TagKeyGRPCMethod, Value: method},
 		opentracing.Tag{Key: tracing.TagKeyGRPCRole, Value: "client"},
 		opentracing.Tag{Key: tracing.TagKeyGRPCCallingConvention, Value: "unary"},
+		tracing.TagMeasured(),
 		opentracing.StartTime(finisher.startTime),
 	}
-	finisher.span, finisher.ctx = tracing.StartSpanFromContext(finisher.ctx, t.Tracer, tracing.OperationRPC, startOptions...)
+
+	finisher.span, finisher.ctx = tracing.StartSpanFromContext(ctx, t.Tracer, tracing.OperationGRPCClientUnary, startOptions...)
 	md := make(metadata.MD)
 	if err := t.Tracer.Inject(finisher.span.Context(), opentracing.TextMap, MetadataReaderWriter{md}); err != nil {
 		return nil, nil, err
@@ -53,21 +56,22 @@ func (t tracer) StartClientUnary(ctx context.Context, method string) (context.Co
 }
 
 // StartClientStream starts a stream client trace.
-func (t tracer) StartClientStream(ctx context.Context, method string) (context.Context, grpcutil.TraceFinisher, error) {
+func (t tracer) StartClientStream(ctx context.Context, remoteAddr, method string) (context.Context, grpcutil.TraceFinisher, error) {
 	var finisher TraceFinisher
 	finisher.ctx = ctx
 	finisher.startTime = time.Now().UTC()
 
 	startOptions := []opentracing.StartSpanOption{
-		opentracing.Tag{Key: tracing.TagKeySpanType, Value: tracing.SpanTypeGRPC},
+		opentracing.Tag{Key: tracing.TagKeySpanType, Value: tracing.SpanTypeRPC},
+		opentracing.Tag{Key: tracing.TagKeyGRPCRemoteAddr, Value: remoteAddr},
 		opentracing.Tag{Key: tracing.TagKeyResourceName, Value: method},
 		opentracing.Tag{Key: tracing.TagKeyGRPCMethod, Value: method},
 		opentracing.Tag{Key: tracing.TagKeyGRPCRole, Value: "client"},
 		opentracing.Tag{Key: tracing.TagKeyGRPCCallingConvention, Value: "stream"},
 		opentracing.StartTime(finisher.startTime),
 	}
-	finisher.span, finisher.ctx = tracing.StartSpanFromContext(finisher.ctx, t.Tracer, tracing.OperationRPC, startOptions...)
 
+	finisher.span, finisher.ctx = tracing.StartSpanFromContext(finisher.ctx, t.Tracer, tracing.OperationGRPCClientStream, startOptions...)
 	md := make(metadata.MD)
 	if err := t.Tracer.Inject(finisher.span.Context(), opentracing.TextMap, MetadataReaderWriter{md}); err != nil {
 		return nil, nil, err
@@ -92,7 +96,7 @@ func (t tracer) StartServerUnary(ctx context.Context, method string) (context.Co
 	userAgent := grpcutil.MetaValue(md, grpcutil.MetaTagUserAgent)
 
 	startOptions := []opentracing.StartSpanOption{
-		opentracing.Tag{Key: tracing.TagKeySpanType, Value: tracing.SpanTypeGRPC},
+		opentracing.Tag{Key: tracing.TagKeySpanType, Value: tracing.SpanTypeRPC},
 		opentracing.Tag{Key: tracing.TagKeyResourceName, Value: method},
 		opentracing.Tag{Key: tracing.TagKeyGRPCMethod, Value: method},
 		opentracing.Tag{Key: tracing.TagKeyGRPCAuthority, Value: authority},
@@ -111,7 +115,7 @@ func (t tracer) StartServerUnary(ctx context.Context, method string) (context.Co
 		startOptions = append(startOptions, opentracing.ChildOf(spanContext))
 	}
 
-	finisher.span = t.Tracer.StartSpan(tracing.OperationRPC, startOptions...)
+	finisher.span = t.Tracer.StartSpan(tracing.OperationGRPCServerUnary, startOptions...)
 	finisher.ctx = opentracing.ContextWithSpan(finisher.ctx, finisher.span)
 	return finisher.ctx, finisher, nil
 }
@@ -131,7 +135,7 @@ func (t tracer) StartServerStream(ctx context.Context, method string) (context.C
 	contentType := grpcutil.MetaValue(md, grpcutil.MetaTagContentType)
 	userAgent := grpcutil.MetaValue(md, grpcutil.MetaTagUserAgent)
 	startOptions := []opentracing.StartSpanOption{
-		opentracing.Tag{Key: tracing.TagKeySpanType, Value: tracing.SpanTypeGRPC},
+		opentracing.Tag{Key: tracing.TagKeySpanType, Value: tracing.SpanTypeRPC},
 		opentracing.Tag{Key: tracing.TagKeyResourceName, Value: method},
 		opentracing.Tag{Key: tracing.TagKeyGRPCMethod, Value: method},
 		opentracing.Tag{Key: tracing.TagKeyGRPCAuthority, Value: authority},
@@ -149,7 +153,7 @@ func (t tracer) StartServerStream(ctx context.Context, method string) (context.C
 	if spanContext != nil {
 		startOptions = append(startOptions, opentracing.ChildOf(spanContext))
 	}
-	finisher.span = t.Tracer.StartSpan(tracing.OperationRPC, startOptions...)
+	finisher.span = t.Tracer.StartSpan(tracing.OperationGRPCServerStream, startOptions...)
 	finisher.ctx = opentracing.ContextWithSpan(ctx, finisher.span)
 	return ctx, finisher, nil
 }

@@ -70,6 +70,7 @@ func (wtf webTraceFinisher) Finish(ctx *web.Ctx, err error) {
 func (wt webTracer) StartView(ctx *web.Ctx, vr *web.ViewResult) web.ViewTraceFinisher {
 	// set up basic start options (these are mostly tags).
 	startOptions := []opentracing.StartSpanOption{
+		tracing.TagMeasured(),
 		opentracing.Tag{Key: tracing.TagKeyResourceName, Value: vr.ViewName},
 		opentracing.Tag{Key: tracing.TagKeySpanType, Value: tracing.SpanTypeWeb},
 		opentracing.StartTime(time.Now().UTC()),

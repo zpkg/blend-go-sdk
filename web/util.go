@@ -78,7 +78,9 @@ func MergeHeaders(headers ...http.Header) http.Header {
 	output := make(http.Header)
 	for _, header := range headers {
 		for key, values := range header {
-			output[key] = append(output[key], values...)
+			for _, value := range values {
+				output.Add(key, value)
+			}
 		}
 	}
 	return output

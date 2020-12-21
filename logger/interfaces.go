@@ -158,6 +158,12 @@ type FatalCloser interface {
 	Closer
 }
 
+// Flagged is a type that returns flags.
+type Flagged interface {
+	GetFlags() *Flags
+	GetWritable() *Flags
+}
+
 // Log is a logger that implements the full suite of logging methods.
 type Log interface {
 	Scoper
@@ -170,6 +176,7 @@ type Log interface {
 // FullLog is a logger that implements the full suite of logging methods.
 type FullLog interface {
 	Closer
+	Flagged
 	Listenable
 	Filterable
 	Log

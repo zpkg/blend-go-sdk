@@ -37,6 +37,7 @@ func StartHTTPSpan(ctx context.Context, tracer opentracing.Tracer, req *http.Req
 		opentracing.Tag{Key: "http.remote_addr", Value: webutil.GetRemoteAddr(req)},
 		opentracing.Tag{Key: "http.host", Value: webutil.GetHost(req)},
 		opentracing.Tag{Key: "http.user_agent", Value: webutil.GetUserAgent(req)},
+		tracing.TagMeasured(),
 		opentracing.StartTime(startTime),
 	}
 	startOptions = append(startOptions, extra...)
