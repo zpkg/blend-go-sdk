@@ -2,7 +2,6 @@ package dbutil
 
 import (
 	"context"
-	"fmt"
 
 	"github.com/blend/go-sdk/db"
 )
@@ -14,5 +13,5 @@ func DatabaseExists(ctx context.Context, name string, opts ...db.Option) (bool, 
 		return false, err
 	}
 	defer conn.Close()
-	return conn.QueryContext(ctx, fmt.Sprintf("SELECT 1 FROM pg_database WHERE datname='%s'", name)).Any()
+	return conn.QueryContext(ctx, "SELECT 1 FROM pg_database WHERE datname = $1", name).Any()
 }

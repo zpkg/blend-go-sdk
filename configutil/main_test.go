@@ -16,6 +16,7 @@ func TestMain(m *testing.M) {
 type config struct {
 	Environment string `json:"env" yaml:"env" env:"SERVICE_ENV"`
 	Other       string `json:"other" yaml:"other" env:"OTHER"`
+	Base        string `json:"base" yaml:"base"`
 }
 
 type bareResolvedConfig struct {

@@ -6,12 +6,12 @@ import "github.com/blend/go-sdk/db"
 func OpenManagementConnection(options ...db.Option) (*db.Connection, error) {
 	defaults := []db.Option{
 		db.OptHost("localhost"),
-		db.OptDatabase("postgres"),
 		db.OptSSLMode("disable"),
 		db.OptConfigFromEnv(),
+		db.OptDatabase("postgres"),
 	}
 	conn, err := db.New(
-		append(defaults, options...)...,
+		append(defaults, append(options, db.OptDatabase("postgres"))...)...,
 	)
 	if err != nil {
 		return nil, err

@@ -58,6 +58,18 @@ func TestReadUnset(t *testing.T) {
 	assert.NotEqual("dev", cfg.Environment)
 }
 
+func TestReadMany(t *testing.T) {
+	assert := assert.New(t)
+
+	var cfg config
+	paths, err := Read(&cfg, OptFilePaths("testdata/project.yml", "testdata/config.yml"))
+	assert.Nil(err)
+	assert.Equal([]string{"testdata/project.yml", "testdata/config.yml"}, paths)
+	assert.Equal("test_yml", cfg.Environment)
+	assert.Equal("foo", cfg.Other)
+	assert.Equal("project-base", cfg.Base)
+}
+
 func TestReadPathNotFound(t *testing.T) {
 	assert := assert.New(t)
 

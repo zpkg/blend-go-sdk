@@ -2,12 +2,23 @@ package grpcstats
 
 import (
 	"context"
+	"strconv"
+
+	"google.golang.org/grpc/status"
 
 	"github.com/blend/go-sdk/grpcutil"
 	"github.com/blend/go-sdk/logger"
 	"github.com/blend/go-sdk/stats"
 	"github.com/blend/go-sdk/timeutil"
 )
+
+func getErrorTag(err error) string {
+	if e, ok := status.FromError(err); ok {
+		code := e.Code()
+		return stats.Tag(stats.TagError, strconv.Itoa(int(code)))
+	}
+	return stats.TagError
+}
 
 // AddListeners adds grpc listeners.
 func AddListeners(log logger.Listenable, collector stats.Collector) {
@@ -37,7 +48,7 @@ func AddListeners(log logger.Listenable, collector stats.Collector) {
 		}
 
 		if re.Err != nil {
-			tags = append(tags, stats.TagError)
+			tags = append(tags, getErrorTag(re.Err))
 		}
 		_ = collector.Increment(MetricNameRPC, tags...)
 		_ = collector.Gauge(MetricNameRPCElapsed, timeutil.Milliseconds(re.Elapsed), tags...)
@@ -70,7 +81,7 @@ func AddListeners(log logger.Listenable, collector stats.Collector) {
 			tags = append(tags, stats.Tag(TagRPCStreamMessageDirection, string(re.Direction)))
 		}
 		if re.Err != nil {
-			tags = append(tags, stats.TagError)
+			tags = append(tags, getErrorTag(re.Err))
 		}
 		_ = collector.Increment(MetricNameRPCStreamMessage, tags...)
 		_ = collector.Gauge(MetricNameRPCStreamMessageElapsed, timeutil.Milliseconds(re.Elapsed), tags...)
