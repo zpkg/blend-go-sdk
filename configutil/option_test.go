@@ -7,46 +7,46 @@ import (
 	"github.com/blend/go-sdk/env"
 )
 
-func TestOptAddPaths(t *testing.T) {
+func Test_OptAddPaths(t *testing.T) {
 	assert := assert.New(t)
 
 	var options ConfigOptions
-	assert.Nil(OptAddFilePaths("foo", "bar")(&options))
-	assert.Len(options.FilePaths, 2)
-	assert.Equal([]string{"foo", "bar"}, options.FilePaths)
+	assert.Nil(OptAddPaths("foo", "bar")(&options))
+	assert.Len(options.Paths, 2)
+	assert.Equal([]string{"foo", "bar"}, options.Paths)
 
-	assert.Nil(OptAddFilePaths("moo", "loo")(&options))
-	assert.Len(options.FilePaths, 4)
-	assert.Equal([]string{"foo", "bar", "moo", "loo"}, options.FilePaths)
+	assert.Nil(OptAddPaths("moo", "loo")(&options))
+	assert.Len(options.Paths, 4)
+	assert.Equal([]string{"foo", "bar", "moo", "loo"}, options.Paths)
 }
 
-func TestOptAddPreferredPaths(t *testing.T) {
+func Test_OptAddPreferredPaths(t *testing.T) {
 	assert := assert.New(t)
 
 	var options ConfigOptions
-	assert.Nil(OptAddPreferredFilePaths("foo", "bar")(&options))
-	assert.Len(options.FilePaths, 2)
-	assert.Equal([]string{"foo", "bar"}, options.FilePaths)
+	assert.Nil(OptAddPreferredPaths("foo", "bar")(&options))
+	assert.Len(options.Paths, 2)
+	assert.Equal([]string{"foo", "bar"}, options.Paths)
 
-	assert.Nil(OptAddPreferredFilePaths("moo", "loo")(&options))
-	assert.Len(options.FilePaths, 4)
-	assert.Equal([]string{"moo", "loo", "foo", "bar"}, options.FilePaths)
+	assert.Nil(OptAddPreferredPaths("moo", "loo")(&options))
+	assert.Len(options.Paths, 4)
+	assert.Equal([]string{"moo", "loo", "foo", "bar"}, options.Paths)
 }
 
-func TestOptPaths(t *testing.T) {
+func Test_OptPaths(t *testing.T) {
 	assert := assert.New(t)
 
 	var options ConfigOptions
-	assert.Nil(OptFilePaths("foo", "bar")(&options))
-	assert.Len(options.FilePaths, 2)
-	assert.Equal([]string{"foo", "bar"}, options.FilePaths)
+	assert.Nil(OptPaths("foo", "bar")(&options))
+	assert.Len(options.Paths, 2)
+	assert.Equal([]string{"foo", "bar"}, options.Paths)
 
-	assert.Nil(OptFilePaths("moo", "loo")(&options))
-	assert.Len(options.FilePaths, 2)
-	assert.Equal([]string{"moo", "loo"}, options.FilePaths)
+	assert.Nil(OptPaths("moo", "loo")(&options))
+	assert.Len(options.Paths, 2)
+	assert.Equal([]string{"moo", "loo"}, options.Paths)
 }
 
-func TestOptEnv(t *testing.T) {
+func Test_OptEnv(t *testing.T) {
 	assert := assert.New(t)
 
 	var options ConfigOptions

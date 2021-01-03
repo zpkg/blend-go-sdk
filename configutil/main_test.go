@@ -19,16 +19,6 @@ type config struct {
 	Base        string `json:"base" yaml:"base"`
 }
 
-type bareResolvedConfig struct {
-	config
-}
-
-// Resolve implements configutil.BareResolver.
-func (br *bareResolvedConfig) Resolve() error {
-	br.Environment = "bare resolved"
-	return nil
-}
-
 type resolvedConfig struct {
 	config
 }

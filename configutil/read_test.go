@@ -15,7 +15,7 @@ func TestTryReadYAML(t *testing.T) {
 	assert := assert.New(t)
 
 	var cfg config
-	paths, err := Read(&cfg, OptFilePaths("testdata/config.yaml"))
+	paths, err := Read(&cfg, OptPaths("testdata/config.yaml"))
 	assert.Nil(err)
 	assert.Len(paths, 1)
 	assert.Equal("testdata/config.yaml", paths[0])
@@ -27,7 +27,7 @@ func TestTryReadYML(t *testing.T) {
 	assert := assert.New(t)
 
 	var cfg config
-	paths, err := Read(&cfg, OptFilePaths("testdata/config.yml"))
+	paths, err := Read(&cfg, OptPaths("testdata/config.yml"))
 	assert.Nil(err)
 	assert.Len(paths, 1)
 	assert.Equal("testdata/config.yml", paths[0])
@@ -39,7 +39,7 @@ func TestTryReadJSON(t *testing.T) {
 	assert := assert.New(t)
 
 	var cfg config
-	paths, err := Read(&cfg, OptFilePaths("testdata/config.json"))
+	paths, err := Read(&cfg, OptPaths("testdata/config.json"))
 	assert.Nil(err)
 	assert.Len(paths, 1)
 	assert.Equal("testdata/config.json", paths[0])
@@ -51,7 +51,7 @@ func TestReadUnset(t *testing.T) {
 	assert := assert.New(t)
 
 	var cfg config
-	paths, err := Read(&cfg, OptFilePaths(""))
+	paths, err := Read(&cfg, OptPaths(""))
 	assert.Nil(err)
 	assert.Empty(paths)
 	assert.Empty(paths)
@@ -62,7 +62,7 @@ func TestReadMany(t *testing.T) {
 	assert := assert.New(t)
 
 	var cfg config
-	paths, err := Read(&cfg, OptFilePaths("testdata/project.yml", "testdata/config.yml"))
+	paths, err := Read(&cfg, OptPaths("testdata/project.yml", "testdata/config.yml"))
 	assert.Nil(err)
 	assert.Equal([]string{"testdata/project.yml", "testdata/config.yml"}, paths)
 	assert.Equal("test_yml", cfg.Environment)
@@ -74,7 +74,7 @@ func TestReadPathNotFound(t *testing.T) {
 	assert := assert.New(t)
 
 	var cfg config
-	_, err := Read(&cfg, OptFilePaths(filepath.Join("testdata", uuid.V4().String())))
+	_, err := Read(&cfg, OptPaths(filepath.Join("testdata", uuid.V4().String())))
 	assert.Nil(err)
 }
 
@@ -135,22 +135,12 @@ func TestDeserializeJSON(t *testing.T) {
 	assert.Equal("foo", cfg.Other)
 }
 
-func TestReadBareResolve(t *testing.T) {
-	assert := assert.New(t)
-
-	var cfg bareResolvedConfig
-	path, err := Read(&cfg, OptFilePaths(""))
-	assert.Nil(err)
-	assert.Empty(path)
-	assert.Equal("bare resolved", cfg.Environment)
-}
-
 func TestReadResolver(t *testing.T) {
 	assert := assert.New(t)
 
 	var cfg resolvedConfig
 	path, err := Read(&cfg,
-		OptFilePaths(""),
+		OptPaths(""),
 		OptEnv(env.Vars{"ENVIRONMENT": "resolved"}),
 	)
 	assert.Nil(err)
@@ -196,7 +186,7 @@ child:
 
 	var cfg fullConfig
 	path, err := Read(&cfg,
-		OptFilePaths(""),
+		OptPaths(""),
 		OptAddContentString("yml", contents0),
 		OptAddContentString("yml", contents1),
 		OptAddContentString("yml", contents2),

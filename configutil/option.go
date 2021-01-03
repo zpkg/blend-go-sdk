@@ -27,7 +27,7 @@ func OptContext(ctx context.Context) Option {
 	}
 }
 
-// OptContents sets contents on the options.
+// OptContents sets config contents on the options.
 func OptContents(contents []ConfigContents) Option {
 	return func(co *ConfigOptions) error {
 		co.Contents = contents
@@ -35,7 +35,7 @@ func OptContents(contents []ConfigContents) Option {
 	}
 }
 
-// OptAddContent adds contents to the options.
+// OptAddContent adds contents to the options as a reader.
 func OptAddContent(ext string, content io.Reader) Option {
 	return func(co *ConfigOptions) error {
 		co.Contents = append(co.Contents, ConfigContents{
@@ -57,26 +57,36 @@ func OptAddContentString(ext string, contents string) Option {
 	}
 }
 
-// OptAddFilePaths adds paths to search for the config file.
-func OptAddFilePaths(paths ...string) Option {
+// OptAddPaths adds paths to search for the config file.
+//
+// These paths will be added after the default paths.
+func OptAddPaths(paths ...string) Option {
 	return func(co *ConfigOptions) error {
-		co.FilePaths = append(co.FilePaths, paths...)
+		co.Paths = append(co.Paths, paths...)
 		return nil
 	}
 }
 
-// OptAddPreferredFilePaths adds paths to search first for the config file.
-func OptAddPreferredFilePaths(paths ...string) Option {
+// OptAddPreferredPaths adds paths to search first for the config file.
+func OptAddPreferredPaths(paths ...string) Option {
 	return func(co *ConfigOptions) error {
-		co.FilePaths = append(paths, co.FilePaths...)
+		co.Paths = append(paths, co.Paths...)
 		return nil
 	}
 }
 
-// OptFilePaths sets paths to search for the config file.
-func OptFilePaths(paths ...string) Option {
+// OptPaths sets paths to search for the config file.
+func OptPaths(paths ...string) Option {
 	return func(co *ConfigOptions) error {
-		co.FilePaths = paths
+		co.Paths = paths
+		return nil
+	}
+}
+
+// OptUnsetPaths removes default paths from the paths set.
+func OptUnsetPaths() Option {
+	return func(co *ConfigOptions) error {
+		co.Paths = nil
 		return nil
 	}
 }
