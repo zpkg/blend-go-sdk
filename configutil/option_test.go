@@ -12,12 +12,12 @@ func Test_OptAddPaths(t *testing.T) {
 
 	var options ConfigOptions
 	assert.Nil(OptAddPaths("foo", "bar")(&options))
-	assert.Len(options.Paths, 2)
-	assert.Equal([]string{"foo", "bar"}, options.Paths)
+	assert.Len(options.FilePaths, 2)
+	assert.Equal([]string{"foo", "bar"}, options.FilePaths)
 
 	assert.Nil(OptAddPaths("moo", "loo")(&options))
-	assert.Len(options.Paths, 4)
-	assert.Equal([]string{"foo", "bar", "moo", "loo"}, options.Paths)
+	assert.Len(options.FilePaths, 4)
+	assert.Equal([]string{"foo", "bar", "moo", "loo"}, options.FilePaths)
 }
 
 func Test_OptAddPreferredPaths(t *testing.T) {
@@ -25,12 +25,12 @@ func Test_OptAddPreferredPaths(t *testing.T) {
 
 	var options ConfigOptions
 	assert.Nil(OptAddPreferredPaths("foo", "bar")(&options))
-	assert.Len(options.Paths, 2)
-	assert.Equal([]string{"foo", "bar"}, options.Paths)
+	assert.Len(options.FilePaths, 2)
+	assert.Equal([]string{"foo", "bar"}, options.FilePaths)
 
 	assert.Nil(OptAddPreferredPaths("moo", "loo")(&options))
-	assert.Len(options.Paths, 4)
-	assert.Equal([]string{"moo", "loo", "foo", "bar"}, options.Paths)
+	assert.Len(options.FilePaths, 4)
+	assert.Equal([]string{"moo", "loo", "foo", "bar"}, options.FilePaths)
 }
 
 func Test_OptPaths(t *testing.T) {
@@ -38,12 +38,12 @@ func Test_OptPaths(t *testing.T) {
 
 	var options ConfigOptions
 	assert.Nil(OptPaths("foo", "bar")(&options))
-	assert.Len(options.Paths, 2)
-	assert.Equal([]string{"foo", "bar"}, options.Paths)
+	assert.Len(options.FilePaths, 2)
+	assert.Equal([]string{"foo", "bar"}, options.FilePaths)
 
 	assert.Nil(OptPaths("moo", "loo")(&options))
-	assert.Len(options.Paths, 2)
-	assert.Equal([]string{"moo", "loo"}, options.Paths)
+	assert.Len(options.FilePaths, 2)
+	assert.Equal([]string{"moo", "loo"}, options.FilePaths)
 }
 
 func Test_OptEnv(t *testing.T) {

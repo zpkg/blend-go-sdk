@@ -62,15 +62,20 @@ func OptAddContentString(ext string, contents string) Option {
 // These paths will be added after the default paths.
 func OptAddPaths(paths ...string) Option {
 	return func(co *ConfigOptions) error {
-		co.Paths = append(co.Paths, paths...)
+		co.FilePaths = append(co.FilePaths, paths...)
 		return nil
 	}
+}
+
+// OptAddFilePaths is deprecated; use `OptAddPaths`
+func OptAddFilePaths(paths ...string) Option {
+	return OptAddPaths(paths...)
 }
 
 // OptAddPreferredPaths adds paths to search first for the config file.
 func OptAddPreferredPaths(paths ...string) Option {
 	return func(co *ConfigOptions) error {
-		co.Paths = append(paths, co.Paths...)
+		co.FilePaths = append(paths, co.FilePaths...)
 		return nil
 	}
 }
@@ -78,7 +83,7 @@ func OptAddPreferredPaths(paths ...string) Option {
 // OptPaths sets paths to search for the config file.
 func OptPaths(paths ...string) Option {
 	return func(co *ConfigOptions) error {
-		co.Paths = paths
+		co.FilePaths = paths
 		return nil
 	}
 }
@@ -86,7 +91,7 @@ func OptPaths(paths ...string) Option {
 // OptUnsetPaths removes default paths from the paths set.
 func OptUnsetPaths() Option {
 	return func(co *ConfigOptions) error {
-		co.Paths = nil
+		co.FilePaths = nil
 		return nil
 	}
 }

@@ -56,7 +56,7 @@ func Read(ref Any, options ...Option) (paths []string, err error) {
 	var f *os.File
 	var path string
 	var resolveErr error
-	for _, path = range configOptions.Paths {
+	for _, path = range configOptions.FilePaths {
 		if path == "" {
 			continue
 		}
@@ -93,9 +93,9 @@ func Read(ref Any, options ...Option) (paths []string, err error) {
 
 func createConfigOptions(options ...Option) (configOptions ConfigOptions, err error) {
 	configOptions.Env = env.Env()
-	configOptions.Paths = DefaultPaths
+	configOptions.FilePaths = DefaultPaths
 	if configOptions.Env.Has(EnvVarConfigPath) {
-		configOptions.Paths = append(configOptions.Env.CSV(EnvVarConfigPath), configOptions.Paths...)
+		configOptions.FilePaths = append(configOptions.Env.CSV(EnvVarConfigPath), configOptions.FilePaths...)
 	}
 	for _, option := range options {
 		if err = option(&configOptions); err != nil {
