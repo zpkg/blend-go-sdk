@@ -5,6 +5,7 @@ import (
 	"go/ast"
 	"go/parser"
 	"go/token"
+	"path/filepath"
 	"strings"
 
 	"github.com/blend/go-sdk/validate"
@@ -29,6 +30,10 @@ func (gc GoCalls) Validate() error {
 
 // Check implements Rule.
 func (gc GoCalls) Check(filename string, contents []byte) RuleResult {
+	if filepath.Ext(filename) != ".go" {
+		return RuleResult{OK: true}
+	}
+
 	fset := token.NewFileSet()
 	fileAst, err := parser.ParseFile(fset, filename, contents, parser.AllErrors|parser.ParseComments)
 	if err != nil {

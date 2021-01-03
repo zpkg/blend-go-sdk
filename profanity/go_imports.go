@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"go/parser"
 	"go/token"
+	"path/filepath"
 	"strings"
 )
 
@@ -19,6 +20,10 @@ type GoImports struct {
 
 // Check implements Rule.
 func (gi GoImports) Check(filename string, contents []byte) RuleResult {
+	if filepath.Ext(filename) != ".go" {
+		return RuleResult{OK: true}
+	}
+
 	fset := token.NewFileSet()
 
 	ast, err := parser.ParseFile(fset, filename, contents, parser.ImportsOnly)

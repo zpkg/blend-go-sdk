@@ -36,6 +36,9 @@ type Profanity struct {
 // Process processes the profanity rules.
 func (p *Profanity) Process() error {
 	p.Verbosef("using rules file: %q", p.Config.RulesFileOrDefault())
+	if ruleFilter := p.Config.Rules.String(); ruleFilter != "" {
+		p.Verbosef("using rule filter: %s", ruleFilter)
+	}
 	if fileFilter := p.Config.Files.String(); fileFilter != "" {
 		p.Verbosef("using file filter: %s", fileFilter)
 	}
@@ -87,16 +90,19 @@ func (p *Profanity) Walk(path string, rules ...RuleSpec) error {
 				return err
 			}
 			for _, rule := range rules {
-				if rule.Files.Allow(fullFilePath) {
-					res := rule.Check(fullFilePath, contents)
-					if res.Err != nil {
-						return res.Err
-					}
-					if !res.OK {
-						didFail = true
-						p.Errorf("%v\n", p.FormatRuleResultFailure(rule, res))
-						if p.Config.FailFastOrDefault() {
-							return ErrFailure
+				if p.Config.Rules.Allow(rule.ID) {
+					if rule.Files.Allow(fullFilePath) {
+						p.Debugf("%s; checking %s", rule.ID, fullFilePath)
+						res := rule.Check(fullFilePath, contents)
+						if res.Err != nil {
+							return res.Err
+						}
+						if !res.OK {
+							didFail = true
+							p.Errorf("%v\n", p.FormatRuleResultFailure(rule, res))
+							if p.Config.FailFastOrDefault() {
+								return ErrFailure
+							}
 						}
 					}
 				}

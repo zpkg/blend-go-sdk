@@ -466,6 +466,146 @@ func TestConnectionUpsertWithSerial(t *testing.T) {
 	assert.Equal(obj.Category, verify.Category)
 }
 
+func createUpsertAutosRegressionTable(tx *sql.Tx) error {
+	schemaDefinition := `CREATE TABLE upsert_auto_regression (
+		id uuid not null,
+		status smallint not null,
+		required boolean not null default false,
+		created_at timestamp default current_timestamp,
+		updated_at timestamp,
+		migrated_at timestamp
+	);`
+	schemaPrimaryKey := "ALTER TABLE upsert_auto_regression ADD CONSTRAINT pk_upsert_auto_regression_id PRIMARY KEY (id);"
+	if _, err := defaultDB().Invoke(OptTx(tx)).Exec(schemaDefinition); err != nil {
+		return err
+	}
+	if _, err := defaultDB().Invoke(OptTx(tx)).Exec(schemaPrimaryKey); err != nil {
+		return err
+	}
+	return nil
+}
+
+func dropUpsertRegressionTable(tx *sql.Tx) error {
+	_, err := defaultDB().Invoke(OptTx(tx)).Exec("DROP TABLE upsert_auto_regression")
+	return err
+}
+
+// upsertAutoRegression contains all data associated with an envelope of documents.
+type upsertAutoRegression struct {
+	ID         uuid.UUID  `db:"id,pk"`
+	Status     uint8      `db:"status"`
+	Required   bool       `db:"required"`
+	CreatedAt  *time.Time `db:"created_at,auto"`
+	UpdatedAt  *time.Time `db:"updated_at,auto"`
+	MigratedAt *time.Time `db:"migrated_at"`
+	ReadOnly   string     `db:"read_only,readonly"`
+}
+
+// TableName returns the table name.
+func (uar upsertAutoRegression) TableName() string {
+	return "upsert_auto_regression"
+}
+
+func TestConnectionCreateAutos(t *testing.T) {
+	its := assert.New(t)
+	tx, err := defaultDB().Begin()
+	its.Nil(err)
+	defer func() { _ = tx.Rollback() }()
+
+	err = createUpsertAutosRegressionTable(tx)
+	its.Nil(err)
+	defer func() { _ = dropUpsertRegressionTable(tx) }()
+
+	// NOTE; postgres truncates nanos
+	ts1 := time.Date(2020, 12, 23, 12, 11, 10, 0, time.UTC)
+	ts2 := time.Date(2020, 12, 23, 13, 12, 11, 0, time.UTC)
+
+	// create initial value
+	value := upsertAutoRegression{
+		ID:       uuid.V4(),
+		Status:   1,
+		Required: true,
+		// CreatedAt:  &ts0,
+		UpdatedAt:  &ts1,
+		MigratedAt: &ts2,
+	}
+	err = defaultDB().Invoke(OptTx(tx)).Create(&value)
+	its.Nil(err)
+
+	var verify upsertAutoRegression
+	var found bool
+	found, err = defaultDB().Invoke(OptTx(tx)).Get(&verify, value.ID)
+	its.Nil(err)
+	its.True(found)
+
+	its.Equal(value.Status, verify.Status)
+	its.Equal(value.Required, verify.Required)
+
+	its.NotNil(value.CreatedAt)
+	its.False(value.CreatedAt.IsZero())
+	its.Equal((*value.UpdatedAt).UTC(), (*verify.UpdatedAt).UTC())
+	its.Equal((*value.MigratedAt).UTC(), (*verify.MigratedAt).UTC())
+}
+
+func TestConnectionUpsertAutos(t *testing.T) {
+	its := assert.New(t)
+	tx, err := defaultDB().Begin()
+	its.Nil(err)
+	defer func() { _ = tx.Rollback() }()
+
+	err = createUpsertAutosRegressionTable(tx)
+	its.Nil(err)
+	defer func() { _ = dropUpsertRegressionTable(tx) }()
+
+	// NOTE; postgres truncates nanos
+	ts0 := time.Date(2020, 12, 23, 11, 10, 9, 0, time.UTC)
+	ts1 := time.Date(2020, 12, 23, 12, 11, 10, 0, time.UTC)
+	ts2 := time.Date(2020, 12, 23, 13, 12, 11, 0, time.UTC)
+
+	// create initial value
+	value := upsertAutoRegression{
+		ID:         uuid.V4(),
+		Status:     1,
+		Required:   true,
+		CreatedAt:  &ts0,
+		UpdatedAt:  &ts1,
+		MigratedAt: &ts2,
+	}
+	err = defaultDB().Invoke(OptTx(tx)).Upsert(&value)
+	its.Nil(err)
+
+	var verify upsertAutoRegression
+	var found bool
+	found, err = defaultDB().Invoke(OptTx(tx)).Get(&verify, value.ID)
+	its.Nil(err)
+	its.True(found)
+
+	its.Equal(value.Status, verify.Status)
+	its.Equal(value.Required, verify.Required)
+
+	its.Equal((*value.CreatedAt).UTC(), (*verify.CreatedAt).UTC())
+	its.Equal((*value.UpdatedAt).UTC(), (*verify.UpdatedAt).UTC())
+	its.Equal((*value.MigratedAt).UTC(), (*verify.MigratedAt).UTC())
+
+	value.CreatedAt = &ts1
+	value.UpdatedAt = &ts2
+	value.MigratedAt = &ts0
+
+	err = defaultDB().Invoke(OptTx(tx)).Upsert(&value)
+	its.Nil(err)
+
+	found, err = defaultDB().Invoke(OptTx(tx)).Get(&verify, value.ID)
+	its.Nil(err)
+	its.True(found)
+
+	its.Equal(value.Status, verify.Status)
+	its.Equal(value.Required, verify.Required)
+
+	its.Equal((*value.CreatedAt).UTC(), (*verify.CreatedAt).UTC())
+	its.Equal((*value.UpdatedAt).UTC(), (*verify.UpdatedAt).UTC())
+	its.Equal((*value.MigratedAt).UTC(), (*verify.MigratedAt).UTC())
+}
+
 func TestConnectionCreateMany(t *testing.T) {
 	assert := assert.New(t)
 	tx, err := defaultDB().Begin()

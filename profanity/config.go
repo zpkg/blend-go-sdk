@@ -7,6 +7,7 @@ type Config struct {
 	FailFast  *bool      `yaml:"failFast"`
 	Path      string     `yaml:"path"`
 	RulesFile string     `yaml:"rulesFile"`
+	Rules     GlobFilter `yaml:"rules"`
 	Files     GlobFilter `yaml:"files"`
 	Dirs      GlobFilter `yaml:"dirs"`
 }

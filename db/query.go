@@ -165,7 +165,7 @@ func (q *Query) query() (rows *sql.Rows, err error) {
 }
 
 func (q *Query) finish(r interface{}, err error) error {
-	return q.Invocation.Finish(q.Statement, r, nil, err)
+	return q.Invocation.finish(q.Statement, r, nil, err)
 }
 
 // Out reads a given rows set out into an object reference.
@@ -175,7 +175,7 @@ func Out(rows *sql.Rows, object interface{}) (found bool, err error) {
 		err = Error(ErrDestinationNotStruct)
 		return
 	}
-	columnMeta := CachedColumnCollectionFromInstance(object)
+	columnMeta := Columns(object)
 	if rows.Next() {
 		found = true
 		if populatable, ok := object.(Populatable); ok {
@@ -206,7 +206,7 @@ func OutMany(rows *sql.Rows, collection interface{}) (err error) {
 	sliceInnerType := ReflectSliceType(collection)
 	collectionValue := ReflectValue(collection)
 	v := makeNew(sliceInnerType)
-	meta := CachedColumnCollectionFromType(newColumnCacheKey(sliceInnerType), sliceInnerType)
+	meta := ColumnsFromType(newColumnCacheKey(sliceInnerType), sliceInnerType)
 
 	isPopulatable := IsPopulatable(v)
 
