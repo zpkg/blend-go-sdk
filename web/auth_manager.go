@@ -454,7 +454,7 @@ func (am AuthManager) expire(ctx *Ctx, sessionValue string) error {
 
 // InjectCookie injects a session cookie into the context.
 func (am AuthManager) injectCookie(ctx *Ctx, value string, expire time.Time) {
-	ctx.WriteNewCookie(&http.Cookie{
+	http.SetCookie(ctx.Response, &http.Cookie{
 		Value:    value,
 		Expires:  expire,
 		Name:     am.CookieDefaults.Name,
