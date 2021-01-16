@@ -22,7 +22,7 @@ export DB_SSLMODE
 
 all: ci
 
-ci: deps vet profanity cover-ci
+ci: deps vet profanity copyright cover-ci
 
 new-install: deps dev-deps install-all
 
@@ -89,7 +89,13 @@ build:
 .PHONY: profanity
 profanity:
 	@echo "$(VERSION)/$(GIT_REF) >> profanity"
-	@go run cmd/profanity/main.go --rules ".profanity.yml" --dirs-exclude="cmd/*" --files-exclude="coverage.html" --dirs-exclude="dist/*" --files-include="*.go" --dirs-exclude="*/node_modules/*" --dirs-exclude="vendor/*" --dirs-exclude="examples/*" --verbose
+	@go run cmd/profanity/main.go --rules ".profanity.yml" --exclude-dir="cmd/*" --exclude-file="coverage.html" --exclude-dir="dist/*" --include-file="*.go" --exclude-dir="*/node_modules/*" --exclude-dir="vendor/*" --exclude-dir="examples/*" --verbose
+
+
+.PHONY: copyright 
+copyright:
+	@echo "$(VERSION)/$(GIT_REF) >> copyright"
+	@go run cmd/copyright/main.go --restrictions-open-source
 
 test-circleci:
 	@echo "$(VERSION)/$(GIT_REF) >> tests"
