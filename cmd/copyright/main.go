@@ -113,37 +113,46 @@ func main() {
 		restrictions = copyright.DefaultRestrictionsInternal
 	}
 
+	engine := copyright.Copyright{
+		Config: copyright.Config{
+			NoticeBodyTemplate: flagNotice,
+			Company:            flagCompany,
+			Restrictions:       restrictions,
+			Year:               flagYear,
+			IncludeFiles:       flagStringsWithDefault(flagIncludeFiles, copyright.DefaultIncludeFiles),
+			ExcludeFiles:       flagStringsWithDefault(flagExcludeFiles, copyright.DefaultExcludeFiles),
+			IncludeDirs:        flagStringsWithDefault(flagIncludeDirs, copyright.DefaultIncludeDirs),
+			ExcludeDirs:        flagStringsWithDefault(flagExcludeDirs, copyright.DefaultExcludeDirs),
+			ExitFirst:          &flagExitFirst,
+			Verbose:            &flagVerbose,
+			Debug:              &flagDebug,
+		},
+	}
+
+	var action func(context.Context) error
+	var actionLabel string
+
+	if flagInject {
+		action = engine.Inject
+		actionLabel = "inject"
+	} else if flagRemove {
+		action = engine.Remove
+		actionLabel = "remove"
+	} else {
+		action = engine.Verify
+		actionLabel = "verify"
+	}
+
 	var didFail bool
 	for _, root := range roots {
-		engine := copyright.Copyright{
-			Config: copyright.Config{
-				Root:               root,
-				NoticeBodyTemplate: flagNotice,
-				Company:            flagCompany,
-				Restrictions:       restrictions,
-				Year:               flagYear,
-				IncludeFiles:       flagStringsWithDefault(flagIncludeFiles, copyright.DefaultIncludeFiles),
-				ExcludeFiles:       flagStringsWithDefault(flagExcludeFiles, copyright.DefaultExcludeFiles),
-				IncludeDirs:        flagStringsWithDefault(flagIncludeDirs, copyright.DefaultIncludeDirs),
-				ExcludeDirs:        flagStringsWithDefault(flagExcludeDirs, copyright.DefaultExcludeDirs),
-				ExitFirst:          &flagExitFirst,
-				Verbose:            &flagVerbose,
-				Debug:              &flagDebug,
-			},
-		}
-
-		if flagInject {
-			maybeFail(ctx, engine.Inject, &didFail)
-		} else if flagRemove {
-			maybeFail(ctx, engine.Remove, &didFail)
-		} else {
-			maybeFail(ctx, engine.Verify, &didFail)
-		}
+		engine.Root = root
+		maybeFail(ctx, action, &didFail)
 	}
 	if didFail {
+		fmt.Printf("copyright %s %s!\n", actionLabel, ansi.Red("failed"))
 		os.Exit(1)
 	}
-	fmt.Printf("copyright %s!\n", ansi.Green("ok"))
+	fmt.Printf("copyright %s %s!\n", actionLabel, ansi.Green("ok"))
 }
 
 func flagStringsWithDefault(flagPointer flagStrings, defaultValues []string) []string {
