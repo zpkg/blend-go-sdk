@@ -1,3 +1,10 @@
+/*
+
+Copyright (c) 2021 - Present. Blend Labs, Inc. All rights reserved
+Blend Confidential - Restricted
+
+*/
+
 package ex
 
 // Is is a helper function that returns if an error is an ex.

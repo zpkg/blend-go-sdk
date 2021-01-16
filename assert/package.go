@@ -1,4 +1,11 @@
 /*
+
+Copyright (c) 2021 - Present. Blend Labs, Inc. All rights reserved
+Blend Confidential - Restricted
+
+*/
+
+/*
 Package assert adds helpers to make writing tests easier.
 
 Example Usage:

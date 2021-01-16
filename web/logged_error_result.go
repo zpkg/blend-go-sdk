@@ -1,3 +1,10 @@
+/*
+
+Copyright (c) 2021 - Present. Blend Labs, Inc. All rights reserved
+Blend Confidential - Restricted
+
+*/
+
 package web
 
 // ResultWithLoggedError logs an error before it renders the result.

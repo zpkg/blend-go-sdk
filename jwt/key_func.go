@@ -1,3 +1,10 @@
+/*
+
+Copyright (c) 2021 - Present. Blend Labs, Inc. All rights reserved
+Blend Confidential - Restricted
+
+*/
+
 package jwt
 
 // Keyfunc should return the key used in verification based on the raw token passed to it.

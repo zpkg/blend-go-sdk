@@ -1,3 +1,10 @@
+/*
+
+Copyright (c) 2021 - Present. Blend Labs, Inc. All rights reserved
+Blend Confidential - Restricted
+
+*/
+
 package mathutil
 
 // Normalize returns a set of numbers on the interval [0,1] for a given set of inputs.

@@ -1,3 +1,10 @@
+/*
+
+Copyright (c) 2021 - Present. Blend Labs, Inc. All rights reserved
+Blend Confidential - Restricted
+
+*/
+
 package mathutil
 
 // InEpsilon returns if two values are within the Epsilon of each other absolutely.

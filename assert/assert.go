@@ -1,3 +1,10 @@
+/*
+
+Copyright (c) 2021 - Present. Blend Labs, Inc. All rights reserved
+Blend Confidential - Restricted
+
+*/
+
 package assert
 
 import (
@@ -260,6 +267,42 @@ func (a *Assertions) Contains(corpus, substring string, userMessageComponents ..
 func (a *Assertions) NotContains(corpus, substring string, userMessageComponents ...interface{}) bool {
 	a.assertion()
 	if didFail, message := shouldNotContain(corpus, substring); didFail {
+		return a.fail(message, userMessageComponents...)
+	}
+	return true
+}
+
+// HasPrefix asserts that a corpus has a given prefix.
+func (a *Assertions) HasPrefix(corpus, prefix string, userMessageComponents ...interface{}) bool {
+	a.assertion()
+	if didFail, message := shouldHasPrefix(corpus, prefix); didFail {
+		return a.fail(message, userMessageComponents...)
+	}
+	return true
+}
+
+// NotHasPrefix asserts that a corpus does not have a given prefix.
+func (a *Assertions) NotHasPrefix(corpus, prefix string, userMessageComponents ...interface{}) bool {
+	a.assertion()
+	if didFail, message := shouldNotHasPrefix(corpus, prefix); didFail {
+		return a.fail(message, userMessageComponents...)
+	}
+	return true
+}
+
+// HasSuffix asserts that a corpus has a given suffix.
+func (a *Assertions) HasSuffix(corpus, suffix string, userMessageComponents ...interface{}) bool {
+	a.assertion()
+	if didFail, message := shouldHasSuffix(corpus, suffix); didFail {
+		return a.fail(message, userMessageComponents...)
+	}
+	return true
+}
+
+// NotHasSuffix asserts that a corpus does not have a given suffix.
+func (a *Assertions) NotHasSuffix(corpus, suffix string, userMessageComponents ...interface{}) bool {
+	a.assertion()
+	if didFail, message := shouldNotHasSuffix(corpus, suffix); didFail {
 		return a.fail(message, userMessageComponents...)
 	}
 	return true
@@ -751,6 +794,38 @@ func shouldContain(corpus, subString string) (bool, string) {
 func shouldNotContain(corpus, subString string) (bool, string) {
 	if strings.Contains(corpus, subString) {
 		message := fmt.Sprintf("`%s` should not contain `%s`", corpus, subString)
+		return true, message
+	}
+	return false, ""
+}
+
+func shouldHasPrefix(corpus, prefix string) (bool, string) {
+	if !strings.HasPrefix(corpus, prefix) {
+		message := fmt.Sprintf("`%s` should have prefix `%s`", corpus, prefix)
+		return true, message
+	}
+	return false, ""
+}
+
+func shouldNotHasPrefix(corpus, prefix string) (bool, string) {
+	if strings.HasPrefix(corpus, prefix) {
+		message := fmt.Sprintf("`%s` should not have prefix `%s`", corpus, prefix)
+		return true, message
+	}
+	return false, ""
+}
+
+func shouldHasSuffix(corpus, suffix string) (bool, string) {
+	if !strings.HasSuffix(corpus, suffix) {
+		message := fmt.Sprintf("`%s` should have suffix `%s`", corpus, suffix)
+		return true, message
+	}
+	return false, ""
+}
+
+func shouldNotHasSuffix(corpus, suffix string) (bool, string) {
+	if strings.HasSuffix(corpus, suffix) {
+		message := fmt.Sprintf("`%s` should not have suffix `%s`", corpus, suffix)
 		return true, message
 	}
 	return false, ""

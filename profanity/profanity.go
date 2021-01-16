@@ -1,3 +1,10 @@
+/*
+
+Copyright (c) 2021 - Present. Blend Labs, Inc. All rights reserved
+Blend Confidential - Restricted
+
+*/
+
 package profanity
 
 import (
@@ -15,14 +22,12 @@ import (
 )
 
 // New creates a new profanity engine with a given set of config options.
-func New(options ...ConfigOption) *Profanity {
-	var cfg Config
+func New(options ...Option) *Profanity {
+	var p Profanity
 	for _, option := range options {
-		option(&cfg)
+		option(&p)
 	}
-	return &Profanity{
-		Config: cfg,
-	}
+	return &p
 }
 
 // Profanity parses rules from the filesystem and applies them to a given root path.
@@ -45,13 +50,10 @@ func (p *Profanity) Process() error {
 	if dirFilter := p.Config.Dirs.String(); dirFilter != "" {
 		p.Verbosef("using dir filter: %s", dirFilter)
 	}
-	err := p.Walk(p.Config.PathOrDefault())
+	err := p.Walk(p.Config.RootOrDefault())
 	if err != nil {
-		if err != ErrFailure {
-			return err
-		}
 		p.Verbosef("profanity %s!", ansi.Red("failed"))
-		return nil
+		return err
 	}
 	p.Verbosef("profanity %s!", ansi.Green("ok"))
 	return nil
@@ -100,7 +102,7 @@ func (p *Profanity) Walk(path string, rules ...RuleSpec) error {
 						if !res.OK {
 							didFail = true
 							p.Errorf("%v\n", p.FormatRuleResultFailure(rule, res))
-							if p.Config.FailFastOrDefault() {
+							if p.Config.ExitFirstOrDefault() {
 								return ErrFailure
 							}
 						}
@@ -121,7 +123,7 @@ func (p *Profanity) Walk(path string, rules ...RuleSpec) error {
 		fullDirPath = filepath.Join(path, dir.Name())
 		if p.Config.Dirs.Allow(fullDirPath) {
 			if err := p.Walk(fullDirPath, rules...); err != nil {
-				if err != ErrFailure || p.Config.FailFastOrDefault() {
+				if err != ErrFailure || p.Config.ExitFirstOrDefault() {
 					return err
 				}
 				didFail = true

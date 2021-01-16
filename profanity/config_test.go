@@ -1,3 +1,10 @@
+/*
+
+Copyright (c) 2021 - Present. Blend Labs, Inc. All rights reserved
+Blend Confidential - Restricted
+
+*/
+
 package profanity
 
 import (
@@ -19,9 +26,9 @@ func TestConfig(t *testing.T) {
 	cfg.Verbose = ref.Bool(true)
 	assert.True(cfg.VerboseOrDefault())
 
-	assert.False(cfg.FailFastOrDefault())
-	cfg.FailFast = ref.Bool(true)
-	assert.True(cfg.FailFastOrDefault())
+	assert.False(cfg.ExitFirstOrDefault())
+	cfg.ExitFirst = ref.Bool(true)
+	assert.True(cfg.ExitFirstOrDefault())
 
 	assert.Equal(DefaultRulesFile, cfg.RulesFileOrDefault())
 	cfg.RulesFile = "foo"

@@ -1,3 +1,10 @@
+/*
+
+Copyright (c) 2021 - Present. Blend Labs, Inc. All rights reserved
+Blend Confidential - Restricted
+
+*/
+
 package profanity
 
 import (
@@ -8,6 +15,7 @@ import (
 	"path/filepath"
 	"strings"
 
+	"github.com/blend/go-sdk/stringutil"
 	"github.com/blend/go-sdk/validate"
 )
 
@@ -126,5 +134,5 @@ func isIdent(expr ast.Expr, ident string) bool {
 		return true
 	}
 	id, ok := expr.(*ast.Ident)
-	return ok && id.Name == ident
+	return ok && stringutil.Glob(id.Name, ident)
 }

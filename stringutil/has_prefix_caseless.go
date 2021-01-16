@@ -1,3 +1,10 @@
+/*
+
+Copyright (c) 2021 - Present. Blend Labs, Inc. All rights reserved
+Blend Confidential - Restricted
+
+*/
+
 package stringutil
 
 // HasPrefixCaseless returns if a corpus has a prefix regardless of casing.

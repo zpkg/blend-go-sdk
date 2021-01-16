@@ -1,3 +1,10 @@
+/*
+
+Copyright (c) 2021 - Present. Blend Labs, Inc. All rights reserved
+Blend Confidential - Restricted
+
+*/
+
 package env
 
 import (
@@ -14,8 +21,13 @@ import (
 )
 
 // New returns a new env var set.
+//
+/* By default, it is empty. In order to populate it with the current
+runtime environment variables, you need to pass in options:
+    vars := env.New(env.OptEnviron(os.Environ()...))
+*/
 func New(opts ...Option) Vars {
-	vars := Vars{}
+	vars := make(Vars)
 	for _, opt := range opts {
 		opt(vars)
 	}

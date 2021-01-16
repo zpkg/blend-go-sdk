@@ -1,3 +1,10 @@
+/*
+
+Copyright (c) 2021 - Present. Blend Labs, Inc. All rights reserved
+Blend Confidential - Restricted
+
+*/
+
 package graceful
 
 // Shutdown racefully stops a set hosted processes based on SIGINT or SIGTERM received from the os.

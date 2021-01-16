@@ -1,3 +1,10 @@
+/*
+
+Copyright (c) 2021 - Present. Blend Labs, Inc. All rights reserved
+Blend Confidential - Restricted
+
+*/
+
 package tracing
 
 // These constants are mostly lifted from the datadog/tracing/ext tag values.

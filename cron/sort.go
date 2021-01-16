@@ -1,3 +1,10 @@
+/*
+
+Copyright (c) 2021 - Present. Blend Labs, Inc. All rights reserved
+Blend Confidential - Restricted
+
+*/
+
 package cron
 
 // JobSchedulersByJobNameAsc is a wrapper that sorts job schedulers

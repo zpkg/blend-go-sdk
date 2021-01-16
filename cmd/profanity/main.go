@@ -1,3 +1,10 @@
+/*
+
+Copyright (c) 2021 - Present. Blend Labs, Inc. All rights reserved
+Blend Confidential - Restricted
+
+*/
+
 package main
 
 import (
@@ -34,9 +41,7 @@ type config struct {
 // Resolve resolves the config.
 func (c *config) Resolve(ctx context.Context) error {
 	return configutil.Resolve(ctx,
-		configutil.SetBool(&c.Verbose, configutil.Bool(flagVerbose), configutil.Bool(c.Verbose), configutil.Bool(ref.Bool(false))),
-		configutil.SetBool(&c.FailFast, configutil.Bool(flagDebug), configutil.Bool(c.Debug), configutil.Bool(ref.Bool(false))),
-		configutil.SetBool(&c.FailFast, configutil.Bool(flagExitFirst), configutil.Bool(c.FailFast), configutil.Bool(ref.Bool(false))),
+		configutil.SetBool(&c.ExitFirst, configutil.Bool(flagExitFirst), configutil.Bool(c.ExitFirst), configutil.Bool(ref.Bool(false))),
 		configutil.SetString(&c.RulesFile, configutil.String(*flagRulesFile), configutil.String(c.RulesFile), configutil.String(profanity.DefaultRulesFile)),
 		configutil.SetStrings(&c.Rules.Include, configutil.Strings(*flagRulesInclude), configutil.Strings(c.Rules.Include)),
 		configutil.SetStrings(&c.Rules.Exclude, configutil.Strings(*flagRulesExclude), configutil.Strings(c.Rules.Exclude)),
@@ -44,6 +49,8 @@ func (c *config) Resolve(ctx context.Context) error {
 		configutil.SetStrings(&c.Files.Exclude, configutil.Strings(*flagFilesExclude), configutil.Strings(c.Files.Exclude)),
 		configutil.SetStrings(&c.Dirs.Include, configutil.Strings(*flagDirsInclude), configutil.Strings(c.Dirs.Include)),
 		configutil.SetStrings(&c.Dirs.Exclude, configutil.Strings(*flagDirsExclude), configutil.Strings(c.Dirs.Exclude)),
+		configutil.SetBool(&c.Verbose, configutil.Bool(flagVerbose), configutil.Bool(c.Verbose), configutil.Bool(ref.Bool(false))),
+		configutil.SetBool(&c.Debug, configutil.Bool(flagDebug), configutil.Bool(c.Debug), configutil.Bool(ref.Bool(false))),
 	)
 }
 
@@ -89,10 +96,10 @@ For an example rule file (with many more rules), see .profanity.yml in the root 
 	flagRulesFile = root.Flags().StringP("rules", "r", profanity.DefaultRulesFile, "The rules file to search for in each valid directory")
 	flagRulesInclude = root.Flags().StringArray("rules-include", nil, "Rules to include in glob matching format; can be multiple")
 	flagRulesExclude = root.Flags().StringArray("rules-exclude", nil, "Rules to exclude in glob matching format; can be multiple")
-	flagFilesInclude = root.Flags().StringArray("files-include", nil, "Files to include in glob matching format; can be multiple")
-	flagFilesExclude = root.Flags().StringArray("files-exclude", nil, "Files to exclude in glob matching format; can be multiple")
-	flagDirsInclude = root.Flags().StringArray("dirs-include", nil, "Directories to include in glob matching format; can be multiple")
-	flagDirsExclude = root.Flags().StringArray("dirs-exclude", nil, "Directories to exclude in glob matching format; can be multiple")
+	flagFilesInclude = root.Flags().StringArray("include-file", nil, "Files to include in glob matching format; can be multiple")
+	flagFilesExclude = root.Flags().StringArray("exclude-file", nil, "Files to exclude in glob matching format; can be multiple")
+	flagDirsInclude = root.Flags().StringArray("include-dir", nil, "Directories to include in glob matching format; can be multiple")
+	flagDirsExclude = root.Flags().StringArray("exclude-dir", nil, "Directories to exclude in glob matching format; can be multiple")
 	flagVerbose = root.Flags().BoolP("verbose", "v", false, "If we should show verbose output.")
 	flagDebug = root.Flags().BoolP("debug", "d", false, "If we should show debug output.")
 	flagExitFirst = root.Flags().Bool("exit-first", false, "If we should fail the run after the first error.")
@@ -127,7 +134,5 @@ func main() {
 	if err := cmd.Execute(); err != nil {
 		fmt.Fprintf(os.Stderr, "%v\n", err)
 		os.Exit(1)
-		return
 	}
-	os.Exit(0)
 }

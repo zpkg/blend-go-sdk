@@ -1,3 +1,10 @@
+/*
+
+Copyright (c) 2021 - Present. Blend Labs, Inc. All rights reserved
+Blend Confidential - Restricted
+
+*/
+
 package slack
 
 // ApplyMessageOptions applies a set of options against a message and returns the mutated copy.

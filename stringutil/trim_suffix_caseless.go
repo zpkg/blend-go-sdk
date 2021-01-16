@@ -1,3 +1,10 @@
+/*
+
+Copyright (c) 2021 - Present. Blend Labs, Inc. All rights reserved
+Blend Confidential - Restricted
+
+*/
+
 package stringutil
 
 // TrimSuffixCaseless trims a case insensitive suffix from a corpus.

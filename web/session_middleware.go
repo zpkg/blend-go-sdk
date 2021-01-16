@@ -1,3 +1,10 @@
+/*
+
+Copyright (c) 2021 - Present. Blend Labs, Inc. All rights reserved
+Blend Confidential - Restricted
+
+*/
+
 package web
 
 // SessionAware is an action that injects the session into the context, it acquires a read lock on session.

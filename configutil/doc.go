@@ -1,4 +1,11 @@
 /*
+
+Copyright (c) 2021 - Present. Blend Labs, Inc. All rights reserved
+Blend Confidential - Restricted
+
+*/
+
+/*
 Package configutil contains helpers for configuration.
 
 The intent of this package is to allow you to compose configuration types found throughout `sdk/` and elsewhere into a single configuration type for a given program.

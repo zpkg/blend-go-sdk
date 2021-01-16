@@ -1,4 +1,11 @@
 /*
+
+Copyright (c) 2021 - Present. Blend Labs, Inc. All rights reserved
+Blend Confidential - Restricted
+
+*/
+
+/*
 Package vault implements a high throughput vault client.
 
 It also provides helpers for reading and writing objects to vault key value stores.

@@ -1,3 +1,10 @@
+/*
+
+Copyright (c) 2021 - Present. Blend Labs, Inc. All rights reserved
+Blend Confidential - Restricted
+
+*/
+
 package datadog
 
 // UseProfiler returns if profiling is enabled and the profiler address is configured.

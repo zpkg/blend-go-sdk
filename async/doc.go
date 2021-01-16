@@ -1,4 +1,11 @@
 /*
+
+Copyright (c) 2021 - Present. Blend Labs, Inc. All rights reserved
+Blend Confidential - Restricted
+
+*/
+
+/*
 Package async provides syncronization primitives and background workers.
 This is a core package that is used by a lot of other packages.
 */

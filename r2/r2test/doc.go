@@ -1,4 +1,11 @@
 /*
+
+Copyright (c) 2021 - Present. Blend Labs, Inc. All rights reserved
+Blend Confidential - Restricted
+
+*/
+
+/*
 Package r2test provides helpers for writing tests involving calls with sdk/r2.
 
 The most common example is to add a mock response as an option to a default set of options.
@@ -19,7 +26,7 @@ Lets say we have a wrapping helper client:
 During tests we can add a default option:
 
 	mockedResponse := `[{"is":"a foo"}]`
-	a := APIClient{ Remote: "http://test.invalid", Defaults: []r2.Option{r2test.OptMockedResponseString(mockedResponse)} }
+	a := APIClient{ Remote: "http://test.invalid", Defaults: []r2.Option{r2test.OptMockResponseString(mockedResponse)} }
 	foos, err := a.GetFoos(context.TODO())
 	...
 

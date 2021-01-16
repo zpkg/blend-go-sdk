@@ -1,7 +1,15 @@
+/*
+
+Copyright (c) 2021 - Present. Blend Labs, Inc. All rights reserved
+Blend Confidential - Restricted
+
+*/
+
 package env_test
 
 import (
 	"encoding/base64"
+	"os"
 	"testing"
 	"time"
 
@@ -11,7 +19,7 @@ import (
 
 func TestNewVarsFromEnvironment(t *testing.T) {
 	assert := assert.New(t)
-	assert.NotNil(env.New(env.OptFromEnv()))
+	assert.NotNil(env.New(env.OptEnviron(os.Environ()...)))
 }
 
 func TestVarsSet(t *testing.T) {

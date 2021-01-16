@@ -1,3 +1,10 @@
+/*
+
+Copyright (c) 2021 - Present. Blend Labs, Inc. All rights reserved
+Blend Confidential - Restricted
+
+*/
+
 package assert
 
 import (
@@ -807,6 +814,98 @@ func TestAssertNotContains(t *testing.T) {
 	output := bytes.NewBuffer(nil)
 	err = safeExec(func() {
 		New(nil, OptOutput(output)).NotContains("foo bar", "foo")
+	})
+	if err == nil {
+		t.Errorf("should have produced a panic")
+		t.FailNow()
+	}
+	if len(output.String()) == 0 {
+		t.Errorf("Should have written output on failure")
+		t.FailNow()
+	}
+}
+
+func TestAssertHasPrefix(t *testing.T) {
+	err := safeExec(func() {
+		New(nil).HasPrefix("foo bar", "foo") // should be ok
+	})
+	if err != nil {
+		t.Errorf("should not have produced a panic")
+		t.FailNow()
+	}
+
+	output := bytes.NewBuffer(nil)
+	err = safeExec(func() {
+		New(nil, OptOutput(output)).HasPrefix("foo bar", "baz")
+	})
+	if err == nil {
+		t.Errorf("should have produced a panic")
+		t.FailNow()
+	}
+	if len(output.String()) == 0 {
+		t.Errorf("Should have written output on failure")
+		t.FailNow()
+	}
+}
+
+func TestAssertNotHasPrefix(t *testing.T) {
+	err := safeExec(func() {
+		New(nil).NotHasPrefix("foo bar", "buzz") // should be ok
+	})
+	if err != nil {
+		t.Errorf("should not have produced a panic")
+		t.FailNow()
+	}
+
+	output := bytes.NewBuffer(nil)
+	err = safeExec(func() {
+		New(nil, OptOutput(output)).NotHasPrefix("foo bar", "foo")
+	})
+	if err == nil {
+		t.Errorf("should have produced a panic")
+		t.FailNow()
+	}
+	if len(output.String()) == 0 {
+		t.Errorf("Should have written output on failure")
+		t.FailNow()
+	}
+}
+
+func TestAssertHasSuffix(t *testing.T) {
+	err := safeExec(func() {
+		New(nil).HasSuffix("foo bar", "bar") // should be ok
+	})
+	if err != nil {
+		t.Errorf("should not have produced a panic")
+		t.FailNow()
+	}
+
+	output := bytes.NewBuffer(nil)
+	err = safeExec(func() {
+		New(nil, OptOutput(output)).HasSuffix("foo bar", "baz")
+	})
+	if err == nil {
+		t.Errorf("should have produced a panic")
+		t.FailNow()
+	}
+	if len(output.String()) == 0 {
+		t.Errorf("Should have written output on failure")
+		t.FailNow()
+	}
+}
+
+func TestAssertNotHasSuffix(t *testing.T) {
+	err := safeExec(func() {
+		New(nil).NotHasSuffix("foo bar", "buzz") // should be ok
+	})
+	if err != nil {
+		t.Errorf("should not have produced a panic")
+		t.FailNow()
+	}
+
+	output := bytes.NewBuffer(nil)
+	err = safeExec(func() {
+		New(nil, OptOutput(output)).NotHasSuffix("foo bar", "bar")
 	})
 	if err == nil {
 		t.Errorf("should have produced a panic")
