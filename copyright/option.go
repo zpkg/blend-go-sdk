@@ -1,7 +1,8 @@
 /*
 
 Copyright (c) 2021 - Present. Blend Labs, Inc. All rights reserved
-Blend Confidential - Restricted
+Use of this source code is governed by a MIT
+license that can be found in the LICENSE file.
 
 */
 
@@ -63,6 +64,27 @@ func OptIncludeDirs(includeGlobs ...string) Option {
 func OptExcludeDirs(excludeGlobs ...string) Option {
 	return func(p *Copyright) {
 		p.Config.ExcludeDirs = excludeGlobs
+	}
+}
+
+// OptNoticeBodyTemplate sets the notice body template.
+func OptNoticeBodyTemplate(noticeBodyTemplate string) Option {
+	return func(p *Copyright) {
+		p.Config.NoticeBodyTemplate = noticeBodyTemplate
+	}
+}
+
+// OptCompany sets the notice body template company.
+func OptCompany(company string) Option {
+	return func(p *Copyright) {
+		p.Config.Company = company
+	}
+}
+
+// OptRestrictions sets the notice body template restrictions.
+func OptRestrictions(restrictions string) Option {
+	return func(p *Copyright) {
+		p.Config.Restrictions = restrictions
 	}
 }
 

@@ -1,7 +1,8 @@
 /*
 
 Copyright (c) 2021 - Present. Blend Labs, Inc. All rights reserved
-Blend Confidential - Restricted
+Use of this source code is governed by a MIT
+license that can be found in the LICENSE file.
 
 */
 
@@ -39,6 +40,10 @@ var (
 	flagCompany string
 	flagYear    int
 
+	flagRestrictions           string
+	flagRestrictionsOpenSource bool
+	flagRestrictionsInternal   bool
+
 	flagInject bool
 	flagRemove bool
 
@@ -58,9 +63,13 @@ func init() {
 
 	flag.BoolVar(&flagExitFirst, "exit-first", false, "If the program should exit on the first verification error")
 
-	flag.StringVar(&flagNotice, "notice", copyright.DefaultNoticeBodyTemplate, "The notice body template; use `-` to read from standard input")
-	flag.StringVar(&flagCompany, "company", copyright.DefaultCompany, "The company name to use in the notice body template")
+	flag.StringVar(&flagNotice, "notice", copyright.DefaultNoticeBodyTemplate, "The notice body template; use '-' to read from standard input")
+	flag.StringVar(&flagCompany, "company", "", "The company name to use in the notice body template")
 	flag.IntVar(&flagYear, "year", time.Now().UTC().Year(), "The year to use in the notice body template")
+
+	flag.StringVar(&flagRestrictions, "restrictions", "", "The restrictions to use in the notice body template.")
+	flag.BoolVar(&flagRestrictionsOpenSource, "restrictions-open-source", false, "The restrictions should be the open source default")
+	flag.BoolVar(&flagRestrictionsInternal, "restrictions-internal", false, "The restrictions should be the internal default")
 
 	flag.BoolVar(&flagInject, "inject", false, "If we should inject the notice")
 	flag.BoolVar(&flagRemove, "remove", false, "If we should remove the notice")
@@ -96,6 +105,15 @@ func main() {
 		roots = []string{"."}
 	}
 
+	var restrictions string
+	if flagRestrictions != "" {
+		restrictions = flagRestrictions
+	} else if flagRestrictionsOpenSource {
+		restrictions = copyright.DefaultRestrictionsOpenSource
+	} else if flagRestrictionsInternal {
+		restrictions = copyright.DefaultRestrictionsInternal
+	}
+
 	var didFail bool
 	for _, root := range roots {
 		engine := copyright.Copyright{
@@ -103,6 +121,7 @@ func main() {
 				Root:               root,
 				NoticeBodyTemplate: flagNotice,
 				Company:            flagCompany,
+				Restrictions:       restrictions,
 				Year:               flagYear,
 				IncludeFiles:       flagStringsWithDefault(flagIncludeFiles, copyright.DefaultIncludeFiles),
 				ExcludeFiles:       flagStringsWithDefault(flagExcludeFiles, copyright.DefaultExcludeFiles),
@@ -116,11 +135,11 @@ func main() {
 
 		if flagInject {
 			maybeFail(ctx, engine.Inject, &didFail)
-		}
-		if flagRemove {
+		} else if flagRemove {
 			maybeFail(ctx, engine.Remove, &didFail)
+		} else {
+			maybeFail(ctx, engine.Verify, &didFail)
 		}
-		maybeFail(ctx, engine.Verify, &didFail)
 	}
 	if didFail {
 		os.Exit(1)

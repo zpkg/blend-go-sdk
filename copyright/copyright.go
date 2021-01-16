@@ -1,7 +1,8 @@
 /*
 
 Copyright (c) 2021 - Present. Blend Labs, Inc. All rights reserved
-Blend Confidential - Restricted
+Use of this source code is governed by a MIT
+license that can be found in the LICENSE file.
 
 */
 
@@ -360,8 +361,9 @@ func (c Copyright) compileNoticeTemplate(noticeTemplate, notice string) (string,
 
 func (c Copyright) compileNoticeBodyTemplate(noticeBodyTemplate string) (string, error) {
 	return c.processTemplate(noticeBodyTemplate, map[string]interface{}{
-		"Year":    c.YearOrDefault(),
-		"Company": c.CompanyOrDefault(),
+		"Year":         c.YearOrDefault(),
+		"Company":      c.CompanyOrDefault(),
+		"Restrictions": c.RestrictionsOrDefault(),
 	})
 }
 

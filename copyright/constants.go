@@ -1,7 +1,8 @@
 /*
 
 Copyright (c) 2021 - Present. Blend Labs, Inc. All rights reserved
-Blend Confidential - Restricted
+Use of this source code is governed by a MIT
+license that can be found in the LICENSE file.
 
 */
 
@@ -23,10 +24,17 @@ Blend Confidential - Restricted
 // DefaultCompany is the default company to inject into the notice template.
 const DefaultCompany = "Blend Labs, Inc"
 
+// DefaultRestrictionsInternal are the default copyright restrictions to inject into the notice template.
+const DefaultRestrictionsInternal = "Blend Confidential - Restricted"
+
+// DefaultRestrictionsOpenSource are the default open source restrictions.
+const DefaultRestrictionsOpenSource = `Use of this source code is governed by a MIT
+license that can be found in the LICENSE file.`
+
 // DefaultNoticeBodyTemplate is the default notice body template.
 const DefaultNoticeBodyTemplate = `
 Copyright (c) {{ .Year }} - Present. {{ .Company }}. All rights reserved
-Blend Confidential - Restricted
+{{ .Restrictions }}
 `
 
 var (

@@ -1,7 +1,8 @@
 /*
 
 Copyright (c) 2021 - Present. Blend Labs, Inc. All rights reserved
-Blend Confidential - Restricted
+Use of this source code is governed by a MIT
+license that can be found in the LICENSE file.
 
 */
 
@@ -20,6 +21,10 @@ type Config struct {
 	Year int `yaml:"year"`
 	// Company is the company name to insert into the `NoticeBodyTemplate` as `{{ .Company }}`
 	Company string `yaml:"company"`
+
+	// Restrictions is the second line to clarify copyright restrictions or
+	// visibility modifiers.
+	Restrictions string `yaml:"restrictions"`
 
 	// IncludeFiles are a list of file globs to include.
 	IncludeFiles []string `yaml:"includeFiles"`
@@ -67,12 +72,20 @@ func (c Config) YearOrDefault() int {
 	return time.Now().UTC().Year()
 }
 
-// CompanyOrDefault returns a company or a default.
+// CompanyOrDefault returns a company name or a default.
 func (c Config) CompanyOrDefault() string {
 	if c.Company != "" {
 		return c.Company
 	}
 	return DefaultCompany
+}
+
+// RestrictionsOrDefault returns a restriction or a default.
+func (c Config) RestrictionsOrDefault() string {
+	if c.Restrictions != "" {
+		return c.Restrictions
+	}
+	return DefaultRestrictionsInternal
 }
 
 // IncludeFilesOrDefault returns a glob list or a default.
