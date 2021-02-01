@@ -122,3 +122,9 @@ func (mr *MockResult) Close() error {
 func MockCtx(method, path string, options ...CtxOption) *Ctx {
 	return NewCtx(webutil.NewMockResponse(new(bytes.Buffer)), webutil.NewMockRequest(method, path), options...)
 }
+
+// MockCtxWithBuffer returns a new mock ctx.
+// It is intended to be used in testing.
+func MockCtxWithBuffer(method, path string, buf io.Writer, options ...CtxOption) *Ctx {
+	return NewCtx(webutil.NewMockResponse(buf), webutil.NewMockRequest(method, path), options...)
+}

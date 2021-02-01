@@ -35,7 +35,7 @@ func OptContext(ctx context.Context) Option {
 }
 
 // OptContents sets config contents on the options.
-func OptContents(contents []ConfigContents) Option {
+func OptContents(contents ...ConfigContents) Option {
 	return func(co *ConfigOptions) error {
 		co.Contents = contents
 		return nil

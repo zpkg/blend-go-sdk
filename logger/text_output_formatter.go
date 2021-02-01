@@ -154,10 +154,12 @@ func (tf TextOutputFormatter) WriteFormat(ctx context.Context, output io.Writer,
 		buffer.WriteString(stringer.String())
 	}
 
-	labels := GetLabels(ctx)
-	if len(labels) > 0 {
-		buffer.WriteString("\t")
-		buffer.WriteString(tf.FormatLabels(labels))
+	if !tf.HideFields {
+		labels := GetLabels(ctx)
+		if len(labels) > 0 {
+			buffer.WriteString("\t")
+			buffer.WriteString(tf.FormatLabels(labels))
+		}
 	}
 
 	buffer.WriteString(Newline)

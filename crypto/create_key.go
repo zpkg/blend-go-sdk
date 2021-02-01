@@ -9,6 +9,7 @@ package crypto
 
 import (
 	cryptorand "crypto/rand"
+	"encoding/base64"
 	"encoding/hex"
 
 	"github.com/blend/go-sdk/ex"
@@ -33,18 +34,32 @@ func CreateKey(keySize int) ([]byte, error) {
 	return key, nil
 }
 
-// MustCreateKeyString generates a new key and returns it as a string.
+// MustCreateKeyString generates a new key and returns it as a hex string.
 func MustCreateKeyString(keySize int) string {
 	return hex.EncodeToString(MustCreateKey(keySize))
 }
 
-// CreateKeyString generates a new key and returns it as a string.
+// MustCreateKeyBase64String generates a new key and returns it as a base64 std encoding string.
+func MustCreateKeyBase64String(keySize int) string {
+	return base64.StdEncoding.EncodeToString(MustCreateKey(keySize))
+}
+
+// CreateKeyString generates a new key and returns it as a hex string.
 func CreateKeyString(keySize int) (string, error) {
 	key, err := CreateKey(keySize)
 	if err != nil {
 		return "", err
 	}
 	return hex.EncodeToString(key), nil
+}
+
+// CreateKeyBase64String generates a new key and returns it as a base64 std encoding string.
+func CreateKeyBase64String(keySize int) (string, error) {
+	key, err := CreateKey(keySize)
+	if err != nil {
+		return "", err
+	}
+	return base64.StdEncoding.EncodeToString(key), nil
 }
 
 // ParseKey parses a key from a string.

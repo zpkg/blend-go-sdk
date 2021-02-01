@@ -61,3 +61,26 @@ func TestIsDev(t *testing.T) {
 		assert.Equal(testCase.Expected, env.IsDev(testCase.Input), fmt.Sprintf("failed for: %s", testCase.Input))
 	}
 }
+
+func TestIsDevTest(t *testing.T) {
+	assert := assert.New(t)
+
+	testCases := []struct {
+		Input    string
+		Expected bool
+	}{
+		{Input: env.ServiceEnvDev, Expected: true},
+		{Input: env.ServiceEnvCI, Expected: false},
+		{Input: env.ServiceEnvTest, Expected: true},
+		{Input: env.ServiceEnvSandbox, Expected: false},
+		{Input: env.ServiceEnvPreprod, Expected: false},
+		{Input: env.ServiceEnvBeta, Expected: false},
+		{Input: env.ServiceEnvProd, Expected: false},
+		{Input: uuid.V4().String(), Expected: false},
+		{Expected: false},
+	}
+
+	for _, testCase := range testCases {
+		assert.Equal(testCase.Expected, env.IsDevTest(testCase.Input), fmt.Sprintf("failed for: %s", testCase.Input))
+	}
+}

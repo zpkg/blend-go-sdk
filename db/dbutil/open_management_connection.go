@@ -18,7 +18,7 @@ func OpenManagementConnection(options ...db.Option) (*db.Connection, error) {
 		db.OptDatabase("postgres"),
 	}
 	conn, err := db.New(
-		append(defaults, append(options, db.OptDatabase("postgres"))...)...,
+		append(defaults, options...)...,
 	)
 	if err != nil {
 		return nil, err

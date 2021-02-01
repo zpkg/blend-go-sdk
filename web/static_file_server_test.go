@@ -157,6 +157,50 @@ func TestStaticFileserverLiveNotFound(t *testing.T) {
 	assert.NotEmpty(buffer.Bytes())
 }
 
+func TestStaticFileserverCachedNotFoundOnRoot(t *testing.T) {
+	assert := assert.New(t)
+
+	cfs := NewStaticFileServer(
+		OptStaticFileServerSearchPaths(http.Dir("testdata")),
+		OptStaticFileServerCacheDisabled(false),
+	)
+	buffer := new(bytes.Buffer)
+	res := webutil.NewMockResponse(buffer)
+	req := webutil.NewMockRequest("GET", "/")
+	r := NewCtx(res, req, OptCtxRouteParams(RouteParameters{
+		RouteTokenFilepath: req.URL.Path,
+	}))
+	r.DefaultProvider = Text
+	result := cfs.Action(r)
+
+	assert.NotNil(result)
+	assert.Nil(result.Render(r))
+	assert.Equal(http.StatusNotFound, res.StatusCode())
+	assert.NotEmpty(buffer.Bytes())
+}
+
+func TestStaticFileserverLiveNotFoundOnRoot(t *testing.T) {
+	assert := assert.New(t)
+
+	cfs := NewStaticFileServer(
+		OptStaticFileServerSearchPaths(http.Dir("testdata")),
+		OptStaticFileServerCacheDisabled(true),
+	)
+	buffer := new(bytes.Buffer)
+	res := webutil.NewMockResponse(buffer)
+	req := webutil.NewMockRequest("GET", "/")
+	r := NewCtx(res, req, OptCtxRouteParams(RouteParameters{
+		RouteTokenFilepath: req.URL.Path,
+	}))
+	r.DefaultProvider = Text
+	result := cfs.Action(r)
+
+	assert.NotNil(result)
+	assert.Nil(result.Render(r))
+	assert.Equal(http.StatusNotFound, res.StatusCode())
+	assert.NotEmpty(buffer.Bytes())
+}
+
 func TestStaticFileserverAddsETag(t *testing.T) {
 	assert := assert.New(t)
 

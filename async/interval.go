@@ -95,6 +95,7 @@ func (i *Interval) Stop() error {
 	}
 	i.Stopping()
 	<-i.NotifyStopped()
+	i.Latch.Reset() // reset the latch in case we have to start again
 	return nil
 }
 

@@ -151,7 +151,7 @@ type Config struct {
 	// precision.
 	//
 	// See: https://www.postgresql.org/docs/10/libpq-connect.html#LIBPQ-CONNECT-CONNECT-TIMEOUT
-	ConnectTimeout time.Duration `json:"connectTimeout" yaml:"connectTimeout" env:"DB_CONNECT_TIMEOUT"`
+	ConnectTimeout time.Duration `json:"connectTimeout,omitempty" yaml:"connectTimeout,omitempty" env:"DB_CONNECT_TIMEOUT"`
 	// LockTimeout is the timeout to use when attempting to acquire a lock.
 	// PostgreSQL will only accept millisecond precision so this value will be
 	// rounded to the nearest millisecond before being set on a connection string.
@@ -159,7 +159,7 @@ type Config struct {
 	// precision.
 	//
 	// See: https://www.postgresql.org/docs/current/runtime-config-client.html#GUC-LOCK-TIMEOUT
-	LockTimeout time.Duration `json:"lockTimeout" yaml:"lockTimeout" env:"DB_LOCK_TIMEOUT"`
+	LockTimeout time.Duration `json:"lockTimeout,omitempty" yaml:"lockTimeout,omitempty" env:"DB_LOCK_TIMEOUT"`
 	// StatementTimeout is the timeout to use when invoking a SQL statement.
 	// PostgreSQL will only accept millisecond precision so this value will be
 	// rounded to the nearest millisecond before being set on a connection string.
@@ -167,7 +167,7 @@ type Config struct {
 	// precision.
 	//
 	// See: https://www.postgresql.org/docs/current/runtime-config-client.html#GUC-STATEMENT-TIMEOUT
-	StatementTimeout time.Duration `json:"statementTimeout" yaml:"statementTimeout" env:"DB_STATEMENT_TIMEOUT"`
+	StatementTimeout time.Duration `json:"statementTimeout,omitempty" yaml:"statementTimeout,omitempty" env:"DB_STATEMENT_TIMEOUT"`
 	// SSLMode is the sslmode for the connection.
 	SSLMode string `json:"sslMode,omitempty" yaml:"sslMode,omitempty" env:"DB_SSLMODE"`
 	// IdleConnections is the number of idle connections.

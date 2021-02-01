@@ -9,6 +9,8 @@ package env
 
 // Service specific constants
 const (
+	// VarRegion is a common env var name.
+	VarRegion = "AWS_REGION"
 	// VarServiceEnv is a common env var name.
 	VarServiceEnv = "SERVICE_ENV"
 	// VarServiceName is a common env var name.

@@ -129,6 +129,9 @@ func (sc *StaticFileServer) ServeFile(r *Ctx, filePath string) Result {
 	if err != nil {
 		return sc.fileError(r, err)
 	}
+	if finfo.IsDir() {
+		return r.DefaultProvider.NotFound()
+	}
 
 	r.WithContext(logger.WithLabel(r.Context(), "web.static_file", finalPath))
 	http.ServeContent(r.Response, r.Request, filePath, finfo.ModTime(), f)
@@ -142,12 +145,10 @@ func (sc *StaticFileServer) ServeCachedFile(r *Ctx, filepath string) Result {
 	if err != nil {
 		return sc.fileError(r, err)
 	}
-	if file.ETag != "" {
-		r.Response.Header().Set(webutil.HeaderETag, file.ETag)
+	if file == nil {
+		return r.DefaultProvider.NotFound()
 	}
-
-	r.WithContext(logger.WithLabel(r.Context(), "web.static_file_cached", file.Path))
-	http.ServeContent(r.Response, r.Request, filepath, file.ModTime, file.Contents)
+	_ = file.Render(r)
 	return nil
 }
 
@@ -219,6 +220,9 @@ func (sc *StaticFileServer) ResolveCachedFile(filepath string) (*CachedStaticFil
 			return nil, nil
 		}
 		return nil, err
+	}
+	if finfo.IsDir() {
+		return nil, nil
 	}
 
 	contents, err := ioutil.ReadAll(diskFile)

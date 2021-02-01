@@ -45,13 +45,18 @@ type Config struct {
 	ReadHeaderTimeout   time.Duration     `json:"readHeaderTimeout,omitempty" yaml:"readHeaderTimeout,omitempty" env:"READ_HEADER_TIMEOUT"`
 	WriteTimeout        time.Duration     `json:"writeTimeout,omitempty" yaml:"writeTimeout,omitempty" env:"WRITE_TIMEOUT"`
 	IdleTimeout         time.Duration     `json:"idleTimeout,omitempty" yaml:"idleTimeout,omitempty" env:"IDLE_TIMEOUT"`
-	ShutdownGracePeriod time.Duration     `json:"shutdownGracePeriod" yaml:"shutdownGracePeriod" env:"SHUTDOWN_GRACE_PERIOD"`
+	ShutdownGracePeriod time.Duration     `json:"shutdownGracePeriod,omitempty" yaml:"shutdownGracePeriod,omitempty" env:"SHUTDOWN_GRACE_PERIOD"`
 
-	KeepAlive        *bool         `json:"keepAlive" yaml:"keepAlive" env:"KEEP_ALIVE"`
+	KeepAlive        *bool         `json:"keepAlive,omitempty" yaml:"keepAlive,omitempty" env:"KEEP_ALIVE"`
 	KeepAlivePeriod  time.Duration `json:"keepAlivePeriod,omitempty" yaml:"keepAlivePeriod,omitempty" env:"KEEP_ALIVE_PERIOD"`
-	UseProxyProtocol bool          `json:"useProxyProtocol" yaml:"useProxyProtocol"`
+	UseProxyProtocol bool          `json:"useProxyProtocol,omitempty" yaml:"useProxyProtocol,omitempty"`
 
 	Views ViewCacheConfig `json:"views,omitempty" yaml:"views,omitempty"`
+}
+
+// IsZero returns if the config is unset or not.
+func (c Config) IsZero() bool {
+	return c.BindAddr == "" && c.Port == 0
 }
 
 // Resolve resolves the config from other sources.
