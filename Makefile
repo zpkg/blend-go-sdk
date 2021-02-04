@@ -1,7 +1,5 @@
 PREFIX			?= $(shell pwd)
 PKGS 			:= $(shell go list ./... | grep -v /vendor/)
-# We don't lint yaml because its forked code and terrible at lint
-LINTPKGS        := $(shell go list ./... | grep -v /vendor/ | grep -v "go-sdk/yaml")
 SHASUMCMD 		:= $(shell command -v sha1sum || command -v shasum; 2> /dev/null)
 TARCMD 			:= $(shell command -v tar || command -v tar; 2> /dev/null)
 GIT_REF 		:= $(shell git log --pretty=format:'%h' -n 1)
@@ -75,7 +73,7 @@ vet:
 
 lint:
 	@echo "$(VERSION)/$(GIT_REF) >> linting code"
-	@golint $(LINTPKGS)
+	@golint $(PKGS)
 
 generate:
 	@echo "$(VERSION)/$(GIT_REF) >> generating code"
@@ -90,7 +88,6 @@ build:
 profanity:
 	@echo "$(VERSION)/$(GIT_REF) >> profanity"
 	@go run cmd/profanity/main.go --rules ".profanity.yml" --exclude-dir="cmd/*" --exclude-file="coverage.html" --exclude-dir="dist/*" --include-file="*.go" --exclude-dir="*/node_modules/*" --exclude-dir="vendor/*" --exclude-dir="examples/*" --verbose
-
 
 .PHONY: copyright 
 copyright:
@@ -117,32 +114,6 @@ cover-ci:
 	@echo "$(VERSION)/$(GIT_REF) >> coverage"
 	@go run cmd/coverage/main.go --keep-coverage-out --covermode=atomic --coverprofile=coverage.txt --exclude="examples/*,cmd/*" --timeout="30s"
 
-cover-enforce:
-	@echo "$(VERSION)/$(GIT_REF) >> coverage"
-	@go run cmd/coverage/main.go -enforce --exclude="examples/*"
-
-cover-update:
-	@echo "$(VERSION)/$(GIT_REF) >> coverage"
-	@go run cmd/coverage/main.go -update --exclude="examples/*"
-
-increment-patch:
-	@echo "Current Version $(VERSION)"
-	@go run cmd/semver/main.go increment patch ./VERSION > ./NEW_VERSION
-	@mv ./NEW_VERSION ./VERSION
-	@cat ./VERSION
-
-increment-minor:
-	@echo "Current Version $(VERSION)"
-	@go run cmd/semver/main.go increment minor ./VERSION > ./NEW_VERSION
-	@mv ./NEW_VERSION ./VERSION
-	@cat ./VERSION
-
-increment-major:
-	@echo "Current Version $(VERSION)"
-	@go run cmd/semver/main.go increment major ./VERSION > ./NEW_VERSION
-	@mv ./NEW_VERSION ./VERSION
-	@cat ./VERSION
-
 clean: clean-dist clean-coverage clean-cache
 
 clean-coverage:
@@ -155,39 +126,10 @@ clean-cache:
 clean-dist:
 	@rm -rf dist
 
-tag:
-	@echo "Tagging v$(VERSION)"
-	@git tag -f v$(VERSION)
-
-push-tag:
-	@echo "Pushing v$(VERSION) tag to remote"
-	@git push -f origin v$(VERSION)
-
-release-all: clean-dist release-ask release-bindata release-coverage release-job release-profanity release-proxy release-recover release-semver release-shamir release-template
-
-release-ask:
-	@goreleaser release -f .goreleaser/ask.yml
-
-release-bindata:
-	@goreleaser release -f .goreleaser/bindata.yml
-
-release-coverage:
-	@goreleaser release -f .goreleaser/coverage.yml
-
-release-profanity:
-	@goreleaser release -f .goreleaser/profanity.yml
-
-release-proxy:
-	@goreleaser release -f .goreleaser/proxy.yml
-
-release-recover:
-	@goreleaser release -f .goreleaser/recover.yml
-
-release-semver:
-	@goreleaser release -f .goreleaser/semver.yml
-
-release-shamir:
-	@goreleaser release -f .goreleaser/shamir.yml
-
-release-template:
-	@goreleaser release -f .goreleaser/template.yml
+push: 
+	@echo "Tagging $(VERSION)"
+	@git add .
+	@git commit -am 'Updates from Blend'
+	@git tag -f $(VERSION)
+	@git push -f origin $(VERSION)
+	@git push -f origin HEAD

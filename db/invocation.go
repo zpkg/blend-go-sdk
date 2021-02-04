@@ -138,13 +138,27 @@ func (i *Invocation) CreateIfNotExists(object DatabaseMapped) (err error) {
 
 // CreateMany writes many objects to the database in a single insert.
 func (i *Invocation) CreateMany(objects interface{}) (err error) {
+	return i.insertOrUpsertMany(objects, false)
+}
+
+// UpsertMany writes many objects to the database in a single upsert.
+func (i *Invocation) UpsertMany(objects interface{}) (err error) {
+	return i.insertOrUpsertMany(objects, true)
+}
+
+// insertOrUpsertManinsertOrUpsertMany writes many objects to the database in a single insert or upsert.
+func (i *Invocation) insertOrUpsertMany(objects interface{}, overwrite bool) (err error) {
 	var queryBody string
 	var insertCols *ColumnCollection
 	var sliceValue reflect.Value
 	var res sql.Result
 	defer func() { err = i.finish(queryBody, recover(), res, err) }()
 
-	queryBody, insertCols, sliceValue = i.generateCreateMany(objects)
+	if overwrite {
+		queryBody, insertCols, sliceValue = i.generateUpsertMany(objects)
+	} else {
+		queryBody, insertCols, sliceValue = i.generateCreateMany(objects)
+	}
 	if sliceValue.Len() == 0 {
 		// If there is nothing to create, then we're done here
 		return
@@ -436,6 +450,36 @@ func (i *Invocation) generateCreateIfNotExists(object DatabaseMapped) (statement
 
 	queryBody = queryBodyBuffer.String()
 	statementLabel = tableName + "_create_if_not_exists"
+	return
+}
+
+func (i *Invocation) generateUpsertMany(objects interface{}) (queryBody string, insertCols *ColumnCollection, sliceValue reflect.Value) {
+	queryBodyInsertMany, insertCols, sliceValue := i.generateCreateMany(objects)
+
+	queryBodyBuffer := i.BufferPool.Get()
+	defer i.BufferPool.Put(queryBodyBuffer)
+	queryBodyBuffer.WriteString(queryBodyInsertMany)
+
+	uks := insertCols.UniqueKeys()
+	if uks.Len() > 0 {
+		queryBodyBuffer.WriteString(" ON CONFLICT (")
+		ukColumnNames := uks.ColumnNames()
+		for i, name := range ukColumnNames {
+			queryBodyBuffer.WriteString(name)
+			if i < len(ukColumnNames)-1 {
+				queryBodyBuffer.WriteRune(',')
+			}
+		}
+		queryBodyBuffer.WriteString(") DO UPDATE SET ")
+
+		for i, name := range insertCols.ColumnNames() {
+			queryBodyBuffer.WriteString(fmt.Sprintf("%s=Excluded.%s", name, name))
+			if i < (insertCols.Len() - 1) {
+				queryBodyBuffer.WriteRune(',')
+			}
+		}
+	}
+	queryBody = queryBodyBuffer.String()
 	return
 }
 

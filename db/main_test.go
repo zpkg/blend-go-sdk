@@ -130,7 +130,7 @@ func createUpserObjectTable(tx *sql.Tx) error {
 type benchObj struct {
 	ID        int       `db:"id,pk,auto"`
 	UUID      string    `db:"uuid"`
-	Name      string    `db:"name"`
+	Name      string    `db:"name,uk"`
 	Timestamp time.Time `db:"timestamp_utc"`
 	Amount    float32   `db:"amount"`
 	Pending   bool      `db:"pending"`
@@ -155,6 +155,11 @@ func createTable(tx *sql.Tx) error {
 		, pending boolean
 		, category varchar(255)
 	);`
+	return IgnoreExecResult(defaultDB().Invoke(OptTx(tx)).Exec(createSQL))
+}
+
+func createIndex(tx *sql.Tx) error {
+	createSQL := `CREATE UNIQUE INDEX ON bench_object (name)`
 	return IgnoreExecResult(defaultDB().Invoke(OptTx(tx)).Exec(createSQL))
 }
 

@@ -694,3 +694,115 @@ func TestInvocationMetrics(t *testing.T) {
 	<-done
 	assert.NotZero(elapsed)
 }
+
+func TestGenerateCreateMany(t *testing.T) {
+	assert := assert.New(t)
+	var objects []DatabaseMapped
+	for x := 0; x < 10; x++ {
+		objects = append(objects, benchObj{
+			Name:      fmt.Sprintf("test_object_%d", x),
+			UUID:      uuid.V4().String(),
+			Timestamp: time.Now().UTC(),
+			Amount:    1005.0,
+			Pending:   true,
+			Category:  fmt.Sprintf("category_%d", x),
+		})
+	}
+	invocation := defaultDB().Invoke()
+
+	// TODO: Add assertions for the two other values returned.
+	queryBody, _, _ := invocation.generateCreateMany(objects)
+	assert.Equal(
+		`INSERT INTO bench_object (uuid,name,timestamp_utc,amount,pending,category) VALUES ($1,$2,$3,$4,$5,$6),($7,$8,$9,$10,$11,$12),($13,$14,$15,$16,$17,$18),($19,$20,$21,$22,$23,$24),($25,$26,$27,$28,$29,$30),($31,$32,$33,$34,$35,$36),($37,$38,$39,$40,$41,$42),($43,$44,$45,$46,$47,$48),($49,$50,$51,$52,$53,$54),($55,$56,$57,$58,$59,$60)`,
+		queryBody,
+	)
+}
+
+func TestGenerateUpsertMany(t *testing.T) {
+	assert := assert.New(t)
+	var objects []DatabaseMapped
+	for x := 0; x < 10; x++ {
+		objects = append(objects, benchObj{
+			Name:      fmt.Sprintf("test_object_%d", x),
+			UUID:      uuid.V4().String(),
+			Timestamp: time.Now().UTC(),
+			Amount:    1005.0,
+			Pending:   true,
+			Category:  fmt.Sprintf("category_%d", x),
+		})
+	}
+	invocation := defaultDB().Invoke()
+
+	// TODO: Add assertions for the two other values returned.
+	queryBody, _, _ := invocation.generateUpsertMany(objects)
+	assert.Equal(
+		`INSERT INTO bench_object (uuid,name,timestamp_utc,amount,pending,category) VALUES ($1,$2,$3,$4,$5,$6),($7,$8,$9,$10,$11,$12),($13,$14,$15,$16,$17,$18),($19,$20,$21,$22,$23,$24),($25,$26,$27,$28,$29,$30),($31,$32,$33,$34,$35,$36),($37,$38,$39,$40,$41,$42),($43,$44,$45,$46,$47,$48),($49,$50,$51,$52,$53,$54),($55,$56,$57,$58,$59,$60) ON CONFLICT (name) DO UPDATE SET uuid=Excluded.uuid,name=Excluded.name,timestamp_utc=Excluded.timestamp_utc,amount=Excluded.amount,pending=Excluded.pending,category=Excluded.category`,
+		queryBody,
+	)
+}
+
+func TestUpsertMany(t *testing.T) {
+	assert := assert.New(t)
+	tx, err := defaultDB().Begin()
+	assert.Nil(err)
+	defer func() { _ = tx.Rollback() }()
+
+	assert.Nil(createTable(tx))
+	assert.Nil(createIndex(tx))
+	currentTime := time.Now().UTC().Truncate(time.Second)
+
+	// Test using upsertMany for insertion.
+	var objects []benchObj
+	objects = append(objects, benchObj{
+		ID:        1,
+		Name:      "test_object",
+		UUID:      uuid.V4().ToFullString(),
+		Timestamp: currentTime,
+		Amount:    1005.0,
+		Pending:   true,
+		Category:  "category",
+	})
+	assert.Nil(defaultDB().Invoke(OptTx(tx)).UpsertMany(objects))
+
+	var verify []benchObj
+	assert.Nil(defaultDB().Invoke(OptTx(tx)).Query(`select * from bench_object`).OutMany(&verify))
+
+	// TODO: Convert the type of Timestamp attribute on benchObj to String, so that the
+	//       comparison happens via the value, not the address of the pointer.
+	//       Currently asserting the equality of the object always fails since the
+	//       comparison of Timestamp field is pointer address comparison.
+	assert.Equal(len(objects), len(verify))
+	assert.Equal(objects[0].ID, verify[0].ID)
+	assert.Equal(objects[0].Name, verify[0].Name)
+	assert.Equal(objects[0].UUID, verify[0].UUID)
+	assert.True(objects[0].Timestamp.Equal(verify[0].Timestamp))
+	assert.Equal(objects[0].Amount, verify[0].Amount)
+	assert.Equal(objects[0].Pending, verify[0].Pending)
+	assert.Equal(objects[0].Category, verify[0].Category)
+
+	// Confirm that conflict on uk column, name, results in an update.
+	var updatedObjects []benchObj
+	updatedObjects = append(updatedObjects, benchObj{
+		ID:        1,
+		Name:      "test_object",
+		UUID:      uuid.V4().ToFullString(),
+		Timestamp: currentTime,
+		Amount:    2000,
+		Pending:   true,
+		Category:  "category",
+	})
+	assert.Nil(defaultDB().Invoke(OptTx(tx)).UpsertMany(updatedObjects))
+
+	var updateVerify []benchObj
+	assert.Nil(defaultDB().Invoke(OptTx(tx)).Query(`select * from bench_object`).OutMany(&updateVerify))
+
+	assert.Equal(len(updatedObjects), len(updateVerify))
+	assert.Equal(updatedObjects[0].ID, updateVerify[0].ID)
+	assert.Equal(updatedObjects[0].Name, updateVerify[0].Name)
+	assert.Equal(updatedObjects[0].UUID, updateVerify[0].UUID)
+	assert.True(updatedObjects[0].Timestamp.Equal(updateVerify[0].Timestamp))
+	assert.Equal(updatedObjects[0].Amount, updateVerify[0].Amount)
+	assert.Equal(updatedObjects[0].Pending, updateVerify[0].Pending)
+	assert.Equal(updatedObjects[0].Category, updateVerify[0].Category)
+
+}

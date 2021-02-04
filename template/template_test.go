@@ -774,10 +774,19 @@ func TestViewfuncNowUTC(t *testing.T) {
 	assert.NotEmpty(buffer.String())
 }
 
+func TestViewFuncTimeFormat(t *testing.T) {
+	assert := assert.New(t)
+
+	tmp := New().WithBody(`{{ .Var "data" | time_format "2006-01-02" }}`).WithVar("data", time.Date(2018, 10, 06, 12, 0, 0, 0, time.UTC))
+	buffer := new(bytes.Buffer)
+	assert.Nil(tmp.Process(buffer))
+	assert.Equal("2018-10-06", buffer.String())
+}
+
 func TestViewFuncRFC3339(t *testing.T) {
 	assert := assert.New(t)
 
-	tmp := New().WithBody("{{ .Var \"data\" | rfc3339 }}").WithVar("data", time.Date(2018, 10, 06, 12, 0, 0, 0, time.UTC))
+	tmp := New().WithBody(`{{ .Var "data" | rfc3339 }}`).WithVar("data", time.Date(2018, 10, 06, 12, 0, 0, 0, time.UTC))
 	buffer := new(bytes.Buffer)
 	assert.Nil(tmp.Process(buffer))
 	assert.Equal("2018-10-06T12:00:00Z", buffer.String())
@@ -826,6 +835,15 @@ func TestViewFuncTimeInLocation(t *testing.T) {
 	buffer := new(bytes.Buffer)
 	assert.Nil(tmp.Process(buffer))
 	assert.Equal("2018-10-06 12:00:00 +0000 UTC", buffer.String())
+}
+
+func TestViewFuncToDuration(t *testing.T) {
+	assert := assert.New(t)
+
+	tmp := New().WithBody(`{{ .Var "data" | to_duration}}`).WithVar("data", int64(time.Minute+(2*time.Second)+(3*time.Millisecond)+(4*time.Microsecond)+(5*time.Nanosecond)))
+	buffer := new(bytes.Buffer)
+	assert.Nil(tmp.Process(buffer))
+	assert.Equal("1m2.003004005s", buffer.String())
 }
 
 func TestViewFuncRound(t *testing.T) {

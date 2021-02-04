@@ -91,6 +91,7 @@ func (vf ViewFuncs) FuncMap() map[string]interface{} {
 		"second":         vf.Second,
 		"millisecond":    vf.Millisecond,
 		/* duration */
+		"to_duration":            vf.ToDuration,
 		"duration_round":         vf.DurationRound,
 		"duration_round_millis":  vf.DurationRoundMillis,
 		"duration_round_seconds": vf.DurationRoundSeconds,
@@ -370,6 +371,41 @@ func (vf ViewFuncs) Second(t time.Time) int {
 // Millisecond returns the millisecond component of a timestamp.
 func (vf ViewFuncs) Millisecond(t time.Time) int {
 	return int(time.Duration(t.Nanosecond()) / time.Millisecond)
+}
+
+// ToDuration returns a given value as a duration.
+func (vf ViewFuncs) ToDuration(val interface{}) (typedVal time.Duration, err error) {
+	switch tv := val.(type) {
+	case time.Duration:
+		typedVal = tv
+	case uint8:
+		typedVal = time.Duration(tv)
+	case int8:
+		typedVal = time.Duration(tv)
+	case uint16:
+		typedVal = time.Duration(tv)
+	case int16:
+		typedVal = time.Duration(tv)
+	case uint32:
+		typedVal = time.Duration(tv)
+	case int32:
+		typedVal = time.Duration(tv)
+	case uint64:
+		typedVal = time.Duration(tv)
+	case int64:
+		typedVal = time.Duration(tv)
+	case int:
+		typedVal = time.Duration(tv)
+	case uint:
+		typedVal = time.Duration(tv)
+	case float32:
+		typedVal = time.Duration(tv)
+	case float64:
+		typedVal = time.Duration(tv)
+	default:
+		err = fmt.Errorf("invalid duration value %[1]T: %[1]v", val)
+	}
+	return
 }
 
 // Since returns the duration since a given timestamp.
@@ -967,7 +1003,7 @@ func (vf ViewFuncs) ToFloat64(val interface{}) (typedVal float64, err error) {
 	case float64:
 		typedVal = tv
 	default:
-		err = fmt.Errorf("invalid addition value %v", val)
+		err = fmt.Errorf("invalid to_float value %[1]T: %[1]v", val)
 	}
 	return
 }
@@ -992,13 +1028,13 @@ func (vf ViewFuncs) ToInt(val interface{}) (typedVal int, err error) {
 	case int64:
 		typedVal = int(tv)
 	case int:
-		typedVal = int(tv)
+		typedVal = tv
 	case float32:
 		typedVal = int(tv)
 	case float64:
 		typedVal = int(tv)
 	default:
-		err = fmt.Errorf("invalid addition value %v", val)
+		err = fmt.Errorf("invalid to_int value %[1]T: %[1]v", val)
 	}
 	return
 }
