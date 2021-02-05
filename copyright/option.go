@@ -73,14 +73,28 @@ func OptNoticeBodyTemplate(noticeBodyTemplate string) Option {
 	}
 }
 
-// OptCompany sets the notice body template company.
+// OptYear sets the template year.
+func OptYear(year int) Option {
+	return func(p *Copyright) {
+		p.Config.Year = year
+	}
+}
+
+// OptCompany sets the template company.
 func OptCompany(company string) Option {
 	return func(p *Copyright) {
 		p.Config.Company = company
 	}
 }
 
-// OptRestrictions sets the notice body template restrictions.
+// OptLicense sets the template license.
+func OptLicense(license string) Option {
+	return func(p *Copyright) {
+		p.Config.License = license
+	}
+}
+
+// OptRestrictions sets the template restrictions.
 func OptRestrictions(restrictions string) Option {
 	return func(p *Copyright) {
 		p.Config.Restrictions = restrictions

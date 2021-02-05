@@ -16,14 +16,16 @@ type Config struct {
 	// NoticeBodyTemplate is the notice body template that will be processed and
 	// injected to the relevant extension specific notice template.
 	NoticeBodyTemplate string `yaml:"noticeBodyTemplate"`
-	// Year is the year to insert into the `NoticeBodyTemplate` as `{{ .Year }}`
+	// Year is the year to insert into the templates as `{{ .Year }}`
 	Year int `yaml:"year"`
-	// Company is the company name to insert into the `NoticeBodyTemplate` as `{{ .Company }}`
+	// Company is the company name to insert into the templates as `{{ .Company }}`
 	Company string `yaml:"company"`
+	// License is the open source license to insert into in templates as `{{ .License }}`
+	License string `yaml:"openSourceLicense"`
 
-	// Restrictions is the second line to clarify copyright restrictions or
-	// visibility modifiers.
-	Restrictions string `yaml:"restrictions"`
+	// Restrictions an optional template to clarify copyright restrictions or
+	// visibility modifiers, which is available in the `NoticeBodyTemplate` as `{{ .Restrictions }}`
+	Restrictions string `yaml:"restrictionTemplate"`
 
 	// IncludeFiles are a list of file globs to include.
 	IncludeFiles []string `yaml:"includeFiles"`
@@ -41,6 +43,8 @@ type Config struct {
 
 	// ExitFirst indicates if we should return after the first failure.
 	ExitFirst *bool `yaml:"exitFirst"`
+	// Quiet controls whether output is suppressed.
+	Quiet *bool `yaml:"quiet"`
 	// Verbose controls whether verbose output is shown.
 	Verbose *bool `yaml:"verbose"`
 	// Debug controls whether debug output is shown.
@@ -79,7 +83,15 @@ func (c Config) CompanyOrDefault() string {
 	return DefaultCompany
 }
 
-// RestrictionsOrDefault returns a restriction or a default.
+// LicenseOrDefault returns an open source license or a default.
+func (c Config) LicenseOrDefault() string {
+	if c.License != "" {
+		return c.License
+	}
+	return DefaultOpenSourceLicense
+}
+
+// RestrictionsOrDefault returns restrictions or a default.
 func (c Config) RestrictionsOrDefault() string {
 	if c.Restrictions != "" {
 		return c.Restrictions
@@ -132,6 +144,14 @@ func (c Config) NoticeTemplatesOrDefault() map[string]string {
 func (c Config) ExitFirstOrDefault() bool {
 	if c.ExitFirst != nil {
 		return *c.ExitFirst
+	}
+	return false
+}
+
+// QuietOrDefault returns a value or a default.
+func (c Config) QuietOrDefault() bool {
+	if c.Quiet != nil {
+		return *c.Quiet
 	}
 	return false
 }

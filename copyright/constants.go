@@ -23,11 +23,14 @@ Blend Confidential - Restricted
 // DefaultCompany is the default company to inject into the notice template.
 const DefaultCompany = "Blend Labs, Inc"
 
+// DefaultOpenSourceLicense is the default open source license.
+const DefaultOpenSourceLicense = "MIT"
+
 // DefaultRestrictionsInternal are the default copyright restrictions to inject into the notice template.
 const DefaultRestrictionsInternal = "Blend Confidential - Restricted"
 
 // DefaultRestrictionsOpenSource are the default open source restrictions.
-const DefaultRestrictionsOpenSource = `Use of this source code is governed by a MIT license that can be found in the LICENSE file.`
+const DefaultRestrictionsOpenSource = `Use of this source code is governed by a {{ .License }} license that can be found in the LICENSE file.`
 
 // DefaultNoticeBodyTemplate is the default notice body template.
 const DefaultNoticeBodyTemplate = `
@@ -80,6 +83,8 @@ var (
 	DefaultExcludeDirs = []string{
 		".git/*",
 		".github/*",
+		"*/_config",
+		"*/_config/*",
 		"*/dist/*",
 		"*/node_modules/*",
 		"*/testdata",

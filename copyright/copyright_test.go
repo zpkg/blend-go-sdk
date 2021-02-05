@@ -28,7 +28,7 @@ bar
 baz
 `)
 
-	notice, err := generateGoNotice(2021)
+	notice, err := generateGoNotice(OptYear(2021))
 	its.Nil(err)
 
 	goodCorpusWithNotice := Copyright{}.mergeFileSections([]byte(notice), goodCorpus)
@@ -45,7 +45,7 @@ func Test_Copyright_fileHasCopyrightHeader_invalid(t *testing.T) {
 bar
 baz
 `)
-	expectedNotice, err := generateGoNotice(2021)
+	expectedNotice, err := generateGoNotice(OptYear(2021))
 	its.Nil(err)
 
 	its.False(c.fileHasCopyrightHeader(invalidCorpus, []byte(expectedNotice)), "we haven't added the notice")
@@ -61,13 +61,13 @@ bar
 baz
 `)
 
-	notice, err := generateGoNotice(2020)
+	notice, err := generateGoNotice(OptYear(2020))
 	its.Nil(err)
 
 	goodCorpusWithNotice := c.mergeFileSections(notice, goodCorpus)
 	its.Contains(string(goodCorpusWithNotice), "Copyright (c) 2020")
 
-	newNotice, err := generateGoNotice(2021)
+	newNotice, err := generateGoNotice(OptYear(2021))
 	its.Nil(err)
 
 	its.True(c.fileHasCopyrightHeader(goodCorpusWithNotice, []byte(newNotice)))
@@ -83,7 +83,7 @@ bar
 baz
 `)
 
-	notice, err := generateGoNotice(2021)
+	notice, err := generateGoNotice(OptYear(2021))
 	its.Nil(err)
 
 	goodCorpusWithNotice := c.mergeFileSections([]byte("\n\n"), notice, goodCorpus)
@@ -126,7 +126,7 @@ bar
 baz
 `)
 
-	notice, err := generateGoNotice(2021)
+	notice, err := generateGoNotice(OptYear(2021))
 	its.Nil(err)
 
 	output := c.goInjectNotice("foo.go", file, notice)
@@ -146,7 +146,7 @@ baz
 
 	file := c.mergeFileSections(buildTag, []byte("\n\n"), corpus)
 
-	notice, err := generateGoNotice(2021)
+	notice, err := generateGoNotice(OptYear(2021))
 	its.Nil(err)
 
 	output := c.goInjectNotice("foo.go", file, notice)
@@ -168,7 +168,7 @@ bar
 baz
 `)
 
-	notice, err := generateTypescriptNotice(2021)
+	notice, err := generateTypescriptNotice(OptYear(2021))
 	its.Nil(err)
 
 	output := c.injectNotice("foo.ts", file, notice)
@@ -179,34 +179,51 @@ baz
 	its.Empty(outputRepeat, "inject notice functions should return an empty slice if the header already exists")
 }
 
-func generateGoNotice(year int) ([]byte, error) {
-	noticeBody, err := (Copyright{
-		Config: Config{
-			Year: year,
-		},
-	}).compileNoticeBodyTemplate(DefaultNoticeBodyTemplate)
+func Test_Copyright_goInjectNotice_openSource(t *testing.T) {
+	its := assert.New(t)
+
+	c := new(Copyright)
+
+	file := []byte(`foo
+bar
+baz
+`)
+
+	notice, err := generateGoNotice(
+		OptYear(2021),
+		OptLicense("Apache 2.0"),
+		OptRestrictions(DefaultRestrictionsOpenSource),
+	)
+	its.Nil(err)
+
+	output := c.goInjectNotice("foo.go", file, notice)
+	its.Contains(string(output), "Copyright (c) 2021")
+	its.Contains(string(output), "Use of this source code is governed by a Apache 2.0")
+	its.HasSuffix(string(output), string(file))
+}
+
+func generateGoNotice(opts ...Option) ([]byte, error) {
+	c := New(opts...)
+	noticeBody, err := c.compileNoticeBodyTemplate(c.NoticeBodyTemplateOrDefault())
 	if err != nil {
 		return nil, err
 	}
 
-	compiled, err := (Copyright{}).compileNoticeTemplate(goNoticeTemplate, noticeBody)
+	compiled, err := c.compileNoticeTemplate(goNoticeTemplate, noticeBody)
 	if err != nil {
 		return nil, err
 	}
 	return []byte(compiled), nil
 }
 
-func generateTypescriptNotice(year int) ([]byte, error) {
-	noticeBody, err := (Copyright{
-		Config: Config{
-			Year: year,
-		},
-	}).compileNoticeBodyTemplate(DefaultNoticeBodyTemplate)
+func generateTypescriptNotice(opts ...Option) ([]byte, error) {
+	c := New(opts...)
+	noticeBody, err := c.compileNoticeBodyTemplate(c.NoticeBodyTemplateOrDefault())
 	if err != nil {
 		return nil, err
 	}
 
-	compiled, err := (Copyright{}).compileNoticeTemplate(tsNoticeTemplate, noticeBody)
+	compiled, err := c.compileNoticeTemplate(tsNoticeTemplate, noticeBody)
 	if err != nil {
 		return nil, err
 	}

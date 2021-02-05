@@ -219,6 +219,9 @@ func (c Copyright) verify(path string, _ os.FileInfo, file, notice []byte) error
 
 // GetStdout returns standard out.
 func (c Copyright) GetStdout() io.Writer {
+	if c.QuietOrDefault() {
+		return ioutil.Discard
+	}
 	if c.Stdout != nil {
 		return c.Stdout
 	}
@@ -227,6 +230,9 @@ func (c Copyright) GetStdout() io.Writer {
 
 // GetStderr returns standard error.
 func (c Copyright) GetStderr() io.Writer {
+	if c.QuietOrDefault() {
+		return ioutil.Discard
+	}
 	if c.Stderr != nil {
 		return c.Stderr
 	}
@@ -353,17 +359,42 @@ func (c Copyright) prefix(prefix string, s string) string {
 }
 
 func (c Copyright) compileNoticeTemplate(noticeTemplate, notice string) (string, error) {
-	return c.processTemplate(noticeTemplate, map[string]interface{}{
+	return c.processTemplate(noticeTemplate, c.templateViewModel(map[string]interface{}{
 		"Notice": notice,
-	})
+	}))
+}
+
+func (c Copyright) templateViewModel(extra ...map[string]interface{}) map[string]interface{} {
+	base := map[string]interface{}{
+		"Year":    c.YearOrDefault(),
+		"Company": c.CompanyOrDefault(),
+		"License": c.LicenseOrDefault(),
+	}
+	for _, m := range extra {
+		for key, value := range m {
+			base[key] = value
+		}
+	}
+	return base
+}
+
+func (c Copyright) compileRestrictionsTemplate(restrictionsTemplate string) (string, error) {
+	return c.processTemplate(restrictionsTemplate, c.templateViewModel())
 }
 
 func (c Copyright) compileNoticeBodyTemplate(noticeBodyTemplate string) (string, error) {
-	return c.processTemplate(noticeBodyTemplate, map[string]interface{}{
-		"Year":         c.YearOrDefault(),
-		"Company":      c.CompanyOrDefault(),
-		"Restrictions": c.RestrictionsOrDefault(),
+	restrictions, err := c.compileRestrictionsTemplate(c.RestrictionsOrDefault())
+	if err != nil {
+		return "", err
+	}
+	viewModel := c.templateViewModel(map[string]interface{}{
+		"Restrictions": restrictions,
 	})
+	output, err := c.processTemplate(noticeBodyTemplate, viewModel)
+	if err != nil {
+		return "", err
+	}
+	return output, nil
 }
 
 func (c Copyright) processTemplate(text string, viewmodel interface{}) (string, error) {
