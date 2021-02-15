@@ -9,6 +9,7 @@ package web
 
 import (
 	"bytes"
+	"context"
 	"encoding/json"
 	"io"
 	"io/ioutil"
@@ -120,11 +121,27 @@ func (mr *MockResult) Close() error {
 // MockCtx returns a new mock ctx.
 // It is intended to be used in testing.
 func MockCtx(method, path string, options ...CtxOption) *Ctx {
-	return NewCtx(webutil.NewMockResponse(new(bytes.Buffer)), webutil.NewMockRequest(method, path), options...)
+	return MockCtxWithBuffer(method, path, new(bytes.Buffer), options...)
 }
 
 // MockCtxWithBuffer returns a new mock ctx.
 // It is intended to be used in testing.
 func MockCtxWithBuffer(method, path string, buf io.Writer, options ...CtxOption) *Ctx {
-	return NewCtx(webutil.NewMockResponse(buf), webutil.NewMockRequest(method, path), options...)
+	return NewCtx(
+		webutil.NewMockResponse(buf),
+		webutil.NewMockRequest(method, path),
+		append(options, OptCtxDefaultProvider(Text))...,
+	)
+}
+
+// MockSimulateLogin simulates a user login for a given app as mocked request params (i.e. r2 options).
+//
+// This requires an auth manager to be set on the app.
+func MockSimulateLogin(ctx context.Context, app *App, userID string, opts ...r2.Option) []r2.Option {
+	sessionID := NewSessionID()
+	session := NewSession(userID, sessionID)
+	_ = app.Auth.PersistHandler(ctx, session)
+	return append([]r2.Option{
+		r2.OptCookieValue(app.Auth.CookieDefaults.Name, sessionID),
+	}, opts...)
 }

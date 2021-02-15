@@ -231,14 +231,10 @@ func (ab *Buffer) Stop() error {
 	ab.intervalWorker.WaitStopped()
 
 	// stop the running dispatch loop
-	stopped := ab.Latch.NotifyStopped()
-	ab.Latch.Stopping()
-	<-stopped
+	ab.Latch.WaitStopped()
 
 	timeoutContext, cancel := context.WithTimeout(ab.Background(), ab.ShutdownGracePeriod)
-	defer func() {
-		cancel()
-	}()
+	defer cancel()
 
 	ab.contentsMu.Lock()
 	defer ab.contentsMu.Unlock()
@@ -279,7 +275,7 @@ func (ab *Buffer) Stop() error {
 			go func(i int, w *async.Worker) {
 				defer wg.Done()
 				logger.MaybeDebugf(ab.Log, "draining worker %d", i)
-				w.Drain(timeoutContext)
+				w.StopContext(timeoutContext)
 			}(index, worker)
 		}
 		wg.Wait()

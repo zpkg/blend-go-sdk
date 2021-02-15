@@ -58,7 +58,7 @@ func TestWithTraceAnnotations_NoGetters(t *testing.T) {
 
 	ctx := context.Background()
 	ctx = WithTraceAnnotations(ctx, spanContextWithoutGetters{})
-	assert.Nil(logger.GetAnnotations(ctx))
+	assert.Empty(logger.GetAnnotations(ctx))
 }
 
 func TestWithTraceAnnotations_AllGetters(t *testing.T) {

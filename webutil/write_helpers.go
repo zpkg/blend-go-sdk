@@ -11,9 +11,15 @@ import (
 	"encoding/json"
 	"encoding/xml"
 	"io"
+	"net"
 	"net/http"
 
 	"github.com/blend/go-sdk/ex"
+)
+
+// Errors
+const (
+	ErrNetWrite ex.Class = "network write error"
 )
 
 // WriteNoContent writes http.StatusNoContent for a request.
@@ -33,14 +39,26 @@ func WriteRawContent(w http.ResponseWriter, statusCode int, content []byte) erro
 func WriteJSON(w http.ResponseWriter, statusCode int, response interface{}) error {
 	w.Header().Set(HeaderContentType, ContentTypeApplicationJSON)
 	w.WriteHeader(statusCode)
-	return ex.New(json.NewEncoder(w).Encode(response))
+	if err := json.NewEncoder(w).Encode(response); err != nil {
+		if typed, ok := err.(*net.OpError); ok {
+			return ex.New(ErrNetWrite, ex.OptInner(typed))
+		}
+		return ex.New(err)
+	}
+	return nil
 }
 
 // WriteXML marshalls an object to json.
 func WriteXML(w http.ResponseWriter, statusCode int, response interface{}) error {
 	w.Header().Set(HeaderContentType, ContentTypeXML)
 	w.WriteHeader(statusCode)
-	return ex.New(xml.NewEncoder(w).Encode(response))
+	if err := xml.NewEncoder(w).Encode(response); err != nil {
+		if typed, ok := err.(*net.OpError); ok {
+			return ex.New(ErrNetWrite, ex.OptInner(typed))
+		}
+		return ex.New(err)
+	}
+	return nil
 }
 
 // DeserializeReaderAsJSON deserializes a post body as json to a given object.

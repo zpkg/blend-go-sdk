@@ -11,6 +11,7 @@ import (
 	"io/ioutil"
 	"log"
 	"testing"
+	"time"
 
 	"github.com/blend/go-sdk/assert"
 	"github.com/blend/go-sdk/logger"
@@ -82,4 +83,49 @@ func TestOptServerOptions(t *testing.T) {
 	defer func() { _ = app.Stop() }()
 
 	assert.NotNil(app.Server.ErrorLog)
+}
+
+func TestOptReadTimeout(t *testing.T) {
+	assert := assert.New(t)
+
+	var app App
+	assert.Zero(app.Config.ReadTimeout)
+	assert.Nil(OptReadTimeout(time.Second)(&app))
+	assert.Equal(time.Second, app.Config.ReadTimeout)
+}
+
+func TestOptReadHeaderTimeout(t *testing.T) {
+	assert := assert.New(t)
+
+	var app App
+	assert.Zero(app.Config.ReadHeaderTimeout)
+	assert.Nil(OptReadHeaderTimeout(time.Second)(&app))
+	assert.Equal(time.Second, app.Config.ReadHeaderTimeout)
+}
+
+func TestOptWriteTimeout(t *testing.T) {
+	assert := assert.New(t)
+
+	var app App
+	assert.Zero(app.Config.WriteTimeout)
+	assert.Nil(OptWriteTimeout(time.Second)(&app))
+	assert.Equal(time.Second, app.Config.WriteTimeout)
+}
+
+func TestOptIdleTimeout(t *testing.T) {
+	assert := assert.New(t)
+
+	var app App
+	assert.Zero(app.Config.IdleTimeout)
+	assert.Nil(OptIdleTimeout(time.Second)(&app))
+	assert.Equal(time.Second, app.Config.IdleTimeout)
+}
+
+func TestOptMaxHeaderBytes(t *testing.T) {
+	assert := assert.New(t)
+
+	var app App
+	assert.Zero(app.Config.MaxHeaderBytes)
+	assert.Nil(OptMaxHeaderBytes(100)(&app))
+	assert.Equal(100, app.Config.MaxHeaderBytes)
 }

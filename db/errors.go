@@ -8,6 +8,8 @@ Use of this source code is governed by a MIT license that can be found in the LI
 package db
 
 import (
+	"net"
+
 	"github.com/blend/go-sdk/ex"
 )
 
@@ -44,6 +46,9 @@ const (
 	ErrRowsNotColumnsProvider ex.Class = "db: rows is not a columns provider"
 	// ErrTooManyRows is returned by Out if there is more than one row returned by the query
 	ErrTooManyRows ex.Class = "db: too many rows returned to map to single object"
+
+	// ErrNetwork is a grouped error for network issues.
+	ErrNetwork ex.Class = "db: network error"
 )
 
 // IsConfigUnset returns if the error is an `ErrConfigUnset`.
@@ -91,6 +96,9 @@ func IsPlanCacheKeyUnset(err error) bool {
 func Error(err error, options ...ex.Option) error {
 	if err == nil {
 		return nil
+	}
+	if _, ok := err.(*net.OpError); ok {
+		return ex.New(ErrNetwork, ex.OptInner(err))
 	}
 	return ex.New(err, options...)
 }

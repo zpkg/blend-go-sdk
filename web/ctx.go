@@ -102,7 +102,8 @@ func (rc *Ctx) WithContext(ctx context.Context) *Ctx {
 
 // Context returns the context.
 func (rc *Ctx) Context() context.Context {
-	ctx := logger.WithLabels(rc.Request.Context(), logger.CombineLabels(logger.GetLabels(rc.Request.Context()), rc.Labels()))
+	ctx := logger.WithLabels(rc.Request.Context(), logger.GetLabels(rc.Request.Context()))
+	ctx = logger.WithLabels(ctx, rc.Labels())
 	ctx = logger.WithAnnotations(ctx, logger.CombineAnnotations(logger.GetAnnotations(rc.Request.Context()), rc.Annotations()))
 	return ctx
 }

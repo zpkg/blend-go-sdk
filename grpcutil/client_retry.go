@@ -20,8 +20,6 @@ import (
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/metadata"
 	"google.golang.org/grpc/status"
-
-	"github.com/blend/go-sdk/logger"
 )
 
 var (
@@ -111,20 +109,12 @@ func WithClientRetryPerRetryTimeout(timeout time.Duration) CallOption {
 	}}
 }
 
-// WithClientRetryLog sets the logger for the call.
-func WithClientRetryLog(log logger.Log) CallOption {
-	return CallOption{applyFunc: func(o *retryOptions) {
-		o.log = log
-	}}
-}
-
 type retryOptions struct {
 	max            uint
 	perCallTimeout time.Duration
 	includeHeader  bool
 	codes          []codes.Code
 	backoffFunc    BackoffFuncContext
-	log            logger.Log
 	abortOnFailure bool
 }
 
@@ -171,7 +161,6 @@ func RetryUnaryClientInterceptor(optFuncs ...CallOption) grpc.UnaryClientInterce
 		}
 		var lastErr error
 		for attempt := uint(0); attempt < callOpts.max; attempt++ {
-			logger.MaybeDebugf(callOpts.log, "grpc_retry attempt: %d", attempt)
 			callCtx, cancel := perCallContext(parentCtx, callOpts, attempt)
 			func() {
 				defer cancel()
@@ -180,16 +169,13 @@ func RetryUnaryClientInterceptor(optFuncs ...CallOption) grpc.UnaryClientInterce
 			if lastErr == nil {
 				return nil
 			}
-			logger.MaybeDebugf(callOpts.log, "grpc_retry attempt: %d, got err: %v", attempt, lastErr)
 			if isContextError(lastErr) {
 				if parentCtx.Err() != nil {
-					logger.MaybeDebugf(callOpts.log, "grpc_retry attempt: %d, parent context error: %v", attempt, parentCtx.Err())
 					// its the parent context deadline or cancellation.
 					return lastErr
 				} else if callOpts.perCallTimeout != 0 {
 					// We have set a perCallTimeout in the retry middleware, which would result in a context error if
 					// the deadline was exceeded, in which case try again.
-					logger.MaybeDebugf(callOpts.log, "grpc_retry attempt: %d, context error from retry call", attempt)
 					continue
 				}
 			}
@@ -249,16 +235,13 @@ func RetryStreamClientInterceptor(optFuncs ...CallOption) grpc.StreamClientInter
 				return retryingStreamer, nil
 			}
 
-			logger.MaybeDebugf(callOpts.log, "grpc_retry attempt: %d, got err: %v", attempt, lastErr)
 			if isContextError(lastErr) {
 				if parentCtx.Err() != nil {
-					logger.MaybeDebugf(callOpts.log, "grpc_retry attempt: %d, parent context error: %v", attempt, parentCtx.Err())
 					// its the parent context deadline or cancellation.
 					return nil, lastErr
 				} else if callOpts.perCallTimeout != 0 {
 					// We have set a perCallTimeout in the retry middleware, which would result in a context error if
 					// the deadline was exceeded, in which case try again.
-					logger.MaybeDebugf(callOpts.log, "grpc_retry attempt: %d, context error from retry call", attempt)
 					continue
 				}
 			}
@@ -282,7 +265,6 @@ type serverStreamingRetryingStream struct {
 	callOpts      *retryOptions
 	streamerCall  func(ctx context.Context) (grpc.ClientStream, error)
 	mu            sync.RWMutex
-	log           logger.Log
 }
 
 func (s *serverStreamingRetryingStream) setStream(clientStream grpc.ClientStream) {
@@ -367,12 +349,10 @@ func (s *serverStreamingRetryingStream) receiveMsgAndIndicateRetry(m interface{}
 	}
 	if isContextError(err) {
 		if s.parentCtx.Err() != nil {
-			logger.MaybeDebugf(s.log, "grpc_retry parent context error: %v", s.parentCtx.Err())
 			return false, err
 		} else if s.callOpts.perCallTimeout != 0 {
 			// We have set a perCallTimeout in the retry middleware, which would result in a context error if
 			// the deadline was exceeded, in which case try again.
-			logger.MaybeDebugf(s.log, "grpc_retry context error from retry call")
 			return true, err
 		}
 	}
@@ -385,17 +365,14 @@ func (s *serverStreamingRetryingStream) reestablishStreamAndResendBuffer(callCtx
 	s.mu.RUnlock()
 	newStream, err := s.streamerCall(callCtx)
 	if err != nil {
-		logger.MaybeDebugf(s.log, "grpc_retry failed redialing new stream: %v", err)
 		return nil, err
 	}
 	for _, msg := range bufferedSends {
 		if err := newStream.SendMsg(msg); err != nil {
-			logger.MaybeDebugf(s.log, "grpc_retry failed resending message: %v", err)
 			return nil, err
 		}
 	}
 	if err := newStream.CloseSend(); err != nil {
-		logger.MaybeDebugf(s.log, "grpc_retry failed CloseSend on new stream %v", err)
 		return nil, err
 	}
 	return newStream, nil

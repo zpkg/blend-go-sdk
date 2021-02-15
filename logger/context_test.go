@@ -33,14 +33,15 @@ func TestContextWithPath(t *testing.T) {
 	assert.Nil(GetPath(context.Background()))
 }
 
-func TestContextWithLabels(t *testing.T) {
+func TestContextWithSetLabels(t *testing.T) {
 	assert := assert.New(t)
 
 	labels := Labels{"one": "two"}
 	labels2 := Labels{"two": "three"}
-	assert.Equal(labels, GetLabels(WithLabels(context.Background(), labels)))
-	assert.Equal(labels, GetLabels(WithLabels(WithLabels(context.Background(), labels2), labels)))
-	assert.Nil(GetLabels(context.Background()))
+	assert.Equal(labels, GetLabels(WithSetLabels(context.Background(), labels)))
+	assert.Equal(labels, GetLabels(WithSetLabels(WithSetLabels(context.Background(), labels2), labels)))
+	assert.NotNil(GetLabels(context.Background()))
+	assert.Empty(GetLabels(context.Background()))
 }
 
 func TestContextWithAnnotation(t *testing.T) {
@@ -58,4 +59,46 @@ func TestContextWithAnnotation(t *testing.T) {
 		"two": "three",
 	}
 	assert.Equal(expectedAnnotations, GetAnnotations(ctx))
+}
+
+func TestContextWithLabels_Mutating(t *testing.T) {
+	its := assert.New(t)
+
+	ctx := context.Background()
+	l0 := Labels{"one": "two", "three": "four"}
+	ctx0 := WithLabels(ctx, l0)
+	l1 := Labels{"one": "not-two", "two": "three"}
+	ctx1 := WithLabels(ctx0, l1)
+
+	l2 := GetLabels(ctx1)
+
+	l2["foo"] = "bar"
+
+	its.Equal("not-two", l2["one"])
+	its.Equal("three", l2["two"])
+	its.Equal("four", l2["three"])
+	its.Equal("bar", l2["foo"])
+
+	its.Equal("two", l0["one"])
+	its.Empty(l0["foo"])
+}
+
+func TestContextWithLabel_Mutating(t *testing.T) {
+	its := assert.New(t)
+
+	original := Labels{"four": "five"}
+	ctx := WithSetLabels(context.Background(), original)
+	its.Equal("five", GetLabels(ctx)["four"])
+
+	ctx0 := WithLabel(ctx, "one", "two")
+	ctx1 := WithLabel(ctx0, "three", "four")
+	ctx2 := WithLabel(ctx1, "four", "not-five")
+
+	l2 := GetLabels(ctx2)
+
+	its.Equal("two", l2["one"])
+	its.Equal("four", l2["three"])
+	its.Equal("not-five", l2["four"])
+
+	its.Equal("five", original["four"])
 }
