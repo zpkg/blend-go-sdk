@@ -16,11 +16,29 @@ import (
 
 // Config is the logger config.
 type Config struct {
-	Flags    []string   `json:"flags,omitempty" yaml:"flags,omitempty" env:"LOG_FLAGS,csv"`
-	Writable []string   `json:"writable,omitempty" yaml:"writable,omitempty" env:"LOG_FLAGS_WRITABLE,csv"`
-	Format   string     `json:"format,omitempty" yaml:"format,omitempty" env:"LOG_FORMAT"`
-	Text     TextConfig `json:"text,omitempty" yaml:"text,omitempty"`
-	JSON     JSONConfig `json:"json,omitempty" yaml:"json,omitempty"`
+	// Flags hold the event types (i.e. flags) that are enabled.
+	// If a flag is disabled, it is hidden from output _and_ listeners are not triggered.
+	Flags []string `json:"flags,omitempty" yaml:"flags,omitempty" env:"LOG_FLAGS,csv"`
+	// Scopes hold the scope paths that are enabled.
+	// If a scope is disabled, any events for that scope (or logger path) are hidden from output and listeners are not triggered.
+	// A scope or path can be set on a logger with `sub := log.WithPath("foo", "bar")`.
+	// It defaults to all scopes being enabled, or `*`.
+	Scopes []string `json:"scopes,omitempty" yaml:"scopes,omitempty" env:"LOG_SCOPES,csv"`
+	// Writable holds event types (i.e. flags) that are shown in output.
+	// If a flag is not writable, it is hidden from output but listeners _are_ triggered.
+	// It defaults to all flags being writable, or `all`.
+	Writable []string `json:"writable,omitempty" yaml:"writable,omitempty" env:"LOG_WRITABLE,csv"`
+	// WritableScopes are scopes that are shown in in output.
+	// A scope can be set on a logger with `sub := log.WithPath("foo", "bar")`.
+	// If a scope is not writable, it is hidden from output but listeners _are_ triggered.
+	// It defaults to all scopes being writable, or `*`.
+	WritableScopes []string `json:"writableScopes,omitempty" yaml:"writableScopes,omitempty" env:"LOG_WRITABLE_SCOPES,csv"`
+	// Format is the output format, either `text` or `json`.
+	Format string `json:"format,omitempty" yaml:"format,omitempty" env:"LOG_FORMAT"`
+	// Text holds text output specific options.
+	Text TextConfig `json:"text,omitempty" yaml:"text,omitempty"`
+	// JSON holds json specific options.
+	JSON JSONConfig `json:"json,omitempty" yaml:"json,omitempty"`
 }
 
 // Resolve resolves the config.
@@ -42,6 +60,22 @@ func (c Config) WritableOrDefault() []string {
 		return c.Writable
 	}
 	return DefaultFlagsWritable
+}
+
+// ScopesOrDefault returns the enabled logger scopes.
+func (c Config) ScopesOrDefault() []string {
+	if len(c.Scopes) > 0 {
+		return c.Scopes
+	}
+	return DefaultScopes
+}
+
+// WritableScopesOrDefault returns the writable logger scopes.
+func (c Config) WritableScopesOrDefault() []string {
+	if len(c.WritableScopes) > 0 {
+		return c.WritableScopes
+	}
+	return DefaultWritableScopes
 }
 
 // FormatOrDefault returns the output format or a default.

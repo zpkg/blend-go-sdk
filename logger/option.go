@@ -22,6 +22,8 @@ func OptConfig(cfg Config) Option {
 		l.Formatter = cfg.Formatter()
 		l.Flags = NewFlags(cfg.FlagsOrDefault()...)
 		l.Writable = NewFlags(cfg.WritableOrDefault()...)
+		l.Scopes = NewScopes(cfg.ScopesOrDefault()...)
+		l.WritableScopes = NewScopes(cfg.WritableScopesOrDefault()...)
 		return nil
 	}
 }
@@ -37,6 +39,8 @@ func OptConfigFromEnv() Option {
 		l.Formatter = cfg.Formatter()
 		l.Flags = NewFlags(cfg.FlagsOrDefault()...)
 		l.Writable = NewFlags(cfg.WritableOrDefault()...)
+		l.Scopes = NewScopes(cfg.ScopesOrDefault()...)
+		l.WritableScopes = NewScopes(cfg.WritableScopesOrDefault()...)
 		return nil
 	}
 }
@@ -65,7 +69,9 @@ func OptOutput(output io.Writer) Option {
 }
 
 // OptPath sets an initial logger context path.
-// This is useful if you want to label a logger to differentiate multiple loggers.
+//
+// This is useful if you want to label a logger to differentiate areas of an application
+// but re-use the existing logger.
 func OptPath(path ...string) Option {
 	return func(l *Logger) error { l.Scope.Path = path; return nil }
 }
@@ -101,6 +107,16 @@ func OptWritable(flags *Flags) Option {
 	return func(l *Logger) error { l.Writable = flags; return nil }
 }
 
+// OptScopes sets the scopes on the logger.
+func OptScopes(scopes *Scopes) Option {
+	return func(l *Logger) error { l.Scopes = scopes; return nil }
+}
+
+// OptWritableScopes sets the writable scopes on the logger.
+func OptWritableScopes(scopes *Scopes) Option {
+	return func(l *Logger) error { l.WritableScopes = scopes; return nil }
+}
+
 // OptAll sets all flags enabled on the logger by default.
 func OptAll() Option {
 	return func(l *Logger) error { l.Flags.SetAll(); return nil }
@@ -111,14 +127,34 @@ func OptAllWritable() Option {
 	return func(l *Logger) error { l.Writable.SetAll(); return nil }
 }
 
+// OptAllScopes sets all scopes enabled on the logger by default.
+func OptAllScopes() Option {
+	return func(l *Logger) error { l.Scopes.SetAll(); return nil }
+}
+
+// OptAllWritableScopes sets all scopes for writing enabled on the logger by default.
+func OptAllWritableScopes() Option {
+	return func(l *Logger) error { l.WritableScopes.SetAll(); return nil }
+}
+
 // OptNone sets no flags enabled on the logger by default.
 func OptNone() Option {
 	return func(l *Logger) error { l.Flags.SetNone(); return nil }
 }
 
-// OptNoneWritable sets no flags enabled on the logger by default.
+// OptNoneWritable sets no flags enabled for writing on the logger by default.
 func OptNoneWritable() Option {
 	return func(l *Logger) error { l.Writable.SetNone(); return nil }
+}
+
+// OptNoneScopes sets no scopes enabled on the logger by default.
+func OptNoneScopes() Option {
+	return func(l *Logger) error { l.Scopes.SetNone(); return nil }
+}
+
+// OptNoneWritableScopes sets no scopes enabled for writing on the logger by default.
+func OptNoneWritableScopes() Option {
+	return func(l *Logger) error { l.WritableScopes.SetNone(); return nil }
 }
 
 // OptEnabled sets enabled flags on the logger.
@@ -131,6 +167,16 @@ func OptEnabledWritable(flags ...string) Option {
 	return func(l *Logger) error { l.Writable.Enable(flags...); return nil }
 }
 
+// OptEnabledScopes sets enabled scopes on the logger.
+func OptEnabledScopes(scopes ...string) Option {
+	return func(l *Logger) error { l.Scopes.Enable(scopes...); return nil }
+}
+
+// OptEnabledWritableScopes sets enabled writable scopes on the logger.
+func OptEnabledWritableScopes(scopes ...string) Option {
+	return func(l *Logger) error { l.WritableScopes.Enable(scopes...); return nil }
+}
+
 // OptDisabled sets disabled flags on the logger.
 func OptDisabled(flags ...string) Option {
 	return func(l *Logger) error { l.Flags.Disable(flags...); return nil }
@@ -139,4 +185,14 @@ func OptDisabled(flags ...string) Option {
 // OptDisabledWritable sets disabled flags on the logger.
 func OptDisabledWritable(flags ...string) Option {
 	return func(l *Logger) error { l.Writable.Disable(flags...); return nil }
+}
+
+// OptDisabledScopes sets disabled scopes on the logger.
+func OptDisabledScopes(scopes ...string) Option {
+	return func(l *Logger) error { l.Scopes.Disable(scopes...); return nil }
+}
+
+// OptDisabledWritableScopes sets disabled flags on the logger.
+func OptDisabledWritableScopes(scopes ...string) Option {
+	return func(l *Logger) error { l.WritableScopes.Disable(scopes...); return nil }
 }

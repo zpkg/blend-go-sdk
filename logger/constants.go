@@ -9,17 +9,28 @@ package logger
 
 import "time"
 
-// Flags
 const (
-	FlagAll  = "all"
+	// FlagAll enables all flags by default.
+	FlagAll = "all"
+	// FlagNone disables all flags by default.
 	FlagNone = "none"
-	Fatal    = "fatal"
-	Error    = "error"
-	Warning  = "warning"
-	Debug    = "debug"
-	Info     = "info"
-
+	// Fatal controls errors that should be considered process ending.
+	Fatal = "fatal"
+	// Error controls errors that should be logged by default and may affect user behavior.
+	Error = "error"
+	// Warning controls errors that should be skipped by default but may help debugging.
+	Warning = "warning"
+	// Debug controls output that is useful when diagnosing issues.
+	Debug = "debug"
+	// Info controls output that is useful for output by default.
+	Info = "info"
+	// Audit controls events that indiciate security related information.
 	Audit = "audit"
+)
+
+const (
+	// ScopeAll is a special scope that matches all scopes.
+	ScopeAll = "*"
 )
 
 // Output Formats
@@ -30,10 +41,12 @@ const (
 
 // Default flags
 var (
-	DefaultFlags         = []string{Info, Error, Fatal}
-	DefaultFlagsWritable = []string{FlagAll}
-	DefaultListenerName  = "default"
-	DefaultRecoverPanics = true
+	DefaultFlags          = []string{Info, Error, Fatal}
+	DefaultFlagsWritable  = []string{FlagAll}
+	DefaultScopes         = []string{ScopeAll}
+	DefaultWritableScopes = []string{ScopeAll}
+	DefaultListenerName   = "default"
+	DefaultRecoverPanics  = true
 )
 
 // Environment Variable Names

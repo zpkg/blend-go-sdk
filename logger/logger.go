@@ -18,11 +18,13 @@ import (
 // By default it uses a text output formatter writing to stdout.
 func New(options ...Option) (*Logger, error) {
 	l := &Logger{
-		Formatter:     NewTextOutputFormatter(),
-		Output:        NewInterlockedWriter(os.Stdout),
-		RecoverPanics: DefaultRecoverPanics,
-		Flags:         NewFlags(DefaultFlags...),
-		Writable:      FlagsAll(),
+		Formatter:      NewTextOutputFormatter(),
+		Output:         NewInterlockedWriter(os.Stdout),
+		RecoverPanics:  DefaultRecoverPanics,
+		Flags:          NewFlags(DefaultFlags...),
+		Writable:       FlagsAll(),
+		Scopes:         ScopesAll(),
+		WritableScopes: ScopesAll(),
 	}
 
 	l.Scope = NewScope(l)
@@ -50,7 +52,6 @@ func All(options ...Option) *Logger {
 		append([]Option{
 			OptConfigFromEnv(),
 			OptAll(),
-			OptAllWritable(),
 		}, options...)...)
 }
 
@@ -59,7 +60,6 @@ func None(options ...Option) *Logger {
 	return MustNew(
 		append([]Option{
 			OptNone(),
-			OptNoneWritable(),
 			OptOutput(nil),
 			OptFormatter(nil),
 		}, options...)...)
@@ -71,7 +71,6 @@ func Prod(options ...Option) *Logger {
 	return MustNew(
 		append([]Option{
 			OptAll(),
-			OptAllWritable(),
 			OptOutput(os.Stderr),
 			OptFormatter(NewTextOutputFormatter(OptTextNoColor())),
 		}, options...)...)
@@ -98,8 +97,10 @@ type Logger struct {
 	*Flags
 	Scope
 
-	Writable      *Flags
-	RecoverPanics bool
+	Writable       *Flags
+	Scopes         *Scopes
+	WritableScopes *Scopes
+	RecoverPanics  bool
 
 	Output    io.Writer
 	Formatter WriteFormatter
@@ -301,6 +302,9 @@ func (l *Logger) Dispatch(ctx context.Context, e Event) {
 	if !l.IsEnabled(flag) {
 		return
 	}
+	if !l.Scopes.IsEnabled(GetPath(ctx)...) {
+		return
+	}
 
 	if !IsSkipTrigger(ctx) {
 		var filters map[string]Filter
@@ -343,8 +347,10 @@ func (l *Logger) Write(ctx context.Context, e Event) {
 	if IsSkipWrite(ctx) {
 		return
 	}
-
 	if !l.Writable.IsEnabled(e.GetFlag()) {
+		return
+	}
+	if !l.WritableScopes.IsEnabled(GetPath(ctx)...) {
 		return
 	}
 

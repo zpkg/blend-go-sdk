@@ -37,7 +37,7 @@ func TestOptConfigFromEnv(t *testing.T) {
 
 	defer env.Restore()
 	env.Env().Set("LOG_FLAGS", "foo,bar")
-	env.Env().Set("LOG_FLAGS_WRITABLE", "foo")
+	env.Env().Set("LOG_WRITABLE", "foo")
 	env.Env().Set("LOG_HIDE_TIMESTAMP", "true")
 	env.Env().Set("LOG_HIDE_FIELDS", "true")
 	env.Env().Set("LOG_TIME_FORMAT", time.Kitchen)

@@ -65,6 +65,53 @@ func TestLoggerFlagsWritten(t *testing.T) {
 	its.Equal("[error] this is just a test\n", buf.String())
 }
 
+func TestLoggerScopes(t *testing.T) {
+	its := assert.New(t)
+
+	buf := new(bytes.Buffer)
+	log := Memory(buf)
+	defer log.Close()
+
+	log.Scopes.Disable("disabled/*")
+
+	eventTriggered := make(chan struct{})
+	log.Listen(Error, DefaultListenerName, func(_ context.Context, e Event) {
+		close(eventTriggered)
+	})
+
+	log.WithPath("disabled", "foo").TriggerContext(context.TODO(), NewMessageEvent(Info, "test"))
+	// should not trigger with scope disabled
+	its.Empty(buf.String())
+
+	log.WithPath("not-disabled", "foo").TriggerContext(context.TODO(), NewMessageEvent(Error, "this is just a test"))
+	<-eventTriggered
+	its.Equal("[not-disabled > foo] [error] this is just a test\n", buf.String())
+}
+
+func TestLoggerWritableScopes(t *testing.T) {
+	its := assert.New(t)
+
+	buf := new(bytes.Buffer)
+	log := Memory(buf)
+	defer log.Close()
+
+	log.WritableScopes.Disable("disabled/*")
+
+	eventTriggered := make(chan struct{})
+	log.Listen(Error, DefaultListenerName, func(_ context.Context, e Event) {
+		close(eventTriggered)
+	})
+
+	log.WithPath("disabled", "foo").TriggerContext(context.TODO(), NewMessageEvent(Error, "test"))
+	<-eventTriggered
+	its.Empty(buf.String())
+
+	eventTriggered = make(chan struct{})
+	log.WithPath("not-disabled", "foo").TriggerContext(context.TODO(), NewMessageEvent(Error, "this is just a test"))
+	<-eventTriggered
+	its.Equal("[not-disabled > foo] [error] this is just a test\n", buf.String())
+}
+
 func TestLoggerE2ESubContext(t *testing.T) {
 	assert := assert.New(t)
 

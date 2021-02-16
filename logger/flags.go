@@ -21,9 +21,10 @@ func NewFlags(flags ...string) *Flags {
 	}
 
 	for _, rawFlag := range flags {
-		parsedFlag := strings.TrimSpace(strings.ToLower(rawFlag))
+		parsedFlag := strings.ToLower(strings.TrimSpace(rawFlag))
 		if parsedFlag == FlagAll {
 			flagSet.all = true
+			continue
 		}
 
 		if parsedFlag == FlagNone {
@@ -82,7 +83,7 @@ func (efs *Flags) All() bool {
 }
 
 // SetNone flips the `none` bit on the flag set to true.
-// It also disables the `all` bit.
+// It also disables the `all` bit, and empties the enabled flag set.
 func (efs *Flags) SetNone() {
 	efs.all = false
 	efs.flags = make(map[string]bool)
