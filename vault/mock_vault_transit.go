@@ -5,24 +5,22 @@ Use of this source code is governed by a MIT license that can be found in the LI
 
 */
 
-package testutil
+package vault
 
 import (
 	"context"
 	"encoding/base64"
-
-	"github.com/blend/go-sdk/vault"
 )
 
 // Assert MockTransitClient implements TransitClient
 var (
-	_ vault.Client        = MockTransitClient{}
-	_ vault.TransitClient = MockTransitClient{}
+	_ Client        = MockTransitClient{}
+	_ TransitClient = MockTransitClient{}
 )
 
 // MockTransitClient skips interactions with the vault for encryption/decryption
 type MockTransitClient struct {
-	vault.Client
+	Client
 }
 
 // Encrypt just returns the input in the mock
