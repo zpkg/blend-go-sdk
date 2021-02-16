@@ -13,6 +13,7 @@ import (
 	"time"
 
 	"github.com/blend/go-sdk/assert"
+	"github.com/blend/go-sdk/uuid"
 )
 
 func Test_BoolValue(t *testing.T) {
@@ -148,4 +149,25 @@ func Test_CSVValue(t *testing.T) {
 	value, err = CSVValue("foo,bar", nil)
 	its.Nil(err)
 	its.Equal([]string{"foo", "bar"}, value)
+}
+
+func Test_UUIDValue(t *testing.T) {
+	its := assert.New(t)
+
+	var value uuid.UUID
+	var err error
+
+	testErr := fmt.Errorf("test error")
+	value, err = UUIDValue("", testErr)
+	its.Equal(testErr, err)
+	its.Empty(value)
+
+	uid := uuid.V4().String()
+	value, err = UUIDValue(uid, nil)
+	its.Nil(err)
+	its.Equal(uid, value.String())
+
+	value, err = UUIDValue("bogus uid", nil)
+	its.NotNil(err)
+	its.Empty(value)
 }

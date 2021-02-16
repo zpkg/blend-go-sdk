@@ -12,6 +12,8 @@ import (
 	"strconv"
 	"strings"
 	"time"
+
+	"github.com/blend/go-sdk/uuid"
 )
 
 // Common errors
@@ -92,4 +94,12 @@ func CSVValue(value string, err error) ([]string, error) {
 		return nil, err
 	}
 	return strings.Split(value, ","), nil
+}
+
+// UUIDValue returns a uuid typed value.
+func UUIDValue(param string, inputErr error) (uuid.UUID, error) {
+	if inputErr != nil {
+		return nil, inputErr
+	}
+	return uuid.Parse(param)
 }
