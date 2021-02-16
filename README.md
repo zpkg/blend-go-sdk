@@ -19,6 +19,7 @@ To run tests, it is required that you have Docker installed, with docker-compose
 We also provide the following CLI tools to help with development that leverage some of these packages:
 
 - `cmd/ask` : securely input secrets and output to a file to be read by templates.
+- `cmd/copyright` : injects and verifies copyright headers are present in files.
 - `cmd/cover` : allows for project level coverage reporting and enforcement.
 - `cmd/job` : run a command on a cron schedule; useful for writing jobs as kubernetes pods.
 - `cmd/profanity` : profanity rules checking (i.e. fail on grep match).
