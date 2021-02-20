@@ -33,10 +33,8 @@ const DefaultRestrictionsInternal = "Blend Confidential - Restricted"
 const DefaultRestrictionsOpenSource = `Use of this source code is governed by a {{ .License }} license that can be found in the LICENSE file.`
 
 // DefaultNoticeBodyTemplate is the default notice body template.
-const DefaultNoticeBodyTemplate = `
-Copyright (c) {{ .Year }} - Present. {{ .Company }}. All rights reserved
-{{ .Restrictions }}
-`
+const DefaultNoticeBodyTemplate = `Copyright (c) {{ .Year }} - Present. {{ .Company }}. All rights reserved
+{{ .Restrictions }}`
 
 var (
 	// DefaultNoticeTemplates is a mapping between file extension (including the prefix dot) to the notice templates.
@@ -103,13 +101,19 @@ var (
 )
 
 const (
+	// goNoticeTemplate is the notice template specific to go files
+	// note: it _must_ end in two newlines to prevent linting / compiler failures.
 	goNoticeTemplate = `/*
+
 {{ .Notice }}
+
 */
 
 `
 
-	yamlNoticeTemplate = `{{ .Notice | prefix "# " }}
+	yamlNoticeTemplate = `#
+{{ .Notice | prefix "# " }}
+#
 `
 
 	htmlNoticeTemplate = `<!--
@@ -117,29 +121,29 @@ const (
 -->
 `
 
-	jsNoticeTemplate = `/*
-{{ .Notice }}
-*/
+	jsNoticeTemplate = `/**
+{{ .Notice | prefix " * " }}
+ */
 `
 
-	tsNoticeTemplate = `/*
-{{ .Notice }}
-*/
+	tsNoticeTemplate = `/**
+{{ .Notice | prefix " * " }}
+ */
 `
 
 	cssNoticeTemplate = `/*
-{{ .Notice }}
-*/
+{{ .Notice | prefix " * " }}
+ */
 `
 
 	scssNoticeTemplate = `/*
-{{ .Notice }}
-*/
+{{ .Notice | prefix " * " }}
+ */
 `
 
 	sassNoticeTemplate = `/*
-{{ .Notice }}
-*/
+{{ .Notice | prefix " * " }}
+ */
 `
 
 	pythonNoticeTemplate = `'''

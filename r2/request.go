@@ -64,9 +64,10 @@ type Request struct {
 	Closer func() error
 	// Tracer is used to report span contexts to a distributed tracing collector.
 	Tracer Tracer
-	// OnRequest is an array of request lifecycle hooks used for logging.
+	// OnRequest is an array of request lifecycle hooks used for logging
+	// or to modify the request on a per call basis before it is sent.
 	OnRequest []OnRequestListener
-	// OnResponse is an array of response lifecycle hooks used for logging.
+	// OnResponse is an array of response lifecycle hooks used typically for logging.
 	OnResponse []OnResponseListener
 }
 

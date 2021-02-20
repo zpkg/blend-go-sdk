@@ -1,7 +1,7 @@
-# 
+#
 # Copyright (c) 2021 - Present. Blend Labs, Inc. All rights reserved
 # Use of this source code is governed by a MIT license that can be found in the LICENSE file.
-# 
+#
 GOLANG_LOGGER: #note: this does not affect go-sdk/logger because of the package selector
   description: "please use `logger.Log`, not a type reference"
   contents:
