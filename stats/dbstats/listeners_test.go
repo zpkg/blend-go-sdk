@@ -33,6 +33,7 @@ func TestAddListenersStats(t *testing.T) {
 	assert := assert.New(t)
 
 	log := logger.All(logger.OptOutput(ioutil.Discard))
+	defer log.Close()
 	collector := stats.NewMockCollector(32)
 
 	AddListeners(log, collector)

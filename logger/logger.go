@@ -380,10 +380,11 @@ func (l *Logger) Close() {
 			_ = listener.Stop()
 		}
 	}
-	for key := range l.Listeners {
-		delete(l.Listeners, key)
+	if closer, ok := l.Output.(io.Closer); ok {
+		_ = closer.Close()
 	}
 	l.Listeners = nil
+	l.Filters = nil
 }
 
 // Drain stops the event listeners, letting them complete their work

@@ -46,9 +46,14 @@ type Scoper interface {
 	WithAnnotations(Annotations) Scope
 }
 
-// Writable is an type that can write events.
+// Writable is a type that can write events.
 type Writable interface {
 	Write(context.Context, Event)
+}
+
+// ApplyContexter is a type that modifies a context.
+type ApplyContexter interface {
+	ApplyContext(context.Context) context.Context
 }
 
 // WriteTriggerable is a type that can both trigger and write events.

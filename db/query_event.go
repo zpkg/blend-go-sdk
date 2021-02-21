@@ -133,17 +133,17 @@ func (e QueryEvent) WriteText(tf logger.TextFormatter, wr io.Writer) {
 		fmt.Fprintf(wr, "[%s]", tf.Colorize(e.Label, ansi.ColorLightWhite))
 	}
 
+	if len(e.Body) > 0 {
+		fmt.Fprint(wr, logger.Space)
+		fmt.Fprint(wr, stringutil.CompressSpace(e.Body))
+	}
+
 	fmt.Fprint(wr, logger.Space)
 	fmt.Fprint(wr, e.Elapsed.String())
 
 	if e.Err != nil {
 		fmt.Fprint(wr, logger.Space)
 		fmt.Fprint(wr, tf.Colorize("failed", ansi.ColorRed))
-	}
-
-	if len(e.Body) > 0 {
-		fmt.Fprint(wr, logger.Space)
-		fmt.Fprint(wr, stringutil.CompressSpace(e.Body))
 	}
 }
 

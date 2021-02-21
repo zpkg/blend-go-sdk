@@ -7,6 +7,7 @@ require (
 	github.com/blend/sentry-go v1.0.0
 	github.com/golang/protobuf v1.4.3
 	github.com/jackc/pgx/v4 v4.10.0
+	github.com/mediocregopher/radix/v4 v4.0.0-beta.1
 	github.com/opentracing/opentracing-go v1.2.0
 	github.com/philhofer/fwd v1.1.1 // indirect
 	github.com/spf13/cobra v1.1.1

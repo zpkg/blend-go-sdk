@@ -75,6 +75,11 @@ const (
 	TagKeyKafkaOffset = "kafka.offset"
 	// TagKeyMeaured indicates a span should also emit metrics.
 	TagKeyMeasured = "_dd.measured"
+
+	// TagKeyTargetHost sets the target host address.
+	TagKeyTargetHost = "out.host"
+	// TagKeyTargetPort sets the target host port.
+	TagKeyTargetPort = "out.port"
 )
 
 // Operations are actions represented by spans.
@@ -104,6 +109,8 @@ const (
 	OperationVaultAPI = "vault.api.request"
 	// OperationKafkaPublish is a publish to a kafka topic.
 	OperationKafkaPublish = "kafka.publish"
+	// OperationRedisCommand is a redis operation.
+	OperationRedisCommand = "redis.command"
 )
 
 // Span types have similar behaviour to "app types" and help categorize

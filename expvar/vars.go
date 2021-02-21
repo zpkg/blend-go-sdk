@@ -44,11 +44,11 @@ func (v *Vars) Publish(name string, val Var) error {
 	return nil
 }
 
-// PublishTo forwards the vars contained in this set to another set with a given prefix.
-func (v *Vars) PublishTo(other *Vars, prefix string) error {
+// Forward forwards the vars contained in this set to another set with a given key prefix.
+func (v *Vars) Forward(dst *Vars, keyPrefix string) error {
 	var err error
 	return v.Do(func(kv KeyValue) error {
-		if err = other.Publish(prefix+kv.Key, kv.Value); err != nil {
+		if err = dst.Publish(keyPrefix+kv.Key, kv.Value); err != nil {
 			return err
 		}
 		return nil
@@ -78,10 +78,12 @@ func (v *Vars) Handler(w http.ResponseWriter, r *http.Request) {
 	_, _ = v.WriteTo(w)
 }
 
-// WriteTo writes the vars to a given writer.
+// WriteTo writes the vars to a given writer as json.
+//
+// This is called by the Handler function to return the output.
 func (v *Vars) WriteTo(wr io.Writer) (size int64, err error) {
 	var n int
-	n, err = fmt.Fprintf(wr, "{\n")
+	n, err = fmt.Fprintf(wr, "{")
 	size += int64(n)
 	if err != nil {
 		return
@@ -89,14 +91,14 @@ func (v *Vars) WriteTo(wr io.Writer) (size int64, err error) {
 	first := true
 	err = v.Do(func(kv KeyValue) error {
 		if !first {
-			n, err = fmt.Fprintf(wr, ",\n")
+			n, err = fmt.Fprintf(wr, ",")
 			size += int64(n)
 			if err != nil {
 				return err
 			}
 		}
 		first = false
-		n, err = fmt.Fprintf(wr, "%q: %s", kv.Key, kv.Value)
+		n, err = fmt.Fprintf(wr, "%q:%s", kv.Key, kv.Value)
 		size += int64(n)
 		if err != nil {
 			return err
@@ -106,7 +108,7 @@ func (v *Vars) WriteTo(wr io.Writer) (size int64, err error) {
 	if err != nil {
 		return
 	}
-	n, err = fmt.Fprintf(wr, "\n}\n")
+	n, err = fmt.Fprintf(wr, "}\n")
 	size += int64(n)
 	return
 }

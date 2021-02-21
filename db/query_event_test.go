@@ -46,7 +46,7 @@ func TestQueryEvent(t *testing.T) {
 	}
 
 	qe.WriteText(noColor, buf)
-	assert.Equal("[event-engine event-username@event-database] [event-query-label] 1ms failed event-body", buf.String())
+	assert.Equal("[event-engine event-username@event-database] [event-query-label] event-body 1ms failed", buf.String())
 
 	contents, err := json.Marshal(qe)
 	assert.Nil(err)
