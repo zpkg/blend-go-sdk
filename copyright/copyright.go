@@ -22,7 +22,7 @@ import (
 	"github.com/blend/go-sdk/stringutil"
 )
 
-// New creates a new profanity engine with a given set of config options.
+// New creates a new copyright engine with a given set of config options.
 func New(options ...Option) *Copyright {
 	var c Copyright
 	for _, option := range options {
