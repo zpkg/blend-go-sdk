@@ -34,7 +34,7 @@ func NewAuthManager(options ...AuthManagerOption) (manager AuthManager, err erro
 	manager.CookieDefaults.Path = DefaultCookiePath
 	manager.CookieDefaults.Secure = DefaultCookieSecure
 	manager.CookieDefaults.HttpOnly = DefaultCookieHTTPOnly
-	manager.CookieDefaults.SameSite = http.SameSiteLaxMode
+	manager.CookieDefaults.SameSite = DefaultCookieSameSiteMode
 
 	for _, opt := range options {
 		if err = opt(&manager); err != nil {

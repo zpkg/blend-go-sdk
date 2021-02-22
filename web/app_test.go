@@ -49,6 +49,7 @@ func TestAppNew(t *testing.T) {
 	assert.Nil(err)
 	assert.NotNil(app.BaseState)
 	assert.NotNil(app.Views)
+	assert.Equal(http.SameSiteLaxMode, app.Auth.CookieDefaults.SameSite)
 }
 
 func TestAppNewFromConfig(t *testing.T) {

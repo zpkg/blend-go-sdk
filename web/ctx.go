@@ -346,7 +346,7 @@ func (rc *Ctx) ExpireCookie(name string, path string) {
 	}
 	c.Path = path
 	c.Value = NewSessionID()
-	c.Expires = time.Now().UTC().AddDate(-1, 0, 0)
+	c.MaxAge = -1
 	http.SetCookie(rc.Response, c)
 }
 

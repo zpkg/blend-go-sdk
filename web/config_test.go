@@ -93,10 +93,10 @@ func TestConfigCookieHTTPOnlyOrDefault(t *testing.T) {
 func TestConfigCookieSameSiteOrDefault(t *testing.T) {
 	assert := assert.New(t)
 	var c Config
-	assert.Zero(c.CookieSameSiteOrDefault())
+	assert.Equal(DefaultCookieSameSiteMode, c.CookieSameSiteOrDefault())
 
-	c.CookieSameSite = webutil.SameSiteLax
-	assert.Equal(http.SameSiteLaxMode, c.CookieSameSiteOrDefault())
+	c.CookieSameSite = webutil.SameSiteStrict
+	assert.Equal(http.SameSiteStrictMode, c.CookieSameSiteOrDefault())
 
 	assert.NotNil(func() (err error) {
 		defer func() {

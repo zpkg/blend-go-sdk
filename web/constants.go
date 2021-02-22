@@ -8,6 +8,7 @@ Use of this source code is governed by a MIT license that can be found in the LI
 package web
 
 import (
+	"net/http"
 	"time"
 )
 
@@ -57,6 +58,8 @@ const (
 	DefaultCookieSecure = true
 	// DefaultCookieHTTPOnly returns what the default value for the `HTTPOnly` bit of issued cookies will be.
 	DefaultCookieHTTPOnly = true
+	// DefaultCookieSameSiteMode is the default cookie same site mode (currently http.SameSiteLaxMode).
+	DefaultCookieSameSiteMode = http.SameSiteLaxMode
 	// DefaultSessionTimeout is the default absolute timeout for a session (24 hours as a sane default).
 	DefaultSessionTimeout time.Duration = 24 * time.Hour
 	// DefaultUseSessionCache is the default if we should use the auth manager session cache.

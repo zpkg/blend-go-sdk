@@ -37,15 +37,20 @@ func New(options ...Option) (*App, error) {
 	if err != nil {
 		return nil, err
 	}
+	auth, err := NewAuthManager()
+	if err != nil {
+		return nil, err
+	}
 	a := App{
-		Latch:           async.NewLatch(),
+		Auth:            auth,
 		BaseContext:     func(_ net.Listener) context.Context { return context.Background() },
 		BaseHeaders:     BaseHeaders(),
 		BaseState:       new(SyncState),
+		DefaultProvider: views,
+		Latch:           async.NewLatch(),
 		Server:          new(http.Server),
 		Statics:         map[string]*StaticFileServer{},
 		Views:           views,
-		DefaultProvider: views,
 	}
 
 	for _, option := range options {

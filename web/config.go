@@ -173,7 +173,7 @@ func (c Config) CookieSameSiteOrDefault() http.SameSite {
 	if c.CookieSameSite != "" {
 		return webutil.MustParseSameSite(c.CookieSameSite)
 	}
-	return 0
+	return DefaultCookieSameSiteMode
 }
 
 // MaxHeaderBytesOrDefault returns the maximum header size in bytes or a default.
