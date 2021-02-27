@@ -13,6 +13,7 @@ import "time"
 type Config struct {
 	// Root is the starting directory for the file walk.
 	Root string `yaml:"root"`
+
 	// NoticeBodyTemplate is the notice body template that will be processed and
 	// injected to the relevant extension specific notice template.
 	NoticeBodyTemplate string `yaml:"noticeBodyTemplate"`
@@ -36,10 +37,15 @@ type Config struct {
 	// ExcludeDirs are a list of directory globs to exclude.
 	ExcludeDirs []string `yaml:"excludeDirs"`
 
-	// NoticeTemplates should be a map between file extension (including dot)
-	// to the relevant notice template for the file. It can include a template variable
+	// ExtensionNoticeTemplates is a map between file extension (including dot prefix)
+	// to the relevant full notice template for the file. It can include a template variable
 	// {{ .Notice }} that will insert the compiled `NoticyBodyTemplate`.
-	NoticeTemplates map[string]string
+	ExtensionNoticeTemplates map[string]string
+
+	// NoticeTemplate is a full notice template that will be used if there is no extension
+	// specific notice template.
+	// It can include the template variable {{ .Notice }} that will instert the compiled `NoticeBodyTemplate`.
+	NoticeTemplate string
 
 	// ExitFirst indicates if we should return after the first failure.
 	ExitFirst *bool `yaml:"exitFirst"`
@@ -131,13 +137,13 @@ func (c Config) ExcludeDirsOrDefault() []string {
 	return DefaultExcludeDirs
 }
 
-// NoticeTemplatesOrDefault returns mapping between file extensions (including dot) to
-// the notice templates (i.e. how the template should be commented)
-func (c Config) NoticeTemplatesOrDefault() map[string]string {
-	if c.NoticeTemplates != nil {
-		return c.NoticeTemplates
+// ExtensionNoticeTemplatesOrDefault returns mapping between file extensions (including dot) to
+// the notice templates (i.e. how the template should be fully formatted per file type).
+func (c Config) ExtensionNoticeTemplatesOrDefault() map[string]string {
+	if c.ExtensionNoticeTemplates != nil {
+		return c.ExtensionNoticeTemplates
 	}
-	return DefaultNoticeTemplates
+	return DefaultExtensionNoticeTemplates
 }
 
 // ExitFirstOrDefault returns a value or a default.

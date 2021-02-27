@@ -12,14 +12,6 @@ import (
 	"regexp"
 )
 
-// note: this is just here for posterity, do not use it.
-/*
-var unicodeNoticeBodyTemplate = `
-Copyright © 2021 - Present. Blend Labs, Inc. All rights reserved
-Blend Confidential - Restricted
-`
-*/
-
 // DefaultCompany is the default company to inject into the notice template.
 const DefaultCompany = "Blend Labs, Inc"
 
@@ -37,8 +29,8 @@ const DefaultNoticeBodyTemplate = `Copyright (c) {{ .Year }} - Present. {{ .Comp
 {{ .Restrictions }}`
 
 var (
-	// DefaultNoticeTemplates is a mapping between file extension (including the prefix dot) to the notice templates.
-	DefaultNoticeTemplates = map[string]string{
+	// DefaultExtensionNoticeTemplates is a mapping between file extension (including the prefix dot) to the notice templates.
+	DefaultExtensionNoticeTemplates = map[string]string{
 		".css":  cssNoticeTemplate,
 		".go":   goNoticeTemplate,
 		".html": htmlNoticeTemplate,

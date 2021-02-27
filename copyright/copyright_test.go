@@ -229,3 +229,37 @@ func generateTypescriptNotice(opts ...Option) ([]byte, error) {
 	}
 	return []byte(compiled), nil
 }
+
+func Test_Copyright_GetNoticeTemplate(t *testing.T) {
+	its := assert.New(t)
+
+	c := Copyright{}
+
+	noticeTemplate, ok := c.GetExtensionNoticeTemplate(".js")
+	its.True(ok)
+	its.Equal(jsNoticeTemplate, noticeTemplate)
+
+	// it handles no dot prefix
+	noticeTemplate, ok = c.GetExtensionNoticeTemplate("js")
+	its.True(ok)
+	its.Equal(jsNoticeTemplate, noticeTemplate)
+
+	// it handles another file type
+	noticeTemplate, ok = c.GetExtensionNoticeTemplate(".go")
+	its.True(ok)
+	its.Equal(goNoticeTemplate, noticeTemplate)
+
+	noticeTemplate, ok = c.GetExtensionNoticeTemplate("not-a-real-extension")
+	its.False(ok)
+	its.Empty(noticeTemplate)
+
+	withDefault := Copyright{
+		Config: Config{
+			NoticeTemplate: "this is just a test",
+		},
+	}
+
+	noticeTemplate, ok = withDefault.GetExtensionNoticeTemplate("not-a-real-extension")
+	its.True(ok)
+	its.Equal("this is just a test", noticeTemplate)
+}

@@ -127,7 +127,7 @@ func (c Copyright) Walk(ctx context.Context, action Action) error {
 		fileExtension := filepath.Ext(path)
 
 		// test the file
-		noticeTemplate, ok := c.NoticeTemplatesOrDefault()[fileExtension]
+		noticeTemplate, ok := c.GetExtensionNoticeTemplate(fileExtension)
 		if !ok {
 			return fmt.Errorf("invalid copyright injection file; %s", fileExtension)
 		}
@@ -141,8 +141,7 @@ func (c Copyright) Walk(ctx context.Context, action Action) error {
 		if err != nil {
 			return err
 		}
-		noticeCompiledBytes := []byte(noticeCompiled)
-		err = action(path, info, fileContents, noticeCompiledBytes)
+		err = action(path, info, fileContents, []byte(noticeCompiled))
 		if err != nil {
 			if err == ErrFailure {
 				didFail = true
@@ -161,60 +160,27 @@ func (c Copyright) Walk(ctx context.Context, action Action) error {
 	return nil
 }
 
-func (c Copyright) inject(path string, info os.FileInfo, file, notice []byte) error {
-	injectedContents := c.injectedContents(path, file, notice)
-	if injectedContents == nil {
-		return nil
+// GetExtensionNoticeTemplate gets a notice template by extension or the default.
+func (c Copyright) GetExtensionNoticeTemplate(fileExtension string) (noticeTemplate string, ok bool) {
+	if !strings.HasPrefix(fileExtension, ".") {
+		fileExtension = "." + fileExtension
 	}
-	return ioutil.WriteFile(path, injectedContents, info.Mode().Perm())
-}
 
-func (c Copyright) injectedContents(path string, file, notice []byte) []byte {
-	fileExtension := filepath.Ext(path)
-	var injectedContents []byte
-	if fileExtension == ".go" {
-		injectedContents = c.goInjectNotice(path, file, notice)
-	} else {
-		injectedContents = c.injectNotice(path, file, notice)
+	// check if there is a filetype specific notice template
+	extensionNoticeTemplates := c.ExtensionNoticeTemplatesOrDefault()
+	if noticeTemplate, ok = extensionNoticeTemplates[fileExtension]; ok {
+		return
 	}
-	return injectedContents
-}
 
-func (c Copyright) remove(path string, info os.FileInfo, file, notice []byte) error {
-	removedContents := c.removedContents(path, file, notice)
-	if removedContents == nil {
-		return nil
+	// check if we have a default notice template
+	if c.NoticeTemplate != "" {
+		noticeTemplate = c.NoticeTemplate
+		ok = true
+		return
 	}
-	return ioutil.WriteFile(path, removedContents, info.Mode().Perm())
-}
 
-func (c Copyright) removedContents(path string, file, notice []byte) []byte {
-	fileExtension := filepath.Ext(path)
-	var removedContents []byte
-	if fileExtension == ".go" {
-		removedContents = c.goRemoveNotice(path, file, notice)
-	} else {
-		removedContents = c.removeNotice(path, file, notice)
-	}
-	return removedContents
-}
-
-func (c Copyright) verify(path string, _ os.FileInfo, file, notice []byte) error {
-	fileExtension := filepath.Ext(path)
-	var err error
-	if fileExtension == ".go" {
-		err = c.goVerifyNotice(path, file, notice)
-	} else {
-		err = c.verifyNotice(path, file, notice)
-	}
-	if c.Config.ExitFirstOrDefault() {
-		return err
-	}
-	if err != nil {
-		fmt.Fprintf(c.GetStderr(), "%+v\n", err)
-		return ErrFailure
-	}
-	return nil
+	// fail
+	return
 }
 
 // GetStdout returns standard out.
@@ -256,8 +222,68 @@ func (c Copyright) Debugf(format string, args ...interface{}) {
 }
 
 //
+// actions
+//
+
+func (c Copyright) inject(path string, info os.FileInfo, file, notice []byte) error {
+	injectedContents := c.injectedContents(path, file, notice)
+	if injectedContents == nil {
+		return nil
+	}
+	return ioutil.WriteFile(path, injectedContents, info.Mode().Perm())
+}
+
+func (c Copyright) remove(path string, info os.FileInfo, file, notice []byte) error {
+	removedContents := c.removedContents(path, file, notice)
+	if removedContents == nil {
+		return nil
+	}
+	return ioutil.WriteFile(path, removedContents, info.Mode().Perm())
+}
+
+func (c Copyright) verify(path string, _ os.FileInfo, file, notice []byte) error {
+	fileExtension := filepath.Ext(path)
+	var err error
+	if fileExtension == ".go" {
+		err = c.goVerifyNotice(path, file, notice)
+	} else {
+		err = c.verifyNotice(path, file, notice)
+	}
+	if c.Config.ExitFirstOrDefault() {
+		return err
+	}
+	if err != nil {
+		fmt.Fprintf(c.GetStderr(), "%+v\n", err)
+		return ErrFailure
+	}
+	return nil
+}
+
+//
 // internal helpers
 //
+
+func (c Copyright) injectedContents(path string, file, notice []byte) []byte {
+	fileExtension := filepath.Ext(path)
+	var injectedContents []byte
+	if fileExtension == ".go" { // we have to treat go files specially because of build tags
+		injectedContents = c.goInjectNotice(path, file, notice)
+	} else {
+		injectedContents = c.injectNotice(path, file, notice)
+	}
+	return injectedContents
+}
+
+func (c Copyright) removedContents(path string, file, notice []byte) []byte {
+	fileExtension := filepath.Ext(path)
+	var removedContents []byte
+	if fileExtension == ".go" { // we have to treat go files specially because of build tags
+		removedContents = c.goRemoveNotice(path, file, notice)
+	} else {
+		removedContents = c.removeNotice(path, file, notice)
+	}
+	return removedContents
+}
 
 // goInjectNotice handles go files differently because they may contain build tags.
 func (c Copyright) goInjectNotice(path string, file, notice []byte) []byte {
