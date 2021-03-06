@@ -27,3 +27,21 @@ func TestIntPtr(t *testing.T) {
 	assert.Nil(SetInt(&setValue, isNil, hasValue, hasValue2)(context.TODO()))
 	assert.Equal(1, setValue)
 }
+
+func TestIntPtr_Zero(t *testing.T) {
+	assert := assert.New(t)
+
+	isNil := IntPtr(nil)
+
+	zero := 0
+	zeroValue := IntPtr(&zero)
+
+	value := 1
+	hasValue := IntPtr(&value)
+	value2 := 2
+	hasValue2 := IntPtr(&value2)
+
+	setValue := 3
+	assert.Nil(SetInt(&setValue, isNil, zeroValue, hasValue, hasValue2)(context.TODO()))
+	assert.Zero(setValue)
+}

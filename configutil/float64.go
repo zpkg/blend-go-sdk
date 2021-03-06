@@ -9,14 +9,6 @@ package configutil
 
 import "context"
 
-// Float64Source is a type that can return a value.
-type Float64Source interface {
-	// Float should return a float64 if the source has a given value.
-	// It should return nil if the value is not found.
-	// It should return an error if there was a problem fetching the value.
-	Float64(context.Context) (*float64, error)
-}
-
 var (
 	_ Float64Source = (*Float64)(nil)
 )

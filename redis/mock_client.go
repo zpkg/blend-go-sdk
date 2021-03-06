@@ -9,6 +9,24 @@ package redis
 
 import "context"
 
+// MockClientFunc is a function that implements Client.
+type MockClientFunc func(context.Context, interface{}, string, ...string) error
+
+// Do implements Client.Do.
+func (mcf MockClientFunc) Do(ctx context.Context, out interface{}, op string, args ...string) error {
+	return mcf(ctx, out, op, args...)
+}
+
+// Close is a no-op.
+func (mcf MockClientFunc) Close() error { return nil }
+
+// NewMockClient returns a new mock client with a given capacity.
+func NewMockClient(capacity int) *MockClient {
+	return &MockClient{
+		Ops: make(chan MockClientOp, capacity),
+	}
+}
+
 // Assert `MockClient` implements client.
 var (
 	_ Client = (*MockClient)(nil)

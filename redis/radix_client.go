@@ -15,6 +15,7 @@ import (
 
 	"github.com/blend/go-sdk/ex"
 	"github.com/blend/go-sdk/logger"
+	"github.com/blend/go-sdk/uuid"
 )
 
 // New returns a new client.
@@ -55,6 +56,19 @@ type RadixClient struct {
 	Log    logger.Triggerable
 	Tracer Tracer
 	Client radix.Client
+}
+
+// Ping sends an echo to the server and validates the response.
+func (rc *RadixClient) Ping(ctx context.Context) error {
+	var actual string
+	expected := uuid.V4().String()
+	if err := rc.Client.Do(ctx, radix.Cmd(&actual, OpECHO, expected)); err != nil {
+		return ex.New(err)
+	}
+	if actual != expected {
+		return ex.New(ErrPingFailed)
+	}
+	return nil
 }
 
 // Do runs a given command.

@@ -83,7 +83,7 @@ func (v *Vars) Handler(w http.ResponseWriter, r *http.Request) {
 // This is called by the Handler function to return the output.
 func (v *Vars) WriteTo(wr io.Writer) (size int64, err error) {
 	var n int
-	n, err = fmt.Fprintf(wr, "{")
+	n, err = fmt.Fprint(wr, "{")
 	size += int64(n)
 	if err != nil {
 		return
@@ -91,7 +91,7 @@ func (v *Vars) WriteTo(wr io.Writer) (size int64, err error) {
 	first := true
 	err = v.Do(func(kv KeyValue) error {
 		if !first {
-			n, err = fmt.Fprintf(wr, ",")
+			n, err = fmt.Fprint(wr, ",")
 			size += int64(n)
 			if err != nil {
 				return err
@@ -108,7 +108,7 @@ func (v *Vars) WriteTo(wr io.Writer) (size int64, err error) {
 	if err != nil {
 		return
 	}
-	n, err = fmt.Fprintf(wr, "}\n")
+	n, err = fmt.Fprintln(wr, "}")
 	size += int64(n)
 	return
 }

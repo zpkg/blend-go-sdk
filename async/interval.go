@@ -55,6 +55,13 @@ func OptIntervalContext(ctx context.Context) IntervalOption {
 	}
 }
 
+// OptIntervalStopOnError sets if the interval worker should stop on action error.
+func OptIntervalStopOnError(stopOnError bool) IntervalOption {
+	return func(i *Interval) {
+		i.StopOnError = stopOnError
+	}
+}
+
 // OptIntervalErrors sets the interval worker start error channel.
 func OptIntervalErrors(errors chan error) IntervalOption {
 	return func(i *Interval) {
@@ -65,11 +72,12 @@ func OptIntervalErrors(errors chan error) IntervalOption {
 // Interval is a background worker that performs an action on an interval.
 type Interval struct {
 	*Latch
-	Context  context.Context
-	Interval time.Duration
-	Action   ContextAction
-	Delay    time.Duration
-	Errors   chan error
+	Context     context.Context
+	Interval    time.Duration
+	Action      ContextAction
+	Delay       time.Duration
+	StopOnError bool
+	Errors      chan error
 }
 
 /*
@@ -84,8 +92,7 @@ func (i *Interval) Start() error {
 		return ex.New(ErrCannotStart)
 	}
 	i.Starting()
-	i.Dispatch()
-	return nil
+	return i.Dispatch()
 }
 
 // Stop stops the worker.
@@ -100,7 +107,7 @@ func (i *Interval) Stop() error {
 }
 
 // Dispatch is the main dispatch loop.
-func (i *Interval) Dispatch() {
+func (i *Interval) Dispatch() (err error) {
 	i.Started()
 
 	if i.Delay > 0 {
@@ -108,23 +115,37 @@ func (i *Interval) Dispatch() {
 	}
 
 	tick := time.NewTicker(i.Interval)
-	defer tick.Stop()
+	defer func() {
+		tick.Stop()
+		i.Stopped()
+	}()
 
-	var err error
 	var stopping <-chan struct{}
 	for {
 		stopping = i.NotifyStopping()
+		// check stopping conditions first
+		select {
+		case <-i.Context.Done():
+			return
+		case <-stopping:
+			return
+		default:
+		}
+
 		select {
 		case <-tick.C:
 			err = i.Action(context.Background())
-			if err != nil && i.Errors != nil {
-				i.Errors <- err
+			if err != nil {
+				if i.StopOnError {
+					return
+				}
+				if i.Errors != nil {
+					i.Errors <- err
+				}
 			}
 		case <-i.Context.Done():
-			i.Stopped()
 			return
 		case <-stopping:
-			i.Stopped()
 			return
 		}
 	}

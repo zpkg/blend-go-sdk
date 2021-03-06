@@ -7,7 +7,9 @@ Use of this source code is governed by a MIT license that can be found in the LI
 
 package mathutil
 
-import "time"
+import (
+	"time"
+)
 
 // Sum adds all the numbers of a slice together
 func Sum(input []float64) float64 {

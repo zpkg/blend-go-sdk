@@ -23,13 +23,31 @@ const googleJWK = `{
 	"n": "7NfiTQcshWgrEdKbHC2e1s92kK-YX7jS3JLFIBpT8f_j_b5y3dQdtFFS4vBoVNQkwep_34x_ihYlhA3QkwaTL2XMSiedjLnubFZBUjs7G0dgGIR3F8A06Bf5KT4g2x1dKVb0Lwwqg22XIfqaS88HdU5pDwcVmq4pVMaJQgUK-xFEC_sHdfqTV8Z0uBCr9Nik_7xz68FINDYyLhehnvwph9ui-8_WeDgU_h5xrG8H7oY28y2NCtBwXxIadB-K8pHxK2srM8wTCIivdyZS80P0jZMqyxPkt4fO33-GQWvelVmR0bS4Arb3Y4bXnoAMCEao3DTm0bgeNVz39274ippJSQ"
 }`
 
-func Test_JWK_PublicKey(t *testing.T) {
+func Test_JWK_RSAPublicKey(t *testing.T) {
 	it := assert.New(t)
 
 	var j JWK
 	it.Nil(json.Unmarshal([]byte(googleJWK), &j))
 
-	pubKey, err := j.PublicKey()
+	pubKey, err := j.RSAPublicKey()
 	it.Nil(err)
 	it.NotNil(pubKey)
+}
+
+func Test_RSAPublicKeyToJWK(t *testing.T) {
+	it := assert.New(t)
+
+	var j JWK
+	it.Nil(json.Unmarshal([]byte(googleJWK), &j))
+
+	pubKey, err := j.RSAPublicKey()
+	it.Nil(err)
+	it.NotNil(pubKey)
+
+	j2 := RSAPublicKeyToJWK(pubKey)
+	it.Equal(JWK{
+		KTY: KTYRSA,
+		E:   j.E,
+		N:   j.N,
+	}, j2)
 }

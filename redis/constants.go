@@ -7,7 +7,11 @@ Use of this source code is governed by a MIT license that can be found in the LI
 
 package redis
 
-import "time"
+import (
+	"time"
+
+	"github.com/blend/go-sdk/ex"
+)
 
 // Defaults
 const (
@@ -15,6 +19,11 @@ const (
 	DefaultAddr           = "127.0.0.1:6379"
 	DefaultTimeout        = 5 * time.Second
 	DefaultConnectTimeout = time.Second
+)
+
+// Errors
+const (
+	ErrPingFailed ex.Class = "radix ping failed"
 )
 
 // Key Operations
@@ -311,4 +320,29 @@ const (
 	OpSETRANGE = "SETRANGE"
 	OpSTRALGO  = "STRALGO"
 	OpSTRLEN   = "STRLEN"
+)
+
+// Connection Operations
+const (
+	OpAUTH               = "AUTH"
+	OpCLIENTCACHING      = "CLIENT CACHING"
+	OpCLIENTID           = "CLIENT ID"
+	OpCLIENTINFO         = "CLIENT INFO"
+	OpCLIENTKILL         = "CLIENT KILL"
+	OpCLIENTLIST         = "CLIENT LIST"
+	OpCLIENTGETNAME      = "CLIENT GETNAME"
+	OpCLIENTGETREDIR     = "CLIENT GETREDIR"
+	OpCLIENTUNPAUSE      = "CLIENT UNPAUSE"
+	OpCLIENTPAUSE        = "CLIENT PAUSE"
+	OpCLIENTREPLY        = "CLIENT REPLY"
+	OpCLIENTSETNAME      = "CLIENT SETNAME"
+	OpCLIENTTRACKING     = "CLIENT TRACKING"
+	OpCLIENTTRACKINGINFO = "CLIENT TRACKINGINFO"
+	OpCLIENTUNBLOCK      = "CLIENT UNBLOCK"
+	OpECHO               = "ECHO"
+	OpHELLO              = "HELLO"
+	OpPING               = "PING"
+	OpQUIT               = "QUIT"
+	OpRESET              = "RESET"
+	OpSELECT             = "SELECT"
 )

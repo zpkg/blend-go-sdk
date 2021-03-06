@@ -10,6 +10,7 @@ package ex
 import (
 	"bytes"
 	"encoding/json"
+	"errors"
 	"fmt"
 )
 
@@ -44,8 +45,10 @@ func NewWithStackDepth(class interface{}, startDepth int, options ...Option) Exc
 		if typed == nil {
 			return nil
 		}
+
 		ex = &Ex{
 			Class:      typed,
+			Inner:      errors.Unwrap(typed),
 			StackTrace: Callers(startDepth),
 		}
 	case string:

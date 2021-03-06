@@ -54,7 +54,7 @@ func (pkc *PublicKeyCache) Get(ctx context.Context, id string) (*rsa.PublicKey, 
 	}
 	pkc.mu.RUnlock()
 	if ok {
-		return jwk.PublicKey()
+		return jwk.RSAPublicKey()
 	}
 
 	pkc.mu.Lock()
@@ -66,7 +66,7 @@ func (pkc *PublicKeyCache) Get(ctx context.Context, id string) (*rsa.PublicKey, 
 		jwk, ok = pkc.current.Keys[id]
 	}
 	if ok {
-		return jwk.PublicKey()
+		return jwk.RSAPublicKey()
 	}
 
 	// if we should still refresh after grabbing
@@ -81,7 +81,7 @@ func (pkc *PublicKeyCache) Get(ctx context.Context, id string) (*rsa.PublicKey, 
 	if !ok {
 		return nil, ex.New("invalid jwt key id; not found in signing keys cache", ex.OptMessagef("Key ID: %s", id))
 	}
-	return jwk.PublicKey()
+	return jwk.RSAPublicKey()
 }
 
 // PublicKeysResponse is a response for the google certs api.
