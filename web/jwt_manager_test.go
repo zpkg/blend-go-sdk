@@ -118,11 +118,11 @@ func TestNewJWTManagerSerialization(t *testing.T) {
 		ExpiresUTC: time.Now().UTC().Add(time.Hour),
 	}
 
-	output, err := m.SerializeSessionValueHandler(context.TODO(), session)
+	output, err := m.SerializeHandler(context.TODO(), session)
 	assert.Nil(err)
 	assert.NotEmpty(output)
 
-	parsed, err := m.ParseSessionValueHandler(context.TODO(), output)
+	parsed, err := m.FetchHandler(context.TODO(), output)
 	assert.Nil(err)
 	assert.Equal(parsed.SessionID, session.SessionID)
 	assert.Equal(parsed.BaseURL, session.BaseURL)

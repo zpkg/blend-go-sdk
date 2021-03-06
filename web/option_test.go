@@ -60,8 +60,6 @@ func TestOptLog(t *testing.T) {
 }
 
 func TestOptServerOptions(t *testing.T) {
-	t.Skip()
-
 	assert := assert.New(t)
 
 	baseline, baselineErr := New()

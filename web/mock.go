@@ -140,7 +140,9 @@ func MockCtxWithBuffer(method, path string, buf io.Writer, options ...CtxOption)
 func MockSimulateLogin(ctx context.Context, app *App, userID string, opts ...r2.Option) []r2.Option {
 	sessionID := NewSessionID()
 	session := NewSession(userID, sessionID)
-	_ = app.Auth.PersistHandler(ctx, session)
+	if app.Auth.PersistHandler != nil {
+		_ = app.Auth.PersistHandler(ctx, session)
+	}
 	return append([]r2.Option{
 		r2.OptCookieValue(app.Auth.CookieDefaults.Name, sessionID),
 	}, opts...)
