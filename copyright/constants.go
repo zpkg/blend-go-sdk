@@ -80,6 +80,7 @@ var (
 		"*/testdata",
 		"*/testdata/*",
 		"*/vendor/*",
+		"node_modules/*",
 		"protogen/*",
 		"vendor/*",
 		"venv/*",
