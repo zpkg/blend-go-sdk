@@ -127,7 +127,6 @@ func (cr CopyRewriter) Execute(ctx context.Context) error {
 }
 
 // copyGoSourceFile rewrites the imports for a golang file at a given path
-// ex. to replace `github.com/blend/go-sdk/` with `golang.blend.com/sdk` vai GoImportRewriteRule.
 func (cr CopyRewriter) copyGoSourceFile(ctx context.Context, destinationPath, sourcePath string) error {
 	contents, err := ioutil.ReadFile(sourcePath)
 	if err != nil {
