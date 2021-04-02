@@ -21,7 +21,7 @@ import (
 func OptLogResponse(log logger.Triggerable) Option {
 	return OptOnResponse(func(req *http.Request, res *http.Response, startedUTC time.Time, err error) error {
 		if err != nil {
-			return err
+			return nil
 		}
 		event := NewEvent(FlagResponse,
 			OptEventRequest(req),
@@ -40,7 +40,7 @@ func OptLogResponse(log logger.Triggerable) Option {
 func OptLogResponseWithBody(log logger.Triggerable) Option {
 	return OptOnResponse(func(req *http.Request, res *http.Response, started time.Time, err error) error {
 		if err != nil {
-			return err
+			return nil
 		}
 		defer res.Body.Close()
 
