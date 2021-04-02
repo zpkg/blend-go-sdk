@@ -254,14 +254,10 @@ func (js *JobScheduler) RunLoop() {
 	defer func() {
 		js.Latch.Stopped()
 		js.Latch.Reset()
-		js.debugf(ctx, "RunLoop: exiting")
 	}()
-
-	js.debugf(ctx, "RunLoop: entered running state")
 
 	if js.JobSchedule != nil {
 		js.NextRuntime = js.JobSchedule.Next(js.NextRuntime)
-		js.debugf(ctx, "RunLoop: setting next runtime `%s`", js.NextRuntime.Format(time.RFC3339Nano))
 	}
 
 	// if the schedule returns a zero timestamp
@@ -269,13 +265,11 @@ func (js *JobScheduler) RunLoop() {
 	// schedule the job to be run.
 	// The run loop will return and the job scheduler will be interpretted as stopped.
 	if js.NextRuntime.IsZero() {
-		js.debugf(ctx, "RunLoop: next runtime is unset, returning")
 		return
 	}
 
 	for {
 		if js.NextRuntime.IsZero() {
-			js.debugf(ctx, "RunLoop: looped next runtime is unset, returning")
 			return
 		}
 
@@ -286,21 +280,16 @@ func (js *JobScheduler) RunLoop() {
 				if _, _, err := js.RunAsync(); err != nil {
 					_ = js.error(ctx, err)
 				}
-			} else {
-				js.debugf(ctx, "RunLoop: job cannot be scheduled; already running")
 			}
 
 			// set up the next runtime.
 			if js.JobSchedule != nil {
 				js.NextRuntime = js.JobSchedule.Next(js.NextRuntime)
-				js.debugf(ctx, "RunLoop: setting next runtime `%s`", js.NextRuntime.Format(time.RFC3339Nano))
 			} else {
 				js.NextRuntime = Zero
-				js.debugf(ctx, "RunLoop: setting next runtime to zero")
 			}
 
 		case <-js.Latch.NotifyStopping():
-			js.debugf(ctx, "RunLoop: stop signal received")
 			// note: we bail hard here
 			// because the job executions in flight are
 			// handled by the context cancellation.

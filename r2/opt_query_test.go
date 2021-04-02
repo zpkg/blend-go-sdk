@@ -45,3 +45,19 @@ func TestOptQueryValue(t *testing.T) {
 	assert.Equal("fuzz", req.Request.URL.Query().Get("buzz"))
 	assert.Equal("buzz=fuzz&huff=buff&query=value", req.Request.URL.RawQuery)
 }
+
+func TestOptQueryValueAdd(t *testing.T) {
+	assert := assert.New(t)
+
+	req := New(TestURL,
+		OptQueryValue("huff", "buff"),
+		OptQueryValueAdd("huff", "fuzz"),
+		OptQueryValueAdd("foo", "bar"),
+		OptQueryValueAdd("foo", "baz"),
+	)
+	assert.NotNil(req.Request.URL)
+	assert.NotEmpty(req.Request.URL.RawQuery)
+	assert.NotEmpty(req.Request.URL.Query())
+	assert.Equal([]string{"buff", "fuzz"}, req.Request.URL.Query()["huff"])
+	assert.Equal([]string{"bar", "baz"}, req.Request.URL.Query()["foo"])
+}

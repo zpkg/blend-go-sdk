@@ -42,6 +42,18 @@ func NewErrorEventListener(listener func(context.Context, ErrorEvent)) Listener 
 	}
 }
 
+// NewScopedErrorEventListener returns a new error event listener that listens
+// to specified scopes
+func NewScopedErrorEventListener(listener func(context.Context, ErrorEvent), scopes *Scopes) Listener {
+	return func(ctx context.Context, e Event) {
+		if typed, isTyped := e.(ErrorEvent); isTyped {
+			if scopes.IsEnabled(GetPath(ctx)...) {
+				listener(ctx, typed)
+			}
+		}
+	}
+}
+
 // NewErrorEventFilter returns a new error event filter.
 func NewErrorEventFilter(filter func(context.Context, ErrorEvent) (ErrorEvent, bool)) Filter {
 	return func(ctx context.Context, e Event) (Event, bool) {

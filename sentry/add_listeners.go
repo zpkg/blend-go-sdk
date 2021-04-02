@@ -14,7 +14,7 @@ import (
 )
 
 // AddListeners adds error listeners.
-func AddListeners(log logger.Listenable, meta configmeta.Meta, cfg Config) error {
+func AddListeners(log logger.Listenable, meta configmeta.Meta, cfg Config, opts ...AddListenersOption) error {
 	if log == nil || cfg.IsZero() {
 		return nil
 	}
@@ -34,8 +34,44 @@ func AddListeners(log logger.Listenable, meta configmeta.Meta, cfg Config) error
 	if err != nil {
 		return err
 	}
-	listener := logger.NewErrorEventListener(client.Notify)
-	log.Listen(logger.Error, ListenerName, listener)
-	log.Listen(logger.Fatal, ListenerName, listener)
+
+	options := AddListenersOptions{
+		EnabledFlags: DefaultListenerFlags,
+		Scopes:       logger.ScopesAll(),
+	}
+	for _, opt := range opts {
+		opt(&options)
+	}
+
+	listener := logger.NewScopedErrorEventListener(client.Notify, options.Scopes)
+	for _, flag := range options.EnabledFlags {
+		log.Listen(flag, ListenerName, listener)
+	}
 	return nil
+}
+
+// AddListenersOptions are all the options we can set when
+// adding Sentry error listeners
+type AddListenersOptions struct {
+	EnabledFlags []string
+	Scopes       *logger.Scopes
+}
+
+// AddListenersOption mutates AddListeners options
+type AddListenersOption func(options *AddListenersOptions)
+
+// AddListenersOptionFlags sets the logger flags to send Sentry
+// notifications for
+func AddListenersOptionFlags(flags ...string) AddListenersOption {
+	return func(options *AddListenersOptions) {
+		options.EnabledFlags = flags
+	}
+}
+
+// AddListenersOptionScopes sets the logger scopes to send Sentry
+// notifications for
+func AddListenersOptionScopes(scopes ...string) AddListenersOption {
+	return func(options *AddListenersOptions) {
+		options.Scopes = logger.NewScopes(scopes...)
+	}
 }

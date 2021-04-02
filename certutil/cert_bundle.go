@@ -173,3 +173,35 @@ func (cb CertBundle) CertPool() (*x509.CertPool, error) {
 	}
 	return systemPool, nil
 }
+
+// ServerConfig returns a tls.Config for this bundle as a server certificate.
+func (cb CertBundle) ServerConfig() (*tls.Config, error) {
+	keyPair, err := cb.GenerateKeyPair()
+	if err != nil {
+		return nil, err
+	}
+
+	serverCert, err := keyPair.CertBytes()
+	if err != nil {
+		return nil, err
+	}
+	serverKey, err := keyPair.KeyBytes()
+	if err != nil {
+		return nil, err
+	}
+
+	serverCertificate, err := tls.X509KeyPair(serverCert, serverKey)
+	if err != nil {
+		return nil, err
+	}
+
+	certPool, err := cb.CertPool()
+	if err != nil {
+		return nil, err
+	}
+
+	config := new(tls.Config)
+	config.Certificates = []tls.Certificate{serverCertificate}
+	config.RootCAs = certPool
+	return config, nil
+}

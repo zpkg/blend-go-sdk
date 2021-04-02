@@ -94,3 +94,20 @@ func TestCertBundleCommonNames(t *testing.T) {
 	assert.Nil(err)
 	assert.Len(commonNames, 2)
 }
+
+func TestCertBundle_ServerConfig(t *testing.T) {
+	t.Parallel()
+
+	assert := assert.New(t)
+
+	bundle, err := NewCertBundle(KeyPair{
+		Cert: string(certLiteral),
+		Key:  string(keyLiteral),
+	})
+	assert.Nil(err)
+
+	cfg, err := bundle.ServerConfig()
+	assert.Nil(err)
+	assert.NotEmpty(cfg.Certificates)
+	assert.NotNil(cfg.RootCAs)
+}

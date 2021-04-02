@@ -43,6 +43,7 @@ var (
 		".tsx":  tsNoticeTemplate,
 		".yaml": yamlNoticeTemplate,
 		".yml":  yamlNoticeTemplate,
+		".sql":  sqlNoticeTemplate,
 	}
 
 	// DefaultIncludeFiles is the default included files list.
@@ -59,6 +60,7 @@ var (
 		"*.tsx",
 		"*.yaml",
 		"*.yml",
+		"*.sql",
 	}
 
 	// DefaultIncludeDirs is the default included directories.
@@ -142,6 +144,11 @@ const (
 	pythonNoticeTemplate = `'''
 {{ .Notice }}
 '''
+`
+
+	sqlNoticeTemplate = `--
+{{ .Notice | prefix "-- " }}
+--
 `
 )
 

@@ -91,7 +91,7 @@ func OptCertManagerClientCerts(client *x509.CertPool) CertManagerOption {
 
 // CertManager is a pool of client certs.
 type CertManager struct {
-	sync.Mutex
+	sync.RWMutex
 	TLSConfig   *tls.Config
 	ClientCerts map[string][]byte
 }
@@ -106,9 +106,9 @@ func (cm *CertManager) ClientCertUIDs() (output []string) {
 
 // HasClientCert returns if the manager has a client cert.
 func (cm *CertManager) HasClientCert(uid string) (has bool) {
-	cm.Lock()
+	cm.RLock()
 	_, has = cm.ClientCerts[uid]
-	cm.Unlock()
+	cm.RUnlock()
 	return
 }
 
@@ -159,8 +159,8 @@ func (cm *CertManager) RefreshClientCerts() error {
 
 // GetConfigForClient gets a tls config for a given client hello.
 func (cm *CertManager) GetConfigForClient(sni *tls.ClientHelloInfo) (config *tls.Config, _ error) {
-	cm.Lock()
+	cm.RLock()
 	config = cm.TLSConfig.Clone()
-	cm.Unlock()
+	cm.RUnlock()
 	return
 }

@@ -126,6 +126,19 @@ func OptQueryValue(key, value string) RequestOption {
 	}
 }
 
+// OptQueryValueAdd adds a query value on a request.
+func OptQueryValueAdd(key, value string) RequestOption {
+	return func(r *http.Request) error {
+		if r.URL == nil {
+			r.URL = &url.URL{}
+		}
+		existing := r.URL.Query()
+		existing.Add(key, value)
+		r.URL.RawQuery = existing.Encode()
+		return nil
+	}
+}
+
 // OptHeader sets the request headers.
 func OptHeader(headers http.Header) RequestOption {
 	return func(r *http.Request) error {
