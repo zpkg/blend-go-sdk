@@ -218,16 +218,25 @@ func TestConfigReparse(t *testing.T) {
 	assert := assert.New(t)
 
 	cfg := &Config{
-		Host:     "bar",
-		Username: "example-string",
-		Password: "dog",
-		Database: "blend",
-		Schema:   "primary_schema",
-		SSLMode:  SSLModeVerifyCA,
+		Host:            "bar",
+		Username:        "example-string",
+		Password:        "dog",
+		Database:        "blend",
+		Schema:          "primary_schema",
+		SSLMode:         SSLModeVerifyCA,
+		BufferPoolSize:  10,
+		MaxConnections:  10,
+		IdleConnections: 5,
+		MaxLifetime:     100,
 	}
 
 	resolved, err := cfg.Reparse()
 	assert.Nil(err)
 	assert.NotNil(resolved)
 	assert.Equal("bar", resolved.Host)
+
+	assert.Equal(resolved.BufferPoolSize, 10)
+	assert.Equal(resolved.MaxConnections, 10)
+	assert.Equal(resolved.IdleConnections, 5)
+	assert.Equal(resolved.MaxLifetime, 100)
 }

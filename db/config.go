@@ -210,7 +210,17 @@ func (c *Config) Resolve(ctx context.Context) error {
 
 // Reparse creates a DSN and reparses it, in case some values need to be coalesced.
 func (c Config) Reparse() (Config, error) {
-	return NewConfigFromDSN(c.CreateDSN())
+	cfg, err := NewConfigFromDSN(c.CreateDSN())
+	if err != nil {
+		return Config{}, err
+	}
+
+	cfg.IdleConnections = c.IdleConnections
+	cfg.MaxConnections = c.MaxConnections
+	cfg.BufferPoolSize = c.BufferPoolSize
+	cfg.MaxLifetime = c.MaxLifetime
+
+	return cfg, nil
 }
 
 // MustReparse creates a DSN and reparses it, in case some values need to be coalesced,
