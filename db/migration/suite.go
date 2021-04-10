@@ -26,7 +26,7 @@ func New(options ...SuiteOption) *Suite {
 }
 
 // NewWithActions returns a new suite, with a new group, made up of given actions.
-func NewWithActions(actions ...Actionable) *Suite {
+func NewWithActions(actions ...Action) *Suite {
 	return New(
 		OptGroups(NewGroup(OptGroupActions(actions...))),
 	)

@@ -9,6 +9,8 @@ package sentry
 
 import (
 	"context"
+	"fmt"
+	"net"
 	"net/http"
 	"runtime"
 	"time"
@@ -18,6 +20,7 @@ import (
 	"github.com/blend/go-sdk/env"
 	"github.com/blend/go-sdk/ex"
 	"github.com/blend/go-sdk/logger"
+	"github.com/blend/go-sdk/webutil"
 )
 
 var (
@@ -125,14 +128,35 @@ func errExtra(ctx context.Context) map[string]interface{} {
 
 func errRequest(ee logger.ErrorEvent) *raven.Request {
 	if ee.State == nil {
-		return &raven.Request{}
+		return new(raven.Request)
 	}
 	typed, ok := ee.State.(*http.Request)
 	if !ok {
 		return &raven.Request{}
 	}
 
-	return raven.NewRequest(typed)
+	return newRavenRequest(typed)
+}
+
+func newRavenRequest(r *http.Request) *raven.Request {
+	protocol := webutil.SchemeHTTP
+	if r.TLS != nil || r.Header.Get("X-Forwarded-Proto") == "https" {
+		protocol = webutil.SchemeHTTPS
+	}
+	url := fmt.Sprintf("%s://%s%s", protocol, r.Host, r.URL.Path)
+	headers := make(map[string]string)
+	headers["Host"] = r.Host
+	var env map[string]string
+	if addr, port, err := net.SplitHostPort(r.RemoteAddr); err == nil {
+		env = map[string]string{"REMOTE_ADDR": addr, "REMOTE_PORT": port}
+	}
+	return &raven.Request{
+		URL:         url,
+		Method:      r.Method,
+		QueryString: r.URL.RawQuery,
+		Headers:     headers,
+		Env:         env,
+	}
 }
 
 func errStackTrace(err error) *raven.Stacktrace {

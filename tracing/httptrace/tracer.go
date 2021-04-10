@@ -9,6 +9,7 @@ package httptrace
 
 import (
 	"context"
+	"fmt"
 	"net/http"
 	"time"
 
@@ -37,7 +38,7 @@ type httpTracer struct {
 func StartHTTPSpan(ctx context.Context, tracer opentracing.Tracer, req *http.Request, resource string, startTime time.Time, extra ...opentracing.StartSpanOption) (opentracing.Span, *http.Request) {
 	// set up basic start options (these are mostly tags).
 	startOptions := []opentracing.StartSpanOption{
-		opentracing.Tag{Key: tracing.TagKeyResourceName, Value: resource},
+		opentracing.Tag{Key: tracing.TagKeyResourceName, Value: fmt.Sprintf("%s %s", req.Method, resource)},
 		opentracing.Tag{Key: tracing.TagKeySpanType, Value: tracing.SpanTypeWeb},
 		opentracing.Tag{Key: tracing.TagKeyHTTPMethod, Value: req.Method},
 		opentracing.Tag{Key: tracing.TagKeyHTTPURL, Value: req.URL.Path},

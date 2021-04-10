@@ -45,7 +45,7 @@ func TestStartHTTPSpan(t *testing.T) {
 
 	expectedTags := map[string]interface{}{
 		tracing.TagKeyMeasured:     1,
-		tracing.TagKeyResourceName: resource,
+		tracing.TagKeyResourceName: fmt.Sprintf("GET %s", resource),
 		tracing.TagKeySpanType:     tracing.SpanTypeWeb,
 		tracing.TagKeyHTTPMethod:   "GET",
 		tracing.TagKeyHTTPURL:      path,
@@ -74,7 +74,7 @@ func TestStart(t *testing.T) {
 
 	expectedTags := map[string]interface{}{
 		tracing.TagKeyMeasured:     1,
-		tracing.TagKeyResourceName: path,
+		tracing.TagKeyResourceName: fmt.Sprintf("GET %s", path),
 		tracing.TagKeySpanType:     tracing.SpanTypeWeb,
 		tracing.TagKeyHTTPMethod:   "GET",
 		tracing.TagKeyHTTPURL:      path,

@@ -31,10 +31,10 @@ func TestGuard(t *testing.T) {
 	assert.Nil(err)
 
 	var didRun bool
-	action := Actions(func(ctx context.Context, c *db.Connection, itx *sql.Tx) error {
+	action := Actions(ActionFunc(func(ctx context.Context, c *db.Connection, itx *sql.Tx) error {
 		didRun = true
 		return nil
-	})
+	}))
 
 	err = Guard("test", func(ctx context.Context, c *db.Connection, itx *sql.Tx) (bool, error) {
 		return c.Invoke(db.OptContext(ctx), db.OptTx(itx)).Query(fmt.Sprintf("select * from %s", tableName)).Any()

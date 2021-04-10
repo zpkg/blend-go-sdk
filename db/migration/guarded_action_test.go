@@ -16,7 +16,7 @@ import (
 func TestStep(t *testing.T) {
 	assert := assert.New(t)
 
-	step := NewStep(Always(), NoOp)
+	step := NewStep(Always(), ActionFunc(NoOp))
 	assert.NotNil(step.Guard)
 	assert.NotNil(step.Body)
 }

@@ -32,7 +32,7 @@ func TestStart(t *testing.T) {
 	assert.Equal(tracing.OperationHTTPRequest, mockSpan.OperationName)
 
 	assert.Len(mockSpan.Tags(), 8)
-	assert.Equal("/test-resource", mockSpan.Tags()[tracing.TagKeyResourceName])
+	assert.Equal("GET /test-resource", mockSpan.Tags()[tracing.TagKeyResourceName])
 	assert.Equal(tracing.SpanTypeWeb, mockSpan.Tags()[tracing.TagKeySpanType])
 	assert.Equal("GET", mockSpan.Tags()[tracing.TagKeyHTTPMethod])
 	assert.Equal("/test-resource", mockSpan.Tags()[tracing.TagKeyHTTPURL])
@@ -58,7 +58,7 @@ func TestStartWithRoute(t *testing.T) {
 	assert.Equal(tracing.OperationHTTPRequest, mockSpan.OperationName)
 
 	assert.Len(mockSpan.Tags(), 9)
-	assert.Equal("/test-resource/:id", mockSpan.Tags()[tracing.TagKeyResourceName])
+	assert.Equal("GET /test-resource/:id", mockSpan.Tags()[tracing.TagKeyResourceName])
 	assert.Equal(tracing.SpanTypeWeb, mockSpan.Tags()[tracing.TagKeySpanType])
 	assert.Equal("GET", mockSpan.Tags()[tracing.TagKeyHTTPMethod])
 	assert.Equal("/test-resource/3", mockSpan.Tags()[tracing.TagKeyHTTPURL])

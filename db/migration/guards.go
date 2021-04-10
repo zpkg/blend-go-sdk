@@ -44,7 +44,7 @@ func Guard(description string, predicate GuardPredicateFunc) GuardFunc {
 			return nil
 		}
 
-		err = step(ctx, c, tx)
+		err = step.Action(ctx, c, tx)
 		if err != nil {
 			if suite := GetContextSuite(ctx); suite != nil {
 				return suite.Error(WithLabel(ctx, description), err)
