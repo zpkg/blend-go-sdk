@@ -62,9 +62,8 @@ func AddListeners(log logger.FilterListenable, collector stats.Collector, opts .
 
 			_ = collector.Increment(MetricNameHTTPRequest, tags...)
 			_ = collector.Gauge(MetricNameHTTPRequestSize, float64(wre.ContentLength), tags...)
-			_ = collector.Gauge(MetricNameHTTPRequestElapsed, timeutil.Milliseconds(wre.Elapsed), tags...)
-			_ = collector.TimeInMilliseconds(MetricNameHTTPRequestElapsed, wre.Elapsed, tags...)
-			_ = collector.Distribution(MetricNameHTTPRequestElapsed, timeutil.Milliseconds(wre.Elapsed), tags...)
+			_ = collector.Histogram(MetricNameHTTPRequestElapsed, timeutil.Milliseconds(wre.Elapsed), tags...)
+			_ = collector.Gauge(MetricNameHTTPRequestElapsedLast, timeutil.Milliseconds(wre.Elapsed), tags...)
 		}),
 	)
 }

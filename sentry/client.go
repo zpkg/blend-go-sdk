@@ -12,8 +12,8 @@ import (
 	"fmt"
 	"net"
 	"net/http"
+	"os"
 	"runtime"
-	"time"
 
 	raven "github.com/blend/sentry-go"
 
@@ -45,6 +45,8 @@ func New(cfg Config) (*Client, error) {
 			ServerName:  cfg.ServerName,
 			Dist:        cfg.Dist,
 			Release:     cfg.Release,
+			Debug:       cfg.Debug,
+			DebugWriter: os.Stderr,
 		},
 	)
 	if err != nil {
@@ -65,7 +67,7 @@ type Client struct {
 // Notify sends a notification.
 func (c Client) Notify(ctx context.Context, ee logger.ErrorEvent) {
 	c.Client.CaptureEvent(errEvent(ctx, ee), nil, raven.NewScope())
-	c.Client.Flush(time.Second)
+	c.Client.Flush(c.Config.FlushTimeoutOrDefault()) // goose this a bit
 }
 
 func errEvent(ctx context.Context, ee logger.ErrorEvent) *raven.Event {

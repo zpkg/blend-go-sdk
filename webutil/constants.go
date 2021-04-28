@@ -148,4 +148,7 @@ const (
 
 	// ContentEncodingGZIP is the gzip (compressed) content encoding.
 	ContentEncodingGZIP = "gzip"
+
+	// ConnectionClose is the connection value of "close"
+	ConnectionClose = "close"
 )

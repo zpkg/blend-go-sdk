@@ -36,7 +36,7 @@ func TestIn(t *testing.T) {
 	selector := In{Key: "foo", Values: []string{"bar", "far"}}
 	assert.True(selector.Matches(valid))
 	assert.True(selector.Matches(valid2))
-	assert.True(selector.Matches(missing))
+	assert.False(selector.Matches(missing))
 	assert.False(selector.Matches(invalid))
 
 	assert.Equal("foo in (bar, far)", selector.String())

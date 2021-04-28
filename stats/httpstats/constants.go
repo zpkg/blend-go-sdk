@@ -11,9 +11,10 @@ import "github.com/blend/go-sdk/webutil"
 
 // HTTP stats constants
 const (
-	MetricNameHTTPRequest        string = string(webutil.FlagHTTPRequest)
-	MetricNameHTTPRequestSize    string = MetricNameHTTPRequest + ".size"
-	MetricNameHTTPRequestElapsed string = MetricNameHTTPRequest + ".elapsed"
+	MetricNameHTTPRequest            string = string(webutil.FlagHTTPRequest)
+	MetricNameHTTPRequestSize        string = MetricNameHTTPRequest + ".size"
+	MetricNameHTTPRequestElapsed     string = MetricNameHTTPRequest + ".elapsed"
+	MetricNameHTTPRequestElapsedLast string = MetricNameHTTPRequestElapsed + ".last"
 
 	TagRoute  string = "route"
 	TagMethod string = "method"

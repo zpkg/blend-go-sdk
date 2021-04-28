@@ -56,16 +56,16 @@ func AddListeners(log logger.FilterListenable, collector stats.Collector, opts .
 		r2.NewEventListener(func(_ context.Context, r2e r2.Event) {
 
 			hostname := stats.Tag(TagHostname, r2e.Request.URL.Hostname())
+			target := stats.Tag(TagTarget, r2e.Request.URL.Hostname())
 			method := stats.Tag(TagMethod, r2e.Request.Method)
 			status := stats.Tag(TagStatus, strconv.Itoa(r2e.Response.StatusCode))
 			tags := []string{
-				hostname, method, status,
+				hostname, target, method, status,
 			}
 
 			_ = collector.Increment(MetricNameHTTPClientRequest, tags...)
-			_ = collector.Gauge(MetricNameHTTPClientRequestElapsed, timeutil.Milliseconds(r2e.Elapsed), tags...)
-			_ = collector.TimeInMilliseconds(MetricNameHTTPClientRequestElapsed, r2e.Elapsed, tags...)
-			_ = collector.Distribution(MetricNameHTTPClientRequestElapsed, timeutil.Milliseconds(r2e.Elapsed), tags...)
+			_ = collector.Gauge(MetricNameHTTPClientRequestElapsedLast, timeutil.Milliseconds(r2e.Elapsed), tags...)
+			_ = collector.Histogram(MetricNameHTTPClientRequestElapsed, timeutil.Milliseconds(r2e.Elapsed), tags...)
 		}),
 	)
 }

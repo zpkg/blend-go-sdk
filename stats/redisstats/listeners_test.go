@@ -50,12 +50,12 @@ func TestAddListenersStats(t *testing.T) {
 	assert.NotEmpty(m.Tags)
 
 	m = <-collector.Metrics
-	assert.Equal(MetricNameElapsed, m.Name)
+	assert.Equal(MetricNameElapsedLast, m.Name)
 	assert.Equal(250, m.Gauge)
 	assert.NotEmpty(m.Tags)
 
 	m = <-collector.Metrics
 	assert.Equal(MetricNameElapsed, m.Name)
-	assert.Equal(250, m.TimeInMilliseconds)
+	assert.Equal(250, m.Histogram)
 	assert.NotEmpty(m.Tags)
 }

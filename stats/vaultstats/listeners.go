@@ -30,8 +30,7 @@ func AddListeners(log logger.Listenable, collector stats.Collector) {
 			stats.Tag("path", ve.Path),
 		}
 		_ = collector.Increment("vault.request", tags...)
-		_ = collector.Gauge("vault.request.elapsed", timeutil.Milliseconds(ve.Elapsed), tags...)
 		_ = collector.TimeInMilliseconds("vault.request.elapsed", ve.Elapsed, tags...)
-		_ = collector.Distribution("vault.request.elapsed", timeutil.Milliseconds(ve.Elapsed), tags...)
+		_ = collector.Histogram("vault.request.elapsed", timeutil.Milliseconds(ve.Elapsed), tags...)
 	}))
 }

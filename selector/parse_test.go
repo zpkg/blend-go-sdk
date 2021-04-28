@@ -15,6 +15,8 @@ import (
 )
 
 func TestMustParse(t *testing.T) {
+	t.Parallel()
+
 	assert := assert.New(t)
 
 	assert.Equal("x == a", MustParse("x==a").String())
@@ -32,6 +34,8 @@ func TestMustParse(t *testing.T) {
 }
 
 func TestParseInvalid(t *testing.T) {
+	t.Parallel()
+
 	assert := assert.New(t)
 
 	testBadStrings := []string{
@@ -55,6 +59,8 @@ func TestParseInvalid(t *testing.T) {
 }
 
 func TestParseSemiValid(t *testing.T) {
+	t.Parallel()
+
 	assert := assert.New(t)
 
 	testGoodStrings := []string{
@@ -72,6 +78,8 @@ func TestParseSemiValid(t *testing.T) {
 }
 
 func TestParseEquals(t *testing.T) {
+	t.Parallel()
+
 	assert := assert.New(t)
 
 	valid := Labels{
@@ -90,6 +98,8 @@ func TestParseEquals(t *testing.T) {
 }
 
 func TestParseNotEquals(t *testing.T) {
+	t.Parallel()
+
 	assert := assert.New(t)
 
 	valid := Labels{
@@ -113,6 +123,8 @@ func TestParseNotEquals(t *testing.T) {
 }
 
 func TestParseIn(t *testing.T) {
+	t.Parallel()
+
 	assert := assert.New(t)
 
 	valid := Labels{
@@ -136,11 +148,13 @@ func TestParseIn(t *testing.T) {
 	assert.Nil(err)
 	assert.True(selector.Matches(valid), selector.String())
 	assert.True(selector.Matches(valid2))
-	assert.True(selector.Matches(invalidMissing))
+	assert.False(selector.Matches(invalidMissing))
 	assert.False(selector.Matches(invalid), selector.String())
 }
 
 func TestParseGroup(t *testing.T) {
+	t.Parallel()
+
 	assert := assert.New(t)
 
 	valid := Labels{
@@ -171,6 +185,8 @@ func TestParseGroup(t *testing.T) {
 }
 
 func TestParseGroupComplicated(t *testing.T) {
+	t.Parallel()
+
 	assert := assert.New(t)
 	valid := Labels{
 		"zoo":   "mar",
@@ -184,6 +200,8 @@ func TestParseGroupComplicated(t *testing.T) {
 }
 
 func TestParseDocsExample(t *testing.T) {
+	t.Parallel()
+
 	assert := assert.New(t)
 	sel, err := Parse("x in (foo,,baz),y,z notin ()")
 	assert.Nil(err)
@@ -191,6 +209,8 @@ func TestParseDocsExample(t *testing.T) {
 }
 
 func TestParseSubdomainKey(t *testing.T) {
+	t.Parallel()
+
 	assert := assert.New(t)
 	sel, err := Parse("example.com/failure-domain == primary")
 	assert.Nil(err)
@@ -204,6 +224,8 @@ func TestParseSubdomainKey(t *testing.T) {
 }
 
 func TestParseEqualsOperators(t *testing.T) {
+	t.Parallel()
+
 	assert := assert.New(t)
 
 	selector, err := Parse("notin=in")
@@ -216,6 +238,8 @@ func TestParseEqualsOperators(t *testing.T) {
 }
 
 func TestParseValidate(t *testing.T) {
+	t.Parallel()
+
 	assert := assert.New(t)
 
 	_, err := Parse("zoo=bar")
@@ -232,6 +256,8 @@ func TestParseValidate(t *testing.T) {
 }
 
 func TestParseRegressionCSVSymbols(t *testing.T) {
+	t.Parallel()
+
 	assert := assert.New(t)
 
 	sel, err := Parse("foo in (bar-bar, baz.baz, buzz_buzz), moo=boo")
@@ -240,6 +266,8 @@ func TestParseRegressionCSVSymbols(t *testing.T) {
 }
 
 func TestParseRegressionIn(t *testing.T) {
+	t.Parallel()
+
 	assert := assert.New(t)
 
 	_, err := Parse("foo in bar, buzz)")
@@ -247,6 +275,8 @@ func TestParseRegressionIn(t *testing.T) {
 }
 
 func TestParseMultiByte(t *testing.T) {
+	t.Parallel()
+
 	assert := assert.New(t)
 
 	selector, err := Parse("함=수,목=록") // number=number, number=rock
@@ -259,6 +289,8 @@ func TestParseMultiByte(t *testing.T) {
 }
 
 func TestParseOptions(t *testing.T) {
+	t.Parallel()
+
 	assert := assert.New(t)
 
 	selQuery := "bar=foo@bar"
@@ -297,6 +329,8 @@ func BenchmarkParse(b *testing.B) {
 }
 
 func TestParse_FuzzRegressions(t *testing.T) {
+	t.Parallel()
+
 	assert := assert.New(t)
 
 	var sel Selector
@@ -320,4 +354,29 @@ func TestParse_FuzzRegressions(t *testing.T) {
 		_, err = Parse(sel.String())
 		assert.Nil(err)
 	}
+}
+
+func TestParse_InRegression(t *testing.T) {
+	t.Parallel()
+
+	its := assert.New(t)
+
+	good0 := Labels{
+		"role": "job",
+		"team": "internal-engineering",
+	}
+	good1 := Labels{
+		"role": "job-worker",
+		"team": "internal-engineering",
+	}
+	bad0 := Labels{
+		"role": "not-job",
+	}
+
+	sel, err := Parse("role in (job, job-worker),team=internal-engineering")
+	its.Nil(err)
+
+	its.True(sel.Matches(good0))
+	its.True(sel.Matches(good1))
+	its.False(sel.Matches(bad0))
 }

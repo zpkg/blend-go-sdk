@@ -41,9 +41,8 @@ func AddListeners(log logger.Listenable, collector stats.Collector) {
 
 				_ = collector.Increment(MetricNameCron, tags...)
 				if ce.Elapsed > 0 {
-					_ = collector.Gauge(MetricNameCronElapsed, timeutil.Milliseconds(ce.Elapsed), tags...)
-					_ = collector.TimeInMilliseconds(MetricNameCronElapsed, ce.Elapsed, tags...)
-					_ = collector.Distribution(MetricNameCronElapsed, timeutil.Milliseconds(ce.Elapsed), tags...)
+					_ = collector.Gauge(MetricNameCronElapsedLast, timeutil.Milliseconds(ce.Elapsed), tags...)
+					_ = collector.Histogram(MetricNameCronElapsed, timeutil.Milliseconds(ce.Elapsed), tags...)
 				}
 			}),
 		)

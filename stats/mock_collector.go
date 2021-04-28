@@ -64,6 +64,23 @@ func (mc *MockCollector) GetCount(metricName string) (count int) {
 	return
 }
 
+// GetTagCount returns the number of events logged for a given metric name & tag name.
+func (mc *MockCollector) GetTagCount(metricName string, tagName string) (count int) {
+	metrics := mc.AllMetrics()
+	metricCount := len(metrics)
+	for x := 0; x < metricCount; x++ {
+		metric := metrics[x]
+		if metric.Name == metricName {
+			for i := 0; i < len(metric.Tags); i++ {
+				if tagName == metric.Tags[i] {
+					count++
+				}
+			}
+		}
+	}
+	return
+}
+
 func (mc *MockCollector) makeName(name string) string {
 	if mc.Field.Namespace != "" {
 		return mc.Field.Namespace + name

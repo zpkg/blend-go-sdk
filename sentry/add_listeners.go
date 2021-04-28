@@ -18,9 +18,6 @@ func AddListeners(log logger.Listenable, meta configmeta.Meta, cfg Config, opts 
 	if log == nil || cfg.IsZero() {
 		return nil
 	}
-	if typed, ok := log.(logger.InfofReceiver); ok {
-		typed.Infof("using sentry host: %s", webutil.MustParseURL(cfg.DSN).Hostname())
-	}
 	if cfg.Environment == "" {
 		cfg.Environment = meta.ServiceEnv
 	}
@@ -29,6 +26,10 @@ func AddListeners(log logger.Listenable, meta configmeta.Meta, cfg Config, opts 
 	}
 	if cfg.Release == "" {
 		cfg.Release = meta.Version
+	}
+
+	if typed, ok := log.(logger.InfofReceiver); ok {
+		typed.Infof("using sentry host: %s and environment: %s", webutil.MustParseURL(cfg.DSN).Hostname(), cfg.Environment)
 	}
 	client, err := New(cfg)
 	if err != nil {

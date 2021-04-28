@@ -19,8 +19,10 @@ const (
 
 	RPCMethodUnknown string = "unknown"
 
-	MetricNameRPC                     string = string(grpcutil.FlagRPC)
-	MetricNameRPCStreamMessage        string = string(grpcutil.FlagRPCStreamMessage)
-	MetricNameRPCElapsed              string = MetricNameRPC + ".elapsed"
-	MetricNameRPCStreamMessageElapsed string = MetricNameRPCStreamMessage + ".elapsed"
+	MetricNameRPC                         string = string(grpcutil.FlagRPC)
+	MetricNameRPCStreamMessage            string = string(grpcutil.FlagRPCStreamMessage)
+	MetricNameRPCElapsed                  string = MetricNameRPC + ".elapsed"
+	MetricNameRPCElapsedLast              string = MetricNameRPCElapsed + ".last"
+	MetricNameRPCStreamMessageElapsed     string = MetricNameRPCStreamMessage + ".elapsed"
+	MetricNameRPCStreamMessageElapsedLast string = MetricNameRPCStreamMessageElapsed + ".last"
 )

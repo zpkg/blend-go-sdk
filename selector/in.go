@@ -31,7 +31,9 @@ func (i In) Matches(labels Labels) bool {
 		}
 		return false
 	}
-	return true
+	// in should be exclusive, that is
+	// we should fail if the in key isn't present
+	return false
 }
 
 // Validate validates the selector.

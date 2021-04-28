@@ -46,12 +46,12 @@ func TestAddListenersStats(t *testing.T) {
 	assert.NotEmpty(qm.Tags)
 
 	qm = <-collector.Metrics
-	assert.Equal(MetricNameDBQueryElapsed, qm.Name)
+	assert.Equal(MetricNameDBQueryElapsedLast, qm.Name)
 	assert.Equal(1000, qm.Gauge)
 	assert.NotEmpty(qm.Tags)
 
 	qm = <-collector.Metrics
 	assert.Equal(MetricNameDBQueryElapsed, qm.Name)
-	assert.Equal(1000, qm.TimeInMilliseconds)
+	assert.Equal(1000, qm.Histogram)
 	assert.NotEmpty(qm.Tags)
 }

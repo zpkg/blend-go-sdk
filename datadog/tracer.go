@@ -60,6 +60,7 @@ func NewTracer(opts ...TracerOption) opentracing.Tracer {
 		startOptions = append(startOptions, ddtracer.WithGlobalTag(key, value))
 	}
 	startOptions = append(startOptions, ddtracer.WithSampler(RateSampler(options.SampleRate)))
+
 	if options.Log != nil {
 		startOptions = append(startOptions, ddtracer.WithLogger(traceLogShim{options.Log}))
 	} else {

@@ -44,8 +44,7 @@ func AddListeners(log logger.Listenable, collector stats.Collector) {
 			tags = append(tags, stats.TagError)
 		}
 		_ = collector.Increment(MetricName, tags...)
-		_ = collector.Gauge(MetricNameElapsed, timeutil.Milliseconds(e.Elapsed), tags...)
-		_ = collector.TimeInMilliseconds(MetricNameElapsed, e.Elapsed, tags...)
-		_ = collector.Distribution(MetricNameElapsed, timeutil.Milliseconds(e.Elapsed), tags...)
+		_ = collector.Gauge(MetricNameElapsedLast, timeutil.Milliseconds(e.Elapsed), tags...)
+		_ = collector.Histogram(MetricNameElapsed, timeutil.Milliseconds(e.Elapsed), tags...)
 	}))
 }

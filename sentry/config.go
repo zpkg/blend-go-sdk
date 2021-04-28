@@ -11,6 +11,7 @@ import (
 	"context"
 	"fmt"
 	"net/url"
+	"time"
 
 	"github.com/blend/go-sdk/configutil"
 	"github.com/blend/go-sdk/env"
@@ -30,6 +31,10 @@ type Config struct {
 	Environment string `json:"environment" yaml:"environment"`
 	// Maximum number of breadcrumbs.
 	MaxBreadcrumbs int `json:"maxBreadCrumbs" yaml:"maxBreadCrumbs"`
+	// Debug prints debugging information to the screen.
+	Debug bool `json:"debug" yaml:"debug"`
+	// FlushTimeout is the timeout for flushing exceptions to sentry.
+	FlushTimeout time.Duration `json:"flushTimeout" yaml:"flushTimeout"`
 }
 
 // IsZero returns if the config is unset.
@@ -43,6 +48,7 @@ func (c *Config) Resolve(ctx context.Context) error {
 		configutil.SetString(&c.DSN, configutil.String(c.DSN), configutil.Env("SENTRY_DSN")),
 		configutil.SetString(&c.ServerName, configutil.String(c.ServerName), configutil.Env(env.VarServiceName)),
 		configutil.SetString(&c.Environment, configutil.String(c.Environment), configutil.Env(env.VarServiceEnv)),
+		configutil.SetDuration(&c.FlushTimeout, configutil.Duration(c.FlushTimeout), configutil.Duration(5*time.Second)),
 	)
 }
 
@@ -57,4 +63,12 @@ func (c *Config) GetDSNHost() string {
 		return ""
 	}
 	return fmt.Sprintf("%s://%s", parsedURL.Scheme, parsedURL.Host)
+}
+
+// FlushTimeoutOrDefault returns the flush timeout or a default.
+func (c Config) FlushTimeoutOrDefault() time.Duration {
+	if c.FlushTimeout > 0 {
+		return c.FlushTimeout
+	}
+	return 5 * time.Second
 }
