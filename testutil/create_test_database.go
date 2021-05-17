@@ -28,6 +28,7 @@ func CreateTestDatabase(ctx context.Context, opts ...db.Option) (*db.Connection,
 		db.OptSSLMode("disable"),
 		db.OptConfigFromEnv(),
 		db.OptDatabase(databaseName),
+		db.OptDialect(db.DialectPostgres),
 	}
 	conn, err := db.New(
 		append(defaults, opts...)...,

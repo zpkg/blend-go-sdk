@@ -77,10 +77,11 @@ type httpTraceFinisher struct {
 	span opentracing.Span
 }
 
-func (htf httpTraceFinisher) Finish(err error) {
+func (htf httpTraceFinisher) Finish(statusCode int, err error) {
 	if htf.span == nil {
 		return
 	}
 	tracing.SpanError(htf.span, err)
+	htf.span.SetTag(tracing.TagKeyHTTPCode, fmt.Sprint(statusCode))
 	htf.span.Finish()
 }

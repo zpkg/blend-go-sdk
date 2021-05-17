@@ -178,6 +178,8 @@ type Config struct {
 	MaxLifetime time.Duration `json:"maxLifetime,omitempty" yaml:"maxLifetime,omitempty" env:"DB_MAX_LIFETIME"`
 	// BufferPoolSize is the number of query composition buffers to maintain.
 	BufferPoolSize int `json:"bufferPoolSize,omitempty" yaml:"bufferPoolSize,omitempty" env:"DB_BUFFER_POOL_SIZE"`
+	// Dialect includes hints to tweak specific sql semantics by database connection.
+	Dialect string `json:"dialect,omitempty" yaml:"dialect,omitempty"`
 }
 
 // IsZero returns if the config is unset.
@@ -205,6 +207,7 @@ func (c *Config) Resolve(ctx context.Context) error {
 		configutil.SetInt(&c.MaxConnections, configutil.Env("DB_MAX_CONNECTIONS"), configutil.Int(c.MaxConnections), configutil.Int(DefaultMaxConnections)),
 		configutil.SetDuration(&c.MaxLifetime, configutil.Env("DB_MAX_LIFETIME"), configutil.Duration(c.MaxLifetime), configutil.Duration(DefaultMaxLifetime)),
 		configutil.SetInt(&c.BufferPoolSize, configutil.Env("DB_BUFFER_POOL_SIZE"), configutil.Int(c.BufferPoolSize), configutil.Int(DefaultBufferPoolSize)),
+		configutil.SetString(&c.Dialect, configutil.Env("DB_DIALECT"), configutil.String(c.Dialect), configutil.String(DialectPostgres)),
 	)
 }
 
@@ -304,6 +307,14 @@ func (c Config) BufferPoolSizeOrDefault() int {
 		return c.BufferPoolSize
 	}
 	return DefaultBufferPoolSize
+}
+
+// DialectOrDefault returns the sql dialect or a default.
+func (c Config) DialectOrDefault() Dialect {
+	if c.Dialect != "" {
+		return Dialect(c.Dialect)
+	}
+	return DialectPostgres
 }
 
 // CreateDSN creates a postgres connection string from the config.

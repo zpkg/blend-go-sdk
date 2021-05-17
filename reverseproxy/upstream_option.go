@@ -32,3 +32,10 @@ func OptUpstreamDial(opts ...webutil.DialOption) UpstreamOption {
 		}
 	}
 }
+
+// OptUpstreamModifyResponse sets the dial options for the upstream.
+func OptUpstreamModifyResponse(modifyResponse func(*http.Response) error) UpstreamOption {
+	return func(u *Upstream) {
+		u.ReverseProxy.ModifyResponse = modifyResponse
+	}
+}

@@ -47,6 +47,10 @@ func New(options ...Option) (*APIClient, error) {
 	client.KV1 = &KV1{Client: client}
 	client.KV2 = &KV2{Client: client}
 	client.Transit = &Transit{Client: client}
+	client.AWSAuth, err = NewAWSAuth()
+	if err != nil {
+		return nil, err
+	}
 
 	for _, option := range options {
 		if err = option(client); err != nil {
@@ -86,6 +90,7 @@ type APIClient struct {
 	Client     HTTPClient
 	CertPool   *x509.CertPool
 	Tracer     Tracer
+	AWSAuth    *AWSAuth
 }
 
 // Put puts a value.
@@ -183,6 +188,16 @@ func (c *APIClient) Encrypt(ctx context.Context, key string, context, data []byt
 // Decrypt decrypts a given set of data.
 func (c *APIClient) Decrypt(ctx context.Context, key string, context []byte, ciphertext string) ([]byte, error) {
 	return c.Transit.Decrypt(ctx, key, context, ciphertext)
+}
+
+// BatchEncrypt batch encrypts a given set of data.
+func (c *APIClient) BatchEncrypt(ctx context.Context, key string, batchInput BatchTransitInput) ([]string, error) {
+	return c.Transit.BatchEncrypt(ctx, key, batchInput)
+}
+
+// BatchDecrypt batch decrypts a given set of data.
+func (c *APIClient) BatchDecrypt(ctx context.Context, key string, batchInput BatchTransitInput) ([][]byte, error) {
+	return c.Transit.BatchDecrypt(ctx, key, batchInput)
 }
 
 // --------------------------------------------------------------------------------

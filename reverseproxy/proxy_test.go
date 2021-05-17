@@ -9,6 +9,7 @@ package reverseproxy
 
 import (
 	"bufio"
+	"context"
 	"fmt"
 	"io"
 	"io/ioutil"
@@ -18,6 +19,7 @@ import (
 	"testing"
 
 	"github.com/blend/go-sdk/assert"
+	"github.com/blend/go-sdk/logger"
 	"github.com/blend/go-sdk/webutil"
 )
 
@@ -168,9 +170,110 @@ func (mht *mockHTTPTracer) Start(req *http.Request) (webutil.HTTPTraceFinisher, 
 }
 
 type mockHTTPTraceFinisher struct {
-	Error error
+	StatusCode int
+	Error      error
 }
 
-func (mhtf *mockHTTPTraceFinisher) Finish(err error) {
+func (mhtf *mockHTTPTraceFinisher) Finish(statusCode int, err error) {
+	mhtf.StatusCode = statusCode
 	mhtf.Error = err
+}
+
+func TestProxy_Panic(t *testing.T) {
+	its := assert.New(t)
+
+	mockedEndpoint := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		if protoHeader := r.Header.Get(webutil.HeaderXForwardedProto); protoHeader == "" {
+			http.Error(w, "No `X-Forwarded-Proto` header!", http.StatusBadRequest)
+			return
+		}
+		w.WriteHeader(http.StatusOK)
+		fmt.Fprint(w, "Ok!")
+	}))
+	defer mockedEndpoint.Close()
+
+	target, err := url.Parse(mockedEndpoint.URL)
+	its.Nil(err)
+
+	log := logger.Memory(io.Discard)
+	defer log.Close()
+
+	errors := make(chan error)
+	log.Listen(logger.Fatal, "panic-chan", logger.NewErrorEventListener(func(ctx context.Context, e logger.ErrorEvent) {
+		errors <- e.Err
+	}))
+
+	proxy, err := NewProxy(
+		OptProxyUpstream(NewUpstream(
+			target,
+		)),
+		OptProxyLog(log),
+		OptProxyResolver(func(_ *http.Request, _ []*Upstream) (*Upstream, error) {
+			panic("this is just a test")
+		}),
+		OptProxySetHeaderValue(webutil.HeaderXForwardedProto, webutil.SchemeHTTP),
+	)
+	its.Nil(err)
+
+	mockedProxy := httptest.NewServer(proxy)
+
+	res, err := http.Get(mockedProxy.URL)
+	its.Nil(err)
+	defer res.Body.Close()
+	its.Equal(http.StatusOK, res.StatusCode)
+	err = <-errors
+	its.NotNil(err)
+	its.Equal("this is just a test", err.Error())
+}
+
+func TestProxy_Panic_httpAbortHandler(t *testing.T) {
+	its := assert.New(t)
+
+	var didCallEndpoint bool
+	mockedEndpoint := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		defer func() { didCallEndpoint = true }()
+		if protoHeader := r.Header.Get(webutil.HeaderXForwardedProto); protoHeader == "" {
+			http.Error(w, "No `X-Forwarded-Proto` header!", http.StatusBadRequest)
+			return
+		}
+		w.WriteHeader(http.StatusOK)
+		fmt.Fprint(w, "Ok!")
+	}))
+	defer mockedEndpoint.Close()
+
+	target, err := url.Parse(mockedEndpoint.URL)
+	its.Nil(err)
+
+	log := logger.Memory(io.Discard)
+	defer log.Close()
+
+	errors := make(chan error, 1)
+	log.Listen(logger.Fatal, "panic-chan", logger.NewErrorEventListener(func(ctx context.Context, e logger.ErrorEvent) {
+		errors <- e.Err
+	}))
+
+	proxy, err := NewProxy(
+		OptProxyUpstream(NewUpstream(
+			target,
+		)),
+		OptProxyLog(log),
+		OptProxyResolver(func(_ *http.Request, _ []*Upstream) (*Upstream, error) {
+			panic(http.ErrAbortHandler)
+		}),
+		OptProxySetHeaderValue(webutil.HeaderXForwardedProto, webutil.SchemeHTTP),
+	)
+	its.Nil(err)
+
+	mockedProxy := httptest.NewServer(proxy)
+
+	res, err := http.Get(mockedProxy.URL)
+	its.Nil(err)
+	defer res.Body.Close()
+	its.Equal(http.StatusOK, res.StatusCode)
+
+	// explicitly drain so we process any errors that would come up
+	log.Drain()
+
+	its.Empty(errors)
+	its.False(didCallEndpoint)
 }

@@ -32,3 +32,26 @@ func (m MockTransitClient) Encrypt(ctx context.Context, key string, context, dat
 func (m MockTransitClient) Decrypt(ctx context.Context, key string, context []byte, ciphertext string) ([]byte, error) {
 	return base64.StdEncoding.DecodeString(ciphertext)
 }
+
+// BatchEncrypt just returns the input
+func (m MockTransitClient) BatchEncrypt(ctx context.Context, key string, batchInput BatchTransitInput) ([]string, error) {
+	var res []string
+	for i := range batchInput.BatchTransitInputItems {
+		data := batchInput.BatchTransitInputItems[i].Plaintext
+		res = append(res, base64.StdEncoding.EncodeToString(data))
+	}
+	return res, nil
+}
+
+// BatchDecrypt just returns the input
+func (m MockTransitClient) BatchDecrypt(ctx context.Context, key string, batchInput BatchTransitInput) ([][]byte, error) {
+	var res [][]byte
+	for i := range batchInput.BatchTransitInputItems {
+		data, err := base64.StdEncoding.DecodeString(batchInput.BatchTransitInputItems[i].Ciphertext)
+		if err != nil {
+			return nil, err
+		}
+		res = append(res, data)
+	}
+	return res, nil
+}

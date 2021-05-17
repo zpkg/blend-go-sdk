@@ -29,6 +29,14 @@ func OptProxyLog(log logger.Log) ProxyOption {
 	}
 }
 
+// OptProxyResolver sets the proxy resolver.
+func OptProxyResolver(resolver Resolver) ProxyOption {
+	return func(p *Proxy) error {
+		p.Resolver = resolver
+		return nil
+	}
+}
+
 // OptProxyUpstream adds a proxy upstream.
 func OptProxyUpstream(upstream *Upstream) ProxyOption {
 	return func(p *Proxy) error {

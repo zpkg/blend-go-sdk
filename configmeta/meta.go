@@ -68,7 +68,7 @@ func (m *Meta) Resolve(ctx context.Context) error {
 		configutil.SetString(&m.ProjectName, configutil.Env(env.VarProjectName), configutil.String(m.ProjectName), configutil.String(ProjectName)),
 		configutil.SetString(&m.ServiceEnv, configutil.Env(env.VarServiceEnv), configutil.String(m.ServiceEnv), configutil.String(env.ServiceEnvDev)),
 		configutil.SetString(&m.Hostname, configutil.Env(env.VarHostname), configutil.String(m.Hostname)),
-		configutil.SetString(&m.Version, configutil.Env(env.VarVersion), configutil.String(m.Version), configutil.String(Version)),
+		configutil.SetString(&m.Version, configutil.Env(env.VarVersion), configutil.String(m.Version), configutil.LazyString(&Version), configutil.String(DefaultVersion)),
 		configutil.SetString(&m.GitRef, configutil.Env(env.VarGitRef), configutil.String(m.GitRef), configutil.String(GitRef)),
 	)
 }
@@ -110,7 +110,10 @@ func (m Meta) VersionOrDefault() string {
 	if m.Version != "" {
 		return m.Version
 	}
-	return Version
+	if Version != "" {
+		return Version
+	}
+	return DefaultVersion
 }
 
 // IsProdlike returns if the cluster meta environment is prodlike.

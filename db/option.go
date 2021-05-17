@@ -128,3 +128,11 @@ func OptSSLMode(mode string) Option {
 		return nil
 	}
 }
+
+// OptDialect sets the connection dialect.
+func OptDialect(dialect Dialect) Option {
+	return func(c *Connection) error {
+		c.Config.Dialect = string(dialect)
+		return nil
+	}
+}

@@ -209,6 +209,31 @@ type MountConfigInput struct {
 	PassthroughRequestHeaders []string          `json:"passthrough_request_headers,omitempty" mapstructure:"passthrough_request_headers"`
 }
 
+// BatchTransitInput is the structure of batch encrypt / decrypt requests
+type BatchTransitInput struct {
+	BatchTransitInputItems []BatchTransitInputItem `json:"batch_input"`
+}
+
+// BatchTransitInputItem is a single item in a batch encrypt / decrypt request
+type BatchTransitInputItem struct {
+	Context    []byte `json:"context,omitempty"`
+	Ciphertext string `json:"ciphertext,omitempty"`
+	Plaintext  []byte `json:"plaintext,omitempty"`
+}
+
+// BatchTransitResult is the structure returned by vault for batch transit requests
+type BatchTransitResult struct {
+	Data struct {
+		BatchTransitResult []struct {
+			// Error, if set represents a failure encountered while encrypting/decrypting a
+			// corresponding batch request item
+			Error      string `json:"error"`
+			Ciphertext string `json:"ciphertext"`
+			Plaintext  string `json:"plaintext"`
+		} `json:"batch_results"`
+	} `json:"data"`
+}
+
 // TransitResult is the structure returned by vault for transit requests
 type TransitResult struct {
 	Data struct {
@@ -265,8 +290,8 @@ type UpdateTransitKeyConfig struct {
 	AllowPlaintextBackup bool `json:"allow_plaintext_backup,omitempty"`
 }
 
-// GithubAuthResponse is a response for github auth.
-type GithubAuthResponse struct {
+// GitHubAuthResponse is a response for github auth.
+type GitHubAuthResponse struct {
 	LeaseID       string                 `json:"lease_id,omitempty"`
 	Renewable     bool                   `json:"renewable,omitempty"`
 	LeaseDuration int64                  `json:"lease_duration,omitempty"`
@@ -279,6 +304,27 @@ type GithubAuthResponse struct {
 		Metadata    struct {
 			Username string `json:"username,omitempty"`
 			Org      string `json:"org,omitempty"`
+		} `json:"metadata"`
+	} `json:"auth"`
+}
+
+// AWSAuthResponse is a response for github auth.
+type AWSAuthResponse struct {
+	LeaseID       string                 `json:"lease_id,omitempty"`
+	Renewable     bool                   `json:"renewable,omitempty"`
+	LeaseDuration int64                  `json:"lease_duration,omitempty"`
+	Data          map[string]interface{} `json:"data,omitempty"`
+	Warnings      map[string]interface{} `json:"warnings,omitempty"`
+	Auth          struct {
+		ClientToken string   `json:"client_token,omitempty"`
+		Accessor    string   `json:"accessor,omitempty"`
+		Policies    []string `json:"policies,omitempty"`
+		Metadata    struct {
+			RoleTagMaxTTL string `json:"role_tag_max_ttl,omitempty"`
+			InstanceID    string `json:"instance_id,omitempty"`
+			AMIID         string `json:"ami_id,omitempty"`
+			Role          string `json:"role,omitempty"`
+			AuthType      string `json:"auth_type,omitempty"`
 		} `json:"metadata"`
 	} `json:"auth"`
 }

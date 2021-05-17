@@ -10,6 +10,7 @@ package vault
 import (
 	"bytes"
 	"context"
+	"encoding/base64"
 	"fmt"
 	"io/ioutil"
 	"net/http"
@@ -264,4 +265,254 @@ func TestVaultHandleRedirects(t *testing.T) {
 	contents, err := ioutil.ReadAll(res.Body)
 	assert.Nil(err)
 	assert.Equal(rawResponse, string(contents))
+}
+
+func TestVaultBatchEncryptDecrypt_Happy(t *testing.T) {
+	assert := assert.New(t)
+	todo := context.Background()
+
+	client, err := New()
+	assert.Nil(err)
+
+	key := "key"
+
+	plaintext1 := []byte("this is plaintext")
+	plaintext2 := []byte("this is plaintext2")
+	batchInput := BatchTransitInput{
+		BatchTransitInputItems: []BatchTransitInputItem{
+			{
+				Context:   nil,
+				Plaintext: plaintext1,
+			},
+			{
+				Context:   nil,
+				Plaintext: plaintext2,
+			},
+		},
+	}
+
+	batchDecryptResultBytes := []byte(fmt.Sprintf(`
+			{
+			  "data": {
+				"batch_results": [
+				  {
+					"plaintext": "%s",
+					"key_version": 1
+				  },
+				  {
+					"plaintext": "%s",
+					"key_version": 1
+				  }
+				]
+			  }
+			}
+	`, base64.StdEncoding.EncodeToString(plaintext1), base64.StdEncoding.EncodeToString(plaintext2)))
+
+	batchEncryptResultBytes := []byte(fmt.Sprintf(`
+		{
+		  "data": {
+			"batch_results": [
+			  {
+				"ciphertext": "vault:%s",
+				"key_version": 1
+			  },
+			  {
+				"ciphertext": "vault:%s",
+				"key_version": 1
+			  }
+			]
+		  }
+		}
+	`, plaintext1, plaintext2))
+	m := NewMockHTTPClient().
+		With(
+			"POST",
+			mustURLf("%s/v1/transit/encrypt/%s", client.Remote.String(), key),
+			&http.Response{
+				StatusCode: http.StatusOK,
+				Body:       ioutil.NopCloser(bytes.NewBuffer(batchEncryptResultBytes)),
+			},
+		).With(
+		"POST",
+		mustURLf("%s/v1/transit/decrypt/%s", client.Remote.String(), key),
+		&http.Response{
+			StatusCode: http.StatusOK,
+			Body:       ioutil.NopCloser(bytes.NewBuffer(batchDecryptResultBytes)),
+		},
+	)
+	client.Client = m
+
+	ciphertextResults, err := client.BatchEncrypt(todo, "key", batchInput)
+	assert.Nil(err)
+	assert.Equal(fmt.Sprintf("vault:%s", plaintext1), ciphertextResults[0])
+	assert.Equal(fmt.Sprintf("vault:%s", plaintext2), ciphertextResults[1])
+
+	plaintextResults, err := client.BatchDecrypt(todo, "key", batchInput)
+	assert.Nil(err)
+	assert.Equal(plaintext1, plaintextResults[0])
+	assert.Equal(plaintext2, plaintextResults[1])
+}
+
+func TestVaultBatchEncryptDecrypt_EmptyInput(t *testing.T) {
+	assert := assert.New(t)
+	todo := context.Background()
+
+	client, err := New()
+	assert.Nil(err)
+
+	key := "key"
+
+	batchInput := BatchTransitInput{
+		BatchTransitInputItems: []BatchTransitInputItem{},
+	}
+
+	errorResultBytes := []byte(`
+		{
+		  "data": {
+				"error": "missing batch input to process"
+		  }
+		}
+	`)
+	m := NewMockHTTPClient().
+		With(
+			"POST",
+			mustURLf("%s/v1/transit/encrypt/%s", client.Remote.String(), key),
+			&http.Response{
+				StatusCode: http.StatusBadRequest,
+				Body:       ioutil.NopCloser(bytes.NewBuffer(errorResultBytes)),
+			},
+		).With(
+		"POST",
+		mustURLf("%s/v1/transit/decrypt/%s", client.Remote.String(), key),
+		&http.Response{
+			StatusCode: http.StatusBadRequest,
+			Body:       ioutil.NopCloser(bytes.NewBuffer(errorResultBytes)),
+		},
+	)
+	client.Client = m
+
+	ciphertextResults, err := client.BatchEncrypt(todo, "key", batchInput)
+	assert.Nil(err)
+	assert.Empty(ciphertextResults)
+
+	plaintextResults, err := client.BatchDecrypt(todo, "key", batchInput)
+	assert.Nil(err)
+	assert.Empty(plaintextResults)
+}
+
+func TestVaultBatchEncrypt_Error(t *testing.T) {
+	assert := assert.New(t)
+	todo := context.TODO()
+
+	client, err := New()
+	assert.Nil(err)
+
+	key := "key"
+
+	plaintext1 := []byte("this is plaintext")
+	plaintext2 := []byte("this is plaintext2")
+	batchInput := BatchTransitInput{
+		BatchTransitInputItems: []BatchTransitInputItem{
+			{
+				Context:   nil,
+				Plaintext: plaintext1,
+			},
+			{
+				Context:   nil,
+				Plaintext: plaintext2,
+			},
+		},
+	}
+
+	batchEncryptResultBytes := []byte(fmt.Sprintf(`
+		{
+		  "data": {
+			"batch_results": [
+			  {
+				"ciphertext": "vault:%s",
+				"key_version": 1
+			  },
+			  {
+				"error": "encryption error",
+				"ciphertext": "vault:%s",
+				"key_version": 1
+			  }
+			]
+		  }
+		}
+	`, plaintext1, plaintext2))
+	m := NewMockHTTPClient().
+		With(
+			"POST",
+			mustURLf("%s/v1/transit/encrypt/%s", client.Remote.String(), key),
+			&http.Response{
+				StatusCode: http.StatusOK,
+				Body:       ioutil.NopCloser(bytes.NewBuffer(batchEncryptResultBytes)),
+			},
+		)
+	client.Client = m
+
+	ciphertextResults, err := client.BatchEncrypt(todo, "key", batchInput)
+	assert.NotNil(err)
+	assert.Equal(ErrBatchTransitEncryptError, err.Error())
+	assert.Nil(ciphertextResults)
+}
+
+func TestVaultBatchDecrypt_Error(t *testing.T) {
+	assert := assert.New(t)
+	todo := context.TODO()
+
+	client, err := New()
+	assert.Nil(err)
+
+	key := "key"
+
+	plaintext1 := []byte("this is plaintext")
+	plaintext2 := []byte("this is plaintext2")
+	batchInput := BatchTransitInput{
+		BatchTransitInputItems: []BatchTransitInputItem{
+			{
+				Context:   nil,
+				Plaintext: plaintext1,
+			},
+			{
+				Context:   nil,
+				Plaintext: plaintext2,
+			},
+		},
+	}
+
+	batchDecryptResultBytes := []byte(fmt.Sprintf(`
+			{
+			  "data": {
+				"batch_results": [
+				  {
+					"error": "error",
+					"plaintext": "%s",
+					"key_version": 1
+				  },
+				  {
+					"plaintext": "%s",
+					"key_version": 1
+				  }
+				]
+			  }
+			}
+	`, base64.StdEncoding.EncodeToString(plaintext1), base64.StdEncoding.EncodeToString(plaintext2)))
+
+	m := NewMockHTTPClient().
+		With(
+			"POST",
+			mustURLf("%s/v1/transit/decrypt/%s", client.Remote.String(), key),
+			&http.Response{
+				StatusCode: http.StatusOK,
+				Body:       ioutil.NopCloser(bytes.NewBuffer(batchDecryptResultBytes)),
+			},
+		)
+	client.Client = m
+
+	plaintextResults, err := client.BatchDecrypt(todo, "key", batchInput)
+	assert.NotNil(err)
+	assert.Equal(ErrBatchTransitDecryptError, err.Error())
+	assert.Nil(plaintextResults)
 }

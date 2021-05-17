@@ -20,5 +20,5 @@ type HTTPTracer interface {
 
 // HTTPTraceFinisher is a simplified version of `TraceFinisher`.
 type HTTPTraceFinisher interface {
-	Finish(error)
+	Finish(int, error)
 }

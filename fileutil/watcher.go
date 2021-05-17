@@ -80,7 +80,7 @@ func (w Watcher) PollIntervalOrDefault() time.Duration {
 func (w Watcher) Watch() {
 	stat, err := os.Stat(w.Path)
 	if err != nil {
-		w.handleError(err)
+		w.handleError(ex.New(err))
 		return
 	}
 
@@ -100,7 +100,7 @@ func (w Watcher) Watch() {
 			if stat.ModTime().After(lastMod) {
 				file, err := os.Open(w.Path)
 				if err != nil {
-					w.handleError(err)
+					w.handleError(ex.New(err))
 					return
 				}
 

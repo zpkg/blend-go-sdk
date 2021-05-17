@@ -4,6 +4,7 @@ go 1.15
 
 require (
 	github.com/DataDog/datadog-go v4.2.0+incompatible
+	github.com/aws/aws-sdk-go v1.38.41
 	github.com/blend/sentry-go v1.0.0
 	github.com/golang/protobuf v1.4.3
 	github.com/jackc/pgx/v4 v4.10.0

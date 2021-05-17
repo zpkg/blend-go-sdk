@@ -69,3 +69,17 @@ const (
 	TypeRSA2048          = "rsa-2048"
 	TypeRSA4096          = "rsa-4096"
 )
+
+// These constants are used to sign the get identity request
+const (
+	// STSURL is the url of the sts call
+	STSURL = "https://sts.amazonaws.com"
+	// STSGetIdentityBody is the body of the post request
+	STSGetIdentityBody = "Action=GetCallerIdentity&Version=2011-06-15"
+)
+
+// constants required for login /v1/auth/aws/login
+const (
+	// AWSAuthLoginPath is the login path for aws iam auth
+	AWSAuthLoginPath = "/v1/auth/aws/login"
+)
