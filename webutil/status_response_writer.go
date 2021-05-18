@@ -25,6 +25,9 @@ var (
 
 // NewStatusResponseWriter creates a new response writer.
 func NewStatusResponseWriter(w http.ResponseWriter) *StatusResponseWriter {
+	if typed, ok := w.(*StatusResponseWriter); ok {
+		return typed
+	}
 	if typed, ok := w.(ResponseWriter); ok {
 		return &StatusResponseWriter{
 			innerResponse: typed.InnerResponse(),
