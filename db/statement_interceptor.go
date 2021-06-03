@@ -7,5 +7,9 @@ Use of this source code is governed by a MIT license that can be found in the LI
 
 package db
 
+import (
+	"context"
+)
+
 // StatementInterceptor is an interceptor for statements.
-type StatementInterceptor func(statementID, statement string) string
+type StatementInterceptor func(ctx context.Context, label, statement string) (string, error)

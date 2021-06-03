@@ -5,11 +5,10 @@ Use of this source code is governed by a MIT license that can be found in the LI
 
 */
 
-package copyright
+package diff
 
-import (
-	"os"
-)
-
-// Action is the action to run.
-type Action func(path string, info os.FileInfo, file, notice []byte) error
+// Diff represents one diff operation
+type Diff struct {
+	Type Operation
+	Text string
+}

@@ -18,7 +18,9 @@ import (
 	"regexp"
 	"strings"
 	"text/template"
+	"unicode"
 
+	"github.com/blend/go-sdk/diff"
 	"github.com/blend/go-sdk/stringutil"
 )
 
@@ -63,15 +65,16 @@ func (c Copyright) Verify(ctx context.Context) error {
 
 // Walk traverses the tree recursively from "." and applies the given action.
 func (c Copyright) Walk(ctx context.Context, action Action) error {
-	notice, err := c.compileNoticeBodyTemplate(c.NoticeBodyTemplateOrDefault())
+	noticeBody, err := c.compileNoticeBodyTemplate(c.NoticeBodyTemplateOrDefault())
 	if err != nil {
 		return err
 	}
+
 	c.Verbosef("using include files: %s", strings.Join(c.IncludeFiles, ", "))
 	c.Verbosef("using include dirs: %s", strings.Join(c.IncludeDirs, ", "))
 	c.Verbosef("using exclude files: %s", strings.Join(c.ExcludeFiles, ", "))
 	c.Verbosef("using exclude dirs: %s", strings.Join(c.ExcludeDirs, ", "))
-	c.Verbosef("using notice:\n%s", c.prefix("\t", strings.TrimSpace(notice)))
+	c.Verbosef("using notice body:\n%s", noticeBody)
 
 	var didFail bool
 	err = filepath.Walk(c.RootOrDefault(), func(path string, info os.FileInfo, fileErr error) error {
@@ -126,13 +129,11 @@ func (c Copyright) Walk(ctx context.Context, action Action) error {
 
 		fileExtension := filepath.Ext(path)
 
-		// test the file
-		noticeTemplate, ok := c.GetExtensionNoticeTemplate(fileExtension)
+		noticeTemplate, ok := c.noticeTemplateByExtension(fileExtension)
 		if !ok {
 			return fmt.Errorf("invalid copyright injection file; %s", fileExtension)
 		}
-
-		noticeCompiled, err := c.compileNoticeTemplate(noticeTemplate, notice)
+		notice, err := c.compileNoticeTemplate(noticeTemplate, noticeBody)
 		if err != nil {
 			return err
 		}
@@ -141,7 +142,7 @@ func (c Copyright) Walk(ctx context.Context, action Action) error {
 		if err != nil {
 			return err
 		}
-		err = action(path, info, fileContents, []byte(noticeCompiled))
+		err = action(path, info, fileContents, []byte(notice))
 		if err != nil {
 			if err == ErrFailure {
 				didFail = true
@@ -152,6 +153,10 @@ func (c Copyright) Walk(ctx context.Context, action Action) error {
 		return nil
 	})
 	if err != nil {
+		if err == ErrFatal {
+			// swap out to failure
+			return ErrFailure
+		}
 		return err
 	}
 	if didFail {
@@ -160,8 +165,8 @@ func (c Copyright) Walk(ctx context.Context, action Action) error {
 	return nil
 }
 
-// GetExtensionNoticeTemplate gets a notice template by extension or the default.
-func (c Copyright) GetExtensionNoticeTemplate(fileExtension string) (noticeTemplate string, ok bool) {
+// noticeTemplateByExtension gets a notice template by extension or the default.
+func (c Copyright) noticeTemplateByExtension(fileExtension string) (noticeTemplate string, ok bool) {
 	if !strings.HasPrefix(fileExtension, ".") {
 		fileExtension = "." + fileExtension
 	}
@@ -244,16 +249,20 @@ func (c Copyright) remove(path string, info os.FileInfo, file, notice []byte) er
 func (c Copyright) verify(path string, _ os.FileInfo, file, notice []byte) error {
 	fileExtension := filepath.Ext(path)
 	var err error
-	if fileExtension == ".go" {
+	if fileExtension == ExtensionGo { // we have to treat go files specially because of build tags
 		err = c.goVerifyNotice(path, file, notice)
 	} else {
 		err = c.verifyNotice(path, file, notice)
 	}
-	if c.Config.ExitFirstOrDefault() {
-		return err
-	}
+
 	if err != nil {
 		fmt.Fprintf(c.GetStderr(), "%+v\n", err)
+		if c.Config.ShowDiffOrDefault() {
+			c.showDiff(path, file, notice)
+		}
+		if c.Config.ExitFirstOrDefault() {
+			return ErrFatal
+		}
 		return ErrFailure
 	}
 	return nil
@@ -266,7 +275,7 @@ func (c Copyright) verify(path string, _ os.FileInfo, file, notice []byte) error
 func (c Copyright) injectedContents(path string, file, notice []byte) []byte {
 	fileExtension := filepath.Ext(path)
 	var injectedContents []byte
-	if fileExtension == ".go" { // we have to treat go files specially because of build tags
+	if fileExtension == ExtensionGo { // we have to treat go files specially because of build tags
 		injectedContents = c.goInjectNotice(path, file, notice)
 	} else {
 		injectedContents = c.injectNotice(path, file, notice)
@@ -277,7 +286,7 @@ func (c Copyright) injectedContents(path string, file, notice []byte) []byte {
 func (c Copyright) removedContents(path string, file, notice []byte) []byte {
 	fileExtension := filepath.Ext(path)
 	var removedContents []byte
-	if fileExtension == ".go" { // we have to treat go files specially because of build tags
+	if fileExtension == ExtensionGo { // we have to treat go files specially because of build tags
 		removedContents = c.goRemoveNotice(path, file, notice)
 	} else {
 		removedContents = c.removeNotice(path, file, notice)
@@ -294,6 +303,7 @@ func (c Copyright) goInjectNotice(path string, file, notice []byte) []byte {
 	}
 
 	c.Verbosef("injecting notice: %s", path)
+	file = c.removeCopyrightHeader(file, notice)
 	return c.mergeFileSections([]byte(goBuildTag), notice, file)
 }
 
@@ -302,6 +312,9 @@ func (c Copyright) injectNotice(path string, file, notice []byte) []byte {
 		return nil
 	}
 	c.Verbosef("injecting notice: %s", path)
+
+	// remove any existing notice-ish looking text ...
+	file = c.removeCopyrightHeader(file, notice)
 	return c.mergeFileSections(notice, file)
 }
 
@@ -324,39 +337,41 @@ func (c Copyright) removeNotice(path string, file, notice []byte) []byte {
 }
 
 func (c Copyright) goVerifyNotice(path string, file, notice []byte) error {
-	c.Debugf("verifying notice: %s", path)
-	file = goBuildTagMatch.ReplaceAll(file, nil)
-	if !c.fileHasCopyrightHeader(file, notice) {
-		return fmt.Errorf(verifyErrorFormat, path)
+	c.Debugf("verifying (go): %s", path)
+	fileLessTags := goBuildTagMatch.ReplaceAll(file, nil)
+	if !c.fileHasCopyrightHeader(fileLessTags, notice) {
+		return fmt.Errorf(VerifyErrorFormat, path)
 	}
 	return nil
 }
 
 func (c Copyright) verifyNotice(path string, file, notice []byte) error {
-	c.Debugf("verifying notice: %s", path)
+	c.Debugf("verifying: %s", path)
 	if !c.fileHasCopyrightHeader(file, notice) {
-		return fmt.Errorf(verifyErrorFormat, path)
+		return fmt.Errorf(VerifyErrorFormat, path)
 	}
 	return nil
 }
 
-func (c Copyright) fileHasCopyrightHeader(fileContents, notice []byte) bool {
-	fileContentsString := string(fileContents)
-	noticeMatch := c.createNoticeMatchExpression(notice)
-	return noticeMatch.MatchString(fileContentsString)
-}
-
-func (c Copyright) removeCopyrightHeader(fileContents, notice []byte) []byte {
-	fileContentsString := string(fileContents)
-	noticeMatch := c.createNoticeMatchExpression(notice)
-	return []byte(noticeMatch.ReplaceAllString(fileContentsString, ""))
-}
-
-func (c Copyright) createNoticeMatchExpression(notice []byte) *regexp.Regexp {
+func (c Copyright) createNoticeMatchExpression(notice []byte, trailingSpaceStrict bool) *regexp.Regexp {
 	noticeString := string(notice)
 	noticeExpr := yearMatch.ReplaceAllString(regexp.QuoteMeta(noticeString), yearExpr)
 	noticeExpr = `^(\s*)` + noticeExpr
+	if !trailingSpaceStrict {
+		// remove trailing space
+		noticeExpr = strings.TrimRightFunc(noticeExpr, unicode.IsSpace)
+		// match trailing space
+		noticeExpr = noticeExpr + `(\s*)`
+	}
 	return regexp.MustCompile(noticeExpr)
+}
+
+func (c Copyright) fileHasCopyrightHeader(fileContents, notice []byte) bool {
+	return c.createNoticeMatchExpression(notice, true).Match(fileContents)
+}
+
+func (c Copyright) removeCopyrightHeader(fileContents []byte, notice []byte) []byte {
+	return c.createNoticeMatchExpression(notice, false).ReplaceAll(fileContents, nil)
 }
 
 func (c Copyright) mergeFileSections(sections ...[]byte) []byte {
@@ -384,9 +399,9 @@ func (c Copyright) prefix(prefix string, s string) string {
 	return strings.Join(output, "\n")
 }
 
-func (c Copyright) compileNoticeTemplate(noticeTemplate, notice string) (string, error) {
+func (c Copyright) compileNoticeTemplate(noticeTemplate, noticeBody string) (string, error) {
 	return c.processTemplate(noticeTemplate, c.templateViewModel(map[string]interface{}{
-		"Notice": notice,
+		"Notice": noticeBody,
 	}))
 }
 
@@ -438,4 +453,25 @@ func (c Copyright) processTemplate(text string, viewmodel interface{}) (string, 
 		return "", err
 	}
 	return output.String(), nil
+}
+
+func (c Copyright) showDiff(path string, file, notice []byte) {
+	noticeLineCount := len(stringutil.SplitLines(string(notice),
+		stringutil.OptSplitLinesIncludeEmptyLines(true),
+		stringutil.OptSplitLinesIncludeNewLine(true),
+	))
+	fileLines := stringutil.SplitLines(string(file),
+		stringutil.OptSplitLinesIncludeEmptyLines(true),
+		stringutil.OptSplitLinesIncludeNewLine(true),
+	)
+	if len(fileLines) < noticeLineCount {
+		noticeLineCount = len(fileLines)
+	}
+	fileTruncated := strings.Join(fileLines[:noticeLineCount], "")
+	fileDiff := diff.New().Diff(string(notice), fileTruncated, true /*checklines*/)
+	prettyDiff := diff.PrettyText(fileDiff)
+	if strings.TrimSpace(prettyDiff) != "" {
+		fmt.Fprintf(c.GetStderr(), "%s: diff\n", path)
+		fmt.Fprintln(c.GetStderr(), prettyDiff)
+	}
 }

@@ -299,3 +299,137 @@ func (mtf mockTraceFinisher) FinishQuery(ctx context.Context, res sql.Result, er
 		mtf.FinishQueryHandler(ctx, res, err)
 	}
 }
+
+var (
+	_ Tracer = (*captureStatementTracer)(nil)
+)
+
+type captureStatementTracer struct {
+	Tracer
+
+	Label     string
+	Statement string
+	Err       error
+}
+
+func (cst *captureStatementTracer) Query(_ context.Context, cfg Config, label string, statement string) TraceFinisher {
+	cst.Label = label
+	cst.Statement = statement
+	return &captureStatementTracerFinisher{cst}
+}
+
+type captureStatementTracerFinisher struct {
+	*captureStatementTracer
+}
+
+func (cstf *captureStatementTracerFinisher) FinishPrepare(context.Context, error) {}
+func (cstf *captureStatementTracerFinisher) FinishQuery(_ context.Context, _ sql.Result, err error) {
+	cstf.captureStatementTracer.Err = err
+}
+
+var failInterceptorError = "this is just an interceptor error"
+
+func failInterceptor(_ context.Context, _, statement string) (string, error) {
+	return "", fmt.Errorf(failInterceptorError)
+}
+
+type uniqueObj struct {
+	ID   int    `db:"id,pk"`
+	Name string `db:"name"`
+}
+
+// TableName returns the mapped table name.
+func (uo uniqueObj) TableName() string {
+	return "unique_obj"
+}
+
+type uuidTest struct {
+	ID   uuid.UUID `db:"id"`
+	Name string    `db:"name"`
+}
+
+func (ut uuidTest) TableName() string {
+	return "uuid_test"
+}
+
+type EmbeddedTestMeta struct {
+	ID           uuid.UUID `db:"id,pk"`
+	TimestampUTC time.Time `db:"timestamp_utc"`
+}
+
+type embeddedTest struct {
+	EmbeddedTestMeta `db:",inline"`
+	Name             string `db:"name"`
+}
+
+func (et embeddedTest) TableName() string {
+	return "embedded_test"
+}
+
+type jsonTestChild struct {
+	Label string `json:"label"`
+}
+
+type jsonTest struct {
+	ID   int    `db:"id,pk,auto"`
+	Name string `db:"name"`
+
+	NotNull  jsonTestChild `db:"not_null,json"`
+	Nullable []string      `db:"nullable,json"`
+}
+
+func (jt jsonTest) TableName() string {
+	return "json_test"
+}
+
+func secondArgErr(_ interface{}, err error) error {
+	return err
+}
+
+func createJSONTestTable(tx *sql.Tx) error {
+	return IgnoreExecResult(defaultDB().Invoke(OptTx(tx)).Exec("create table json_test (id serial primary key, name varchar(255), not_null json, nullable json)"))
+}
+
+func dropJSONTextTable(tx *sql.Tx) error {
+	return IgnoreExecResult(defaultDB().Invoke(OptTx(tx)).Exec("drop table if exists json_test"))
+}
+
+func createUpsertAutosRegressionTable(tx *sql.Tx) error {
+	schemaDefinition := `CREATE TABLE upsert_auto_regression (
+		id uuid not null,
+		status smallint not null,
+		required boolean not null default false,
+		created_at timestamp default current_timestamp,
+		updated_at timestamp,
+		migrated_at timestamp
+	);`
+	schemaPrimaryKey := "ALTER TABLE upsert_auto_regression ADD CONSTRAINT pk_upsert_auto_regression_id PRIMARY KEY (id);"
+	if _, err := defaultDB().Invoke(OptTx(tx)).Exec(schemaDefinition); err != nil {
+		return err
+	}
+	if _, err := defaultDB().Invoke(OptTx(tx)).Exec(schemaPrimaryKey); err != nil {
+		return err
+	}
+	return nil
+}
+
+func dropUpsertRegressionTable(tx *sql.Tx) error {
+	_, err := defaultDB().Invoke(OptTx(tx)).Exec("DROP TABLE upsert_auto_regression")
+	return err
+}
+
+// upsertAutoRegression contains all data associated with an envelope of documents.
+type upsertAutoRegression struct {
+	ID         uuid.UUID  `db:"id,pk"`
+	Status     uint8      `db:"status"`
+	Required   bool       `db:"required"`
+	CreatedAt  *time.Time `db:"created_at,auto"`
+	UpdatedAt  *time.Time `db:"updated_at,auto"`
+	MigratedAt *time.Time `db:"migrated_at"`
+	ReadOnly   string     `db:"read_only,readonly"`
+}
+
+// TableName returns the table name.
+func (uar upsertAutoRegression) TableName() string {
+	return "upsert_auto_regression"
+}

@@ -22,6 +22,7 @@ import (
 type Query struct {
 	Invocation *Invocation
 	Statement  string
+	Err        error
 	Args       []interface{}
 }
 
@@ -161,6 +162,12 @@ func (q *Query) rowsClose(rows *sql.Rows, err error) error {
 }
 
 func (q *Query) query() (rows *sql.Rows, err error) {
+	// fast abort if there was an issue ahead of returning the query.
+	if q.Err != nil {
+		err = q.Err
+		return
+	}
+
 	var queryError error
 	db := q.Invocation.DB
 	ctx := q.Invocation.Context

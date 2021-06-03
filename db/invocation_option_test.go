@@ -25,7 +25,7 @@ func TestInvocationOptions(t *testing.T) {
 	assert.Equal("label", i.Label)
 
 	assert.Nil(i.StatementInterceptor)
-	OptInvocationStatementInterceptor(func(label, statement string) string { return "OK!" })(i)
+	OptInvocationStatementInterceptor(func(_ context.Context, label, statement string) (string, error) { return "OK!", nil })(i)
 	assert.NotNil(i.StatementInterceptor)
 
 	assert.Nil(i.Context)
@@ -54,10 +54,14 @@ func TestInvocationOptions(t *testing.T) {
 	assert.NotNil(i.DB)
 
 	i.DB = nil
-	OptDB(defaultDB().Connection)(i)
+	OptInvocationDB(defaultDB().Connection)(i)
 	assert.NotNil(i.DB)
 
 	i.DB = nil
-	OptDB(tx)(i)
+	OptInvocationDB(tx)(i)
 	assert.NotNil(i.DB)
+
+	i.StatementInterceptor = nil
+	OptInvocationStatementInterceptor(failInterceptor)(i)
+	assert.NotNil(i.StatementInterceptor)
 }

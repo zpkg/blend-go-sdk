@@ -59,12 +59,14 @@ var (
 	flagQuiet     bool
 	flagVerbose   bool
 	flagDebug     bool
+	flagShowDiff  bool
 )
 
 func init() {
 	flag.BoolVar(&flagQuiet, "quiet", false, "If all output should be suppressed")
 	flag.BoolVar(&flagVerbose, "verbose", false, "If verbose output should be shown")
 	flag.BoolVar(&flagDebug, "debug", false, "If debug output should be shown")
+	flag.BoolVar(&flagShowDiff, "show-diff", false, "If the text diff in verification output should be shown")
 
 	flag.BoolVar(&flagExitFirst, "exit-first", false, "If the program should exit on the first verification error")
 
@@ -97,6 +99,12 @@ func init() {
 Verify, inject or remove copyright notices from files in a given tree.
 
 By default, this tool verifies that copyright notices are present with no flags provided.
+
+To verify headers:
+
+	> copyright
+	- OR -
+	> copyright --verify
 
 To inject headers:
 
@@ -150,8 +158,6 @@ func main() {
 
 	engine := copyright.Copyright{
 		Config: copyright.Config{
-			NoticeTemplate:           tryReadFile(flagNoticeTemplate),
-			NoticeBodyTemplate:       tryReadFile(flagNoticeBodyTemplate),
 			Company:                  flagCompany,
 			Restrictions:             restrictions,
 			Year:                     flagYear,
@@ -165,6 +171,7 @@ func main() {
 			Quiet:                    &flagQuiet,
 			Verbose:                  &flagVerbose,
 			Debug:                    &flagDebug,
+			ShowDiff:                 &flagShowDiff,
 		},
 	}
 
@@ -192,7 +199,7 @@ func main() {
 	}
 	if didFail {
 		if !flagQuiet {
-			fmt.Printf("copyright %s %s!\n", actionLabel, ansi.Red("failed"))
+			fmt.Printf("copyright %s %s!\nuse `copyright --inject` to add missing notices\n", actionLabel, ansi.Red("failed"))
 		}
 		os.Exit(1)
 	}

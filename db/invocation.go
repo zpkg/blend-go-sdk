@@ -45,7 +45,10 @@ type Invocation struct {
 
 // Exec executes a sql statement with a given set of arguments and returns the rows affected.
 func (i *Invocation) Exec(statement string, args ...interface{}) (res sql.Result, err error) {
-	statement = i.start(statement)
+	statement, err = i.start(statement)
+	if err != nil {
+		return
+	}
 	defer func() { err = i.finish(statement, recover(), res, err) }()
 
 	res, err = i.DB.ExecContext(i.Context, statement, args...)
@@ -58,11 +61,12 @@ func (i *Invocation) Exec(statement string, args ...interface{}) (res sql.Result
 
 // Query returns a new query object for a given sql query and arguments.
 func (i *Invocation) Query(statement string, args ...interface{}) *Query {
-	return &Query{
+	q := &Query{
 		Invocation: i,
-		Statement:  i.start(statement),
 		Args:       args,
 	}
+	q.Statement, q.Err = i.start(statement)
+	return q
 }
 
 // Get returns a given object based on a group of primary key ids within a transaction.
@@ -96,7 +100,10 @@ func (i *Invocation) Create(object DatabaseMapped) (err error) {
 
 	i.Label, queryBody, insertCols, autos = i.generateCreate(object)
 
-	queryBody = i.start(queryBody)
+	queryBody, err = i.start(queryBody)
+	if err != nil {
+		return
+	}
 	if autos.Len() == 0 {
 		if res, err = i.DB.ExecContext(i.Context, queryBody, insertCols.ColumnValues(object)...); err != nil {
 			err = Error(err)
@@ -129,7 +136,10 @@ func (i *Invocation) CreateIfNotExists(object DatabaseMapped) (err error) {
 
 	i.Label, queryBody, insertCols = i.generateCreateIfNotExists(object)
 
-	queryBody = i.start(queryBody)
+	queryBody, err = i.start(queryBody)
+	if err != nil {
+		return
+	}
 	if res, err = i.DB.ExecContext(i.Context, queryBody, insertCols.ColumnValues(object)...); err != nil {
 		err = Error(err)
 	}
@@ -164,7 +174,10 @@ func (i *Invocation) insertOrUpsertMany(objects interface{}, overwrite bool) (er
 		return
 	}
 
-	queryBody = i.start(queryBody)
+	queryBody, err = i.start(queryBody)
+	if err != nil {
+		return
+	}
 	var colValues []interface{}
 	for row := 0; row < sliceValue.Len(); row++ {
 		colValues = append(colValues, insertCols.ColumnValues(sliceValue.Index(row).Interface())...)
@@ -190,7 +203,10 @@ func (i *Invocation) Update(object DatabaseMapped) (updated bool, err error) {
 
 	i.Label, queryBody, pks, updateCols = i.generateUpdate(object)
 
-	queryBody = i.start(queryBody)
+	queryBody, err = i.start(queryBody)
+	if err != nil {
+		return
+	}
 	res, err = i.DB.ExecContext(
 		i.Context,
 		queryBody,
@@ -225,7 +241,10 @@ func (i *Invocation) Upsert(object DatabaseMapped) (err error) {
 
 	i.Label, queryBody, autos, upsertCols = i.generateUpsert(object)
 
-	queryBody = i.start(queryBody)
+	queryBody, err = i.start(queryBody)
+	if err != nil {
+		return
+	}
 	if autos.Len() == 0 {
 		if _, err = i.Exec(queryBody, upsertCols.ColumnValues(object)...); err != nil {
 			return
@@ -255,7 +274,10 @@ func (i *Invocation) Exists(object DatabaseMapped) (exists bool, err error) {
 		err = Error(err)
 		return
 	}
-	queryBody = i.start(queryBody)
+	queryBody, err = i.start(queryBody)
+	if err != nil {
+		return
+	}
 	var value int
 	if queryErr := i.DB.QueryRowContext(i.Context, queryBody, pks.ColumnValues(object)...).Scan(&value); queryErr != nil && !ex.Is(queryErr, sql.ErrNoRows) {
 		err = Error(queryErr)
@@ -279,7 +301,10 @@ func (i *Invocation) Delete(object DatabaseMapped) (deleted bool, err error) {
 		return
 	}
 
-	queryBody = i.start(queryBody)
+	queryBody, err = i.start(queryBody)
+	if err != nil {
+		return
+	}
 	res, err = i.DB.ExecContext(i.Context, queryBody, pks.ColumnValues(object)...)
 	if err != nil {
 		err = Error(err)
@@ -721,15 +746,19 @@ func (i *Invocation) setAutos(object DatabaseMapped, autos *ColumnCollection, au
 }
 
 // start runs on start steps.
-func (i *Invocation) start(statement string) string {
+func (i *Invocation) start(statement string) (string, error) {
 	i.StartTime = time.Now()
 	if i.StatementInterceptor != nil {
-		statement = i.StatementInterceptor(i.Label, statement)
+		var err error
+		statement, err = i.StatementInterceptor(i.Context, i.Label, statement)
+		if err != nil {
+			return statement, err
+		}
 	}
 	if i.Tracer != nil && !IsSkipQueryLogging(i.Context) {
 		i.TraceFinisher = i.Tracer.Query(i.Context, i.Config, i.Label, statement)
 	}
-	return statement
+	return statement, nil
 }
 
 // finish runs on complete steps.

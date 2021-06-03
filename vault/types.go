@@ -327,4 +327,5 @@ type AWSAuthResponse struct {
 			AuthType      string `json:"auth_type,omitempty"`
 		} `json:"metadata"`
 	} `json:"auth"`
+	Errors []string `json:"errors,omitempty"`
 }

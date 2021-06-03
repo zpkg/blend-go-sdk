@@ -25,16 +25,6 @@ func OptLabel(label string) InvocationOption {
 	}
 }
 
-// OptInvocationStatementInterceptor sets the invocation statement interceptor.
-func OptInvocationStatementInterceptor(interceptor StatementInterceptor) InvocationOption {
-	return func(i *Invocation) { i.StatementInterceptor = interceptor }
-}
-
-// OptInvocationLog sets the invocation logger.
-func OptInvocationLog(log logger.Log) InvocationOption {
-	return func(i *Invocation) { i.Log = log }
-}
-
 // OptContext sets a context on an invocation.
 func OptContext(ctx context.Context) InvocationOption {
 	return func(i *Invocation) {
@@ -65,9 +55,26 @@ func OptTx(tx *sql.Tx) InvocationOption {
 	}
 }
 
-// OptDB is an invocation option that sets the underlying invocation db.
-func OptDB(db DB) InvocationOption {
+// OptInvocationDB is an invocation option that sets the underlying invocation db.
+func OptInvocationDB(db DB) InvocationOption {
 	return func(i *Invocation) {
 		i.DB = db
 	}
+}
+
+// invocation specific options
+
+// OptInvocationStatementInterceptor sets the invocation statement interceptor.
+func OptInvocationStatementInterceptor(interceptor StatementInterceptor) InvocationOption {
+	return func(i *Invocation) { i.StatementInterceptor = interceptor }
+}
+
+// OptInvocationLog sets the invocation logger.
+func OptInvocationLog(log logger.Log) InvocationOption {
+	return func(i *Invocation) { i.Log = log }
+}
+
+// OptInvocationTracer sets the invocation tracer.
+func OptInvocationTracer(tracer Tracer) InvocationOption {
+	return func(i *Invocation) { i.Tracer = tracer }
 }

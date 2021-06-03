@@ -28,22 +28,57 @@ const DefaultRestrictionsOpenSource = `Use of this source code is governed by a 
 const DefaultNoticeBodyTemplate = `Copyright (c) {{ .Year }} - Present. {{ .Company }}. All rights reserved
 {{ .Restrictions }}`
 
+// Extension
+const (
+	ExtensionUnknown = ""
+	ExtensionCSS     = ".css"
+	ExtensionGo      = ".go"
+	ExtensionHTML    = ".html"
+	ExtensionJS      = ".js"
+	ExtensionJSX     = ".jsx"
+	ExtensionPy      = ".py"
+	ExtensionSASS    = ".sass"
+	ExtensionSCSS    = ".scss"
+	ExtensionTS      = ".ts"
+	ExtensionTSX     = ".tsx"
+	ExtensionYAML    = ".yaml"
+	ExtensionYML     = ".yml"
+	ExtensionSQL     = ".sql"
+)
+
 var (
+	// KnownExtensions is a list of all the known extensions.
+	KnownExtensions = []string{
+		ExtensionCSS,
+		ExtensionGo,
+		ExtensionHTML,
+		ExtensionJS,
+		ExtensionJSX,
+		ExtensionPy,
+		ExtensionSCSS,
+		ExtensionSASS,
+		ExtensionTS,
+		ExtensionTSX,
+		ExtensionYAML,
+		ExtensionYML,
+		ExtensionSQL,
+	}
+
 	// DefaultExtensionNoticeTemplates is a mapping between file extension (including the prefix dot) to the notice templates.
 	DefaultExtensionNoticeTemplates = map[string]string{
-		".css":  cssNoticeTemplate,
-		".go":   goNoticeTemplate,
-		".html": htmlNoticeTemplate,
-		".js":   jsNoticeTemplate,
-		".jsx":  jsNoticeTemplate,
-		".py":   pythonNoticeTemplate,
-		".sass": sassNoticeTemplate,
-		".scss": scssNoticeTemplate,
-		".ts":   tsNoticeTemplate,
-		".tsx":  tsNoticeTemplate,
-		".yaml": yamlNoticeTemplate,
-		".yml":  yamlNoticeTemplate,
-		".sql":  sqlNoticeTemplate,
+		ExtensionCSS:  cssNoticeTemplate,
+		ExtensionGo:   goNoticeTemplate,
+		ExtensionHTML: htmlNoticeTemplate,
+		ExtensionJS:   jsNoticeTemplate,
+		ExtensionJSX:  jsNoticeTemplate,
+		ExtensionPy:   pythonNoticeTemplate,
+		ExtensionSASS: sassNoticeTemplate,
+		ExtensionSCSS: scssNoticeTemplate,
+		ExtensionTS:   tsNoticeTemplate,
+		ExtensionTSX:  tsNoticeTemplate,
+		ExtensionYAML: yamlNoticeTemplate,
+		ExtensionYML:  yamlNoticeTemplate,
+		ExtensionSQL:  sqlNoticeTemplate,
 	}
 
 	// DefaultIncludeFiles is the default included files list.
@@ -91,8 +126,9 @@ var (
 
 // Errors
 var (
-	verifyErrorFormat = "%s: file copyright header missing or invalid; please use `copyright --inject` to add it"
+	VerifyErrorFormat = "%s: copyright header missing or invalid"
 	ErrFailure        = errors.New("failure; one or more steps failed")
+	ErrFatal          = errors.New("failure; one or more steps failed, and we should exit after the first failure")
 )
 
 const (

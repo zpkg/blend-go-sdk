@@ -235,21 +235,21 @@ func Test_Copyright_GetNoticeTemplate(t *testing.T) {
 
 	c := Copyright{}
 
-	noticeTemplate, ok := c.GetExtensionNoticeTemplate(".js")
+	noticeTemplate, ok := c.noticeTemplateByExtension(".js")
 	its.True(ok)
 	its.Equal(jsNoticeTemplate, noticeTemplate)
 
 	// it handles no dot prefix
-	noticeTemplate, ok = c.GetExtensionNoticeTemplate("js")
+	noticeTemplate, ok = c.noticeTemplateByExtension("js")
 	its.True(ok)
 	its.Equal(jsNoticeTemplate, noticeTemplate)
 
 	// it handles another file type
-	noticeTemplate, ok = c.GetExtensionNoticeTemplate(".go")
+	noticeTemplate, ok = c.noticeTemplateByExtension(".go")
 	its.True(ok)
 	its.Equal(goNoticeTemplate, noticeTemplate)
 
-	noticeTemplate, ok = c.GetExtensionNoticeTemplate("not-a-real-extension")
+	noticeTemplate, ok = c.noticeTemplateByExtension("not-a-real-extension")
 	its.False(ok)
 	its.Empty(noticeTemplate)
 
@@ -259,7 +259,7 @@ func Test_Copyright_GetNoticeTemplate(t *testing.T) {
 		},
 	}
 
-	noticeTemplate, ok = withDefault.GetExtensionNoticeTemplate("not-a-real-extension")
+	noticeTemplate, ok = withDefault.noticeTemplateByExtension("not-a-real-extension")
 	its.True(ok)
 	its.Equal("this is just a test", noticeTemplate)
 }

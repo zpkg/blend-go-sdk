@@ -13,6 +13,8 @@ import (
 	"io"
 	"time"
 
+	"google.golang.org/grpc/status"
+
 	"github.com/blend/go-sdk/ansi"
 	"github.com/blend/go-sdk/logger"
 	"github.com/blend/go-sdk/timeutil"
@@ -155,7 +157,12 @@ func (e RPCEvent) WriteText(tf logger.TextFormatter, wr io.Writer) {
 
 	if e.Err != nil {
 		fmt.Fprint(wr, logger.Space)
-		fmt.Fprint(wr, tf.Colorize("failed", ansi.ColorRed))
+
+		if s, ok := status.FromError(e.Err); ok {
+			fmt.Fprint(wr, tf.Colorize(fmt.Sprint(s.Code()), ansi.ColorRed))
+		} else {
+			fmt.Fprint(wr, tf.Colorize("failed", ansi.ColorRed))
+		}
 	}
 }
 

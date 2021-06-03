@@ -87,6 +87,11 @@ func (a *Assertions) NonFatal() *Assertions { //golint you can bite me.
 	}
 }
 
+// NotImplemented will just error.
+func (a *Assertions) NotImplemented(userMessageComponents ...interface{}) {
+	fail(a.Output, a.T, a.OutputFormat, NewFailure("the current test is not implemented", userMessageComponents...))
+}
+
 func (a *Assertions) fail(message string, userMessageComponents ...interface{}) bool {
 	if a.Optional {
 		fail(a.Output, a.T, a.OutputFormat, NewFailure(message, userMessageComponents...))

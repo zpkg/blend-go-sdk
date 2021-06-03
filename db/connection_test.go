@@ -78,9 +78,12 @@ func TestQuery(t *testing.T) {
 	err = defaultDB().Invoke(OptTx(tx)).Query("select * from bench_object").OutMany(&objs)
 	a.Nil(err)
 	a.NotEmpty(objs)
+
+	err = defaultDB().Invoke(OptTx(tx), OptInvocationStatementInterceptor(failInterceptor)).Query("select * from bench_object").OutMany(&objs)
+	a.Equal("this is just an interceptor error", err.Error())
 }
 
-func TestConnectionOpen(t *testing.T) {
+func Test_Connection_Open(t *testing.T) {
 	a := assert.New(t)
 
 	conn, err := New(OptConfigFromEnv())
@@ -100,6 +103,9 @@ func TestExec(t *testing.T) {
 
 	err = IgnoreExecResult(defaultDB().Invoke(OptTx(tx)).Exec("select 'ok!'"))
 	a.Nil(err)
+
+	err = IgnoreExecResult(defaultDB().Invoke(OptTx(tx), OptInvocationStatementInterceptor(failInterceptor)).Exec("select 'ok!'"))
+	a.Equal("this is just an interceptor error", err.Error())
 }
 
 // TestConnectionConfigSetsDatabase tests if we set the .database property on open.

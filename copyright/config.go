@@ -55,6 +55,9 @@ type Config struct {
 	Verbose *bool `yaml:"verbose"`
 	// Debug controls whether debug output is shown.
 	Debug *bool `yaml:"debug"`
+
+	// ShowDiff shows shows the diffs on verification failues.
+	ShowDiff *bool `yaml:"verifyDiff"`
 }
 
 // RootOrDefault returns the walk root or a default.
@@ -176,4 +179,12 @@ func (c Config) DebugOrDefault() bool {
 		return *c.Debug
 	}
 	return false
+}
+
+// ShowDiffOrDefault returns a value or a default.
+func (c Config) ShowDiffOrDefault() bool {
+	if c.ShowDiff != nil {
+		return *c.ShowDiff
+	}
+	return true
 }

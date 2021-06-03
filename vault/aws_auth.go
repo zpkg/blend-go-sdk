@@ -12,16 +12,16 @@ import (
 	"context"
 	"encoding/base64"
 	"encoding/json"
+	"io"
 	"io/ioutil"
 	"net/http"
 	"net/url"
-	"strings"
-	"time"
 
+	"github.com/aws/aws-sdk-go/aws"
 	"github.com/aws/aws-sdk-go/aws/credentials"
 	"github.com/aws/aws-sdk-go/aws/credentials/stscreds"
 	"github.com/aws/aws-sdk-go/aws/session"
-	v4 "github.com/aws/aws-sdk-go/aws/signer/v4"
+	"github.com/aws/aws-sdk-go/service/sts"
 
 	"github.com/blend/go-sdk/ex"
 )
@@ -61,12 +61,12 @@ func OptAWSAuthCredentialProvider(cp CredentialProvider) AWSAuthOption {
 
 // AWSIAMLogin returns a vault token given the instance role which invokes this function
 func (a *AWSAuth) AWSIAMLogin(ctx context.Context, client HTTPClient, baseURL url.URL, roleName, roleARN, service, region string) (string, error) {
-	headers, err := a.GetCallerIdentitySignedHeaders(roleARN, service, region)
+	stsRequest, err := a.GetCallerIdentitySignedRequest(roleARN, service, region)
 	if err != nil {
 		return "", ex.New(err)
 	}
 
-	request, err := createVaultLoginRequest(roleName, baseURL, headers)
+	request, err := createVaultLoginRequest(roleName, baseURL, stsRequest)
 	if err != nil {
 		return "", ex.New(err)
 	}
@@ -81,24 +81,38 @@ func (a *AWSAuth) AWSIAMLogin(ctx context.Context, client HTTPClient, baseURL ur
 	if err := json.NewDecoder(res.Body).Decode(&response); err != nil {
 		return "", ex.New(err)
 	}
+	if len(response.Errors) > 0 {
+		return "", ex.New("Error making aws get identity request", ex.OptMessagef("%+v", response.Errors))
+	}
+
 	return response.Auth.ClientToken, nil
 }
 
-// GetCallerIdentitySignedHeaders gets signed get caller identity request headers
-func (a *AWSAuth) GetCallerIdentitySignedHeaders(roleARN, service, region string) (http.Header, error) {
-	body := strings.NewReader(STSGetIdentityBody)
-	req, err := http.NewRequest(MethodPost, STSURL, body)
-	if err != nil {
-		return nil, ex.New(err)
-	}
-
+// GetCallerIdentitySignedRequest gets a signed caller identity request
+func (a *AWSAuth) GetCallerIdentitySignedRequest(roleARN, service, region string) (*http.Request, error) {
 	credentials, err := a.CredentialProvider(roleARN)
 	if err != nil {
 		return nil, ex.New(err)
 	}
 
-	signer := v4.NewSigner(credentials)
-	return signer.Sign(req, body, service, region, time.Now())
+	stsSession, err := session.NewSessionWithOptions(session.Options{
+		Config: aws.Config{
+			Credentials: credentials,
+			Region:      &region,
+		},
+	})
+	if err != nil {
+		return nil, ex.New(err)
+	}
+
+	svc := sts.New(stsSession)
+	stsRequest, _ := svc.GetCallerIdentityRequest(nil)
+	err = stsRequest.Sign()
+	if err != nil {
+		return nil, ex.New(err)
+	}
+
+	return stsRequest.HTTPRequest, nil
 }
 
 // GetIAMAuthCredentials is a credential provider to be passed in as input into the AWSAuth struct
@@ -111,29 +125,42 @@ func GetIAMAuthCredentials(roleARN string) (*credentials.Credentials, error) {
 	return credentials, nil
 }
 
-func createVaultLoginRequest(roleName string, baseURL url.URL, header http.Header) (*http.Request, error) {
+func createVaultLoginRequest(roleName string, baseURL url.URL, request *http.Request) (*http.Request, error) {
 	baseURL.Path = AWSAuthLoginPath
-	headers, err := json.Marshal(header)
+	stsHeaders, err := json.Marshal(request.Header)
 	if err != nil {
-		return nil, err
+		return nil, ex.New(err)
 	}
 
 	body := map[string]string{
 		"role":                    roleName,
 		"iam_http_request_method": MethodPost,
-		"iam_request_url":         base64.StdEncoding.EncodeToString([]byte(STSURL)),
+		"iam_request_url":         base64.StdEncoding.EncodeToString([]byte(request.URL.String())),
 		"iam_request_body":        base64.StdEncoding.EncodeToString([]byte(STSGetIdentityBody)),
-		"iam_request_headers":     base64.StdEncoding.EncodeToString(headers),
+		"iam_request_headers":     base64.StdEncoding.EncodeToString(stsHeaders),
 	}
 
 	contents, err := json.Marshal(body)
 	if err != nil {
-		return nil, err
+		return nil, ex.New(err)
 	}
 
-	return &http.Request{
+	req := &http.Request{
 		URL:    &baseURL,
 		Method: MethodPost,
 		Body:   ioutil.NopCloser(bytes.NewReader(contents)),
-	}, nil
+	}
+
+	req.GetBody = func() (io.ReadCloser, error) {
+		r := bytes.NewReader(contents)
+		return ioutil.NopCloser(r), nil
+	}
+
+	req.ContentLength = int64(len(contents))
+	if req.Header == nil {
+		req.Header = make(http.Header)
+	}
+	req.Header.Set(HeaderContentType, ContentTypeApplicationJSON)
+
+	return req, nil
 }
