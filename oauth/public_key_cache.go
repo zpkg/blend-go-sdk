@@ -71,7 +71,7 @@ func (pkc *PublicKeyCache) Get(ctx context.Context, id string) (*rsa.PublicKey, 
 
 	// if we should still refresh after grabbing
 	// the write lock
-	keys, err := FetchPublicKeys(ctx, pkc.FetchPublicKeysDefaults...)
+	keys, err := pkc.FetchPublicKeys(ctx, pkc.FetchPublicKeysDefaults...)
 	if err != nil {
 		return nil, err
 	}
@@ -84,23 +84,8 @@ func (pkc *PublicKeyCache) Get(ctx context.Context, id string) (*rsa.PublicKey, 
 	return jwk.RSAPublicKey()
 }
 
-// PublicKeysResponse is a response for the google certs api.
-type PublicKeysResponse struct {
-	CacheControl string
-	Expires      time.Time
-	Keys         map[string]jwt.JWK
-}
-
-// IsExpired returns if the cert response is expired.
-func (pkr PublicKeysResponse) IsExpired() bool {
-	if pkr.Expires.IsZero() {
-		return true
-	}
-	return time.Now().UTC().After(pkr.Expires.UTC())
-}
-
 // FetchPublicKeys gets the google signing certs.
-func FetchPublicKeys(ctx context.Context, opts ...r2.Option) (*PublicKeysResponse, error) {
+func (pkc *PublicKeyCache) FetchPublicKeys(ctx context.Context, opts ...r2.Option) (*PublicKeysResponse, error) {
 	var jwks fetchPublicKeysResponse
 	meta, err := r2.New(GoogleKeysURL, opts...).JSON(&jwks)
 	if err != nil {
@@ -137,4 +122,19 @@ func jwkLookup(jwks []jwt.JWK) map[string]jwt.JWK {
 		output[jwk.KID] = jwk
 	}
 	return output
+}
+
+// PublicKeysResponse is a response for the google certs api.
+type PublicKeysResponse struct {
+	CacheControl string
+	Expires      time.Time
+	Keys         map[string]jwt.JWK
+}
+
+// IsExpired returns if the cert response is expired.
+func (pkr PublicKeysResponse) IsExpired() bool {
+	if pkr.Expires.IsZero() {
+		return true
+	}
+	return time.Now().UTC().After(pkr.Expires.UTC())
 }

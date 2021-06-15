@@ -7,7 +7,9 @@ Use of this source code is governed by a MIT license that can be found in the LI
 
 package breaker
 
-import "fmt"
+import (
+	"fmt"
+)
 
 // These constants are states of CircuitBreaker.
 const (

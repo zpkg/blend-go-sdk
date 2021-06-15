@@ -26,8 +26,8 @@ import (
 //       - `http.Client` satisfies `HTTPGetClient`
 //       - `WaitForAdmin.executeOnce` satisfies `retry.Action`
 var (
-	_ HTTPGetClient = (*http.Client)(nil)
-	_ retry.Action  = (*WaitForAdmin)(nil).executeOnce
+	_ HTTPGetClient      = (*http.Client)(nil)
+	_ retry.ActionerFunc = (*WaitForAdmin)(nil).executeOnce
 )
 
 var (
@@ -110,7 +110,7 @@ func (wfa *WaitForAdmin) IsReady() bool {
 	return true
 }
 
-func (wfa *WaitForAdmin) executeOnce(_ context.Context) (interface{}, error) {
+func (wfa *WaitForAdmin) executeOnce(_ context.Context, _ interface{}) (interface{}, error) {
 	attempt := atomic.AddUint32(&wfa.Attempt, 1)
 	logger.MaybeDebugf(wfa.Log, "Checking if Envoy is ready, attempt %d", attempt)
 	if wfa.IsReady() {
@@ -129,15 +129,14 @@ func (wfa *WaitForAdmin) executeOnce(_ context.Context) (interface{}, error) {
 func (wfa *WaitForAdmin) Execute(ctx context.Context) error {
 	_, err := retry.Retry(
 		ctx,
-		wfa.executeOnce,
+		retry.ActionerFunc(wfa.executeOnce),
+		nil,
 		retry.OptConstantDelay(wfa.Sleep),
 		retry.OptMaxAttempts(10),
 	)
-
 	if ex.Is(err, ErrFailedAttempt) {
 		return ex.New(ErrTimedOut)
 	}
-
 	return err
 }
 

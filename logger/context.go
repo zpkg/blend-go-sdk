@@ -146,11 +146,8 @@ func WithAnnotations(ctx context.Context, annotations Annotations) context.Conte
 }
 
 // WithAnnotation returns a new context with a given additional annotation.
-func WithAnnotation(ctx context.Context, key, value string) context.Context {
+func WithAnnotation(ctx context.Context, key string, value interface{}) context.Context {
 	existing := GetAnnotations(ctx)
-	if existing == nil {
-		existing = make(Annotations)
-	}
 	existing[key] = value
 	return context.WithValue(ctx, annotationsKey{}, existing)
 }

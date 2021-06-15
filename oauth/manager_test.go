@@ -119,7 +119,7 @@ func Test_Manager_Finish(t *testing.T) {
 	it.Equal("https://example.com/example-string.jpg", res.Profile.PictureURL)
 }
 
-func Test_Manager_Finish_DisallowedDomain(t *testing.T) {
+func Test_Manager_Finish_disallowedDomain(t *testing.T) {
 	it := assert.New(t)
 
 	pk0, err := jwt.ParseRSAPrivateKeyFromPEM([]byte(pk0pem))
@@ -207,7 +207,7 @@ func Test_Manager_Finish_DisallowedDomain(t *testing.T) {
 	it.Empty(res.Profile.Email)
 }
 
-func Test_Manager_Finish_FailsAudience(t *testing.T) {
+func Test_Manager_Finish_failsAudience(t *testing.T) {
 	it := assert.New(t)
 
 	pk0, err := jwt.ParseRSAPrivateKeyFromPEM([]byte(pk0pem))
@@ -270,7 +270,7 @@ func Test_Manager_Finish_FailsAudience(t *testing.T) {
 	it.Empty(res.Profile.Email)
 }
 
-func Test_Manager_Finish_FailsVerification(t *testing.T) {
+func Test_Manager_Finish_failsVerification(t *testing.T) {
 	it := assert.New(t)
 
 	pk0, err := jwt.ParseRSAPrivateKeyFromPEM([]byte(pk0pem))
@@ -410,6 +410,7 @@ func Test_Manager_OAuthURL_FullyQualifiedRedirectURI(t *testing.T) {
 
 	parsed, err := url.Parse(oauthURL)
 	assert.Nil(err)
+	assert.Equal("test_client_id", parsed.Query().Get("client_id"))
 	assert.Equal("test.blend.com", parsed.Query().Get("hd"), "we should set the hosted domain if it's configured")
 }
 

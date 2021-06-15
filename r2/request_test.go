@@ -204,6 +204,36 @@ func TestRequestNoContentJSON(t *testing.T) {
 	assert.Equal(http.StatusNoContent, res.StatusCode)
 }
 
+func TestRequestJSONBytes(t *testing.T) {
+	assert := assert.New(t)
+	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		w.WriteHeader(http.StatusOK)
+		fmt.Fprintf(w, "{\"status\":\"ok!\"}\n")
+	}))
+	defer server.Close()
+
+	var deserialized map[string]interface{}
+	contents, res, err := New(server.URL).JSONBytes(&deserialized)
+	assert.Nil(err)
+	assert.Equal("{\"status\":\"ok!\"}\n", string(contents))
+	assert.Equal(http.StatusOK, res.StatusCode)
+	assert.Equal("ok!", deserialized["status"])
+}
+
+func TestRequestNoContentJSONBytes(t *testing.T) {
+	assert := assert.New(t)
+	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		w.WriteHeader(http.StatusNoContent)
+	}))
+	defer server.Close()
+
+	var deserialized map[string]interface{}
+	contents, res, err := New(server.URL).JSONBytes(&deserialized)
+	assert.True(ex.Is(err, ErrNoContentJSON))
+	assert.Equal(http.StatusNoContent, res.StatusCode)
+	assert.Empty(contents)
+}
+
 type xmlTestCase struct {
 	Status string `xml:"status"`
 }

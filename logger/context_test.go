@@ -53,10 +53,10 @@ func TestContextWithAnnotation(t *testing.T) {
 	expectedAnnotations := Annotations{"one": "two"}
 	assert.Equal(expectedAnnotations, GetAnnotations(ctx))
 
-	ctx = WithAnnotation(ctx, "two", "three")
+	ctx = WithAnnotation(ctx, "two", 3)
 	expectedAnnotations = Annotations{
 		"one": "two",
-		"two": "three",
+		"two": 3,
 	}
 	assert.Equal(expectedAnnotations, GetAnnotations(ctx))
 }

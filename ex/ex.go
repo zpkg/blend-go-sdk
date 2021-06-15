@@ -241,3 +241,22 @@ func (e *Ex) String() string {
 	}
 	return s.String()
 }
+
+// Unwrap returns the inner error if it exists.
+// Enables error chaining and calling errors.Is/As to
+// match on inner errors.
+func (e *Ex) Unwrap() error {
+	return e.Inner
+}
+
+// Is returns true if the target error matches the Ex.
+// Enables errors.Is on Ex classes when an error
+// is wrapped using Ex.
+func (e *Ex) Is(target error) bool {
+	return Is(e, target)
+}
+
+// As delegates to the errors.As to match on the Ex class.
+func (e *Ex) As(target interface{}) bool {
+	return errors.As(e.Class, target)
+}

@@ -13,9 +13,15 @@ import (
 
 	"github.com/mediocregopher/radix/v4"
 
+	"github.com/blend/go-sdk/async"
 	"github.com/blend/go-sdk/ex"
 	"github.com/blend/go-sdk/logger"
 	"github.com/blend/go-sdk/uuid"
+)
+
+var (
+	_ async.Checker = (*RadixClient)(nil)
+	_ Client        = (*RadixClient)(nil)
 )
 
 // New returns a new client.
@@ -69,6 +75,11 @@ func (rc *RadixClient) Ping(ctx context.Context) error {
 		return ex.New(ErrPingFailed)
 	}
 	return nil
+}
+
+// Check implements a status check.
+func (rc *RadixClient) Check(ctx context.Context) error {
+	return rc.Ping(ctx)
 }
 
 // Do runs a given command.

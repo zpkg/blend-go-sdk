@@ -13,6 +13,7 @@ import (
 	"io"
 	"time"
 
+	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
 
 	"github.com/blend/go-sdk/ansi"
@@ -159,7 +160,7 @@ func (e RPCEvent) WriteText(tf logger.TextFormatter, wr io.Writer) {
 		fmt.Fprint(wr, logger.Space)
 
 		if s, ok := status.FromError(e.Err); ok {
-			fmt.Fprint(wr, tf.Colorize(fmt.Sprint(s.Code()), ansi.ColorRed))
+			fmt.Fprint(wr, tf.Colorize(fmt.Sprintf("failed (%[1]d - %[1]v)", s.Code()), ansi.ColorRed))
 		} else {
 			fmt.Fprint(wr, tf.Colorize("failed", ansi.ColorRed))
 		}
@@ -168,6 +169,10 @@ func (e RPCEvent) WriteText(tf logger.TextFormatter, wr io.Writer) {
 
 // Decompose implements JSONWritable.
 func (e RPCEvent) Decompose() map[string]interface{} {
+	var code codes.Code
+	if s, ok := status.FromError(e.Err); ok {
+		code = s.Code()
+	}
 	return map[string]interface{}{
 		"engine":      e.Engine,
 		"peer":        e.Peer,
@@ -177,5 +182,6 @@ func (e RPCEvent) Decompose() map[string]interface{} {
 		"contentType": e.ContentType,
 		"elapsed":     timeutil.Milliseconds(e.Elapsed),
 		"err":         e.Err,
+		"code":        code,
 	}
 }

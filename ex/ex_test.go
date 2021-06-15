@@ -265,3 +265,91 @@ func TestExceptionPrintsInner(t *testing.T) {
 	assert.Contains(output, "middle")
 	assert.Contains(output, "terminal")
 }
+
+type structuredError struct {
+	value string
+}
+
+func (err structuredError) Error() string {
+	return err.value
+}
+
+func TestException_ErrorsIsCompatability(t *testing.T) {
+	assert := assert.New(t)
+
+	{ // Single nesting, Ex is outermost
+		innerErr := errors.New("inner")
+		outerErr := New("outer", OptInnerClass(innerErr))
+
+		assert.True(errors.Is(outerErr, innerErr))
+	}
+
+	{ // Single nesting, Ex is innermost
+		innerErr := New("inner")
+		outerErr := fmt.Errorf("outer: %w", innerErr)
+
+		assert.True(errors.Is(outerErr, Class("inner")))
+	}
+
+	{ // Triple nesting, including Ex and non-Ex
+		firstErr := errors.New("inner most")
+		secondErr := fmt.Errorf("standard err: %w", firstErr)
+		thirdErr := New("ex err", OptInner(secondErr))
+		fourthErr := New("outer most", OptInner(thirdErr))
+
+		assert.True(errors.Is(fourthErr, firstErr))
+		assert.True(errors.Is(fourthErr, secondErr))
+		assert.True(errors.Is(fourthErr, Class("ex err")))
+	}
+
+	{ // Target is nested in an Ex class and not in Inner chain
+		firstErr := errors.New("inner most")
+		secondErr := fmt.Errorf("standard err: %w", firstErr)
+		thirdErr := New(secondErr, OptInner(fmt.Errorf("another cause")))
+
+		assert.True(errors.Is(thirdErr, firstErr))
+		assert.True(errors.Is(thirdErr, secondErr))
+	}
+}
+
+func TestException_ErrorsAsCompatability(t *testing.T) {
+	assert := assert.New(t)
+
+	{ // Single nesting, targeting non-Ex
+		innerErr := structuredError{"inner most"}
+		outerErr := New("outer", OptInner(innerErr))
+
+		var matchedErr structuredError
+		assert.True(errors.As(outerErr, &matchedErr))
+		assert.Equal("inner most", matchedErr.value)
+	}
+
+	{ // Single nesting, targetting Ex
+		innerErr := New("outer most")
+		outerErr := fmt.Errorf("outer err: %w", innerErr)
+
+		var matchedErr *Ex
+		assert.True(errors.As(outerErr, &matchedErr))
+		assert.Equal("outer most", matchedErr.Class.Error())
+	}
+
+	{ // Single nesting, targetting inner Ex class
+		innerErr := New(structuredError{"inner most"})
+		outerErr := New("outer most", OptInner(innerErr))
+
+		var matchedErr structuredError
+		assert.True(errors.As(outerErr, &matchedErr))
+		assert.Equal("inner most", matchedErr.value)
+	}
+
+	{ // Triple Nesting, targeting non-Ex
+		firstErr := structuredError{"inner most"}
+		secondErr := fmt.Errorf("standard err: %w", firstErr)
+		thirdErr := New("ex err", OptInner(secondErr))
+		fourthErr := New("outer most", OptInner(thirdErr))
+
+		var matchedErr structuredError
+		assert.True(errors.As(fourthErr, &matchedErr))
+		assert.Equal("inner most", matchedErr.value)
+	}
+}

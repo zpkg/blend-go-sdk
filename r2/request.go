@@ -238,6 +238,42 @@ func (r Request) JSON(dst interface{}) (res *http.Response, err error) {
 	return
 }
 
+// JSONBytes reads the response as json into a given object
+// and returns the response bytes as well as the response metadata.
+//
+// This method is useful for debugging responses.
+func (r Request) JSONBytes(dst interface{}) (body []byte, res *http.Response, err error) {
+	defer func() {
+		if closeErr := r.Close(); closeErr != nil {
+			err = ex.Append(err, closeErr)
+		}
+	}()
+
+	res, err = r.Do()
+	if err != nil {
+		res = nil
+		err = ex.New(err)
+		return
+	}
+	defer func() {
+		err = ex.Append(err, res.Body.Close())
+	}()
+	if res.StatusCode == http.StatusNoContent {
+		err = ex.New(ErrNoContentJSON)
+		return
+	}
+	body, err = ioutil.ReadAll(res.Body)
+	if err != nil {
+		err = ex.New(err)
+		return
+	}
+	if err = json.Unmarshal(body, dst); err != nil {
+		err = ex.New(err)
+		return
+	}
+	return
+}
+
 // XML reads the response as xml into a given object and returns the response metadata.
 func (r Request) XML(dst interface{}) (res *http.Response, err error) {
 	defer func() {

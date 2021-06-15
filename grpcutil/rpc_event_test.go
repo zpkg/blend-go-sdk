@@ -78,7 +78,7 @@ func TestRPCEvent_StatusCode(t *testing.T) {
 	}
 
 	re.WriteText(noColor, buf)
-	assert.Equal("[event-engine] /v1.bar event-peer event-authority event-user-agent event-content-type 1ms ResourceExhausted", buf.String())
+	assert.Equal("[event-engine] /v1.bar event-peer event-authority event-user-agent event-content-type 1ms failed (8 - ResourceExhausted)", buf.String())
 
 	contents, err := json.Marshal(re)
 	assert.Nil(err)

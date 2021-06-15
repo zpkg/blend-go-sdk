@@ -27,6 +27,9 @@ const (
 	EnvVarVaultToken = "VAULT_TOKEN"
 	// EnvVarVaultCertAuthorityPath is the environment variable for the vault certificate authority.
 	EnvVarVaultCertAuthorityPath = "VAULT_CACERT"
+	// EnvVarVaultTimeout is the environment variable for how long to wait for vault to timeout. The values here
+	// are parsed by time.ParseDuration. Examples (5s = five seconds, 100ms = 100 milliseconds, etc.)
+	EnvVarVaultTimeout = "VAULT_TIMEOUT"
 )
 
 const (

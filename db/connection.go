@@ -11,14 +11,14 @@ import (
 	"context"
 	"database/sql"
 
+	"github.com/blend/go-sdk/async"
 	"github.com/blend/go-sdk/bufferutil"
 	"github.com/blend/go-sdk/ex"
 	"github.com/blend/go-sdk/logger"
 )
 
-const (
-	// ConnectionNilError is a common error
-	ConnectionNilError = "connection is nil"
+var (
+	_ async.Checker = (*Connection)(nil)
 )
 
 // --------------------------------------------------------------------------------
@@ -185,4 +185,10 @@ func (dbc *Connection) Query(statement string, args ...interface{}) *Query {
 // QueryContext is a helper stub for .Invoke(OptContext(ctx)).Query(...).
 func (dbc *Connection) QueryContext(ctx context.Context, statement string, args ...interface{}) *Query {
 	return dbc.Invoke(OptContext(ctx)).Query(statement, args...)
+}
+
+// Check implements a status check.
+func (dbc *Connection) Check(ctx context.Context) error {
+	_, err := dbc.QueryContext(ctx, "select 1").Any()
+	return err
 }

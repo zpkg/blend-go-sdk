@@ -12,70 +12,72 @@ import (
 )
 
 // Option is a mutator for a breaker.
-type Option func(*Breaker) error
+type Option func(*Breaker)
+
+// OptOpenFailureThreshold sets the OpenFailureThreshold.
+func OptOpenFailureThreshold(openFailureThreshold int64) Option {
+	return func(b *Breaker) {
+		b.OpenFailureThreshold = openFailureThreshold
+	}
+}
 
 // OptHalfOpenMaxActions sets the HalfOpenMaxActions.
 func OptHalfOpenMaxActions(maxActions int64) Option {
-	return func(b *Breaker) error {
+	return func(b *Breaker) {
 		b.HalfOpenMaxActions = maxActions
-		return nil
 	}
 }
 
 // OptClosedExpiryInterval sets the ClosedExpiryInterval.
 func OptClosedExpiryInterval(interval time.Duration) Option {
-	return func(b *Breaker) error {
+	return func(b *Breaker) {
 		b.ClosedExpiryInterval = interval
-		return nil
 	}
 }
 
 // OptOpenExpiryInterval sets the OpenExpiryInterval.
 func OptOpenExpiryInterval(interval time.Duration) Option {
-	return func(b *Breaker) error {
+	return func(b *Breaker) {
 		b.OpenExpiryInterval = interval
-		return nil
 	}
 }
 
 // OptConfig sets the breaker based on a config.
 func OptConfig(cfg Config) Option {
-	return func(b *Breaker) error {
+	return func(b *Breaker) {
 		b.HalfOpenMaxActions = cfg.HalfOpenMaxActions
 		b.ClosedExpiryInterval = cfg.ClosedExpiryInterval
 		b.OpenExpiryInterval = cfg.OpenExpiryInterval
-		return nil
 	}
 }
 
 // OptOpenAction sets the open action on the breaker.
-func OptOpenAction(action Action) Option {
-	return func(b *Breaker) error {
+//
+// The "Open" action is called when the breaker opens,
+// that is, when it no longer allows calls.
+func OptOpenAction(action Actioner) Option {
+	return func(b *Breaker) {
 		b.OpenAction = action
-		return nil
 	}
 }
 
 // OptOnStateChange sets the OnStateChange handler on the breaker.
 func OptOnStateChange(handler OnStateChangeHandler) Option {
-	return func(b *Breaker) error {
+	return func(b *Breaker) {
 		b.OnStateChange = handler
-		return nil
 	}
 }
 
 // OptShouldOpenProvider sets the ShouldCloseProvider provider on the breaker.
 func OptShouldOpenProvider(provider ShouldOpenProvider) Option {
-	return func(b *Breaker) error {
+	return func(b *Breaker) {
 		b.ShouldOpenProvider = provider
-		return nil
 	}
 }
 
 // OptNowProvider sets the now provider on the breaker.
 func OptNowProvider(provider NowProvider) Option {
-	return func(b *Breaker) error {
+	return func(b *Breaker) {
 		b.NowProvider = provider
-		return nil
 	}
 }

@@ -31,19 +31,19 @@ var (
 // Meta is the cluster config meta.
 type Meta struct {
 	// Region is the aws region the service is deployed to.
-	Region string `yaml:"region,omitempty"`
+	Region string `json:"region,omitempty" yaml:"region,omitempty"`
 	// ServiceName is name of the service
-	ServiceName string `yaml:"serviceName,omitempty"`
+	ServiceName string `json:"serviceName,omitempty" yaml:"serviceName,omitempty"`
 	// ProjectName is the project name injected by Deployinator.
-	ProjectName string `yaml:"projectName,omitempty"`
+	ProjectName string `json:"projectName,omitempty" yaml:"projectName,omitempty"`
 	// Environment is the environment of the cluster (sandbox, prod etc.)
-	ServiceEnv string `yaml:"serviceEnv,omitempty"`
+	ServiceEnv string `json:"serviceEnv,omitempty" yaml:"serviceEnv,omitempty"`
 	// Hostname is the environment of the cluster (sandbox, prod etc.)
-	Hostname string `yaml:"hostname,omitempty"`
+	Hostname string `json:"hostname,omitempty" yaml:"hostname,omitempty"`
 	// Version is the application version.
-	Version string `yaml:"version,omitempty"`
+	Version string `json:"version,omitempty" yaml:"version,omitempty"`
 	// GitRef is the git ref of the image.
-	GitRef string `yaml:"gitRef,omitempty"`
+	GitRef string `json:"gitRef,omitempty" yaml:"gitRef,omitempty"`
 }
 
 // SetFrom returns a resolve action to set this meta from a root meta.

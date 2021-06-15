@@ -7,6 +7,8 @@ Use of this source code is governed by a MIT license that can be found in the LI
 
 package ex
 
+import "errors"
+
 // Is is a helper function that returns if an error is an ex.
 //
 // It will handle if the err is an exception, a multi-error or a regular error.
@@ -25,10 +27,10 @@ func Is(err interface{}, cause error) bool {
 			}
 			return typed.Class == causeTyped.Class
 		}
-		return (typed.Class == cause) || (typed.Class.Error() == cause.Error())
+		return (typed.Class == cause) || (typed.Class.Error() == cause.Error()) || errors.Is(typed.Class, cause)
 	}
 	if typed, ok := err.(ClassProvider); ok {
-		return typed.Class() == cause || (typed.Class().Error() == cause.Error())
+		return typed.Class() == cause || (typed.Class().Error() == cause.Error()) || errors.Is(typed.Class(), cause)
 	}
 
 	// handle the case of multi-exceptions
@@ -43,7 +45,7 @@ func Is(err interface{}, cause error) bool {
 
 	// handle regular errors
 	if typed, ok := err.(error); ok && typed != nil {
-		return (err == cause) || (typed.Error() == cause.Error())
+		return (err == cause) || (typed.Error() == cause.Error()) || errors.Is(typed, cause)
 	}
 	// handle ???
 	return err == cause
