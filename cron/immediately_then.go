@@ -9,7 +9,7 @@ package cron
 
 import (
 	"fmt"
-	"sync"
+	"sync/atomic"
 	"time"
 )
 
@@ -27,17 +27,16 @@ func Immediately() *ImmediateSchedule {
 
 // ImmediateSchedule fires immediately with an optional continuation schedule.
 type ImmediateSchedule struct {
-	sync.Mutex
-	didRun bool
+	didRun int32
 	then   Schedule
 }
 
 // String returns a string representation of the schedul.e
 func (i *ImmediateSchedule) String() string {
 	if i.then != nil {
-		return fmt.Sprintf("immediately, then %v", i.then)
+		return fmt.Sprintf("%s %v", StringScheduleImmediatelyThen, i.then)
 	}
-	return "immediately, once"
+	return StringScheduleImmediately
 }
 
 // Then allows you to specify a subsequent schedule after the first run.
@@ -48,14 +47,9 @@ func (i *ImmediateSchedule) Then(then Schedule) Schedule {
 
 // Next implements Schedule.
 func (i *ImmediateSchedule) Next(after time.Time) time.Time {
-	i.Lock()
-	defer i.Unlock()
-
-	if !i.didRun {
-		i.didRun = true
+	if atomic.CompareAndSwapInt32(&i.didRun, 0, 1) {
 		return Now()
 	}
-
 	if i.then != nil {
 		return i.then.Next(after)
 	}

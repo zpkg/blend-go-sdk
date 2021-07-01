@@ -17,10 +17,11 @@ import (
 
 // Interface assertions.
 var (
-	_ Job               = (*JobBuilder)(nil)
-	_ ScheduleProvider  = (*JobBuilder)(nil)
-	_ LifecycleProvider = (*JobBuilder)(nil)
-	_ ConfigProvider    = (*JobBuilder)(nil)
+	_ Job                = (*JobBuilder)(nil)
+	_ ScheduleProvider   = (*JobBuilder)(nil)
+	_ LifecycleProvider  = (*JobBuilder)(nil)
+	_ BackgroundProvider = (*JobBuilder)(nil)
+	_ ConfigProvider     = (*JobBuilder)(nil)
 )
 
 // NewJob returns a new job builder.
@@ -123,6 +124,21 @@ func OptJobOnDisabled(handler func(context.Context)) JobBuilderOption {
 	return func(jb *JobBuilder) { jb.JobLifecycle.OnDisabled = handler }
 }
 
+// OptJobOnLoad sets a lifecycle hook.
+func OptJobOnLoad(handler func(context.Context) error) JobBuilderOption {
+	return func(jb *JobBuilder) { jb.JobLifecycle.OnLoad = handler }
+}
+
+// OptJobOnUnload sets a lifecycle hook.
+func OptJobOnUnload(handler func(context.Context) error) JobBuilderOption {
+	return func(jb *JobBuilder) { jb.JobLifecycle.OnUnload = handler }
+}
+
+// OptJobBackground sets the background provider.
+func OptJobBackground(provider func(context.Context) context.Context) JobBuilderOption {
+	return func(jb *JobBuilder) { jb.BackgroundProvider = provider }
+}
+
 // JobBuilder allows for job creation w/o a fully formed struct.
 type JobBuilder struct {
 	JobName             string
@@ -130,11 +146,20 @@ type JobBuilder struct {
 	JobLifecycle        JobLifecycle
 	JobAction           Action
 	JobScheduleProvider func() Schedule
+	BackgroundProvider  func(context.Context) context.Context
 }
 
 // Name returns the job name.
 func (jb *JobBuilder) Name() string {
 	return jb.JobName
+}
+
+// Background implements BackgroundProvider.
+func (jb *JobBuilder) Background(ctx context.Context) context.Context {
+	if jb.BackgroundProvider != nil {
+		return jb.BackgroundProvider(ctx)
+	}
+	return ctx
 }
 
 // Schedule returns the job schedule if a provider is set.

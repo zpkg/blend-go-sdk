@@ -14,16 +14,18 @@ import (
 	"github.com/blend/go-sdk/assert"
 )
 
-func TestCreateKey(t *testing.T) {
-	assert := assert.New(t)
+func Test_CreateKey(t *testing.T) {
+	t.Parallel()
+
+	its := assert.New(t)
 
 	key, err := CreateKey(32)
-	assert.Nil(err)
-	assert.Len(key, 32)
+	its.Nil(err)
+	its.Len(key, 32)
 
 	key2, err := CreateKey(32)
-	assert.Nil(err)
-	assert.Len(key2, 32)
+	its.Nil(err)
+	its.Len(key2, 32)
 
-	assert.False(hmac.Equal(key, key2))
+	its.False(hmac.Equal(key, key2))
 }

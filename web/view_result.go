@@ -16,6 +16,7 @@ import (
 
 	"github.com/blend/go-sdk/env"
 	"github.com/blend/go-sdk/ex"
+	"github.com/blend/go-sdk/logger"
 	"github.com/blend/go-sdk/webutil"
 )
 
@@ -67,6 +68,9 @@ func (vr *ViewResult) Render(ctx *Ctx) (err error) {
 	})
 	if err != nil {
 		err = ex.New(err)
+		if ctx.App != nil {
+			logger.MaybeErrorContext(ctx.Context(), ctx.App.Log, err)
+		}
 		ctx.Response.WriteHeader(http.StatusInternalServerError)
 		_, _ = ctx.Response.Write([]byte(fmt.Sprintf("%+v\n", err)))
 		return

@@ -22,21 +22,13 @@ import (
 
 // Invocation is a specific operation against a context.
 type Invocation struct {
-	DB DB
-
-	/* invocation state */
-	Label string
-
-	/* context */
-	Context context.Context
-	Cancel  func()
-
-	/* dependencies */
-	Config     Config
-	Log        logger.Triggerable
-	BufferPool *bufferutil.Pool
-
-	/* logging hooks */
+	DB                   DB
+	Label                string
+	Context              context.Context
+	Cancel               func()
+	Config               Config
+	Log                  logger.Triggerable
+	BufferPool           *bufferutil.Pool
 	StatementInterceptor StatementInterceptor
 	Tracer               Tracer
 	StartTime            time.Time
@@ -747,6 +739,9 @@ func (i *Invocation) setAutos(object DatabaseMapped, autos *ColumnCollection, au
 
 // start runs on start steps.
 func (i *Invocation) start(statement string) (string, error) {
+	if i.DB == nil {
+		return "", ex.New(ErrConnectionClosed)
+	}
 	i.StartTime = time.Now()
 	if i.StatementInterceptor != nil {
 		var err error
@@ -754,6 +749,14 @@ func (i *Invocation) start(statement string) (string, error) {
 		if err != nil {
 			return statement, err
 		}
+	}
+	if i.Log != nil && !IsSkipQueryLogging(i.Context) {
+		qse := NewQueryStartEvent(statement)
+		qse.Username = i.Config.Username
+		qse.Database = i.Config.DatabaseOrDefault()
+		qse.Label = i.Label
+		qse.Engine = i.Config.EngineOrDefault()
+		i.Log.TriggerContext(i.Context, qse)
 	}
 	if i.Tracer != nil && !IsSkipQueryLogging(i.Context) {
 		i.TraceFinisher = i.Tracer.Query(i.Context, i.Config, i.Label, statement)

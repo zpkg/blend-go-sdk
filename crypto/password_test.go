@@ -14,11 +14,12 @@ import (
 )
 
 func Test_PasswordHashAndMatch(t *testing.T) {
-	assert := assert.New(t)
+	t.Parallel()
+	its := assert.New(t)
 	password := "some-test-password-12345"
 	hashedPassword, err := HashPassword(password)
-	assert.Nil(err)
-	assert.NotEqual("", hashedPassword)
-	assert.True(PasswordMatchesHash(password, hashedPassword))
-	assert.False(PasswordMatchesHash("something-else", hashedPassword))
+	its.Nil(err)
+	its.NotEqual("", hashedPassword)
+	its.True(PasswordMatchesHash(password, hashedPassword))
+	its.False(PasswordMatchesHash("something-else", hashedPassword))
 }

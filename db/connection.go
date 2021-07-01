@@ -153,13 +153,15 @@ func (dbc *Connection) PrepareContext(ctx context.Context, statement string, tx 
 // Invoke returns a new invocation.
 func (dbc *Connection) Invoke(options ...InvocationOption) *Invocation {
 	i := Invocation{
-		DB:                   dbc.Connection,
 		Config:               dbc.Config,
 		BufferPool:           dbc.BufferPool,
 		Context:              context.Background(),
 		Log:                  dbc.Log,
 		Tracer:               dbc.Tracer,
 		StatementInterceptor: dbc.StatementInterceptor,
+	}
+	if dbc.Connection != nil {
+		i.DB = dbc.Connection
 	}
 	for _, option := range options {
 		option(&i)

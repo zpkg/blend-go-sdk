@@ -69,6 +69,8 @@ func (vf ViewFuncs) FuncMap() map[string]interface{} {
 		"now":            vf.Now,
 		"now_utc":        vf.NowUTC,
 		"time_format":    vf.TimeFormat,
+		"time_is_zero":   vf.TimeIsZero,
+		"time_is_epoch":  vf.TimeIsEpoch,
 		"date_long":      vf.DateLong,
 		"date_short":     vf.DateShort,
 		"date_month_day": vf.DateMonthDay,
@@ -83,6 +85,7 @@ func (vf ViewFuncs) FuncMap() map[string]interface{} {
 		"in_loc":         vf.TimeInLocation,
 		"since":          vf.Since,
 		"since_utc":      vf.SinceUTC,
+		"time_sub":       vf.TimeSub,
 		"year":           vf.Year,
 		"month":          vf.Month,
 		"day":            vf.Day,
@@ -96,11 +99,12 @@ func (vf ViewFuncs) FuncMap() map[string]interface{} {
 		"duration_round_millis":  vf.DurationRoundMillis,
 		"duration_round_seconds": vf.DurationRoundSeconds,
 		/* numbers */
-		"format_money": vf.FormatMoney,
-		"format_pct":   vf.FormatPct,
-		"round":        vf.Round,
-		"ceil":         vf.Ceil,
-		"floor":        vf.Floor,
+		"format_money":    vf.FormatMoney,
+		"format_pct":      vf.FormatPct,
+		"format_filesize": vf.FormatFileSize,
+		"round":           vf.Round,
+		"ceil":            vf.Ceil,
+		"floor":           vf.Floor,
 		/* base64 */
 		"base64":       vf.Base64,
 		"base64decode": vf.Base64Decode,
@@ -278,6 +282,16 @@ func (vf ViewFuncs) TimeFormat(format string, t time.Time) string {
 	return t.Format(format)
 }
 
+// TimeIsZero returns if the time is set or not.
+func (vf ViewFuncs) TimeIsZero(t time.Time) bool {
+	return t.IsZero()
+}
+
+// TimeIsEpoch returns if the time is the unix epoch time or not.
+func (vf ViewFuncs) TimeIsEpoch(t time.Time) bool {
+	return t.Equal(time.Unix(0, 0))
+}
+
 // DateLong returns the short date for a timestamp.
 func (vf ViewFuncs) DateLong(t time.Time) string {
 	return t.Format("Jan _2, 2006")
@@ -414,6 +428,11 @@ func (vf ViewFuncs) Since(t time.Time) time.Duration {
 	return time.Since(t)
 }
 
+// TimeSub the duration difference between two times.
+func (vf ViewFuncs) TimeSub(t1, t2 time.Time) time.Duration {
+	return t1.UTC().Sub(t2.UTC())
+}
+
 // SinceUTC returns the duration since a given timestamp in UTC.
 // It is relative, meaning the value returned can be negative.
 func (vf ViewFuncs) SinceUTC(t time.Time) time.Duration {
@@ -478,6 +497,11 @@ func (vf ViewFuncs) FormatMoney(d float64) string {
 // then suffixed with '%')
 func (vf ViewFuncs) FormatPct(d float64) string {
 	return fmt.Sprintf("%0.2f%%", d*100)
+}
+
+// FormatFileSize formats an int as a file size.
+func (vf ViewFuncs) FormatFileSize(sizeBytes int) string {
+	return stringutil.FileSize(sizeBytes)
 }
 
 // Base64 encodes data as a string as a base6 string.

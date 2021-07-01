@@ -182,6 +182,15 @@ func (a *Assertions) PanicEqual(expected interface{}, action func(), userMessage
 	return true
 }
 
+// NotPanic asserts the given action does not panic.
+func (a *Assertions) NotPanic(action func(), userMessageComponents ...interface{}) bool {
+	a.assertion()
+	if didFail, message := shouldNotPanic(action); didFail {
+		return a.fail(message, userMessageComponents...)
+	}
+	return true
+}
+
 // Zero asserts that a value is equal to it's default value.
 func (a *Assertions) Zero(value interface{}, userMessageComponents ...interface{}) bool {
 	a.assertion()
@@ -650,6 +659,23 @@ func shouldBeReferenceEqual(expected, actual interface{}) (bool, string) {
 	return false, ""
 }
 
+func shouldNotPanic(action func()) (bool, string) {
+	var actual interface{}
+	var didPanic bool
+	func() {
+		defer func() {
+			actual = recover()
+			didPanic = actual != nil
+		}()
+		action()
+	}()
+
+	if didPanic {
+		return true, notPanicMessage(actual)
+	}
+	return false, ""
+}
+
 func shouldBePanicEqual(expected interface{}, action func()) (bool, string) {
 	var actual interface{}
 	var didPanic bool
@@ -1084,6 +1110,10 @@ func panicEqualMessage(didPanic bool, expected, actual interface{}) string {
 		return "Should have produced a panic"
 	}
 	return shouldBeMultipleMessage(expected, actual, "Panic from action should equal")
+}
+
+func notPanicMessage(actual interface{}) string {
+	return shouldBeMessage(actual, "Should not have panicked")
 }
 
 func getLength(object interface{}) int {

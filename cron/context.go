@@ -25,3 +25,20 @@ func GetJobManager(ctx context.Context) *JobManager {
 	}
 	return nil
 }
+
+type jobSchedulerKey struct{}
+
+// WithJobScheduler adds a job scheduler to a context.
+func WithJobScheduler(ctx context.Context, js *JobScheduler) context.Context {
+	return context.WithValue(ctx, jobSchedulerKey{}, js)
+}
+
+// GetJobScheduler gets a JobScheduler off a context.
+func GetJobScheduler(ctx context.Context) *JobScheduler {
+	if value := ctx.Value(jobSchedulerKey{}); value != nil {
+		if typed, ok := value.(*JobScheduler); ok {
+			return typed
+		}
+	}
+	return nil
+}

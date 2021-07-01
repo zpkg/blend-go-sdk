@@ -9,6 +9,7 @@ package web
 
 import (
 	"net/http"
+	"os"
 	"path"
 )
 
@@ -46,7 +47,10 @@ func (sr StaticResult) Render(ctx *Ctx) error {
 	}
 
 	f, err := sr.FileSystem.Open(sr.FilePath)
-	if err != nil {
+	if err != nil && os.IsNotExist(err) {
+		http.NotFound(ctx.Response, ctx.Request)
+		return nil
+	} else if err != nil {
 		return err
 	}
 	defer f.Close()

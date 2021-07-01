@@ -65,17 +65,17 @@ func (jm *JobManager) StartAsync() error {
 	}
 	jm.Latch.Starting()
 	logger.MaybeInfo(jm.Log, "job manager starting")
-	for _, job := range jm.Jobs {
+	for _, jobScheduler := range jm.Jobs {
 		errors := make(chan error)
 		go func() {
-			errors <- job.Start()
+			errors <- jobScheduler.Start()
 		}()
-		logger.MaybeDebugf(jm.Log, "job manager starting job %s", job.Name())
+		logger.MaybeDebugf(jm.Log, "job manager starting job %s", jobScheduler.Name())
 		select {
 		case err := <-errors:
 			logger.MaybeError(jm.Log, err)
-		case <-job.NotifyStarted():
-			logger.MaybeDebugf(jm.Log, "job manager starting job %s complete", job.Name())
+		case <-jobScheduler.NotifyStarted():
+			logger.MaybeDebugf(jm.Log, "job manager starting job %s complete", jobScheduler.Name())
 			continue
 		}
 	}
@@ -100,7 +100,7 @@ func (jm *JobManager) Stop() error {
 		logger.MaybeInfo(jm.Log, "job manager stopping complete")
 	}()
 	for _, jobScheduler := range jm.Jobs {
-		if err := jobScheduler.OnUnload(jm.BaseContext); err != nil {
+		if err := jobScheduler.OnUnload(jobScheduler.Background()); err != nil {
 			logger.MaybeError(jm.Log, err)
 		}
 		if err := jobScheduler.Stop(); err != nil {
@@ -131,7 +131,7 @@ func (jm *JobManager) LoadJobs(jobs ...Job) error {
 			OptJobSchedulerTracer(jm.Tracer),
 			OptJobSchedulerBaseContext(jm.BaseContext),
 		)
-		if err := jobScheduler.OnLoad(jm.BaseContext); err != nil {
+		if err := jobScheduler.OnLoad(jobScheduler.Background()); err != nil {
 			return err
 		}
 		jm.Jobs[jobName] = jobScheduler
@@ -146,11 +146,11 @@ func (jm *JobManager) UnloadJobs(jobNames ...string) error {
 
 	for _, jobName := range jobNames {
 		if jobScheduler, ok := jm.Jobs[jobName]; ok {
-			if err := jobScheduler.OnUnload(context.Background()); err != nil {
+			if err := jobScheduler.OnUnload(jobScheduler.Background()); err != nil {
 				return err
 			}
 			if err := jobScheduler.Stop(); err != nil {
-				return err
+				logger.MaybeError(jm.Log, err)
 			}
 			delete(jm.Jobs, jobName)
 		} else {

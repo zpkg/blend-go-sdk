@@ -30,7 +30,8 @@ func Times(times int, schedule Schedule) *TimesSchedule {
 }
 
 // TimesSchedule is a schedule that only returns
-// a certain number of results.
+// a certain number of schedule "Next" results
+// after which it returns time.Time{} for the next runtime.
 type TimesSchedule struct {
 	sync.Mutex
 

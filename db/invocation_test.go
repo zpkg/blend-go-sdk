@@ -8,6 +8,7 @@ Use of this source code is governed by a MIT license that can be found in the LI
 package db
 
 import (
+	"bytes"
 	"context"
 	"fmt"
 	"io/ioutil"
@@ -16,6 +17,7 @@ import (
 	"time"
 
 	"github.com/blend/go-sdk/assert"
+	"github.com/blend/go-sdk/ex"
 	"github.com/blend/go-sdk/logger"
 	"github.com/blend/go-sdk/uuid"
 )
@@ -897,6 +899,7 @@ func Test_Invocation_Exists(t *testing.T) {
 }
 
 func Test_Invocation_Exists_statementInterceptor(t *testing.T) {
+	t.Parallel()
 	its := assert.New(t)
 	tx, err := defaultDB().Begin()
 	its.Nil(err)
@@ -916,6 +919,7 @@ func Test_Invocation_Exists_statementInterceptor(t *testing.T) {
 }
 
 func Test_Invocation_metrics(t *testing.T) {
+	t.Parallel()
 	its := assert.New(t)
 
 	log := logger.All(logger.OptOutput(ioutil.Discard))
@@ -935,6 +939,7 @@ func Test_Invocation_metrics(t *testing.T) {
 }
 
 func Test_Invocation_generateCreateMany(t *testing.T) {
+	t.Parallel()
 	its := assert.New(t)
 	var objects []DatabaseMapped
 	for x := 0; x < 10; x++ {
@@ -958,7 +963,9 @@ func Test_Invocation_generateCreateMany(t *testing.T) {
 }
 
 func Test_Invocation_generateUpsertMany(t *testing.T) {
+	t.Parallel()
 	its := assert.New(t)
+
 	var objects []DatabaseMapped
 	for x := 0; x < 10; x++ {
 		objects = append(objects, benchObj{
@@ -978,4 +985,24 @@ func Test_Invocation_generateUpsertMany(t *testing.T) {
 		`INSERT INTO bench_object (uuid,name,timestamp_utc,amount,pending,category) VALUES ($1,$2,$3,$4,$5,$6),($7,$8,$9,$10,$11,$12),($13,$14,$15,$16,$17,$18),($19,$20,$21,$22,$23,$24),($25,$26,$27,$28,$29,$30),($31,$32,$33,$34,$35,$36),($37,$38,$39,$40,$41,$42),($43,$44,$45,$46,$47,$48),($49,$50,$51,$52,$53,$54),($55,$56,$57,$58,$59,$60) ON CONFLICT (name) DO UPDATE SET uuid=Excluded.uuid,name=Excluded.name,timestamp_utc=Excluded.timestamp_utc,amount=Excluded.amount,pending=Excluded.pending,category=Excluded.category`,
 		queryBody,
 	)
+}
+
+func Test_Invocation_start(t *testing.T) {
+	t.Parallel()
+	its := assert.New(t)
+
+	statement, err := new(Invocation).start("test-statement")
+	its.Equal(ErrConnectionClosed.Error(), ex.ErrClass(err).Error())
+	its.Empty(statement)
+
+	buf := new(bytes.Buffer)
+	log := logger.Memory(buf)
+	statement, err = (&Invocation{
+		DB:      defaultDB().Connection,
+		Context: context.Background(),
+		Log:     log,
+	}).start("select 1")
+	its.Nil(err)
+	its.Equal("select 1", statement)
+	its.NotEmpty(buf.String())
 }

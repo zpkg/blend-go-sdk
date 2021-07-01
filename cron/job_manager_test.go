@@ -26,57 +26,56 @@ var (
 	_ graceful.Graceful = (*JobManager)(nil)
 )
 
-func TestJobManagerNew(t *testing.T) {
-	assert := assert.New(t)
+func Test_JobManager_New(t *testing.T) {
+	t.Parallel()
+	its := assert.New(t)
 
-	jm := New()
-	assert.NotNil(jm.Latch)
-	assert.NotNil(jm.Jobs)
+	jm := New(
+		OptLog(logger.None()),
+	)
+	its.NotNil(jm.Latch)
+	its.NotNil(jm.Jobs)
+	its.NotNil(jm.Log)
 }
 
-func TestRunJobBySchedule(t *testing.T) {
-	t.Skip() // flake
+func Test_JobManager_Start(t *testing.T) {
+	t.Parallel()
+	its := assert.New(t)
 
-	a := assert.New(t)
+	jm := New(
+		OptLog(logger.None()),
+	)
+	defer jm.Stop()
 
-	didRun := make(chan struct{})
+	// start blocks, use a channel and goroutine
+	errors := make(chan error, 1)
+	go func() {
+		if err := jm.Start(); err != nil {
+			errors <- err
+		}
+	}()
 
-	interval := 50 * time.Millisecond
-
-	jm := New()
-	runAt := Now().Add(interval)
-	err := jm.LoadJobs(&runAtJob{
-		RunAt: runAt,
-		RunDelegate: func(ctx context.Context) error {
-			close(didRun)
-			return nil
-		},
-	})
-	a.Nil(err)
-
-	a.Nil(jm.StartAsync())
-	defer func() { _ = jm.Stop() }()
-
-	before := Now()
-	<-didRun
-
-	a.True(Since(before) < 2*interval)
+	<-jm.Latch.NotifyStarted()
+	its.Empty(errors)
+	err := jm.Start()
+	its.NotNil(err)
 }
 
-func TestDisableJob(t *testing.T) {
-	a := assert.New(t)
+func Test_JobManager_DisableJobs(t *testing.T) {
+	t.Parallel()
+	its := assert.New(t)
 
 	jm := New()
-	a.Nil(jm.LoadJobs(&runAtJob{RunAt: time.Now().UTC().Add(100 * time.Millisecond), RunDelegate: func(ctx context.Context) error {
+	its.Nil(jm.LoadJobs(&runAtJob{RunAt: time.Now().UTC().Add(100 * time.Millisecond), RunDelegate: func(ctx context.Context) error {
 		return nil
 	}}))
-	a.Nil(jm.DisableJobs(runAtJobName))
-	a.True(jm.IsJobDisabled(runAtJobName))
+	its.Nil(jm.DisableJobs(runAtJobName))
+	its.True(jm.IsJobDisabled(runAtJobName))
 }
 
-// The goal with this test is to see if panics take down the test process or not.
-func TestJobManagerJobPanicHandling(t *testing.T) {
-	assert := assert.New(t)
+func Test_JobManager_handleJobPanics(t *testing.T) {
+	t.Parallel()
+	its := assert.New(t)
 
 	manager := New()
 	waitGroup := sync.WaitGroup{}
@@ -86,15 +85,16 @@ func TestJobManagerJobPanicHandling(t *testing.T) {
 		defer waitGroup.Done()
 		panic("this is only a test")
 	}
-	assert.Nil(manager.LoadJobs(NewJob(OptJobName("panic-test"), OptJobAction(action))))
+	its.Nil(manager.LoadJobs(NewJob(OptJobName("panic-test"), OptJobAction(action))))
 	_, _, err := manager.RunJob("panic-test")
-	assert.Nil(err)
+	its.Nil(err)
 	waitGroup.Wait()
-	assert.True(true, "should complete")
+	its.True(true, "should complete")
 }
 
-func TestEnabledProvider(t *testing.T) {
-	assert := assert.New(t)
+func Test_JobManager_jobConfigProvider_disabled(t *testing.T) {
+	t.Parallel()
+	its := assert.New(t)
 
 	manager := New()
 	job := &testWithDisabled{
@@ -103,22 +103,23 @@ func TestEnabledProvider(t *testing.T) {
 
 	jobName := "testWithEnabled"
 
-	assert.Nil(manager.LoadJobs(job))
+	its.Nil(manager.LoadJobs(job))
 
 	// test provider
-	assert.False(manager.IsJobDisabled(jobName))
+	its.False(manager.IsJobDisabled(jobName))
 	job.disabled = true
-	assert.True(manager.IsJobDisabled(jobName))
+	its.True(manager.IsJobDisabled(jobName))
 
 	// test explicit
-	assert.Nil(manager.DisableJobs(jobName))
-	assert.True(manager.IsJobDisabled(jobName))
-	assert.Nil(manager.EnableJobs(jobName))
-	assert.False(manager.IsJobDisabled(jobName))
+	its.Nil(manager.DisableJobs(jobName))
+	its.True(manager.IsJobDisabled(jobName))
+	its.Nil(manager.EnableJobs(jobName))
+	its.False(manager.IsJobDisabled(jobName))
 }
 
-func TestFiresErrorOnTaskError(t *testing.T) {
-	a := assert.New(t)
+func Test_JobManager_onError(t *testing.T) {
+	t.Parallel()
+	its := assert.New(t)
 
 	agent := logger.All(logger.OptOutput(ioutil.Discard))
 	defer agent.Close()
@@ -149,18 +150,19 @@ func TestFiresErrorOnTaskError(t *testing.T) {
 			return fmt.Errorf("this is only a test")
 		}),
 	)
-	a.Nil(manager.LoadJobs(job))
+	its.Nil(manager.LoadJobs(job))
 	_, done, err := manager.RunJob(job.Name())
-	a.Nil(err)
+	its.Nil(err)
 	wg.Wait()
 
-	a.True(errorDidFire)
-	a.True(errorMatched)
+	its.True(errorDidFire)
+	its.True(errorMatched)
 	<-done
 }
 
-func TestManagerTracer(t *testing.T) {
-	assert := assert.New(t)
+func Test_JobManager_Tracer(t *testing.T) {
+	t.Parallel()
+	its := assert.New(t)
 
 	wg := sync.WaitGroup{}
 	wg.Add(2)
@@ -180,21 +182,22 @@ func TestManagerTracer(t *testing.T) {
 		},
 	}))
 
-	assert.Nil(manager.LoadJobs(NewJob(OptJobName("tracer-test"))))
+	its.Nil(manager.LoadJobs(NewJob(OptJobName("tracer-test"))))
 	_, _, err := manager.RunJob("tracer-test")
-	assert.Nil(err)
+	its.Nil(err)
 	wg.Wait()
-	assert.True(didCallStart)
-	assert.True(didCallFinish)
-	assert.True(errorUnset)
-	assert.Equal("tracer-test", foundJobName)
+	its.True(didCallStart)
+	its.True(didCallFinish)
+	its.True(errorUnset)
+	its.Equal("tracer-test", foundJobName)
 }
 
-func TestJobManagerJobLifecycle(t *testing.T) {
-	assert := assert.New(t)
+func Test_JobManager_JobLifecycle(t *testing.T) {
+	t.Parallel()
+	its := assert.New(t)
 
 	jm := New()
-	assert.Nil(jm.StartAsync())
+	its.Nil(jm.StartAsync())
 	defer func() { _ = jm.Stop() }()
 
 	var shouldFail bool
@@ -207,110 +210,103 @@ func TestJobManagerJobLifecycle(t *testing.T) {
 		}
 		return nil
 	})
-	assert.Nil(jm.LoadJobs(j))
+	its.Nil(jm.LoadJobs(j))
 
 	successSignal := j.SuccessSignal
 	_, done, err := jm.RunJob(j.Name())
-	assert.Nil(err)
+	its.Nil(err)
 	<-done
 	<-successSignal
 
 	brokenSignal := j.BrokenSignal
 	_, done, err = jm.RunJob(j.Name())
-	assert.Nil(err)
+	its.Nil(err)
 	<-done
 	<-brokenSignal
 
 	fixedSignal := j.FixedSignal
 	_, done, err = jm.RunJob(j.Name())
-	assert.Nil(err)
+	its.Nil(err)
 	<-done
 	<-fixedSignal
 
-	assert.Equal(3, j.Starts)
-	assert.Equal(3, j.Completes)
-	assert.Equal(1, j.Failures)
-	assert.Equal(2, j.Successes)
+	its.Equal(3, j.Starts)
+	its.Equal(3, j.Completes)
+	its.Equal(1, j.Failures)
+	its.Equal(2, j.Successes)
 }
 
-func TestJobManagerJob(t *testing.T) {
-	assert := assert.New(t)
+func Test_JobManager_Job(t *testing.T) {
+	t.Parallel()
+	its := assert.New(t)
 
 	jm := New()
 	j := newLifecycleTest(func(_ context.Context) error {
 		return nil
 	})
-	assert.Nil(jm.LoadJobs(j))
+	its.Nil(jm.LoadJobs(j))
 
 	meta, err := jm.Job(j.Name())
-	assert.Nil(err)
-	assert.NotNil(meta)
+	its.Nil(err)
+	its.NotNil(meta)
 
 	meta, err = jm.Job(uuid.V4().String())
-	assert.NotNil(err)
-	assert.Nil(meta)
+	its.NotNil(err)
+	its.Nil(meta)
 }
 
-func TestJobManagerLoadJob(t *testing.T) {
-	assert := assert.New(t)
+func Test_JobManager_LoadJobs(t *testing.T) {
+	t.Parallel()
+	its := assert.New(t)
 
 	jm := New()
-	assert.Nil(jm.LoadJobs(&loadJobTestMinimum{}))
+	its.Nil(jm.LoadJobs(&loadJobTestMinimum{}))
 
-	assert.True(jm.HasJob("load-job-test-minimum"))
+	its.True(jm.HasJob("load-job-test-minimum"))
 
 	jobScheduler, err := jm.Job("load-job-test-minimum")
-	assert.Nil(err)
-	assert.NotNil(jobScheduler)
+	its.Nil(err)
+	its.NotNil(jobScheduler)
 
-	assert.Equal("load-job-test-minimum", jobScheduler.Name())
-	assert.NotNil(jobScheduler.Job)
+	its.Equal("load-job-test-minimum", jobScheduler.Name())
+	its.NotNil(jobScheduler.Job)
 
-	assert.Equal(DefaultDisabled, jobScheduler.Disabled())
-	assert.Zero(jobScheduler.Config().TimeoutOrDefault())
+	its.Equal(DefaultDisabled, jobScheduler.Disabled())
+	its.Zero(jobScheduler.Config().TimeoutOrDefault())
 
-	assert.Nil(jm.LoadJobs(&testJobWithTimeout{TimeoutDuration: time.Second}))
+	its.Nil(jm.LoadJobs(&testJobWithTimeout{TimeoutDuration: time.Second}))
 
 	jobScheduler, err = jm.Job("testJobWithTimeout")
-	assert.Nil(err)
-	assert.NotNil(jobScheduler)
-	assert.Equal(time.Second, jobScheduler.Config().TimeoutOrDefault())
+	its.Nil(err)
+	its.NotNil(jobScheduler)
+	its.Equal(time.Second, jobScheduler.Config().TimeoutOrDefault())
 }
 
-func TestJobManagerLoadJobs(t *testing.T) {
-	assert := assert.New(t)
-
-	jm := New()
-	assert.Nil(jm.LoadJobs(NewJob(OptJobName("test-0")), NewJob(OptJobName("test-1"))))
-	assert.Len(jm.Jobs, 2)
-
-	assert.NotNil(jm.LoadJobs(NewJob(OptJobName("test-0")), NewJob(OptJobName("test-1"))))
-}
-
-func TestJobManagerIsRunning(t *testing.T) {
-	assert := assert.New(t)
+func Test_JobManager_IsRunning(t *testing.T) {
+	t.Parallel()
+	its := assert.New(t)
 
 	jm := New()
 
 	checked := make(chan struct{})
 	proceed := make(chan struct{})
-	assert.Nil(jm.LoadJobs(NewJob(OptJobName("is-running-test"), OptJobAction(func(_ context.Context) error {
+	its.Nil(jm.LoadJobs(NewJob(OptJobName("is-running-test"), OptJobAction(func(_ context.Context) error {
 		close(proceed)
 		<-checked
 		return nil
 	})))) // hadoooooken
 
 	_, _, err := jm.RunJob("is-running-test")
-	assert.Nil(err)
+	its.Nil(err)
 	<-proceed
-	assert.True(jm.IsJobRunning("is-running-test"))
+	its.True(jm.IsJobRunning("is-running-test"))
 	close(checked)
-
-	assert.False(jm.IsJobRunning(uuid.V4().String()))
+	its.False(jm.IsJobRunning(uuid.V4().String()))
 }
 
-func TestJobManagerCancelJob(t *testing.T) {
-	assert := assert.New(t)
+func Test_JobManager_CancelJob(t *testing.T) {
+	t.Parallel()
+	its := assert.New(t)
 
 	started := make(chan struct{})
 	cancelling := make(chan struct{})
@@ -325,36 +321,112 @@ func TestJobManagerCancelJob(t *testing.T) {
 	}), OptJobOnCancellation(func(_ context.Context) {
 		close(cancelled) // but signal on the lifecycle event
 	}))
-	assert.Nil(jm.LoadJobs(job))
+	its.Nil(jm.LoadJobs(job))
 
 	_, done, err := jm.RunJob(job.Name())
-	assert.Nil(err)
+	its.Nil(err)
 	<-started
 	close(cancelling)
-	assert.Nil(jm.CancelJob(job.Name()))
+	its.Nil(jm.CancelJob(job.Name()))
 	<-cancelled
-	assert.False(jm.IsJobRunning(job.Name()))
+	its.False(jm.IsJobRunning(job.Name()))
 	<-done
 }
 
-func TestJobManagerEnableDisableJob(t *testing.T) {
-	assert := assert.New(t)
+func Test_JobManager_EnableDisableJob(t *testing.T) {
+	t.Parallel()
+	its := assert.New(t)
 
 	name := "enable-disable-test"
 	jm := New()
-	assert.Nil(jm.LoadJobs(NewJob(OptJobName(name))))
+	its.Nil(jm.LoadJobs(NewJob(OptJobName(name))))
 
 	j, err := jm.Job(name)
-	assert.Nil(err)
-	assert.False(j.Disabled())
+	its.Nil(err)
+	its.False(j.Disabled())
 
-	assert.Nil(jm.DisableJobs(name))
+	its.Nil(jm.DisableJobs(name))
 	j, err = jm.Job(name)
-	assert.Nil(err)
-	assert.True(j.Disabled())
+	its.Nil(err)
+	its.True(j.Disabled())
 
-	assert.Nil(jm.EnableJobs(name))
+	its.Nil(jm.EnableJobs(name))
 	j, err = jm.Job(name)
-	assert.Nil(err)
-	assert.False(j.Disabled())
+	its.Nil(err)
+	its.False(j.Disabled())
+}
+
+func Test_JobManager_LoadJobs_lifecycle(t *testing.T) {
+	t.Parallel()
+	its := assert.New(t)
+
+	baseContext := context.WithValue(context.Background(), testContextKey{}, "load-jobs-lifecycle")
+	jm := New(
+		OptBaseContext(baseContext),
+	)
+
+	onLoadContexts := make(chan context.Context, 1)
+	job := NewJob(
+		OptJobName("load-test"),
+		OptJobOnLoad(func(ctx context.Context) error {
+			onLoadContexts <- ctx
+			return nil
+		}),
+	)
+
+	err := jm.LoadJobs(job)
+	its.Nil(err)
+
+	gotContext := <-onLoadContexts
+	its.Equal("load-jobs-lifecycle", gotContext.Value(testContextKey{}))
+	js := GetJobScheduler(gotContext)
+	its.NotNil(js)
+	its.Equal("load-test", js.Job.Name())
+}
+
+func Test_JobManager_UnloadJobs_lifecycle(t *testing.T) {
+	t.Parallel()
+	its := assert.New(t)
+
+	baseContext := context.WithValue(context.Background(), testContextKey{}, "load-jobs-lifecycle")
+	jm := New(
+		OptBaseContext(baseContext),
+	)
+
+	onUnloadContexts := make(chan context.Context, 1)
+	job0 := NewJob(
+		OptJobName("load-test"),
+		OptJobOnUnload(func(ctx context.Context) error {
+			onUnloadContexts <- ctx
+			return nil
+		}),
+	)
+	job1 := NewJob(
+		OptJobName("load-test-1"),
+		OptJobOnUnload(func(ctx context.Context) error {
+			onUnloadContexts <- ctx
+			return nil
+		}),
+	)
+
+	err := jm.LoadJobs(job0, job1)
+	its.Nil(err)
+
+	its.True(jm.HasJob("load-test"))
+	its.True(jm.HasJob("load-test-1"))
+
+	err = jm.UnloadJobs("load-test")
+	its.Nil(err)
+
+	its.False(jm.HasJob("load-test"))
+	its.True(jm.HasJob("load-test-1"))
+
+	gotContext := <-onUnloadContexts
+	its.Equal("load-jobs-lifecycle", gotContext.Value(testContextKey{}))
+	js := GetJobScheduler(gotContext)
+	its.NotNil(js)
+	its.Equal("load-test", js.Job.Name())
+
+	err = jm.UnloadJobs(uuid.V4().String())
+	its.NotNil(err)
 }

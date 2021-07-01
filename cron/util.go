@@ -9,9 +9,13 @@ package cron
 
 import "time"
 
+// this is used by `Now()`
+// it can be overrided in tests etc.
+var _nowProvider = time.Now
+
 // Now returns a new timestamp.
 func Now() time.Time {
-	return time.Now().UTC()
+	return _nowProvider().UTC()
 }
 
 // Since returns the duration since another timestamp.
@@ -79,7 +83,8 @@ var (
 
 	// Epoch is unix epoch saved for utility purposes.
 	Epoch = time.Unix(0, 0)
-	// Zero is basically epoch but if you want to be super duper sure.
+	// Zero is different than epoch in that it is the "unset" value for a time
+	// where Epoch is a valid date. Nominally it is `time.Time{}`.
 	Zero = time.Time{}
 )
 

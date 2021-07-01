@@ -14,9 +14,10 @@ import (
 )
 
 func TestNewEvent(t *testing.T) {
-	assert := assert.New(t)
+	t.Parallel()
+	its := assert.New(t)
 
 	e := NewEvent(FlagComplete, "test_task")
-	assert.Equal(FlagComplete, e.GetFlag())
-	assert.Equal("test_task", e.JobName)
+	its.Equal(FlagComplete, e.GetFlag())
+	its.Equal("test_task", e.JobName)
 }

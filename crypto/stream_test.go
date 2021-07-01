@@ -15,39 +15,43 @@ import (
 	"github.com/blend/go-sdk/assert"
 )
 
-func TestStreamEncrypterDecrypter(t *testing.T) {
-	assert := assert.New(t)
+func Test_Stream_EncrypterDecrypter(t *testing.T) {
+	t.Parallel()
+	its := assert.New(t)
+
 	key, err := CreateKey(32)
-	assert.Nil(err)
+	its.Nil(err)
 	plaintext := "Eleven is the best person in all of Hawkins Indiana. Some more text"
 	pt := []byte(plaintext)
 
 	src := bytes.NewReader(pt)
 
 	se, err := NewStreamEncrypter(key, src)
-	assert.Nil(err)
-	assert.NotNil(se)
+	its.Nil(err)
+	its.NotNil(se)
 
 	encrypted, err := ioutil.ReadAll(se)
-	assert.Nil(err)
-	assert.NotNil(encrypted)
+	its.Nil(err)
+	its.NotNil(encrypted)
 
 	sd, err := NewStreamDecrypter(key, se.Meta(), bytes.NewReader(encrypted))
-	assert.Nil(err)
-	assert.NotNil(sd)
+	its.Nil(err)
+	its.NotNil(sd)
 
 	decrypted, err := ioutil.ReadAll(sd)
-	assert.Nil(err)
-	assert.Equal(plaintext, string(decrypted))
+	its.Nil(err)
+	its.Equal(plaintext, string(decrypted))
 
-	assert.Nil(sd.Authenticate())
+	its.Nil(sd.Authenticate())
 }
 
-func TestCheckedWrite(t *testing.T) {
-	assert := assert.New(t)
+func Test_checkedWrite(t *testing.T) {
+	t.Parallel()
+	its := assert.New(t)
+
 	writer := bytes.NewBuffer(nil)
 	data := []byte{1, 1, 1}
 	v, err := checkedWrite(writer, data)
-	assert.Nil(err)
-	assert.Equal(len(data), v)
+	its.Nil(err)
+	its.Equal(len(data), v)
 }

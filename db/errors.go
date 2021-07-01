@@ -14,8 +14,6 @@ import (
 )
 
 const (
-	// ErrConnectionNil is a common error
-	ErrConnectionNil ex.Class = "connection is nil"
 	// ErrDestinationNotStruct is an exception class.
 	ErrDestinationNotStruct ex.Class = "db: destination object is not a struct"
 	// ErrConfigUnset is an exception class.

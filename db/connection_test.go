@@ -16,17 +16,27 @@ import (
 	"github.com/blend/go-sdk/ex"
 )
 
-// TestConnectionSanityCheck tests if we can connect to the db, a.k.a., if the underlying driver works.
-func TestConnectionUseBeforeOpen(t *testing.T) {
-	assert := assert.New(t)
+// Test_Connection_useBeforeOpen tests if we can connect to the db, a.k.a., if the underlying driver works.
+func Test_Connection_useBeforeOpen(t *testing.T) {
+	t.Parallel()
+	its := assert.New(t)
 
 	conn, err := New()
-	assert.Nil(err)
+	its.Nil(err)
 
 	tx, err := conn.Begin()
-	assert.NotNil(err)
-	assert.True(ex.Is(ErrConnectionClosed, err))
-	assert.Nil(tx)
+	its.NotNil(err)
+	its.True(ex.Is(ErrConnectionClosed, err))
+	its.Nil(tx)
+
+	inv := conn.Invoke()
+	its.Nil(inv.DB)
+	its.True(inv.DB == nil)
+
+	any, err := conn.Query("select 1").Any()
+	its.NotNil(err)
+	its.True(ex.Is(ErrConnectionClosed, err), err.Error())
+	its.False(any)
 }
 
 // TestConnectionSanityCheck tests if we can connect to the db, a.k.a., if the underlying driver works.
