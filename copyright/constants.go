@@ -171,8 +171,9 @@ const (
 `
 
 	pythonNoticeTemplate = `#
-{{ .Notice | prefix "#" }}
+{{ .Notice | prefix "# " }}
 #
+
 `
 
 	sqlNoticeTemplate = `--

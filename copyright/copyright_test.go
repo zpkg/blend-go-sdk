@@ -8,14 +8,46 @@ Use of this source code is governed by a MIT license that can be found in the LI
 package copyright
 
 import (
+	"bytes"
+	"context"
 	"fmt"
+	"io"
 	"io/fs"
+	"io/ioutil"
+	"os"
 	"path/filepath"
 	"testing"
 	"time"
 
 	"github.com/blend/go-sdk/assert"
+	"github.com/blend/go-sdk/ref"
 )
+
+func Test_Copyright_GetStdout(t *testing.T) {
+	its := assert.New(t)
+
+	c := New()
+
+	its.Equal(os.Stdout, c.GetStdout())
+	buf := new(bytes.Buffer)
+	c.Stdout = buf
+	its.Equal(c.Stdout, c.GetStdout())
+	c.Quiet = ref.Bool(true)
+	its.Equal(io.Discard, c.GetStdout())
+}
+
+func Test_Copyright_GetStderr(t *testing.T) {
+	its := assert.New(t)
+
+	c := New()
+
+	its.Equal(os.Stderr, c.GetStderr())
+	buf := new(bytes.Buffer)
+	c.Stderr = buf
+	its.Equal(buf, c.GetStderr())
+	c.Quiet = ref.Bool(true)
+	its.Equal(io.Discard, c.GetStderr())
+}
 
 func Test_Copyright_mergeFileSections(t *testing.T) {
 	its := assert.New(t)
@@ -302,10 +334,203 @@ func Test_Copyright_includeOrExclude(t *testing.T) {
 		/*3*/ {Config: Config{Root: ".", IncludeFiles: []string{"/foo/bar/*.jpg"}}, Path: "/foo/bar/baz.jpg", Info: mockInfoFile("baz.jpg"), Expected: nil},
 		/*4*/ {Config: Config{Root: ".", Excludes: []string{}, IncludeFiles: []string{}}, Path: "/foo/bar/baz.jpg", Info: mockInfoFile("baz.jpg"), Expected: ErrWalkSkip},
 		/*5*/ {Config: Config{Root: "."}, Path: "/foo/bar/baz.jpg", Info: mockInfoFile("baz.jpg"), Expected: nil},
+		/*6*/ {Config: Config{Root: "."}, Path: "/foo/bar/baz.jpg", Info: mockInfoDir("baz"), Expected: ErrWalkSkip},
 	}
 
 	for index, tc := range testCases {
 		c := Copyright{Config: tc.Config}
 		its.Equal(tc.Expected, c.includeOrExclude(tc.Path, tc.Info), fmt.Sprintf("test %d", index))
 	}
+}
+
+const (
+	tsFile0 = `import * as axios from 'axios';`
+	pyFile0 = `from __future__ import print_function
+	
+		import logging
+		import os
+		import shutil
+		import sys
+		import requests
+		import uuid
+		import json`
+
+	goFile0 = `// +build tools
+		package tools
+		
+		import (
+			// goimports organizes imports for us
+			_ "golang.org/x/tools/cmd/goimports"
+		
+			// golint is an opinionated linter
+			_ "golang.org/x/lint/golint"
+		
+			// ineffassign is an opinionated linter
+			_ "github.com/gordonklaus/ineffassign"
+		
+			// staticcheck is ineffassign but better
+			_ "honnef.co/go/tools/cmd/staticcheck"
+		)
+		`
+)
+
+func createTestFS(its *assert.Assertions) (tempDir string, revert func()) {
+	// create a temp dir
+	var err error
+	tempDir, err = ioutil.TempDir("", "coverage_test")
+	its.Nil(err)
+	revert = func() {
+		os.RemoveAll(tempDir)
+	}
+
+	// create some files
+	err = os.MkdirAll(filepath.Join(tempDir, "foo", "bar"), 0755)
+	its.Nil(err)
+	err = os.MkdirAll(filepath.Join(tempDir, "bar", "foo"), 0755)
+	its.Nil(err)
+
+	err = os.MkdirAll(filepath.Join(tempDir, "not-bar", "not-foo"), 0755)
+	its.Nil(err)
+
+	err = ioutil.WriteFile(filepath.Join(tempDir, "file0.py"), []byte(pyFile0), 0644)
+	its.Nil(err)
+
+	err = ioutil.WriteFile(filepath.Join(tempDir, "file0.ts"), []byte(tsFile0), 0644)
+	its.Nil(err)
+
+	err = ioutil.WriteFile(filepath.Join(tempDir, "file0.go"), []byte(goFile0), 0644)
+	its.Nil(err)
+
+	err = ioutil.WriteFile(filepath.Join(tempDir, "foo", "bar", "file0.py"), []byte(pyFile0), 0644)
+	its.Nil(err)
+
+	err = ioutil.WriteFile(filepath.Join(tempDir, "foo", "bar", "file0.ts"), []byte(tsFile0), 0644)
+	its.Nil(err)
+
+	err = ioutil.WriteFile(filepath.Join(tempDir, "foo", "bar", "file0.go"), []byte(goFile0), 0644)
+	its.Nil(err)
+
+	err = ioutil.WriteFile(filepath.Join(tempDir, "bar", "foo", "file0.py"), []byte(pyFile0), 0644)
+	its.Nil(err)
+
+	err = ioutil.WriteFile(filepath.Join(tempDir, "bar", "foo", "file0.ts"), []byte(tsFile0), 0644)
+	its.Nil(err)
+
+	err = ioutil.WriteFile(filepath.Join(tempDir, "bar", "foo", "file0.go"), []byte(goFile0), 0644)
+	its.Nil(err)
+
+	err = ioutil.WriteFile(filepath.Join(tempDir, "not-bar", "not-foo", "file0.py"), []byte(pyFile0), 0644)
+	its.Nil(err)
+
+	err = ioutil.WriteFile(filepath.Join(tempDir, "not-bar", "not-foo", "file0.ts"), []byte(tsFile0), 0644)
+	its.Nil(err)
+
+	err = ioutil.WriteFile(filepath.Join(tempDir, "not-bar", "not-foo", "file0.go"), []byte(goFile0), 0644)
+	its.Nil(err)
+	return
+}
+
+func Test_Copyright_Walk(t *testing.T) {
+	its := assert.New(t)
+
+	tempDir, revert := createTestFS(its)
+	defer revert()
+
+	c := New(
+		OptRoot(tempDir),
+		OptIncludeFiles("*.py", "*.ts"),
+		OptExcludes("*/not-bar/*", "*/not-foo/*"),
+	)
+
+	var err error
+	var seen []string
+	err = c.Walk(context.TODO(), func(path string, info os.FileInfo, file, notice []byte) error {
+		seen = append(seen, path)
+		return nil
+	})
+	its.Nil(err)
+	expected := []string{
+		filepath.Join(tempDir, "bar", "foo", "file0.py"),
+		filepath.Join(tempDir, "bar", "foo", "file0.ts"),
+		filepath.Join(tempDir, "file0.py"),
+		filepath.Join(tempDir, "file0.ts"),
+		filepath.Join(tempDir, "foo", "bar", "file0.py"),
+		filepath.Join(tempDir, "foo", "bar", "file0.ts"),
+	}
+	its.Equal(expected, seen)
+}
+
+func Test_Copyright_Inject(t *testing.T) {
+	its := assert.New(t)
+
+	tempDir, revert := createTestFS(its)
+	defer revert()
+
+	c := New(
+		OptRoot(tempDir),
+		OptIncludeFiles("*.py", "*.ts", "*.go"),
+		OptExcludes("*/not-bar/*", "*/not-foo/*"),
+	)
+
+	err := c.Inject(context.TODO())
+	its.Nil(err)
+
+	contents, err := ioutil.ReadFile(filepath.Join(tempDir, "bar", "foo", "file0.py"))
+	its.Nil(err)
+	its.HasPrefix(string(contents), "#\n# Copyright")
+
+	contents, err = ioutil.ReadFile(filepath.Join(tempDir, "bar", "foo", "file0.ts"))
+	its.Nil(err)
+	its.HasPrefix(string(contents), "/**\n * Copyright")
+}
+
+func Test_Copyright_Verify(t *testing.T) {
+	its := assert.New(t)
+
+	tempDir, revert := createTestFS(its)
+	defer revert()
+
+	c := New(
+		OptRoot(tempDir),
+		OptIncludeFiles("*.py", "*.ts", "*.go"),
+		OptExcludes("*/not-bar/*", "*/not-foo/*"),
+	)
+	c.Stdout = new(bytes.Buffer)
+	c.Stderr = new(bytes.Buffer)
+
+	err := c.Verify(context.TODO())
+	its.NotNil(err)
+
+	err = c.Inject(context.TODO())
+	its.Nil(err)
+
+	err = c.Verify(context.TODO())
+	its.Nil(err)
+}
+
+func Test_Copyright_Remove(t *testing.T) {
+	its := assert.New(t)
+
+	tempDir, revert := createTestFS(its)
+	defer revert()
+
+	c := New(
+		OptRoot(tempDir),
+		OptIncludeFiles("*.py", "*.ts", "*.go"),
+		OptExcludes("*/not-bar/*", "*/not-foo/*"),
+	)
+	c.Stdout = new(bytes.Buffer)
+	c.Stderr = new(bytes.Buffer)
+
+	err := c.Inject(context.TODO())
+	its.Nil(err)
+
+	err = c.Verify(context.TODO())
+	its.Nil(err)
+
+	err = c.Remove(context.TODO())
+	its.Nil(err)
+
+	err = c.Verify(context.TODO())
+	its.NotNil(err)
 }

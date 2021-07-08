@@ -51,9 +51,10 @@ var (
 	flagInject bool
 	flagRemove bool
 
-	flagExcludes     flagStrings
-	flagExcludesFrom flagStrings
-	flagIncludeFiles flagStrings
+	flagExcludes        flagStrings
+	flagExcludesFrom    flagStrings
+	flagExcludeDefaults bool
+	flagIncludeFiles    flagStrings
 
 	flagExitFirst bool
 	flagQuiet     bool
@@ -87,6 +88,7 @@ func init() {
 
 	flag.Var(&flagExtensionNoticeTemplates, "ext", "Extension specific notice template overrides overrides; should be in the form -ext=js=js_template.txt, can be multiple")
 
+	flag.BoolVar(&flagExcludeDefaults, "exclude-defaults", true, "If we should add the exclude defaults")
 	flag.Var(&flagExcludes, "exclude", "Files or directories to exclude via glob match, can be multiple")
 	flag.Var(&flagExcludesFrom, "excludes-from", "A file to read for globs to exclude (e.g. .gitignore), can be multiple")
 	flag.Var(&flagIncludeFiles, "include-file", "Files to include via glob match, can be multiple")
@@ -151,6 +153,9 @@ func main() {
 		roots = []string{"."}
 	}
 
+	if flagExcludeDefaults {
+		flagExcludes = append(flagExcludes, flagStrings(copyright.DefaultExcludes)...)
+	}
 	for _, excludesFrom := range flagExcludesFrom {
 		excludes, err := readExcludesFile(excludesFrom)
 		if err != nil {
@@ -162,9 +167,6 @@ func main() {
 
 	if len(flagIncludeFiles) == 0 {
 		flagIncludeFiles = flagStrings(copyright.DefaultIncludeFiles)
-	}
-	if len(flagExcludes) == 0 {
-		flagExcludes = flagStrings(copyright.DefaultExcludes)
 	}
 
 	var restrictions string

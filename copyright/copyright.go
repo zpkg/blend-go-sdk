@@ -156,6 +156,11 @@ func (c Copyright) includeOrExclude(path string, info os.FileInfo) error {
 			return ErrWalkSkip
 		}
 	}
+
+	if info.IsDir() {
+		return ErrWalkSkip
+	}
+
 	return nil
 }
 
