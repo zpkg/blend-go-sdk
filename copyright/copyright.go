@@ -70,10 +70,8 @@ func (c Copyright) Walk(ctx context.Context, action Action) error {
 		return err
 	}
 
-	c.Verbosef("using include files: %s", strings.Join(c.IncludeFiles, ", "))
-	c.Verbosef("using include dirs: %s", strings.Join(c.IncludeDirs, ", "))
-	c.Verbosef("using exclude files: %s", strings.Join(c.ExcludeFiles, ", "))
-	c.Verbosef("using exclude dirs: %s", strings.Join(c.ExcludeDirs, ", "))
+	c.Verbosef("using excludes: %s", strings.Join(c.Config.Excludes, ", "))
+	c.Verbosef("using include files: %s", strings.Join(c.Config.IncludeFiles, ", "))
 	c.Verbosef("using notice body:\n%s", noticeBody)
 
 	var didFail bool
@@ -82,53 +80,14 @@ func (c Copyright) Walk(ctx context.Context, action Action) error {
 			return fileErr
 		}
 
-		if info.IsDir() {
-			if path == c.RootOrDefault() {
+		if skipErr := c.includeOrExclude(path, info); skipErr != nil {
+			if skipErr == ErrWalkSkip {
 				return nil
 			}
-
-			for _, exclude := range c.ExcludeDirsOrDefault() {
-				if stringutil.Glob(path, exclude) {
-					c.Debugf("%s: skipping dir (matches exclude glob: %s)", path, exclude)
-					return filepath.SkipDir
-				}
-			}
-
-			var includeDir bool
-			for _, include := range c.IncludeDirsOrDefault() {
-				if stringutil.Glob(path, include) {
-					includeDir = true
-					break
-				}
-			}
-			if !includeDir {
-				c.Debugf("%s: skipping dir (doesnt match any include globs: %s)", path, strings.Join(c.IncludeDirsOrDefault(), ", "))
-				return filepath.SkipDir
-			}
-			return nil
-		}
-
-		for _, exclude := range c.ExcludeFilesOrDefault() {
-			if stringutil.Glob(path, exclude) {
-				c.Debugf("%s: skipping file (matches exclude glob: %s)", path, exclude)
-				return nil
-			}
-		}
-
-		var includeFile bool
-		for _, include := range c.IncludeFilesOrDefault() {
-			if stringutil.Glob(path, include) {
-				includeFile = true
-				break
-			}
-		}
-		if !includeFile {
-			c.Debugf("%s: skipping file (doesnt match any include globs: %s)", path, strings.Join(c.IncludeFilesOrDefault(), ", "))
-			return nil
+			return skipErr
 		}
 
 		fileExtension := filepath.Ext(path)
-
 		noticeTemplate, ok := c.noticeTemplateByExtension(fileExtension)
 		if !ok {
 			return fmt.Errorf("invalid copyright injection file; %s", fileExtension)
@@ -161,6 +120,41 @@ func (c Copyright) Walk(ctx context.Context, action Action) error {
 	}
 	if didFail {
 		return ErrFailure
+	}
+	return nil
+}
+
+func (c Copyright) includeOrExclude(path string, info os.FileInfo) error {
+	if info.IsDir() {
+		if path == c.RootOrDefault() {
+			return ErrWalkSkip
+		}
+	}
+
+	if c.Config.Excludes != nil {
+		for _, exclude := range c.Config.Excludes {
+			if stringutil.Glob(path, exclude) {
+				c.Debugf("path %s matches exclude %s", path, exclude)
+				if info.IsDir() {
+					return filepath.SkipDir
+				}
+				return ErrWalkSkip
+			}
+		}
+	}
+
+	if c.Config.IncludeFiles != nil {
+		var includePath bool
+		for _, include := range c.Config.IncludeFiles {
+			if stringutil.Glob(path, include) {
+				includePath = true
+				break
+			}
+		}
+		if !includePath {
+			c.Debugf("path %s does not match any includes", path)
+			return ErrWalkSkip
+		}
 	}
 	return nil
 }

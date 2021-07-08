@@ -28,14 +28,12 @@ type Config struct {
 	// visibility modifiers, which is available in the `NoticeBodyTemplate` as `{{ .Restrictions }}`
 	Restrictions string `yaml:"restrictionTemplate"`
 
-	// IncludeFiles are a list of file globs to include.
+	// Excludes are a list of globs to exclude, they can
+	// match both files and directories.
+	// This can be populated with `.gitignore` and the like.
+	Excludes []string `yaml:"excludes"`
+	// IncludeFiles are a list of globs to match files to include.
 	IncludeFiles []string `yaml:"includeFiles"`
-	// ExcludeFiles are a list of file globs to exclude.
-	ExcludeFiles []string `yaml:"excludeFiles"`
-	// IncludeDirs are a list of directory globs to include.
-	IncludeDirs []string `yaml:"includeDirs"`
-	// ExcludeDirs are a list of directory globs to exclude.
-	ExcludeDirs []string `yaml:"excludeDirs"`
 
 	// ExtensionNoticeTemplates is a map between file extension (including dot prefix)
 	// to the relevant full notice template for the file. It can include a template variable
@@ -106,38 +104,6 @@ func (c Config) RestrictionsOrDefault() string {
 		return c.Restrictions
 	}
 	return DefaultRestrictionsInternal
-}
-
-// IncludeFilesOrDefault returns a glob list or a default.
-func (c Config) IncludeFilesOrDefault() []string {
-	if c.IncludeFiles != nil {
-		return c.IncludeFiles
-	}
-	return DefaultIncludeFiles
-}
-
-// IncludeDirsOrDefault returns a glob list or a default.
-func (c Config) IncludeDirsOrDefault() []string {
-	if c.IncludeDirs != nil {
-		return c.IncludeDirs
-	}
-	return DefaultIncludeDirs
-}
-
-// ExcludeFilesOrDefault returns a glob list or a default.
-func (c Config) ExcludeFilesOrDefault() []string {
-	if c.ExcludeFiles != nil {
-		return c.ExcludeFiles
-	}
-	return DefaultExcludeFiles
-}
-
-// ExcludeDirsOrDefault returns a glob list or a default.
-func (c Config) ExcludeDirsOrDefault() []string {
-	if c.ExcludeDirs != nil {
-		return c.ExcludeDirs
-	}
-	return DefaultExcludeDirs
 }
 
 // ExtensionNoticeTemplatesOrDefault returns mapping between file extensions (including dot) to

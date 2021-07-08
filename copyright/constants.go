@@ -81,6 +81,23 @@ var (
 		ExtensionSQL:  sqlNoticeTemplate,
 	}
 
+	// DefaultExcludes is the default excluded directories.
+	DefaultExcludes = []string{
+		".git/*",
+		".github/*",
+		"*/_config",
+		"*/_config/*",
+		"*/dist/*",
+		"*/node_modules/*",
+		"*/testdata",
+		"*/testdata/*",
+		"*/vendor/*",
+		"node_modules/*",
+		"protogen/*",
+		"vendor/*",
+		"venv/*",
+	}
+
 	// DefaultIncludeFiles is the default included files list.
 	DefaultIncludeFiles = []string{
 		"*.css",
@@ -97,36 +114,12 @@ var (
 		"*.yml",
 		"*.sql",
 	}
-
-	// DefaultIncludeDirs is the default included directories.
-	DefaultIncludeDirs = []string{
-		"*",
-	}
-
-	// DefaultExcludeFiles is the default excluded files list.
-	DefaultExcludeFiles = []string{}
-
-	// DefaultExcludeDirs is the default excluded directories.
-	DefaultExcludeDirs = []string{
-		".git/*",
-		".github/*",
-		"*/_config",
-		"*/_config/*",
-		"*/dist/*",
-		"*/node_modules/*",
-		"*/testdata",
-		"*/testdata/*",
-		"*/vendor/*",
-		"node_modules/*",
-		"protogen/*",
-		"vendor/*",
-		"venv/*",
-	}
 )
 
 // Errors
 var (
 	VerifyErrorFormat = "%s: copyright header missing or invalid"
+	ErrWalkSkip       = errors.New("walk skip")
 	ErrFailure        = errors.New("failure; one or more steps failed")
 	ErrFatal          = errors.New("failure; one or more steps failed, and we should exit after the first failure")
 )
@@ -177,9 +170,9 @@ const (
  */
 `
 
-	pythonNoticeTemplate = `'''
-{{ .Notice }}
-'''
+	pythonNoticeTemplate = `#
+{{ .Notice | prefix "#" }}
+#
 `
 
 	sqlNoticeTemplate = `--

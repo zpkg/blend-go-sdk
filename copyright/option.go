@@ -38,31 +38,17 @@ func OptRoot(root string) Option {
 	}
 }
 
-// OptIncludeFiles sets the include glob filter for files.
+// OptExcludes sets the exclude glob filters.
+func OptExcludes(excludeGlobs ...string) Option {
+	return func(p *Copyright) {
+		p.Config.Excludes = excludeGlobs
+	}
+}
+
+// OptIncludeFiles sets the include file glob filters.
 func OptIncludeFiles(includeGlobs ...string) Option {
 	return func(p *Copyright) {
 		p.Config.IncludeFiles = includeGlobs
-	}
-}
-
-// OptExcludeFiles sets the exclude glob filter for files.
-func OptExcludeFiles(excludeGlobs ...string) Option {
-	return func(p *Copyright) {
-		p.Config.ExcludeFiles = excludeGlobs
-	}
-}
-
-// OptIncludeDirs sets the include glob filter for files.
-func OptIncludeDirs(includeGlobs ...string) Option {
-	return func(p *Copyright) {
-		p.Config.IncludeDirs = includeGlobs
-	}
-}
-
-// OptExcludeDirs sets the exclude glob filter for directories.
-func OptExcludeDirs(excludeGlobs ...string) Option {
-	return func(p *Copyright) {
-		p.Config.ExcludeDirs = excludeGlobs
 	}
 }
 

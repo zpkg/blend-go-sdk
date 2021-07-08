@@ -8,6 +8,7 @@ Use of this source code is governed by a MIT license that can be found in the LI
 package main
 
 import (
+	"bufio"
 	"context"
 	"flag"
 	"fmt"
@@ -50,10 +51,9 @@ var (
 	flagInject bool
 	flagRemove bool
 
+	flagExcludes     flagStrings
+	flagExcludesFrom flagStrings
 	flagIncludeFiles flagStrings
-	flagExcludeFiles flagStrings
-	flagIncludeDirs  flagStrings
-	flagExcludeDirs  flagStrings
 
 	flagExitFirst bool
 	flagQuiet     bool
@@ -74,7 +74,7 @@ func init() {
 	flag.IntVar(&flagYear, "year", time.Now().UTC().Year(), "The year to use in templates as {{ .Year }}")
 	flag.StringVar(&flagLicense, "license", copyright.DefaultOpenSourceLicense, "The license to use in templates as {{ .License }}")
 
-	flag.StringVar(&flagNoticeTemplate, "notice-template", "", "The notice template; will try as a file path first, if not found then as a string literal")
+	flag.StringVar(&flagNoticeTemplate, "notice-template", "", "The notice template; will try as a file path first, if -1 then as a string literal. This will serve as the fully formed template.")
 	flag.StringVar(&flagNoticeBodyTemplate, "notice-body-template", copyright.DefaultNoticeBodyTemplate, "The notice body template; will try as a file path first, if not found then as a string literal")
 	flag.StringVar(&flagRestrictions, "restrictions", copyright.DefaultRestrictionsInternal, "The restriction template to compile and insert in the notice body template as {{ .Restrictions }}")
 
@@ -85,12 +85,11 @@ func init() {
 	flag.BoolVar(&flagInject, "inject", false, "If we should inject the notice (exclusive with -verify and -remove)")
 	flag.BoolVar(&flagRemove, "remove", false, "If we should remove the notice (exclusive with -verify and -inject)")
 
-	flag.Var(&flagExtensionNoticeTemplates, "ext", "Extension specific notice template overrides overrides; should be in the form -ext=js=js_template.txt")
+	flag.Var(&flagExtensionNoticeTemplates, "ext", "Extension specific notice template overrides overrides; should be in the form -ext=js=js_template.txt, can be multiple")
 
-	flag.Var(&flagIncludeFiles, "include-file", "Files to include via glob match")
-	flag.Var(&flagExcludeFiles, "exclude-file", "Files to exclude via glob match")
-	flag.Var(&flagIncludeDirs, "include-dir", "Directories to include via glob match")
-	flag.Var(&flagExcludeDirs, "exclude-dir", "Directories to exclude via glob match")
+	flag.Var(&flagExcludes, "exclude", "Files or directories to exclude via glob match, can be multiple")
+	flag.Var(&flagExcludesFrom, "excludes-from", "A file to read for globs to exclude (e.g. .gitignore), can be multiple")
+	flag.Var(&flagIncludeFiles, "include-file", "Files to include via glob match, can be multiple")
 
 	oldUsage := flag.Usage
 	flag.Usage = func() {
@@ -100,19 +99,34 @@ Verify, inject or remove copyright notices from files in a given tree.
 
 By default, this tool verifies that copyright notices are present with no flags provided.
 
+Headers are treated exactly; do not edit the headers once they've been injected.
+
 To verify headers:
 
 	> copyright
 	- OR -
 	> copyright --verify
+	- OR -
+	> copyright --verify ./critical
 
 To inject headers:
 
 	> copyright --inject
 
+	- NOTE: you can run "--inject" multiple times; it will only add the header if it is not present.
+
 To remove headers:
 
 	> copyright --remove
+
+If you have an old version of the header in your files, and you want to migrate to an updated version:
+
+	- Save the exiting header to a file, "notice.txt", including any newlines between the notice and code
+	- Remove existing notices:
+		> copyright --remove -ext=py=notice.txt
+	- Then inject the new notice:
+		> copyright --inject --include-file="*.py"
+	- You should now have the new notice in your files, and "--inject" will honor it
 
 `,
 		)
@@ -137,17 +151,20 @@ func main() {
 		roots = []string{"."}
 	}
 
+	for _, excludesFrom := range flagExcludesFrom {
+		excludes, err := readExcludesFile(excludesFrom)
+		if err != nil {
+			fmt.Fprintln(os.Stderr, err.Error())
+			os.Exit(1)
+		}
+		flagExcludes = append(flagExcludes, excludes...)
+	}
+
 	if len(flagIncludeFiles) == 0 {
 		flagIncludeFiles = flagStrings(copyright.DefaultIncludeFiles)
 	}
-	if len(flagExcludeFiles) == 0 {
-		flagExcludeFiles = flagStrings(copyright.DefaultExcludeFiles)
-	}
-	if len(flagIncludeDirs) == 0 {
-		flagIncludeDirs = flagStrings(copyright.DefaultIncludeDirs)
-	}
-	if len(flagExcludeDirs) == 0 {
-		flagExcludeDirs = flagStrings(copyright.DefaultExcludeDirs)
+	if len(flagExcludes) == 0 {
+		flagExcludes = flagStrings(copyright.DefaultExcludes)
 	}
 
 	var restrictions string
@@ -176,10 +193,8 @@ func main() {
 			Year:                     flagYear,
 			License:                  flagLicense,
 			ExtensionNoticeTemplates: extensionNoticeTemplates,
+			Excludes:                 flagExcludes,
 			IncludeFiles:             flagIncludeFiles,
-			ExcludeFiles:             flagExcludeFiles,
-			IncludeDirs:              flagIncludeDirs,
-			ExcludeDirs:              flagExcludeDirs,
 			ExitFirst:                &flagExitFirst,
 			Quiet:                    &flagQuiet,
 			Verbose:                  &flagVerbose,
@@ -188,36 +203,43 @@ func main() {
 		},
 	}
 
-	var action func(context.Context) error
-	var actionLabel string
+	var actions []func(context.Context) error
+	var actionLabels []string
 
+	if flagRemove {
+		actions = append(actions, engine.Remove)
+		actionLabels = append(actionLabels, "remove")
+	}
+	if flagInject {
+		actions = append(actions, engine.Inject)
+		actionLabels = append(actionLabels, "inject")
+	}
 	if flagVerify {
-		action = engine.Verify
-		actionLabel = "verify"
-	} else if flagInject {
-		action = engine.Inject
-		actionLabel = "inject"
-	} else if flagRemove {
-		action = engine.Remove
-		actionLabel = "remove"
-	} else {
-		action = engine.Verify
-		actionLabel = "verify"
+		actions = append(actions, engine.Verify)
+		actionLabels = append(actionLabels, "verify")
+	}
+	if len(actions) == 0 {
+		actions = append(actions, engine.Verify)
+		actionLabels = append(actionLabels, "verify")
 	}
 
-	var didFail bool
-	for _, root := range roots {
-		engine.Root = root
-		maybeFail(ctx, action, &didFail)
-	}
-	if didFail {
-		if !flagQuiet {
-			fmt.Printf("copyright %s %s!\nuse `copyright --inject` to add missing notices\n", actionLabel, ansi.Red("failed"))
+	for index, action := range actions {
+		didFail := false
+		actionLabel := actionLabels[index]
+
+		for _, root := range roots {
+			engine.Root = root
+			maybeFail(ctx, action, &didFail)
 		}
-		os.Exit(1)
-	}
-	if !flagQuiet {
-		fmt.Printf("copyright %s %s!\n", actionLabel, ansi.Green("ok"))
+		if didFail {
+			if !flagQuiet {
+				fmt.Printf("copyright %s %s!\nuse `copyright --inject` to add missing notices\n", actionLabel, ansi.Red("failed"))
+			}
+			os.Exit(1)
+		}
+		if !flagQuiet {
+			fmt.Printf("copyright %s %s!\n", actionLabel, ansi.Green("ok"))
+		}
 	}
 }
 
@@ -227,6 +249,20 @@ func tryReadFile(path string) string {
 		return path
 	}
 	return string(contents)
+}
+
+func readExcludesFile(path string) ([]string, error) {
+	f, err := os.Open(path)
+	if err != nil {
+		return nil, err
+	}
+	defer f.Close()
+	var output []string
+	scanner := bufio.NewScanner(f)
+	for scanner.Scan() {
+		output = append(output, strings.TrimSpace(scanner.Text()))
+	}
+	return output, nil
 }
 
 func parseExtensionNoticeBodyTemplate(extensionNoticeBodyTemplate string) (extension, noticeBodyTemplate string, err error) {
