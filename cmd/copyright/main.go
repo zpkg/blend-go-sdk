@@ -50,10 +50,10 @@ var (
 	flagInject bool
 	flagRemove bool
 
-	flagIncludeFiles = flagStrings(copyright.DefaultIncludeFiles)
-	flagExcludeFiles = flagStrings(copyright.DefaultExcludeFiles)
-	flagIncludeDirs  = flagStrings(copyright.DefaultIncludeDirs)
-	flagExcludeDirs  = flagStrings(copyright.DefaultExcludeDirs)
+	flagIncludeFiles flagStrings
+	flagExcludeFiles flagStrings
+	flagIncludeDirs  flagStrings
+	flagExcludeDirs  flagStrings
 
 	flagExitFirst bool
 	flagQuiet     bool
@@ -135,6 +135,19 @@ func main() {
 		roots = args
 	} else {
 		roots = []string{"."}
+	}
+
+	if len(flagIncludeFiles) == 0 {
+		flagIncludeFiles = flagStrings(copyright.DefaultIncludeFiles)
+	}
+	if len(flagExcludeFiles) == 0 {
+		flagExcludeFiles = flagStrings(copyright.DefaultExcludeFiles)
+	}
+	if len(flagIncludeDirs) == 0 {
+		flagIncludeDirs = flagStrings(copyright.DefaultIncludeDirs)
+	}
+	if len(flagExcludeDirs) == 0 {
+		flagExcludeDirs = flagStrings(copyright.DefaultExcludeDirs)
 	}
 
 	var restrictions string

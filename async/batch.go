@@ -53,6 +53,10 @@ type Batch struct {
 
 // Process executes the action for all the work items.
 func (b *Batch) Process(ctx context.Context) {
+	if len(b.Work) == 0 {
+		return
+	}
+
 	allWorkers := make([]*Worker, b.Parallelism)
 	availableWorkers := make(chan *Worker, b.Parallelism)
 
