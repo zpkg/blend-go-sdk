@@ -44,6 +44,7 @@ const (
 	ExtensionYAML    = ".yaml"
 	ExtensionYML     = ".yml"
 	ExtensionSQL     = ".sql"
+	ExtensionProto   = ".proto"
 )
 
 var (
@@ -62,23 +63,25 @@ var (
 		ExtensionYAML,
 		ExtensionYML,
 		ExtensionSQL,
+		ExtensionProto,
 	}
 
 	// DefaultExtensionNoticeTemplates is a mapping between file extension (including the prefix dot) to the notice templates.
 	DefaultExtensionNoticeTemplates = map[string]string{
-		ExtensionCSS:  cssNoticeTemplate,
-		ExtensionGo:   goNoticeTemplate,
-		ExtensionHTML: htmlNoticeTemplate,
-		ExtensionJS:   jsNoticeTemplate,
-		ExtensionJSX:  jsNoticeTemplate,
-		ExtensionPy:   pythonNoticeTemplate,
-		ExtensionSASS: sassNoticeTemplate,
-		ExtensionSCSS: scssNoticeTemplate,
-		ExtensionTS:   tsNoticeTemplate,
-		ExtensionTSX:  tsNoticeTemplate,
-		ExtensionYAML: yamlNoticeTemplate,
-		ExtensionYML:  yamlNoticeTemplate,
-		ExtensionSQL:  sqlNoticeTemplate,
+		ExtensionCSS:   cssNoticeTemplate,
+		ExtensionGo:    goNoticeTemplate,
+		ExtensionHTML:  htmlNoticeTemplate,
+		ExtensionJS:    jsNoticeTemplate,
+		ExtensionJSX:   jsNoticeTemplate,
+		ExtensionPy:    pythonNoticeTemplate,
+		ExtensionSASS:  sassNoticeTemplate,
+		ExtensionSCSS:  scssNoticeTemplate,
+		ExtensionTS:    tsNoticeTemplate,
+		ExtensionTSX:   tsNoticeTemplate,
+		ExtensionYAML:  yamlNoticeTemplate,
+		ExtensionYML:   yamlNoticeTemplate,
+		ExtensionSQL:   sqlNoticeTemplate,
+		ExtensionProto: protoNoticeTemplate,
 	}
 
 	// DefaultExcludes is the default excluded directories.
@@ -113,6 +116,7 @@ var (
 		"*.yaml",
 		"*.yml",
 		"*.sql",
+		"*.proto",
 	}
 )
 
@@ -179,6 +183,12 @@ const (
 	sqlNoticeTemplate = `--
 {{ .Notice | prefix "-- " }}
 --
+`
+
+	protoNoticeTemplate = `//
+{{ .Notice | prefix "// " }}
+//
+
 `
 )
 
