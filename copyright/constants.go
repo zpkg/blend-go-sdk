@@ -97,6 +97,7 @@ var (
 		"*/vendor/*",
 		"node_modules/*",
 		"protogen/*",
+		"*.pb.go",
 		"vendor/*",
 		"venv/*",
 	}

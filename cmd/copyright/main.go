@@ -123,7 +123,7 @@ To remove headers:
 
 If you have an old version of the header in your files, and you want to migrate to an updated version:
 
-	- Save the exiting header to a file, "notice.txt", including any newlines between the notice and code
+	- Save the existing header to a file, "notice.txt", including any newlines between the notice and code
 	- Remove existing notices:
 		> copyright --remove -ext=py=notice.txt
 	- Then inject the new notice:
