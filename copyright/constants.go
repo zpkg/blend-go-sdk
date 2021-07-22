@@ -121,12 +121,15 @@ var (
 	}
 )
 
-// Errors
+// Error Strings
 var (
 	VerifyErrorFormat = "%s: copyright header missing or invalid"
-	ErrWalkSkip       = errors.New("walk skip")
-	ErrFailure        = errors.New("failure; one or more steps failed")
-	ErrFatal          = errors.New("failure; one or more steps failed, and we should exit after the first failure")
+)
+
+// Error sentinels
+var (
+	ErrWalkSkip = errors.New("walk skip; we should not process this file or path")
+	ErrFailure  = errors.New("failure; one or more steps failed")
 )
 
 const (

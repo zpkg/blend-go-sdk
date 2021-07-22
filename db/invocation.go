@@ -585,16 +585,19 @@ func (i *Invocation) generateUpdate(object DatabaseMapped) (statementLabel, quer
 	return
 }
 
-func (i *Invocation) generateUpsert(object DatabaseMapped) (statementLabel, queryBody string, autos, insertCols *ColumnCollection) {
+func (i *Invocation) generateUpsert(object DatabaseMapped) (statementLabel, queryBody string, autos, insertsWithAutos *ColumnCollection) {
 	tableName := TableName(object)
 	cols := Columns(object)
 	updates := cols.UpdateColumns()
 	updateCols := updates.Columns()
 
-	// these should be not auto columns, and columns that are auto and are set
-	insertCols = cols.InsertColumns().ConcatWith(cols.Autos().NotZero(object))
-
-	insertColNames := insertCols.ColumnNames()
+	// We add in all the autos columns but filter them out of the insert clause
+	insertsWithAutos = cols.InsertColumns().ConcatWith(cols.Autos())
+	insertCols := insertsWithAutos.Columns()
+	tokenMap := map[string]string{}
+	for i, col := range insertCols {
+		tokenMap[col.ColumnName] = "$" + strconv.Itoa(i+1)
+	}
 
 	// autos are read out on insert (but only if unset)
 	autos = cols.Autos().Zero(object)
@@ -607,30 +610,33 @@ func (i *Invocation) generateUpsert(object DatabaseMapped) (statementLabel, quer
 	queryBodyBuffer.WriteString("INSERT INTO ")
 	queryBodyBuffer.WriteString(tableName)
 	queryBodyBuffer.WriteString(" (")
-	for i, name := range insertColNames {
-		queryBodyBuffer.WriteString(name)
-		if i < len(insertColNames)-1 {
-			queryBodyBuffer.WriteRune(',')
+
+	skipComma := true
+	for _, col := range insertCols {
+		if !col.IsAuto || cols.NotZero(object).HasColumn(col.ColumnName) {
+			if !skipComma {
+				queryBodyBuffer.WriteRune(',')
+			}
+			skipComma = false
+			queryBodyBuffer.WriteString(col.ColumnName)
 		}
 	}
 
 	queryBodyBuffer.WriteString(") VALUES (")
-
-	for x := 0; x < insertCols.Len(); x++ {
-		queryBodyBuffer.WriteString("$" + strconv.Itoa(x+1))
-		if x < (insertCols.Len() - 1) {
-			queryBodyBuffer.WriteRune(',')
+	skipComma = true
+	for _, col := range insertsWithAutos.Columns() {
+		if !col.IsAuto || cols.NotZero(object).HasColumn(col.ColumnName) {
+			if !skipComma {
+				queryBodyBuffer.WriteRune(',')
+			}
+			skipComma = false
+			queryBodyBuffer.WriteString(tokenMap[col.ColumnName])
 		}
 	}
 
 	queryBodyBuffer.WriteString(")")
 
 	if pks.Len() > 0 {
-		tokenMap := map[string]string{}
-		for i, col := range insertCols.Columns() {
-			tokenMap[col.ColumnName] = "$" + strconv.Itoa(i+1)
-		}
-
 		queryBodyBuffer.WriteString(" ON CONFLICT (")
 
 		for i, name := range pkNames {

@@ -11,9 +11,6 @@ import "time"
 
 // Config holds the runtime configuration option for the copyright engine.
 type Config struct {
-	// Root is the starting directory for the file walk.
-	Root string `yaml:"root"`
-
 	// NoticeBodyTemplate is the notice body template that will be processed and
 	// injected to the relevant extension specific notice template.
 	NoticeBodyTemplate string `yaml:"noticeBodyTemplate"`
@@ -56,14 +53,6 @@ type Config struct {
 
 	// ShowDiff shows shows the diffs on verification failues.
 	ShowDiff *bool `yaml:"verifyDiff"`
-}
-
-// RootOrDefault returns the walk root or a default.
-func (c Config) RootOrDefault() string {
-	if c.Root != "" {
-		return c.Root
-	}
-	return "."
 }
 
 // NoticeBodyTemplateOrDefault returns the notice body template or a default.

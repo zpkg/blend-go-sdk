@@ -21,10 +21,6 @@ func Test_Config(t *testing.T) {
 
 	var cfg Config
 
-	its.Equal(".", cfg.RootOrDefault())
-	cfg.Root = "root"
-	its.Equal("root", cfg.RootOrDefault())
-
 	its.Equal(DefaultNoticeBodyTemplate, cfg.NoticeBodyTemplateOrDefault())
 	cfg.NoticeBodyTemplate = "not-" + DefaultNoticeBodyTemplate
 	its.Equal("not-"+DefaultNoticeBodyTemplate, cfg.NoticeBodyTemplateOrDefault())

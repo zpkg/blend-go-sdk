@@ -47,144 +47,99 @@ type Copyright struct {
 
 // Inject inserts the copyright header in any matching files that don't already
 // have the copyright header.
-func (c Copyright) Inject(ctx context.Context) error {
-	return c.Walk(ctx, c.inject)
+func (c Copyright) Inject(ctx context.Context, root string) error {
+	return c.Walk(ctx, c.inject, root)
 }
 
 // Remove removes the copyright header in any matching files that
 // have the copyright header.
-func (c Copyright) Remove(ctx context.Context) error {
-	return c.Walk(ctx, c.remove)
+func (c Copyright) Remove(ctx context.Context, root string) error {
+	return c.Walk(ctx, c.remove, root)
 }
 
 // Verify asserts that the files found during walk
 // have the copyright header.
-func (c Copyright) Verify(ctx context.Context) error {
-	return c.Walk(ctx, c.verify)
+func (c Copyright) Verify(ctx context.Context, root string) error {
+	return c.Walk(ctx, c.verify, root)
 }
 
-// Walk traverses the tree recursively from "." and applies the given action.
-func (c Copyright) Walk(ctx context.Context, action Action) error {
+// Walk traverses the tree recursively from the root and applies the given action.
+//
+// If the root is a file, it is handled singly and then walk will return.
+func (c Copyright) Walk(ctx context.Context, action Action, root string) error {
 	noticeBody, err := c.compileNoticeBodyTemplate(c.NoticeBodyTemplateOrDefault())
 	if err != nil {
 		return err
 	}
 
+	c.Verbosef("using root: %s", root)
 	c.Verbosef("using excludes: %s", strings.Join(c.Config.Excludes, ", "))
 	c.Verbosef("using include files: %s", strings.Join(c.Config.IncludeFiles, ", "))
 	c.Verbosef("using notice body:\n%s", noticeBody)
 
+	// if the root is a file, just handle the file itself
+	// otherwise walk the full tree
+	if info, err := os.Stat(root); err != nil {
+		return err
+	} else if !info.IsDir() {
+		c.Debugf("root is a file, processing and returning")
+		return c.processFile(action, noticeBody, root, info)
+	}
+
 	var didFail bool
-	err = filepath.Walk(c.RootOrDefault(), func(path string, info os.FileInfo, fileErr error) error {
+	err = filepath.Walk(root, func(path string, info os.FileInfo, fileErr error) error {
 		if fileErr != nil {
 			return fileErr
 		}
 
-		if skipErr := c.includeOrExclude(path, info); skipErr != nil {
+		if skipErr := c.includeOrExclude(root, path, info); skipErr != nil {
 			if skipErr == ErrWalkSkip {
 				return nil
 			}
 			return skipErr
 		}
 
-		fileExtension := filepath.Ext(path)
-		noticeTemplate, ok := c.noticeTemplateByExtension(fileExtension)
-		if !ok {
-			return fmt.Errorf("invalid copyright injection file; %s", fileExtension)
-		}
-		notice, err := c.compileNoticeTemplate(noticeTemplate, noticeBody)
-		if err != nil {
-			return err
+		walkErr := c.processFile(action, noticeBody, path, info)
+		if walkErr != nil {
+			// if we don't exit on the first failure
+			// check if the error is just a verification error
+			// if so, mark that we've had a failure
+			// and return nil so the walk continues
+			if !c.Config.ExitFirstOrDefault() {
+				// if it's a sentinel error
+				// mark we've failed and return nil
+				if walkErr == ErrFailure {
+					didFail = true
+					return nil
+				}
+
+				// this error might be an os issue / something else
+				// return it
+				return walkErr
+			}
+
+			// otherwise always return the error
+			// this will abort the walk
+			return walkErr
 		}
 
-		fileContents, err := ioutil.ReadFile(path)
-		if err != nil {
-			return err
-		}
-		err = action(path, info, fileContents, []byte(notice))
-		if err != nil {
-			if err == ErrFailure {
-				didFail = true
-				return nil
-			}
-			return err
-		}
+		// no error no problem
 		return nil
 	})
+
+	// if we had an error
+	// return it
 	if err != nil {
-		if err == ErrFatal {
-			// swap out to failure
-			return ErrFailure
-		}
 		return err
 	}
+
+	// if we failed at some point, ideally
+	// because we're set to not exit first
+	// return the sentinel error
 	if didFail {
 		return ErrFailure
 	}
 	return nil
-}
-
-func (c Copyright) includeOrExclude(path string, info os.FileInfo) error {
-	if info.IsDir() {
-		if path == c.RootOrDefault() {
-			return ErrWalkSkip
-		}
-	}
-
-	if c.Config.Excludes != nil {
-		for _, exclude := range c.Config.Excludes {
-			if stringutil.Glob(path, exclude) {
-				c.Debugf("path %s matches exclude %s", path, exclude)
-				if info.IsDir() {
-					return filepath.SkipDir
-				}
-				return ErrWalkSkip
-			}
-		}
-	}
-
-	if c.Config.IncludeFiles != nil {
-		var includePath bool
-		for _, include := range c.Config.IncludeFiles {
-			if stringutil.Glob(path, include) {
-				includePath = true
-				break
-			}
-		}
-		if !includePath {
-			c.Debugf("path %s does not match any includes", path)
-			return ErrWalkSkip
-		}
-	}
-
-	if info.IsDir() {
-		return ErrWalkSkip
-	}
-
-	return nil
-}
-
-// noticeTemplateByExtension gets a notice template by extension or the default.
-func (c Copyright) noticeTemplateByExtension(fileExtension string) (noticeTemplate string, ok bool) {
-	if !strings.HasPrefix(fileExtension, ".") {
-		fileExtension = "." + fileExtension
-	}
-
-	// check if there is a filetype specific notice template
-	extensionNoticeTemplates := c.ExtensionNoticeTemplatesOrDefault()
-	if noticeTemplate, ok = extensionNoticeTemplates[fileExtension]; ok {
-		return
-	}
-
-	// check if we have a default notice template
-	if c.NoticeTemplate != "" {
-		noticeTemplate = c.NoticeTemplate
-		ok = true
-		return
-	}
-
-	// fail
-	return
 }
 
 // GetStdout returns standard out.
@@ -207,6 +162,11 @@ func (c Copyright) GetStderr() io.Writer {
 		return c.Stderr
 	}
 	return os.Stderr
+}
+
+// Errorf writes to stderr.
+func (c Copyright) Errorf(format string, args ...interface{}) {
+	fmt.Fprintf(c.GetStderr(), format+"\n", args...)
 }
 
 // Verbosef writes to stdout if the `Verbose` flag is true.
@@ -255,12 +215,11 @@ func (c Copyright) verify(path string, _ os.FileInfo, file, notice []byte) error
 	}
 
 	if err != nil {
-		fmt.Fprintf(c.GetStderr(), "%+v\n", err)
+		// verify prints the file that had the issue
+		// as part of the normal action
+		c.Errorf("%+v", err)
 		if c.Config.ShowDiffOrDefault() {
 			c.showDiff(path, file, notice)
-		}
-		if c.Config.ExitFirstOrDefault() {
-			return ErrFatal
 		}
 		return ErrFailure
 	}
@@ -270,6 +229,88 @@ func (c Copyright) verify(path string, _ os.FileInfo, file, notice []byte) error
 //
 // internal helpers
 //
+
+// includeOrExclude makes the determination if we should process a path (file or directory).
+func (c Copyright) includeOrExclude(root, path string, info os.FileInfo) error {
+	if info.IsDir() {
+		if path == root {
+			return ErrWalkSkip
+		}
+	}
+
+	if c.Config.Excludes != nil {
+		for _, exclude := range c.Config.Excludes {
+			if stringutil.Glob(path, exclude) {
+				c.Debugf("path %s matches exclude %s", path, exclude)
+				if info.IsDir() {
+					return filepath.SkipDir
+				}
+				return ErrWalkSkip
+			}
+		}
+	}
+
+	if c.Config.IncludeFiles != nil {
+		var includePath bool
+		for _, include := range c.Config.IncludeFiles {
+			if stringutil.Glob(path, include) {
+				includePath = true
+				break
+			}
+		}
+		if !includePath {
+			c.Debugf("path %s does not match any includes", path)
+			return ErrWalkSkip
+		}
+	}
+
+	if info.IsDir() {
+		return ErrWalkSkip
+	}
+
+	return nil
+}
+
+// processFile processes a single file with the action
+func (c Copyright) processFile(action Action, noticeBody, path string, info os.FileInfo) error {
+	fileExtension := filepath.Ext(path)
+	noticeTemplate, ok := c.noticeTemplateByExtension(fileExtension)
+	if !ok {
+		return fmt.Errorf("invalid copyright injection file; %s", filepath.Base(path))
+	}
+	notice, err := c.compileNoticeTemplate(noticeTemplate, noticeBody)
+	if err != nil {
+		return err
+	}
+	fileContents, err := ioutil.ReadFile(path)
+	if err != nil {
+		return err
+	}
+	return action(path, info, fileContents, []byte(notice))
+}
+
+// noticeTemplateByExtension gets a notice template by extension or the default.
+func (c Copyright) noticeTemplateByExtension(fileExtension string) (noticeTemplate string, ok bool) {
+	if !strings.HasPrefix(fileExtension, ".") {
+		fileExtension = "." + fileExtension
+	}
+
+	// check if there is a filetype specific notice template
+	extensionNoticeTemplates := c.ExtensionNoticeTemplatesOrDefault()
+	if noticeTemplate, ok = extensionNoticeTemplates[fileExtension]; ok {
+		return
+	}
+
+	// check if we have a default notice template
+	if c.NoticeTemplate != "" {
+		noticeTemplate = c.NoticeTemplate
+		ok = true
+		return
+	}
+
+	// fail
+	return
+}
 
 func (c Copyright) injectedContents(path string, file, notice []byte) []byte {
 	fileExtension := filepath.Ext(path)

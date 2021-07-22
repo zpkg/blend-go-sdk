@@ -21,20 +21,6 @@ import (
 	"github.com/blend/go-sdk/copyright"
 )
 
-type flagStrings []string
-
-func (fs flagStrings) String() string {
-	return strings.Join(fs, ", ")
-}
-
-func (fs *flagStrings) Set(flagValue string) error {
-	if flagValue == "" {
-		return fmt.Errorf("invalid flag value; is empty")
-	}
-	*fs = append(*fs, flagValue)
-	return nil
-}
-
 var (
 	flagNoticeTemplate           string
 	flagExtensionNoticeTemplates flagStrings
@@ -88,7 +74,7 @@ func init() {
 
 	flag.Var(&flagExtensionNoticeTemplates, "ext", "Extension specific notice template overrides overrides; should be in the form -ext=js=js_template.txt, can be multiple")
 
-	flag.BoolVar(&flagExcludeDefaults, "exclude-defaults", true, "If we should add the exclude defaults")
+	flag.BoolVar(&flagExcludeDefaults, "exclude-defaults", true, "If we should add the exclude defaults (e.g. node_modules etc.)")
 	flag.Var(&flagExcludes, "exclude", "Files or directories to exclude via glob match, can be multiple")
 	flag.Var(&flagExcludesFrom, "excludes-from", "A file to read for globs to exclude (e.g. .gitignore), can be multiple")
 	flag.Var(&flagIncludeFiles, "include-file", "Files to include via glob match, can be multiple")
@@ -96,6 +82,8 @@ func init() {
 	oldUsage := flag.Usage
 	flag.Usage = func() {
 		fmt.Fprint(flag.CommandLine.Output(), `blend source code copyright management cli
+
+> copyright [--inject|--verify|--remove] [ROOT(s)...]
 
 Verify, inject or remove copyright notices from files in a given tree.
 
@@ -110,10 +98,14 @@ To verify headers:
 	> copyright --verify
 	- OR -
 	> copyright --verify ./critical
+	- OR -
+	> copyright --verify ./critical/foo.py
 
 To inject headers:
 
 	> copyright --inject
+	- OR -
+	> copyright --inject ./critical/foo.py
 
 	- NOTE: you can run "--inject" multiple times; it will only add the header if it is not present.
 
@@ -148,7 +140,7 @@ func main() {
 
 	var roots []string
 	if args := flag.Args(); len(args) > 0 {
-		roots = args
+		roots = args[:]
 	} else {
 		roots = []string{"."}
 	}
@@ -205,7 +197,7 @@ func main() {
 		},
 	}
 
-	var actions []func(context.Context) error
+	var actions []func(context.Context, string) error
 	var actionLabels []string
 
 	if flagRemove {
@@ -230,9 +222,9 @@ func main() {
 		actionLabel := actionLabels[index]
 
 		for _, root := range roots {
-			engine.Root = root
-			maybeFail(ctx, action, &didFail)
+			maybeFail(ctx, action, root, &didFail)
 		}
+
 		if didFail {
 			if !flagQuiet {
 				fmt.Printf("copyright %s %s!\nuse `copyright --inject` to add missing notices\n", actionLabel, ansi.Red("failed"))
@@ -243,6 +235,20 @@ func main() {
 			fmt.Printf("copyright %s %s!\n", actionLabel, ansi.Green("ok"))
 		}
 	}
+}
+
+type flagStrings []string
+
+func (fs flagStrings) String() string {
+	return strings.Join(fs, ", ")
+}
+
+func (fs *flagStrings) Set(flagValue string) error {
+	if flagValue == "" {
+		return fmt.Errorf("invalid flag value; is empty")
+	}
+	*fs = append(*fs, flagValue)
+	return nil
 }
 
 func tryReadFile(path string) string {
@@ -281,8 +287,8 @@ func parseExtensionNoticeBodyTemplate(extensionNoticeBodyTemplate string) (exten
 	return
 }
 
-func maybeFail(ctx context.Context, action func(context.Context) error, didFail *bool) {
-	err := action(ctx)
+func maybeFail(ctx context.Context, action func(context.Context, string) error, root string, didFail *bool) {
+	err := action(ctx, root)
 	if err != nil {
 		if err == copyright.ErrFailure {
 			*didFail = true

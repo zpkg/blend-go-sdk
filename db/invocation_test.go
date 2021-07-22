@@ -667,6 +667,43 @@ func Test_Invocation_Upsert_withAutos(t *testing.T) {
 	its.Equal((*value.MigratedAt).UTC(), (*verify.MigratedAt).UTC())
 }
 
+func Test_Invocation_Upsert_withAutos_Unset(t *testing.T) {
+	its := assert.New(t)
+	tx, err := defaultDB().Begin()
+	its.Nil(err)
+	defer func() { _ = tx.Rollback() }()
+
+	err = createUpsertAutosRegressionTable(tx)
+	its.Nil(err)
+	defer func() { _ = dropUpsertRegressionTable(tx) }()
+
+	tsMig := time.Date(2020, 12, 23, 11, 10, 9, 0, time.UTC)
+
+	// create initial value but let created_at be set by the default
+	value := upsertAutoRegression{
+		ID:         uuid.V4(),
+		Status:     1,
+		Required:   true,
+		MigratedAt: &tsMig,
+	}
+
+	err = defaultDB().Invoke(OptTx(tx)).Upsert(&value)
+	its.Nil(err)
+
+	var verify upsertAutoRegression
+	var found bool
+	found, err = defaultDB().Invoke(OptTx(tx)).Get(&verify, value.ID)
+	its.Nil(err)
+	its.True(found)
+
+	its.Equal(value.Status, verify.Status)
+	its.Equal(value.Required, verify.Required)
+	its.Equal((*value.MigratedAt).UTC(), (*verify.MigratedAt).UTC())
+	its.NotNil(verify.CreatedAt)
+	recorded := *verify.CreatedAt
+	its.True(recorded.Unix() > time.Date(2021, 1, 30, 0, 0, 0, 0, time.UTC).Unix())
+}
+
 func Test_Invocation_CreateMany(t *testing.T) {
 	its := assert.New(t)
 	tx, err := defaultDB().Begin()

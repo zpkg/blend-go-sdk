@@ -328,18 +328,18 @@ func Test_Copyright_includeOrExclude(t *testing.T) {
 		Info     fs.FileInfo
 		Expected error
 	}{
-		/*0*/ {Config: Config{Root: "."}, Path: ".", Info: mockInfoDir("."), Expected: ErrWalkSkip},
-		/*1*/ {Config: Config{Root: ".", Excludes: []string{"/foo/**"}}, Path: "/foo/bar", Info: mockInfoDir("bar"), Expected: filepath.SkipDir},
-		/*2*/ {Config: Config{Root: ".", Excludes: []string{"/foo/**"}}, Path: "/foo/bar/baz.jpg", Info: mockInfoFile("baz.jpg"), Expected: ErrWalkSkip},
-		/*3*/ {Config: Config{Root: ".", IncludeFiles: []string{"/foo/bar/*.jpg"}}, Path: "/foo/bar/baz.jpg", Info: mockInfoFile("baz.jpg"), Expected: nil},
-		/*4*/ {Config: Config{Root: ".", Excludes: []string{}, IncludeFiles: []string{}}, Path: "/foo/bar/baz.jpg", Info: mockInfoFile("baz.jpg"), Expected: ErrWalkSkip},
-		/*5*/ {Config: Config{Root: "."}, Path: "/foo/bar/baz.jpg", Info: mockInfoFile("baz.jpg"), Expected: nil},
-		/*6*/ {Config: Config{Root: "."}, Path: "/foo/bar/baz.jpg", Info: mockInfoDir("baz"), Expected: ErrWalkSkip},
+		/*0*/ {Config: Config{}, Path: ".", Info: mockInfoDir("."), Expected: ErrWalkSkip},
+		/*1*/ {Config: Config{Excludes: []string{"/foo/**"}}, Path: "/foo/bar", Info: mockInfoDir("bar"), Expected: filepath.SkipDir},
+		/*2*/ {Config: Config{Excludes: []string{"/foo/**"}}, Path: "/foo/bar/baz.jpg", Info: mockInfoFile("baz.jpg"), Expected: ErrWalkSkip},
+		/*3*/ {Config: Config{IncludeFiles: []string{"/foo/bar/*.jpg"}}, Path: "/foo/bar/baz.jpg", Info: mockInfoFile("baz.jpg"), Expected: nil},
+		/*4*/ {Config: Config{Excludes: []string{}, IncludeFiles: []string{}}, Path: "/foo/bar/baz.jpg", Info: mockInfoFile("baz.jpg"), Expected: ErrWalkSkip},
+		/*5*/ {Config: Config{}, Path: "/foo/bar/baz.jpg", Info: mockInfoFile("baz.jpg"), Expected: nil},
+		/*6*/ {Config: Config{}, Path: "/foo/bar/baz.jpg", Info: mockInfoDir("baz"), Expected: ErrWalkSkip},
 	}
 
 	for index, tc := range testCases {
 		c := Copyright{Config: tc.Config}
-		its.Equal(tc.Expected, c.includeOrExclude(tc.Path, tc.Info), fmt.Sprintf("test %d", index))
+		its.Equal(tc.Expected, c.includeOrExclude(".", tc.Path, tc.Info), fmt.Sprintf("test %d", index))
 	}
 }
 
@@ -374,10 +374,13 @@ const (
 		`
 )
 
+// createTestFS creates a temp dir with files in them, with _no_ copyright headers.
+//
+// there should be at least (1) failure.
 func createTestFS(its *assert.Assertions) (tempDir string, revert func()) {
 	// create a temp dir
 	var err error
-	tempDir, err = ioutil.TempDir("", "coverage_test")
+	tempDir, err = ioutil.TempDir("", "copyright_test")
 	its.Nil(err)
 	revert = func() {
 		os.RemoveAll(tempDir)
@@ -437,7 +440,6 @@ func Test_Copyright_Walk(t *testing.T) {
 	defer revert()
 
 	c := New(
-		OptRoot(tempDir),
 		OptIncludeFiles("*.py", "*.ts"),
 		OptExcludes("*/not-bar/*", "*/not-foo/*"),
 	)
@@ -447,7 +449,7 @@ func Test_Copyright_Walk(t *testing.T) {
 	err = c.Walk(context.TODO(), func(path string, info os.FileInfo, file, notice []byte) error {
 		seen = append(seen, path)
 		return nil
-	})
+	}, tempDir)
 	its.Nil(err)
 	expected := []string{
 		filepath.Join(tempDir, "bar", "foo", "file0.py"),
@@ -460,6 +462,67 @@ func Test_Copyright_Walk(t *testing.T) {
 	its.Equal(expected, seen)
 }
 
+func Test_Copyright_Walk_noExitFirst(t *testing.T) {
+	its := assert.New(t)
+
+	tempDir, revert := createTestFS(its)
+	defer revert()
+
+	c := New(
+		OptIncludeFiles("*.py", "*.ts"),
+		OptExcludes("*/not-bar/*", "*/not-foo/*"),
+		OptExitFirst(false),
+	)
+
+	var err error
+	var seen []string
+	err = c.Walk(context.TODO(), func(path string, info os.FileInfo, file, notice []byte) error {
+		seen = append(seen, path)
+		if len(seen) > 0 {
+			return ErrFailure
+		}
+		return nil
+	}, tempDir)
+	its.NotNil(err)
+	expected := []string{
+		filepath.Join(tempDir, "bar", "foo", "file0.py"),
+		filepath.Join(tempDir, "bar", "foo", "file0.ts"),
+		filepath.Join(tempDir, "file0.py"),
+		filepath.Join(tempDir, "file0.ts"),
+		filepath.Join(tempDir, "foo", "bar", "file0.py"),
+		filepath.Join(tempDir, "foo", "bar", "file0.ts"),
+	}
+	its.Equal(expected, seen)
+}
+
+func Test_Copyright_Walk_exitFirst(t *testing.T) {
+	its := assert.New(t)
+
+	tempDir, revert := createTestFS(its)
+	defer revert()
+
+	c := New(
+		OptIncludeFiles("*.py", "*.ts"),
+		OptExcludes("*/not-bar/*", "*/not-foo/*"),
+		OptExitFirst(true),
+	)
+
+	var err error
+	var seen []string
+	err = c.Walk(context.TODO(), func(path string, info os.FileInfo, file, notice []byte) error {
+		seen = append(seen, path)
+		if len(seen) > 0 {
+			return ErrFailure
+		}
+		return nil
+	}, tempDir)
+	its.NotNil(err)
+	expected := []string{
+		filepath.Join(tempDir, "bar", "foo", "file0.py"),
+	}
+	its.Equal(expected, seen)
+}
+
 func Test_Copyright_Inject(t *testing.T) {
 	its := assert.New(t)
 
@@ -467,12 +530,11 @@ func Test_Copyright_Inject(t *testing.T) {
 	defer revert()
 
 	c := New(
-		OptRoot(tempDir),
 		OptIncludeFiles("*.py", "*.ts", "*.go"),
 		OptExcludes("*/not-bar/*", "*/not-foo/*"),
 	)
 
-	err := c.Inject(context.TODO())
+	err := c.Inject(context.TODO(), tempDir)
 	its.Nil(err)
 
 	contents, err := ioutil.ReadFile(filepath.Join(tempDir, "bar", "foo", "file0.py"))
@@ -491,20 +553,20 @@ func Test_Copyright_Verify(t *testing.T) {
 	defer revert()
 
 	c := New(
-		OptRoot(tempDir),
 		OptIncludeFiles("*.py", "*.ts", "*.go"),
 		OptExcludes("*/not-bar/*", "*/not-foo/*"),
+		OptExitFirst(false),
 	)
 	c.Stdout = new(bytes.Buffer)
 	c.Stderr = new(bytes.Buffer)
 
-	err := c.Verify(context.TODO())
-	its.NotNil(err)
+	err := c.Verify(context.TODO(), tempDir)
+	its.NotNil(err, "we must record a failure from walking the test fs")
 
-	err = c.Inject(context.TODO())
+	err = c.Inject(context.TODO(), tempDir)
 	its.Nil(err)
 
-	err = c.Verify(context.TODO())
+	err = c.Verify(context.TODO(), tempDir)
 	its.Nil(err)
 }
 
@@ -515,22 +577,45 @@ func Test_Copyright_Remove(t *testing.T) {
 	defer revert()
 
 	c := New(
-		OptRoot(tempDir),
 		OptIncludeFiles("*.py", "*.ts", "*.go"),
 		OptExcludes("*/not-bar/*", "*/not-foo/*"),
 	)
 	c.Stdout = new(bytes.Buffer)
 	c.Stderr = new(bytes.Buffer)
 
-	err := c.Inject(context.TODO())
+	err := c.Inject(context.TODO(), tempDir)
 	its.Nil(err)
 
-	err = c.Verify(context.TODO())
+	err = c.Verify(context.TODO(), tempDir)
 	its.Nil(err)
 
-	err = c.Remove(context.TODO())
+	err = c.Remove(context.TODO(), tempDir)
 	its.Nil(err)
 
-	err = c.Verify(context.TODO())
+	err = c.Verify(context.TODO(), tempDir)
 	its.NotNil(err)
+}
+
+func Test_Copyright_Walk_singleFileRoot(t *testing.T) {
+	its := assert.New(t)
+
+	tempDir, revert := createTestFS(its)
+	defer revert()
+
+	c := New(
+		OptIncludeFiles("*.py", "*.ts"),
+		OptExcludes("*/not-bar/*", "*/not-foo/*"),
+	)
+
+	var err error
+	var seen []string
+	err = c.Walk(context.TODO(), func(path string, info os.FileInfo, file, notice []byte) error {
+		seen = append(seen, path)
+		return nil
+	}, filepath.Join(tempDir, "file0.py"))
+	its.Nil(err)
+	expected := []string{
+		filepath.Join(tempDir, "file0.py"),
+	}
+	its.Equal(expected, seen)
 }

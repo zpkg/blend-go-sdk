@@ -31,13 +31,6 @@ func OptExitFirst(exitFirst bool) Option {
 	}
 }
 
-// OptRoot sets the root directory to start the profanity check.
-func OptRoot(root string) Option {
-	return func(p *Copyright) {
-		p.Config.Root = root
-	}
-}
-
 // OptExcludes sets the exclude glob filters.
 func OptExcludes(excludeGlobs ...string) Option {
 	return func(p *Copyright) {

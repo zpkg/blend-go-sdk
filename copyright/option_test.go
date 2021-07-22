@@ -31,10 +31,6 @@ func Test_Options(t *testing.T) {
 	OptExitFirst(true)(c)
 	its.True(*c.Config.ExitFirst)
 
-	its.Empty(c.Config.Root)
-	OptRoot("opt-root")(c)
-	its.Equal("opt-root", c.Config.Root)
-
 	its.Empty(c.Config.IncludeFiles)
 	OptIncludeFiles("opt-include-0", "opt-include-1")(c)
 	its.Equal([]string{"opt-include-0", "opt-include-1"}, c.Config.IncludeFiles)
