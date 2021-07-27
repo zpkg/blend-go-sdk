@@ -35,11 +35,17 @@ func TestOptPostedFiles(t *testing.T) {
 	its.Nil(err)
 	its.Len(files, 2)
 
-	its.Equal("form-key", files[0].Key)
-	its.Equal("file.txt", files[0].FileName)
-	its.Equal("this is a test", string(files[0].Contents))
+	its.AnyCount(files, 1, func(v interface{}) bool {
+		file := v.(webutil.PostedFile)
+		return file.Key == "form-key" &&
+			file.FileName == "file.txt" &&
+			string(file.Contents) == "this is a test"
+	})
 
-	its.Equal("form-key-2", files[1].Key)
-	its.Equal("file2.txt", files[1].FileName)
-	its.Equal("this is a test2", string(files[1].Contents))
+	its.AnyCount(files, 1, func(v interface{}) bool {
+		file := v.(webutil.PostedFile)
+		return file.Key == "form-key-2" &&
+			file.FileName == "file2.txt" &&
+			string(file.Contents) == "this is a test2"
+	})
 }
