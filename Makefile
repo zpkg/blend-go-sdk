@@ -1,18 +1,14 @@
-PREFIX			?= $(shell pwd)
-PKGS 			:= $(shell go list ./... | grep -v /vendor/)
+PREFIX				?= $(shell pwd)
+PKGS 					:= $(shell go list ./... | grep -v /vendor/)
 SHASUMCMD 		:= $(shell command -v sha1sum || command -v shasum; 2> /dev/null)
-TARCMD 			:= $(shell command -v tar || command -v tar; 2> /dev/null)
-GIT_REF 		:= $(shell git log --pretty=format:'%h' -n 1)
+TARCMD 				:= $(shell command -v tar || command -v tar; 2> /dev/null)
+GIT_REF 			:= $(shell git log --pretty=format:'%h' -n 1)
 CURRENT_USER 	:= $(shell whoami)
-VERSION 		:= $(shell cat ./VERSION)
+VERSION 			:= $(shell cat ./VERSION)
 
 # this is to allow local go-sdk/db tests to pass
-DB_PORT 		?= 5432
+DB_PORT 			?= 5432
 DB_SSLMODE		?= disable
-
-# coverage stuff
-CIRCLE_ARTIFACTS 	?= "."
-COVERAGE_OUT 		:= "$(CIRCLE_ARTIFACTS)/coverage.html"
 
 export GIT_REF
 export VERSION
@@ -20,7 +16,7 @@ export DB_SSLMODE
 
 all: ci
 
-ci: deps vet profanity copyright cover-ci
+ci: deps vet profanity copyright test
 
 new-install: deps dev-deps install-all
 
@@ -31,16 +27,16 @@ deps:
 	@go get ./...
 
 dev-deps:
-	@go get -u golang.org/x/lint/golint
-	@GO111MODULE=on go get -d github.com/goreleaser/goreleaser
+	@go install golang.org/x/lint/golint@latest
+	@go install github.com/goreleaser/goreleaser@latest
 
-install-all: install-ask install-bindata install-coverage install-profanity install-reverseproxy install-recover install-semver install-shamir install-template
+install-all: install-ask install-copyright install-coverage install-profanity install-reverseproxy install-recover install-semver install-shamir install-template
 
 install-ask:
 	@go install github.com/blend/go-sdk/cmd/ask
 
-install-bindata:
-	@go install github.com/blend/go-sdk/cmd/bindata
+install-copyright:
+	@go install github.com/blend/go-sdk/cmd/copyright
 
 install-coverage:
 	@go install github.com/blend/go-sdk/cmd/coverage
@@ -62,6 +58,35 @@ install-shamir:
 
 install-template:
 	@go install github.com/blend/go-sdk/cmd/template
+
+release-binaries: release-ask release-copyright release-coverage release-profanity release-reverseproxy release-recover release-semver release-shamir release-template
+
+release-ask:
+	@goreleaser ./.goreleaser/ask.yml
+
+release-copyright:
+	@goreleaser ./.goreleaser/copyright.yml
+
+release-coverage:
+	@goreleaser ./.goreleaser/coverage.yml
+
+release-profanity:
+	@goreleaser ./.goreleaser/profanity.yml
+
+release-reverseproxy:
+	@goreleaser ./.goreleaser/reverseproxy.yml
+
+release-recover:
+	@goreleaser ./.goreleaser/recover.yml
+
+release-semver:
+	@goreleaser ./.goreleaser/semver.yml
+
+release-shamir:
+	@goreleaser ./.goreleaser/shamir.yml
+
+release-template:
+	@goreleaser ./.goreleaser/template.yml
 
 format:
 	@echo "$(VERSION)/$(GIT_REF) >> formatting code"
@@ -94,11 +119,11 @@ copyright:
 	@echo "$(VERSION)/$(GIT_REF) >> copyright"
 	@go run cmd/copyright/main.go --restrictions-open-source
 
-test-circleci:
-	@echo "$(VERSION)/$(GIT_REF) >> tests"
-	@circleci build
-
 test:
+	@echo "$(VERSION)/$(GIT_REF) >> tests"
+	@go test $(PKGS) -timeout 15s
+
+test-race:
 	@echo "$(VERSION)/$(GIT_REF) >> tests"
 	@go test $(PKGS) -timeout 15s -race
 
