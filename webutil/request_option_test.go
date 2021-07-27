@@ -14,6 +14,7 @@ import (
 	"fmt"
 	"io/ioutil"
 	"net/http"
+	"net/http/httptest"
 	"net/url"
 	"strings"
 	"testing"
@@ -183,6 +184,61 @@ func TestOptPostedFiles(t *testing.T) {
 	assert.Equal([]byte(expected), bodyBytes)
 	assert.Equal(r.ContentLength, len(expected))
 	validateRequestGetBody(assert, r, []byte(expected))
+}
+
+func TestOptPostedFiles_postForm(t *testing.T) {
+	assert := assert.New(t)
+
+	testServer := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, req *http.Request) {
+		if err := req.ParseMultipartForm(1 << 20); err != nil {
+			http.Error(w, err.Error(), http.StatusBadRequest)
+			return
+		}
+		if req.FormValue("foo") != "foo-value" {
+			http.Error(w, "post form value `foo` missing or incorrect", http.StatusBadRequest)
+			return
+		}
+		if req.FormValue("bar") != "bar-value" {
+			http.Error(w, "post form value `bar` missing or incorrect", http.StatusBadRequest)
+			return
+		}
+
+		files, err := PostedFiles(req)
+		if err != nil {
+			http.Error(w, err.Error(), http.StatusBadRequest)
+			return
+		}
+		if len(files) < 2 {
+			http.Error(w, "posted files missing", http.StatusBadRequest)
+			return
+		}
+
+		w.WriteHeader(http.StatusOK)
+		fmt.Fprintf(w, "OK!")
+	}))
+	defer testServer.Close()
+
+	file1 := PostedFile{Key: "a", FileName: "b.txt", Contents: []byte("hey")}
+	file2 := PostedFile{Key: "c", FileName: "d.txt", Contents: []byte("bye")}
+
+	postFormOpt0 := OptPostFormValue("foo", "foo-value")
+	postFormOpt1 := OptPostFormValue("bar", "bar-value")
+	opt := OptPostedFiles(file1, file2)
+
+	r, err := http.NewRequest(http.MethodPost, testServer.URL, nil)
+	assert.Nil(err)
+	err = postFormOpt0(r)
+	assert.Nil(err)
+	err = postFormOpt1(r)
+	assert.Nil(err)
+	err = opt(r)
+	assert.Nil(err)
+
+	res, err := http.DefaultClient.Do(r)
+	assert.Nil(err)
+	defer res.Body.Close()
+	message, _ := ioutil.ReadAll(res.Body)
+	assert.Equal(http.StatusOK, res.StatusCode, string(message))
 }
 
 func TestOptJSONBody(t *testing.T) {

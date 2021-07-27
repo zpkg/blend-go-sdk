@@ -231,6 +231,17 @@ func OptPostedFiles(files ...PostedFile) RequestOption {
 
 		b := new(bytes.Buffer)
 		w := multipart.NewWriter(b)
+
+		if len(r.PostForm) > 0 {
+			for key, values := range r.PostForm {
+				for _, value := range values {
+					if err := w.WriteField(key, value); err != nil {
+						return err
+					}
+				}
+			}
+		}
+
 		for _, file := range files {
 			fw, err := w.CreateFormFile(file.Key, file.FileName)
 			if err != nil {

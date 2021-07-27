@@ -88,13 +88,13 @@ func (r Request) Do() (*http.Response, error) {
 		return nil, ex.New(ErrInvalidMethod, ex.OptMessagef("method: %q", r.Request.Method))
 	}
 
-	// reconcile post form values
 	if len(r.Request.PostForm) > 0 && r.Request.Body == nil {
 		body := r.Request.PostForm.Encode()
 		buffer := bytes.NewBufferString(body)
 		r.Request.ContentLength = int64(buffer.Len())
 		r.Request.Body = ioutil.NopCloser(buffer)
 	}
+
 	if r.Request.Body == nil {
 		r.Request.Body = http.NoBody
 		r.Request.GetBody = func() (io.ReadCloser, error) { return ioutil.NopCloser(http.NoBody), nil }
