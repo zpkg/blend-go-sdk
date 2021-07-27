@@ -325,14 +325,27 @@ func Test_Invocation_Get(t *testing.T) {
 		Timestamp: time.Now().UTC(),
 		Category:  uuid.V4().String(),
 	}
-	err = defaultDB().Invoke(OptTx(tx)).Create(obj)
+	i := defaultDB().Invoke(OptTx(tx))
+	err = i.Create(obj)
 	its.Nil(err)
+	its.Equal("upsert_object_create", i.Label)
 
 	var verify upsertObj
-	found, err := defaultDB().Invoke(OptTx(tx)).Get(&verify, obj.UUID)
+	i = defaultDB().Invoke(OptTx(tx))
+	found, err := i.Get(&verify, obj.UUID)
 	its.Nil(err)
 	its.True(found)
 	its.Equal(verify.UUID, obj.UUID)
+	its.Equal("upsert_object_get", i.Label)
+
+	// Perform same get, but set a label on the invocation
+	verify = upsertObj{}
+	i = defaultDB().Invoke(OptTx(tx), OptLabel("bespoke_upsert"))
+	found, err = i.Get(&verify, obj.UUID)
+	its.Nil(err)
+	its.True(found)
+	its.Equal(verify.UUID, obj.UUID)
+	its.Equal("bespoke_upsert", i.Label)
 }
 
 func Test_Invocation_Get_statementInterceptor(t *testing.T) {

@@ -61,6 +61,13 @@ func (i *Invocation) Query(statement string, args ...interface{}) *Query {
 	return q
 }
 
+func (i *Invocation) maybeSetLabel(label string) {
+	if i.Label != "" {
+		return
+	}
+	i.Label = label
+}
+
 // Get returns a given object based on a group of primary key ids within a transaction.
 func (i *Invocation) Get(object DatabaseMapped, ids ...interface{}) (found bool, err error) {
 	if len(ids) == 0 {
@@ -68,29 +75,31 @@ func (i *Invocation) Get(object DatabaseMapped, ids ...interface{}) (found bool,
 		return
 	}
 
-	var queryBody string
-	if i.Label, queryBody, err = i.generateGet(object); err != nil {
+	var queryBody, label string
+	if label, queryBody, err = i.generateGet(object); err != nil {
 		err = Error(err)
 		return
 	}
+	i.maybeSetLabel(label)
 	return i.Query(queryBody, ids...).Out(object)
 }
 
 // All returns all rows of an object mapped table wrapped in a transaction.
 func (i *Invocation) All(collection interface{}) (err error) {
-	var queryBody string
-	i.Label, queryBody = i.generateGetAll(collection)
+	label, queryBody := i.generateGetAll(collection)
+	i.maybeSetLabel(label)
 	return i.Query(queryBody).OutMany(collection)
 }
 
 // Create writes an object to the database within a transaction.
 func (i *Invocation) Create(object DatabaseMapped) (err error) {
-	var queryBody string
+	var queryBody, label string
 	var insertCols, autos *ColumnCollection
 	var res sql.Result
 	defer func() { err = i.finish(queryBody, recover(), res, err) }()
 
-	i.Label, queryBody, insertCols, autos = i.generateCreate(object)
+	label, queryBody, insertCols, autos = i.generateCreate(object)
+	i.maybeSetLabel(label)
 
 	queryBody, err = i.start(queryBody)
 	if err != nil {
@@ -121,12 +130,13 @@ func (i *Invocation) Create(object DatabaseMapped) (err error) {
 // This will _ignore_ auto columns, as they will always invalidate the assertion that there already exists
 // a row with a given primary key set.
 func (i *Invocation) CreateIfNotExists(object DatabaseMapped) (err error) {
-	var queryBody string
+	var queryBody, label string
 	var insertCols *ColumnCollection
 	var res sql.Result
 	defer func() { err = i.finish(queryBody, recover(), res, err) }()
 
-	i.Label, queryBody, insertCols = i.generateCreateIfNotExists(object)
+	label, queryBody, insertCols = i.generateCreateIfNotExists(object)
+	i.maybeSetLabel(label)
 
 	queryBody, err = i.start(queryBody)
 	if err != nil {
@@ -188,12 +198,13 @@ func (i *Invocation) insertOrUpsertMany(objects interface{}, overwrite bool) (er
 // the Update HAS BEEN APPLIED. Its on the developer using UPDATE to ensure his tags are correct and/or execute it in a
 // transaction and roll back on this error
 func (i *Invocation) Update(object DatabaseMapped) (updated bool, err error) {
-	var queryBody string
+	var queryBody, label string
 	var pks, updateCols *ColumnCollection
 	var res sql.Result
 	defer func() { err = i.finish(queryBody, recover(), res, err) }()
 
-	i.Label, queryBody, pks, updateCols = i.generateUpdate(object)
+	label, queryBody, pks, updateCols = i.generateUpdate(object)
+	i.maybeSetLabel(label)
 
 	queryBody, err = i.start(queryBody)
 	if err != nil {
@@ -227,11 +238,12 @@ func (i *Invocation) Update(object DatabaseMapped) (updated bool, err error) {
 // Upsert inserts the object if it doesn't exist already (as defined by its primary keys) or updates it atomically.
 // It returns `found` as true if the effect was an upsert, i.e. the pk was found.
 func (i *Invocation) Upsert(object DatabaseMapped) (err error) {
-	var queryBody string
+	var queryBody, label string
 	var autos, upsertCols *ColumnCollection
 	defer func() { err = i.finish(queryBody, recover(), nil, err) }()
 
 	i.Label, queryBody, autos, upsertCols = i.generateUpsert(object)
+	i.maybeSetLabel(label)
 
 	queryBody, err = i.start(queryBody)
 	if err != nil {
@@ -258,14 +270,15 @@ func (i *Invocation) Upsert(object DatabaseMapped) (err error) {
 
 // Exists returns a bool if a given object exists (utilizing the primary key columns if they exist) wrapped in a transaction.
 func (i *Invocation) Exists(object DatabaseMapped) (exists bool, err error) {
-	var queryBody string
+	var queryBody, label string
 	var pks *ColumnCollection
 	defer func() { err = i.finish(queryBody, recover(), nil, err) }()
 
-	if i.Label, queryBody, pks, err = i.generateExists(object); err != nil {
+	if label, queryBody, pks, err = i.generateExists(object); err != nil {
 		err = Error(err)
 		return
 	}
+	i.maybeSetLabel(label)
 	queryBody, err = i.start(queryBody)
 	if err != nil {
 		return
@@ -284,15 +297,16 @@ func (i *Invocation) Exists(object DatabaseMapped) (exists bool, err error) {
 // https://github.com/golang/go/issues/7898, the Delete HAS BEEN APPLIED on the current transaction. Its on the
 // developer using Delete to ensure their tags are correct and/or ensure theit Tx rolls back on this error.
 func (i *Invocation) Delete(object DatabaseMapped) (deleted bool, err error) {
-	var queryBody string
+	var queryBody, label string
 	var pks *ColumnCollection
 	var res sql.Result
 	defer func() { err = i.finish(queryBody, recover(), res, err) }()
 
-	if i.Label, queryBody, pks, err = i.generateDelete(object); err != nil {
+	if label, queryBody, pks, err = i.generateDelete(object); err != nil {
 		return
 	}
 
+	i.maybeSetLabel(label)
 	queryBody, err = i.start(queryBody)
 	if err != nil {
 		return

@@ -23,13 +23,23 @@ func TestOptPostedFiles(t *testing.T) {
 			FileName: "file.txt",
 			Contents: []byte("this is a test"),
 		},
+		webutil.PostedFile{
+			Key:      "form-key-2",
+			FileName: "file2.txt",
+			Contents: []byte("this is a test2"),
+		},
 	))
 	its.NotNil(r.Request.Body)
 
 	files, err := webutil.PostedFiles(r.Request)
 	its.Nil(err)
-	its.Len(files, 1)
+	its.Len(files, 2)
+
 	its.Equal("form-key", files[0].Key)
 	its.Equal("file.txt", files[0].FileName)
 	its.Equal("this is a test", string(files[0].Contents))
+
+	its.Equal("form-key-2", files[1].Key)
+	its.Equal("file2.txt", files[1].FileName)
+	its.Equal("this is a test2", string(files[1].Contents))
 }
