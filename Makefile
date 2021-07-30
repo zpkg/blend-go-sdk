@@ -162,7 +162,7 @@ push:
 push-verified: 
 	@echo "Tagging $(VERSION)"
 	@git add .
-	@git commit -am 'Updates from Blend'
+	@git commit -S -am 'Updates from Blend'
 	@git tag -f $(VERSION)
 	@git push -f origin $(VERSION)
 	@git push -f origin HEAD
