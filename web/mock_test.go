@@ -29,6 +29,12 @@ func TestMock(t *testing.T) {
 	assert.Equal(http.StatusNoContent, res.StatusCode)
 
 	assert.True(app.IsStopped())
+
+	// try to make another request to the underlying test server
+
+	res, err = http.Get(res.Request.URL.String())
+	assert.NotNil(err)
+	assert.Nil(res)
 }
 
 func TestMockGet(t *testing.T) {

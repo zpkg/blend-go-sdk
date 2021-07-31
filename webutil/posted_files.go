@@ -69,7 +69,7 @@ func PostedFiles(r *http.Request, opts ...PostedFileOption) ([]PostedFile, error
 
 	if options.ParseMultipartForm {
 		if err := r.ParseMultipartForm(options.MaxMemory); err != nil {
-			return nil, err
+			return nil, ex.New(err)
 		}
 		for key := range r.MultipartForm.File {
 			file, err := readPostedFile(r, key)
@@ -81,7 +81,7 @@ func PostedFiles(r *http.Request, opts ...PostedFileOption) ([]PostedFile, error
 	}
 	if options.ParseForm {
 		if err := r.ParseForm(); err != nil {
-			return nil, err
+			return nil, ex.New(err)
 		}
 		for key := range r.PostForm {
 			file, err := readPostedFile(r, key)
