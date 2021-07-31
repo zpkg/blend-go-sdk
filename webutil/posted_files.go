@@ -51,7 +51,10 @@ func OptPostedFilesParseForm(parseForm bool) PostedFileOption {
 	return func(pfo *PostedFilesOptions) { pfo.ParseForm = parseForm }
 }
 
-// PostedFiles returns any files posted
+// PostedFiles returns any files posted to the request.
+//
+// The files are held in memory, if you need to stream the files out because they may be large,
+// you should use the `*net/http.Request.FormFile(...)` function directly instead of this method.
 func PostedFiles(r *http.Request, opts ...PostedFileOption) ([]PostedFile, error) {
 	var files []PostedFile
 
@@ -69,15 +72,11 @@ func PostedFiles(r *http.Request, opts ...PostedFileOption) ([]PostedFile, error
 			return nil, err
 		}
 		for key := range r.MultipartForm.File {
-			fileReader, fileHeader, err := r.FormFile(key)
+			file, err := readPostedFile(r, key)
 			if err != nil {
-				return nil, ex.New(err)
+				return nil, err
 			}
-			bytes, err := ioutil.ReadAll(fileReader)
-			if err != nil {
-				return nil, ex.New(err)
-			}
-			files = append(files, PostedFile{Key: key, FileName: fileHeader.Filename, Contents: bytes})
+			files = append(files, *file)
 		}
 	}
 	if options.ParseForm {
@@ -85,14 +84,25 @@ func PostedFiles(r *http.Request, opts ...PostedFileOption) ([]PostedFile, error
 			return nil, err
 		}
 		for key := range r.PostForm {
-			if fileReader, fileHeader, err := r.FormFile(key); err == nil && fileReader != nil {
-				bytes, err := ioutil.ReadAll(fileReader)
-				if err != nil {
-					return nil, ex.New(err)
-				}
-				files = append(files, PostedFile{Key: key, FileName: fileHeader.Filename, Contents: bytes})
+			file, err := readPostedFile(r, key)
+			if err != nil {
+				return nil, err
 			}
+			files = append(files, *file)
 		}
 	}
 	return files, nil
+}
+
+func readPostedFile(r *http.Request, key string) (*PostedFile, error) {
+	fileReader, fileHeader, err := r.FormFile(key)
+	if err != nil {
+		return nil, ex.New(err)
+	}
+	defer fileReader.Close()
+	fileContents, err := ioutil.ReadAll(fileReader)
+	if err != nil {
+		return nil, ex.New(err)
+	}
+	return &PostedFile{Key: key, FileName: fileHeader.Filename, Contents: fileContents}, nil
 }

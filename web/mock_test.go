@@ -8,11 +8,13 @@ Use of this source code is governed by a MIT license that can be found in the LI
 package web
 
 import (
+	"fmt"
 	"net/http"
 	"net/url"
 	"testing"
 
 	"github.com/blend/go-sdk/assert"
+	"github.com/blend/go-sdk/r2"
 	"github.com/blend/go-sdk/webutil"
 )
 
@@ -40,4 +42,29 @@ func TestMockGet(t *testing.T) {
 	assert.Equal(http.StatusNoContent, res.StatusCode)
 
 	assert.True(app.IsStopped())
+}
+
+func TestMockPostedFile(t *testing.T) {
+	assert := assert.New(t)
+
+	app := MustNew()
+	app.POST("/", func(r *Ctx) Result {
+		postedFiles, err := webutil.PostedFiles(r.Request)
+		if err != nil {
+			return Text.BadRequest(err)
+		}
+		if len(postedFiles) == 0 {
+			return Text.BadRequest(fmt.Errorf("there should be 2 files"))
+		}
+		return Text.OK()
+	})
+
+	res, err := MockMethod(app, http.MethodPost, "/",
+		r2.OptPostedFiles(
+			webutil.PostedFile{Key: "file0", FileName: "file0.txt", Contents: []byte("this is just a test")},
+			webutil.PostedFile{Key: "file1", FileName: "file1.txt", Contents: []byte("this is just a test")},
+		),
+	).Discard()
+	assert.Nil(err)
+	assert.Equal(http.StatusOK, res.StatusCode)
 }
