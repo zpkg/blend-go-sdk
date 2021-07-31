@@ -124,7 +124,7 @@ func TestCtxPostedFiles(t *testing.T) {
 
 	context := MockCtx("GET", "/")
 	postedFiles, err := webutil.PostedFiles(context.Request)
-	assert.Nil(err)
+	assert.NotNil(err, "we expect this to fail if the body isn't a multipart form")
 	assert.Empty(postedFiles)
 
 	context = MockCtx("GET", "/", OptCtxPostedFiles(webutil.PostedFile{
