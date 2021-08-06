@@ -100,6 +100,7 @@ var (
 		"*.pb.go",
 		"vendor/*",
 		"venv/*",
+		"*/venv/*",
 	}
 
 	// DefaultIncludeFiles is the default included files list.

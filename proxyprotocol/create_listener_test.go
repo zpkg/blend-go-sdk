@@ -20,7 +20,7 @@ import (
 func TestCreateListener(t *testing.T) {
 	assert := assert.New(t)
 
-	listener, err := CreateListener("127.0.0.1:",
+	listener, err := CreateListener("tcp", "127.0.0.1:0",
 		OptKeepAlive(true),
 		OptUseProxyProtocol(true),
 		OptKeepAlivePeriod(30*time.Second),
@@ -45,7 +45,7 @@ func TestCreateTLSListener(t *testing.T) {
 	assert := assert.New(t)
 
 	tlsConfig := &tls.Config{}
-	listener, err := CreateListener("127.0.0.1:",
+	listener, err := CreateListener("tcp", "127.0.0.1:0",
 		OptKeepAlive(true),
 		OptUseProxyProtocol(true),
 		OptKeepAlivePeriod(30*time.Second),

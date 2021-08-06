@@ -127,7 +127,7 @@ func main() {
 		listenerOptions = append(listenerOptions, proxyprotocol.OptTLSConfig(proxyServerTLSConfig))
 	}
 
-	proxyServerListener, err := proxyprotocol.CreateListener(addr, listenerOptions...)
+	proxyServerListener, err := proxyprotocol.CreateListener("tcp", addr, listenerOptions...)
 	if err != nil {
 		log.Fatal(err)
 		os.Exit(1)

@@ -69,6 +69,7 @@ func TestOptServerOptions(t *testing.T) {
 	assert.Nil(baseline.Server.ErrorLog)
 
 	app, err := New(
+		OptBindAddr("127.0.0.1:0"),
 		OptServerOptions(
 			webutil.OptHTTPServerErrorLog(log.New(ioutil.Discard, "", log.LstdFlags)),
 		),

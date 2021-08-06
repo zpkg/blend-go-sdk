@@ -81,7 +81,8 @@ func Test_PostedFiles(t *testing.T) {
 	res, err := http.DefaultClient.Do(r)
 	its.Nil(err)
 	defer res.Body.Close()
-	its.Equal(http.StatusOK, res.StatusCode)
+	bodyContents, _ := ioutil.ReadAll(res.Body)
+	its.Equal(http.StatusOK, res.StatusCode, bodyContents)
 }
 
 func Test_PostedFiles_onlyParseForm(t *testing.T) {

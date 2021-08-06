@@ -5,7 +5,7 @@ Use of this source code is governed by a MIT license that can be found in the LI
 
 */
 
-/*Package configmeta provides a configutil metadata type to provide a cannonical location to hold common config variables.
+/*Package configmeta provides a configutil metadata type to provide a canonical location to hold common config variables.
 
 It provides a couple common variables to set with ldflags on build, namely `configmeta.Version` and `configmeta.GitRef`.
 

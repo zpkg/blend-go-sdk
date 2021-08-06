@@ -16,8 +16,8 @@ import (
 )
 
 // CreateListener creates a new proxy protocol listener.
-func CreateListener(addr string, opts ...CreateListenerOption) (net.Listener, error) {
-	ln, err := net.Listen("tcp", addr)
+func CreateListener(network, addr string, opts ...CreateListenerOption) (net.Listener, error) {
+	ln, err := net.Listen(network, addr)
 	if err != nil {
 		return nil, err
 	}
