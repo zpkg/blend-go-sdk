@@ -526,7 +526,7 @@ func TestVaultHmac(t *testing.T) {
 
 	key := "key"
 	input := []byte("hmac!")
-	result := fmt.Sprintf(`{"data": {"hmac": "%s"}}`, base64.StdEncoding.EncodeToString(input))
+	result := fmt.Sprintf(`{"data": {"hmac": "%s"}}`, input)
 
 	m := NewMockHTTPClient().
 		With(
