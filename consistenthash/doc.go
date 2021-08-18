@@ -8,15 +8,16 @@ Use of this source code is governed by a MIT license that can be found in the LI
 /*
 Package consistenthash contains helpers for mapping items to buckets using consistent hashing.
 
-The underlying hash function is `crc64.ChecksumIEEE` but that can be customized. The hash function
-is seeded with a constant polynomial so that assignments are stable between process starts.
+Methods (AddBucket, Assignment etc.) typically run in `log2(N*M)` time where N is the number
+of buckets and M is the number of virtual replicas in use (wich defaults to 16).
+This is strictly worse than a typical map, but avoids space issues with tracking item
+assignments individually.
 
-Consistent hash (the result of `New(...)`) is safe to use from multiple goroutines and
-will use a mutex to synchronize changes to internal state.
+The default hash function is `crc64.ChecksumIEEE` but that can be customized. The default hash
+function is seeded with a constant polynomial so that assignments are stable between process starts.
 
-Methods typically run in `log2(N*M)` time where N is the number of buckets and M is the
-number of virtual replicas in use (wich defaults to 16). This is strictly worse than a typical
-map, but avoids space issues with tracking item assignments individually.
+A `*consistenthash.ConsistentHash` reference (the result of `New(...)`) is safe to use
+from multiple goroutines and will use a read/write mutex to synchronize changes to internal state.
 
 Example usage:
 
@@ -30,6 +31,7 @@ You can tune the number of virtual replicas to reduce the constant time hit of m
 at the expense of bucket to item mapping uniformity.
 
 Example setting the replicas:
+
     ch := consistenthash.New(
 		consistenthash.OptBuckets("worker-0", "worker-1", "worker-2"),
 		consistenthash.OptReplicas(5),

@@ -20,7 +20,7 @@ var (
 type HashFunction func([]byte) uint64
 
 // StableHash implements the default hash function with
-// a stable crc64 table.
+// a stable crc64 table checksum.
 func StableHash(data []byte) uint64 {
 	return crc64.Checksum(data, stableCRC)
 }

@@ -85,7 +85,7 @@ func Test_ConsistentHash_typical(t *testing.T) {
 	setExistsInOtherSets(its, items, worker0items, worker1items, worker2items, worker3items, worker4items)
 }
 
-func Test_ConsistentHash_redistribute_addBucket(t *testing.T) {
+func Test_ConsistentHash_redistribute_addBuckets(t *testing.T) {
 	its := assert.New(t)
 
 	const bucketCount = 5
@@ -126,7 +126,7 @@ func Test_ConsistentHash_redistribute_addBucket(t *testing.T) {
 	its.NotEmpty(oldWorker4items)
 
 	// simulate adding a bucket
-	ch.AddBucket("worker-5")
+	ch.AddBuckets("worker-5")
 	its.Len(ch.buckets, bucketCount+1)
 	its.Len(ch.hashring, (bucketCount+1)*ch.ReplicasOrDefault())
 
