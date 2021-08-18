@@ -46,7 +46,12 @@ func (c StandardClaims) Valid() error {
 	}
 
 	if !c.VerifyIssuedAt(now, false) {
-		return ex.New(ErrValidationIssued)
+		return ex.New(ErrValidationIssued,
+			ex.OptMessagef("issued at: %s, now: %s",
+				time.Unix(c.IssuedAt, 0).Format(time.RFC3339),
+				time.Unix(now, 0).Format(time.RFC3339),
+			),
+		)
 	}
 
 	if !c.VerifyNotBefore(now, false) {

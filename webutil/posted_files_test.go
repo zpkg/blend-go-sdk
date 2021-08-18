@@ -12,6 +12,7 @@ import (
 	"io/ioutil"
 	"net/http"
 	"net/http/httptest"
+	"sort"
 	"strings"
 	"testing"
 
@@ -42,6 +43,9 @@ func Test_PostedFiles(t *testing.T) {
 			http.Error(rw, "invalid file count", http.StatusBadRequest)
 			return
 		}
+		sort.Slice(files, func(i, j int) bool {
+			return files[i].Key < files[j].Key
+		})
 
 		if files[0].Key != file0.Key {
 			http.Error(rw, fmt.Sprintf("invalid file0 key: %s, expectd: %s", files[0].Key, file0.Key), http.StatusBadRequest)

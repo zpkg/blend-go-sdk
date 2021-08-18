@@ -8,14 +8,21 @@ Use of this source code is governed by a MIT license that can be found in the LI
 package consistenthash
 
 import (
+	"encoding/json"
 	"fmt"
 	"sort"
+	"strings"
 	"sync"
 )
 
 const (
 	// DefaultReplicas is the default number of replicas.
 	DefaultReplicas = 16
+)
+
+var (
+	_ json.Marshaler = (*ConsistentHash)(nil)
+	_ fmt.Stringer   = (*ConsistentHash)(nil)
 )
 
 // New returns a new consistent hash.
@@ -63,8 +70,12 @@ type ConsistentHash struct {
 	replicas     int
 	buckets      map[string]struct{}
 	hashFunction HashFunction
-	hashring     []hashedString
+	hashring     []HashedBucket
 }
+
+//
+// properties with defaults
+//
 
 // ReplicasOrDefault is the default number of replicas.
 func (ch *ConsistentHash) ReplicasOrDefault() int {
@@ -74,15 +85,6 @@ func (ch *ConsistentHash) ReplicasOrDefault() int {
 	return DefaultReplicas
 }
 
-// Buckets returns the buckets.
-func (ch *ConsistentHash) Buckets() (buckets []string) {
-	for bucket := range ch.buckets {
-		buckets = append(buckets, bucket)
-	}
-	sort.Strings(buckets)
-	return
-}
-
 // HashFunctionOrDefault returns the provided hash function or a default.
 func (ch *ConsistentHash) HashFunctionOrDefault() HashFunction {
 	if ch.hashFunction != nil {
@@ -90,6 +92,10 @@ func (ch *ConsistentHash) HashFunctionOrDefault() HashFunction {
 	}
 	return StableHash
 }
+
+//
+// Write methods
+//
 
 // AddBucket adds a bucket to the consistent hash.
 //
@@ -138,46 +144,102 @@ func (ch *ConsistentHash) RemoveBucket(toRemove string) (ok bool) {
 	return
 }
 
+//
+// Read methods
+//
+
+// Buckets returns the buckets.
+func (ch *ConsistentHash) Buckets() (buckets []string) {
+	ch.mu.RLock()
+	defer ch.mu.RUnlock()
+
+	for bucket := range ch.buckets {
+		buckets = append(buckets, bucket)
+	}
+	sort.Strings(buckets)
+	return
+}
+
 // Assignment returns the bucket assignment for a given item.
 func (ch *ConsistentHash) Assignment(item string) (bucket string) {
 	ch.mu.RLock()
 	defer ch.mu.RUnlock()
-	index := ch.search(item)
-	if index >= len(ch.hashring) {
-		index = 0
-	}
-	bucket = ch.hashring[index].Value
+
+	bucket = ch.assignmentUnsafe(item)
 	return
 }
 
 // IsAssigned returns if a given bucket is assigned a given item.
 func (ch *ConsistentHash) IsAssigned(bucket, item string) (ok bool) {
-	ok = bucket == ch.Assignment(item)
+	ch.mu.RLock()
+	defer ch.mu.RUnlock()
+
+	ok = bucket == ch.assignmentUnsafe(item)
 	return
 }
 
 // Assignments returns the assignments for a given list of items organized
 // by the name of the bucket, and an array of the assigned items.
 func (ch *ConsistentHash) Assignments(items ...string) map[string][]string {
+	ch.mu.RLock()
+	defer ch.mu.RUnlock()
+
 	output := make(map[string][]string)
 	for _, item := range items {
-		bucket := ch.Assignment(item)
+		bucket := ch.assignmentUnsafe(item)
 		output[bucket] = append(output[bucket], item)
 	}
 	return output
 }
 
+// String returns a string form of the hash for debugging purposes.
+func (ch *ConsistentHash) String() string {
+	ch.mu.RLock()
+	defer ch.mu.RUnlock()
+
+	var output []string
+	for _, bucket := range ch.hashring {
+		output = append(output, fmt.Sprintf("%d:%s-%02d", bucket.Hashcode, bucket.Bucket, bucket.Replica))
+	}
+	return strings.Join(output, ", ")
+}
+
+// MarshalJSON marshals the consistent hash as json.
 //
-// helpers
+// The form of the returned json is the underlying []HashedBucket
+// and there is no corresponding `UnmarshalJSON` because
+// it is uncertain on the other end what the hashfunction is
+// because functions can't be json serialized.
 //
+// You should use MarshalJSON for communicating information
+// for debugging purposes only.
+func (ch *ConsistentHash) MarshalJSON() ([]byte, error) {
+	ch.mu.RLock()
+	defer ch.mu.RUnlock()
+
+	return json.Marshal(ch.hashring)
+}
+
+//
+// internal / unexported helpers
+//
+
+func (ch *ConsistentHash) assignmentUnsafe(item string) (bucket string) {
+	index := ch.search(item)
+	if index >= len(ch.hashring) {
+		index = 0
+	}
+	bucket = ch.hashring[index].Bucket
+	return
+}
 
 // insert inserts a hashring bucket.
 //
 // insertion uses heap push to sort the items on insert.
 func (ch *ConsistentHash) insert(bucket string) {
 	for x := 0; x < ch.ReplicasOrDefault(); x++ {
-		ch.hashring = insertionSort(ch.hashring, hashedString{
-			Value:    bucket,
+		ch.hashring = InsertionSort(ch.hashring, HashedBucket{
+			Bucket:   bucket,
 			Replica:  x,
 			Hashcode: ch.hashcode(ch.bucketHashKey(bucket, x)),
 		})
@@ -207,11 +269,11 @@ func (ch *ConsistentHash) hashcode(item string) uint64 {
 	return ch.HashFunctionOrDefault()([]byte(item))
 }
 
-// hashedString is a bucket in the hashring
+// HashedBucket is a bucket in the hashring
 // that holds the hashcode, the bucket name (as Value)
 // and the virtual replica index.
-type hashedString struct {
-	Hashcode uint64
-	Value    string
-	Replica  int
+type HashedBucket struct {
+	Hashcode uint64 `json:"hashcode"`
+	Bucket   string `json:"bucket"`
+	Replica  int    `json:"replica"`
 }

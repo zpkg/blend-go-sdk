@@ -8,6 +8,7 @@ Use of this source code is governed by a MIT license that can be found in the LI
 package consistenthash
 
 import (
+	"encoding/json"
 	"fmt"
 	"testing"
 
@@ -217,7 +218,7 @@ func Test_ConsistentHash_redistribute_removeBucket(t *testing.T) {
 	_, ok := ch.buckets["worker-2"]
 	its.False(ok)
 	for _, bucket := range ch.hashring {
-		its.NotEqual("worker-2", bucket.Value)
+		its.NotEqual("worker-2", bucket.Bucket)
 	}
 
 	assignments = ch.Assignments(items...)
@@ -280,4 +281,48 @@ func Test_ConsistentHash_notFound_removeBucket(t *testing.T) {
 	newAssignments := ch.Assignments(items...)
 
 	assignmentsAreEqual(its, oldAssignments, newAssignments)
+}
+
+func Test_ConsistentHash_String(t *testing.T) {
+	its := assert.New(t)
+
+	const bucketCount = 5
+
+	var buckets []string
+	for x := 0; x < bucketCount; x++ {
+		buckets = append(buckets, fmt.Sprintf("worker-%d", x))
+	}
+
+	ch := New(
+		OptBuckets(
+			buckets...,
+		),
+	)
+	its.NotEmpty(ch.String())
+}
+
+func Test_ConsistentHash_MarshalJSON(t *testing.T) {
+	its := assert.New(t)
+
+	const bucketCount = 5
+
+	var buckets []string
+	for x := 0; x < bucketCount; x++ {
+		buckets = append(buckets, fmt.Sprintf("worker-%d", x))
+	}
+
+	ch := New(
+		OptBuckets(
+			buckets...,
+		),
+	)
+
+	output, err := json.Marshal(ch)
+	its.Nil(err)
+	its.NotEmpty(output)
+
+	var verify []HashedBucket
+	err = json.Unmarshal(output, &verify)
+	its.Nil(err)
+	its.Equal(ch.hashring, verify)
 }

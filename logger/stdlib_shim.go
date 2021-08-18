@@ -8,14 +8,14 @@ Use of this source code is governed by a MIT license that can be found in the LI
 package logger
 
 import (
-	"log"
+	stdlog "log"
 )
 
 // StdlibShim returns a stdlib logger that writes to a given logger instance.
-func StdlibShim(handler Triggerable, opts ...ShimWriterOption) *log.Logger {
-	shim := NewShimWriter(handler)
+func StdlibShim(log Triggerable, opts ...ShimWriterOption) *stdlog.Logger {
+	shim := NewShimWriter(log)
 	for _, opt := range opts {
 		opt(&shim)
 	}
-	return log.New(shim, "", 0)
+	return stdlog.New(shim, "", 0)
 }

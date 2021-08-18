@@ -16,13 +16,13 @@ import (
 func Test_insertionSort(t *testing.T) {
 	its := assert.New(t)
 
-	ring := []hashedString{}
-	ring = insertionSort(ring, hashedString{Hashcode: 3})
-	ring = insertionSort(ring, hashedString{Hashcode: 1})
-	ring = insertionSort(ring, hashedString{Hashcode: 4})
-	ring = insertionSort(ring, hashedString{Hashcode: 2})
-	ring = insertionSort(ring, hashedString{Hashcode: 0})
-	ring = insertionSort(ring, hashedString{Hashcode: 5})
+	ring := []HashedBucket{}
+	ring = InsertionSort(ring, HashedBucket{Hashcode: 3})
+	ring = InsertionSort(ring, HashedBucket{Hashcode: 1})
+	ring = InsertionSort(ring, HashedBucket{Hashcode: 4})
+	ring = InsertionSort(ring, HashedBucket{Hashcode: 2})
+	ring = InsertionSort(ring, HashedBucket{Hashcode: 0})
+	ring = InsertionSort(ring, HashedBucket{Hashcode: 5})
 
 	its.Len(ring, 6)
 
