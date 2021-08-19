@@ -217,7 +217,7 @@ func comparePrereleases(v string, other string) int {
 		return 0
 	}
 
-	// split both pre releases for analyse their parts
+	// split both pre releases for analyze their parts
 	selfPreReleaseMeta := strings.Split(v, ".")
 	otherPreReleaseMeta := strings.Split(other, ".")
 
@@ -346,7 +346,7 @@ func (v *Version) Minor() (minor int64) {
 	return
 }
 
-// Patch returns the Patch segment, or the thrid highest order segment.
+// Patch returns the Patch segment, or the third highest order segment.
 func (v *Version) Patch() (patch int64) {
 	if len(v.segments) < 3 {
 		return

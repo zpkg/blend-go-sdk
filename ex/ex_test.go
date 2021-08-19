@@ -324,7 +324,7 @@ func TestException_ErrorsAsCompatability(t *testing.T) {
 		assert.Equal("inner most", matchedErr.value)
 	}
 
-	{ // Single nesting, targetting Ex
+	{ // Single nesting, targeting Ex
 		innerErr := New("outer most")
 		outerErr := fmt.Errorf("outer err: %w", innerErr)
 
@@ -333,7 +333,7 @@ func TestException_ErrorsAsCompatability(t *testing.T) {
 		assert.Equal("outer most", matchedErr.Class.Error())
 	}
 
-	{ // Single nesting, targetting inner Ex class
+	{ // Single nesting, targeting inner Ex class
 		innerErr := New(structuredError{"inner most"})
 		outerErr := New("outer most", OptInner(innerErr))
 

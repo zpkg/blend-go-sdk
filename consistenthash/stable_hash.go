@@ -7,7 +7,9 @@ Use of this source code is governed by a MIT license that can be found in the LI
 
 package consistenthash
 
-import "hash/crc64"
+import (
+	"hash/crc64"
+)
 
 var (
 	// stableCRC implements a stable crc64 hash table.

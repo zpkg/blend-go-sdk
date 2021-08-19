@@ -34,7 +34,7 @@ func Tokenize(corpus string, tokens Tokens) string {
 
 	var state int
 	// working token is the full token (including ${ and }).
-	// wokring key is the stuff within the ${ and }.
+	// working key is the stuff within the ${ and }.
 	var workingToken, workingKey *bytes.Buffer
 	var key string
 

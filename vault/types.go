@@ -269,7 +269,7 @@ type CreateTransitKeyConfig struct {
 	//      convergent encryption)
 	//   chacha20-poly1305 – ChaCha20-Poly1305 AEAD (symmetric, supports derivation and convergent encryption)
 	//   ed25519 – ED25519 (asymmetric, supports derivation). When using derivation, a sign operation with the same
-	//      context will derive the same key and signature; this is a signing analogue to convergent_encryption.
+	//      context will derive the same key and signature; this is a signing analog to convergent_encryption.
 	//   ecdsa-p256 – ECDSA using the P-256 elliptic curve (asymmetric)
 	//   rsa-2048 - RSA with bit size of 2048 (asymmetric)
 	//   rsa-4096 - RSA with bit size of 4096 (asymmetric)

@@ -120,9 +120,9 @@ func TestJSONMarshalFormat(t *testing.T) {
 
 	id := V4()
 
-	marshalled, err := id.MarshalJSON()
+	marshaled, err := id.MarshalJSON()
 	assert.Nil(err)
-	assert.Equal(fmt.Sprintf("%q", id.ToFullString()), string(marshalled))
+	assert.Equal(fmt.Sprintf("%q", id.ToFullString()), string(marshaled))
 }
 
 func TestYAMLMarshalers(t *testing.T) {

@@ -56,7 +56,7 @@ func Background(opts ...BackgroundOption) context.Context {
 		MaybeDebugf(options.Log, "graceful background; waiting for shutdown signal")
 		<-shutdown
 
-		MaybeDebugf(options.Log, "graceful background; shutdown signal received, cancelling context")
+		MaybeDebugf(options.Log, "graceful background; shutdown signal received, canceling context")
 		cancel()
 
 		if !options.SkipStopOnSignal {

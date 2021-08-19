@@ -33,7 +33,7 @@ func ParseFileSize(fileSizeValue string) (int64, error) {
 	}
 	switch units {
 	case "tb":
-		return value * Terrabyte, nil
+		return value * Terabyte, nil
 	case "gb":
 		return value * Gigabyte, nil
 	case "mb":

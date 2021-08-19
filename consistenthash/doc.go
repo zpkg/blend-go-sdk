@@ -9,7 +9,7 @@ Use of this source code is governed by a MIT license that can be found in the LI
 Package consistenthash contains helpers for mapping items to buckets using consistent hashing.
 
 Methods (AddBucket, Assignment etc.) typically run in `log2(N*M)` time where N is the number
-of buckets and M is the number of virtual replicas in use (wich defaults to 16).
+of buckets and M is the number of virtual replicas in use (which defaults to 16).
 This is strictly worse than a typical map, but avoids space issues with tracking item
 assignments individually.
 

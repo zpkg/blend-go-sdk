@@ -153,7 +153,7 @@ func (e *Ex) Error() string {
 	return e.Class.Error()
 }
 
-// Decompose breaks the exception down to be marshalled into an intermediate format.
+// Decompose breaks the exception down to be marshaled into an intermediate format.
 func (e *Ex) Decompose() map[string]interface{} {
 	values := map[string]interface{}{}
 	values["Class"] = e.Class.Error()

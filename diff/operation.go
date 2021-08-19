@@ -20,7 +20,7 @@ const (
 	DiffInsert Operation = 1
 	// DiffEqual item represents an equal diff.
 	DiffEqual Operation = 0
-	//IndexSeparator is used to seperate the array indexes in an index string
+	//IndexSeparator is used to separate the array indexes in an index string
 	IndexSeparator = ","
 )
 

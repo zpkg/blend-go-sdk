@@ -85,6 +85,38 @@ func Test_ConsistentHash_typical(t *testing.T) {
 	setExistsInOtherSets(its, items, worker0items, worker1items, worker2items, worker3items, worker4items)
 }
 
+func Test_ConsistentHash_AddBuckets(t *testing.T) {
+	its := assert.New(t)
+
+	ch := New()
+
+	res := ch.AddBuckets("worker-0", "worker-1", "worker-2")
+	its.True(res)
+	res = ch.AddBuckets("worker-0", "worker-1", "worker-2")
+	its.False(res, "we should return false if _no_ new buckets were added")
+	res = ch.AddBuckets("worker-0", "worker-1", "worker-2", "worker-3")
+	its.True(res, "we should return true if _any_ new buckets were added")
+	buckets := ch.Buckets()
+	its.Len(buckets, 4)
+	its.Equal([]string{"worker-0", "worker-1", "worker-2", "worker-3"}, buckets)
+}
+
+func Test_ConsistentHash_RemoveBucket(t *testing.T) {
+	its := assert.New(t)
+
+	ch := New()
+
+	res := ch.AddBuckets("worker-0", "worker-1", "worker-2")
+	its.True(res)
+	res = ch.RemoveBucket("worker-3")
+	its.False(res, "we should return false if bucket not found")
+	res = ch.RemoveBucket("worker-2")
+	its.True(res, "we should return true if bucket found")
+	buckets := ch.Buckets()
+	its.Len(buckets, 2)
+	its.Equal([]string{"worker-0", "worker-1"}, buckets)
+}
+
 func Test_ConsistentHash_redistribute_addBuckets(t *testing.T) {
 	its := assert.New(t)
 

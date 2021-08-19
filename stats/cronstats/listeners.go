@@ -25,7 +25,7 @@ func AddListeners(log logger.Listenable, collector stats.Collector) {
 	flags := []string{
 		cron.FlagBegin,
 		cron.FlagComplete,
-		cron.FlagCancelled,
+		cron.FlagCanceled,
 		cron.FlagErrored,
 		cron.FlagSuccess,
 		cron.FlagBroken,

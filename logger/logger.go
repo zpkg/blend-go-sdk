@@ -138,7 +138,7 @@ func (l *Logger) HasListeners(flag string) bool {
 	return len(listeners) > 0
 }
 
-// HasListener returns if a specific listener is registerd for a flag.
+// HasListener returns if a specific listener is registered for a flag.
 func (l *Logger) HasListener(flag, listenerName string) bool {
 	l.Lock()
 	defer l.Unlock()

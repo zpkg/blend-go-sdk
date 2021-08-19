@@ -323,8 +323,8 @@ func (js *JobScheduler) RunAsyncContext(ctx context.Context) (*JobInvocation, <-
 	go func() {
 		defer func() {
 			switch {
-			case err != nil && IsJobCancelled(err):
-				js.onJobCompleteCancelled(ctx) // the job was cancelled, either manually or by a timeout
+			case err != nil && IsJobCanceled(err):
+				js.onJobCompleteCanceled(ctx) // the job was canceled, either manually or by a timeout
 			case err != nil:
 				js.onJobCompleteError(ctx, err) // the job completed with an error
 			default:
@@ -347,7 +347,7 @@ func (js *JobScheduler) RunAsyncContext(ctx context.Context) (*JobInvocation, <-
 
 		select {
 		case <-ctx.Done(): // if the timeout or cancel is triggered
-			err = ErrJobCancelled // set the error to a known error
+			err = ErrJobCanceled // set the error to a known error
 			return
 		case err = <-js.safeBackgroundExec(ctx): // run the job in a background routine and catch pancis
 			return
@@ -512,10 +512,10 @@ func (js *JobScheduler) onJobBegin(ctx context.Context) {
 	}
 }
 
-func (js *JobScheduler) onJobCompleteCancelled(ctx context.Context) {
+func (js *JobScheduler) onJobCompleteCanceled(ctx context.Context) {
 	js.currentLock.Lock()
 	js.current.Complete = time.Now().UTC()
-	js.current.Status = JobInvocationStatusCancelled
+	js.current.Status = JobInvocationStatusCanceled
 	id := js.current.ID
 	elapsed := js.current.Elapsed()
 	js.currentLock.Unlock()
@@ -525,7 +525,7 @@ func (js *JobScheduler) onJobCompleteCancelled(ctx context.Context) {
 		lifecycle.OnCancellation(ctx)
 	}
 	if js.Log != nil && !js.Config().SkipLoggerTrigger {
-		js.logTrigger(ctx, NewEvent(FlagCancelled, js.Name(), OptEventJobInvocation(id), OptEventElapsed(elapsed)))
+		js.logTrigger(ctx, NewEvent(FlagCanceled, js.Name(), OptEventJobInvocation(id), OptEventElapsed(elapsed)))
 		js.logTrigger(ctx, NewEvent(FlagComplete, js.Name(), OptEventJobInvocation(id), OptEventElapsed(elapsed)))
 	}
 	if lifecycle.OnComplete != nil {

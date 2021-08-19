@@ -27,8 +27,8 @@ func Test_Errors(t *testing.T) {
 	its.True(IsJobNotFound(ex.New(ErrJobNotFound)))
 	its.False(IsJobNotFound(ex.New("incorrect")))
 
-	its.True(IsJobCancelled(ex.New(ErrJobCancelled)))
-	its.False(IsJobCancelled(ex.New("incorrect")))
+	its.True(IsJobCanceled(ex.New(ErrJobCanceled)))
+	its.False(IsJobCanceled(ex.New("incorrect")))
 
 	its.True(IsJobAlreadyRunning(ex.New(ErrJobAlreadyRunning)))
 	its.False(IsJobAlreadyRunning(ex.New("incorrect")))

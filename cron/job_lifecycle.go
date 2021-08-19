@@ -23,7 +23,7 @@ type JobLifecycle struct {
 	// OnComplete fires whenever a job finishes, regardless of status.
 	OnComplete func(context.Context)
 
-	// OnCancellation is called if the job is cancelled explicitly
+	// OnCancellation is called if the job is canceled explicitly
 	// or it sets a timeout in the .Config() and exceeds that timeout.
 	OnCancellation func(context.Context)
 	// OnError is called if the job returns an error or panics during

@@ -9,8 +9,8 @@ package cron
 
 import "context"
 
-// IsContextCancelled check if a job is cancelled
-func IsContextCancelled(ctx context.Context) bool {
+// IsContextCanceled check if a job is canceled
+func IsContextCanceled(ctx context.Context) bool {
 	select {
 	case <-ctx.Done():
 		return true

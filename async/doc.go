@@ -6,7 +6,7 @@ Use of this source code is governed by a MIT license that can be found in the LI
 */
 
 /*
-Package async provides syncronization primitives and background workers.
+Package async provides synchronization primitives and background workers.
 This is a core package that is used by a lot of other packages.
 */
 package async // import "github.com/blend/go-sdk/async"

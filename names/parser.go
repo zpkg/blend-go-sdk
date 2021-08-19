@@ -129,9 +129,9 @@ func isMiddleName(input string) bool {
 	return len(word) == 1
 }
 
-func uppercaseFirstAll(input string, seperator string) string {
+func uppercaseFirstAll(input string, separator string) string {
 	words := []string{}
-	parts := strings.Split(input, seperator)
+	parts := strings.Split(input, separator)
 	for _, thisWord := range parts {
 		toAppend := ""
 		switch {
@@ -151,7 +151,7 @@ func uppercaseFirstAll(input string, seperator string) string {
 		}
 		words = append(words, toAppend)
 	}
-	return strings.Join(words, seperator)
+	return strings.Join(words, separator)
 }
 
 func upperCaseFirst(input string) string {

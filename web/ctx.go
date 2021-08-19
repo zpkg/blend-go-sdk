@@ -70,7 +70,7 @@ type Ctx struct {
 	State State
 	// Session is the current auth session
 	Session *Session
-	// Route is the maching route for the request if relevant.
+	// Route is the matching route for the request if relevant.
 	Route *Route
 	// RouteParams is a cache of parameters or variables
 	// within the route and their values.

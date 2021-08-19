@@ -131,7 +131,13 @@ func MockCtxWithBuffer(method, path string, buf io.Writer, options ...CtxOption)
 	return NewCtx(
 		webutil.NewMockResponse(buf),
 		webutil.NewMockRequest(method, path),
-		append(options, OptCtxDefaultProvider(Text))...,
+		append(
+			[]CtxOption{
+				OptCtxApp(new(App)),
+				OptCtxDefaultProvider(Text),
+			},
+			options...,
+		)...,
 	)
 }
 

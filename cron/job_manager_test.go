@@ -309,26 +309,26 @@ func Test_JobManager_CancelJob(t *testing.T) {
 	its := assert.New(t)
 
 	started := make(chan struct{})
-	cancelling := make(chan struct{})
-	cancelled := make(chan struct{})
+	canceling := make(chan struct{})
+	canceled := make(chan struct{})
 
 	jm := New()
 	job := NewJob(OptJobName("is-running-test"), OptJobAction(func(ctx context.Context) error {
 		close(started)
-		<-cancelling
+		<-canceling
 		time.Sleep(time.Millisecond) // this is a pad to make the test more reliable.
 		return nil
 	}), OptJobOnCancellation(func(_ context.Context) {
-		close(cancelled) // but signal on the lifecycle event
+		close(canceled) // but signal on the lifecycle event
 	}))
 	its.Nil(jm.LoadJobs(job))
 
 	_, done, err := jm.RunJob(job.Name())
 	its.Nil(err)
 	<-started
-	close(cancelling)
+	close(canceling)
 	its.Nil(jm.CancelJob(job.Name()))
-	<-cancelled
+	<-canceled
 	its.False(jm.IsJobRunning(job.Name()))
 	<-done
 }

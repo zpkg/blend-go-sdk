@@ -12,7 +12,7 @@ import (
 	"strings"
 )
 
-// GetHost returns the request host, omiting the port if specified.
+// GetHost returns the request host, omitting the port if specified.
 func GetHost(r *http.Request) string {
 	if r == nil {
 		return ""

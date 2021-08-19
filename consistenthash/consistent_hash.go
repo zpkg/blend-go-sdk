@@ -100,7 +100,8 @@ func (ch *ConsistentHash) HashFunctionOrDefault() HashFunction {
 // Write methods
 //
 
-// AddBuckets adds a list of buckets to the consistent hash.
+// AddBuckets adds a list of buckets to the consistent hash, and returns
+// a boolean indiciating if _any_ buckets were added.
 //
 // If any of the new buckets do not exist on the hash ring the
 // new bucket will be inserted `ReplicasOrDefault` number
@@ -111,7 +112,7 @@ func (ch *ConsistentHash) HashFunctionOrDefault() HashFunction {
 //
 // Calling `AddBuckets` is safe to do concurrently
 // and acquires a write lock on the consistent hash reference.
-func (ch *ConsistentHash) AddBuckets(newBuckets ...string) {
+func (ch *ConsistentHash) AddBuckets(newBuckets ...string) (ok bool) {
 	ch.mu.Lock()
 	defer ch.mu.Unlock()
 
@@ -120,11 +121,13 @@ func (ch *ConsistentHash) AddBuckets(newBuckets ...string) {
 	}
 	for _, newBucket := range newBuckets {
 		if _, ok := ch.buckets[newBucket]; ok {
-			return
+			continue
 		}
+		ok = true
 		ch.buckets[newBucket] = struct{}{}
 		ch.insertUnsafe(newBucket)
 	}
+	return
 }
 
 // RemoveBucket removes a bucket from the consistent hash, and returns

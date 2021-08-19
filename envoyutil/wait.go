@@ -123,7 +123,7 @@ func (wfa *WaitForAdmin) executeOnce(_ context.Context, _ interface{}) (interfac
 }
 
 // Execute will communicate with the Envoy admin port running on `localhost`,
-// which defaults to 15000 but can be overriden with `ENVOY_ADMIN_PORT`. It
+// which defaults to 15000 but can be overridden with `ENVOY_ADMIN_PORT`. It
 // will send `GET /ready` up to 10 times, sleeping for `wfa.Sleep` in between
 // if the response is not 200 OK with a body of `LIVE\n`.
 func (wfa *WaitForAdmin) Execute(ctx context.Context) error {
@@ -142,7 +142,7 @@ func (wfa *WaitForAdmin) Execute(ctx context.Context) error {
 
 // MaybeWaitForAdmin will check if Envoy is running if the `WAIT_FOR_ENVOY`
 // environment variable is set. This will communicate with the Envoy admin
-// port running on `localhost`, which defaults to 15000 but can be overriden
+// port running on `localhost`, which defaults to 15000 but can be overridden
 // with `ENVOY_ADMIN_PORT`. It will send `GET /ready` up to 10 times, sleeping
 // for 1 second in between if the response is not 200 OK with a body of
 // `LIVE\n`.

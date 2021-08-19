@@ -210,7 +210,7 @@ func Test_JobScheduler_onJobBegin(t *testing.T) {
 	its.True(didCallLifecycleOnBegin)
 }
 
-func Test_JobScheduler_onJobCompleteCancelled(t *testing.T) {
+func Test_JobScheduler_onJobCompleteCanceled(t *testing.T) {
 	t.Parallel()
 	its := assert.New(t)
 
@@ -240,13 +240,13 @@ func Test_JobScheduler_onJobCompleteCancelled(t *testing.T) {
 	ctx := js.Background()
 	ctx = js.withBaseContext(ctx)
 	ctx, js.current = js.withInvocationContext(ctx)
-	js.onJobCompleteCancelled(ctx)
+	js.onJobCompleteCanceled(ctx)
 
 	its.False(js.current.Complete.IsZero())
-	its.Equal(JobInvocationStatusCancelled, js.current.Status)
+	its.Equal(JobInvocationStatusCanceled, js.current.Status)
 	its.Equal([]string{"cancellation", "complete"}, calls)
 
-	its.Contains(buffer.String(), "[cron.cancelled]")
+	its.Contains(buffer.String(), "[cron.canceled]")
 	its.Contains(buffer.String(), "[cron.complete]")
 }
 

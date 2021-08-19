@@ -94,7 +94,7 @@ func OptJobOnError(handler func(context.Context)) JobBuilderOption {
 	return func(jb *JobBuilder) { jb.JobLifecycle.OnError = handler }
 }
 
-// OptJobOnCancellation sets a lifecycle hook.
+// OptJobOnCancellation sets the on cancellation lifecycle hook.
 func OptJobOnCancellation(handler func(context.Context)) JobBuilderOption {
 	return func(jb *JobBuilder) { jb.JobLifecycle.OnCancellation = handler }
 }

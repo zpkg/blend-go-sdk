@@ -19,7 +19,7 @@ var (
 	_ fmt.Stringer = (*ImmediateSchedule)(nil)
 )
 
-// Immediately Returns a schedule that casues a job to run immediately on start,
+// Immediately Returns a schedule that causes a job to run immediately on start,
 // with an optional subsequent schedule.
 func Immediately() *ImmediateSchedule {
 	return &ImmediateSchedule{}
