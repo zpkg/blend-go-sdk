@@ -1,7 +1,7 @@
 /*
 
 Copyright (c) 2021 - Present. Blend Labs, Inc. All rights reserved
-Use of this source code is governed by a MIT license that can be found in the LICENSE file.
+Blend Confidential - Restricted
 
 */
 
@@ -22,11 +22,11 @@ import (
 var errKeyFunc error = fmt.Errorf("error loading key")
 
 var (
-	jwtTestDefaultKey *rsa.PublicKey
-	defaultKeyFunc    jwt.Keyfunc = func(t *jwt.Token) (interface{}, error) { return jwtTestDefaultKey, nil }
-	emptyKeyFunc      jwt.Keyfunc = func(t *jwt.Token) (interface{}, error) { return nil, nil }
-	errorKeyFunc      jwt.Keyfunc = func(t *jwt.Token) (interface{}, error) { return nil, errKeyFunc }
-	nilKeyFunc        jwt.Keyfunc = nil
+	jwtTestDefaultKey	*rsa.PublicKey
+	defaultKeyFunc		jwt.Keyfunc	= func(t *jwt.Token) (interface{}, error) { return jwtTestDefaultKey, nil }
+	emptyKeyFunc		jwt.Keyfunc	= func(t *jwt.Token) (interface{}, error) { return nil, nil }
+	errorKeyFunc		jwt.Keyfunc	= func(t *jwt.Token) (interface{}, error) { return nil, errKeyFunc }
+	nilKeyFunc		jwt.Keyfunc	= nil
 )
 
 func init() {
@@ -34,14 +34,14 @@ func init() {
 }
 
 var jwtTestData = []struct {
-	name        string
-	tokenString string
-	keyfunc     jwt.Keyfunc
-	claims      jwt.Claims
-	valid       bool
-	err         error
-	inner       error
-	parser      *jwt.Parser
+	name		string
+	tokenString	string
+	keyfunc		jwt.Keyfunc
+	claims		jwt.Claims
+	valid		bool
+	err		error
+	inner		error
+	parser		*jwt.Parser
 }{
 	{
 		"basic",
@@ -55,7 +55,7 @@ var jwtTestData = []struct {
 	},
 	{
 		"basic expired",
-		"", // autogen
+		"",	// autogen
 		defaultKeyFunc,
 		jwt.MapClaims{"foo": "bar", "exp": float64(time.Now().Unix() - 100)},
 		false,
@@ -65,7 +65,7 @@ var jwtTestData = []struct {
 	},
 	{
 		"basic nbf",
-		"", // autogen
+		"",	// autogen
 		defaultKeyFunc,
 		jwt.MapClaims{"foo": "bar", "nbf": float64(time.Now().Unix() + 100)},
 		false,
@@ -75,7 +75,7 @@ var jwtTestData = []struct {
 	},
 	{
 		"expired and nbf",
-		"", // autogen
+		"",	// autogen
 		defaultKeyFunc,
 		jwt.MapClaims{"foo": "bar", "nbf": float64(time.Now().Unix() + 100), "exp": float64(time.Now().Unix() - 100)},
 		false,
@@ -167,7 +167,7 @@ var jwtTestData = []struct {
 	},
 	{
 		"JSON Number - basic expired",
-		"", // autogen
+		"",	// autogen
 		defaultKeyFunc,
 		jwt.MapClaims{"foo": "bar", "exp": json.Number(fmt.Sprintf("%v", time.Now().Unix()-100))},
 		false,
@@ -177,7 +177,7 @@ var jwtTestData = []struct {
 	},
 	{
 		"JSON Number - basic nbf",
-		"", // autogen
+		"",	// autogen
 		defaultKeyFunc,
 		jwt.MapClaims{"foo": "bar", "nbf": json.Number(fmt.Sprintf("%v", time.Now().Unix()+100))},
 		false,
@@ -187,7 +187,7 @@ var jwtTestData = []struct {
 	},
 	{
 		"JSON Number - expired and nbf",
-		"", // autogen
+		"",	// autogen
 		defaultKeyFunc,
 		jwt.MapClaims{"foo": "bar", "nbf": json.Number(fmt.Sprintf("%v", time.Now().Unix()+100)), "exp": json.Number(fmt.Sprintf("%v", time.Now().Unix()-100))},
 		false,
@@ -197,7 +197,7 @@ var jwtTestData = []struct {
 	},
 	{
 		"SkipClaimsValidation during token parsing",
-		"", // autogen
+		"",	// autogen
 		defaultKeyFunc,
 		jwt.MapClaims{"foo": "bar", "nbf": json.Number(fmt.Sprintf("%v", time.Now().Unix()+100))},
 		true,

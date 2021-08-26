@@ -1,7 +1,7 @@
 /*
 
 Copyright (c) 2021 - Present. Blend Labs, Inc. All rights reserved
-Use of this source code is governed by a MIT license that can be found in the LICENSE file.
+Blend Confidential - Restricted
 
 */
 
@@ -21,10 +21,10 @@ import (
 // SigningMethodECDSA implements the ECDSA family of signing methods signing methods
 // Expects *ecdsa.PrivateKey for signing and *ecdsa.PublicKey for verification
 type SigningMethodECDSA struct {
-	Name      string
-	Hash      crypto.Hash
-	KeySize   int
-	CurveBits int
+	Name		string
+	Hash		crypto.Hash
+	KeySize		int
+	CurveBits	int
 }
 
 // Alg returns the signing method name.
@@ -131,8 +131,8 @@ func (m *SigningMethodECDSA) Sign(signingString string, key interface{}) (string
 
 // Common ECDSA errors.
 var (
-	ErrNotECPublicKey  ex.Class = "Key is not a valid ECDSA public key"
-	ErrNotECPrivateKey ex.Class = "Key is not a valid ECDSA private key"
+	ErrNotECPublicKey	ex.Class	= "Key is not a valid ECDSA public key"
+	ErrNotECPrivateKey	ex.Class	= "Key is not a valid ECDSA private key"
 )
 
 // ParseECPrivateKeyFromPEM parses a PEM encoded Elliptic Curve Private Key Structure

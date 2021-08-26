@@ -1,7 +1,7 @@
 /*
 
 Copyright (c) 2021 - Present. Blend Labs, Inc. All rights reserved
-Use of this source code is governed by a MIT license that can be found in the LICENSE file.
+Blend Confidential - Restricted
 
 */
 
@@ -45,33 +45,33 @@ func MakeSampleToken(c jwt.Claims, key interface{}) string {
 
 // Sample keys.
 var (
-	HMACTestKey = "AyM1SysPpbyDfgZld3umj1qzKObwVMkoqQ+EstJQLr/T+1qS0gZH75aKtMN3Yj0iPS4hcgUuTwjAzZr1Z9CAow=="
+	HMACTestKey	= "AyM1SysPpbyDfgZld3umj1qzKObwVMkoqQ+EstJQLr/T+1qS0gZH75aKtMN3Yj0iPS4hcgUuTwjAzZr1Z9CAow=="
 
-	EC256Private = []byte(`-----BEGIN EC PRIVATE KEY-----
+	EC256Private	= []byte(`-----BEGIN EC PRIVATE KEY-----
 MHcCAQEEIAh5qA3rmqQQuu0vbKV/+zouz/y/Iy2pLpIcWUSyImSwoAoGCCqGSM49
 AwEHoUQDQgAEYD54V/vp+54P9DXarYqx4MPcm+HKRIQzNasYSoRQHQ/6S6Ps8tpM
 cT+KvIIC8W/e9k0W7Cm72M1P9jU7SLf/vg==
 -----END EC PRIVATE KEY-----`)
 
-	EC256Public = []byte(`-----BEGIN PUBLIC KEY-----
+	EC256Public	= []byte(`-----BEGIN PUBLIC KEY-----
 MFkwEwYHKoZIzj0CAQYIKoZIzj0DAQcDQgAEYD54V/vp+54P9DXarYqx4MPcm+HK
 RIQzNasYSoRQHQ/6S6Ps8tpMcT+KvIIC8W/e9k0W7Cm72M1P9jU7SLf/vg==
 -----END PUBLIC KEY-----`)
 
-	EC384Private = []byte(`-----BEGIN EC PRIVATE KEY-----
+	EC384Private	= []byte(`-----BEGIN EC PRIVATE KEY-----
 MIGkAgEBBDCaCvMHKhcG/qT7xsNLYnDT7sE/D+TtWIol1ROdaK1a564vx5pHbsRy
 SEKcIxISi1igBwYFK4EEACKhZANiAATYa7rJaU7feLMqrAx6adZFNQOpaUH/Uylb
 ZLriOLON5YFVwtVUpO1FfEXZUIQpptRPtc5ixIPY658yhBSb6irfIJUSP9aYTflJ
 GKk/mDkK4t8mWBzhiD5B6jg9cEGhGgA=
 -----END EC PRIVATE KEY-----`)
 
-	EC384Public = []byte(`-----BEGIN PUBLIC KEY-----
+	EC384Public	= []byte(`-----BEGIN PUBLIC KEY-----
 MHYwEAYHKoZIzj0CAQYFK4EEACIDYgAE2Gu6yWlO33izKqwMemnWRTUDqWlB/1Mp
 W2S64jizjeWBVcLVVKTtRXxF2VCEKabUT7XOYsSD2OufMoQUm+oq3yCVEj/WmE35
 SRipP5g5CuLfJlgc4Yg+Qeo4PXBBoRoA
 -----END PUBLIC KEY-----`)
 
-	EC512Private = []byte(`-----BEGIN EC PRIVATE KEY-----
+	EC512Private	= []byte(`-----BEGIN EC PRIVATE KEY-----
 MIHcAgEBBEIB0pE4uFaWRx7t03BsYlYvF1YvKaBGyvoakxnodm9ou0R9wC+sJAjH
 QZZJikOg4SwNqgQ/hyrOuDK2oAVHhgVGcYmgBwYFK4EEACOhgYkDgYYABAAJXIuw
 12MUzpHggia9POBFYXSxaOGKGbMjIyDI+6q7wi7LMw3HgbaOmgIqFG72o8JBQwYN
@@ -79,14 +79,14 @@ QZZJikOg4SwNqgQ/hyrOuDK2oAVHhgVGcYmgBwYFK4EEACOhgYkDgYYABAAJXIuw
 8fGOw/n3Rm2Yd/EB56u2rnD29qS+nOM9eGS+gy39OQ==
 -----END EC PRIVATE KEY-----`)
 
-	EC512Public = []byte(`-----BEGIN PUBLIC KEY-----
+	EC512Public	= []byte(`-----BEGIN PUBLIC KEY-----
 MIGbMBAGByqGSM49AgEGBSuBBAAjA4GGAAQACVyLsNdjFM6R4IImvTzgRWF0sWjh
 ihmzIyMgyPuqu8IuyzMNx4G2jpoCKhRu9qPCQUMGDeCG1x3/n/OgkWNQANsB82x7
 7eiIZAl0zcQRH32tcjFILvJ/XCihdoi4MkCnCqlt9/HxjsP590ZtmHfxAeertq5w
 9vakvpzjPXhkvoMt/Tk=
 -----END PUBLIC KEY-----`)
 
-	PrivateSecure = []byte(`-----BEGIN RSA PRIVATE KEY-----
+	PrivateSecure	= []byte(`-----BEGIN RSA PRIVATE KEY-----
 Proc-Type: 4,ENCRYPTED
 DEK-Info: DES-EDE3-CBC,7487BB8910A3741B
 
@@ -117,7 +117,7 @@ anWFjbH6YQ/QplkkAqZMpropWn6ZdNDg/+BUjukDs0HZrbdGy846WxQUvE7G2bAw
 IFQ1SymBZBtfnZXhfAXOHoWh017p6HsIkb2xmFrigMj7Jh10VVhdWg==
 -----END RSA PRIVATE KEY-----`)
 
-	SampleKey = []byte(`-----BEGIN RSA PRIVATE KEY-----
+	SampleKey	= []byte(`-----BEGIN RSA PRIVATE KEY-----
 MIIEowIBAAKCAQEA4f5wg5l2hKsTeNem/V41fGnJm6gOdrj8ym3rFkEU/wT8RDtn
 SgFEZOQpHEgQ7JL38xUfU0Y3g6aYw9QT0hJ7mCpz9Er5qLaMXJwZxzHzAahlfA0i
 cqabvJOMvQtzD6uQv6wPEyZtDTWiQi9AXwBpHssPnpYGIn20ZZuNlX2BrClciHhC
@@ -145,7 +145,7 @@ CKuHRG+AP579dncdUnOMvfXOtkdM4vk0+hWASBQzM9xzVcztCa+koAugjVaLS9A+
 9uQoqEeVNTckxx0S2bYevRy7hGQmUJTyQm3j1zEUR5jpdbL83Fbq
 -----END RSA PRIVATE KEY-----`)
 
-	SampleKeyPublic = []byte(`-----BEGIN PUBLIC KEY-----
+	SampleKeyPublic	= []byte(`-----BEGIN PUBLIC KEY-----
 MIIBIjANBgkqhkiG9w0BAQEFAAOCAQ8AMIIBCgKCAQEA4f5wg5l2hKsTeNem/V41
 fGnJm6gOdrj8ym3rFkEU/wT8RDtnSgFEZOQpHEgQ7JL38xUfU0Y3g6aYw9QT0hJ7
 mCpz9Er5qLaMXJwZxzHzAahlfA0icqabvJOMvQtzD6uQv6wPEyZtDTWiQi9AXwBp

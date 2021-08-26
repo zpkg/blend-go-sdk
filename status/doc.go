@@ -1,7 +1,7 @@
 /*
 
 Copyright (c) 2021 - Present. Blend Labs, Inc. All rights reserved
-Use of this source code is governed by a MIT license that can be found in the LICENSE file.
+Blend Confidential - Restricted
 
 */
 
@@ -28,4 +28,4 @@ The package provides a `status.Controller` type that is created with the `status
 
 The app will now have `/status/sla` and `/status/details` endpoints registered.
 */
-package status // import "github.com/blend/go-sdk/status"
+package status	// import "github.com/blend/go-sdk/status"

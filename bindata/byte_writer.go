@@ -1,7 +1,7 @@
 /*
 
 Copyright (c) 2021 - Present. Blend Labs, Inc. All rights reserved
-Use of this source code is governed by a MIT license that can be found in the LICENSE file.
+Blend Confidential - Restricted
 
 */
 
@@ -13,8 +13,8 @@ import (
 )
 
 var (
-	newline = []byte{'\n'}
-	space   = []byte{' '}
+	newline	= []byte{'\n'}
+	space	= []byte{' '}
 )
 
 // NewByteWriter returns a new byte writer.
@@ -25,8 +25,8 @@ func NewByteWriter(wr io.Writer) *ByteWriter {
 // ByteWriter writes escaped bytes to a writer.
 type ByteWriter struct {
 	io.Writer
-	Indent []byte
-	c      int
+	Indent	[]byte
+	c	int
 }
 
 func (w *ByteWriter) Write(p []byte) (n int, err error) {

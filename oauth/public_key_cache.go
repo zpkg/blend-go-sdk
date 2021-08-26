@@ -1,7 +1,7 @@
 /*
 
 Copyright (c) 2021 - Present. Blend Labs, Inc. All rights reserved
-Use of this source code is governed by a MIT license that can be found in the LICENSE file.
+Blend Confidential - Restricted
 
 */
 
@@ -21,9 +21,9 @@ import (
 
 // PublicKeyCache holds cached signing certs.
 type PublicKeyCache struct {
-	FetchPublicKeysDefaults []r2.Option
-	mu                      sync.RWMutex
-	current                 *PublicKeysResponse
+	FetchPublicKeysDefaults	[]r2.Option
+	mu			sync.RWMutex
+	current			*PublicKeysResponse
 }
 
 // Keyfunc returns a jwt keyfunc for a specific exchange tied to context.
@@ -102,9 +102,9 @@ func (pkc *PublicKeyCache) FetchPublicKeys(ctx context.Context, opts ...r2.Optio
 		return nil, ex.New("invalid google keys response; invalid expires value", ex.OptInner(err))
 	}
 	res := &PublicKeysResponse{
-		Keys:         jwkLookup(jwks.Keys),
-		CacheControl: meta.Header.Get("Cache-Control"),
-		Expires:      expires,
+		Keys:		jwkLookup(jwks.Keys),
+		CacheControl:	meta.Header.Get("Cache-Control"),
+		Expires:	expires,
 	}
 	return res, nil
 }
@@ -126,9 +126,9 @@ func jwkLookup(jwks []jwt.JWK) map[string]jwt.JWK {
 
 // PublicKeysResponse is a response for the google certs api.
 type PublicKeysResponse struct {
-	CacheControl string
-	Expires      time.Time
-	Keys         map[string]jwt.JWK
+	CacheControl	string
+	Expires		time.Time
+	Keys		map[string]jwt.JWK
 }
 
 // IsExpired returns if the cert response is expired.

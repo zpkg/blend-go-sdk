@@ -1,7 +1,7 @@
 /*
 
 Copyright (c) 2021 - Present. Blend Labs, Inc. All rights reserved
-Use of this source code is governed by a MIT license that can be found in the LICENSE file.
+Blend Confidential - Restricted
 
 */
 
@@ -14,10 +14,10 @@ import (
 
 const (
 	// DefaultSampleSize is the default number of steps to run per test.
-	DefaultSampleSize = 10000
+	DefaultSampleSize	= 10000
 
 	// DefaultStasisSize is the stasis size for the fixed length test.
-	DefaultStasisSize = 512
+	DefaultStasisSize	= 512
 )
 
 type QueueFactory func(capacity int) Queue

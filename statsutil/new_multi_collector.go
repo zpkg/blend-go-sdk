@@ -1,7 +1,7 @@
 /*
 
 Copyright (c) 2021 - Present. Blend Labs, Inc. All rights reserved
-Use of this source code is governed by a MIT license that can be found in the LICENSE file.
+Blend Confidential - Restricted
 
 */
 
@@ -20,10 +20,10 @@ import (
 type MultiCollectorOptions struct {
 	configmeta.Meta
 
-	DefaultTags []string
-	Datadog     datadog.Config
-	Prometheus  statsd.Config
-	Printer     bool
+	DefaultTags	[]string
+	Datadog		datadog.Config
+	Prometheus	statsd.Config
+	Printer		bool
 }
 
 // MultiCollectorOption mutates MultiCollectorOptions.

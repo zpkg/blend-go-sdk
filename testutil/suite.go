@@ -1,7 +1,7 @@
 /*
 
 Copyright (c) 2021 - Present. Blend Labs, Inc. All rights reserved
-Use of this source code is governed by a MIT license that can be found in the LICENSE file.
+Blend Confidential - Restricted
 
 */
 
@@ -17,9 +17,9 @@ import (
 
 // FailureCodes
 const (
-	SuiteFailureTests  = 1
-	SuiteFailureBefore = 2
-	SuiteFailureAfter  = 3
+	SuiteFailureTests	= 1
+	SuiteFailureBefore	= 2
+	SuiteFailureAfter	= 3
 )
 
 // New returns a new test suite.
@@ -41,10 +41,10 @@ type SuiteAction func(context.Context) error
 
 // Suite is a set of before and after actions for a given package tests.
 type Suite struct {
-	M      *testing.M
-	Log    logger.Log
-	Before []SuiteAction
-	After  []SuiteAction
+	M	*testing.M
+	Log	logger.Log
+	Before	[]SuiteAction
+	After	[]SuiteAction
 }
 
 // Run runs tests and returns the exit code.

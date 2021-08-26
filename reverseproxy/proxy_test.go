@@ -1,7 +1,7 @@
 /*
 
 Copyright (c) 2021 - Present. Blend Labs, Inc. All rights reserved
-Use of this source code is governed by a MIT license that can be found in the LICENSE file.
+Blend Confidential - Restricted
 
 */
 
@@ -24,8 +24,8 @@ import (
 )
 
 var (
-	_ webutil.HTTPTracer        = (*mockHTTPTracer)(nil)
-	_ webutil.HTTPTraceFinisher = (*mockHTTPTraceFinisher)(nil)
+	_	webutil.HTTPTracer		= (*mockHTTPTracer)(nil)
+	_	webutil.HTTPTraceFinisher	= (*mockHTTPTraceFinisher)(nil)
 )
 
 func Test_Proxy(t *testing.T) {
@@ -170,9 +170,9 @@ func TestReverseProxyWebSocket(t *testing.T) {
 }
 
 type mockHTTPTracer struct {
-	Request    *http.Request
-	StatusCode int
-	Error      error
+	Request		*http.Request
+	StatusCode	int
+	Error		error
 }
 
 func (mht *mockHTTPTracer) Start(req *http.Request) (webutil.HTTPTraceFinisher, *http.Request) {

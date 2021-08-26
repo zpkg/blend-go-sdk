@@ -1,7 +1,7 @@
 /*
 
 Copyright (c) 2021 - Present. Blend Labs, Inc. All rights reserved
-Use of this source code is governed by a MIT license that can be found in the LICENSE file.
+Blend Confidential - Restricted
 
 */
 
@@ -24,4 +24,4 @@ You can also add additional parameters to the retry:
 	}, "https://google.com", retry.OptMaxAttempts(10), retry.OptExponentialBackoff(time.Second))
 
 */
-package retry // import "github.com/blend/go-sdk/retry"
+package retry	// import "github.com/blend/go-sdk/retry"

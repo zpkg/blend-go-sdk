@@ -1,7 +1,7 @@
 /*
 
 Copyright (c) 2021 - Present. Blend Labs, Inc. All rights reserved
-Use of this source code is governed by a MIT license that can be found in the LICENSE file.
+Blend Confidential - Restricted
 
 */
 
@@ -20,7 +20,7 @@ func SplitCSV(text string) (output []string) {
 	var opened rune
 	for _, r := range text {
 		switch state {
-		case 0: // word
+		case 0:	// word
 			if isQuote(r) {
 				opened = r
 				state = 1
@@ -30,7 +30,7 @@ func SplitCSV(text string) (output []string) {
 			} else {
 				word = append(word, r)
 			}
-		case 1: // we're in a quoted section
+		case 1:	// we're in a quoted section
 			if matchesQuote(opened, r) {
 				state = 0
 				continue

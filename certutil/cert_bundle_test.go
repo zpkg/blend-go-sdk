@@ -1,7 +1,7 @@
 /*
 
 Copyright (c) 2021 - Present. Blend Labs, Inc. All rights reserved
-Use of this source code is governed by a MIT license that can be found in the LICENSE file.
+Blend Confidential - Restricted
 
 */
 
@@ -20,8 +20,8 @@ func TestNewCertBundleFromLiterals(t *testing.T) {
 	assert := assert.New(t)
 
 	bundle, err := NewCertBundle(KeyPair{
-		Cert: string(certLiteral),
-		Key:  string(keyLiteral),
+		Cert:	string(certLiteral),
+		Key:	string(keyLiteral),
 	})
 
 	assert.Nil(err)
@@ -37,8 +37,8 @@ func TestNewCertBundleFromFiles(t *testing.T) {
 	assert := assert.New(t)
 
 	bundle, err := NewCertBundle(KeyPair{
-		CertPath: "testdata/client.cert.pem",
-		KeyPath:  "testdata/client.key.pem",
+		CertPath:	"testdata/client.cert.pem",
+		KeyPath:	"testdata/client.key.pem",
 	})
 	assert.Nil(err)
 	assert.NotNil(bundle.PrivateKey)
@@ -53,8 +53,8 @@ func TestCertBundleWriteCertPem(t *testing.T) {
 	assert := assert.New(t)
 
 	bundle, err := NewCertBundle(KeyPair{
-		CertPath: "testdata/client.cert.pem",
-		KeyPath:  "testdata/client.key.pem",
+		CertPath:	"testdata/client.cert.pem",
+		KeyPath:	"testdata/client.key.pem",
 	})
 	assert.Nil(err)
 
@@ -69,8 +69,8 @@ func TestCertBundleWriteKeyPem(t *testing.T) {
 	assert := assert.New(t)
 
 	bundle, err := NewCertBundle(KeyPair{
-		CertPath: "testdata/client.cert.pem",
-		KeyPath:  "testdata/client.key.pem",
+		CertPath:	"testdata/client.cert.pem",
+		KeyPath:	"testdata/client.key.pem",
 	})
 	assert.Nil(err)
 
@@ -85,8 +85,8 @@ func TestCertBundleCommonNames(t *testing.T) {
 	assert := assert.New(t)
 
 	bundle, err := NewCertBundle(KeyPair{
-		Cert: string(certLiteral),
-		Key:  string(keyLiteral),
+		Cert:	string(certLiteral),
+		Key:	string(keyLiteral),
 	})
 	assert.Nil(err)
 
@@ -101,8 +101,8 @@ func TestCertBundle_ServerConfig(t *testing.T) {
 	assert := assert.New(t)
 
 	bundle, err := NewCertBundle(KeyPair{
-		Cert: string(certLiteral),
-		Key:  string(keyLiteral),
+		Cert:	string(certLiteral),
+		Key:	string(keyLiteral),
 	})
 	assert.Nil(err)
 

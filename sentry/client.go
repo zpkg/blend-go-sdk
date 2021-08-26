@@ -1,7 +1,7 @@
 /*
 
 Copyright (c) 2021 - Present. Blend Labs, Inc. All rights reserved
-Use of this source code is governed by a MIT license that can be found in the LICENSE file.
+Blend Confidential - Restricted
 
 */
 
@@ -40,71 +40,71 @@ func MustNew(cfg Config) *Client {
 func New(cfg Config) (*Client, error) {
 	rc, err := raven.NewClient(
 		raven.ClientOptions{
-			Dsn:         cfg.DSN,
-			Environment: cfg.Environment,
-			ServerName:  cfg.ServerName,
-			Dist:        cfg.Dist,
-			Release:     cfg.Release,
-			Debug:       cfg.Debug,
-			DebugWriter: os.Stderr,
+			Dsn:		cfg.DSN,
+			Environment:	cfg.Environment,
+			ServerName:	cfg.ServerName,
+			Dist:		cfg.Dist,
+			Release:	cfg.Release,
+			Debug:		cfg.Debug,
+			DebugWriter:	os.Stderr,
 		},
 	)
 	if err != nil {
 		return nil, err
 	}
 	return &Client{
-		Config: cfg,
-		Client: rc,
+		Config:	cfg,
+		Client:	rc,
 	}, nil
 }
 
 // Client is a wrapper for the sentry-go client.
 type Client struct {
-	Config Config
-	Client *raven.Client
+	Config	Config
+	Client	*raven.Client
 }
 
 // Notify sends a notification.
 func (c Client) Notify(ctx context.Context, ee logger.ErrorEvent) {
 	c.Client.CaptureEvent(errEvent(ctx, ee), nil, raven.NewScope())
-	c.Client.Flush(c.Config.FlushTimeoutOrDefault()) // goose this a bit
+	c.Client.Flush(c.Config.FlushTimeoutOrDefault())	// goose this a bit
 }
 
 func errEvent(ctx context.Context, ee logger.ErrorEvent) *raven.Event {
 	exceptions := []raven.Exception{
 		{
-			Type:       ex.ErrClass(ee.Err).Error(),
-			Value:      ex.ErrMessage(ee.Err),
-			Stacktrace: errStackTrace(ee.Err),
+			Type:		ex.ErrClass(ee.Err).Error(),
+			Value:		ex.ErrMessage(ee.Err),
+			Stacktrace:	errStackTrace(ee.Err),
 		},
 	}
 	var innerErr error
 	for innerErr = ex.ErrInner(ee.Err); innerErr != nil; innerErr = ex.ErrInner(innerErr) {
 		exceptions = append(exceptions, raven.Exception{
-			Type:       ex.ErrClass(innerErr).Error(),
-			Value:      ex.ErrMessage(innerErr),
-			Stacktrace: errStackTrace(innerErr),
+			Type:		ex.ErrClass(innerErr).Error(),
+			Value:		ex.ErrMessage(innerErr),
+			Stacktrace:	errStackTrace(innerErr),
 		})
 	}
 
 	return &raven.Event{
-		Timestamp:   logger.GetEventTimestamp(ctx, ee),
-		Fingerprint: errFingerprint(ctx, ex.ErrClass(ee.Err).Error()),
-		Level:       raven.Level(ee.GetFlag()),
-		Tags:        errTags(ctx),
-		Extra:       errExtra(ctx),
-		Platform:    "go",
+		Timestamp:	logger.GetEventTimestamp(ctx, ee),
+		Fingerprint:	errFingerprint(ctx, ex.ErrClass(ee.Err).Error()),
+		Level:		raven.Level(ee.GetFlag()),
+		Tags:		errTags(ctx),
+		Extra:		errExtra(ctx),
+		Platform:	"go",
 		Sdk: raven.SdkInfo{
-			Name:    SDK,
-			Version: raven.Version,
+			Name:		SDK,
+			Version:	raven.Version,
 			Packages: []raven.SdkPackage{{
-				Name:    SDK,
-				Version: raven.Version,
+				Name:		SDK,
+				Version:	raven.Version,
 			}},
 		},
-		Request:   errRequest(ee),
-		Message:   ex.ErrClass(ee.Err).Error(),
-		Exception: exceptions,
+		Request:	errRequest(ee),
+		Message:	ex.ErrClass(ee.Err).Error(),
+		Exception:	exceptions,
 	}
 }
 
@@ -153,11 +153,11 @@ func newRavenRequest(r *http.Request) *raven.Request {
 		env = map[string]string{"REMOTE_ADDR": addr, "REMOTE_PORT": port}
 	}
 	return &raven.Request{
-		URL:         url,
-		Method:      r.Method,
-		QueryString: r.URL.RawQuery,
-		Headers:     headers,
-		Env:         env,
+		URL:		url,
+		Method:		r.Method,
+		QueryString:	r.URL.RawQuery,
+		Headers:	headers,
+		Env:		env,
 	}
 }
 

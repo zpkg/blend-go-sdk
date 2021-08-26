@@ -7,6 +7,7 @@ require (
 	github.com/aws/aws-sdk-go v1.38.41
 	github.com/blend/sentry-go v1.0.0
 	github.com/golang/protobuf v1.4.3
+	github.com/jackc/pgconn v1.8.0
 	github.com/jackc/pgx/v4 v4.10.0
 	github.com/mediocregopher/radix/v4 v4.0.0-beta.1
 	github.com/opentracing/opentracing-go v1.2.0

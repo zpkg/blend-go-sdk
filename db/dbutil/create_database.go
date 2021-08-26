@@ -1,7 +1,7 @@
 /*
 
 Copyright (c) 2021 - Present. Blend Labs, Inc. All rights reserved
-Use of this source code is governed by a MIT license that can be found in the LICENSE file.
+Blend Confidential - Restricted
 
 */
 
@@ -18,18 +18,22 @@ import (
 //
 // Note: the `name` parameter is passed to the statement directly (not via. a parameter).
 // You should use extreme care to not pass user submitted inputs to this function.
-func CreateDatabase(ctx context.Context, name string, opts ...db.Option) error {
-	conn, err := OpenManagementConnection(opts...)
+func CreateDatabase(ctx context.Context, name string, opts ...db.Option) (err error) {
+	var conn *db.Connection
+	defer func() {
+		err = db.PoolCloseFinalizer(conn, err)
+	}()
+
+	conn, err = OpenManagementConnection(opts...)
 	if err != nil {
-		return err
+		return
 	}
-	defer conn.Close()
 
 	if err = ValidateDatabaseName(name); err != nil {
-		return err
+		return
 	}
 
 	statement := fmt.Sprintf("CREATE DATABASE %s", name)
 	_, err = conn.ExecContext(ctx, statement)
-	return err
+	return
 }

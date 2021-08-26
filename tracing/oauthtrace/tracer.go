@@ -1,7 +1,7 @@
 /*
 
 Copyright (c) 2021 - Present. Blend Labs, Inc. All rights reserved
-Use of this source code is governed by a MIT license that can be found in the LICENSE file.
+Blend Confidential - Restricted
 
 */
 
@@ -19,8 +19,8 @@ import (
 )
 
 var (
-	_ oauth.Tracer        = (*oauthTracer)(nil)
-	_ oauth.TraceFinisher = (*oauthTraceFinisher)(nil)
+	_	oauth.Tracer		= (*oauthTracer)(nil)
+	_	oauth.TraceFinisher	= (*oauthTraceFinisher)(nil)
 )
 
 // Tracer returns a request tracer that also injects span context into outgoing headers.

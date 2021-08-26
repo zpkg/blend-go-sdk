@@ -1,7 +1,7 @@
 /*
 
 Copyright (c) 2021 - Present. Blend Labs, Inc. All rights reserved
-Use of this source code is governed by a MIT license that can be found in the LICENSE file.
+Blend Confidential - Restricted
 
 */
 
@@ -9,9 +9,9 @@ package collections
 
 // BatchIterator is an iterator for interface{}
 type BatchIterator struct {
-	Items     []interface{}
-	BatchSize int
-	Cursor    int
+	Items		[]interface{}
+	BatchSize	int
+	Cursor		int
 }
 
 // HasNext returns if we should process another batch.

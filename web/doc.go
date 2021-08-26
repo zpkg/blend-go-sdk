@@ -1,7 +1,7 @@
 /*
 
 Copyright (c) 2021 - Present. Blend Labs, Inc. All rights reserved
-Use of this source code is governed by a MIT license that can be found in the LICENSE file.
+Blend Confidential - Restricted
 
 */
 
@@ -34,4 +34,4 @@ and close the server gracefully if they're received, letting requests finish.
 
 There are many more examples in the github.com/blend/go-sdk/examples/web directory.
 */
-package web // import "github.com/blend/go-sdk/web"
+package web	// import "github.com/blend/go-sdk/web"

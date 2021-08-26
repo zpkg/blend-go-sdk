@@ -1,7 +1,7 @@
 /*
 
 Copyright (c) 2021 - Present. Blend Labs, Inc. All rights reserved
-Use of this source code is governed by a MIT license that can be found in the LICENSE file.
+Blend Confidential - Restricted
 
 */
 
@@ -21,9 +21,9 @@ func TestIs(t *testing.T) {
 	stdLibErr := errors.New("sentinel")
 
 	testCases := []struct {
-		Err      interface{}
-		Cause    error
-		Expected bool
+		Err		interface{}
+		Cause		error
+		Expected	bool
 	}{
 		{Err: Class("test class"), Cause: Class("test class"), Expected: true},
 		{Err: New("test class"), Cause: Class("test class"), Expected: true},

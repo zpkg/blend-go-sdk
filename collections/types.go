@@ -1,7 +1,7 @@
 /*
 
 Copyright (c) 2021 - Present. Blend Labs, Inc. All rights reserved
-Use of this source code is governed by a MIT license that can be found in the LICENSE file.
+Blend Confidential - Restricted
 
 */
 
@@ -11,7 +11,7 @@ package collections
 type Error string
 
 // Error implements error.
-func (e Error) Error() string { return string(e) }
+func (e Error) Error() string	{ return string(e) }
 
 // Labels is a loose type alias to map[string]string
 type Labels = map[string]string

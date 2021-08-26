@@ -1,7 +1,7 @@
 /*
 
 Copyright (c) 2021 - Present. Blend Labs, Inc. All rights reserved
-Use of this source code is governed by a MIT license that can be found in the LICENSE file.
+Blend Confidential - Restricted
 
 */
 
@@ -20,8 +20,8 @@ import (
 )
 
 var (
-	_ r2.Tracer        = (*r2Tracer)(nil)
-	_ r2.TraceFinisher = (*r2TraceFinisher)(nil)
+	_	r2.Tracer		= (*r2Tracer)(nil)
+	_	r2.TraceFinisher	= (*r2TraceFinisher)(nil)
 )
 
 // Tracer returns a request tracer that also injects span context into outgoing headers.

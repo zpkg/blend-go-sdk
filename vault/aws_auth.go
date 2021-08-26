@@ -1,7 +1,7 @@
 /*
 
 Copyright (c) 2021 - Present. Blend Labs, Inc. All rights reserved
-Use of this source code is governed by a MIT license that can be found in the LICENSE file.
+Blend Confidential - Restricted
 
 */
 
@@ -22,7 +22,6 @@ import (
 	"github.com/aws/aws-sdk-go/aws/credentials/stscreds"
 	"github.com/aws/aws-sdk-go/aws/session"
 	"github.com/aws/aws-sdk-go/service/sts"
-
 	"github.com/blend/go-sdk/ex"
 )
 
@@ -97,8 +96,8 @@ func (a *AWSAuth) GetCallerIdentitySignedRequest(roleARN, service, region string
 
 	stsSession, err := session.NewSessionWithOptions(session.Options{
 		Config: aws.Config{
-			Credentials: credentials,
-			Region:      &region,
+			Credentials:	credentials,
+			Region:		&region,
 		},
 	})
 	if err != nil {
@@ -133,11 +132,11 @@ func createVaultLoginRequest(roleName string, baseURL url.URL, request *http.Req
 	}
 
 	body := map[string]string{
-		"role":                    roleName,
-		"iam_http_request_method": MethodPost,
-		"iam_request_url":         base64.StdEncoding.EncodeToString([]byte(request.URL.String())),
-		"iam_request_body":        base64.StdEncoding.EncodeToString([]byte(STSGetIdentityBody)),
-		"iam_request_headers":     base64.StdEncoding.EncodeToString(stsHeaders),
+		"role":				roleName,
+		"iam_http_request_method":	MethodPost,
+		"iam_request_url":		base64.StdEncoding.EncodeToString([]byte(request.URL.String())),
+		"iam_request_body":		base64.StdEncoding.EncodeToString([]byte(STSGetIdentityBody)),
+		"iam_request_headers":		base64.StdEncoding.EncodeToString(stsHeaders),
 	}
 
 	contents, err := json.Marshal(body)
@@ -146,9 +145,9 @@ func createVaultLoginRequest(roleName string, baseURL url.URL, request *http.Req
 	}
 
 	req := &http.Request{
-		URL:    &baseURL,
-		Method: MethodPost,
-		Body:   ioutil.NopCloser(bytes.NewReader(contents)),
+		URL:	&baseURL,
+		Method:	MethodPost,
+		Body:	ioutil.NopCloser(bytes.NewReader(contents)),
 	}
 
 	req.GetBody = func() (io.ReadCloser, error) {

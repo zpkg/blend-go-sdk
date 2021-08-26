@@ -1,7 +1,7 @@
 /*
 
 Copyright (c) 2021 - Present. Blend Labs, Inc. All rights reserved
-Use of this source code is governed by a MIT license that can be found in the LICENSE file.
+Blend Confidential - Restricted
 
 */
 
@@ -92,6 +92,7 @@ func NewConfigFromDSN(dsn string) (config Config, err error) {
 //  -  DB_MAX_CONNECTIONS   = MaxConnections
 //  -  DB_MAX_LIFETIME      = MaxLifetime
 //  -  DB_BUFFER_POOL_SIZE  = BufferPoolSize
+//  -  DB_DIALECT           = Dialect
 func NewConfigFromEnv() (config Config, err error) {
 	if err = (&config).Resolve(env.WithVars(context.Background(), env.Env())); err != nil {
 		return
@@ -112,15 +113,15 @@ func MustNewConfigFromEnv() Config {
 // Config is a set of connection config options.
 type Config struct {
 	// Engine is the database engine.
-	Engine string `json:"engine,omitempty" yaml:"engine,omitempty" env:"DB_ENGINE"`
+	Engine	string	`json:"engine,omitempty" yaml:"engine,omitempty" env:"DB_ENGINE"`
 	// DSN is a fully formed DSN (this skips DSN formation from all other variables outside `schema`).
-	DSN string `json:"dsn,omitempty" yaml:"dsn,omitempty" env:"DATABASE_URL"`
+	DSN	string	`json:"dsn,omitempty" yaml:"dsn,omitempty" env:"DATABASE_URL"`
 	// Host is the server to connect to.
-	Host string `json:"host,omitempty" yaml:"host,omitempty" env:"DB_HOST"`
+	Host	string	`json:"host,omitempty" yaml:"host,omitempty" env:"DB_HOST"`
 	// Port is the port to connect to.
-	Port string `json:"port,omitempty" yaml:"port,omitempty" env:"DB_PORT"`
+	Port	string	`json:"port,omitempty" yaml:"port,omitempty" env:"DB_PORT"`
 	// DBName is the database name
-	Database string `json:"database,omitempty" yaml:"database,omitempty" env:"DB_NAME"`
+	Database	string	`json:"database,omitempty" yaml:"database,omitempty" env:"DB_NAME"`
 	// Schema is the application schema within the database, defaults to `public`. This schema is used to set the
 	// Postgres "search_path" If you want to reference tables in other schemas, you'll need to specify those schemas
 	// in your queries e.g. "SELECT * FROM schema_two.table_one..."
@@ -131,18 +132,18 @@ type Config struct {
 	// separated schema names as the value for this config, or you can dbc.Invoke().Exec a SET statement on a newly
 	// opened connection such as "SET search_path = 'schema_one,schema_two';" Again, we recommend against this practice
 	// and encourage you to specify schema names beyond the first in your queries.
-	Schema string `json:"schema,omitempty" yaml:"schema,omitempty" env:"DB_SCHEMA"`
+	Schema	string	`json:"schema,omitempty" yaml:"schema,omitempty" env:"DB_SCHEMA"`
 	// ApplicationName is the name set by an application connection to a database
 	// server, intended to be transmitted in the connection string. It can be
 	// used to uniquely identify an application and will be included in the
 	// `pg_stat_activity` view.
 	//
 	// See: https://www.postgresql.org/docs/12/runtime-config-logging.html#GUC-APPLICATION-NAME
-	ApplicationName string `json:"applicationName,omitempty" yaml:"applicationName,omitempty" env:"DB_APPLICATION_NAME"`
+	ApplicationName	string	`json:"applicationName,omitempty" yaml:"applicationName,omitempty" env:"DB_APPLICATION_NAME"`
 	// Username is the username for the connection via password auth.
-	Username string `json:"username,omitempty" yaml:"username,omitempty" env:"DB_USER"`
+	Username	string	`json:"username,omitempty" yaml:"username,omitempty" env:"DB_USER"`
 	// Password is the password for the connection via password auth.
-	Password string `json:"password,omitempty" yaml:"password,omitempty" env:"DB_PASSWORD"`
+	Password	string	`json:"password,omitempty" yaml:"password,omitempty" env:"DB_PASSWORD"`
 	// ConnectTimeout determines the maximum wait for connection. The minimum
 	// allowed timeout is 2 seconds, so anything below is treated the same
 	// as unset. PostgreSQL will only accept second precision so this value will be
@@ -151,7 +152,7 @@ type Config struct {
 	// precision.
 	//
 	// See: https://www.postgresql.org/docs/10/libpq-connect.html#LIBPQ-CONNECT-CONNECT-TIMEOUT
-	ConnectTimeout time.Duration `json:"connectTimeout,omitempty" yaml:"connectTimeout,omitempty" env:"DB_CONNECT_TIMEOUT"`
+	ConnectTimeout	time.Duration	`json:"connectTimeout,omitempty" yaml:"connectTimeout,omitempty" env:"DB_CONNECT_TIMEOUT"`
 	// LockTimeout is the timeout to use when attempting to acquire a lock.
 	// PostgreSQL will only accept millisecond precision so this value will be
 	// rounded to the nearest millisecond before being set on a connection string.
@@ -159,7 +160,7 @@ type Config struct {
 	// precision.
 	//
 	// See: https://www.postgresql.org/docs/current/runtime-config-client.html#GUC-LOCK-TIMEOUT
-	LockTimeout time.Duration `json:"lockTimeout,omitempty" yaml:"lockTimeout,omitempty" env:"DB_LOCK_TIMEOUT"`
+	LockTimeout	time.Duration	`json:"lockTimeout,omitempty" yaml:"lockTimeout,omitempty" env:"DB_LOCK_TIMEOUT"`
 	// StatementTimeout is the timeout to use when invoking a SQL statement.
 	// PostgreSQL will only accept millisecond precision so this value will be
 	// rounded to the nearest millisecond before being set on a connection string.
@@ -167,19 +168,19 @@ type Config struct {
 	// precision.
 	//
 	// See: https://www.postgresql.org/docs/current/runtime-config-client.html#GUC-STATEMENT-TIMEOUT
-	StatementTimeout time.Duration `json:"statementTimeout,omitempty" yaml:"statementTimeout,omitempty" env:"DB_STATEMENT_TIMEOUT"`
+	StatementTimeout	time.Duration	`json:"statementTimeout,omitempty" yaml:"statementTimeout,omitempty" env:"DB_STATEMENT_TIMEOUT"`
 	// SSLMode is the sslmode for the connection.
-	SSLMode string `json:"sslMode,omitempty" yaml:"sslMode,omitempty" env:"DB_SSLMODE"`
+	SSLMode	string	`json:"sslMode,omitempty" yaml:"sslMode,omitempty" env:"DB_SSLMODE"`
 	// IdleConnections is the number of idle connections.
-	IdleConnections int `json:"idleConnections,omitempty" yaml:"idleConnections,omitempty" env:"DB_IDLE_CONNECTIONS"`
+	IdleConnections	int	`json:"idleConnections,omitempty" yaml:"idleConnections,omitempty" env:"DB_IDLE_CONNECTIONS"`
 	// MaxConnections is the maximum number of connections.
-	MaxConnections int `json:"maxConnections,omitempty" yaml:"maxConnections,omitempty" env:"DB_MAX_CONNECTIONS"`
+	MaxConnections	int	`json:"maxConnections,omitempty" yaml:"maxConnections,omitempty" env:"DB_MAX_CONNECTIONS"`
 	// MaxLifetime is the maximum time a connection can be open.
-	MaxLifetime time.Duration `json:"maxLifetime,omitempty" yaml:"maxLifetime,omitempty" env:"DB_MAX_LIFETIME"`
+	MaxLifetime	time.Duration	`json:"maxLifetime,omitempty" yaml:"maxLifetime,omitempty" env:"DB_MAX_LIFETIME"`
 	// BufferPoolSize is the number of query composition buffers to maintain.
-	BufferPoolSize int `json:"bufferPoolSize,omitempty" yaml:"bufferPoolSize,omitempty" env:"DB_BUFFER_POOL_SIZE"`
+	BufferPoolSize	int	`json:"bufferPoolSize,omitempty" yaml:"bufferPoolSize,omitempty" env:"DB_BUFFER_POOL_SIZE"`
 	// Dialect includes hints to tweak specific sql semantics by database connection.
-	Dialect string `json:"dialect,omitempty" yaml:"dialect,omitempty"`
+	Dialect	string	`json:"dialect,omitempty" yaml:"dialect,omitempty" env:"DB_DIALECT"`
 }
 
 // IsZero returns if the config is unset.
@@ -190,24 +191,24 @@ func (c Config) IsZero() bool {
 // Resolve applies any external data sources to the config.
 func (c *Config) Resolve(ctx context.Context) error {
 	return configutil.Resolve(ctx,
-		configutil.SetString(&c.Engine, configutil.Env("DB_ENGINE"), configutil.String(c.Engine), configutil.String(DefaultEngine)),
-		configutil.SetString(&c.DSN, configutil.Env("DATABASE_URL"), configutil.String(c.DSN)),
-		configutil.SetString(&c.Host, configutil.Env("DB_HOST"), configutil.String(c.Host), configutil.String(DefaultHost)),
-		configutil.SetString(&c.Port, configutil.Env("DB_PORT"), configutil.String(c.Port), configutil.String(DefaultPort)),
-		configutil.SetString(&c.Database, configutil.Env("DB_NAME"), configutil.String(c.Database), configutil.String(DefaultDatabase)),
-		configutil.SetString(&c.Schema, configutil.Env("DB_SCHEMA"), configutil.String(c.Schema)),
+		configutil.SetString(&c.Engine, configutil.Env(EnvVarDBEngine), configutil.String(c.Engine), configutil.String(DefaultEngine)),
+		configutil.SetString(&c.DSN, configutil.Env(EnvVarDatabaseURL), configutil.String(c.DSN)),
+		configutil.SetString(&c.Host, configutil.Env(EnvVarDBHost), configutil.String(c.Host), configutil.String(DefaultHost)),
+		configutil.SetString(&c.Port, configutil.Env(EnvVarDBPort), configutil.String(c.Port), configutil.String(DefaultPort)),
+		configutil.SetString(&c.Database, configutil.Env(EnvVarDBName), configutil.String(c.Database), configutil.String(DefaultDatabase)),
+		configutil.SetString(&c.Schema, configutil.Env(EnvVarDBSchema), configutil.String(c.Schema)),
 		configutil.SetString(&c.ApplicationName, configutil.Env(EnvVarDBApplicationName), configutil.String(c.ApplicationName)),
-		configutil.SetString(&c.Username, configutil.Env("DB_USER"), configutil.String(c.Username), configutil.Env("USER")),
-		configutil.SetString(&c.Password, configutil.Env("DB_PASSWORD"), configutil.String(c.Password)),
-		configutil.SetDuration(&c.ConnectTimeout, configutil.Env("DB_CONNECT_TIMEOUT"), configutil.Duration(c.ConnectTimeout), configutil.Duration(DefaultConnectTimeout)),
-		configutil.SetDuration(&c.LockTimeout, configutil.Env("DB_LOCK_TIMEOUT"), configutil.Duration(c.LockTimeout)),
-		configutil.SetDuration(&c.StatementTimeout, configutil.Env("DB_STATEMENT_TIMEOUT"), configutil.Duration(c.StatementTimeout)),
-		configutil.SetString(&c.SSLMode, configutil.Env("DB_SSLMODE"), configutil.String(c.SSLMode)),
-		configutil.SetInt(&c.IdleConnections, configutil.Env("DB_IDLE_CONNECTIONS"), configutil.Int(c.IdleConnections), configutil.Int(DefaultIdleConnections)),
-		configutil.SetInt(&c.MaxConnections, configutil.Env("DB_MAX_CONNECTIONS"), configutil.Int(c.MaxConnections), configutil.Int(DefaultMaxConnections)),
-		configutil.SetDuration(&c.MaxLifetime, configutil.Env("DB_MAX_LIFETIME"), configutil.Duration(c.MaxLifetime), configutil.Duration(DefaultMaxLifetime)),
-		configutil.SetInt(&c.BufferPoolSize, configutil.Env("DB_BUFFER_POOL_SIZE"), configutil.Int(c.BufferPoolSize), configutil.Int(DefaultBufferPoolSize)),
-		configutil.SetString(&c.Dialect, configutil.Env("DB_DIALECT"), configutil.String(c.Dialect), configutil.String(DialectPostgres)),
+		configutil.SetString(&c.Username, configutil.Env(EnvVarDBUser), configutil.String(c.Username), configutil.Env("USER")),
+		configutil.SetString(&c.Password, configutil.Env(EnvVarDBPassword), configutil.String(c.Password)),
+		configutil.SetDuration(&c.ConnectTimeout, configutil.Env(EnvVarDBConnectTimeout), configutil.Duration(c.ConnectTimeout), configutil.Duration(DefaultConnectTimeout)),
+		configutil.SetDuration(&c.LockTimeout, configutil.Env(EnvVarDBLockTimeout), configutil.Duration(c.LockTimeout)),
+		configutil.SetDuration(&c.StatementTimeout, configutil.Env(EnvVarDBStatementTimeout), configutil.Duration(c.StatementTimeout)),
+		configutil.SetString(&c.SSLMode, configutil.Env(EnvVarDBSSLMode), configutil.String(c.SSLMode)),
+		configutil.SetInt(&c.IdleConnections, configutil.Env(EnvVarDBIdleConnections), configutil.Int(c.IdleConnections), configutil.Int(DefaultIdleConnections)),
+		configutil.SetInt(&c.MaxConnections, configutil.Env(EnvVarDBMaxConnections), configutil.Int(c.MaxConnections), configutil.Int(DefaultMaxConnections)),
+		configutil.SetDuration(&c.MaxLifetime, configutil.Env(EnvVarDBMaxLifetime), configutil.Duration(c.MaxLifetime), configutil.Duration(DefaultMaxLifetime)),
+		configutil.SetInt(&c.BufferPoolSize, configutil.Env(EnvVarDBBufferPoolSize), configutil.Int(c.BufferPoolSize), configutil.Int(DefaultBufferPoolSize)),
+		configutil.SetString(&c.Dialect, configutil.Env(EnvVarDBDialect), configutil.String(c.Dialect), configutil.String(DialectPostgres)),
 	)
 }
 
@@ -329,9 +330,9 @@ func (c Config) CreateDSN() string {
 	}
 
 	dsn := &url.URL{
-		Scheme: "postgres",
-		Host:   host,
-		Path:   c.DatabaseOrDefault(),
+		Scheme:	"postgres",
+		Host:	host,
+		Path:	c.DatabaseOrDefault(),
 	}
 
 	if len(c.Username) > 0 {
@@ -369,40 +370,18 @@ func (c Config) CreateDSN() string {
 // CreateLoggingDSN creates a postgres connection string from the config suitable for logging.
 // It will not include the password.
 func (c Config) CreateLoggingDSN() string {
-	host := c.HostOrDefault()
-	if c.PortOrDefault() != "" {
-		host = host + ":" + c.PortOrDefault()
+	if c.DSN != "" {
+		nc, err := NewConfigFromDSN(c.DSN)
+		if err != nil {
+			return "Failed to parse DSN: see DATABASE_URL environment variable"
+		}
+		return nc.CreateLoggingDSN()
 	}
 
-	dsn := &url.URL{
-		Scheme: "postgres",
-		Host:   host,
-		Path:   c.DatabaseOrDefault(),
-	}
-
-	if len(c.Username) > 0 {
-		dsn.User = url.User(c.Username)
-	}
-
-	queryArgs := url.Values{}
-	if len(c.SSLMode) > 0 {
-		queryArgs.Add("sslmode", c.SSLMode)
-	}
-	if c.ConnectTimeout > 0 {
-		setTimeoutSeconds(queryArgs, "connect_timeout", c.ConnectTimeout)
-	}
-	if c.LockTimeout > 0 {
-		setTimeoutMilliseconds(queryArgs, "lock_timeout", c.LockTimeout)
-	}
-	if c.StatementTimeout > 0 {
-		setTimeoutMilliseconds(queryArgs, "statement_timeout", c.StatementTimeout)
-	}
-	if c.Schema != "" {
-		queryArgs.Add("search_path", c.Schema)
-	}
-
-	dsn.RawQuery = queryArgs.Encode()
-	return dsn.String()
+	// NOTE: Since `c` is a value receiver, we can modify it without
+	//       mutating the actual value.
+	c.Password = ""
+	return c.CreateDSN()
 }
 
 // Validate validates that user-provided values are valid, e.g. that timeouts

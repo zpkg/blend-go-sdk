@@ -1,7 +1,7 @@
 /*
 
 Copyright (c) 2021 - Present. Blend Labs, Inc. All rights reserved
-Use of this source code is governed by a MIT license that can be found in the LICENSE file.
+Blend Confidential - Restricted
 
 */
 
@@ -222,25 +222,25 @@ type AuthManagerRedirectHandler func(*Ctx) *url.URL
 
 // AuthManager is a manager for sessions.
 type AuthManager struct {
-	CookieDefaults http.Cookie
+	CookieDefaults	http.Cookie
 
 	// PersistHandler is called to both create and to update a session in a persistent store.
-	PersistHandler AuthManagerPersistSessionHandler
+	PersistHandler	AuthManagerPersistSessionHandler
 	// SerializeSessionHandler if set, is called to serialize the session
 	// as a session cookie value.
-	SerializeHandler AuthManagerSerializeSessionHandler
+	SerializeHandler	AuthManagerSerializeSessionHandler
 	// FetchSessionHandler is called if set to restore a session from a string session identifier.
-	FetchHandler AuthManagerFetchSessionHandler
+	FetchHandler	AuthManagerFetchSessionHandler
 	// Remove handler is called on logout to remove a session from a persistent store.
 	// It is called during `Logout` to remove logged out sessions.
-	RemoveHandler AuthManagerRemoveSessionHandler
+	RemoveHandler	AuthManagerRemoveSessionHandler
 	// ValidateHandler is called after a session is retored to make sure it's still valid.
-	ValidateHandler AuthManagerValidateSessionHandler
+	ValidateHandler	AuthManagerValidateSessionHandler
 	// SessionTimeoutProvider is called to create a variable session expiry.
-	SessionTimeoutProvider AuthManagerSessionTimeoutProvider
+	SessionTimeoutProvider	AuthManagerSessionTimeoutProvider
 
 	// LoginRedirectHandler redirects an unauthenticated user to the login page.
-	LoginRedirectHandler AuthManagerRedirectHandler
+	LoginRedirectHandler	AuthManagerRedirectHandler
 }
 
 // --------------------------------------------------------------------------------
@@ -388,14 +388,14 @@ func (am AuthManager) expire(ctx *Ctx, sessionValue string) error {
 // InjectCookie injects a session cookie into the context.
 func (am AuthManager) injectCookie(ctx *Ctx, value string, expire time.Time) {
 	http.SetCookie(ctx.Response, &http.Cookie{
-		Value:    value,
-		Expires:  expire,
-		Name:     am.CookieDefaults.Name,
-		Path:     am.CookieDefaults.Path,
-		Domain:   am.CookieDefaults.Domain,
-		HttpOnly: am.CookieDefaults.HttpOnly,
-		Secure:   am.CookieDefaults.Secure,
-		SameSite: am.CookieDefaults.SameSite,
+		Value:		value,
+		Expires:	expire,
+		Name:		am.CookieDefaults.Name,
+		Path:		am.CookieDefaults.Path,
+		Domain:		am.CookieDefaults.Domain,
+		HttpOnly:	am.CookieDefaults.HttpOnly,
+		Secure:		am.CookieDefaults.Secure,
+		SameSite:	am.CookieDefaults.SameSite,
 	})
 }
 

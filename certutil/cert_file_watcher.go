@@ -1,7 +1,7 @@
 /*
 
 Copyright (c) 2021 - Present. Blend Labs, Inc. All rights reserved
-Use of this source code is governed by a MIT license that can be found in the LICENSE file.
+Blend Confidential - Restricted
 
 */
 
@@ -28,9 +28,9 @@ func NewCertFileWatcher(certPath, keyPath string, opts ...CertFileWatcherOption)
 	}
 
 	cw := &CertFileWatcher{
-		Latch:    async.NewLatch(),
-		CertPath: certPath,
-		KeyPath:  keyPath,
+		Latch:		async.NewLatch(),
+		CertPath:	certPath,
+		KeyPath:	keyPath,
 	}
 
 	for _, opt := range opts {
@@ -71,13 +71,13 @@ func OptCertFileWatcherPollInterval(d time.Duration) CertFileWatcherOption {
 type CertFileWatcher struct {
 	*async.Latch
 
-	Certificate *tls.Certificate
+	Certificate	*tls.Certificate
 
-	CertPath     string
-	KeyPath      string
-	PollInterval time.Duration
+	CertPath	string
+	KeyPath		string
+	PollInterval	time.Duration
 
-	OnReload func(*CertFileWatcher, error)
+	OnReload	func(*CertFileWatcher, error)
 }
 
 // PollIntervalOrDefault returns the polling interval or a default.

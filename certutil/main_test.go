@@ -1,14 +1,14 @@
 /*
 
 Copyright (c) 2021 - Present. Blend Labs, Inc. All rights reserved
-Use of this source code is governed by a MIT license that can be found in the LICENSE file.
+Blend Confidential - Restricted
 
 */
 
 package certutil
 
 var (
-	caCertLiteral = []byte(`-----BEGIN CERTIFICATE-----
+	caCertLiteral	= []byte(`-----BEGIN CERTIFICATE-----
 MIIDgTCCAmmgAwIBAgIQUVFYoBt9rT3UbtDB2PPYsjANBgkqhkiG9w0BAQsFADBq
 MRYwFAYDVQQGEw1Vbml0ZWQgU3RhdGVzMRMwEQYDVQQIEwpDYWxpZm9ybmlhMRYw
 FAYDVQQHEw1TYW4gRnJhbmNpc2NvMQ8wDQYDVQQKEwZXYXJkZW4xEjAQBgNVBAMT
@@ -29,7 +29,7 @@ sr4omD+d7t6NAv7YsIUmyxtnzE0iS1lEXQfZpOcPpIx1K554YK9vX+DJS6lBsxMS
 pST+Wru/8PRGk6jOEnmFwHEut6JCORk8JqBcd7KXobJ4G3qPEFcr2Fu/ogrPj4tN
 0+JpKvBNKgdklRFSZ6O3BudGXjBrMMQno8z8pcSlKRyKYLl2dA==
 -----END CERTIFICATE-----`)
-	caKeyLiteral = []byte(`-----BEGIN RSA PRIVATE KEY-----
+	caKeyLiteral	= []byte(`-----BEGIN RSA PRIVATE KEY-----
 MIIEowIBAAKCAQEAocLIhZrHbvjZdyJSaJilR5QgTw7ejS8aM8VKbidBrfOMXKTg
 m0mRvP6hknK34ychGke7Le9BiD5aeGrWXn4TMxrBkbygo/yVjhSqMfBKFn0xBIBL
 GneynoWaygUKn/Cbz8y9J4NJ4yVOsWMX2VGGHH02tIamSD1TtzK/Q0zpYnZfrubG
@@ -57,8 +57,8 @@ MDk9AlYLsDFm3F/9AUZY4F4KdWFjvj3emZ+cfw048+U2W3UM6z9G6Gw/ro69CRxD
 zK+1ATHUx9OfrF80qQmjFbVUBTmUi0qm4i5iztO+/sICG9P5rFr5
 -----END RSA PRIVATE KEY-----`)
 
-	certLiteralCommonName = "56cb6b4422fc4215b2d0696adde0a74a"
-	certLiteral           = []byte(`-----BEGIN CERTIFICATE-----
+	certLiteralCommonName	= "56cb6b4422fc4215b2d0696adde0a74a"
+	certLiteral		= []byte(`-----BEGIN CERTIFICATE-----
 MIIDnjCCAoagAwIBAgIRANSKBwYVW3egUP3+MP2bxI4wDQYJKoZIhvcNAQELBQAw
 ajEWMBQGA1UEBhMNVW5pdGVkIFN0YXRlczETMBEGA1UECBMKQ2FsaWZvcm5pYTEW
 MBQGA1UEBxMNU2FuIEZyYW5jaXNjbzEPMA0GA1UEChMGV2FyZGVuMRIwEAYDVQQD
@@ -102,7 +102,7 @@ pST+Wru/8PRGk6jOEnmFwHEut6JCORk8JqBcd7KXobJ4G3qPEFcr2Fu/ogrPj4tN
 0+JpKvBNKgdklRFSZ6O3BudGXjBrMMQno8z8pcSlKRyKYLl2dA==
 -----END CERTIFICATE-----`)
 
-	keyLiteral = []byte(`-----BEGIN RSA PRIVATE KEY-----
+	keyLiteral	= []byte(`-----BEGIN RSA PRIVATE KEY-----
 MIIEpAIBAAKCAQEAwa/tHzU2y9SQWG+kU6awbrSJ4UTlsEsAEKS70UHQEbJfMB6a
 3vkyp3bG5dOpsoZo/HDPnEhVebCZtpPWF3sc38tqrh1yQD89pqVWuttWjGzsVzN3
 ZP326LigHxE7IBtvcVLSjLwkHJ7cYYC7TZamrBUWGng9nd7XPZ5wSoG8NxantW3v

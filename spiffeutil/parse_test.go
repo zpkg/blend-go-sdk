@@ -1,7 +1,7 @@
 /*
 
 Copyright (c) 2021 - Present. Blend Labs, Inc. All rights reserved
-Use of this source code is governed by a MIT license that can be found in the LICENSE file.
+Blend Confidential - Restricted
 
 */
 
@@ -20,8 +20,8 @@ func TestParse(t *testing.T) {
 	assert := sdkAssert.New(t)
 
 	type failureCase struct {
-		URI     string
-		Message string
+		URI	string
+		Message	string
 	}
 	failures := []failureCase{
 		{URI: "https://web.invalid", Message: "Does not match protocol: \"https://web.invalid\""},
@@ -48,9 +48,9 @@ func TestParseKubernetesWorkloadID(t *testing.T) {
 	assert := sdkAssert.New(t)
 
 	type testCase struct {
-		WorkloadID     string
-		Namespace      string
-		ServiceAccount string
+		WorkloadID	string
+		Namespace	string
+		ServiceAccount	string
 	}
 	testCases := []testCase{
 		{WorkloadID: "ns/light1/sa/bulb", Namespace: "light1", ServiceAccount: "bulb"},

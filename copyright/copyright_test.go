@@ -1,7 +1,7 @@
 /*
 
 Copyright (c) 2021 - Present. Blend Labs, Inc. All rights reserved
-Use of this source code is governed by a MIT license that can be found in the LICENSE file.
+Blend Confidential - Restricted
 
 */
 
@@ -16,7 +16,9 @@ import (
 	"io/ioutil"
 	"os"
 	"path/filepath"
+	"strings"
 	"testing"
+	"text/template"
 	"time"
 
 	"github.com/blend/go-sdk/assert"
@@ -302,31 +304,31 @@ func Test_Copyright_GetNoticeTemplate(t *testing.T) {
 
 type mockInfoDir string
 
-func (mid mockInfoDir) Name() string       { return string(mid) }
-func (mid mockInfoDir) Size() int64        { return 1 << 8 }
-func (mid mockInfoDir) Mode() fs.FileMode  { return fs.FileMode(0755) }
-func (mid mockInfoDir) ModTime() time.Time { return time.Now().UTC() }
-func (mid mockInfoDir) IsDir() bool        { return true }
-func (mid mockInfoDir) Sys() interface{}   { return nil }
+func (mid mockInfoDir) Name() string		{ return string(mid) }
+func (mid mockInfoDir) Size() int64		{ return 1 << 8 }
+func (mid mockInfoDir) Mode() fs.FileMode	{ return fs.FileMode(0755) }
+func (mid mockInfoDir) ModTime() time.Time	{ return time.Now().UTC() }
+func (mid mockInfoDir) IsDir() bool		{ return true }
+func (mid mockInfoDir) Sys() interface{}	{ return nil }
 
 type mockInfoFile string
 
-func (mif mockInfoFile) Name() string       { return string(mif) }
-func (mif mockInfoFile) Size() int64        { return 1 << 8 }
-func (mif mockInfoFile) Mode() fs.FileMode  { return fs.FileMode(0755) }
-func (mif mockInfoFile) ModTime() time.Time { return time.Now().UTC() }
-func (mif mockInfoFile) IsDir() bool        { return false }
-func (mif mockInfoFile) Sys() interface{}   { return nil }
+func (mif mockInfoFile) Name() string		{ return string(mif) }
+func (mif mockInfoFile) Size() int64		{ return 1 << 8 }
+func (mif mockInfoFile) Mode() fs.FileMode	{ return fs.FileMode(0755) }
+func (mif mockInfoFile) ModTime() time.Time	{ return time.Now().UTC() }
+func (mif mockInfoFile) IsDir() bool		{ return false }
+func (mif mockInfoFile) Sys() interface{}	{ return nil }
 
 func Test_Copyright_includeOrExclude(t *testing.T) {
 	t.Parallel()
 	its := assert.New(t)
 
 	testCases := [...]struct {
-		Config   Config
-		Path     string
-		Info     fs.FileInfo
-		Expected error
+		Config		Config
+		Path		string
+		Info		fs.FileInfo
+		Expected	error
 	}{
 		/*0*/ {Config: Config{}, Path: ".", Info: mockInfoDir("."), Expected: ErrWalkSkip},
 		/*1*/ {Config: Config{Excludes: []string{"/foo/**"}}, Path: "/foo/bar", Info: mockInfoDir("bar"), Expected: filepath.SkipDir},
@@ -344,8 +346,8 @@ func Test_Copyright_includeOrExclude(t *testing.T) {
 }
 
 const (
-	tsFile0 = `import * as axios from 'axios';`
-	pyFile0 = `from __future__ import print_function
+	tsFile0	= `import * as axios from 'axios';`
+	pyFile0	= `from __future__ import print_function
 	
 		import logging
 		import os
@@ -355,7 +357,7 @@ const (
 		import uuid
 		import json`
 
-	goFile0 = `// +build tools
+	goFile0	= `// +build tools
 		package tools
 		
 		import (
@@ -546,6 +548,66 @@ func Test_Copyright_Inject(t *testing.T) {
 	its.HasPrefix(string(contents), "/**\n * Copyright")
 }
 
+func Test_Copyright_Inject_Shebang(t *testing.T) {
+	t.Parallel()
+	its := assert.New(t)
+
+	tempDir, err := ioutil.TempDir("", "copyright_test")
+	its.Nil(err)
+	t.Cleanup(func() { os.RemoveAll(tempDir) })
+
+	// Write `shift.py` without
+	contents := strings.Join([]string{
+		"\r\t",
+		"  #!/usr/bin/env python",
+		"",
+		"def main():",
+		`    print("Hello world")`,
+		"",
+		"",
+		`if __name__ == "__main__":`,
+		"    main()",
+		"",
+	}, "\n")
+	filename := filepath.Join(tempDir, "shift.py")
+	err = ioutil.WriteFile(filename, []byte(contents), 0755)
+	its.Nil(err)
+
+	// Actually inject
+	c := New(OptIncludeFiles("*shift.py"))
+	err = c.Inject(context.TODO(), tempDir)
+	its.Nil(err)
+
+	// Verify injected contents are as expected
+	contentInjected, err := ioutil.ReadFile(filename)
+	its.Nil(err)
+	expected := strings.Join([]string{
+		"\r\t",
+		"  #!/usr/bin/env python",
+		"#",
+		"# " + expectedNoticePrefix(its),
+		"# " + DefaultRestrictionsInternal,
+		"#",
+		"",
+		"",
+		"def main():",
+		`    print("Hello world")`,
+		"",
+		"",
+		`if __name__ == "__main__":`,
+		"    main()",
+		"",
+	}, "\n")
+	its.Equal(expected, string(contentInjected))
+
+	// Verify no-op if notice header is already present
+	err = c.Inject(context.TODO(), tempDir)
+	its.Nil(err)
+	contentInjected, err = ioutil.ReadFile(filename)
+	its.Nil(err)
+	its.Equal(expected, string(contentInjected))
+}
+
 func Test_Copyright_Verify(t *testing.T) {
 	its := assert.New(t)
 
@@ -568,6 +630,62 @@ func Test_Copyright_Verify(t *testing.T) {
 
 	err = c.Verify(context.TODO(), tempDir)
 	its.Nil(err)
+}
+
+func Test_Copyright_Verify_Shebang(t *testing.T) {
+	t.Parallel()
+	its := assert.New(t)
+
+	tempDir, err := ioutil.TempDir("", "copyright_test")
+	its.Nil(err)
+	t.Cleanup(func() { os.RemoveAll(tempDir) })
+
+	// Write `shift.py` already injected
+	contents := strings.Join([]string{
+		"#!/usr/bin/env python",
+		"#",
+		"# " + expectedNoticePrefix(its),
+		"# " + DefaultRestrictionsInternal,
+		"#",
+		"",
+		"",
+		"def main():",
+		`    print("Hello world")`,
+		"",
+		"",
+		`if __name__ == "__main__":`,
+		"    main()",
+		"",
+	}, "\n")
+	filename := filepath.Join(tempDir, "shift.py")
+	err = ioutil.WriteFile(filename, []byte(contents), 0755)
+	its.Nil(err)
+
+	// Verify present
+	cfg := Config{
+		ShowDiff:	ref.Bool(false),
+		Quiet:		ref.Bool(true),
+		IncludeFiles:	[]string{"*shift.py"},
+	}
+	c := New(OptConfig(cfg))
+	err = c.Verify(context.TODO(), tempDir)
+	its.Nil(err)
+
+	// Write without and fail
+	contents = strings.Join([]string{
+		"#!/usr/bin/env python",
+		"def main():",
+		`    print("Hello world")`,
+		"",
+		"",
+		`if __name__ == "__main__":`,
+		"    main()",
+		"",
+	}, "\n")
+	err = ioutil.WriteFile(filename, []byte(contents), 0755)
+	its.Nil(err)
+	err = c.Verify(context.TODO(), tempDir)
+	its.Equal("failure; one or more steps failed", fmt.Sprintf("%v", err))
 }
 
 func Test_Copyright_Remove(t *testing.T) {
@@ -596,6 +714,63 @@ func Test_Copyright_Remove(t *testing.T) {
 	its.NotNil(err)
 }
 
+func Test_Copyright_Remove_Shebang(t *testing.T) {
+	t.Parallel()
+	its := assert.New(t)
+
+	tempDir, err := ioutil.TempDir("", "copyright_test")
+	its.Nil(err)
+	t.Cleanup(func() { os.RemoveAll(tempDir) })
+
+	// Write `shift.py` already injected
+	contents := strings.Join([]string{
+		"#!/usr/bin/env python",
+		"#",
+		"# " + expectedNoticePrefix(its),
+		"# " + DefaultRestrictionsInternal,
+		"#",
+		"",
+		"",
+		"def main():",
+		`    print("Hello world")`,
+		"",
+		"",
+		`if __name__ == "__main__":`,
+		"    main()",
+		"",
+	}, "\n")
+	filename := filepath.Join(tempDir, "shift.py")
+	err = ioutil.WriteFile(filename, []byte(contents), 0755)
+	its.Nil(err)
+
+	// Actually remove
+	c := New(OptIncludeFiles("*shift.py"))
+	err = c.Remove(context.TODO(), tempDir)
+	its.Nil(err)
+
+	// Verify removed contents are as expected
+	contentRemoved, err := ioutil.ReadFile(filename)
+	its.Nil(err)
+	expected := strings.Join([]string{
+		"#!/usr/bin/env python",
+		"def main():",
+		`    print("Hello world")`,
+		"",
+		"",
+		`if __name__ == "__main__":`,
+		"    main()",
+		"",
+	}, "\n")
+	its.Equal(expected, string(contentRemoved))
+
+	// Verify no-op if notice header is already removed
+	err = c.Remove(context.TODO(), tempDir)
+	its.Nil(err)
+	contentRemoved, err = ioutil.ReadFile(filename)
+	its.Nil(err)
+	its.Equal(expected, string(contentRemoved))
+}
+
 func Test_Copyright_Walk_singleFileRoot(t *testing.T) {
 	its := assert.New(t)
 
@@ -618,4 +793,19 @@ func Test_Copyright_Walk_singleFileRoot(t *testing.T) {
 		filepath.Join(tempDir, "file0.py"),
 	}
 	its.Equal(expected, seen)
+}
+
+func expectedNoticePrefix(its *assert.Assertions) string {
+	vars := map[string]string{
+		"Year":		fmt.Sprintf("%d", time.Now().UTC().Year()),
+		"Company":	DefaultCompany,
+		"Restrictions":	"",
+	}
+	tmpl := template.New("output")
+	_, err := tmpl.Parse(DefaultNoticeBodyTemplate)
+	its.Nil(err)
+	prefixBuffer := new(bytes.Buffer)
+	err = tmpl.Execute(prefixBuffer, vars)
+	its.Nil(err)
+	return strings.TrimRight(prefixBuffer.String(), "\n")
 }

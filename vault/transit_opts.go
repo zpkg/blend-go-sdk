@@ -1,7 +1,7 @@
 /*
 
 Copyright (c) 2021 - Present. Blend Labs, Inc. All rights reserved
-Use of this source code is governed by a MIT license that can be found in the LICENSE file.
+Blend Confidential - Restricted
 
 */
 
@@ -10,12 +10,12 @@ package vault
 import "github.com/blend/go-sdk/ex"
 
 var validTKTypes = map[string]struct{}{
-	TypeAES256GCM96:      {},
-	TypeCHACHA20POLY1305: {},
-	TypeED25519:          {},
-	TypeECDSAP256:        {},
-	TypeRSA2048:          {},
-	TypeRSA4096:          {},
+	TypeAES256GCM96:	{},
+	TypeCHACHA20POLY1305:	{},
+	TypeED25519:		{},
+	TypeECDSAP256:		{},
+	TypeRSA2048:		{},
+	TypeRSA4096:		{},
 }
 
 // CreateTransitKeyOption is an option type for transit key creation

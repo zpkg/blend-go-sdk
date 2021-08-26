@@ -1,16 +1,16 @@
 /*
 
 Copyright (c) 2021 - Present. Blend Labs, Inc. All rights reserved
-Use of this source code is governed by a MIT license that can be found in the LICENSE file.
+Blend Confidential - Restricted
 
 */
 
 package collections
 
 type listNode struct {
-	Next     *listNode
-	Previous *listNode
-	Value    interface{}
+	Next		*listNode
+	Previous	*listNode
+	Value		interface{}
 }
 
 // NewLinkedList returns a new Queue instance.
@@ -21,9 +21,9 @@ func NewLinkedList() *LinkedList {
 // LinkedList is an implementation of a fifo buffer using nodes and poitners.
 // Remarks; it is not threadsafe. It is constant(ish) time in all ops.
 type LinkedList struct {
-	head   *listNode
-	tail   *listNode
-	length int
+	head	*listNode
+	tail	*listNode
+	length	int
 }
 
 // Len returns the length of the queue in constant time.
@@ -35,10 +35,10 @@ func (q *LinkedList) Len() int {
 func (q *LinkedList) Enqueue(value interface{}) {
 	node := &listNode{Value: value}
 
-	if q.head == nil { //the queue is empty, that is to say head is nil
+	if q.head == nil {	//the queue is empty, that is to say head is nil
 		q.head = node
 		q.tail = node
-	} else { //the queue is not empty, we have a (valid) tail pointer
+	} else {	//the queue is not empty, we have a (valid) tail pointer
 		q.tail.Previous = node
 		node.Next = q.tail
 		q.tail = node

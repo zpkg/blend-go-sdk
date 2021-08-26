@@ -1,7 +1,7 @@
 /*
 
 Copyright (c) 2021 - Present. Blend Labs, Inc. All rights reserved
-Use of this source code is governed by a MIT license that can be found in the LICENSE file.
+Blend Confidential - Restricted
 
 */
 
@@ -134,7 +134,7 @@ type Frame uintptr
 
 // PC returns the program counter for this frame;
 // multiple frames may have the same PC value.
-func (f Frame) PC() uintptr { return uintptr(f) - 1 }
+func (f Frame) PC() uintptr	{ return uintptr(f) - 1 }
 
 // File returns the full path to the file that contains the
 // function for this Frame's pc.

@@ -1,7 +1,7 @@
 /*
 
 Copyright (c) 2021 - Present. Blend Labs, Inc. All rights reserved
-Use of this source code is governed by a MIT license that can be found in the LICENSE file.
+Blend Confidential - Restricted
 
 */
 
@@ -139,7 +139,7 @@ func TestStringMatchesError(t *testing.T) {
 
 	var err error
 	good := "a foo"
-	err = String(&good).Matches("((")() // this should be an invalid regex "(("
+	err = String(&good).Matches("((")()	// this should be an invalid regex "(("
 	assert.NotNil(err)
 	assert.NotEqual(ErrValidation, ex.ErrClass(err))
 }

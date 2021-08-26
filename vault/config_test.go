@@ -1,7 +1,7 @@
 /*
 
 Copyright (c) 2021 - Present. Blend Labs, Inc. All rights reserved
-Use of this source code is governed by a MIT license that can be found in the LICENSE file.
+Blend Confidential - Restricted
 
 */
 
@@ -9,12 +9,11 @@ package vault
 
 import (
 	"context"
-	"testing"
-	"time"
-
 	"github.com/blend/go-sdk/assert"
 	"github.com/blend/go-sdk/configutil"
 	"github.com/blend/go-sdk/env"
+	"testing"
+	"time"
 )
 
 var (

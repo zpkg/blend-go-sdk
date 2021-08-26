@@ -1,7 +1,7 @@
 /*
 
 Copyright (c) 2021 - Present. Blend Labs, Inc. All rights reserved
-Use of this source code is governed by a MIT license that can be found in the LICENSE file.
+Blend Confidential - Restricted
 
 */
 
@@ -50,8 +50,8 @@ func OptCopyAllSkipGlobs(globs ...string) CopyAllOption {
 
 // CopyAllOptions are the options for copy all.
 type CopyAllOptions struct {
-	SymlinkMode  CopyAllSymlinkMode
-	SkipProvider func(os.FileInfo) bool
+	SymlinkMode	CopyAllSymlinkMode
+	SkipProvider	func(os.FileInfo) bool
 }
 
 // CopyAllOption is a mutator for copy all options
@@ -63,11 +63,11 @@ type CopyAllSymlinkMode int
 // CopyAllSymlinkMode(s)
 var (
 	// CopyAllSymlinkModeShallow will copy links from the source to the destination as links.
-	CopyAllSymlinkModeShallow CopyAllSymlinkMode = 0
+	CopyAllSymlinkModeShallow	CopyAllSymlinkMode	= 0
 	// CopyAllSymlinkModeDeep will traverse into the link destination and copy any files recursively.
-	CopyAllSymlinkModeDeep CopyAllSymlinkMode = 1
+	CopyAllSymlinkModeDeep	CopyAllSymlinkMode	= 1
 	// CopyAllSymlinkModeSkip will skip any links discovered.
-	CopyAllSymlinkModeSkip CopyAllSymlinkMode = 2
+	CopyAllSymlinkModeSkip	CopyAllSymlinkMode	= 2
 )
 
 // copyAll switches proper copy functions regarding file type, etc...
@@ -106,7 +106,7 @@ func symCopy(destination, source string, sourceDirInfo os.FileInfo, opts CopyAll
 	case CopyAllSymlinkModeSkip:
 		fallthrough
 	default:
-		return nil // do nothing
+		return nil	// do nothing
 	}
 }
 

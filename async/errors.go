@@ -1,7 +1,7 @@
 /*
 
 Copyright (c) 2021 - Present. Blend Labs, Inc. All rights reserved
-Use of this source code is governed by a MIT license that can be found in the LICENSE file.
+Blend Confidential - Restricted
 
 */
 
@@ -11,7 +11,7 @@ import "github.com/blend/go-sdk/ex"
 
 // Errors
 var (
-	ErrCannotStart  ex.Class = "cannot start; already started"
-	ErrCannotStop   ex.Class = "cannot stop; already stopped"
-	ErrCannotCancel ex.Class = "cannot cancel; already canceled"
+	ErrCannotStart	ex.Class	= "cannot start; already started"
+	ErrCannotStop	ex.Class	= "cannot stop; already stopped"
+	ErrCannotCancel	ex.Class	= "cannot cancel; already canceled"
 )

@@ -1,7 +1,7 @@
 /*
 
 Copyright (c) 2021 - Present. Blend Labs, Inc. All rights reserved
-Use of this source code is governed by a MIT license that can be found in the LICENSE file.
+Blend Confidential - Restricted
 
 */
 
@@ -35,14 +35,14 @@ func New(options ...Option) *Copyright {
 
 // Copyright is the main type that injects, removes and verifies copyright headers.
 type Copyright struct {
-	Config // Config holds the configuration opitons.
+	Config	// Config holds the configuration opitons.
 
 	// Stdout is the writer for Verbose and Debug output.
 	// If it is unset, `os.Stdout` will be used.
-	Stdout io.Writer
+	Stdout	io.Writer
 	// Stderr is the writer for Error output.
 	// If it is unset, `os.Stderr` will be used.
-	Stderr io.Writer
+	Stderr	io.Writer
 }
 
 // Inject inserts the copyright header in any matching files that don't already
@@ -208,7 +208,9 @@ func (c Copyright) remove(path string, info os.FileInfo, file, notice []byte) er
 func (c Copyright) verify(path string, _ os.FileInfo, file, notice []byte) error {
 	fileExtension := filepath.Ext(path)
 	var err error
-	if fileExtension == ExtensionGo { // we have to treat go files specially because of build tags
+	if c.hasShebang(file) {
+		err = c.shebangVerifyNotice(path, file, notice)
+	} else if fileExtension == ExtensionGo {	// we have to treat go files specially because of build tags
 		err = c.goVerifyNotice(path, file, notice)
 	} else {
 		err = c.verifyNotice(path, file, notice)
@@ -314,24 +316,50 @@ func (c Copyright) noticeTemplateByExtension(fileExtension string) (noticeTempla
 
 func (c Copyright) injectedContents(path string, file, notice []byte) []byte {
 	fileExtension := filepath.Ext(path)
-	var injectedContents []byte
-	if fileExtension == ExtensionGo { // we have to treat go files specially because of build tags
-		injectedContents = c.goInjectNotice(path, file, notice)
-	} else {
-		injectedContents = c.injectNotice(path, file, notice)
+	if c.hasShebang(file) {
+		return c.shebangInjectNotice(path, file, notice)
 	}
-	return injectedContents
+
+	if fileExtension == ExtensionGo {	// we have to treat go files specially because of build tags
+		return c.goInjectNotice(path, file, notice)
+	}
+
+	return c.injectNotice(path, file, notice)
+}
+
+func (Copyright) hasShebang(file []byte) bool {
+	return shebangMatch.Match(file)
 }
 
 func (c Copyright) removedContents(path string, file, notice []byte) []byte {
 	fileExtension := filepath.Ext(path)
-	var removedContents []byte
-	if fileExtension == ExtensionGo { // we have to treat go files specially because of build tags
-		removedContents = c.goRemoveNotice(path, file, notice)
-	} else {
-		removedContents = c.removeNotice(path, file, notice)
+	if c.hasShebang(file) {
+		return c.shebangRemoveNotice(path, file, notice)
 	}
-	return removedContents
+
+	if fileExtension == ExtensionGo {	// we have to treat go files specially because of build tags
+		return c.goRemoveNotice(path, file, notice)
+	}
+
+	return c.removeNotice(path, file, notice)
+}
+
+// shebangInjectNotice explicitly handles files that start with a shebang line.
+// This assumes these are not `*.go` source files so has more in common with
+// `injectNotice()` than with `goInjectNotice()`.
+func (c Copyright) shebangInjectNotice(path string, file, notice []byte) []byte {
+	// Strip shebang lines from beginning of file
+	shebangLines := shebangMatch.Find(file)
+	file = shebangMatch.ReplaceAll(file, nil)
+
+	if c.fileHasCopyrightHeader(file, notice) {
+		return nil
+	}
+	c.Verbosef("injecting notice: %s", path)
+
+	// remove any existing notice-ish looking text ...
+	file = c.removeCopyrightHeader(file, notice)
+	return c.mergeFileSections(shebangLines, notice, file)
 }
 
 // goInjectNotice handles go files differently because they may contain build tags.
@@ -358,6 +386,22 @@ func (c Copyright) injectNotice(path string, file, notice []byte) []byte {
 	return c.mergeFileSections(notice, file)
 }
 
+// shebangRemoveNotice explicitly handles files that start with a shebang line.
+// This assumes these are not `*.go` source files so has more in common with
+// `removeNotice()` than with `goRemoveNotice()`.
+func (c Copyright) shebangRemoveNotice(path string, file, notice []byte) []byte {
+	// Strip shebang lines from beginning of file
+	shebangLines := shebangMatch.Find(file)
+	file = shebangMatch.ReplaceAll(file, nil)
+
+	if !c.fileHasCopyrightHeader(file, notice) {
+		return nil
+	}
+	c.Verbosef("removing notice: %s", path)
+	removed := c.removeCopyrightHeader(file, notice)
+	return c.mergeFileSections(shebangLines, removed)
+}
+
 func (c Copyright) goRemoveNotice(path string, file, notice []byte) []byte {
 	goBuildTag := goBuildTagMatch.FindString(string(file))
 	file = goBuildTagMatch.ReplaceAll(file, []byte(""))
@@ -374,6 +418,20 @@ func (c Copyright) removeNotice(path string, file, notice []byte) []byte {
 	}
 	c.Verbosef("removing notice: %s", path)
 	return c.removeCopyrightHeader(file, notice)
+}
+
+// shebangVerifyNotice explicitly handles files that start with a shebang line.
+// This assumes these are not `*.go` source files so has more in common with
+// `verifyNotice()` than with `goVerifyNotice()`.
+func (c Copyright) shebangVerifyNotice(path string, file, notice []byte) error {
+	// Strip and ignore shebang lines from beginning of file
+	file = shebangMatch.ReplaceAll(file, nil)
+
+	c.Debugf("verifying (shebang): %s", path)
+	if !c.fileHasCopyrightHeader(file, notice) {
+		return fmt.Errorf(VerifyErrorFormat, path)
+	}
+	return nil
 }
 
 func (c Copyright) goVerifyNotice(path string, file, notice []byte) error {
@@ -447,9 +505,9 @@ func (c Copyright) compileNoticeTemplate(noticeTemplate, noticeBody string) (str
 
 func (c Copyright) templateViewModel(extra ...map[string]interface{}) map[string]interface{} {
 	base := map[string]interface{}{
-		"Year":    c.YearOrDefault(),
-		"Company": c.CompanyOrDefault(),
-		"License": c.LicenseOrDefault(),
+		"Year":		c.YearOrDefault(),
+		"Company":	c.CompanyOrDefault(),
+		"License":	c.LicenseOrDefault(),
 	}
 	for _, m := range extra {
 		for key, value := range m {

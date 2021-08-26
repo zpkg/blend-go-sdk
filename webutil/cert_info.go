@@ -1,7 +1,7 @@
 /*
 
 Copyright (c) 2021 - Present. Blend Labs, Inc. All rights reserved
-Use of this source code is governed by a MIT license that can be found in the LICENSE file.
+Blend Confidential - Restricted
 
 */
 
@@ -37,23 +37,23 @@ func ParseCertInfo(res *http.Response) *CertInfo {
 	}
 
 	return &CertInfo{
-		SubjectCommonName: firstCert.Subject.CommonName,
-		IssuerNames:       issuerNames,
-		IssuerCommonName:  firstCert.Issuer.CommonName,
-		DNSNames:          firstCert.DNSNames,
-		NotAfter:          earliestNotAfter,
-		NotBefore:         latestNotBefore,
+		SubjectCommonName:	firstCert.Subject.CommonName,
+		IssuerNames:		issuerNames,
+		IssuerCommonName:	firstCert.Issuer.CommonName,
+		DNSNames:		firstCert.DNSNames,
+		NotAfter:		earliestNotAfter,
+		NotBefore:		latestNotBefore,
 	}
 }
 
 // CertInfo is the information for a certificate.
 type CertInfo struct {
-	SubjectCommonName string    `json:"subjectCommonName" yaml:"subjectCommonName"`
-	IssuerCommonName  string    `json:"issuerCommonName" yaml:"issuerCommonName"`
-	IssuerNames       []string  `json:"issuerNames" yaml:"issuerNames"`
-	DNSNames          []string  `json:"dnsNames" yaml:"dnsNames"`
-	NotAfter          time.Time `json:"notAfter" yaml:"notAfter"`
-	NotBefore         time.Time `json:"notBefore" yaml:"notBefore"`
+	SubjectCommonName	string		`json:"subjectCommonName" yaml:"subjectCommonName"`
+	IssuerCommonName	string		`json:"issuerCommonName" yaml:"issuerCommonName"`
+	IssuerNames		[]string	`json:"issuerNames" yaml:"issuerNames"`
+	DNSNames		[]string	`json:"dnsNames" yaml:"dnsNames"`
+	NotAfter		time.Time	`json:"notAfter" yaml:"notAfter"`
+	NotBefore		time.Time	`json:"notBefore" yaml:"notBefore"`
 }
 
 // IsExpired returns if the certificate is strictly expired

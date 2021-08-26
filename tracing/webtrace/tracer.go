@@ -1,7 +1,7 @@
 /*
 
 Copyright (c) 2021 - Present. Blend Labs, Inc. All rights reserved
-Use of this source code is governed by a MIT license that can be found in the LICENSE file.
+Blend Confidential - Restricted
 
 */
 
@@ -24,10 +24,10 @@ const (
 )
 
 var (
-	_ web.Tracer            = (*webTracer)(nil)
-	_ web.TraceFinisher     = (*webTraceFinisher)(nil)
-	_ web.ViewTracer        = (*webTracer)(nil)
-	_ web.ViewTraceFinisher = (*webViewTraceFinisher)(nil)
+	_	web.Tracer		= (*webTracer)(nil)
+	_	web.TraceFinisher	= (*webTraceFinisher)(nil)
+	_	web.ViewTracer		= (*webTracer)(nil)
+	_	web.ViewTraceFinisher	= (*webViewTraceFinisher)(nil)
 )
 
 // Tracer returns a web tracer.

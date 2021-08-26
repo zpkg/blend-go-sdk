@@ -1,7 +1,7 @@
 /*
 
 Copyright (c) 2021 - Present. Blend Labs, Inc. All rights reserved
-Use of this source code is governed by a MIT license that can be found in the LICENSE file.
+Blend Confidential - Restricted
 
 */
 
@@ -40,4 +40,4 @@ Example setting the replicas:
 	worker := ch.Assignment("item-0") // will yield `worker-0` or `worker-1` etc.
 
 */
-package consistenthash // import "github.com/blend/go-sdk/consistenthash"
+package consistenthash	// import "github.com/blend/go-sdk/consistenthash"
