@@ -1,11 +1,11 @@
 /*
 
 Copyright (c) 2021 - Present. Blend Labs, Inc. All rights reserved
-Blend Confidential - Restricted
+Use of this source code is governed by a MIT license that can be found in the LICENSE file.
 
 */
 
 /*
 Package grpctrace provides tracing helpers for grpc servers and clients.
 */
-package grpctrace	// import "github.com/blend/go-sdk/tracing/grpctrace"
+package grpctrace // import "github.com/blend/go-sdk/tracing/grpctrace"

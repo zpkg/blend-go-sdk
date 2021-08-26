@@ -1,7 +1,7 @@
 /*
 
 Copyright (c) 2021 - Present. Blend Labs, Inc. All rights reserved
-Blend Confidential - Restricted
+Use of this source code is governed by a MIT license that can be found in the LICENSE file.
 
 */
 
@@ -21,21 +21,21 @@ import (
 
 // String errors
 const (
-	ErrStringRequired	ex.Class	= "string should be set"
-	ErrStringForbidden	ex.Class	= "string should not be set"
-	ErrStringLength		ex.Class	= "string should be a given length"
-	ErrStringLengthMin	ex.Class	= "string should be a minimum length"
-	ErrStringLengthMax	ex.Class	= "string should be a maximum length"
-	ErrStringMatches	ex.Class	= "string should match regular expression"
-	ErrStringIsUpper	ex.Class	= "string should be uppercase"
-	ErrStringIsLower	ex.Class	= "string should be lowercase"
-	ErrStringIsTitle	ex.Class	= "string should be titlecase"
-	ErrStringIsUUID		ex.Class	= "string should be a uuid"
-	ErrStringIsEmail	ex.Class	= "string should be a valid email address"
-	ErrStringIsURI		ex.Class	= "string should be a valid uri"
-	ErrStringIsIP		ex.Class	= "string should be a valid ip address"
-	ErrStringIsSlug		ex.Class	= "string should be a valid slug (i.e. matching [0-9,a-z,A-Z,_,-])"
-	ErrStringIsOneOf	ex.Class	= "string should be one of a set of values"
+	ErrStringRequired  ex.Class = "string should be set"
+	ErrStringForbidden ex.Class = "string should not be set"
+	ErrStringLength    ex.Class = "string should be a given length"
+	ErrStringLengthMin ex.Class = "string should be a minimum length"
+	ErrStringLengthMax ex.Class = "string should be a maximum length"
+	ErrStringMatches   ex.Class = "string should match regular expression"
+	ErrStringIsUpper   ex.Class = "string should be uppercase"
+	ErrStringIsLower   ex.Class = "string should be lowercase"
+	ErrStringIsTitle   ex.Class = "string should be titlecase"
+	ErrStringIsUUID    ex.Class = "string should be a uuid"
+	ErrStringIsEmail   ex.Class = "string should be a valid email address"
+	ErrStringIsURI     ex.Class = "string should be a valid uri"
+	ErrStringIsIP      ex.Class = "string should be a valid ip address"
+	ErrStringIsSlug    ex.Class = "string should be a valid slug (i.e. matching [0-9,a-z,A-Z,_,-])"
+	ErrStringIsOneOf   ex.Class = "string should be one of a set of values"
 )
 
 // String contains helpers for string validation.
@@ -78,7 +78,7 @@ func (s StringValidators) MinLen(length int) Validator {
 		if s.Value == nil {
 			return Errorf(ErrStringLengthMin, nil, "length: %d", length)
 		}
-		if len(*s.Value) < length {	//if it's unset, it should fail the minimum check.
+		if len(*s.Value) < length { //if it's unset, it should fail the minimum check.
 			return Errorf(ErrStringLengthMin, *s.Value, "length: %d", length)
 		}
 		return nil

@@ -1,7 +1,7 @@
 /*
 
 Copyright (c) 2021 - Present. Blend Labs, Inc. All rights reserved
-Blend Confidential - Restricted
+Use of this source code is governed by a MIT license that can be found in the LICENSE file.
 
 */
 
@@ -27,10 +27,10 @@ func (e Error) MarshalJSON() ([]byte, error) {
 
 // ParseError is a specific parse error.
 type ParseError struct {
-	Err		error
-	Input		string
-	Position	int
-	Message		string
+	Err      error
+	Input    string
+	Position int
+	Message  string
 }
 
 // Class implements ex.ClassProvider.

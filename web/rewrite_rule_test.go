@@ -1,7 +1,7 @@
 /*
 
 Copyright (c) 2021 - Present. Blend Labs, Inc. All rights reserved
-Blend Confidential - Restricted
+Use of this source code is governed by a MIT license that can be found in the LICENSE file.
 
 */
 
@@ -22,8 +22,8 @@ func TestRewriteRuleApply(t *testing.T) {
 	expression := regexp.MustCompile(regex)
 
 	rr := &RewriteRule{
-		MatchExpression:	regex,
-		expr:			expression,
+		MatchExpression: regex,
+		expr:            expression,
 		Action: func(path string, pieces ...string) string {
 			assert.NotEmpty(path)
 			assert.NotEmpty(pieces)

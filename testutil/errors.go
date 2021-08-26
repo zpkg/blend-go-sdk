@@ -1,7 +1,7 @@
 /*
 
 Copyright (c) 2021 - Present. Blend Labs, Inc. All rights reserved
-Blend Confidential - Restricted
+Use of this source code is governed by a MIT license that can be found in the LICENSE file.
 
 */
 
@@ -11,8 +11,8 @@ package testutil
 //       * `SingleError` satisfies `ErrorProducer`.
 //       * `SliceErrors` satisfies `ErrorProducer`.
 var (
-	_	ErrorProducer	= (*SingleError)(nil)
-	_	ErrorProducer	= (*SliceErrors)(nil)
+	_ ErrorProducer = (*SingleError)(nil)
+	_ ErrorProducer = (*SliceErrors)(nil)
 )
 
 // ErrorProducer is an interface that defines an error factory.
@@ -32,8 +32,8 @@ func (se *SingleError) NextError() error {
 
 // SliceErrors satisfies ErrorProducer for a slice of errors.
 type SliceErrors struct {
-	Errors	[]error
-	Index	int
+	Errors []error
+	Index  int
 }
 
 // NextError produces the "next" error. (This is not concurrency safe.)

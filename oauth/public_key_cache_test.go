@@ -1,7 +1,7 @@
 /*
 
 Copyright (c) 2021 - Present. Blend Labs, Inc. All rights reserved
-Blend Confidential - Restricted
+Use of this source code is governed by a MIT license that can be found in the LICENSE file.
 
 */
 
@@ -45,9 +45,9 @@ func Test_PublicKeyCache_Keyfunc(t *testing.T) {
 		r2.OptURL(keysResponder.URL),
 	}
 	cache.current = &PublicKeysResponse{
-		CacheControl:	"public, max-age=23196, must-revalidate, no-transform",
-		Expires:	time.Now().UTC().AddDate(0, 0, 1),
-		Keys:		jwkLookup(keys),
+		CacheControl: "public, max-age=23196, must-revalidate, no-transform",
+		Expires:      time.Now().UTC().AddDate(0, 0, 1),
+		Keys:         jwkLookup(keys),
 	}
 
 	keyfunc := cache.Keyfunc(context.TODO())
@@ -105,9 +105,9 @@ func Test_PublicKeyCache_Get(t *testing.T) {
 	keysResponder := httptest.NewServer(http.HandlerFunc(func(rw http.ResponseWriter, req *http.Request) {
 		didCallResponder = true
 		rw.Header().Set("Content-Type", "application/json; charset=UTF-8")
-		rw.Header().Set("Cache-Control", "public, max-age=23196, must-revalidate, no-transform")	// set cache control
-		rw.Header().Set("Expires", time.Now().UTC().AddDate(0, 1, 0).Format(http.TimeFormat))		// set expires
-		rw.Header().Set("Date", time.Now().UTC().Format(http.TimeFormat))				// set date
+		rw.Header().Set("Cache-Control", "public, max-age=23196, must-revalidate, no-transform") // set cache control
+		rw.Header().Set("Expires", time.Now().UTC().AddDate(0, 1, 0).Format(http.TimeFormat))    // set expires
+		rw.Header().Set("Date", time.Now().UTC().Format(http.TimeFormat))                        // set date
 		rw.WriteHeader(http.StatusOK)
 		_ = json.NewEncoder(rw).Encode(struct {
 			Keys []jwt.JWK `json:"keys"`
@@ -156,9 +156,9 @@ func Test_PublicKeyCache_Get_NoRefresh(t *testing.T) {
 
 	cache := new(PublicKeyCache)
 	cache.current = &PublicKeysResponse{
-		CacheControl:	"public, max-age=23196, must-revalidate, no-transform",
-		Expires:	time.Now().UTC().AddDate(0, 0, 1),
-		Keys:		jwkLookup(keys),
+		CacheControl: "public, max-age=23196, must-revalidate, no-transform",
+		Expires:      time.Now().UTC().AddDate(0, 0, 1),
+		Keys:         jwkLookup(keys),
 	}
 	cache.FetchPublicKeysDefaults = []r2.Option{
 		r2.OptURL(keysResponder.URL),
@@ -186,9 +186,9 @@ func Test_PublicKeyCache_Get_Refresh(t *testing.T) {
 	keysResponder := httptest.NewServer(http.HandlerFunc(func(rw http.ResponseWriter, req *http.Request) {
 		didCallResponder = true
 		rw.Header().Set("Content-Type", "application/json; charset=UTF-8")
-		rw.Header().Set("Cache-Control", "public, max-age=23196, must-revalidate, no-transform")	// set cache control
-		rw.Header().Set("Expires", time.Now().UTC().AddDate(0, 1, 0).Format(http.TimeFormat))		// set expires
-		rw.Header().Set("Date", time.Now().UTC().Format(http.TimeFormat))				// set date
+		rw.Header().Set("Cache-Control", "public, max-age=23196, must-revalidate, no-transform") // set cache control
+		rw.Header().Set("Expires", time.Now().UTC().AddDate(0, 1, 0).Format(http.TimeFormat))    // set expires
+		rw.Header().Set("Date", time.Now().UTC().Format(http.TimeFormat))                        // set date
 		rw.WriteHeader(200)
 		_ = json.NewEncoder(rw).Encode(struct {
 			Keys []jwt.JWK `json:"keys"`
@@ -200,9 +200,9 @@ func Test_PublicKeyCache_Get_Refresh(t *testing.T) {
 
 	cache := new(PublicKeyCache)
 	cache.current = &PublicKeysResponse{
-		CacheControl:	"public, max-age=23196, must-revalidate, no-transform",
-		Expires:	time.Now().UTC().AddDate(0, 0, -1),
-		Keys:		jwkLookup(keys),
+		CacheControl: "public, max-age=23196, must-revalidate, no-transform",
+		Expires:      time.Now().UTC().AddDate(0, 0, -1),
+		Keys:         jwkLookup(keys),
 	}
 	cache.FetchPublicKeysDefaults = []r2.Option{
 		r2.OptURL(keysResponder.URL),
@@ -230,9 +230,9 @@ func Test_PublicKeyCache_Get_RefreshOnMiss(t *testing.T) {
 	keysResponder := httptest.NewServer(http.HandlerFunc(func(rw http.ResponseWriter, req *http.Request) {
 		didCallResponder = true
 		rw.Header().Set("Content-Type", "application/json; charset=UTF-8")
-		rw.Header().Set("Cache-Control", "public, max-age=23196, must-revalidate, no-transform")	// set cache control
-		rw.Header().Set("Expires", time.Now().UTC().AddDate(0, 1, 0).Format(http.TimeFormat))		// set expires
-		rw.Header().Set("Date", time.Now().UTC().Format(http.TimeFormat))				// set date
+		rw.Header().Set("Cache-Control", "public, max-age=23196, must-revalidate, no-transform") // set cache control
+		rw.Header().Set("Expires", time.Now().UTC().AddDate(0, 1, 0).Format(http.TimeFormat))    // set expires
+		rw.Header().Set("Date", time.Now().UTC().Format(http.TimeFormat))                        // set date
 		rw.WriteHeader(200)
 		_ = json.NewEncoder(rw).Encode(struct {
 			Keys []jwt.JWK `json:"keys"`
@@ -244,9 +244,9 @@ func Test_PublicKeyCache_Get_RefreshOnMiss(t *testing.T) {
 
 	cache := new(PublicKeyCache)
 	cache.current = &PublicKeysResponse{
-		CacheControl:	"public, max-age=23196, must-revalidate, no-transform",
-		Expires:	time.Now().UTC().AddDate(0, 0, -1),
-		Keys:		jwkLookup(keys),
+		CacheControl: "public, max-age=23196, must-revalidate, no-transform",
+		Expires:      time.Now().UTC().AddDate(0, 0, -1),
+		Keys:         jwkLookup(keys),
 	}
 	cache.FetchPublicKeysDefaults = []r2.Option{
 		r2.OptURL(keysResponder.URL),

@@ -1,7 +1,7 @@
 /*
 
 Copyright (c) 2021 - Present. Blend Labs, Inc. All rights reserved
-Blend Confidential - Restricted
+Use of this source code is governed by a MIT license that can be found in the LICENSE file.
 
 */
 
@@ -24,13 +24,13 @@ type Claims interface {
 // https://tools.ietf.org/html/rfc7519#section-4.1
 // See examples for how to use this with your own claim types
 type StandardClaims struct {
-	ID		string	`json:"jti,omitempty"`
-	Audience	string	`json:"aud,omitempty"`
-	ExpiresAt	int64	`json:"exp,omitempty"`
-	IssuedAt	int64	`json:"iat,omitempty"`
-	Issuer		string	`json:"iss,omitempty"`
-	NotBefore	int64	`json:"nbf,omitempty"`
-	Subject		string	`json:"sub,omitempty"`
+	ID        string `json:"jti,omitempty"`
+	Audience  string `json:"aud,omitempty"`
+	ExpiresAt int64  `json:"exp,omitempty"`
+	IssuedAt  int64  `json:"iat,omitempty"`
+	Issuer    string `json:"iss,omitempty"`
+	NotBefore int64  `json:"nbf,omitempty"`
+	Subject   string `json:"sub,omitempty"`
 }
 
 // Valid asserts time based claims "exp, iat, nbf".

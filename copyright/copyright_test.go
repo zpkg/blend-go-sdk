@@ -1,7 +1,7 @@
 /*
 
 Copyright (c) 2021 - Present. Blend Labs, Inc. All rights reserved
-Blend Confidential - Restricted
+Use of this source code is governed by a MIT license that can be found in the LICENSE file.
 
 */
 
@@ -304,31 +304,31 @@ func Test_Copyright_GetNoticeTemplate(t *testing.T) {
 
 type mockInfoDir string
 
-func (mid mockInfoDir) Name() string		{ return string(mid) }
-func (mid mockInfoDir) Size() int64		{ return 1 << 8 }
-func (mid mockInfoDir) Mode() fs.FileMode	{ return fs.FileMode(0755) }
-func (mid mockInfoDir) ModTime() time.Time	{ return time.Now().UTC() }
-func (mid mockInfoDir) IsDir() bool		{ return true }
-func (mid mockInfoDir) Sys() interface{}	{ return nil }
+func (mid mockInfoDir) Name() string       { return string(mid) }
+func (mid mockInfoDir) Size() int64        { return 1 << 8 }
+func (mid mockInfoDir) Mode() fs.FileMode  { return fs.FileMode(0755) }
+func (mid mockInfoDir) ModTime() time.Time { return time.Now().UTC() }
+func (mid mockInfoDir) IsDir() bool        { return true }
+func (mid mockInfoDir) Sys() interface{}   { return nil }
 
 type mockInfoFile string
 
-func (mif mockInfoFile) Name() string		{ return string(mif) }
-func (mif mockInfoFile) Size() int64		{ return 1 << 8 }
-func (mif mockInfoFile) Mode() fs.FileMode	{ return fs.FileMode(0755) }
-func (mif mockInfoFile) ModTime() time.Time	{ return time.Now().UTC() }
-func (mif mockInfoFile) IsDir() bool		{ return false }
-func (mif mockInfoFile) Sys() interface{}	{ return nil }
+func (mif mockInfoFile) Name() string       { return string(mif) }
+func (mif mockInfoFile) Size() int64        { return 1 << 8 }
+func (mif mockInfoFile) Mode() fs.FileMode  { return fs.FileMode(0755) }
+func (mif mockInfoFile) ModTime() time.Time { return time.Now().UTC() }
+func (mif mockInfoFile) IsDir() bool        { return false }
+func (mif mockInfoFile) Sys() interface{}   { return nil }
 
 func Test_Copyright_includeOrExclude(t *testing.T) {
 	t.Parallel()
 	its := assert.New(t)
 
 	testCases := [...]struct {
-		Config		Config
-		Path		string
-		Info		fs.FileInfo
-		Expected	error
+		Config   Config
+		Path     string
+		Info     fs.FileInfo
+		Expected error
 	}{
 		/*0*/ {Config: Config{}, Path: ".", Info: mockInfoDir("."), Expected: ErrWalkSkip},
 		/*1*/ {Config: Config{Excludes: []string{"/foo/**"}}, Path: "/foo/bar", Info: mockInfoDir("bar"), Expected: filepath.SkipDir},
@@ -346,8 +346,8 @@ func Test_Copyright_includeOrExclude(t *testing.T) {
 }
 
 const (
-	tsFile0	= `import * as axios from 'axios';`
-	pyFile0	= `from __future__ import print_function
+	tsFile0 = `import * as axios from 'axios';`
+	pyFile0 = `from __future__ import print_function
 	
 		import logging
 		import os
@@ -357,7 +357,7 @@ const (
 		import uuid
 		import json`
 
-	goFile0	= `// +build tools
+	goFile0 = `// +build tools
 		package tools
 		
 		import (
@@ -663,9 +663,9 @@ func Test_Copyright_Verify_Shebang(t *testing.T) {
 
 	// Verify present
 	cfg := Config{
-		ShowDiff:	ref.Bool(false),
-		Quiet:		ref.Bool(true),
-		IncludeFiles:	[]string{"*shift.py"},
+		ShowDiff:     ref.Bool(false),
+		Quiet:        ref.Bool(true),
+		IncludeFiles: []string{"*shift.py"},
 	}
 	c := New(OptConfig(cfg))
 	err = c.Verify(context.TODO(), tempDir)
@@ -797,9 +797,9 @@ func Test_Copyright_Walk_singleFileRoot(t *testing.T) {
 
 func expectedNoticePrefix(its *assert.Assertions) string {
 	vars := map[string]string{
-		"Year":		fmt.Sprintf("%d", time.Now().UTC().Year()),
-		"Company":	DefaultCompany,
-		"Restrictions":	"",
+		"Year":         fmt.Sprintf("%d", time.Now().UTC().Year()),
+		"Company":      DefaultCompany,
+		"Restrictions": "",
 	}
 	tmpl := template.New("output")
 	_, err := tmpl.Parse(DefaultNoticeBodyTemplate)

@@ -1,7 +1,7 @@
 /*
 
 Copyright (c) 2021 - Present. Blend Labs, Inc. All rights reserved
-Blend Confidential - Restricted
+Use of this source code is governed by a MIT license that can be found in the LICENSE file.
 
 */
 
@@ -19,9 +19,9 @@ func Request(r *http.Request, opts ...RequestOption) *http.Request {
 	}
 
 	options := RequestOptions{
-		DisallowedHeaders:	DefaultSanitizationDisallowedHeaders,
-		DisallowedQueryParams:	DefaultSanitizationDisallowedQueryParams,
-		ValueSanitizer:		DefaultValueSanitizer,
+		DisallowedHeaders:     DefaultSanitizationDisallowedHeaders,
+		DisallowedQueryParams: DefaultSanitizationDisallowedQueryParams,
+		ValueSanitizer:        DefaultValueSanitizer,
 	}
 	for _, opt := range opts {
 		opt(&options)
@@ -84,9 +84,9 @@ func OptRequestValueSanitizer(valueSanitizer ValueSanitizer) RequestOption {
 
 // RequestOptions are options for sanitization of http requests.
 type RequestOptions struct {
-	DisallowedHeaders	[]string
-	DisallowedQueryParams	[]string
-	ValueSanitizer		ValueSanitizer
+	DisallowedHeaders     []string
+	DisallowedQueryParams []string
+	ValueSanitizer        ValueSanitizer
 }
 
 // IsHeaderDisallowed returns if a header is in the disallowed list.

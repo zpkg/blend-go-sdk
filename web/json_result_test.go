@@ -1,7 +1,7 @@
 /*
 
 Copyright (c) 2021 - Present. Blend Labs, Inc. All rights reserved
-Blend Confidential - Restricted
+Use of this source code is governed by a MIT license that can be found in the LICENSE file.
 
 */
 
@@ -24,7 +24,7 @@ func TestJSONResultRender(t *testing.T) {
 	r := NewCtx(w, webutil.NewMockRequest("GET", "/"))
 
 	jr := &JSONResult{
-		StatusCode:	http.StatusOK,
+		StatusCode: http.StatusOK,
 		Response: map[string]interface{}{
 			"foo": "bar",
 		},
@@ -43,7 +43,7 @@ func TestJSONResultRenderStatusCode(t *testing.T) {
 	r := NewCtx(w, webutil.NewMockRequest("GET", "/"))
 
 	jr := &JSONResult{
-		StatusCode:	http.StatusBadRequest,
+		StatusCode: http.StatusBadRequest,
 		Response: map[string]interface{}{
 			"foo": "bar",
 		},

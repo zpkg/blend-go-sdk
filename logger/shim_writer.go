@@ -1,7 +1,7 @@
 /*
 
 Copyright (c) 2021 - Present. Blend Labs, Inc. All rights reserved
-Blend Confidential - Restricted
+Use of this source code is governed by a MIT license that can be found in the LICENSE file.
 
 */
 
@@ -30,9 +30,9 @@ const (
 // shell command write to a logger for standard out.
 func NewShimWriter(log Triggerable, opts ...ShimWriterOption) ShimWriter {
 	shim := ShimWriter{
-		Context:	context.Background(),
-		Log:		log,
-		EventProvider:	ShimWriterMessageEventProvider(DefaultShimWriterMessageFlag),
+		Context:       context.Background(),
+		Log:           log,
+		EventProvider: ShimWriterMessageEventProvider(DefaultShimWriterMessageFlag),
 	}
 	for _, opt := range opts {
 		opt(&shim)
@@ -72,9 +72,9 @@ type ShimWriterOption func(*ShimWriter)
 // ShimWriter is a type that implements io.Writer with
 // a logger backend.
 type ShimWriter struct {
-	Context		context.Context
-	Log		Triggerable
-	EventProvider	func([]byte) Event
+	Context       context.Context
+	Log           Triggerable
+	EventProvider func([]byte) Event
 }
 
 // Write implements io.Writer.

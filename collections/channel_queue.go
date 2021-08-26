@@ -1,7 +1,7 @@
 /*
 
 Copyright (c) 2021 - Present. Blend Labs, Inc. All rights reserved
-Blend Confidential - Restricted
+Use of this source code is governed by a MIT license that can be found in the LICENSE file.
 
 */
 
@@ -16,9 +16,9 @@ func NewChannelQueueWithCapacity(capacity int) *ChannelQueue {
 
 // ChannelQueue is a threadsafe queue.
 type ChannelQueue struct {
-	Capacity	int
-	storage		chan interface{}
-	latch		sync.Mutex
+	Capacity int
+	storage  chan interface{}
+	latch    sync.Mutex
 }
 
 // Len returns the number of items in the queue.

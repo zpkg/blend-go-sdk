@@ -1,7 +1,7 @@
 /*
 
 Copyright (c) 2021 - Present. Blend Labs, Inc. All rights reserved
-Blend Confidential - Restricted
+Use of this source code is governed by a MIT license that can be found in the LICENSE file.
 
 */
 
@@ -70,12 +70,12 @@ func Test_Invocation_Create(t *testing.T) {
 	its.Nil(err)
 
 	obj := &benchObj{
-		Name:		"test_object_0",
-		UUID:		uuid.V4().String(),
-		Timestamp:	time.Now().UTC(),
-		Amount:		1000.0 + (5.0 * float32(0)),
-		Pending:	true,
-		Category:	fmt.Sprintf("category_%d", 0),
+		Name:      "test_object_0",
+		UUID:      uuid.V4().String(),
+		Timestamp: time.Now().UTC(),
+		Amount:    1000.0 + (5.0 * float32(0)),
+		Pending:   true,
+		Category:  fmt.Sprintf("category_%d", 0),
 	}
 	err = defaultDB().Invoke(OptTx(tx)).Create(obj)
 	its.Nil(err)
@@ -91,12 +91,12 @@ func Test_Invocation_Create_statementInterceptorFailure(t *testing.T) {
 	its.Nil(err)
 
 	obj := &benchObj{
-		Name:		"test_object_0",
-		UUID:		uuid.V4().String(),
-		Timestamp:	time.Now().UTC(),
-		Amount:		1000.0 + (5.0 * float32(0)),
-		Pending:	true,
-		Category:	fmt.Sprintf("category_%d", 0),
+		Name:      "test_object_0",
+		UUID:      uuid.V4().String(),
+		Timestamp: time.Now().UTC(),
+		Amount:    1000.0 + (5.0 * float32(0)),
+		Pending:   true,
+		Category:  fmt.Sprintf("category_%d", 0),
 	}
 	err = defaultDB().Invoke(
 		OptTx(tx),
@@ -128,7 +128,7 @@ func Test_Invocation_Create_jsonNulls(t *testing.T) {
 	its.Equal(obj0.NotNull.Label, verify0.NotNull.Label)
 
 	// try creating partially set object and reading it out
-	obj1 := jsonTest{Name: uuid.V4().String(), NotNull: jsonTestChild{Label: uuid.V4().String()}}	//note `Nullable` isn't set
+	obj1 := jsonTest{Name: uuid.V4().String(), NotNull: jsonTestChild{Label: uuid.V4().String()}} //note `Nullable` isn't set
 
 	columns := Columns(obj1)
 	values := columns.ColumnValues(obj1)
@@ -257,12 +257,12 @@ func Test_Invocation_Create_parallel(t *testing.T) {
 		go func() {
 			defer wg.Done()
 			obj := &benchObj{
-				Name:		"test_object_0",
-				UUID:		uuid.V4().String(),
-				Timestamp:	time.Now().UTC(),
-				Amount:		1000.0 + (5.0 * float32(0)),
-				Pending:	true,
-				Category:	fmt.Sprintf("category_%d", 0),
+				Name:      "test_object_0",
+				UUID:      uuid.V4().String(),
+				Timestamp: time.Now().UTC(),
+				Amount:    1000.0 + (5.0 * float32(0)),
+				Pending:   true,
+				Category:  fmt.Sprintf("category_%d", 0),
 			}
 			innerErr := defaultDB().Invoke().Create(obj)
 			its.Nil(innerErr)
@@ -287,12 +287,12 @@ func Test_Invocation_Create_withAutos(t *testing.T) {
 
 	// create initial value
 	value := upsertAutoRegression{
-		ID:		uuid.V4(),
-		Status:		1,
-		Required:	true,
+		ID:       uuid.V4(),
+		Status:   1,
+		Required: true,
 		// CreatedAt:  &ts0,
-		UpdatedAt:	&ts1,
-		MigratedAt:	&ts2,
+		UpdatedAt:  &ts1,
+		MigratedAt: &ts2,
 	}
 	err = defaultDB().Invoke(OptTx(tx)).Create(&value)
 	its.Nil(err)
@@ -322,9 +322,9 @@ func Test_Invocation_Get(t *testing.T) {
 	its.Nil(err)
 
 	obj := &upsertObj{
-		UUID:		uuid.V4(),
-		Timestamp:	time.Now().UTC(),
-		Category:	uuid.V4().String(),
+		UUID:      uuid.V4(),
+		Timestamp: time.Now().UTC(),
+		Category:  uuid.V4().String(),
 	}
 	i := defaultDB().Invoke(OptTx(tx))
 	err = i.Create(obj)
@@ -359,9 +359,9 @@ func Test_Invocation_Get_statementInterceptor(t *testing.T) {
 	its.Nil(err)
 
 	obj := &upsertObj{
-		UUID:		uuid.V4(),
-		Timestamp:	time.Now().UTC(),
-		Category:	uuid.V4().String(),
+		UUID:      uuid.V4(),
+		Timestamp: time.Now().UTC(),
+		Category:  uuid.V4().String(),
 	}
 	err = defaultDB().Invoke(OptTx(tx)).Create(obj)
 	its.Nil(err)
@@ -387,8 +387,8 @@ func Test_Invocation_Get_notFound(t *testing.T) {
 	its.Nil(err)
 
 	obj := &upsertObj{
-		Timestamp:	time.Now().UTC(),
-		Category:	uuid.V4().String(),
+		Timestamp: time.Now().UTC(),
+		Category:  uuid.V4().String(),
 	}
 	found, err := defaultDB().Invoke(OptTx(tx)).Get(obj, uuid.V4().String())
 	its.Nil(err)
@@ -408,9 +408,9 @@ func Test_Invocation_Delete(t *testing.T) {
 	its.Nil(err)
 
 	obj := &upsertObj{
-		UUID:		uuid.V4(),
-		Timestamp:	time.Now().UTC(),
-		Category:	uuid.V4().String(),
+		UUID:      uuid.V4(),
+		Timestamp: time.Now().UTC(),
+		Category:  uuid.V4().String(),
 	}
 	err = defaultDB().Invoke(OptTx(tx)).Create(obj)
 	its.Nil(err)
@@ -435,9 +435,9 @@ func Test_Invocation_Delete_statementInterceptor(t *testing.T) {
 	its.Nil(err)
 
 	obj := &upsertObj{
-		UUID:		uuid.V4(),
-		Timestamp:	time.Now().UTC(),
-		Category:	uuid.V4().String(),
+		UUID:      uuid.V4(),
+		Timestamp: time.Now().UTC(),
+		Category:  uuid.V4().String(),
 	}
 	err = defaultDB().Invoke(OptTx(tx)).Create(obj)
 	its.Nil(err)
@@ -465,9 +465,9 @@ func Test_Invocation_Delete_notFound(t *testing.T) {
 	its.Nil(err)
 
 	obj := &upsertObj{
-		UUID:		uuid.V4(),
-		Timestamp:	time.Now().UTC(),
-		Category:	uuid.V4().String(),
+		UUID:      uuid.V4(),
+		Timestamp: time.Now().UTC(),
+		Category:  uuid.V4().String(),
 	}
 	deleted, err := defaultDB().Invoke(OptTx(tx)).Delete(obj)
 	its.Nil(err)
@@ -484,9 +484,9 @@ func Test_Invocation_Update(t *testing.T) {
 	its.Nil(err)
 
 	obj := &upsertObj{
-		UUID:		uuid.V4(),
-		Timestamp:	time.Now().UTC(),
-		Category:	uuid.V4().String(),
+		UUID:      uuid.V4(),
+		Timestamp: time.Now().UTC(),
+		Category:  uuid.V4().String(),
 	}
 	err = defaultDB().Invoke(OptTx(tx)).Create(obj)
 	its.Nil(err)
@@ -517,9 +517,9 @@ func Test_Invocation_Update_statementInterceptor(t *testing.T) {
 	its.Nil(err)
 
 	obj := &upsertObj{
-		UUID:		uuid.V4(),
-		Timestamp:	time.Now().UTC(),
-		Category:	uuid.V4().String(),
+		UUID:      uuid.V4(),
+		Timestamp: time.Now().UTC(),
+		Category:  uuid.V4().String(),
 	}
 	err = defaultDB().Invoke(OptTx(tx)).Create(obj)
 	its.Nil(err)
@@ -549,9 +549,9 @@ func Test_Invocation_Update_notFound(t *testing.T) {
 	its.Nil(err)
 
 	obj := &upsertObj{
-		UUID:		uuid.V4(),	// this will be mostly impossible to exist
-		Timestamp:	time.Now().UTC(),
-		Category:	uuid.V4().String(),
+		UUID:      uuid.V4(), // this will be mostly impossible to exist
+		Timestamp: time.Now().UTC(),
+		Category:  uuid.V4().String(),
 	}
 	updated, err := defaultDB().Invoke(OptTx(tx)).Update(obj)
 	its.Nil(err)
@@ -568,9 +568,9 @@ func Test_Invocation_Upsert(t *testing.T) {
 	its.Nil(err)
 
 	obj := &upsertObj{
-		UUID:		uuid.V4(),
-		Timestamp:	time.Now().UTC(),
-		Category:	uuid.V4().String(),
+		UUID:      uuid.V4(),
+		Timestamp: time.Now().UTC(),
+		Category:  uuid.V4().String(),
 	}
 	err = defaultDB().Invoke(OptTx(tx)).Upsert(obj)
 	its.Nil(err)
@@ -603,9 +603,9 @@ func Test_Invocation_Upsert_noAutos_logging(t *testing.T) {
 	log := logger.Memory(buf)
 
 	obj := &upsertNoAutosObj{
-		UUID:		uuid.V4(),
-		Timestamp:	time.Now().UTC(),
-		Category:	uuid.V4().String(),
+		UUID:      uuid.V4(),
+		Timestamp: time.Now().UTC(),
+		Category:  uuid.V4().String(),
 	}
 	err = defaultDB().Invoke(
 		OptTx(tx),
@@ -647,9 +647,9 @@ func Test_Invocation_Upsert_statementInterceptor(t *testing.T) {
 	its.Nil(err)
 
 	obj := &upsertObj{
-		UUID:		uuid.V4(),
-		Timestamp:	time.Now().UTC(),
-		Category:	uuid.V4().String(),
+		UUID:      uuid.V4(),
+		Timestamp: time.Now().UTC(),
+		Category:  uuid.V4().String(),
 	}
 	err = defaultDB().Invoke(OptTx(tx)).Upsert(obj)
 	its.Nil(err)
@@ -685,12 +685,12 @@ func Test_Invocation_Upsert_withAutos(t *testing.T) {
 
 	// create initial value
 	value := upsertAutoRegression{
-		ID:		uuid.V4(),
-		Status:		1,
-		Required:	true,
-		CreatedAt:	&ts0,
-		UpdatedAt:	&ts1,
-		MigratedAt:	&ts2,
+		ID:         uuid.V4(),
+		Status:     1,
+		Required:   true,
+		CreatedAt:  &ts0,
+		UpdatedAt:  &ts1,
+		MigratedAt: &ts2,
 	}
 	err = defaultDB().Invoke(OptTx(tx)).Upsert(&value)
 	its.Nil(err)
@@ -741,10 +741,10 @@ func Test_Invocation_Upsert_withAutos_Unset(t *testing.T) {
 
 	// create initial value but let created_at be set by the default
 	value := upsertAutoRegression{
-		ID:		uuid.V4(),
-		Status:		1,
-		Required:	true,
-		MigratedAt:	&tsMig,
+		ID:         uuid.V4(),
+		Status:     1,
+		Required:   true,
+		MigratedAt: &tsMig,
 	}
 
 	err = defaultDB().Invoke(OptTx(tx)).Upsert(&value)
@@ -776,12 +776,12 @@ func Test_Invocation_CreateMany(t *testing.T) {
 	var objects []DatabaseMapped
 	for x := 0; x < 10; x++ {
 		objects = append(objects, benchObj{
-			Name:		fmt.Sprintf("test_object_%d", x),
-			UUID:		uuid.V4().String(),
-			Timestamp:	time.Now().UTC(),
-			Amount:		1005.0,
-			Pending:	true,
-			Category:	fmt.Sprintf("category_%d", x),
+			Name:      fmt.Sprintf("test_object_%d", x),
+			UUID:      uuid.V4().String(),
+			Timestamp: time.Now().UTC(),
+			Amount:    1005.0,
+			Pending:   true,
+			Category:  fmt.Sprintf("category_%d", x),
 		})
 	}
 
@@ -806,12 +806,12 @@ func Test_Invocation_CreateMany_statementInterceptor(t *testing.T) {
 	var objects []DatabaseMapped
 	for x := 0; x < 10; x++ {
 		objects = append(objects, benchObj{
-			Name:		fmt.Sprintf("test_object_%d", x),
-			UUID:		uuid.V4().String(),
-			Timestamp:	time.Now().UTC(),
-			Amount:		1005.0,
-			Pending:	true,
-			Category:	fmt.Sprintf("category_%d", x),
+			Name:      fmt.Sprintf("test_object_%d", x),
+			UUID:      uuid.V4().String(),
+			Timestamp: time.Now().UTC(),
+			Amount:    1005.0,
+			Pending:   true,
+			Category:  fmt.Sprintf("category_%d", x),
 		})
 	}
 
@@ -835,13 +835,13 @@ func Test_Invocation_UpsertMany(t *testing.T) {
 	// Test using upsertMany for insertion.
 	var objects []benchObj
 	objects = append(objects, benchObj{
-		ID:		1,
-		Name:		"test_object",
-		UUID:		uuid.V4().ToFullString(),
-		Timestamp:	currentTime,
-		Amount:		1005.0,
-		Pending:	true,
-		Category:	"category",
+		ID:        1,
+		Name:      "test_object",
+		UUID:      uuid.V4().ToFullString(),
+		Timestamp: currentTime,
+		Amount:    1005.0,
+		Pending:   true,
+		Category:  "category",
 	})
 	its.Nil(defaultDB().Invoke(OptTx(tx)).UpsertMany(objects))
 
@@ -864,13 +864,13 @@ func Test_Invocation_UpsertMany(t *testing.T) {
 	// Confirm that conflict on uk column, name, results in an update.
 	var updatedObjects []benchObj
 	updatedObjects = append(updatedObjects, benchObj{
-		ID:		1,
-		Name:		"test_object",
-		UUID:		uuid.V4().ToFullString(),
-		Timestamp:	currentTime,
-		Amount:		2000,
-		Pending:	true,
-		Category:	"category",
+		ID:        1,
+		Name:      "test_object",
+		UUID:      uuid.V4().ToFullString(),
+		Timestamp: currentTime,
+		Amount:    2000,
+		Pending:   true,
+		Category:  "category",
 	})
 	its.Nil(defaultDB().Invoke(OptTx(tx)).UpsertMany(updatedObjects))
 
@@ -900,13 +900,13 @@ func Test_Invocation_UpsertMany_statementInterceptor(t *testing.T) {
 	// Test using upsertMany for insertion.
 	var objects []benchObj
 	objects = append(objects, benchObj{
-		ID:		1,
-		Name:		"test_object",
-		UUID:		uuid.V4().ToFullString(),
-		Timestamp:	currentTime,
-		Amount:		1005.0,
-		Pending:	true,
-		Category:	"category",
+		ID:        1,
+		Name:      "test_object",
+		UUID:      uuid.V4().ToFullString(),
+		Timestamp: currentTime,
+		Amount:    1005.0,
+		Pending:   true,
+		Category:  "category",
 	})
 	err = defaultDB().Invoke(
 		OptTx(tx),
@@ -925,9 +925,9 @@ func Test_Invocation_CreateIfNotExists(t *testing.T) {
 	its.Nil(err)
 
 	obj := &upsertObj{
-		UUID:		uuid.V4(),
-		Timestamp:	time.Now().UTC(),
-		Category:	uuid.V4().String(),
+		UUID:      uuid.V4(),
+		Timestamp: time.Now().UTC(),
+		Category:  uuid.V4().String(),
 	}
 	err = defaultDB().Invoke(OptTx(tx)).CreateIfNotExists(obj)
 	its.Nil(err)
@@ -958,9 +958,9 @@ func Test_Invocation_CreateIfNotExists_statementInterceptor(t *testing.T) {
 	its.Nil(err)
 
 	obj := &upsertObj{
-		UUID:		uuid.V4(),
-		Timestamp:	time.Now().UTC(),
-		Category:	uuid.V4().String(),
+		UUID:      uuid.V4(),
+		Timestamp: time.Now().UTC(),
+		Category:  uuid.V4().String(),
 	}
 	err = defaultDB().Invoke(
 		OptTx(tx),
@@ -1041,12 +1041,12 @@ func Test_Invocation_generateCreateMany(t *testing.T) {
 	var objects []DatabaseMapped
 	for x := 0; x < 10; x++ {
 		objects = append(objects, benchObj{
-			Name:		fmt.Sprintf("test_object_%d", x),
-			UUID:		uuid.V4().String(),
-			Timestamp:	time.Now().UTC(),
-			Amount:		1005.0,
-			Pending:	true,
-			Category:	fmt.Sprintf("category_%d", x),
+			Name:      fmt.Sprintf("test_object_%d", x),
+			UUID:      uuid.V4().String(),
+			Timestamp: time.Now().UTC(),
+			Amount:    1005.0,
+			Pending:   true,
+			Category:  fmt.Sprintf("category_%d", x),
 		})
 	}
 	invocation := defaultDB().Invoke()
@@ -1066,12 +1066,12 @@ func Test_Invocation_generateUpsertMany(t *testing.T) {
 	var objects []DatabaseMapped
 	for x := 0; x < 10; x++ {
 		objects = append(objects, benchObj{
-			Name:		fmt.Sprintf("test_object_%d", x),
-			UUID:		uuid.V4().String(),
-			Timestamp:	time.Now().UTC(),
-			Amount:		1005.0,
-			Pending:	true,
-			Category:	fmt.Sprintf("category_%d", x),
+			Name:      fmt.Sprintf("test_object_%d", x),
+			UUID:      uuid.V4().String(),
+			Timestamp: time.Now().UTC(),
+			Amount:    1005.0,
+			Pending:   true,
+			Category:  fmt.Sprintf("category_%d", x),
 		})
 	}
 	invocation := defaultDB().Invoke()
@@ -1095,9 +1095,9 @@ func Test_Invocation_start(t *testing.T) {
 	buf := new(bytes.Buffer)
 	log := logger.Memory(buf)
 	statement, err = (&Invocation{
-		DB:		defaultDB().Connection,
-		Context:	context.Background(),
-		Log:		log,
+		DB:      defaultDB().Connection,
+		Context: context.Background(),
+		Log:     log,
 	}).start("select 1")
 	its.Nil(err)
 	its.Equal("select 1", statement)

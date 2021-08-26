@@ -1,7 +1,7 @@
 /*
 
 Copyright (c) 2021 - Present. Blend Labs, Inc. All rights reserved
-Blend Confidential - Restricted
+Use of this source code is governed by a MIT license that can be found in the LICENSE file.
 
 */
 
@@ -35,7 +35,7 @@ func NewTemp(contents []byte) (*Temp, error) {
 type Temp struct {
 	sync.Mutex
 
-	file	*os.File
+	file *os.File
 }
 
 // Name returns the fully qualified file path.

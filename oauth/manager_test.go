@@ -1,7 +1,7 @@
 /*
 
 Copyright (c) 2021 - Present. Blend Labs, Inc. All rights reserved
-Blend Confidential - Restricted
+Use of this source code is governed by a MIT license that can be found in the LICENSE file.
 
 */
 
@@ -40,9 +40,9 @@ func Test_Manager_Finish(t *testing.T) {
 	}
 	keysResponder := httptest.NewServer(http.HandlerFunc(func(rw http.ResponseWriter, req *http.Request) {
 		rw.Header().Set("Content-Type", "application/json; charset=UTF-8")
-		rw.Header().Set("Cache-Control", "public, max-age=23196, must-revalidate, no-transform")	// set cache control
-		rw.Header().Set("Expires", time.Now().UTC().AddDate(0, 1, 0).Format(http.TimeFormat))		// set expires
-		rw.Header().Set("Date", time.Now().UTC().Format(http.TimeFormat))				// set date
+		rw.Header().Set("Cache-Control", "public, max-age=23196, must-revalidate, no-transform") // set cache control
+		rw.Header().Set("Expires", time.Now().UTC().AddDate(0, 1, 0).Format(http.TimeFormat))    // set expires
+		rw.Header().Set("Date", time.Now().UTC().Format(http.TimeFormat))                        // set date
 		rw.WriteHeader(200)
 		_ = json.NewEncoder(rw).Encode(struct {
 			Keys []jwt.JWK `json:"keys"`
@@ -98,14 +98,14 @@ func Test_Manager_Finish(t *testing.T) {
 		r2.OptURL(profileResponder.URL),
 	}
 	mgr.Endpoint = oauth2.Endpoint{
-		AuthStyle:	oauth2.AuthStyleInParams,
-		TokenURL:	codeResponder.URL,
+		AuthStyle: oauth2.AuthStyleInParams,
+		TokenURL:  codeResponder.URL,
 	}
 	finishRequest := &http.Request{
 		URL: &url.URL{
 			RawQuery: (url.Values{
-				"code":		[]string{"test_code"},
-				"state":	[]string{MustSerializeState(mgr.CreateState())},
+				"code":  []string{"test_code"},
+				"state": []string{MustSerializeState(mgr.CreateState())},
 			}).Encode(),
 		},
 	}
@@ -132,9 +132,9 @@ func Test_Manager_Finish_disallowedDomain(t *testing.T) {
 	}
 	keysResponder := httptest.NewServer(http.HandlerFunc(func(rw http.ResponseWriter, req *http.Request) {
 		rw.Header().Set("Content-Type", "application/json; charset=UTF-8")
-		rw.Header().Set("Cache-Control", "public, max-age=23196, must-revalidate, no-transform")	// set cache control
-		rw.Header().Set("Expires", time.Now().UTC().AddDate(0, 1, 0).Format(http.TimeFormat))		// set expires
-		rw.Header().Set("Date", time.Now().UTC().Format(http.TimeFormat))				// set date
+		rw.Header().Set("Cache-Control", "public, max-age=23196, must-revalidate, no-transform") // set cache control
+		rw.Header().Set("Expires", time.Now().UTC().AddDate(0, 1, 0).Format(http.TimeFormat))    // set expires
+		rw.Header().Set("Date", time.Now().UTC().Format(http.TimeFormat))                        // set date
 		rw.WriteHeader(200)
 		_ = json.NewEncoder(rw).Encode(struct {
 			Keys []jwt.JWK `json:"keys"`
@@ -190,14 +190,14 @@ func Test_Manager_Finish_disallowedDomain(t *testing.T) {
 		r2.OptURL(profileResponder.URL),
 	}
 	mgr.Endpoint = oauth2.Endpoint{
-		AuthStyle:	oauth2.AuthStyleInParams,
-		TokenURL:	codeResponder.URL,
+		AuthStyle: oauth2.AuthStyleInParams,
+		TokenURL:  codeResponder.URL,
 	}
 	finishRequest := &http.Request{
 		URL: &url.URL{
 			RawQuery: (url.Values{
-				"code":		[]string{"test_code"},
-				"state":	[]string{MustSerializeState(mgr.CreateState())},
+				"code":  []string{"test_code"},
+				"state": []string{MustSerializeState(mgr.CreateState())},
 			}).Encode(),
 		},
 	}
@@ -220,9 +220,9 @@ func Test_Manager_Finish_failsAudience(t *testing.T) {
 	}
 	keysResponder := httptest.NewServer(http.HandlerFunc(func(rw http.ResponseWriter, req *http.Request) {
 		rw.Header().Set("Content-Type", "application/json; charset=UTF-8")
-		rw.Header().Set("Cache-Control", "public, max-age=23196, must-revalidate, no-transform")	// set cache control
-		rw.Header().Set("Expires", time.Now().UTC().AddDate(0, 1, 0).Format(http.TimeFormat))		// set expires
-		rw.Header().Set("Date", time.Now().UTC().Format(http.TimeFormat))				// set date
+		rw.Header().Set("Cache-Control", "public, max-age=23196, must-revalidate, no-transform") // set cache control
+		rw.Header().Set("Expires", time.Now().UTC().AddDate(0, 1, 0).Format(http.TimeFormat))    // set expires
+		rw.Header().Set("Date", time.Now().UTC().Format(http.TimeFormat))                        // set date
 		rw.WriteHeader(200)
 		_ = json.NewEncoder(rw).Encode(struct {
 			Keys []jwt.JWK `json:"keys"`
@@ -253,14 +253,14 @@ func Test_Manager_Finish_failsAudience(t *testing.T) {
 		r2.OptURL(keysResponder.URL),
 	}
 	mgr.Endpoint = oauth2.Endpoint{
-		AuthStyle:	oauth2.AuthStyleInParams,
-		TokenURL:	codeResponder.URL,
+		AuthStyle: oauth2.AuthStyleInParams,
+		TokenURL:  codeResponder.URL,
 	}
 	finishRequest := &http.Request{
 		URL: &url.URL{
 			RawQuery: (url.Values{
-				"code":		[]string{"test_code"},
-				"state":	[]string{MustSerializeState(mgr.CreateState())},
+				"code":  []string{"test_code"},
+				"state": []string{MustSerializeState(mgr.CreateState())},
 			}).Encode(),
 		},
 	}
@@ -285,9 +285,9 @@ func Test_Manager_Finish_failsVerification(t *testing.T) {
 	}
 	keysResponder := httptest.NewServer(http.HandlerFunc(func(rw http.ResponseWriter, req *http.Request) {
 		rw.Header().Set("Content-Type", "application/json; charset=UTF-8")
-		rw.Header().Set("Cache-Control", "public, max-age=23196, must-revalidate, no-transform")	// set cache control
-		rw.Header().Set("Expires", time.Now().UTC().AddDate(0, 1, 0).Format(http.TimeFormat))		// set expires
-		rw.Header().Set("Date", time.Now().UTC().Format(http.TimeFormat))				// set date
+		rw.Header().Set("Cache-Control", "public, max-age=23196, must-revalidate, no-transform") // set cache control
+		rw.Header().Set("Expires", time.Now().UTC().AddDate(0, 1, 0).Format(http.TimeFormat))    // set expires
+		rw.Header().Set("Date", time.Now().UTC().Format(http.TimeFormat))                        // set date
 		rw.WriteHeader(200)
 		_ = json.NewEncoder(rw).Encode(struct {
 			Keys []jwt.JWK `json:"keys"`
@@ -343,14 +343,14 @@ func Test_Manager_Finish_failsVerification(t *testing.T) {
 		r2.OptURL(profileResponder.URL),
 	}
 	mgr.Endpoint = oauth2.Endpoint{
-		AuthStyle:	oauth2.AuthStyleInParams,
-		TokenURL:	codeResponder.URL,
+		AuthStyle: oauth2.AuthStyleInParams,
+		TokenURL:  codeResponder.URL,
 	}
 	finishRequest := &http.Request{
 		URL: &url.URL{
 			RawQuery: (url.Values{
-				"code":		[]string{"test_code"},
-				"state":	[]string{MustSerializeState(mgr.CreateState())},
+				"code":  []string{"test_code"},
+				"state": []string{MustSerializeState(mgr.CreateState())},
 			}).Encode(),
 		},
 	}
@@ -371,10 +371,10 @@ func Test_NewFromConfig(t *testing.T) {
 	assert := assert.New(t)
 
 	m, err := New(OptConfig(Config{
-		RedirectURI:	"https://app.com/oauth/google",
-		HostedDomain:	"foo.com",
-		ClientID:	"foo_client",
-		ClientSecret:	"bar_secret",
+		RedirectURI:  "https://app.com/oauth/google",
+		HostedDomain: "foo.com",
+		ClientID:     "foo_client",
+		ClientSecret: "bar_secret",
 	}))
 
 	assert.Nil(err)

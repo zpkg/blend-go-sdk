@@ -1,7 +1,7 @@
 /*
 
 Copyright (c) 2021 - Present. Blend Labs, Inc. All rights reserved
-Blend Confidential - Restricted
+Use of this source code is governed by a MIT license that can be found in the LICENSE file.
 
 */
 
@@ -17,9 +17,9 @@ import (
 
 // Parser is a parser for tokens.
 type Parser struct {
-	ValidMethods		[]string	// If populated, only these methods will be considered valid
-	UseJSONNumber		bool		// Use JSON Number format in JSON decoder
-	SkipClaimsValidation	bool		// Skip claims validation during token parsing
+	ValidMethods         []string // If populated, only these methods will be considered valid
+	UseJSONNumber        bool     // Use JSON Number format in JSON decoder
+	SkipClaimsValidation bool     // Skip claims validation during token parsing
 }
 
 // Parse parses, validate, and return a token.

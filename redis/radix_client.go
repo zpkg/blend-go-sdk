@@ -1,7 +1,7 @@
 /*
 
 Copyright (c) 2021 - Present. Blend Labs, Inc. All rights reserved
-Blend Confidential - Restricted
+Use of this source code is governed by a MIT license that can be found in the LICENSE file.
 
 */
 
@@ -20,8 +20,8 @@ import (
 )
 
 var (
-	_	async.Checker	= (*RadixClient)(nil)
-	_	Client		= (*RadixClient)(nil)
+	_ async.Checker = (*RadixClient)(nil)
+	_ Client        = (*RadixClient)(nil)
 )
 
 // New returns a new client.
@@ -40,9 +40,9 @@ func New(ctx context.Context, opts ...Option) (*RadixClient, error) {
 	}
 	rc.Client, err = (radix.PoolConfig{
 		Dialer: radix.Dialer{
-			SelectDB:	rc.Config.DB,
-			AuthUser:	rc.Config.AuthUser,
-			AuthPass:	rc.Config.AuthPassword,
+			SelectDB: rc.Config.DB,
+			AuthUser: rc.Config.AuthUser,
+			AuthPass: rc.Config.AuthPassword,
 		},
 	}).New(ctx, rc.Config.Network, rc.Config.Addr)
 	if err != nil {
@@ -58,10 +58,10 @@ var (
 
 // RadixClient is a wrapping client for the underling radix redis driver.
 type RadixClient struct {
-	Config	Config
-	Log	logger.Triggerable
-	Tracer	Tracer
-	Client	radix.Client
+	Config Config
+	Log    logger.Triggerable
+	Tracer Tracer
+	Client radix.Client
 }
 
 // Ping sends an echo to the server and validates the response.

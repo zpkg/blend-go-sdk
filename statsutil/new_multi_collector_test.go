@@ -1,7 +1,7 @@
 /*
 
 Copyright (c) 2021 - Present. Blend Labs, Inc. All rights reserved
-Blend Confidential - Restricted
+Use of this source code is governed by a MIT license that can be found in the LICENSE file.
 
 */
 
@@ -24,10 +24,10 @@ func Test_NewMultiCollector(t *testing.T) {
 
 	collector, err := NewMultiCollector(log,
 		OptMetaConfig(configmeta.Meta{
-			ServiceName:	"test-service",
-			ServiceEnv:	"test-service-env",
-			Version:	"test-service-version",
-			Hostname:	"test-service-hostname",
+			ServiceName: "test-service",
+			ServiceEnv:  "test-service-env",
+			Version:     "test-service-version",
+			Hostname:    "test-service-hostname",
 		}),
 		OptDatadogConfig(datadog.Config{}),
 		OptPrinter(true),

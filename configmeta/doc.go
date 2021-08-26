@@ -1,7 +1,7 @@
 /*
 
 Copyright (c) 2021 - Present. Blend Labs, Inc. All rights reserved
-Blend Confidential - Restricted
+Use of this source code is governed by a MIT license that can be found in the LICENSE file.
 
 */
 
@@ -30,4 +30,4 @@ This will pull `SERVICE_NAME` and `SERVICE_ENV` into relevant fields, as well as
 
 This type is used in a number of other packages for common fields like service name and service environment.
 */
-package configmeta	// import "github.com/blend/go-sdk/configmeta"
+package configmeta // import "github.com/blend/go-sdk/configmeta"

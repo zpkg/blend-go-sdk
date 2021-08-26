@@ -1,7 +1,7 @@
 /*
 
 Copyright (c) 2021 - Present. Blend Labs, Inc. All rights reserved
-Blend Confidential - Restricted
+Use of this source code is governed by a MIT license that can be found in the LICENSE file.
 
 */
 
@@ -14,8 +14,8 @@ import (
 
 // Interface assertions.
 var (
-	_	Schedule	= (*OnceAtUTCSchedule)(nil)
-	_	fmt.Stringer	= (*OnceAtUTCSchedule)(nil)
+	_ Schedule     = (*OnceAtUTCSchedule)(nil)
+	_ fmt.Stringer = (*OnceAtUTCSchedule)(nil)
 )
 
 // OnceAtUTC returns a schedule that fires once at a given time.

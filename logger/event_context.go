@@ -1,7 +1,7 @@
 /*
 
 Copyright (c) 2021 - Present. Blend Labs, Inc. All rights reserved
-Blend Confidential - Restricted
+Use of this source code is governed by a MIT license that can be found in the LICENSE file.
 
 */
 
@@ -11,5 +11,5 @@ package logger
 // It is used when a sub-context triggers or writes an event.
 type EventContext struct {
 	Event
-	ContextPath	[]string
+	ContextPath []string
 }

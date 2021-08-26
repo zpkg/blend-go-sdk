@@ -1,7 +1,7 @@
 /*
 
 Copyright (c) 2021 - Present. Blend Labs, Inc. All rights reserved
-Blend Confidential - Restricted
+Use of this source code is governed by a MIT license that can be found in the LICENSE file.
 
 */
 
@@ -27,7 +27,7 @@ import (
 func Mock(app *App, req *http.Request, options ...r2.Option) *MockResult {
 	var err error
 	result := &MockResult{
-		App:	app,
+		App: app,
 		Request: &r2.Request{
 			Request: req,
 		},
@@ -62,7 +62,7 @@ func Mock(app *App, req *http.Request, options ...r2.Option) *MockResult {
 // You should use request options to set the body of the request if it's a post or put etc.
 func MockMethod(app *App, method, path string, options ...r2.Option) *MockResult {
 	req := &http.Request{
-		Method:	method,
+		Method: method,
 		URL: &url.URL{
 			Path: path,
 		},
@@ -73,7 +73,7 @@ func MockMethod(app *App, method, path string, options ...r2.Option) *MockResult
 // MockGet sends a mock get request to an app.
 func MockGet(app *App, path string, options ...r2.Option) *MockResult {
 	req := &http.Request{
-		Method:	"GET",
+		Method: "GET",
 		URL: &url.URL{
 			Path: path,
 		},
@@ -84,8 +84,8 @@ func MockGet(app *App, path string, options ...r2.Option) *MockResult {
 // MockPost sends a mock post request to an app.
 func MockPost(app *App, path string, body io.ReadCloser, options ...r2.Option) *MockResult {
 	req := &http.Request{
-		Method:	"POST",
-		Body:	body,
+		Method: "POST",
+		Body:   body,
 		URL: &url.URL{
 			Path: path,
 		},
@@ -97,8 +97,8 @@ func MockPost(app *App, path string, body io.ReadCloser, options ...r2.Option) *
 func MockPostJSON(app *App, path string, body interface{}, options ...r2.Option) *MockResult {
 	contents, _ := json.Marshal(body)
 	req := &http.Request{
-		Method:	"POST",
-		Body:	ioutil.NopCloser(bytes.NewReader(contents)),
+		Method: "POST",
+		Body:   ioutil.NopCloser(bytes.NewReader(contents)),
 		URL: &url.URL{
 			Path: path,
 		},
@@ -109,8 +109,8 @@ func MockPostJSON(app *App, path string, body interface{}, options ...r2.Option)
 // MockResult is a result of a mocked request.
 type MockResult struct {
 	*r2.Request
-	App	*App
-	Server	*httptest.Server
+	App    *App
+	Server *httptest.Server
 }
 
 // Close stops the app.

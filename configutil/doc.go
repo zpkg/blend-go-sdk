@@ -1,7 +1,7 @@
 /*
 
 Copyright (c) 2021 - Present. Blend Labs, Inc. All rights reserved
-Blend Confidential - Restricted
+Use of this source code is governed by a MIT license that can be found in the LICENSE file.
 
 */
 
@@ -42,4 +42,4 @@ In the above, the environment variable `BIND_ADDR` takes precedence over the str
 
 Note, we also "resolve" each of the attached configs first, in case they also have environment variables they read from etc.
 */
-package configutil	// import "github.com/blend/go-sdk/configutil"
+package configutil // import "github.com/blend/go-sdk/configutil"

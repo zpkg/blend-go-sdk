@@ -1,7 +1,7 @@
 /*
 
 Copyright (c) 2021 - Present. Blend Labs, Inc. All rights reserved
-Blend Confidential - Restricted
+Use of this source code is governed by a MIT license that can be found in the LICENSE file.
 
 */
 
@@ -17,7 +17,7 @@ import (
 func TestQueue_Check(t *testing.T) {
 	it := assert.New(t)
 
-	rl := NewQueue(5, time.Second)	// 5 actions per second
+	rl := NewQueue(5, time.Second) // 5 actions per second
 
 	now := time.Now()
 

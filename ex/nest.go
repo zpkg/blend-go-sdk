@@ -1,7 +1,7 @@
 /*
 
 Copyright (c) 2021 - Present. Blend Labs, Inc. All rights reserved
-Blend Confidential - Restricted
+Use of this source code is governed by a MIT license that can be found in the LICENSE file.
 
 */
 
@@ -18,8 +18,8 @@ func Nest(err ...error) error {
 			var wrappedEx *Ex
 			if typedEx, isTyped := e.(*Ex); !isTyped {
 				wrappedEx = &Ex{
-					Class:		e,
-					StackTrace:	Callers(DefaultStartDepth),
+					Class:      e,
+					StackTrace: Callers(DefaultStartDepth),
 				}
 			} else {
 				wrappedEx = typedEx

@@ -1,7 +1,7 @@
 /*
 
 Copyright (c) 2021 - Present. Blend Labs, Inc. All rights reserved
-Blend Confidential - Restricted
+Use of this source code is governed by a MIT license that can be found in the LICENSE file.
 
 */
 
@@ -35,14 +35,14 @@ func New(options ...Option) *Copyright {
 
 // Copyright is the main type that injects, removes and verifies copyright headers.
 type Copyright struct {
-	Config	// Config holds the configuration opitons.
+	Config // Config holds the configuration opitons.
 
 	// Stdout is the writer for Verbose and Debug output.
 	// If it is unset, `os.Stdout` will be used.
-	Stdout	io.Writer
+	Stdout io.Writer
 	// Stderr is the writer for Error output.
 	// If it is unset, `os.Stderr` will be used.
-	Stderr	io.Writer
+	Stderr io.Writer
 }
 
 // Inject inserts the copyright header in any matching files that don't already
@@ -210,7 +210,7 @@ func (c Copyright) verify(path string, _ os.FileInfo, file, notice []byte) error
 	var err error
 	if c.hasShebang(file) {
 		err = c.shebangVerifyNotice(path, file, notice)
-	} else if fileExtension == ExtensionGo {	// we have to treat go files specially because of build tags
+	} else if fileExtension == ExtensionGo { // we have to treat go files specially because of build tags
 		err = c.goVerifyNotice(path, file, notice)
 	} else {
 		err = c.verifyNotice(path, file, notice)
@@ -320,7 +320,7 @@ func (c Copyright) injectedContents(path string, file, notice []byte) []byte {
 		return c.shebangInjectNotice(path, file, notice)
 	}
 
-	if fileExtension == ExtensionGo {	// we have to treat go files specially because of build tags
+	if fileExtension == ExtensionGo { // we have to treat go files specially because of build tags
 		return c.goInjectNotice(path, file, notice)
 	}
 
@@ -337,7 +337,7 @@ func (c Copyright) removedContents(path string, file, notice []byte) []byte {
 		return c.shebangRemoveNotice(path, file, notice)
 	}
 
-	if fileExtension == ExtensionGo {	// we have to treat go files specially because of build tags
+	if fileExtension == ExtensionGo { // we have to treat go files specially because of build tags
 		return c.goRemoveNotice(path, file, notice)
 	}
 
@@ -505,9 +505,9 @@ func (c Copyright) compileNoticeTemplate(noticeTemplate, noticeBody string) (str
 
 func (c Copyright) templateViewModel(extra ...map[string]interface{}) map[string]interface{} {
 	base := map[string]interface{}{
-		"Year":		c.YearOrDefault(),
-		"Company":	c.CompanyOrDefault(),
-		"License":	c.LicenseOrDefault(),
+		"Year":    c.YearOrDefault(),
+		"Company": c.CompanyOrDefault(),
+		"License": c.LicenseOrDefault(),
 	}
 	for _, m := range extra {
 		for key, value := range m {

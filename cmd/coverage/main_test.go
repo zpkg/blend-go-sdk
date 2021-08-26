@@ -1,7 +1,7 @@
 /*
 
 Copyright (c) 2021 - Present. Blend Labs, Inc. All rights reserved
-Blend Confidential - Restricted
+Use of this source code is governed by a MIT license that can be found in the LICENSE file.
 
 */
 
@@ -14,9 +14,9 @@ import (
 )
 
 type coverProfileTestCase struct {
-	BaseDir		string
-	FileName	string
-	Expected	string
+	BaseDir  string
+	FileName string
+	Expected string
 }
 
 func TestGlob(t *testing.T) {

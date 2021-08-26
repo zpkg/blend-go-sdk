@@ -1,7 +1,7 @@
 /*
 
 Copyright (c) 2021 - Present. Blend Labs, Inc. All rights reserved
-Blend Confidential - Restricted
+Use of this source code is governed by a MIT license that can be found in the LICENSE file.
 
 */
 
@@ -36,10 +36,10 @@ type Codeowners struct {
 
 	// Stdout is the writer for Verbose and Debug output.
 	// If it is unset, `os.Stdout` will be used.
-	Stdout	io.Writer
+	Stdout io.Writer
 	// Stderr is the writer for Error output.
 	// If it is unset, `os.Stderr` will be used.
-	Stderr	io.Writer
+	Stderr io.Writer
 }
 
 // GenerateFile generates the file as nominated by the config path.
@@ -132,8 +132,8 @@ func (c Codeowners) Validate(ctx context.Context, input io.Reader) error {
 		return err
 	}
 	ghc := GithubClient{
-		Addr:	c.Config.GithubURLOrDefault(),
-		Token:	c.Config.GithubToken,
+		Addr:  c.Config.GithubURLOrDefault(),
+		Token: c.Config.GithubToken,
 	}
 	for _, source := range codeownersFile {
 		for _, path := range source.Paths {

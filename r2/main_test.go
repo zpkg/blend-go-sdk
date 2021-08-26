@@ -1,7 +1,7 @@
 /*
 
 Copyright (c) 2021 - Present. Blend Labs, Inc. All rights reserved
-Blend Confidential - Restricted
+Use of this source code is governed by a MIT license that can be found in the LICENSE file.
 
 */
 
@@ -17,8 +17,8 @@ import (
 )
 
 type MockTracer struct {
-	StartHandler	func(*http.Request)
-	FinishHandler	func(*http.Request, *http.Response, time.Time, error)
+	StartHandler  func(*http.Request)
+	FinishHandler func(*http.Request, *http.Response, time.Time, error)
 }
 
 func (mt MockTracer) Start(req *http.Request) TraceFinisher {

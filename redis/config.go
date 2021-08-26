@@ -1,7 +1,7 @@
 /*
 
 Copyright (c) 2021 - Present. Blend Labs, Inc. All rights reserved
-Blend Confidential - Restricted
+Use of this source code is governed by a MIT license that can be found in the LICENSE file.
 
 */
 
@@ -16,13 +16,13 @@ import (
 
 // Config is the config type for the redis client.
 type Config struct {
-	Network		string		`yaml:"network"`
-	Addr		string		`yaml:"addr"`
-	AuthUser	string		`yaml:"authUser"`
-	AuthPassword	string		`yaml:"authPassword"`
-	DB		string		`yaml:"db"`
-	ConnectTimeout	time.Duration	`yaml:"connectTimeout"`
-	Timeout		time.Duration	`yaml:"timeout"`
+	Network        string        `yaml:"network"`
+	Addr           string        `yaml:"addr"`
+	AuthUser       string        `yaml:"authUser"`
+	AuthPassword   string        `yaml:"authPassword"`
+	DB             string        `yaml:"db"`
+	ConnectTimeout time.Duration `yaml:"connectTimeout"`
+	Timeout        time.Duration `yaml:"timeout"`
 }
 
 // Resolve resolves the config.

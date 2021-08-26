@@ -1,7 +1,7 @@
 /*
 
 Copyright (c) 2021 - Present. Blend Labs, Inc. All rights reserved
-Blend Confidential - Restricted
+Use of this source code is governed by a MIT license that can be found in the LICENSE file.
 
 */
 
@@ -19,15 +19,15 @@ import (
 // NewFileCompressor returns a new file compressor.
 func NewFileCompressor(src io.ReadCloser) *FileCompressor {
 	return &FileCompressor{
-		Source:	src,
-		MD5:	md5.New(),
+		Source: src,
+		MD5:    md5.New(),
 	}
 }
 
 // FileCompressor reads a file an returns compressed output.
 type FileCompressor struct {
-	Source	io.ReadCloser
-	MD5	hash.Hash
+	Source io.ReadCloser
+	MD5    hash.Hash
 }
 
 // WriteTo copies the source to the destination as a compressed output.

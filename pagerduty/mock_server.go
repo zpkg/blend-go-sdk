@@ -1,7 +1,7 @@
 /*
 
 Copyright (c) 2021 - Present. Blend Labs, Inc. All rights reserved
-Blend Confidential - Restricted
+Use of this source code is governed by a MIT license that can be found in the LICENSE file.
 
 */
 
@@ -21,9 +21,9 @@ var (
 
 // MockAPI implements methods that can be called with the client.
 type MockAPI struct {
-	ListIncidents	func() ListIncidentsOutput
-	UpdateIncident	func(string, UpdateIncidentInput) Incident
-	CreateIncident	func(CreateIncidentInput) Incident
+	ListIncidents  func() ListIncidentsOutput
+	UpdateIncident func(string, UpdateIncidentInput) Incident
+	CreateIncident func(CreateIncidentInput) Incident
 }
 
 // Handler implements http.Handler.

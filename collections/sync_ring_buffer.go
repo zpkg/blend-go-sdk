@@ -1,7 +1,7 @@
 /*
 
 Copyright (c) 2021 - Present. Blend Labs, Inc. All rights reserved
-Blend Confidential - Restricted
+Use of this source code is governed by a MIT license that can be found in the LICENSE file.
 
 */
 
@@ -14,23 +14,23 @@ import (
 // NewSyncRingBuffer returns a new synchronized ring buffer.
 func NewSyncRingBuffer() *SyncRingBuffer {
 	return &SyncRingBuffer{
-		innerBuffer:	NewRingBuffer(),
-		syncRoot:	&sync.Mutex{},
+		innerBuffer: NewRingBuffer(),
+		syncRoot:    &sync.Mutex{},
 	}
 }
 
 // NewSyncRingBufferWithCapacity returns a new synchronized ring buffer.
 func NewSyncRingBufferWithCapacity(capacity int) *SyncRingBuffer {
 	return &SyncRingBuffer{
-		innerBuffer:	NewRingBufferWithCapacity(capacity),
-		syncRoot:	&sync.Mutex{},
+		innerBuffer: NewRingBufferWithCapacity(capacity),
+		syncRoot:    &sync.Mutex{},
 	}
 }
 
 // SyncRingBuffer is a ring buffer wrapper that adds synchronization.
 type SyncRingBuffer struct {
-	innerBuffer	*RingBuffer
-	syncRoot	*sync.Mutex
+	innerBuffer *RingBuffer
+	syncRoot    *sync.Mutex
 }
 
 // SyncRoot returns the mutex used to synchronize the collection.

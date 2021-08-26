@@ -1,7 +1,7 @@
 /*
 
 Copyright (c) 2021 - Present. Blend Labs, Inc. All rights reserved
-Blend Confidential - Restricted
+Use of this source code is governed by a MIT license that can be found in the LICENSE file.
 
 */
 
@@ -24,7 +24,7 @@ func TestMulti(t *testing.T) {
 
 	m := Append(ex0, ex1, ex2)
 
-	it.True(strings.HasPrefix(m.Error(), `3 errors occurred:`), m.Error())	//todo, make this test more strict
+	it.True(strings.HasPrefix(m.Error(), `3 errors occurred:`), m.Error()) //todo, make this test more strict
 
 	it.Len(m.(Multi).WrappedErrors(), 3)
 

@@ -1,7 +1,7 @@
 /*
 
 Copyright (c) 2021 - Present. Blend Labs, Inc. All rights reserved
-Blend Confidential - Restricted
+Use of this source code is governed by a MIT license that can be found in the LICENSE file.
 
 */
 
@@ -15,9 +15,9 @@ import (
 
 // Config is the pagerduty config.
 type Config struct {
-	Addr	string
-	Token	string
-	Email	string	// TODO(wc): is this even needed?
+	Addr  string
+	Token string
+	Email string // TODO(wc): is this even needed?
 }
 
 // IsZero returns if the config is set or not.

@@ -1,7 +1,7 @@
 /*
 
 Copyright (c) 2021 - Present. Blend Labs, Inc. All rights reserved
-Blend Confidential - Restricted
+Use of this source code is governed by a MIT license that can be found in the LICENSE file.
 
 */
 
@@ -18,7 +18,7 @@ func (mcf MockClientFunc) Do(ctx context.Context, out interface{}, op string, ar
 }
 
 // Close is a no-op.
-func (mcf MockClientFunc) Close() error	{ return nil }
+func (mcf MockClientFunc) Close() error { return nil }
 
 // NewMockClient returns a new mock client with a given capacity.
 func NewMockClient(capacity int) *MockClient {
@@ -44,11 +44,11 @@ func (mc *MockClient) Do(_ context.Context, out interface{}, op string, args ...
 }
 
 // Close closes the mock client.
-func (mc *MockClient) Close() error	{ return nil }
+func (mc *MockClient) Close() error { return nil }
 
 // MockClientOp is a mocked client op.
 type MockClientOp struct {
-	Out	interface{}
-	Op	string
-	Args	[]string
+	Out  interface{}
+	Op   string
+	Args []string
 }

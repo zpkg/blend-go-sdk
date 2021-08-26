@@ -1,7 +1,7 @@
 /*
 
 Copyright (c) 2021 - Present. Blend Labs, Inc. All rights reserved
-Blend Confidential - Restricted
+Use of this source code is governed by a MIT license that can be found in the LICENSE file.
 
 */
 
@@ -154,8 +154,8 @@ func TestStartView(t *testing.T) {
 
 	ctx := web.MockCtx("GET", "/test-resource")
 	viewResult := &web.ViewResult{
-		ViewName:	"test_view",
-		StatusCode:	200,
+		ViewName:   "test_view",
+		StatusCode: 200,
 	}
 	wvtf := webViewTracer.StartView(ctx, viewResult)
 	span := wvtf.(*webViewTraceFinisher).span
@@ -177,8 +177,8 @@ func TestStartViewWithParentSpan(t *testing.T) {
 	ctx := web.MockCtx("GET", "/test-resource")
 	ctx.WithContext(opentracing.ContextWithSpan(ctx.Context(), parentSpan))
 	viewResult := &web.ViewResult{
-		ViewName:	"test_view",
-		StatusCode:	200,
+		ViewName:   "test_view",
+		StatusCode: 200,
 	}
 	wvtf := webViewTracer.StartView(ctx, viewResult)
 	span := wvtf.(*webViewTraceFinisher).span
@@ -196,8 +196,8 @@ func TestFinishView(t *testing.T) {
 
 	ctx := web.MockCtx("GET", "/test-resource")
 	viewResult := &web.ViewResult{
-		ViewName:	"test_view",
-		StatusCode:	200,
+		ViewName:   "test_view",
+		StatusCode: 200,
 	}
 	wvtf := webViewTracer.StartView(ctx, viewResult)
 	wvtf.FinishView(ctx, viewResult, nil)

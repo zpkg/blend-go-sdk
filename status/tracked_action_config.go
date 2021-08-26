@@ -1,7 +1,7 @@
 /*
 
 Copyright (c) 2021 - Present. Blend Labs, Inc. All rights reserved
-Blend Confidential - Restricted
+Use of this source code is governed by a MIT license that can be found in the LICENSE file.
 
 */
 
@@ -16,11 +16,11 @@ import (
 
 // TrackedActionConfig is the configuration for the tracker.
 type TrackedActionConfig struct {
-	YellowRequestCount	int
-	YellowRequestPercentage	float64
-	RedRequestCount		int
-	RedRequestPercentage	float64
-	Expiration		time.Duration
+	YellowRequestCount      int
+	YellowRequestPercentage float64
+	RedRequestCount         int
+	RedRequestPercentage    float64
+	Expiration              time.Duration
 }
 
 // Resolve resolves the config.

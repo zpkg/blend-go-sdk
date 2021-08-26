@@ -1,7 +1,7 @@
 /*
 
 Copyright (c) 2021 - Present. Blend Labs, Inc. All rights reserved
-Blend Confidential - Restricted
+Use of this source code is governed by a MIT license that can be found in the LICENSE file.
 
 */
 
@@ -17,8 +17,8 @@ import (
 // SigningMethodHMAC implements the HMAC-SHA family of signing methods signing methods
 // Expects key type of []byte for both signing and validation
 type SigningMethodHMAC struct {
-	Name	string
-	Hash	crypto.Hash
+	Name string
+	Hash crypto.Hash
 }
 
 // Alg returns the name of the signing method.

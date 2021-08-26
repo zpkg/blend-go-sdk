@@ -1,7 +1,7 @@
 /*
 
 Copyright (c) 2021 - Present. Blend Labs, Inc. All rights reserved
-Blend Confidential - Restricted
+Use of this source code is governed by a MIT license that can be found in the LICENSE file.
 
 */
 
@@ -42,15 +42,15 @@ func New(options ...Option) (*App, error) {
 		return nil, err
 	}
 	a := App{
-		Auth:			auth,
-		BaseContext:		func(_ net.Listener) context.Context { return context.Background() },
-		BaseHeaders:		BaseHeaders(),
-		BaseState:		new(SyncState),
-		DefaultProvider:	views,
-		Latch:			async.NewLatch(),
-		Server:			new(http.Server),
-		Statics:		map[string]*StaticFileServer{},
-		Views:			views,
+		Auth:            auth,
+		BaseContext:     func(_ net.Listener) context.Context { return context.Background() },
+		BaseHeaders:     BaseHeaders(),
+		BaseState:       new(SyncState),
+		DefaultProvider: views,
+		Latch:           async.NewLatch(),
+		Server:          new(http.Server),
+		Statics:         map[string]*StaticFileServer{},
+		Views:           views,
 	}
 
 	for _, option := range options {
@@ -65,31 +65,31 @@ func New(options ...Option) (*App, error) {
 type App struct {
 	*async.Latch
 
-	Config	Config
+	Config Config
 
-	Auth		AuthManager
-	BaseContext	func(net.Listener) context.Context
+	Auth        AuthManager
+	BaseContext func(net.Listener) context.Context
 
-	BaseHeaders	http.Header
-	BaseMiddleware	[]Middleware
-	BaseState	State
+	BaseHeaders    http.Header
+	BaseMiddleware []Middleware
+	BaseState      State
 
-	Log	logger.Log
-	Tracer	Tracer
+	Log    logger.Log
+	Tracer Tracer
 
-	TLSConfig	*tls.Config
-	Server		*http.Server
-	Listener	net.Listener
+	TLSConfig *tls.Config
+	Server    *http.Server
+	Listener  net.Listener
 
-	Statics	map[string]*StaticFileServer
-	Routes	map[string]*RouteNode
+	Statics map[string]*StaticFileServer
+	Routes  map[string]*RouteNode
 
-	DefaultProvider	ResultProvider
-	Views		*ViewCache
+	DefaultProvider ResultProvider
+	Views           *ViewCache
 
-	NotFoundHandler		Handler
-	MethodNotAllowedHandler	Handler
-	PanicAction		PanicAction
+	NotFoundHandler         Handler
+	MethodNotAllowedHandler Handler
+	PanicAction             PanicAction
 }
 
 // Background returns a base context.
@@ -142,9 +142,9 @@ func (a *App) Start() (err error) {
 			return
 		}
 		a.Listener = webutil.TCPKeepAliveListener{
-			TCPListener:		typedListener,
-			KeepAlive:		a.Config.KeepAliveOrDefault(),
-			KeepAlivePeriod:	a.Config.KeepAlivePeriodOrDefault(),
+			TCPListener:     typedListener,
+			KeepAlive:       a.Config.KeepAliveOrDefault(),
+			KeepAlivePeriod: a.Config.KeepAlivePeriodOrDefault(),
 		}
 
 		if a.Config.UseProxyProtocol {
@@ -364,9 +364,9 @@ func (a *App) ServeHTTP(w http.ResponseWriter, req *http.Request) {
 			route.Handler(w, req, route, params)
 			return
 		} else if req.Method != webutil.MethodConnect && path != "/" {
-			code := http.StatusMovedPermanently	// 301 // Permanent redirect, request with GET method
+			code := http.StatusMovedPermanently // 301 // Permanent redirect, request with GET method
 			if req.Method != webutil.MethodGet {
-				code = http.StatusTemporaryRedirect	// 307
+				code = http.StatusTemporaryRedirect // 307
 			}
 
 			if tsr && !a.Config.SkipRedirectTrailingSlash {
@@ -540,7 +540,7 @@ func (a *App) ctxOptions(ctx context.Context, route *Route, p RouteParameters) [
 }
 
 func (a *App) allowed(path, reqMethod string) (allow string) {
-	if path == "*" {	// server-wide
+	if path == "*" { // server-wide
 		for method := range a.Routes {
 			if method == "OPTIONS" {
 				continue

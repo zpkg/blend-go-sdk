@@ -1,7 +1,7 @@
 /*
 
 Copyright (c) 2021 - Present. Blend Labs, Inc. All rights reserved
-Blend Confidential - Restricted
+Use of this source code is governed by a MIT license that can be found in the LICENSE file.
 
 */
 
@@ -11,7 +11,7 @@ import "time"
 
 // Config is the breaker config.
 type Config struct {
-	HalfOpenMaxActions	int64		`json:"halfOpenMaxActions" yaml:"halfOpenMaxActions"`
-	ClosedExpiryInterval	time.Duration	`json:"closedExpiryInterval" yaml:"closedExpiryInterval"`
-	OpenExpiryInterval	time.Duration	`json:"openExpiryInterval" yaml:"openExpiryInterval"`
+	HalfOpenMaxActions   int64         `json:"halfOpenMaxActions" yaml:"halfOpenMaxActions"`
+	ClosedExpiryInterval time.Duration `json:"closedExpiryInterval" yaml:"closedExpiryInterval"`
+	OpenExpiryInterval   time.Duration `json:"openExpiryInterval" yaml:"openExpiryInterval"`
 }

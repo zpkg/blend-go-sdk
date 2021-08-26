@@ -1,7 +1,7 @@
 /*
 
 Copyright (c) 2021 - Present. Blend Labs, Inc. All rights reserved
-Blend Confidential - Restricted
+Use of this source code is governed by a MIT license that can be found in the LICENSE file.
 
 */
 
@@ -9,11 +9,11 @@ package names
 
 // Name is a structured/parsed name.
 type Name struct {
-	Salutation	string
-	FirstName	string
-	MiddleName	string
-	LastName	string
-	Suffix		string
+	Salutation string
+	FirstName  string
+	MiddleName string
+	LastName   string
+	Suffix     string
 }
 
 // String returns the string representation of a name.

@@ -1,7 +1,7 @@
 /*
 
 Copyright (c) 2021 - Present. Blend Labs, Inc. All rights reserved
-Blend Confidential - Restricted
+Use of this source code is governed by a MIT license that can be found in the LICENSE file.
 
 */
 
@@ -20,10 +20,10 @@ import (
 
 // Query is the intermediate result of a query.
 type Query struct {
-	Invocation	*Invocation
-	Statement	string
-	Err		error
-	Args		[]interface{}
+	Invocation *Invocation
+	Statement  string
+	Err        error
+	Args       []interface{}
 }
 
 // Do runs a given query, yielding the raw results.

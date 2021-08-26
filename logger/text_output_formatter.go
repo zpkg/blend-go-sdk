@@ -1,7 +1,7 @@
 /*
 
 Copyright (c) 2021 - Present. Blend Labs, Inc. All rights reserved
-Blend Confidential - Restricted
+Use of this source code is governed by a MIT license that can be found in the LICENSE file.
 
 */
 
@@ -25,8 +25,8 @@ var (
 // NewTextOutputFormatter returns a new text writer for a given output.
 func NewTextOutputFormatter(options ...TextOutputFormatterOption) *TextOutputFormatter {
 	tf := &TextOutputFormatter{
-		BufferPool:	bufferutil.NewPool(DefaultBufferPoolSize),
-		TimeFormat:	DefaultTextTimeFormat,
+		BufferPool: bufferutil.NewPool(DefaultBufferPoolSize),
+		TimeFormat: DefaultTextTimeFormat,
 	}
 
 	for _, option := range options {
@@ -71,12 +71,12 @@ func OptTextNoColor() TextOutputFormatterOption {
 
 // TextOutputFormatter handles formatting messages as text.
 type TextOutputFormatter struct {
-	HideTimestamp	bool
-	HideFields	bool
-	NoColor		bool
-	TimeFormat	string
+	HideTimestamp bool
+	HideFields    bool
+	NoColor       bool
+	TimeFormat    string
 
-	BufferPool	*bufferutil.Pool
+	BufferPool *bufferutil.Pool
 }
 
 // TimeFormatOrDefault returns the time format or a default

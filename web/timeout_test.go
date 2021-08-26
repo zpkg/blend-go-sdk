@@ -1,7 +1,7 @@
 /*
 
 Copyright (c) 2021 - Present. Blend Labs, Inc. All rights reserved
-Blend Confidential - Restricted
+Use of this source code is governed by a MIT license that can be found in the LICENSE file.
 
 */
 
@@ -17,7 +17,7 @@ import (
 )
 
 func TestTimeout(t *testing.T) {
-	t.Skip()	// flaky
+	t.Skip() // flaky
 	assert := assert.New(t)
 
 	app := MustNew(

@@ -1,7 +1,7 @@
 /*
 
 Copyright (c) 2021 - Present. Blend Labs, Inc. All rights reserved
-Blend Confidential - Restricted
+Use of this source code is governed by a MIT license that can be found in the LICENSE file.
 
 */
 
@@ -24,8 +24,8 @@ var (
 type TCPKeepAliveListener struct {
 	*net.TCPListener
 
-	KeepAlive	bool
-	KeepAlivePeriod	time.Duration
+	KeepAlive       bool
+	KeepAlivePeriod time.Duration
 }
 
 // Accept implements net.Listener

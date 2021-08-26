@@ -1,7 +1,7 @@
 /*
 
 Copyright (c) 2021 - Present. Blend Labs, Inc. All rights reserved
-Blend Confidential - Restricted
+Use of this source code is governed by a MIT license that can be found in the LICENSE file.
 
 */
 
@@ -34,14 +34,14 @@ func ParseTokenJWT(tok *oauth2.Token, keyfunc jwt.Keyfunc) (*GoogleClaims, error
 type GoogleClaims struct {
 	jwt.StandardClaims
 
-	Email		string	`json:"email"`
-	EmailVerified	string	`json:"email-verified"`
-	HD		string	`json:"hd"`
-	Nonce		string	`json:"nonce"`
+	Email         string `json:"email"`
+	EmailVerified string `json:"email-verified"`
+	HD            string `json:"hd"`
+	Nonce         string `json:"nonce"`
 
-	FamilyName	string	`json:"family_name"`
-	GivenName	string	`json:"given_name"`
-	Locale		string	`json:"locale"`
-	Picture		string	`json:"picture"`
-	Profile		string	`json:"profile"`
+	FamilyName string `json:"family_name"`
+	GivenName  string `json:"given_name"`
+	Locale     string `json:"locale"`
+	Picture    string `json:"picture"`
+	Profile    string `json:"profile"`
 }

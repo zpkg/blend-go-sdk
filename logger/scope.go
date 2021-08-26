@@ -1,7 +1,7 @@
 /*
 
 Copyright (c) 2021 - Present. Blend Labs, Inc. All rights reserved
-Blend Confidential - Restricted
+Use of this source code is governed by a MIT license that can be found in the LICENSE file.
 
 */
 
@@ -20,9 +20,9 @@ var (
 // NewScope returns a new scope for a logger with a given set of optional options.
 func NewScope(log *Logger, options ...ScopeOption) Scope {
 	s := Scope{
-		Logger:		log,
-		Labels:		make(Labels),
-		Annotations:	make(Annotations),
+		Logger:      log,
+		Labels:      make(Labels),
+		Annotations: make(Annotations),
 	}
 	for _, option := range options {
 		option(&s)
@@ -39,7 +39,7 @@ The key fields:
 */
 type Scope struct {
 	// Path is a series of descriptive labels that shows the origin of the scope.
-	Path	[]string
+	Path []string
 	// Labels are descriptive string fields for the scope.
 	Labels
 	// Annotations are extra fields for the scope.
@@ -47,7 +47,7 @@ type Scope struct {
 
 	// Logger is a parent reference to the root logger; this holds
 	// information around what flags are enabled and listeners for events.
-	Logger	*Logger
+	Logger *Logger
 }
 
 // ScopeOption is a mutator for a scope.
@@ -240,7 +240,7 @@ func (sc Scope) FromContext(ctx context.Context) Scope {
 // ApplyContext applies the scope fields to a given context.
 func (sc Scope) ApplyContext(ctx context.Context) context.Context {
 	ctx = WithPath(ctx, append(sc.Path, GetPath(ctx)...)...)
-	ctx = WithLabels(ctx, sc.Labels)	// treated specially because maps are references
+	ctx = WithLabels(ctx, sc.Labels) // treated specially because maps are references
 	ctx = WithAnnotations(ctx, CombineAnnotations(sc.Annotations, GetAnnotations(ctx)))
 	return ctx
 }

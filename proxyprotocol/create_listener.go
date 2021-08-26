@@ -1,7 +1,7 @@
 /*
 
 Copyright (c) 2021 - Present. Blend Labs, Inc. All rights reserved
-Blend Confidential - Restricted
+Use of this source code is governed by a MIT license that can be found in the LICENSE file.
 
 */
 
@@ -22,8 +22,8 @@ func CreateListener(network, addr string, opts ...CreateListenerOption) (net.Lis
 		return nil, err
 	}
 	options := CreateListenerOptions{
-		KeepAlive:		true,
-		KeepAlivePeriod:	3 * time.Minute,
+		KeepAlive:       true,
+		KeepAlivePeriod: 3 * time.Minute,
 	}
 	for _, opt := range opts {
 		if err := opt(&options); err != nil {

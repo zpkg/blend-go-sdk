@@ -1,7 +1,7 @@
 /*
 
 Copyright (c) 2021 - Present. Blend Labs, Inc. All rights reserved
-Blend Confidential - Restricted
+Use of this source code is governed by a MIT license that can be found in the LICENSE file.
 
 */
 
@@ -16,9 +16,9 @@ import (
 )
 
 const (
-	goodAddr	= "127.0.0.1"
-	badAddr		= "127.0.0.2"
-	errAddr		= "9999.0.0.2"
+	goodAddr = "127.0.0.1"
+	badAddr  = "127.0.0.2"
+	errAddr  = "9999.0.0.2"
 )
 
 var (

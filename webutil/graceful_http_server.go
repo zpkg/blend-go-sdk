@@ -1,7 +1,7 @@
 /*
 
 Copyright (c) 2021 - Present. Blend Labs, Inc. All rights reserved
-Blend Confidential - Restricted
+Use of this source code is governed by a MIT license that can be found in the LICENSE file.
 
 */
 
@@ -20,8 +20,8 @@ import (
 // NewGracefulHTTPServer returns a new graceful http server wrapper.
 func NewGracefulHTTPServer(server *http.Server, options ...GracefulHTTPServerOption) *GracefulHTTPServer {
 	gs := &GracefulHTTPServer{
-		Latch:	async.NewLatch(),
-		Server:	server,
+		Latch:  async.NewLatch(),
+		Server: server,
 	}
 	for _, option := range options {
 		option(gs)
@@ -44,10 +44,10 @@ func OptGracefulHTTPServerListener(listener net.Listener) GracefulHTTPServerOpti
 
 // GracefulHTTPServer is a wrapper for an http server that implements the graceful interface.
 type GracefulHTTPServer struct {
-	Latch			*async.Latch
-	Server			*http.Server
-	ShutdownGracePeriod	time.Duration
-	Listener		net.Listener
+	Latch               *async.Latch
+	Server              *http.Server
+	ShutdownGracePeriod time.Duration
+	Listener            net.Listener
 }
 
 // Start implements graceful.Graceful.Start.

@@ -1,7 +1,7 @@
 /*
 
 Copyright (c) 2021 - Present. Blend Labs, Inc. All rights reserved
-Blend Confidential - Restricted
+Use of this source code is governed by a MIT license that can be found in the LICENSE file.
 
 */
 
@@ -22,8 +22,8 @@ func TestRedirectHost(t *testing.T) {
 	assert := assert.New(t)
 
 	redirect := HTTPRedirect{
-		RedirectScheme:	"spdy",
-		RedirectHost:	"redirect-host",
+		RedirectScheme: "spdy",
+		RedirectHost:   "redirect-host",
 	}
 	mockedRedirect := httptest.NewServer(redirect)
 

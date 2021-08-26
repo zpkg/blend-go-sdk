@@ -1,7 +1,7 @@
 /*
 
 Copyright (c) 2021 - Present. Blend Labs, Inc. All rights reserved
-Blend Confidential - Restricted
+Use of this source code is governed by a MIT license that can be found in the LICENSE file.
 
 */
 
@@ -20,8 +20,8 @@ import (
 )
 
 var (
-	_	webutil.HTTPTracer		= (*httpTracer)(nil)
-	_	webutil.HTTPTraceFinisher	= (*httpTraceFinisher)(nil)
+	_ webutil.HTTPTracer        = (*httpTracer)(nil)
+	_ webutil.HTTPTraceFinisher = (*httpTraceFinisher)(nil)
 )
 
 // Tracer returns an HTTP tracer.

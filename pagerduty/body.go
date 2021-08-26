@@ -1,7 +1,7 @@
 /*
 
 Copyright (c) 2021 - Present. Blend Labs, Inc. All rights reserved
-Blend Confidential - Restricted
+Use of this source code is governed by a MIT license that can be found in the LICENSE file.
 
 */
 
@@ -9,6 +9,6 @@ package pagerduty
 
 // Body is an api type.
 type Body struct {
-	Type	string	`json:"type"`
-	Details	string	`json:"details,omitempty"`
+	Type    string `json:"type"`
+	Details string `json:"details,omitempty"`
 }

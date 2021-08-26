@@ -1,7 +1,7 @@
 /*
 
 Copyright (c) 2021 - Present. Blend Labs, Inc. All rights reserved
-Blend Confidential - Restricted
+Use of this source code is governed by a MIT license that can be found in the LICENSE file.
 
 */
 
@@ -21,24 +21,24 @@ var (
 // NewMockCollector returns a new mock collector.
 func NewMockCollector(capacity int) *MockCollector {
 	return &MockCollector{
-		Metrics:	make(chan MockMetric, capacity),
-		Errors:		make(chan error, capacity),
-		FlushErrors:	make(chan error, capacity),
-		CloseErrors:	make(chan error, capacity),
+		Metrics:     make(chan MockMetric, capacity),
+		Errors:      make(chan error, capacity),
+		FlushErrors: make(chan error, capacity),
+		CloseErrors: make(chan error, capacity),
 	}
 }
 
 // MockCollector is a mocked collector for stats.
 type MockCollector struct {
-	Field	struct {
-		Namespace	string
-		DefaultTags	[]string
+	Field struct {
+		Namespace   string
+		DefaultTags []string
 	}
 
-	Metrics		chan MockMetric
-	Errors		chan error
-	FlushErrors	chan error
-	CloseErrors	chan error
+	Metrics     chan MockMetric
+	Errors      chan error
+	FlushErrors chan error
+	CloseErrors chan error
 }
 
 // AllMetrics returns all the metrics from the collector.
@@ -175,11 +175,11 @@ func (mc MockCollector) Close() error {
 
 // MockMetric is a mock metric.
 type MockMetric struct {
-	Name			string
-	Count			int64
-	Gauge			float64
-	Histogram		float64
-	Distribution		float64
-	TimeInMilliseconds	float64
-	Tags			[]string
+	Name               string
+	Count              int64
+	Gauge              float64
+	Histogram          float64
+	Distribution       float64
+	TimeInMilliseconds float64
+	Tags               []string
 }

@@ -1,7 +1,7 @@
 /*
 
 Copyright (c) 2021 - Present. Blend Labs, Inc. All rights reserved
-Blend Confidential - Restricted
+Use of this source code is governed by a MIT license that can be found in the LICENSE file.
 
 */
 
@@ -40,4 +40,4 @@ We can pass other options to the `ex.New(...)` constructor, such as setting an i
 		fmt.Printf("validation error: %v\n", ex.ErrInner(err))
 	}
 */
-package ex	// import "github.com/blend/go-sdk/ex"
+package ex // import "github.com/blend/go-sdk/ex"

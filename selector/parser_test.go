@@ -1,7 +1,7 @@
 /*
 
 Copyright (c) 2021 - Present. Blend Labs, Inc. All rights reserved
-Blend Confidential - Restricted
+Use of this source code is governed by a MIT license that can be found in the LICENSE file.
 
 */
 
@@ -68,8 +68,8 @@ func TestParserReadWord(t *testing.T) {
 	assert.True(l.done())
 
 	l = &Parser{
-		s:	"foo ==",
-		pos:	6,
+		s:   "foo ==",
+		pos: 6,
 	}
 	word, err = l.readWord()
 	assert.NotNil(err)

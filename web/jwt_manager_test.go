@@ -1,7 +1,7 @@
 /*
 
 Copyright (c) 2021 - Present. Blend Labs, Inc. All rights reserved
-Blend Confidential - Restricted
+Use of this source code is governed by a MIT license that can be found in the LICENSE file.
 
 */
 
@@ -38,11 +38,11 @@ func TestNewJWTManagerClaims(t *testing.T) {
 	m := NewJWTManager(key)
 
 	session := &Session{
-		SessionID:	uuid.V4().String(),
-		BaseURL:	uuid.V4().String(),
-		UserID:		uuid.V4().String(),
-		CreatedUTC:	time.Date(2018, 9, 8, 12, 00, 0, 0, time.UTC),
-		ExpiresUTC:	time.Date(2018, 9, 9, 12, 00, 0, 0, time.UTC),
+		SessionID:  uuid.V4().String(),
+		BaseURL:    uuid.V4().String(),
+		UserID:     uuid.V4().String(),
+		CreatedUTC: time.Date(2018, 9, 8, 12, 00, 0, 0, time.UTC),
+		ExpiresUTC: time.Date(2018, 9, 9, 12, 00, 0, 0, time.UTC),
 	}
 
 	claims := m.Claims(session)
@@ -61,12 +61,12 @@ func TestNewJWTManagerFromClaims(t *testing.T) {
 	m := NewJWTManager(key)
 
 	claims := &jwt.StandardClaims{
-		ID:		uuid.V4().String(),
-		Audience:	uuid.V4().String(),
-		Issuer:		"go-web",
-		Subject:	uuid.V4().String(),
-		IssuedAt:	time.Date(2018, 9, 8, 12, 00, 0, 0, time.UTC).Unix(),
-		ExpiresAt:	time.Date(2018, 9, 9, 12, 00, 0, 0, time.UTC).Unix(),
+		ID:        uuid.V4().String(),
+		Audience:  uuid.V4().String(),
+		Issuer:    "go-web",
+		Subject:   uuid.V4().String(),
+		IssuedAt:  time.Date(2018, 9, 8, 12, 00, 0, 0, time.UTC).Unix(),
+		ExpiresAt: time.Date(2018, 9, 9, 12, 00, 0, 0, time.UTC).Unix(),
 	}
 
 	session := m.FromClaims(claims)
@@ -90,12 +90,12 @@ func TestNewJWTManagerKeyFunc(t *testing.T) {
 	assert.True(ex.Is(ErrJWTNonstandardClaims, err))
 
 	claims := &jwt.StandardClaims{
-		ID:		uuid.V4().String(),
-		Audience:	uuid.V4().String(),
-		Issuer:		"go-web",
-		Subject:	uuid.V4().String(),
-		IssuedAt:	time.Date(2018, 9, 8, 12, 00, 0, 0, time.UTC).Unix(),
-		ExpiresAt:	time.Date(2018, 9, 9, 12, 00, 0, 0, time.UTC).Unix(),
+		ID:        uuid.V4().String(),
+		Audience:  uuid.V4().String(),
+		Issuer:    "go-web",
+		Subject:   uuid.V4().String(),
+		IssuedAt:  time.Date(2018, 9, 8, 12, 00, 0, 0, time.UTC).Unix(),
+		ExpiresAt: time.Date(2018, 9, 9, 12, 00, 0, 0, time.UTC).Unix(),
 	}
 	returnedKey, err := m.KeyFunc(&jwt.Token{
 		Claims: claims,
@@ -111,11 +111,11 @@ func TestNewJWTManagerSerialization(t *testing.T) {
 	m := NewJWTManager(key)
 
 	session := &Session{
-		SessionID:	uuid.V4().String(),
-		BaseURL:	uuid.V4().String(),
-		UserID:		uuid.V4().String(),
-		CreatedUTC:	time.Now().UTC(),
-		ExpiresUTC:	time.Now().UTC().Add(time.Hour),
+		SessionID:  uuid.V4().String(),
+		BaseURL:    uuid.V4().String(),
+		UserID:     uuid.V4().String(),
+		CreatedUTC: time.Now().UTC(),
+		ExpiresUTC: time.Now().UTC().Add(time.Hour),
 	}
 
 	output, err := m.SerializeHandler(context.TODO(), session)

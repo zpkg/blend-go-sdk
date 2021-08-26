@@ -1,11 +1,11 @@
 /*
 
 Copyright (c) 2021 - Present. Blend Labs, Inc. All rights reserved
-Blend Confidential - Restricted
+Use of this source code is governed by a MIT license that can be found in the LICENSE file.
 
 */
 
 /*
 Package cache provides caching primitives for in-memory caches, including LRU eviction.
 */
-package cache	// import "github.com/blend/go-sdk/cache"
+package cache // import "github.com/blend/go-sdk/cache"

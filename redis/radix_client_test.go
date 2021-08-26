@@ -1,7 +1,7 @@
 /*
 
 Copyright (c) 2021 - Present. Blend Labs, Inc. All rights reserved
-Blend Confidential - Restricted
+Use of this source code is governed by a MIT license that can be found in the LICENSE file.
 
 */
 
@@ -37,8 +37,8 @@ func Test_RadixClient_Do(t *testing.T) {
 	}
 
 	rc := &redis.RadixClient{
-		Log:	log,
-		Client:	mockRadixClient,
+		Log:    log,
+		Client: mockRadixClient,
 	}
 
 	var foo string
@@ -55,7 +55,7 @@ func Test_RadixClient_Do_timeout(t *testing.T) {
 		Config: redis.Config{
 			Timeout: time.Millisecond,
 		},
-		Client:	mockRadixClient,
+		Client: mockRadixClient,
 	}
 	var foo string
 	its.NotNil(rc.Do(context.Background(), &foo, "GET", "foo"))

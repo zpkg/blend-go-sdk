@@ -1,7 +1,7 @@
 /*
 
 Copyright (c) 2021 - Present. Blend Labs, Inc. All rights reserved
-Blend Confidential - Restricted
+Use of this source code is governed by a MIT license that can be found in the LICENSE file.
 
 */
 
@@ -16,7 +16,7 @@ import (
 // MockRadixClient implements radix.Client for testing.
 type MockRadixClient struct {
 	radix.Client
-	Ops	chan radix.Action
+	Ops chan radix.Action
 }
 
 // Do implements part of the radix client interface.

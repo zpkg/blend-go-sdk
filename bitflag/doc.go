@@ -1,11 +1,11 @@
 /*
 
 Copyright (c) 2021 - Present. Blend Labs, Inc. All rights reserved
-Blend Confidential - Restricted
+Use of this source code is governed by a MIT license that can be found in the LICENSE file.
 
 */
 
 /*
 Package bitflag contains utilities for working with bit flags (or bit masks).
 */
-package bitflag	// import "github.com/blend/go-sdk/bitflag"
+package bitflag // import "github.com/blend/go-sdk/bitflag"

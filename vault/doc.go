@@ -1,7 +1,7 @@
 /*
 
 Copyright (c) 2021 - Present. Blend Labs, Inc. All rights reserved
-Blend Confidential - Restricted
+Use of this source code is governed by a MIT license that can be found in the LICENSE file.
 
 */
 
@@ -27,4 +27,4 @@ Then, in your tests, you can create a new mock:
 
 This will then let you pass `new(clientMock)` to anywhere you need to set a `vault.Client`
 */
-package vault	// import "github.com/blend/go-sdk/vault"
+package vault // import "github.com/blend/go-sdk/vault"

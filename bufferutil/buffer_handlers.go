@@ -1,7 +1,7 @@
 /*
 
 Copyright (c) 2021 - Present. Blend Labs, Inc. All rights reserved
-Blend Confidential - Restricted
+Use of this source code is governed by a MIT license that can be found in the LICENSE file.
 
 */
 
@@ -17,7 +17,7 @@ import (
 // BufferHandlers is a synchronized map of listeners for new lines to a line buffer.
 type BufferHandlers struct {
 	sync.RWMutex
-	Handlers	map[string]*async.Worker
+	Handlers map[string]*async.Worker
 }
 
 // Add adds a handler.

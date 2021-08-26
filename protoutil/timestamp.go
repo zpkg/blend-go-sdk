@@ -1,7 +1,7 @@
 /*
 
 Copyright (c) 2021 - Present. Blend Labs, Inc. All rights reserved
-Blend Confidential - Restricted
+Use of this source code is governed by a MIT license that can be found in the LICENSE file.
 
 */
 
@@ -21,8 +21,8 @@ func Timestamp(t time.Time) *timestamp.Timestamp {
 		return nil
 	}
 	return &timestamp.Timestamp{
-		Seconds:	int64(t.UTC().Unix()),
-		Nanos:		int32(t.UTC().Nanosecond()),
+		Seconds: int64(t.UTC().Unix()),
+		Nanos:   int32(t.UTC().Nanosecond()),
 	}
 }
 

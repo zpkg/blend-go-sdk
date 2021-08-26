@@ -1,7 +1,7 @@
 /*
 
 Copyright (c) 2021 - Present. Blend Labs, Inc. All rights reserved
-Blend Confidential - Restricted
+Use of this source code is governed by a MIT license that can be found in the LICENSE file.
 
 */
 
@@ -40,8 +40,8 @@ func main() {
 		}
 		if line < letterHeight {
 			lineText = strings.TrimSuffix(strings.TrimSuffix(lineText, "@"), "@")
-			lineText = strings.ReplaceAll(lineText, "\"", "\\\"")	// escape quotes
-			lineText = strings.ReplaceAll(lineText, "\\", "\\\\")	// escape slashes
+			lineText = strings.ReplaceAll(lineText, "\"", "\\\"") // escape quotes
+			lineText = strings.ReplaceAll(lineText, "\\", "\\\\") // escape slashes
 			fmt.Fprintf(os.Stdout, "\t\t\"%s\",\n", lineText)
 			line++
 		}

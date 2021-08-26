@@ -1,7 +1,7 @@
 /*
 
 Copyright (c) 2021 - Present. Blend Labs, Inc. All rights reserved
-Blend Confidential - Restricted
+Use of this source code is governed by a MIT license that can be found in the LICENSE file.
 
 */
 
@@ -12,8 +12,9 @@ import (
 	"testing"
 	"time"
 
-	"github.com/blend/go-sdk/assert"
 	"google.golang.org/grpc/connectivity"
+
+	"github.com/blend/go-sdk/assert"
 )
 
 type mockGetConnectionState connectivity.State

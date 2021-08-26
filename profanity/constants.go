@@ -1,7 +1,7 @@
 /*
 
 Copyright (c) 2021 - Present. Blend Labs, Inc. All rights reserved
-Blend Confidential - Restricted
+Use of this source code is governed by a MIT license that can be found in the LICENSE file.
 
 */
 
@@ -9,15 +9,15 @@ package profanity
 
 // Defaults
 const (
-	DefaultRoot		= "."
-	DefaultRulesFile	= ".profanity.yml"
+	DefaultRoot      = "."
+	DefaultRulesFile = ".profanity.yml"
 )
 
 // Glob constants
 const (
-	Star	= "*"
-	Root	= "."
+	Star = "*"
+	Root = "."
 
-	GoFiles		= "*.go"
-	GoTestFiles	= "*_test.go"
+	GoFiles     = "*.go"
+	GoTestFiles = "*_test.go"
 )

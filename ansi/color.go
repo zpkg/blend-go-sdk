@@ -1,7 +1,7 @@
 /*
 
 Copyright (c) 2021 - Present. Blend Labs, Inc. All rights reserved
-Blend Confidential - Restricted
+Use of this source code is governed by a MIT license that can be found in the LICENSE file.
 
 */
 
@@ -132,48 +132,48 @@ const (
 
 // Color codes
 const (
-	ColorBlack	Color	= "30m"
-	ColorRed	Color	= "31m"
-	ColorGreen	Color	= "32m"
-	ColorYellow	Color	= "33m"
-	ColorBlue	Color	= "34m"
-	ColorPurple	Color	= "35m"
-	ColorCyan	Color	= "36m"
-	ColorWhite	Color	= "37m"
+	ColorBlack  Color = "30m"
+	ColorRed    Color = "31m"
+	ColorGreen  Color = "32m"
+	ColorYellow Color = "33m"
+	ColorBlue   Color = "34m"
+	ColorPurple Color = "35m"
+	ColorCyan   Color = "36m"
+	ColorWhite  Color = "37m"
 )
 
 // BrightColorCodes
 const (
-	ColorLightBlack		Color	= "90m"
-	ColorLightRed		Color	= "91m"
-	ColorLightGreen		Color	= "92m"
-	ColorLightYellow	Color	= "93m"
-	ColorLightBlue		Color	= "94m"
-	ColorLightPurple	Color	= "95m"
-	ColorLightCyan		Color	= "96m"
-	ColorLightWhite		Color	= "97m"
+	ColorLightBlack  Color = "90m"
+	ColorLightRed    Color = "91m"
+	ColorLightGreen  Color = "92m"
+	ColorLightYellow Color = "93m"
+	ColorLightBlue   Color = "94m"
+	ColorLightPurple Color = "95m"
+	ColorLightCyan   Color = "96m"
+	ColorLightWhite  Color = "97m"
 )
 
 // BackgroundColorCodes
 const (
-	ColorBackgroundBlack	Color	= "40m"
-	ColorBackgroundRed	Color	= "41m"
-	ColorBackgroundGreen	Color	= "42m"
-	ColorBackgroundYellow	Color	= "43m"
-	ColorBackgroundBlue	Color	= "44m"
-	ColorBackgroundPurple	Color	= "45m"
-	ColorBackgroundCyan	Color	= "46m"
-	ColorBackgroundWhite	Color	= "47m"
+	ColorBackgroundBlack  Color = "40m"
+	ColorBackgroundRed    Color = "41m"
+	ColorBackgroundGreen  Color = "42m"
+	ColorBackgroundYellow Color = "43m"
+	ColorBackgroundBlue   Color = "44m"
+	ColorBackgroundPurple Color = "45m"
+	ColorBackgroundCyan   Color = "46m"
+	ColorBackgroundWhite  Color = "47m"
 )
 
 // BackgroundColorCodes
 const (
-	ColorBackgroundBrightBlack	Color	= "100m"
-	ColorBackgroundBrightRed	Color	= "101m"
-	ColorBackgroundBrightGreen	Color	= "102m"
-	ColorBackgroundBrightYellow	Color	= "103m"
-	ColorBackgroundBrightBlue	Color	= "104m"
-	ColorBackgroundBrightPurple	Color	= "105m"
-	ColorBackgroundBrightCyan	Color	= "106m"
-	ColorBackgroundBrightWhite	Color	= "107m"
+	ColorBackgroundBrightBlack  Color = "100m"
+	ColorBackgroundBrightRed    Color = "101m"
+	ColorBackgroundBrightGreen  Color = "102m"
+	ColorBackgroundBrightYellow Color = "103m"
+	ColorBackgroundBrightBlue   Color = "104m"
+	ColorBackgroundBrightPurple Color = "105m"
+	ColorBackgroundBrightCyan   Color = "106m"
+	ColorBackgroundBrightWhite  Color = "107m"
 )

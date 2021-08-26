@@ -1,7 +1,7 @@
 /*
 
 Copyright (c) 2021 - Present. Blend Labs, Inc. All rights reserved
-Blend Confidential - Restricted
+Use of this source code is governed by a MIT license that can be found in the LICENSE file.
 
 */
 
@@ -19,8 +19,8 @@ import (
 
 // Bundle is an assets bundle with associated options.
 type Bundle struct {
-	PackageName	string
-	Ignores		[]*regexp.Regexp
+	PackageName string
+	Ignores     []*regexp.Regexp
 }
 
 // PackageNameOrDefault returns the package name or a default.
@@ -243,8 +243,8 @@ func (b Bundle) readFile(path string) (*File, error) {
 	}
 
 	return &File{
-		Name:		path,
-		Modtime:	stat.ModTime(),
-		Contents:	NewFileCompressor(f),
+		Name:     path,
+		Modtime:  stat.ModTime(),
+		Contents: NewFileCompressor(f),
 	}, nil
 }

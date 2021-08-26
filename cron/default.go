@@ -1,7 +1,7 @@
 /*
 
 Copyright (c) 2021 - Present. Blend Labs, Inc. All rights reserved
-Blend Confidential - Restricted
+Use of this source code is governed by a MIT license that can be found in the LICENSE file.
 
 */
 
@@ -10,8 +10,8 @@ package cron
 import "sync"
 
 var (
-	_default	*JobManager
-	_defaultLock	sync.Mutex
+	_default     *JobManager
+	_defaultLock sync.Mutex
 )
 
 // Default returns a shared instance of a JobManager.

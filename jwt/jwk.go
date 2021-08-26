@@ -1,7 +1,7 @@
 /*
 
 Copyright (c) 2021 - Present. Blend Labs, Inc. All rights reserved
-Blend Confidential - Restricted
+Use of this source code is governed by a MIT license that can be found in the LICENSE file.
 
 */
 
@@ -15,18 +15,18 @@ import (
 
 type (
 	// JWKSet represents a set of JWKs as defined by https://tools.ietf.org/html/rfc7517#section-5
-	JWKSet	struct {
+	JWKSet struct {
 		Keys []JWK `json:"keys"`
 	}
 
 	// JWK represents a cryptographic key as defined by https://tools.ietf.org/html/rfc7517#section-4
-	JWK	struct {
-		KTY	string	`json:"kty"`
-		USE	string	`json:"use,omitempty"`
-		ALG	string	`json:"alg,omitempty"`
-		KID	string	`json:"kid,omitempty"`
-		E	string	`json:"e,omitempty"`
-		N	string	`json:"n,omitempty"`
+	JWK struct {
+		KTY string `json:"kty"`
+		USE string `json:"use,omitempty"`
+		ALG string `json:"alg,omitempty"`
+		KID string `json:"kid,omitempty"`
+		E   string `json:"e,omitempty"`
+		N   string `json:"n,omitempty"`
 	}
 )
 
@@ -45,8 +45,8 @@ func (j JWK) RSAPublicKey() (*rsa.PublicKey, error) {
 	e.SetBytes(decodedE)
 	n.SetBytes(decodedN)
 	return &rsa.PublicKey{
-		E:	int(e.Int64()),
-		N:	&n,
+		E: int(e.Int64()),
+		N: &n,
 	}, nil
 }
 
@@ -58,8 +58,8 @@ const (
 // RSAPublicKeyToJWK converts an RSA public key to a JWK.
 func RSAPublicKeyToJWK(key *rsa.PublicKey) JWK {
 	return JWK{
-		KTY:	KTYRSA,
-		E:	base64.RawURLEncoding.EncodeToString(big.NewInt(int64(key.E)).Bytes()),
-		N:	base64.RawURLEncoding.EncodeToString(key.N.Bytes()),
+		KTY: KTYRSA,
+		E:   base64.RawURLEncoding.EncodeToString(big.NewInt(int64(key.E)).Bytes()),
+		N:   base64.RawURLEncoding.EncodeToString(key.N.Bytes()),
 	}
 }

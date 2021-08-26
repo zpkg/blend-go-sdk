@@ -1,7 +1,7 @@
 /*
 
 Copyright (c) 2021 - Present. Blend Labs, Inc. All rights reserved
-Blend Confidential - Restricted
+Use of this source code is governed by a MIT license that can be found in the LICENSE file.
 
 */
 
@@ -11,9 +11,9 @@ import "github.com/blend/go-sdk/logger"
 
 // Constants
 const (
-	Platform	= "go"
-	SDK		= "sentry.go"
-	ListenerName	= "sentry"
+	Platform     = "go"
+	SDK          = "sentry.go"
+	ListenerName = "sentry"
 )
 
 var (

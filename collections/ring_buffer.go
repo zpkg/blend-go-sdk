@@ -1,7 +1,7 @@
 /*
 
 Copyright (c) 2021 - Present. Blend Labs, Inc. All rights reserved
-Blend Confidential - Restricted
+Use of this source code is governed by a MIT license that can be found in the LICENSE file.
 
 */
 
@@ -13,38 +13,38 @@ import (
 )
 
 const (
-	ringBufferMinimumGrow		= 4
-	ringBufferGrowFactor		= 200
-	ringBufferDefaultCapacity	= 4
+	ringBufferMinimumGrow     = 4
+	ringBufferGrowFactor      = 200
+	ringBufferDefaultCapacity = 4
 )
 
 // NewRingBuffer creates a new, empty, RingBuffer.
 func NewRingBuffer() *RingBuffer {
 	return &RingBuffer{
-		array:	make([]interface{}, ringBufferDefaultCapacity),
-		head:	0,
-		tail:	0,
-		size:	0,
+		array: make([]interface{}, ringBufferDefaultCapacity),
+		head:  0,
+		tail:  0,
+		size:  0,
 	}
 }
 
 // NewRingBufferWithCapacity creates a new ringbuffer with a given capacity.
 func NewRingBufferWithCapacity(capacity int) *RingBuffer {
 	return &RingBuffer{
-		array:	make([]interface{}, capacity),
-		head:	0,
-		tail:	0,
-		size:	0,
+		array: make([]interface{}, capacity),
+		head:  0,
+		tail:  0,
+		size:  0,
 	}
 }
 
 // NewRingBufferFromValues creates a  ring buffer out of a slice.
 func NewRingBufferFromValues(values []interface{}) *RingBuffer {
 	return &RingBuffer{
-		array:	values,
-		head:	0,
-		tail:	len(values) - 1,
-		size:	len(values),
+		array: values,
+		head:  0,
+		tail:  len(values) - 1,
+		size:  len(values),
 	}
 }
 
@@ -52,10 +52,10 @@ func NewRingBufferFromValues(values []interface{}) *RingBuffer {
 // a whole new node object for each element (which saves GC churn).
 // Enqueue can be O(n), Dequeue can be O(1).
 type RingBuffer struct {
-	array	[]interface{}
-	head	int
-	tail	int
-	size	int
+	array []interface{}
+	head  int
+	tail  int
+	size  int
 }
 
 // Len returns the length of the ring buffer (as it is currently populated).

@@ -1,7 +1,7 @@
 /*
 
 Copyright (c) 2021 - Present. Blend Labs, Inc. All rights reserved
-Blend Confidential - Restricted
+Use of this source code is governed by a MIT license that can be found in the LICENSE file.
 
 */
 
@@ -85,12 +85,12 @@ func fatal(err error) {
 func parsePathConfig(path string) bindata.PathConfig {
 	if strings.HasSuffix(path, "/...") {
 		return bindata.PathConfig{
-			Path:		filepath.Clean(path[:len(path)-4]),
-			Recursive:	true,
+			Path:      filepath.Clean(path[:len(path)-4]),
+			Recursive: true,
 		}
 	}
 	return bindata.PathConfig{
-		Path:		filepath.Clean(path),
-		Recursive:	false,
+		Path:      filepath.Clean(path),
+		Recursive: false,
 	}
 }

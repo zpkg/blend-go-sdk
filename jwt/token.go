@@ -1,7 +1,7 @@
 /*
 
 Copyright (c) 2021 - Present. Blend Labs, Inc. All rights reserved
-Blend Confidential - Restricted
+Use of this source code is governed by a MIT license that can be found in the LICENSE file.
 
 */
 
@@ -21,23 +21,23 @@ func New(method SigningMethod) *Token {
 func NewWithClaims(method SigningMethod, claims Claims) *Token {
 	return &Token{
 		Header: map[string]interface{}{
-			"typ":	"JWT",
-			"alg":	method.Alg(),
+			"typ": "JWT",
+			"alg": method.Alg(),
 		},
-		Claims:	claims,
-		Method:	method,
+		Claims: claims,
+		Method: method,
 	}
 }
 
 // Token is a JWT token.
 // Different fields will be used depending on whether you're creating or parsing/verifying a token.
 type Token struct {
-	Raw		string			// The raw token.  Populated when you Parse a token
-	Method		SigningMethod		// The signing method used or to be used
-	Header		map[string]interface{}	// The first segment of the token
-	Claims		Claims			// The second segment of the token
-	Signature	string			// The third segment of the token.  Populated when you Parse a token
-	Valid		bool			// Is the token valid?  Populated when you Parse/Verify a token
+	Raw       string                 // The raw token.  Populated when you Parse a token
+	Method    SigningMethod          // The signing method used or to be used
+	Header    map[string]interface{} // The first segment of the token
+	Claims    Claims                 // The second segment of the token
+	Signature string                 // The third segment of the token.  Populated when you Parse a token
+	Valid     bool                   // Is the token valid?  Populated when you Parse/Verify a token
 }
 
 // SignedString returns the complete, signed token.
