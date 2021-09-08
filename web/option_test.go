@@ -128,3 +128,12 @@ func TestOptMaxHeaderBytes(t *testing.T) {
 	assert.Nil(OptMaxHeaderBytes(100)(&app))
 	assert.Equal(100, app.Config.MaxHeaderBytes)
 }
+
+func TestOptBaseURL(t *testing.T) {
+	assert := assert.New(t)
+
+	var app App
+	assert.Empty(app.Config.BaseURL)
+	assert.Nil(OptBaseURL("https://example.local")(&app))
+	assert.Equal("https://example.local", app.Config.BaseURL)
+}

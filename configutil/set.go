@@ -70,7 +70,26 @@ func SetStrings(destination *[]string, sources ...StringsSource) ResolveAction {
 }
 
 // SetBool coalesces a given list of sources into a variable.
-func SetBool(destination **bool, sources ...BoolSource) ResolveAction {
+func SetBool(destination *bool, sources ...BoolSource) ResolveAction {
+	return func(ctx context.Context) error {
+		var value *bool
+		var err error
+		for _, source := range sources {
+			value, err = source.Bool(ctx)
+			if err != nil {
+				return err
+			}
+			if value != nil {
+				*destination = *value
+				return nil
+			}
+		}
+		return nil
+	}
+}
+
+// SetBoolPtr coalesces a given list of sources into a variable.
+func SetBoolPtr(destination **bool, sources ...BoolSource) ResolveAction {
 	return func(ctx context.Context) error {
 		var value *bool
 		var err error

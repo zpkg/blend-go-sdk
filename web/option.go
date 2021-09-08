@@ -47,7 +47,7 @@ func OptConfigFromEnv() Option {
 	}
 }
 
-// OptBindAddr sets the config bind address
+// OptBindAddr sets the config bind address.
 func OptBindAddr(bindAddr string) Option {
 	return func(a *App) error {
 		a.Config.BindAddr = bindAddr
@@ -55,7 +55,7 @@ func OptBindAddr(bindAddr string) Option {
 	}
 }
 
-// OptPort sets the config bind address
+// OptPort sets the config bind address.
 func OptPort(port int32) Option {
 	return func(a *App) error {
 		a.Config.Port = port
@@ -269,6 +269,14 @@ func OptIdleTimeout(d time.Duration) Option {
 func OptMaxHeaderBytes(maxHeaderBytes int) Option {
 	return func(a *App) error {
 		a.Config.MaxHeaderBytes = maxHeaderBytes
+		return nil
+	}
+}
+
+// OptBaseURL sets the config base url.
+func OptBaseURL(baseURL string) Option {
+	return func(a *App) error {
+		a.Config.BaseURL = baseURL
 		return nil
 	}
 }

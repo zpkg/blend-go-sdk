@@ -8,43 +8,76 @@ Use of this source code is governed by a MIT license that can be found in the LI
 package certutil
 
 import (
+	"crypto/x509"
+	"io"
 	"io/ioutil"
 	"os"
+	"path/filepath"
 	"testing"
 
 	"github.com/blend/go-sdk/assert"
 )
 
 func TestCertFileWatcher(t *testing.T) {
-	t.Parallel()
+	its := assert.New(t)
 
-	assert := assert.New(t)
+	tempDir, err := ioutil.TempDir("", "")
+	its.Nil(err)
+	defer func() { _ = os.RemoveAll(tempDir) }()
 
-	tempKey, err := ioutil.TempFile("", "")
-	assert.Nil(err)
-	defer func() {
-		os.Remove(tempKey.Name())
-	}()
+	tempCertPath := filepath.Join(tempDir, "tls.crt")
+	tempKeyPath := filepath.Join(tempDir, "tls.key")
 
-	tempCert, err := ioutil.TempFile("", "")
-	assert.Nil(err)
-	defer func() {
-		os.Remove(tempCert.Name())
-	}()
+	err = copyFile("testdata/server.cert.pem", tempCertPath)
+	its.Nil(err)
+	err = copyFile("testdata/server.key.pem", tempKeyPath)
+	its.Nil(err)
 
-	_, err = tempKey.Write(keyLiteral)
-	assert.Nil(err)
+	w, err := NewCertFileWatcher(
+		tempCertPath, tempKeyPath,
+	)
+	its.Nil(err)
 
-	_, err = tempCert.Write(certLiteral)
-	assert.Nil(err)
+	its.Equal(tempCertPath, w.CertPath())
+	its.Equal(tempKeyPath, w.KeyPath())
 
-	assert.Nil(tempKey.Close())
-	assert.Nil(tempCert.Close())
+	cert := w.Certificate()
+	its.NotNil(cert)
 
-	w, err := NewCertFileWatcher(tempCert.Name(), tempKey.Name())
-	assert.Nil(err)
-	assert.NotNil(w.Certificate)
+	err = copyFile("testdata/alt-server.cert.pem", tempCertPath)
+	its.Nil(err)
+	err = copyFile("testdata/alt-server.key.pem", tempKeyPath)
+	its.Nil(err)
 
-	assert.Nil(w.Reload())
-	assert.NotNil(w.Certificate)
+	err = w.Reload()
+	its.Nil(err)
+
+	newCert := w.Certificate()
+	its.NotNil(newCert)
+
+	cert.Leaf, err = x509.ParseCertificate(cert.Certificate[0])
+	its.Nil(err)
+	newCert.Leaf, err = x509.ParseCertificate(newCert.Certificate[0])
+	its.Nil(err)
+
+	its.NotEqual(cert.Leaf.SerialNumber.String(), newCert.Leaf.SerialNumber.String())
+}
+
+func copyFile(src, dst string) error {
+	srcFile, err := os.Open(src)
+	if err != nil {
+		return err
+	}
+	defer srcFile.Close()
+
+	dstFile, err := os.Create(dst)
+	if err != nil {
+		return err
+	}
+	defer dstFile.Close()
+	_, err = io.Copy(dstFile, srcFile)
+	if err != nil {
+		return err
+	}
+	return nil
 }

@@ -13,6 +13,7 @@ import (
 	"strings"
 
 	"github.com/blend/go-sdk/ex"
+	"github.com/blend/go-sdk/stringutil"
 )
 
 // OptPath sets the url path.
@@ -35,4 +36,29 @@ func OptPath(path string) Option {
 // OptPathf sets the url path based on a format and arguments.
 func OptPathf(format string, args ...interface{}) Option {
 	return OptPath(fmt.Sprintf(format, args...))
+}
+
+// OptParameterizedPath sets the url path based on a parameterized path and arguments.
+// Parameterized paths should appear in the same format as paths you would add to your
+// web app (ex. `/resource/:resource_id`).
+func OptParameterizedPath(format string, params map[string]string) Option {
+	return func(r *Request) error {
+		if r.Request == nil {
+			return ex.New(ErrRequestUnset)
+		}
+
+		if !strings.HasPrefix(format, "/") {
+			format = "/" + format
+		}
+
+		path, err := stringutil.ReplacePathParameters(format, params)
+		if err != nil {
+			return err
+		}
+
+		ctx := r.Request.Context()
+		r.WithContext(WithParameterizedPath(ctx, format))
+
+		return OptPath(path)(r)
+	}
 }

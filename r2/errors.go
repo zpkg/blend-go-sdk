@@ -30,6 +30,10 @@ const (
 	// ErrInvalidMethod is an error that is returned from `r2.Request.Do()` if a method
 	// is specified on the request that violates the valid charset for HTTP methods.
 	ErrInvalidMethod ex.Class = "r2; invalid http method"
+	// ErrMismatchedPathParameters is an error that is returned from `OptParameterizedPath()` if
+	// the parameterized path string has a different number of parameters than what was passed as
+	// variadic arguments.
+	ErrMismatchedPathParameters ex.Class = "r2; route parameters provided don't match parameters needed in path"
 )
 
 // ErrIsTooManyRedirects returns if the error is too many redirects.

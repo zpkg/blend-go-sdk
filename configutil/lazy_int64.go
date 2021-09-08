@@ -9,7 +9,7 @@ package configutil
 
 import "context"
 
-// LazyInt64 returns an IntSource for a given int pointer.
+// LazyInt64 returns an Int64Source for a given int64 pointer.
 //
 // LazyInt64 differs from Int64Ptr in that it treats 0 values as unset.
 // If 0 is a valid value, use a Int64Ptr.

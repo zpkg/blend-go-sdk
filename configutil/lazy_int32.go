@@ -9,7 +9,7 @@ package configutil
 
 import "context"
 
-// LazyInt32 returns an IntSource for a given int pointer.
+// LazyInt32 returns an Int32Source for a given int32 pointer.
 //
 // LazyInt32 differs from Int32Ptr in that it treats 0 values as unset.
 // If 0 is a valid value, use a Int32Ptr.

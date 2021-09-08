@@ -335,7 +335,7 @@ func (a *App) Handle(method, path string, handler Handler) {
 		root = new(RouteNode)
 		a.Routes[method] = root
 	}
-	root.addRoute(method, path, handler)
+	root.AddRoute(method, path, handler)
 }
 
 // Lookup finds the route data for a given method and path.

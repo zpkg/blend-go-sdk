@@ -39,7 +39,7 @@ func (c *Config) Resolve(ctx context.Context) error {
 			configutil.String(c.Target),
 			configutil.String("https://google.com/robots.txt"),
 		),
-		configutil.SetBool(&c.DebugEnabled,
+		configutil.SetBoolPtr(&c.DebugEnabled,
 			configutil.Env("DEBUG_ENABLED"),
 			configutil.Bool(c.DebugEnabled),
 			configutil.Bool(ref.Bool(true)),

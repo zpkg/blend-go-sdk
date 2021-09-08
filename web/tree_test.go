@@ -140,7 +140,7 @@ func TestTreeAddAndGet(t *testing.T) {
 		"/β",
 	}
 	for _, route := range routes {
-		tree.addRoute("GET", route, fakeHandler(route))
+		tree.AddRoute("GET", route, fakeHandler(route))
 	}
 
 	//printChildren(tree, "")
@@ -183,7 +183,7 @@ func TestTreeWildcard(t *testing.T) {
 		"/info/:user/project/:project",
 	}
 	for _, route := range routes {
-		tree.addRoute("GET", route, fakeHandler(route))
+		tree.AddRoute("GET", route, fakeHandler(route))
 	}
 
 	//printChildren(tree, "")
@@ -228,7 +228,7 @@ func testRoutes(t *testing.T, routes []testRoute) {
 
 	for _, route := range routes {
 		recv := catchPanic(func() {
-			tree.addRoute("GET", route.path, nil)
+			tree.AddRoute("GET", route.path, nil)
 		})
 
 		if route.conflict {
@@ -292,7 +292,7 @@ func TestTreeDupliatePath(t *testing.T) {
 	}
 	for _, route := range routes {
 		recv := catchPanic(func() {
-			tree.addRoute("GET", route, fakeHandler(route))
+			tree.AddRoute("GET", route, fakeHandler(route))
 		})
 		if recv != nil {
 			t.Fatalf("panic inserting route '%s': %v", route, recv)
@@ -300,7 +300,7 @@ func TestTreeDupliatePath(t *testing.T) {
 
 		// Add again
 		recv = catchPanic(func() {
-			tree.addRoute("GET", route, nil)
+			tree.AddRoute("GET", route, nil)
 		})
 		if recv == nil {
 			t.Fatalf("no panic while inserting duplicate route '%s", route)
@@ -329,7 +329,7 @@ func TestEmptyWildcardName(t *testing.T) {
 	}
 	for _, route := range routes {
 		recv := catchPanic(func() {
-			tree.addRoute("GET", route, nil)
+			tree.AddRoute("GET", route, nil)
 		})
 		if recv == nil {
 			t.Fatalf("no panic while inserting route with empty wildcard name '%s", route)
@@ -366,7 +366,7 @@ func TestTreeDoubleWildcard(t *testing.T) {
 	for _, route := range routes {
 		tree := &RouteNode{}
 		recv := catchPanic(func() {
-			tree.addRoute("GET", route, nil)
+			tree.AddRoute("GET", route, nil)
 		})
 
 		if rs, ok := recv.(string); !ok || !strings.HasPrefix(rs, panicMsg) {
@@ -417,7 +417,7 @@ func TestTreeTrailingSlashRedirect(t *testing.T) {
 	}
 	for _, route := range routes {
 		recv := catchPanic(func() {
-			tree.addRoute("GET", route, fakeHandler(route))
+			tree.AddRoute("GET", route, fakeHandler(route))
 		})
 		if recv != nil {
 			t.Fatalf("panic inserting route '%s': %v", route, recv)
@@ -473,7 +473,7 @@ func TestTreeRootTrailingSlashRedirect(t *testing.T) {
 	tree := &RouteNode{}
 
 	recv := catchPanic(func() {
-		tree.addRoute("GET", "/:test", fakeHandler("/:test"))
+		tree.AddRoute("GET", "/:test", fakeHandler("/:test"))
 	})
 	if recv != nil {
 		t.Fatalf("panic inserting test route: %v", recv)
@@ -517,7 +517,7 @@ func TestTreeFindCaseInsensitivePath(t *testing.T) {
 
 	for _, route := range routes {
 		recv := catchPanic(func() {
-			tree.addRoute("GET", route, fakeHandler(route))
+			tree.AddRoute("GET", route, fakeHandler(route))
 		})
 		if recv != nil {
 			t.Fatalf("panic inserting route '%s': %v", route, recv)
@@ -622,8 +622,8 @@ func TestTreeInvalidNodeType(t *testing.T) {
 	const panicMsg = "invalid node type"
 
 	tree := &RouteNode{}
-	tree.addRoute("GET", "/", fakeHandler("/"))
-	tree.addRoute("GET", "/:page", fakeHandler("/:page"))
+	tree.AddRoute("GET", "/", fakeHandler("/"))
+	tree.AddRoute("GET", "/:page", fakeHandler("/:page"))
 
 	// set invalid node type
 	tree.Children[0].RouteNodeType = 42

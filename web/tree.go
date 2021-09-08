@@ -41,6 +41,12 @@ type RouteNode struct {
 	Priority   uint32
 }
 
+// GetPath returns the node for a path, parameter values, and if there is a trailing slash redirect
+// recommendation
+func (n *RouteNode) GetPath(path string) (route *Route, p RouteParameters, tsr bool) {
+	return n.getValue(path)
+}
+
 // incrementChildPriority increments priority of the given child and reorders if necessary
 func (n *RouteNode) incrementChildPriority(index int) int {
 	n.Children[index].Priority++
@@ -66,9 +72,8 @@ func (n *RouteNode) incrementChildPriority(index int) int {
 	return newIndex
 }
 
-// addRoute adds a node with the given handle to the path.
-// Not concurrency-safe!
-func (n *RouteNode) addRoute(method, path string, handler Handler) {
+// AddRoute adds a node with the given handle to the path.
+func (n *RouteNode) AddRoute(method, path string, handler Handler) {
 	fullPath := path
 	n.Priority++
 	numParams := countParams(path)
@@ -314,7 +319,7 @@ func (n *RouteNode) insertChild(numParams uint8, method, path, fullPath string, 
 	}
 }
 
-// Returns the handle registered with the given path (key). The values of
+// getValue Returns the handle registered with the given path (key). The values of
 // wildcards are saved to a map.
 // If no handle can be found, a TSR (trailing slash redirect) recommendation is
 // made if a handle exists with an extra (without the) trailing slash for the

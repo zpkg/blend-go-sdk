@@ -14,21 +14,38 @@ import (
 )
 
 func TestOptPath(t *testing.T) {
-	assert := assert.New(t)
+	its := assert.New(t)
 
 	r := New(TestURL, OptPath("/not-foo"))
-	assert.Equal("/not-foo", r.Request.URL.Path)
+	its.Nil(r.Err)
+	its.Equal("/not-foo", r.Request.URL.Path)
 
 	var unset Request
-	assert.NotNil(OptPath("/not-foo")(&unset))
+	its.NotNil(OptPath("/not-foo")(&unset))
 }
 
 func TestOptPathf(t *testing.T) {
-	assert := assert.New(t)
+	its := assert.New(t)
 
 	r := New(TestURL, OptPathf("/not-foo/%s", "bar"))
-	assert.Equal("/not-foo/bar", r.Request.URL.Path)
+	its.Nil(r.Err)
+	its.Equal("/not-foo/bar", r.Request.URL.Path)
 
 	var unset Request
-	assert.NotNil(OptPathf("/not-foo/%s", "bar")(&unset))
+	its.NotNil(OptPathf("/not-foo/%s", "bar")(&unset))
+}
+
+func TestOptParameterizedPath(t *testing.T) {
+	its := assert.New(t)
+
+	r := New(TestURL, OptParameterizedPath("resource/:resource_id", map[string]string{"resource_id": "1234"}))
+	its.Nil(r.Err)
+	its.Equal("/resource/1234", r.Request.URL.Path)
+	its.Equal("/resource/:resource_id", GetParameterizedPath(r.Request.Context()))
+
+	var unset Request
+	its.NotNil(OptParameterizedPath("resource/:resource_id", map[string]string{"resource_id": "1234"})(&unset))
+
+	its.NotNil(OptParameterizedPath("resource/:resource_id", map[string]string{})(r))
+	its.Nil(OptParameterizedPath("resource/:resource_id", map[string]string{"resource_id": "1234", "other_id": "5678"})(r))
 }

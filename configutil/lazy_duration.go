@@ -12,7 +12,7 @@ import (
 	"time"
 )
 
-// LazyDuration returns an IntSource for a given int pointer.
+// LazyDuration returns an DurationSource for a given duration pointer.
 //
 // LazyDuration differs from DurationPtr in that it treats 0 values as unset.
 // If 0 is a valid value, use a DurationPtr.

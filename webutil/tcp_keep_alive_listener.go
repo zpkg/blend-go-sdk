@@ -20,7 +20,8 @@ var (
 // connections. It's used by ListenAndServe and ListenAndServeTLS so
 // dead TCP connections (e.g. closing laptop mid-download) eventually
 // go away.
-// Taken from net/http/server.go
+//
+// It is taken from net/http/server.go
 type TCPKeepAliveListener struct {
 	*net.TCPListener
 

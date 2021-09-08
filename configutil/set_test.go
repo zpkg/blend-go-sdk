@@ -60,8 +60,22 @@ func TestSetBool(t *testing.T) {
 	fv := false
 	hasValue2 := Bool(&fv)
 
-	var value *bool
+	var value bool
 	assert.Nil(SetBool(&value, empty, hasValue, hasValue2)(context.TODO()))
+	assert.Equal(true, value)
+}
+
+func TestSetBoolPtr(t *testing.T) {
+	assert := assert.New(t)
+
+	empty := Bool(nil)
+	tv := true
+	hasValue := Bool(&tv)
+	fv := false
+	hasValue2 := Bool(&fv)
+
+	var value *bool
+	assert.Nil(SetBoolPtr(&value, empty, hasValue, hasValue2)(context.TODO()))
 	assert.Equal(true, *value)
 }
 

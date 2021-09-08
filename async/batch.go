@@ -36,6 +36,13 @@ func OptBatchErrors(errors chan error) BatchOption {
 	}
 }
 
+// OptBatchSkipRecoverPanics sets the batch worker to throw (or to recover) panics.
+func OptBatchSkipRecoverPanics(skipRecoverPanics bool) BatchOption {
+	return func(i *Batch) {
+		i.SkipRecoverPanics = skipRecoverPanics
+	}
+}
+
 // OptBatchParallelism sets the batch worker parallelism, or the number of workers to create.
 func OptBatchParallelism(parallelism int) BatchOption {
 	return func(i *Batch) {
@@ -45,10 +52,11 @@ func OptBatchParallelism(parallelism int) BatchOption {
 
 // Batch is a batch of work executed by a fixed count of workers.
 type Batch struct {
-	Action      WorkAction
-	Parallelism int
-	Work        chan interface{}
-	Errors      chan error
+	Action            WorkAction
+	SkipRecoverPanics bool
+	Parallelism       int
+	Work              chan interface{}
+	Errors            chan error
 }
 
 // Process executes the action for all the work items.
@@ -73,6 +81,7 @@ func (b *Batch) Process(ctx context.Context) {
 		worker.Context = ctx
 		worker.Errors = b.Errors
 		worker.Finalizer = returnWorker
+		worker.SkipRecoverPanics = b.SkipRecoverPanics
 
 		workerStarted := worker.NotifyStarted()
 		go func() { _ = worker.Start() }()
@@ -101,7 +110,11 @@ func (b *Batch) Process(ctx context.Context) {
 		case workItem = <-b.Work:
 			select {
 			case worker = <-availableWorkers:
-				worker.Enqueue(workItem)
+				select {
+				case worker.Work <- workItem:
+				case <-ctx.Done():
+					return
+				}
 			case <-ctx.Done():
 				return
 			}
@@ -109,5 +122,4 @@ func (b *Batch) Process(ctx context.Context) {
 			return
 		}
 	}
-
 }

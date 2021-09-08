@@ -9,7 +9,7 @@ package configutil
 
 import "context"
 
-// LazyFloat64 returns an IntSource for a given int pointer.
+// LazyFloat64 returns an Float64Source for a given float64 pointer.
 //
 // LazyFloat64 differs from Float64Ptr in that it treats 0 values as unset.
 // If 0 is a valid value, use a Float64Ptr.

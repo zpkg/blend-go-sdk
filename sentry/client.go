@@ -78,22 +78,45 @@ func errEvent(ctx context.Context, ee logger.ErrorEvent) *raven.Event {
 			Stacktrace: errStackTrace(ee.Err),
 		},
 	}
+
 	var innerErr error
 	for innerErr = ex.ErrInner(ee.Err); innerErr != nil; innerErr = ex.ErrInner(innerErr) {
-		exceptions = append(exceptions, raven.Exception{
-			Type:       ex.ErrClass(innerErr).Error(),
-			Value:      ex.ErrMessage(innerErr),
-			Stacktrace: errStackTrace(innerErr),
-		})
+		rex := raven.Exception{
+			Type:  ex.ErrClass(innerErr).Error(),
+			Value: ex.ErrMessage(innerErr),
+		}
+		if st := errStackTrace(innerErr); st != nil && len(st.Frames) > 0 {
+			rex.Stacktrace = st
+		} else {
+			rex.Stacktrace = &raven.Stacktrace{Frames: []raven.Frame{}}
+		}
+		exceptions = append(exceptions, rex)
 	}
 
-	return &raven.Event{
+	event := &raven.Event{
+		Title:       ex.ErrClass(ee.Err).Error(),
 		Timestamp:   logger.GetEventTimestamp(ctx, ee),
 		Fingerprint: errFingerprint(ctx, ex.ErrClass(ee.Err).Error()),
 		Level:       raven.Level(ee.GetFlag()),
 		Tags:        errTags(ctx),
 		Extra:       errExtra(ctx),
 		Platform:    "go",
+		Contexts: map[string]interface{}{
+			"device": map[string]interface{}{
+				"arch":    runtime.GOARCH,
+				"num_cpu": runtime.NumCPU(),
+			},
+			"os": map[string]interface{}{
+				"name": runtime.GOOS,
+			},
+			"runtime": map[string]interface{}{
+				"name":           "go",
+				"version":        runtime.Version(),
+				"go_numroutines": runtime.NumGoroutine(),
+				"go_maxprocs":    runtime.GOMAXPROCS(0),
+				"go_numcgocalls": runtime.NumCgoCall(),
+			},
+		},
 		Sdk: raven.SdkInfo{
 			Name:    SDK,
 			Version: raven.Version,
@@ -106,6 +129,42 @@ func errEvent(ctx context.Context, ee logger.ErrorEvent) *raven.Event {
 		Message:   ex.ErrClass(ee.Err).Error(),
 		Exception: exceptions,
 	}
+
+	// Set contextual information preserving existing data. For each context, if
+	// the existing value is not of type map[string]interface{}, then no
+	// additional information is added.
+	if deviceContext, ok := event.Contexts["device"].(map[string]interface{}); ok {
+		if _, ok := deviceContext["arch"]; !ok {
+			deviceContext["arch"] = runtime.GOARCH
+		}
+		if _, ok := deviceContext["num_cpu"]; !ok {
+			deviceContext["num_cpu"] = runtime.NumCPU()
+		}
+	}
+	if osContext, ok := event.Contexts["os"].(map[string]interface{}); ok {
+		if _, ok := osContext["name"]; !ok {
+			osContext["name"] = runtime.GOOS
+		}
+	}
+	if runtimeContext, ok := event.Contexts["runtime"].(map[string]interface{}); ok {
+		if _, ok := runtimeContext["name"]; !ok {
+			runtimeContext["name"] = "go"
+		}
+		if _, ok := runtimeContext["version"]; !ok {
+			runtimeContext["version"] = runtime.Version()
+		}
+		if _, ok := runtimeContext["go_numroutines"]; !ok {
+			runtimeContext["go_numroutines"] = runtime.NumGoroutine()
+		}
+		if _, ok := runtimeContext["go_maxprocs"]; !ok {
+			runtimeContext["go_maxprocs"] = runtime.GOMAXPROCS(0)
+		}
+		if _, ok := runtimeContext["go_numcgocalls"]; !ok {
+			runtimeContext["go_numcgocalls"] = runtime.NumCgoCall()
+		}
+	}
+
+	return event
 }
 
 func errFingerprint(ctx context.Context, extra ...string) []string {
@@ -120,7 +179,9 @@ func errTags(ctx context.Context) map[string]string {
 	if labels == nil {
 		labels = make(map[string]string)
 	}
-	labels["hostname"] = env.Env().Hostname()
+	if hostname := env.GetVars(ctx).Hostname(); hostname != "" {
+		labels["hostname"] = hostname
+	}
 	return labels
 }
 

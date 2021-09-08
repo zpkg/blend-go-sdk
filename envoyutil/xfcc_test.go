@@ -12,6 +12,8 @@ import (
 	"fmt"
 	"net/url"
 	"regexp"
+	"runtime"
+	"strings"
 	"testing"
 
 	sdkAssert "github.com/blend/go-sdk/assert"
@@ -150,7 +152,7 @@ func TestXFCCElementDecodeCert(t *testing.T) {
 		{Cert: "%", Error: "Error Parsing X-Forwarded-Client-Cert\ninvalid URL escape \"%\""},
 		{
 			Cert:  "-----BEGIN CERTIFICATE-----\nnope\n-----END CERTIFICATE-----\n",
-			Error: "Error Parsing X-Forwarded-Client-Cert\nasn1: syntax error: truncated tag or length",
+			Error: "Error Parsing X-Forwarded-Client-Cert\nx509: malformed certificate",
 		},
 		{
 			Cert:  url.QueryEscape(xfccElementTestCert + "\n" + xfccElementTestCert),
@@ -161,6 +163,11 @@ func TestXFCCElementDecodeCert(t *testing.T) {
 			Error: "Error Parsing X-Forwarded-Client-Cert; Incorrect number of certificates; expected 1 got 0",
 		},
 	}
+
+	if !strings.HasPrefix(runtime.Version(), "go1.17") {
+		testCases[3].Error = "Error Parsing X-Forwarded-Client-Cert\nasn1: syntax error: truncated tag or length"
+	}
+
 	for _, tc := range testCases {
 		xe := envoyutil.XFCCElement{Cert: tc.Cert}
 		cert, err := xe.DecodeCert()
@@ -193,9 +200,14 @@ func TestXFCCElementDecodeChain(t *testing.T) {
 		{Chain: "%", Error: "Error Parsing X-Forwarded-Client-Cert\ninvalid URL escape \"%\""},
 		{
 			Chain: "-----BEGIN CERTIFICATE-----\nnope\n-----END CERTIFICATE-----\n",
-			Error: "Error Parsing X-Forwarded-Client-Cert\nasn1: syntax error: truncated tag or length",
+			Error: "Error Parsing X-Forwarded-Client-Cert\nx509: malformed certificate",
 		},
 	}
+
+	if !strings.HasPrefix(runtime.Version(), "go1.17") {
+		testCases[3].Error = "Error Parsing X-Forwarded-Client-Cert\nasn1: syntax error: truncated tag or length"
+	}
+
 	for _, tc := range testCases {
 		xe := envoyutil.XFCCElement{Chain: tc.Chain}
 		chain, err := xe.DecodeChain()

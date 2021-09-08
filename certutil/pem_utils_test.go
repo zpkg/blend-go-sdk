@@ -8,6 +8,7 @@ Use of this source code is governed by a MIT license that can be found in the LI
 package certutil
 
 import (
+	"runtime"
 	"strings"
 	"testing"
 
@@ -32,7 +33,11 @@ func TestParseCertPEM(t *testing.T) {
 	}, "\n"))
 	certs, err = ParseCertPEM(invalidCert)
 	assert.Nil(certs)
-	assert.Equal("asn1: syntax error: truncated tag or length", err.Error())
+	expected := "x509: malformed certificate"
+	if !strings.HasPrefix(runtime.Version(), "go1.17") {
+		expected = "asn1: syntax error: truncated tag or length"
+	}
+	assert.Equal(expected, err.Error())
 }
 
 func TestCommonNamesForCertPair(t *testing.T) {
