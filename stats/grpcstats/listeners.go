@@ -19,19 +19,13 @@ import (
 	"github.com/blend/go-sdk/timeutil"
 )
 
-func getErrorTag(err error) string {
-	if e, ok := status.FromError(err); ok {
-		code := e.Code()
-		return stats.Tag(stats.TagError, strconv.Itoa(int(code)))
-	}
-	return stats.TagError
-}
-
 // AddListeners adds grpc listeners.
-func AddListeners(log logger.Listenable, collector stats.Collector) {
+func AddListeners(log logger.Listenable, collector stats.Collector, opts ...stats.AddListenerOption) {
 	if log == nil || collector == nil {
 		return
 	}
+
+	options := stats.NewAddListenerOptions(opts...)
 
 	log.Listen(grpcutil.FlagRPC, stats.ListenerNameStats, grpcutil.NewRPCEventListener(func(ctx context.Context, re grpcutil.RPCEvent) {
 		var tags []string
@@ -57,6 +51,9 @@ func AddListeners(log logger.Listenable, collector stats.Collector) {
 		if re.Err != nil {
 			tags = append(tags, getErrorTag(re.Err))
 		}
+
+		tags = append(tags, options.GetLoggerTags(ctx)...)
+
 		_ = collector.Increment(MetricNameRPC, tags...)
 		_ = collector.Gauge(MetricNameRPCElapsedLast, timeutil.Milliseconds(re.Elapsed), tags...)
 		_ = collector.Histogram(MetricNameRPCElapsed, timeutil.Milliseconds(re.Elapsed), tags...)
@@ -89,8 +86,19 @@ func AddListeners(log logger.Listenable, collector stats.Collector) {
 		if re.Err != nil {
 			tags = append(tags, getErrorTag(re.Err))
 		}
+
+		tags = append(tags, options.GetLoggerTags(ctx)...)
+
 		_ = collector.Increment(MetricNameRPCStreamMessage, tags...)
 		_ = collector.Gauge(MetricNameRPCStreamMessageElapsedLast, timeutil.Milliseconds(re.Elapsed), tags...)
 		_ = collector.Histogram(MetricNameRPCStreamMessageElapsed, timeutil.Milliseconds(re.Elapsed), tags...)
 	}))
+}
+
+func getErrorTag(err error) string {
+	if e, ok := status.FromError(err); ok {
+		code := e.Code()
+		return stats.Tag(stats.TagError, strconv.Itoa(int(code)))
+	}
+	return stats.TagError
 }

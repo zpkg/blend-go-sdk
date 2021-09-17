@@ -116,6 +116,17 @@ func (m Meta) VersionOrDefault() string {
 	return DefaultVersion
 }
 
+// GitRefOrDefault returns a gitref or a default.
+func (m Meta) GitRefOrDefault() string {
+	if m.GitRef != "" {
+		return m.GitRef
+	}
+	if GitRef != "" {
+		return GitRef
+	}
+	return "HEAD"
+}
+
 // IsProdlike returns if the cluster meta environment is prodlike.
 func (m Meta) IsProdlike() bool {
 	return env.IsProdlike(m.ServiceEnvOrDefault())

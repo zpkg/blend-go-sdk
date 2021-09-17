@@ -364,7 +364,7 @@ func (c Copyright) shebangInjectNotice(path string, file, notice []byte) []byte 
 
 // goInjectNotice handles go files differently because they may contain build tags.
 func (c Copyright) goInjectNotice(path string, file, notice []byte) []byte {
-	goBuildTag := goBuildTagMatch.FindString(string(file))
+	goBuildTag := goBuildTagMatch.Find(file)
 	file = goBuildTagMatch.ReplaceAll(file, nil)
 	if c.fileHasCopyrightHeader(file, notice) {
 		return nil
@@ -372,7 +372,7 @@ func (c Copyright) goInjectNotice(path string, file, notice []byte) []byte {
 
 	c.Verbosef("injecting notice: %s", path)
 	file = c.removeCopyrightHeader(file, notice)
-	return c.mergeFileSections([]byte(goBuildTag), notice, file)
+	return c.mergeFileSections(goBuildTag, notice, file)
 }
 
 func (c Copyright) injectNotice(path string, file, notice []byte) []byte {

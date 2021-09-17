@@ -18,24 +18,13 @@ import (
 	"github.com/blend/go-sdk/webutil"
 )
 
-// AddListenerOptions are options for adding listeners.
-type AddListenerOptions struct {
-	RequestSanitizeDefaults []sanitize.RequestOption
-}
-
-// AddListenerOption mutates AddListenerOptions
-type AddListenerOption func(*AddListenerOptions)
-
 // AddListeners adds web listeners.
-func AddListeners(log logger.FilterListenable, collector stats.Collector, opts ...AddListenerOption) {
+func AddListeners(log logger.FilterListenable, collector stats.Collector, opts ...stats.AddListenerOption) {
 	if log == nil || collector == nil {
 		return
 	}
 
-	var options AddListenerOptions
-	for _, opt := range opts {
-		opt(&options)
-	}
+	options := stats.NewAddListenerOptions(opts...)
 
 	log.Filter(webutil.FlagHTTPRequest,
 		stats.FilterNameSanitization,
@@ -46,7 +35,7 @@ func AddListeners(log logger.FilterListenable, collector stats.Collector, opts .
 	)
 
 	log.Listen(webutil.FlagHTTPRequest, stats.ListenerNameStats,
-		webutil.NewHTTPRequestEventListener(func(_ context.Context, wre webutil.HTTPRequestEvent) {
+		webutil.NewHTTPRequestEventListener(func(ctx context.Context, wre webutil.HTTPRequestEvent) {
 			var route string
 			if len(wre.Route) > 0 {
 				route = stats.Tag(TagRoute, wre.Route)
@@ -59,6 +48,7 @@ func AddListeners(log logger.FilterListenable, collector stats.Collector, opts .
 			tags := []string{
 				route, method, status,
 			}
+			tags = append(tags, options.GetLoggerTags(ctx)...)
 
 			_ = collector.Increment(MetricNameHTTPRequest, tags...)
 			_ = collector.Gauge(MetricNameHTTPRequestSize, float64(wre.ContentLength), tags...)

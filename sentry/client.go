@@ -171,7 +171,7 @@ func errFingerprint(ctx context.Context, extra ...string) []string {
 	if fingerprint := GetFingerprint(ctx); fingerprint != nil {
 		return fingerprint
 	}
-	return append(logger.GetPath(ctx), extra...)
+	return extra
 }
 
 func errTags(ctx context.Context) map[string]string {

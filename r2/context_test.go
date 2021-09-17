@@ -49,7 +49,7 @@ func TestGetParameterizedURLString(t *testing.T) {
 		},
 		{
 			name: "r2 request using OptParameterizedPath",
-			req: New("https://example.test", OptParameterizedPath("resource/:resource_id/:child_id", map[string]string{
+			req: New("https://example.test", OptPathParameterized("resource/:resource_id/:child_id", map[string]string{
 				"resource_id": "1234",
 				"child_id":    "5678",
 			})).Request,

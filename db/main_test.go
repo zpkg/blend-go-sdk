@@ -444,6 +444,26 @@ func dropUpsertRegressionTable(tx *sql.Tx) error {
 	return err
 }
 
+func createUpsertSerialPKTable(tx *sql.Tx) error {
+	schemaDefinition := `CREATE TABLE upsert_serial_pk (
+		id serial not null primary key,
+		status smallint not null,
+		required boolean not null default false,
+		created_at timestamp default current_timestamp,
+		updated_at timestamp,
+		migrated_at timestamp
+	);`
+	if _, err := defaultDB().Invoke(OptTx(tx)).Exec(schemaDefinition); err != nil {
+		return err
+	}
+	return nil
+}
+
+func dropUpsertSerialPKTable(tx *sql.Tx) error {
+	_, err := defaultDB().Invoke(OptTx(tx)).Exec("DROP TABLE upsert_serial_pk")
+	return err
+}
+
 // upsertAutoRegression contains all data associated with an envelope of documents.
 type upsertAutoRegression struct {
 	ID         uuid.UUID  `db:"id,pk"`
@@ -458,4 +478,19 @@ type upsertAutoRegression struct {
 // TableName returns the table name.
 func (uar upsertAutoRegression) TableName() string {
 	return "upsert_auto_regression"
+}
+
+type upsertSerialPK struct {
+	ID         int        `db:"id,pk,serial"`
+	Status     uint8      `db:"status"`
+	Required   bool       `db:"required"`
+	CreatedAt  *time.Time `db:"created_at,auto"`
+	UpdatedAt  *time.Time `db:"updated_at,auto"`
+	MigratedAt *time.Time `db:"migrated_at"`
+	ReadOnly   string     `db:"read_only,readonly"`
+}
+
+// TableName returns the table name.
+func (uar upsertSerialPK) TableName() string {
+	return "upsert_serial_pk"
 }

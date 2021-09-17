@@ -12,7 +12,7 @@ import (
 	"os"
 	"syscall"
 
-	"golang.org/x/crypto/ssh/terminal"
+	"golang.org/x/term"
 )
 
 // MustPassword gives a prompt and reads input until newlines without printing the input to screen.
@@ -30,7 +30,7 @@ func MustPassword(prompt string) string {
 // The prompt is written to stdout with `fmt.Print` unchanged.
 func Password(prompt string) (string, error) {
 	fmt.Fprint(os.Stdout, prompt)
-	results, err := terminal.ReadPassword(int(syscall.Stdin))
+	results, err := term.ReadPassword(int(syscall.Stdin))
 	if err != nil {
 		return "", err
 	}
@@ -42,7 +42,7 @@ func Password(prompt string) (string, error) {
 // The prompt is written to stdout with `fmt.Printf` unchanged.
 func Passwordf(format string, args ...interface{}) (string, error) {
 	fmt.Fprintf(os.Stdout, format, args...)
-	results, err := terminal.ReadPassword(int(syscall.Stdin))
+	results, err := term.ReadPassword(int(syscall.Stdin))
 	if err != nil {
 		return "", err
 	}

@@ -605,8 +605,19 @@ func (i *Invocation) generateUpsert(object DatabaseMapped) (statementLabel, quer
 	updates := cols.UpdateColumns()
 	updateCols := updates.Columns()
 
-	// We add in all the autos columns but filter them out of the insert clause
+	// We add in all the autos columns to start
 	insertsWithAutos = cols.InsertColumns().ConcatWith(cols.Autos())
+	pks := insertsWithAutos.PrimaryKeys()
+
+	// But we exclude auto primary keys that are not set. Auto primary keys that ARE set must be included in the insert
+	// clause so that there is a collision. But keys that are not set must be excluded from insertsWithAutos so that
+	// they are not passed as an extra parameter to ExecInContext later and are properly auto-generated
+	for _, col := range pks.Columns() {
+		if col.IsAuto && !cols.NotZero(object).HasColumn(col.ColumnName) {
+			insertsWithAutos.Remove(col.ColumnName)
+		}
+	}
+
 	insertCols := insertsWithAutos.Columns()
 	tokenMap := map[string]string{}
 	for i, col := range insertCols {
@@ -615,7 +626,6 @@ func (i *Invocation) generateUpsert(object DatabaseMapped) (statementLabel, quer
 
 	// autos are read out on insert (but only if unset)
 	autos = cols.Autos().Zero(object)
-	pks := cols.PrimaryKeys()
 	pkNames := pks.ColumnNames()
 
 	queryBodyBuffer := i.BufferPool.Get()

@@ -90,7 +90,7 @@ func TestStartParameterizedPath(t *testing.T) {
 	mockTracer := mocktracer.New()
 	reqTracer := Tracer(mockTracer)
 
-	req := r2.New("https://foo.com/", r2.OptHeader(make(http.Header)), r2.OptParameterizedPath("bar/:bar_id", map[string]string{"bar_id": "123"}))
+	req := r2.New("https://foo.com/", r2.OptHeader(make(http.Header)), r2.OptPathParameterized("bar/:bar_id", map[string]string{"bar_id": "123"}))
 	rtf := reqTracer.Start(req.Request)
 
 	spanContext, err := mockTracer.Extract(opentracing.HTTPHeaders, opentracing.HTTPHeadersCarrier(req.Request.Header))

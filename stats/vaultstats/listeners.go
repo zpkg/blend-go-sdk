@@ -18,17 +18,20 @@ import (
 )
 
 // AddListeners adds web listeners.
-func AddListeners(log logger.Listenable, collector stats.Collector) {
+func AddListeners(log logger.Listenable, collector stats.Collector, opts ...stats.AddListenerOption) {
 	if log == nil || collector == nil {
 		return
 	}
 
-	log.Listen(vault.Flag, stats.ListenerNameStats, vault.NewEventListener(func(_ context.Context, ve vault.Event) {
+	options := stats.NewAddListenerOptions(opts...)
+
+	log.Listen(vault.Flag, stats.ListenerNameStats, vault.NewEventListener(func(ctx context.Context, ve vault.Event) {
 		tags := []string{
 			stats.Tag("method", ve.Method),
 			stats.Tag("status", strconv.Itoa(ve.StatusCode)),
 			stats.Tag("path", ve.Path),
 		}
+		tags = append(tags, options.GetLoggerTags(ctx)...)
 		_ = collector.Increment("vault.request", tags...)
 		_ = collector.TimeInMilliseconds("vault.request.elapsed", ve.Elapsed, tags...)
 		_ = collector.Histogram("vault.request.elapsed", timeutil.Milliseconds(ve.Elapsed), tags...)

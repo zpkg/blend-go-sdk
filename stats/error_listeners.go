@@ -16,14 +16,20 @@ import (
 )
 
 // AddErrorListeners adds error listeners.
-func AddErrorListeners(log logger.Listenable, stats Collector) {
+func AddErrorListeners(log logger.Listenable, stats Collector, opts ...AddListenerOption) {
 	if log == nil || stats == nil {
 		return
 	}
 
-	listener := logger.NewErrorEventListener(func(_ context.Context, ee logger.ErrorEvent) {
-		_ = stats.Increment(MetricNameError,
+	options := NewAddListenerOptions(opts...)
+
+	listener := logger.NewErrorEventListener(func(ctx context.Context, ee logger.ErrorEvent) {
+		tags := []string{
 			Tag(TagSeverity, string(ee.GetFlag())),
+		}
+		tags = append(tags, options.GetLoggerTags(ctx)...)
+		_ = stats.Increment(MetricNameError,
+			tags...,
 		)
 	})
 	log.Listen(logger.Warning, ListenerNameStats, listener)
@@ -37,15 +43,21 @@ func AddErrorListeners(log logger.Listenable, stats Collector) {
 // that is, if you put variable data in the exception class.
 // If there is any doubt which of these to use (AddErrorListeners or AddErrorListenersByClass)
 // use the version that does not add the class information (AddErrorListeners).
-func AddErrorListenersByClass(log logger.Listenable, stats Collector) {
+func AddErrorListenersByClass(log logger.Listenable, stats Collector, opts ...AddListenerOption) {
 	if log == nil || stats == nil {
 		return
 	}
 
-	listener := logger.NewErrorEventListener(func(_ context.Context, ee logger.ErrorEvent) {
-		_ = stats.Increment(MetricNameError,
+	options := NewAddListenerOptions(opts...)
+
+	listener := logger.NewErrorEventListener(func(ctx context.Context, ee logger.ErrorEvent) {
+		tags := []string{
 			Tag(TagSeverity, string(ee.GetFlag())),
 			Tag(TagClass, fmt.Sprintf("%v", ex.ErrClass(ee.Err))),
+		}
+		tags = append(tags, options.GetLoggerTags(ctx)...)
+		_ = stats.Increment(MetricNameError,
+			tags...,
 		)
 	})
 	log.Listen(logger.Warning, ListenerNameStats, listener)

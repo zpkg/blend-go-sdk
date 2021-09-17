@@ -143,7 +143,7 @@ func TestErrEventFingerprintDefault(t *testing.T) {
 	assert.Equal([]string{"this is a test"}, event.Fingerprint)
 }
 
-func TestErrEventFingerprintPath(t *testing.T) {
+func TestErrEventFingerprintIgnoresPath(t *testing.T) {
 	assert := assert.New(t)
 
 	ctx := logger.WithPath(context.Background(), "foo", "bar")
@@ -161,7 +161,7 @@ func TestErrEventFingerprintPath(t *testing.T) {
 
 	assert.NotNil(event)
 	assert.NotEmpty(event.Fingerprint)
-	assert.Equal([]string{"foo", "bar", "this is a test"}, event.Fingerprint)
+	assert.Equal([]string{"this is a test"}, event.Fingerprint)
 }
 
 func TestErrEventFingerprintOverride(t *testing.T) {

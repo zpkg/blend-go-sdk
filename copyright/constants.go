@@ -198,7 +198,7 @@ const (
 )
 
 const (
-	goBuildTagExpr = `(?s)^\/\/ \+build([^\n]+)(\n{2})`
+	goBuildTagExpr = `^(\/\/(go:build| \+build).*\n)+\n`
 	yearExpr       = `([0-9]{4,}?)`
 	shebangExpr    = `(?s)^(\s*)#!([^\n]+)\n`
 )

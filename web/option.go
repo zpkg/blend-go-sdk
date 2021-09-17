@@ -8,8 +8,10 @@ Use of this source code is governed by a MIT license that can be found in the LI
 package web
 
 import (
+	"context"
 	"crypto/tls"
 	"fmt"
+	"net"
 	"net/http"
 	"time"
 
@@ -60,6 +62,23 @@ func OptPort(port int32) Option {
 	return func(a *App) error {
 		a.Config.Port = port
 		a.Config.BindAddr = fmt.Sprintf(":%v", port)
+		return nil
+	}
+}
+
+// OptBaseContext sets a base context on an `App`; this is a context that
+// is always used via the `BaseContext` function, independent of the listener.
+func OptBaseContext(ctx context.Context) Option {
+	return OptBaseContextFunc(func(_ net.Listener) context.Context {
+		return ctx
+	})
+}
+
+// OptBaseContextFunc sets a base context function on an `App`; this
+// context function will propagated from the `App` to `http.Server.BaseContext`.
+func OptBaseContextFunc(bc func(net.Listener) context.Context) Option {
+	return func(a *App) error {
+		a.BaseContext = bc
 		return nil
 	}
 }

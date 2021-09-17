@@ -764,6 +764,59 @@ func Test_Invocation_Upsert_withAutos_Unset(t *testing.T) {
 	its.True(recorded.Unix() > time.Date(2021, 1, 30, 0, 0, 0, 0, time.UTC).Unix())
 }
 
+func Test_Invocation_Upsert_withSerialPKAndOtherAutos(t *testing.T) {
+	its := assert.New(t)
+	tx, err := defaultDB().Begin()
+	its.Nil(err)
+	defer func() { _ = tx.Rollback() }()
+
+	err = createUpsertSerialPKTable(tx)
+	its.Nil(err)
+	defer func() { _ = dropUpsertSerialPKTable(tx) }()
+
+	tsMig := time.Date(2020, 12, 23, 11, 10, 9, 0, time.UTC)
+
+	// create initial value but let created_at be set by the default
+	value := upsertSerialPK{
+		Status:     1,
+		Required:   true,
+		MigratedAt: &tsMig,
+	}
+
+	err = defaultDB().Invoke(OptTx(tx)).Upsert(&value)
+	its.Nil(err)
+	its.NotZero(value.ID)
+	insertID := value.ID
+
+	var verify upsertSerialPK
+	var found bool
+	found, err = defaultDB().Invoke(OptTx(tx)).Get(&verify, insertID)
+	its.Nil(err)
+	its.True(found)
+
+	its.Equal(value.Status, verify.Status)
+	its.Equal(value.Required, verify.Required)
+	its.Equal((*value.MigratedAt).UTC(), (*verify.MigratedAt).UTC())
+	its.NotNil(verify.CreatedAt)
+	recorded := *verify.CreatedAt
+	its.True(recorded.Unix() > time.Date(2021, 1, 30, 0, 0, 0, 0, time.UTC).Unix())
+
+	newTime := time.Now().UTC()
+	value.UpdatedAt = &newTime
+
+	err = defaultDB().Invoke(OptTx(tx)).Upsert(&value)
+	its.Nil(err)
+	its.NotZero(value.ID)
+	its.Equal(insertID, value.ID)
+
+	found, err = defaultDB().Invoke(OptTx(tx)).Get(&verify, insertID)
+	its.Nil(err)
+	its.True(found)
+
+	// Using Unix so that this doesn't fail due to loss of nanosecond precision in postgres
+	its.Equal(newTime.Unix(), verify.UpdatedAt.Unix())
+}
+
 func Test_Invocation_CreateMany(t *testing.T) {
 	its := assert.New(t)
 	tx, err := defaultDB().Begin()

@@ -132,14 +132,15 @@ const (
 
 // Color codes
 const (
-	ColorBlack  Color = "30m"
-	ColorRed    Color = "31m"
-	ColorGreen  Color = "32m"
-	ColorYellow Color = "33m"
-	ColorBlue   Color = "34m"
-	ColorPurple Color = "35m"
-	ColorCyan   Color = "36m"
-	ColorWhite  Color = "37m"
+	ColorDefault Color = "39m"
+	ColorBlack   Color = "30m"
+	ColorRed     Color = "31m"
+	ColorGreen   Color = "32m"
+	ColorYellow  Color = "33m"
+	ColorBlue    Color = "34m"
+	ColorPurple  Color = "35m"
+	ColorCyan    Color = "36m"
+	ColorWhite   Color = "37m"
 )
 
 // BrightColorCodes

@@ -35,17 +35,17 @@ func TestOptPathf(t *testing.T) {
 	its.NotNil(OptPathf("/not-foo/%s", "bar")(&unset))
 }
 
-func TestOptParameterizedPath(t *testing.T) {
+func TestOptPathParameterized(t *testing.T) {
 	its := assert.New(t)
 
-	r := New(TestURL, OptParameterizedPath("resource/:resource_id", map[string]string{"resource_id": "1234"}))
+	r := New(TestURL, OptPathParameterized("resource/:resource_id", map[string]string{"resource_id": "1234"}))
 	its.Nil(r.Err)
 	its.Equal("/resource/1234", r.Request.URL.Path)
 	its.Equal("/resource/:resource_id", GetParameterizedPath(r.Request.Context()))
 
 	var unset Request
-	its.NotNil(OptParameterizedPath("resource/:resource_id", map[string]string{"resource_id": "1234"})(&unset))
+	its.NotNil(OptPathParameterized("resource/:resource_id", map[string]string{"resource_id": "1234"})(&unset))
 
-	its.NotNil(OptParameterizedPath("resource/:resource_id", map[string]string{})(r))
-	its.Nil(OptParameterizedPath("resource/:resource_id", map[string]string{"resource_id": "1234", "other_id": "5678"})(r))
+	its.NotNil(OptPathParameterized("resource/:resource_id", map[string]string{})(r))
+	its.Nil(OptPathParameterized("resource/:resource_id", map[string]string{"resource_id": "1234", "other_id": "5678"})(r))
 }

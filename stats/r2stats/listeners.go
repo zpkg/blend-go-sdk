@@ -18,24 +18,13 @@ import (
 	"github.com/blend/go-sdk/timeutil"
 )
 
-// AddListenerOptions are options for adding listeners.
-type AddListenerOptions struct {
-	RequestSanitizeDefaults []sanitize.RequestOption
-}
-
-// AddListenerOption mutates AddListenerOptions
-type AddListenerOption func(*AddListenerOptions)
-
 // AddListeners adds web listeners.
-func AddListeners(log logger.FilterListenable, collector stats.Collector, opts ...AddListenerOption) {
+func AddListeners(log logger.FilterListenable, collector stats.Collector, opts ...stats.AddListenerOption) {
 	if log == nil || collector == nil {
 		return
 	}
 
-	var options AddListenerOptions
-	for _, opt := range opts {
-		opt(&options)
-	}
+	options := stats.NewAddListenerOptions(opts...)
 
 	log.Filter(r2.Flag,
 		stats.FilterNameSanitization,
@@ -53,8 +42,7 @@ func AddListeners(log logger.FilterListenable, collector stats.Collector, opts .
 	)
 
 	log.Listen(r2.FlagResponse, stats.ListenerNameStats,
-		r2.NewEventListener(func(_ context.Context, r2e r2.Event) {
-
+		r2.NewEventListener(func(ctx context.Context, r2e r2.Event) {
 			hostname := stats.Tag(TagHostname, r2e.Request.URL.Hostname())
 			target := stats.Tag(TagTarget, r2e.Request.URL.Hostname())
 			method := stats.Tag(TagMethod, r2e.Request.Method)
@@ -62,7 +50,7 @@ func AddListeners(log logger.FilterListenable, collector stats.Collector, opts .
 			tags := []string{
 				hostname, target, method, status,
 			}
-
+			tags = append(tags, options.GetLoggerTags(ctx)...)
 			_ = collector.Increment(MetricNameHTTPClientRequest, tags...)
 			_ = collector.Gauge(MetricNameHTTPClientRequestElapsedLast, timeutil.Milliseconds(r2e.Elapsed), tags...)
 			_ = collector.Histogram(MetricNameHTTPClientRequestElapsed, timeutil.Milliseconds(r2e.Elapsed), tags...)

@@ -23,6 +23,7 @@ import (
 
 	"github.com/blend/go-sdk/assert"
 	"github.com/blend/go-sdk/ref"
+	"github.com/blend/go-sdk/testutil"
 )
 
 func Test_Copyright_GetStdout(t *testing.T) {
@@ -154,6 +155,32 @@ baz
 	its.True(goBuildTagMatch.Match(file))
 }
 
+func Test_Copyright_goBuildTagsMatch(t *testing.T) {
+	its := assert.New(t)
+
+	file := testutil.GetTestFixture(its, "buildtags1.go")
+	its.True(goBuildTagMatch.Match(file))
+	found := goBuildTagMatch.Find(file)
+	its.Equal("//go:build tag1\n// +build tag1\n\n", string(found))
+
+	file2 := testutil.GetTestFixture(its, "buildtags2.go")
+	its.True(goBuildTagMatch.Match(file2))
+	found2 := goBuildTagMatch.Find(file2)
+
+	expected := `// +build tag5
+//go:build tag1 && tag2 && tag3
+// +build tag1,tag2,tag3
+// +build tag6
+
+`
+	its.Equal(expected, string(found2))
+
+	file3 := testutil.GetTestFixture(its, "buildtags3.go")
+	its.True(goBuildTagMatch.Match(file3))
+	found3 := goBuildTagMatch.Find(file3)
+	its.Equal("//go:build tag1 & tag2\n\n", string(found3))
+}
+
 func Test_Copyright_goInjectNotice(t *testing.T) {
 	its := assert.New(t)
 
@@ -172,7 +199,7 @@ baz
 	its.HasSuffix(string(output), string(file))
 }
 
-func Test_Copyright_goInjectNotice_buildTags(t *testing.T) {
+func Test_Copyright_goInjectNotice_buildTag(t *testing.T) {
 	its := assert.New(t)
 	c := Copyright{}
 
@@ -196,6 +223,50 @@ baz
 	its.Empty(outputRepeat, "inject notice functions should return an empty slice if the header already exists")
 }
 
+func Test_Copyright_goInjectNotice_buildTags(t *testing.T) {
+	t.Parallel()
+
+	type testCase struct {
+		Name       string
+		TestFile   string
+		GoldenFile string
+	}
+
+	cases := []testCase{
+		{
+			Name:     "standard build tags",
+			TestFile: "buildtags1.go",
+		},
+		{
+			Name:     "multiple build tags",
+			TestFile: "buildtags2.go",
+		},
+		{
+			Name:     "build tags split accross file",
+			TestFile: "buildtags3.go",
+		},
+	}
+
+	for _, tc := range cases {
+		tc := tc
+		t.Run(tc.Name, func(t *testing.T) {
+			it := assert.New(t)
+			c := Copyright{}
+
+			notice, err := generateGoNotice(OptYear(2001))
+			it.Nil(err)
+
+			testFile := testutil.GetTestFixture(it, tc.TestFile)
+
+			output := c.goInjectNotice("foo.go", testFile, notice)
+			testutil.AssertGoldenFile(it, output, tc.TestFile)
+
+			outputRepeat := c.goInjectNotice("foo.go", output, notice)
+			it.Empty(outputRepeat)
+		})
+	}
+}
+
 func Test_Copyright_injectNotice_typescript(t *testing.T) {
 	its := assert.New(t)
 
@@ -206,11 +277,11 @@ bar
 baz
 `)
 
-	notice, err := generateTypescriptNotice(OptYear(2021))
+	notice, err := generateTypescriptNotice(OptYear(2001))
 	its.Nil(err)
 
 	output := c.injectNotice("foo.ts", file, notice)
-	its.Contains(string(output), "Copyright (c) 2021")
+	its.Contains(string(output), "Copyright (c) 2001")
 	its.HasSuffix(string(output), string(file))
 
 	outputRepeat := c.injectNotice("foo.ts", output, notice)

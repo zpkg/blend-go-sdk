@@ -17,7 +17,7 @@ import (
 )
 
 // AddListeners adds web listeners.
-func AddListeners(log logger.Listenable, collector stats.Collector) {
+func AddListeners(log logger.Listenable, collector stats.Collector, opts ...stats.AddListenerOption) {
 	if log == nil || collector == nil {
 		return
 	}
@@ -32,12 +32,16 @@ func AddListeners(log logger.Listenable, collector stats.Collector) {
 		cron.FlagFixed,
 	}
 
+	options := stats.NewAddListenerOptions(opts...)
+
 	for _, flag := range flags {
 		log.Listen(flag, stats.ListenerNameStats,
-			cron.NewEventListener(func(_ context.Context, ce cron.Event) {
+			cron.NewEventListener(func(ctx context.Context, ce cron.Event) {
 				var tags []string
 				tags = append(tags, stats.Tag(TagJob, ce.JobName))
 				tags = append(tags, stats.Tag(TagJobStatus, ce.Flag))
+
+				tags = append(tags, options.GetLoggerTags(ctx)...)
 
 				_ = collector.Increment(MetricNameCron, tags...)
 				if ce.Elapsed > 0 {

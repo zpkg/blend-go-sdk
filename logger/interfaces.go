@@ -164,6 +164,11 @@ type Closer interface {
 	Close()
 }
 
+// Drainer is a type that can be drained
+type Drainer interface {
+	Drain()
+}
+
 // FatalCloser is a type that defines Fatal and Close.
 type FatalCloser interface {
 	FatalReceiver
@@ -188,6 +193,7 @@ type Log interface {
 // FullLog is a logger that implements the full suite of logging methods.
 type FullLog interface {
 	Closer
+	Drainer
 	Flagged
 	Listenable
 	Filterable

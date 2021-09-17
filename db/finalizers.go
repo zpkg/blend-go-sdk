@@ -25,7 +25,7 @@ import (
 // > 	// ...
 // > }
 func PoolCloseFinalizer(pool *Connection, err error) error {
-	if pool == nil {
+	if pool == nil || pool.Connection == nil {
 		return err
 	}
 

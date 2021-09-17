@@ -38,10 +38,10 @@ func OptPathf(format string, args ...interface{}) Option {
 	return OptPath(fmt.Sprintf(format, args...))
 }
 
-// OptParameterizedPath sets the url path based on a parameterized path and arguments.
+// OptPathParameterized sets the url path based on a parameterized path and arguments.
 // Parameterized paths should appear in the same format as paths you would add to your
 // web app (ex. `/resource/:resource_id`).
-func OptParameterizedPath(format string, params map[string]string) Option {
+func OptPathParameterized(format string, params map[string]string) Option {
 	return func(r *Request) error {
 		if r.Request == nil {
 			return ex.New(ErrRequestUnset)

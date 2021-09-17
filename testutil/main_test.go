@@ -17,6 +17,8 @@ import (
 )
 
 func TestMain(m *testing.M) {
+	testutil.MarkUpdateGoldenFlag(testutil.OptUpdateGoldenFlag(testUpdateGoldenFlag))
+
 	testutil.New(
 		m,
 		testutil.OptLog(logger.All()),

@@ -8,8 +8,10 @@ Use of this source code is governed by a MIT license that can be found in the LI
 package web
 
 import (
+	"context"
 	"io/ioutil"
 	"log"
+	"net"
 	"testing"
 	"time"
 
@@ -49,6 +51,35 @@ func TestOptPort(t *testing.T) {
 	assert.Nil(OptPort(9999)(&app))
 	assert.Equal(":9999", app.Config.BindAddr)
 	assert.Equal(9999, app.Config.Port)
+}
+
+func TestOptBaseContext(t *testing.T) {
+	t.Parallel()
+	it := assert.New(t)
+
+	ctx := context.TODO()
+	opt := OptBaseContext(ctx)
+	a := App{}
+	err := opt(&a)
+	it.Nil(err)
+	root := a.BaseContext(nil)
+	it.ReferenceEqual(ctx, root)
+}
+
+func TestOptBaseContextFunc(t *testing.T) {
+	t.Parallel()
+	it := assert.New(t)
+
+	ctx := context.TODO()
+	bc := func(_ net.Listener) context.Context {
+		return ctx
+	}
+	opt := OptBaseContextFunc(bc)
+	a := App{}
+	err := opt(&a)
+	it.Nil(err)
+	root := a.BaseContext(nil)
+	it.ReferenceEqual(ctx, root)
 }
 
 func TestOptLog(t *testing.T) {
