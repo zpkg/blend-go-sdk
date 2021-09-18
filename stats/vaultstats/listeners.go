@@ -31,7 +31,7 @@ func AddListeners(log logger.Listenable, collector stats.Collector, opts ...stat
 			stats.Tag("status", strconv.Itoa(ve.StatusCode)),
 			stats.Tag("path", ve.Path),
 		}
-		tags = append(tags, options.GetLoggerTags(ctx)...)
+		tags = append(tags, options.GetLoggerLabelsAsTags(ctx)...)
 		_ = collector.Increment("vault.request", tags...)
 		_ = collector.TimeInMilliseconds("vault.request.elapsed", ve.Elapsed, tags...)
 		_ = collector.Histogram("vault.request.elapsed", timeutil.Milliseconds(ve.Elapsed), tags...)

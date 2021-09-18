@@ -23,7 +23,6 @@ import (
 
 	"github.com/blend/go-sdk/assert"
 	"github.com/blend/go-sdk/ref"
-	"github.com/blend/go-sdk/testutil"
 )
 
 func Test_Copyright_GetStdout(t *testing.T) {
@@ -158,12 +157,12 @@ baz
 func Test_Copyright_goBuildTagsMatch(t *testing.T) {
 	its := assert.New(t)
 
-	file := testutil.GetTestFixture(its, "buildtags1.go")
+	file := []byte(buildTags1) // testutil.GetTestFixture(its, "buildtags1.go")
 	its.True(goBuildTagMatch.Match(file))
 	found := goBuildTagMatch.Find(file)
 	its.Equal("//go:build tag1\n// +build tag1\n\n", string(found))
 
-	file2 := testutil.GetTestFixture(its, "buildtags2.go")
+	file2 := []byte(buildTags2) // testutil.GetTestFixture(its, "buildtags2.go")
 	its.True(goBuildTagMatch.Match(file2))
 	found2 := goBuildTagMatch.Find(file2)
 
@@ -175,7 +174,7 @@ func Test_Copyright_goBuildTagsMatch(t *testing.T) {
 `
 	its.Equal(expected, string(found2))
 
-	file3 := testutil.GetTestFixture(its, "buildtags3.go")
+	file3 := []byte(buildTags3) // testutil.GetTestFixture(its, "buildtags3.go")
 	its.True(goBuildTagMatch.Match(file3))
 	found3 := goBuildTagMatch.Find(file3)
 	its.Equal("//go:build tag1 & tag2\n\n", string(found3))
@@ -227,23 +226,26 @@ func Test_Copyright_goInjectNotice_buildTags(t *testing.T) {
 	t.Parallel()
 
 	type testCase struct {
-		Name       string
-		TestFile   string
-		GoldenFile string
+		Name   string
+		Input  string
+		Expect string
 	}
 
 	cases := []testCase{
 		{
-			Name:     "standard build tags",
-			TestFile: "buildtags1.go",
+			Name:   "standard build tags",
+			Input:  buildTags1, // "buildtags1.go",
+			Expect: goldenBuildTags1,
 		},
 		{
-			Name:     "multiple build tags",
-			TestFile: "buildtags2.go",
+			Name:   "multiple build tags",
+			Input:  buildTags2, // "buildtags2.go",
+			Expect: goldenBuildTags2,
 		},
 		{
-			Name:     "build tags split accross file",
-			TestFile: "buildtags3.go",
+			Name:   "build tags split across file",
+			Input:  buildTags3, // "buildtags3.go",
+			Expect: goldenBuildTags3,
 		},
 	}
 
@@ -256,10 +258,8 @@ func Test_Copyright_goInjectNotice_buildTags(t *testing.T) {
 			notice, err := generateGoNotice(OptYear(2001))
 			it.Nil(err)
 
-			testFile := testutil.GetTestFixture(it, tc.TestFile)
-
-			output := c.goInjectNotice("foo.go", testFile, notice)
-			testutil.AssertGoldenFile(it, output, tc.TestFile)
+			output := c.goInjectNotice("foo.go", []byte(tc.Input), notice)
+			it.Equal(string(output), tc.Expect) // testutil.AssertGoldenFile(it, output, tc.TestFile)
 
 			outputRepeat := c.goInjectNotice("foo.go", output, notice)
 			it.Empty(outputRepeat)

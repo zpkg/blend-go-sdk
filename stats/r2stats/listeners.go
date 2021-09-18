@@ -50,7 +50,7 @@ func AddListeners(log logger.FilterListenable, collector stats.Collector, opts .
 			tags := []string{
 				hostname, target, method, status,
 			}
-			tags = append(tags, options.GetLoggerTags(ctx)...)
+			tags = append(tags, options.GetLoggerLabelsAsTags(ctx)...)
 			_ = collector.Increment(MetricNameHTTPClientRequest, tags...)
 			_ = collector.Gauge(MetricNameHTTPClientRequestElapsedLast, timeutil.Milliseconds(r2e.Elapsed), tags...)
 			_ = collector.Histogram(MetricNameHTTPClientRequestElapsed, timeutil.Milliseconds(r2e.Elapsed), tags...)

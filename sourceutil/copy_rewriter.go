@@ -33,6 +33,7 @@ type CopyRewriter struct {
 	StringSubstitutions []StringSubstitution
 	DryRun              bool
 	RemoveDestination   bool
+	KeepTemporary       bool
 
 	Quiet   *bool
 	Verbose *bool
@@ -51,13 +52,14 @@ func (cr CopyRewriter) Execute(ctx context.Context) error {
 	if err != nil {
 		return err
 	}
-
-	defer func() {
-		if _, err = os.Stat(tempDir); err == nil {
-			cr.Verbosef("cleaning up temp dir %s", tempDir)
-			os.RemoveAll(tempDir)
-		}
-	}()
+	if !cr.KeepTemporary {
+		defer func() {
+			if _, err = os.Stat(tempDir); err == nil {
+				cr.Verbosef("cleaning up temp dir %s", tempDir)
+				os.RemoveAll(tempDir)
+			}
+		}()
+	}
 
 	// walk files
 	err = filepath.Walk(cr.Source, func(path string, info os.FileInfo, err error) error {

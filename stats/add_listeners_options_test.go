@@ -21,7 +21,7 @@ func Test_NewAddListenersOptions(t *testing.T) {
 	its.True(NewAddListenerOptions(OptIncludeLoggerLabelsAsTags(true)).IncludeLoggerLabelsAsTags)
 }
 
-func Test_AddListenerOptions_GetLoggerTags(t *testing.T) {
+func Test_AddListenerOptions_GetLoggerLabelsAsTags(t *testing.T) {
 	its := assert.New(t)
 
 	ctx := logger.WithLabels(context.Background(), logger.Labels{
@@ -29,8 +29,8 @@ func Test_AddListenerOptions_GetLoggerTags(t *testing.T) {
 		"not-foo": "not-bar",
 	})
 
-	its.Empty(AddListenerOptions{}.GetLoggerTags(ctx))
+	its.Empty(AddListenerOptions{}.GetLoggerLabelsAsTags(ctx))
 	its.NotEmpty(AddListenerOptions{
 		IncludeLoggerLabelsAsTags: true,
-	}.GetLoggerTags(ctx))
+	}.GetLoggerLabelsAsTags(ctx))
 }

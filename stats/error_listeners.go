@@ -27,7 +27,7 @@ func AddErrorListeners(log logger.Listenable, stats Collector, opts ...AddListen
 		tags := []string{
 			Tag(TagSeverity, string(ee.GetFlag())),
 		}
-		tags = append(tags, options.GetLoggerTags(ctx)...)
+		tags = append(tags, options.GetLoggerLabelsAsTags(ctx)...)
 		_ = stats.Increment(MetricNameError,
 			tags...,
 		)
@@ -55,7 +55,7 @@ func AddErrorListenersByClass(log logger.Listenable, stats Collector, opts ...Ad
 			Tag(TagSeverity, string(ee.GetFlag())),
 			Tag(TagClass, fmt.Sprintf("%v", ex.ErrClass(ee.Err))),
 		}
-		tags = append(tags, options.GetLoggerTags(ctx)...)
+		tags = append(tags, options.GetLoggerLabelsAsTags(ctx)...)
 		_ = stats.Increment(MetricNameError,
 			tags...,
 		)

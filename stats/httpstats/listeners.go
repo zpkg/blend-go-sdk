@@ -48,7 +48,7 @@ func AddListeners(log logger.FilterListenable, collector stats.Collector, opts .
 			tags := []string{
 				route, method, status,
 			}
-			tags = append(tags, options.GetLoggerTags(ctx)...)
+			tags = append(tags, options.GetLoggerLabelsAsTags(ctx)...)
 
 			_ = collector.Increment(MetricNameHTTPRequest, tags...)
 			_ = collector.Gauge(MetricNameHTTPRequestSize, float64(wre.ContentLength), tags...)

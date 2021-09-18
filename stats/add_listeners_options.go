@@ -10,7 +10,6 @@ package stats
 import (
 	"context"
 
-	"github.com/blend/go-sdk/logger"
 	"github.com/blend/go-sdk/sanitize"
 )
 
@@ -29,15 +28,10 @@ type AddListenerOptions struct {
 	RequestSanitizeDefaults   []sanitize.RequestOption
 }
 
-// GetLoggerTags gets the logger tags from a context if they're set to be included.
-func (options AddListenerOptions) GetLoggerTags(ctx context.Context) (tags []string) {
+// GetLoggerLabelsAsTags gets the logger tags from a context if they're set to be included.
+func (options AddListenerOptions) GetLoggerLabelsAsTags(ctx context.Context) (tags []string) {
 	if options.IncludeLoggerLabelsAsTags {
-		// append the labels
-		if labels := logger.GetLabels(ctx); len(labels) > 0 {
-			for key, value := range labels {
-				tags = append(tags, Tag(key, value))
-			}
-		}
+		tags = GetLoggerLabelsAsTags(ctx)
 	}
 	return
 }

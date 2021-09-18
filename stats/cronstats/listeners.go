@@ -41,7 +41,7 @@ func AddListeners(log logger.Listenable, collector stats.Collector, opts ...stat
 				tags = append(tags, stats.Tag(TagJob, ce.JobName))
 				tags = append(tags, stats.Tag(TagJobStatus, ce.Flag))
 
-				tags = append(tags, options.GetLoggerTags(ctx)...)
+				tags = append(tags, options.GetLoggerLabelsAsTags(ctx)...)
 
 				_ = collector.Increment(MetricNameCron, tags...)
 				if ce.Elapsed > 0 {

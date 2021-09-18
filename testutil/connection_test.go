@@ -35,7 +35,6 @@ const (
 )
 
 func TestResolveDBConfig_InvalidEnv(t *testing.T) {
-	t.Parallel()
 	it := assert.New(t)
 
 	ev := env.New()
@@ -60,7 +59,6 @@ Environment Variables:
 }
 
 func TestValidatePool_NotRunning(t *testing.T) {
-	t.Parallel()
 	it := assert.New(t)
 
 	c := defaultConfig(it, actualEnv)
@@ -86,7 +84,7 @@ Connection String:
 }
 
 func TestValidatePool_NoSSL(t *testing.T) {
-	t.Parallel()
+	t.Skip("it is not a safe assumption that all local installations of postgres disable ssl")
 	it := assert.New(t)
 
 	c := defaultConfig(it, actualEnv)
@@ -108,7 +106,7 @@ Connection String:
 }
 
 func TestValidatePool_MissingPassword(t *testing.T) {
-	t.Parallel()
+	t.Skip("it is not a safe assumption that all local installations of postgres require password authentication")
 	it := assert.New(t)
 
 	c := defaultConfig(it, actualEnv)
@@ -131,7 +129,7 @@ Connection String:
 }
 
 func TestValidatePool_WrongPassword(t *testing.T) {
-	t.Parallel()
+	t.Skip("it is not a safe assumption that all local installations of postgres require password authentication")
 	it := assert.New(t)
 
 	c := defaultConfig(it, actualEnv)
@@ -154,7 +152,6 @@ Connection String:
 }
 
 func TestValidatePool_UnsupportedDriver(t *testing.T) {
-	t.Parallel()
 	it := assert.New(t)
 
 	c := defaultConfig(it, actualEnv)
@@ -179,7 +176,6 @@ Connection String:
 }
 
 func TestValidatePool_NotAccepting(t *testing.T) {
-	t.Parallel()
 	it := assert.New(t)
 
 	c := defaultConfig(it, actualEnv)
@@ -206,7 +202,6 @@ Connection String:
 }
 
 func TestValidatePool_DoesNotExist(t *testing.T) {
-	t.Parallel()
 	it := assert.New(t)
 
 	database := fmt.Sprintf("testdb_%s", uuid.V4().String())
@@ -235,7 +230,6 @@ Connection String:
 }
 
 func TestValidatePool_InvalidProtocolInDSN(t *testing.T) {
-	t.Parallel()
 	it := assert.New(t)
 
 	c := db.Config{Engine: "pgx", DSN: "x://y"}

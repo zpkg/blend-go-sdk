@@ -42,7 +42,7 @@ func AddListeners(log logger.Listenable, collector stats.Collector, opts ...stat
 			tags = append(tags, stats.TagError)
 		}
 
-		tags = append(tags, options.GetLoggerTags(ctx)...)
+		tags = append(tags, options.GetLoggerLabelsAsTags(ctx)...)
 
 		_ = collector.Increment(MetricName, tags...)
 		_ = collector.Gauge(MetricNameElapsedLast, timeutil.Milliseconds(e.Elapsed), tags...)

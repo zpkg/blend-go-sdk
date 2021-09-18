@@ -52,7 +52,7 @@ func AddListeners(log logger.Listenable, collector stats.Collector, opts ...stat
 			tags = append(tags, getErrorTag(re.Err))
 		}
 
-		tags = append(tags, options.GetLoggerTags(ctx)...)
+		tags = append(tags, options.GetLoggerLabelsAsTags(ctx)...)
 
 		_ = collector.Increment(MetricNameRPC, tags...)
 		_ = collector.Gauge(MetricNameRPCElapsedLast, timeutil.Milliseconds(re.Elapsed), tags...)
@@ -87,7 +87,7 @@ func AddListeners(log logger.Listenable, collector stats.Collector, opts ...stat
 			tags = append(tags, getErrorTag(re.Err))
 		}
 
-		tags = append(tags, options.GetLoggerTags(ctx)...)
+		tags = append(tags, options.GetLoggerLabelsAsTags(ctx)...)
 
 		_ = collector.Increment(MetricNameRPCStreamMessage, tags...)
 		_ = collector.Gauge(MetricNameRPCStreamMessageElapsedLast, timeutil.Milliseconds(re.Elapsed), tags...)
