@@ -27,6 +27,7 @@ GOLANG_ASSERT_NON_TEST:
   files:
     exclude:
     - "*_test.go"
+    - "sdk/testutil/golden.go"
   goImports:
     include:
     - "github.com/blend/go-sdk/assert"
