@@ -66,7 +66,10 @@ func TestParseKubernetesWorkloadID(t *testing.T) {
 			assert.Nil(kw)
 		} else {
 			assert.Nil(err)
-			expected := &spiffeutil.KubernetesWorkload{Namespace: tc.Namespace, ServiceAccount: tc.ServiceAccount}
+			expected := &spiffeutil.KubernetesWorkload{
+				Namespace:      tc.Namespace,
+				ServiceAccount: tc.ServiceAccount,
+			}
 			assert.Equal(expected, kw)
 		}
 	}

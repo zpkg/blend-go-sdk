@@ -15,8 +15,6 @@ import (
 )
 
 func TestKeyPairIsZero(t *testing.T) {
-	t.Parallel()
-
 	assert := assert.New(t)
 
 	assert.True(KeyPair{}.IsZero())
@@ -27,8 +25,6 @@ func TestKeyPairIsZero(t *testing.T) {
 }
 
 func TestKeyPairCertBytes(t *testing.T) {
-	t.Parallel()
-
 	assert := assert.New(t)
 
 	assert.Equal("foo", MustBytes(KeyPair{Cert: "foo"}.CertBytes()))
@@ -36,8 +32,6 @@ func TestKeyPairCertBytes(t *testing.T) {
 }
 
 func TestKeyPairKeyBytes(t *testing.T) {
-	t.Parallel()
-
 	assert := assert.New(t)
 
 	assert.Equal("foo", MustBytes(KeyPair{Key: "foo"}.KeyBytes()))
@@ -45,10 +39,21 @@ func TestKeyPairKeyBytes(t *testing.T) {
 }
 
 func TestKeyPairString(t *testing.T) {
-	t.Parallel()
-
 	assert := assert.New(t)
 
 	assert.Equal("[ cert: <literal>, key: <literal> ]", KeyPair{Cert: "bar", Key: "foo"}.String())
 	assert.Equal("[ cert: bar, key: foo ]", KeyPair{CertPath: "bar", KeyPath: "foo"}.String())
+}
+
+func TestKeyPairTLSCertificate(t *testing.T) {
+	its := assert.New(t)
+
+	kp := KeyPair{
+		CertPath: "testdata/server.cert.pem",
+		KeyPath:  "testdata/server.key.pem",
+	}
+
+	cert, err := kp.TLSCertificate()
+	its.Nil(err)
+	its.NotNil(cert)
 }

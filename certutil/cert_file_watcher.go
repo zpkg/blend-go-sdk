@@ -23,16 +23,13 @@ const (
 )
 
 // NewCertFileWatcher creates a new CertReloader object with a reload delay
-func NewCertFileWatcher(certPath, keyPath string, opts ...CertFileWatcherOption) (*CertFileWatcher, error) {
-	if certPath == "" || keyPath == "" {
+func NewCertFileWatcher(keyPair KeyPair, opts ...CertFileWatcherOption) (*CertFileWatcher, error) {
+	if keyPair.CertPath == "" || keyPair.KeyPath == "" {
 		return nil, ex.New(ErrTLSPathsUnset)
 	}
 	cw := &CertFileWatcher{
-		latch: async.NewLatch(),
-		keyPair: KeyPair{
-			CertPath: certPath,
-			KeyPath:  keyPath,
-		},
+		latch:   async.NewLatch(),
+		keyPair: keyPair,
 	}
 	for _, opt := range opts {
 		if err := opt(cw); err != nil {
@@ -50,10 +47,13 @@ func NewCertFileWatcher(certPath, keyPath string, opts ...CertFileWatcherOption)
 // CertFileWatcherOption is an option for a cert watcher.
 type CertFileWatcherOption func(*CertFileWatcher) error
 
+// CertFileWatcherOnReloadAction is the on reload action for a cert file watcher.
+type CertFileWatcherOnReloadAction func(*CertFileWatcher) error
+
 // OptCertFileWatcherOnReload sets the on reload handler.
 // If you need to capture *every* reload of the cert, including the initial one in the constructor
 // you must use this option.
-func OptCertFileWatcherOnReload(handler func(*CertFileWatcher, error)) CertFileWatcherOption {
+func OptCertFileWatcherOnReload(handler CertFileWatcherOnReloadAction) CertFileWatcherOption {
 	return func(cfw *CertFileWatcher) error {
 		cfw.onReload = handler
 		return nil
@@ -84,7 +84,7 @@ type CertFileWatcher struct {
 	keyPair       KeyPair
 	pollInterval  time.Duration
 	notifyReload  chan struct{}
-	onReload      func(*CertFileWatcher, error)
+	onReload      CertFileWatcherOnReloadAction
 }
 
 // CertPath returns the cert path.
@@ -107,8 +107,8 @@ func (cw *CertFileWatcher) Reload() (err error) {
 		if cw.notifyReload != nil {
 			cw.notifyReload <- struct{}{}
 		}
-		if cw.onReload != nil {
-			cw.onReload(cw, err)
+		if cw.onReload != nil && err == nil {
+			err = cw.onReload(cw)
 		}
 	}()
 
@@ -117,7 +117,6 @@ func (cw *CertFileWatcher) Reload() (err error) {
 		err = ex.New(loadErr)
 		return
 	}
-
 	cw.certificateMu.Lock()
 	cw.certificate = &cert
 	cw.certificateMu.Unlock()
@@ -185,10 +184,11 @@ func (cw *CertFileWatcher) Start() error {
 			}
 			// wait for both to update
 			if keyMod.After(keyLastMod) && certMod.After(certLastMod) {
-				if err = cw.Reload(); err == nil {
-					keyLastMod = keyMod
-					certLastMod = certMod
+				if err = cw.Reload(); err != nil {
+					return err
 				}
+				keyLastMod = keyMod
+				certLastMod = certMod
 			}
 		case <-cw.latch.NotifyStopping():
 			cw.latch.Stopped()

@@ -12,8 +12,6 @@ import (
 	"fmt"
 	"net/url"
 	"regexp"
-	"runtime"
-	"strings"
 	"testing"
 
 	sdkAssert "github.com/blend/go-sdk/assert"
@@ -164,10 +162,6 @@ func TestXFCCElementDecodeCert(t *testing.T) {
 		},
 	}
 
-	if !strings.HasPrefix(runtime.Version(), "go1.17") {
-		testCases[3].Error = "Error Parsing X-Forwarded-Client-Cert\nasn1: syntax error: truncated tag or length"
-	}
-
 	for _, tc := range testCases {
 		xe := envoyutil.XFCCElement{Cert: tc.Cert}
 		cert, err := xe.DecodeCert()
@@ -202,10 +196,6 @@ func TestXFCCElementDecodeChain(t *testing.T) {
 			Chain: "-----BEGIN CERTIFICATE-----\nnope\n-----END CERTIFICATE-----\n",
 			Error: "Error Parsing X-Forwarded-Client-Cert\nx509: malformed certificate",
 		},
-	}
-
-	if !strings.HasPrefix(runtime.Version(), "go1.17") {
-		testCases[3].Error = "Error Parsing X-Forwarded-Client-Cert\nasn1: syntax error: truncated tag or length"
 	}
 
 	for _, tc := range testCases {

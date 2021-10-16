@@ -65,6 +65,9 @@ const (
 	// EnvVarDBMaxLifetime is the environment variable used to set the maximum
 	// lifetime of a connection in a connection pool.
 	EnvVarDBMaxLifetime = "DB_MAX_LIFETIME"
+	// EnvVarDBMaxIdleTime is the environment variable used to set the maximum
+	// time a connection can be idle.
+	EnvVarDBMaxIdleTime = "DB_MAX_IDLE_TIME"
 	// EnvVarDBBufferPoolSize is the environment variable used to set the buffer
 	// pool size on a connection in a connection pool.
 	EnvVarDBBufferPoolSize = "DB_BUFFER_POOL_SIZE"
@@ -112,6 +115,8 @@ const (
 	DefaultMaxConnections = 32
 	// DefaultMaxLifetime is the default maximum lifetime of driver connections.
 	DefaultMaxLifetime = time.Duration(0)
+	// DefaultMaxIdleTime is the default maximum idle time of driver connections.
+	DefaultMaxIdleTime = time.Duration(0)
 	// DefaultBufferPoolSize is the default number of buffer pool entries to maintain.
 	DefaultBufferPoolSize = 1024
 )

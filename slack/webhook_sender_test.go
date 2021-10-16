@@ -10,15 +10,17 @@ package slack
 import (
 	"context"
 	"encoding/json"
+	"fmt"
 	"net/http"
 	"net/http/httptest"
 	"testing"
 
 	"github.com/blend/go-sdk/assert"
+	"github.com/blend/go-sdk/ex"
 )
 
-func TestWebhookSender(t *testing.T) {
-	assert := assert.New(t)
+func Test_WebhookSender_OK(t *testing.T) {
+	its := assert.New(t)
 
 	ts := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		w.WriteHeader(http.StatusOK)
@@ -33,14 +35,15 @@ func TestWebhookSender(t *testing.T) {
 	err := sender.Send(context.TODO(), Message{
 		Text: "this is only a test",
 	})
-	assert.Nil(err)
+	its.Nil(err)
 }
 
-func TestWebhookSenderStatusCode(t *testing.T) {
-	assert := assert.New(t)
+func Test_WebhookSender_BadStatusCode_ErrorMessage(t *testing.T) {
+	its := assert.New(t)
 
 	ts := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		w.WriteHeader(http.StatusBadRequest)
+		fmt.Fprintf(w, "remote message here\n")
 	}))
 	defer ts.Close()
 
@@ -49,13 +52,16 @@ func TestWebhookSenderStatusCode(t *testing.T) {
 	}
 
 	sender := New(config)
-	assert.NotNil(sender.Send(context.TODO(), Message{
+	err := sender.Send(context.TODO(), Message{
 		Text: "this is only a test",
-	}))
+	})
+	its.NotNil(err)
+	its.True(ex.Is(err, ErrNon200))
+	its.Equal("remote message here\n", ex.ErrMessage(err))
 }
 
-func TestWebhookSenderDefaults(t *testing.T) {
-	assert := assert.New(t)
+func Test_WebhookSender_Defaults(t *testing.T) {
+	its := assert.New(t)
 
 	config := Config{
 		Webhook:  "http://foo.com",
@@ -75,13 +81,13 @@ func TestWebhookSenderDefaults(t *testing.T) {
 		option(&message)
 	}
 
-	assert.Equal("this is only a test", message.Text)
-	assert.Equal("#bot-test", message.Channel)
-	assert.Equal("default-test", message.Username)
+	its.Equal("this is only a test", message.Text)
+	its.Equal("#bot-test", message.Channel)
+	its.Equal("default-test", message.Username)
 }
 
-func TestWebhookSendAndReadResponse(t *testing.T) {
-	assert := assert.New(t)
+func Test_WebhookSend_DecodeResponse(t *testing.T) {
+	its := assert.New(t)
 
 	mockResponse := PostMessageResponse{
 		OK:        true,
@@ -115,12 +121,12 @@ func TestWebhookSendAndReadResponse(t *testing.T) {
 	response, err := sender.SendAndReadResponse(context.TODO(), Message{
 		Text: "this is only a test",
 	})
-	assert.Nil(err)
-	assert.Equal(mockResponse, *response)
+	its.Nil(err)
+	its.Equal(mockResponse, *response)
 }
 
-func TestWebhookSendAndReadResponseStatusCode(t *testing.T) {
-	assert := assert.New(t)
+func Test_WebhookSender_ReadResponse_BadStatusCode(t *testing.T) {
+	its := assert.New(t)
 
 	mockResponse := PostMessageResponse{
 		OK:    false,
@@ -141,12 +147,12 @@ func TestWebhookSendAndReadResponseStatusCode(t *testing.T) {
 	response, err := sender.SendAndReadResponse(context.TODO(), Message{
 		Text: "this is only a test",
 	})
-	assert.NotNil(err)
-	assert.Equal(mockResponse, *response)
+	its.NotNil(err)
+	its.Equal(mockResponse, *response)
 }
 
-func TestPostMessageAndReadResponse(t *testing.T) {
-	assert := assert.New(t)
+func Test_WebhookSender_PostMessageAndReadResponse(t *testing.T) {
+	its := assert.New(t)
 
 	mockResponse := PostMessageResponse{
 		OK:        true,
@@ -187,8 +193,8 @@ func TestPostMessageAndReadResponse(t *testing.T) {
 	// Test: Channel and text parameters should be passed along in the request
 	expectedChannel, expectedText := "#test-channel", "Test test"
 	response, err := sender.PostMessageAndReadResponse(expectedChannel, expectedText)
-	assert.Nil(err)
-	assert.Equal(true, response.OK)
-	assert.Equal(expectedChannel, response.Channel)
-	assert.Equal(expectedText, response.Message.Text)
+	its.Nil(err)
+	its.Equal(true, response.OK)
+	its.Equal(expectedChannel, response.Channel)
+	its.Equal(expectedText, response.Message.Text)
 }

@@ -43,7 +43,7 @@ func GetRequestStarted(ctx context.Context) time.Time {
 			return typed
 		}
 	}
-	return time.Now().UTC()
+	return time.Time{}
 }
 
 type sessionKey struct{}

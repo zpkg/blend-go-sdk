@@ -26,10 +26,12 @@ func AddListeners(log logger.FilterListenable, collector stats.Collector, opts .
 
 	options := stats.NewAddListenerOptions(opts...)
 
+	requestSanitizer := sanitize.NewRequestSanitizer(options.RequestSanitizeDefaults...)
+
 	log.Filter(webutil.FlagHTTPRequest,
 		stats.FilterNameSanitization,
 		webutil.NewHTTPRequestEventFilter(func(_ context.Context, wre webutil.HTTPRequestEvent) (webutil.HTTPRequestEvent, bool) {
-			wre.Request = sanitize.Request(wre.Request, options.RequestSanitizeDefaults...)
+			wre.Request = requestSanitizer.Sanitize(wre.Request)
 			return wre, false
 		}),
 	)

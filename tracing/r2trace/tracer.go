@@ -36,13 +36,14 @@ type r2Tracer struct {
 func (rt r2Tracer) Start(req *http.Request) r2.TraceFinisher {
 	startOptions := []opentracing.StartSpanOption{
 		opentracing.Tag{Key: tracing.TagKeySpanType, Value: tracing.SpanTypeHTTP},
-		opentracing.Tag{Key: tracing.TagKeyResourceName, Value: r2.GetParameterizedURLString(req)},
+		opentracing.Tag{Key: tracing.TagKeyResourceName, Value: r2.GetRawURLParameterized(req)},
 		opentracing.Tag{Key: tracing.TagKeyHTTPMethod, Value: strings.ToUpper(req.Method)},
 		opentracing.Tag{Key: tracing.TagKeyHTTPURL, Value: req.URL.String()},
 		tracing.TagMeasured(),
 		opentracing.StartTime(time.Now().UTC()),
 	}
-	span, _ := tracing.StartSpanFromContext(req.Context(), rt.tracer, tracing.OperationHTTPRequest, startOptions...)
+	span, ctx := tracing.StartSpanFromContext(req.Context(), rt.tracer, tracing.OperationHTTPRequest, startOptions...)
+	*req = *req.WithContext(ctx)
 
 	if req.Header == nil {
 		req.Header = make(http.Header)

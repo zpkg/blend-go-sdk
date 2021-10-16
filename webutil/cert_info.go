@@ -8,6 +8,8 @@ Use of this source code is governed by a MIT license that can be found in the LI
 package webutil
 
 import (
+	"crypto/tls"
+	"crypto/x509"
 	"fmt"
 	"net/http"
 	"time"
@@ -44,6 +46,27 @@ func ParseCertInfo(res *http.Response) *CertInfo {
 		NotAfter:          earliestNotAfter,
 		NotBefore:         latestNotBefore,
 	}
+}
+
+// NewCertInfo returns a new cert info.
+func NewCertInfo(cert *tls.Certificate) (*CertInfo, error) {
+	leaf, err := x509.ParseCertificate(cert.Certificate[0])
+	if err != nil {
+		return nil, err
+	}
+	var issuerNames []string
+	for _, name := range leaf.Issuer.Names {
+		issuerNames = append(issuerNames, fmt.Sprint(name.Value))
+	}
+
+	return &CertInfo{
+		SubjectCommonName: leaf.Subject.CommonName,
+		IssuerNames:       issuerNames,
+		IssuerCommonName:  leaf.Issuer.CommonName,
+		DNSNames:          leaf.DNSNames,
+		NotAfter:          leaf.NotAfter,
+		NotBefore:         leaf.NotBefore,
+	}, nil
 }
 
 // CertInfo is the information for a certificate.

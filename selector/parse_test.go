@@ -15,8 +15,6 @@ import (
 )
 
 func TestMustParse(t *testing.T) {
-	t.Parallel()
-
 	assert := assert.New(t)
 
 	assert.Equal("x == a", MustParse("x==a").String())
@@ -34,8 +32,6 @@ func TestMustParse(t *testing.T) {
 }
 
 func TestParseInvalid(t *testing.T) {
-	t.Parallel()
-
 	assert := assert.New(t)
 
 	testBadStrings := []string{
@@ -59,15 +55,19 @@ func TestParseInvalid(t *testing.T) {
 }
 
 func TestParseSemiValid(t *testing.T) {
-	t.Parallel()
-
 	assert := assert.New(t)
 
 	testGoodStrings := []string{
 		"",
 		"x=a,y=b,z=c",
 		"x!=a,y=b",
+		"x",
 		"!x",
+		"!x,y",
+		"!x,y,z",
+		"!x,y,!z",
+		"!x,y,z,a",
+		"!x,y,z,!a",
 	}
 
 	var err error
@@ -77,9 +77,27 @@ func TestParseSemiValid(t *testing.T) {
 	}
 }
 
-func TestParseEquals(t *testing.T) {
-	t.Parallel()
+func TestParseTrailingComma(t *testing.T) {
+	assert := assert.New(t)
 
+	testBadStrings := []string{
+		",",
+		"x,",
+		"!x,",
+		"foo==bar,",
+		"foo!=bar,",
+		"foo in (bar,baz),",
+		"foo not in (bar,baz),",
+	}
+
+	var err error
+	for _, str := range testBadStrings {
+		_, err = Parse(str)
+		assert.NotNil(err, str)
+	}
+}
+
+func TestParseEquals(t *testing.T) {
 	assert := assert.New(t)
 
 	valid := Labels{
@@ -98,8 +116,6 @@ func TestParseEquals(t *testing.T) {
 }
 
 func TestParseNotEquals(t *testing.T) {
-	t.Parallel()
-
 	assert := assert.New(t)
 
 	valid := Labels{
@@ -123,8 +139,6 @@ func TestParseNotEquals(t *testing.T) {
 }
 
 func TestParseIn(t *testing.T) {
-	t.Parallel()
-
 	assert := assert.New(t)
 
 	valid := Labels{
@@ -153,8 +167,6 @@ func TestParseIn(t *testing.T) {
 }
 
 func TestParseGroup(t *testing.T) {
-	t.Parallel()
-
 	assert := assert.New(t)
 
 	valid := Labels{
@@ -185,8 +197,6 @@ func TestParseGroup(t *testing.T) {
 }
 
 func TestParseGroupComplicated(t *testing.T) {
-	t.Parallel()
-
 	assert := assert.New(t)
 	valid := Labels{
 		"zoo":   "mar",
@@ -200,8 +210,6 @@ func TestParseGroupComplicated(t *testing.T) {
 }
 
 func TestParseDocsExample(t *testing.T) {
-	t.Parallel()
-
 	assert := assert.New(t)
 	sel, err := Parse("x in (foo,,baz),y,z notin ()")
 	assert.Nil(err)
@@ -209,7 +217,6 @@ func TestParseDocsExample(t *testing.T) {
 }
 
 func TestParseSubdomainKey(t *testing.T) {
-	t.Parallel()
 
 	assert := assert.New(t)
 	sel, err := Parse("example.com/failure-domain == primary")
@@ -224,8 +231,6 @@ func TestParseSubdomainKey(t *testing.T) {
 }
 
 func TestParseEqualsOperators(t *testing.T) {
-	t.Parallel()
-
 	assert := assert.New(t)
 
 	selector, err := Parse("notin=in")
@@ -238,8 +243,6 @@ func TestParseEqualsOperators(t *testing.T) {
 }
 
 func TestParseValidate(t *testing.T) {
-	t.Parallel()
-
 	assert := assert.New(t)
 
 	_, err := Parse("zoo=bar")
@@ -256,18 +259,30 @@ func TestParseValidate(t *testing.T) {
 }
 
 func TestParseRegressionCSVSymbols(t *testing.T) {
-	t.Parallel()
-
 	assert := assert.New(t)
 
 	sel, err := Parse("foo in (bar-bar, baz.baz, buzz_buzz), moo=boo")
-	assert.Nil(err, "regression is values can have '-' in them")
+	assert.Nil(err, "regression is csv values can have '-', '.' and '_' in them")
+	assert.NotEmpty(sel.String())
+}
+
+func TestParseRegressionCSVEarlyTermination(t *testing.T) {
+	assert := assert.New(t)
+
+	sel, err := Parse("foo in (bar,), moo=boo")
+	assert.Nil(err)
+	assert.NotEmpty(sel.String())
+}
+
+func TestParseRegressionCSVMultipleSpaces(t *testing.T) {
+	assert := assert.New(t)
+
+	sel, err := Parse("foo in (bar,  foo), moo=boo")
+	assert.Nil(err)
 	assert.NotEmpty(sel.String())
 }
 
 func TestParseRegressionIn(t *testing.T) {
-	t.Parallel()
-
 	assert := assert.New(t)
 
 	_, err := Parse("foo in bar, buzz)")
@@ -275,8 +290,6 @@ func TestParseRegressionIn(t *testing.T) {
 }
 
 func TestParseMultiByte(t *testing.T) {
-	t.Parallel()
-
 	assert := assert.New(t)
 
 	selector, err := Parse("함=수,목=록") // number=number, number=rock
@@ -289,8 +302,6 @@ func TestParseMultiByte(t *testing.T) {
 }
 
 func TestParseOptions(t *testing.T) {
-	t.Parallel()
-
 	assert := assert.New(t)
 
 	selQuery := "bar=foo@bar"
@@ -329,8 +340,6 @@ func BenchmarkParse(b *testing.B) {
 }
 
 func TestParse_FuzzRegressions(t *testing.T) {
-	t.Parallel()
-
 	assert := assert.New(t)
 
 	var sel Selector
@@ -357,8 +366,6 @@ func TestParse_FuzzRegressions(t *testing.T) {
 }
 
 func TestParse_InRegression(t *testing.T) {
-	t.Parallel()
-
 	its := assert.New(t)
 
 	good0 := Labels{

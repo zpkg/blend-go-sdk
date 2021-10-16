@@ -8,6 +8,7 @@ Use of this source code is governed by a MIT license that can be found in the LI
 package main
 
 import (
+	"context"
 	"fmt"
 	"os"
 
@@ -15,7 +16,7 @@ import (
 )
 
 func main() {
-	go fileutil.Watch("file.yml", func(f *os.File) error {
+	go fileutil.Watch(context.Background(), "file.yml", func(f *os.File) error {
 		defer f.Close()
 		fmt.Printf("file changed\n")
 		return nil

@@ -7,7 +7,11 @@ Use of this source code is governed by a MIT license that can be found in the LI
 
 package async
 
-import "time"
+import (
+	"time"
+
+	"github.com/blend/go-sdk/ex"
+)
 
 // Latch states
 const (
@@ -26,4 +30,11 @@ const (
 	DefaultQueueMaxWork        = 1 << 10
 	DefaultInterval            = 500 * time.Millisecond
 	DefaultShutdownGracePeriod = 10 * time.Second
+)
+
+// Errors
+var (
+	ErrCannotStart  ex.Class = "cannot start; already started"
+	ErrCannotStop   ex.Class = "cannot stop; already stopped"
+	ErrCannotCancel ex.Class = "cannot cancel; already canceled"
 )

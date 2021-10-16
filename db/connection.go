@@ -102,6 +102,7 @@ func (dbc *Connection) Open() error {
 
 	dbc.Connection = dbConn
 	dbc.Connection.SetConnMaxLifetime(dbc.Config.MaxLifetimeOrDefault())
+	dbc.Connection.SetConnMaxIdleTime(dbc.Config.MaxIdleTimeOrDefault())
 	dbc.Connection.SetMaxIdleConns(dbc.Config.IdleConnectionsOrDefault())
 	dbc.Connection.SetMaxOpenConns(dbc.Config.MaxConnectionsOrDefault())
 	return nil

@@ -18,11 +18,6 @@ import (
 	"github.com/blend/go-sdk/web"
 )
 
-const (
-	// StateKeySpan is the span state key.
-	StateKeySpan = "web-span"
-)
-
 var (
 	_ web.Tracer            = (*webTracer)(nil)
 	_ web.TraceFinisher     = (*webTraceFinisher)(nil)
@@ -41,7 +36,7 @@ type webTracer struct {
 
 func (wt webTracer) Start(ctx *web.Ctx) web.TraceFinisher {
 	var resource string
-	extra := []opentracing.StartSpanOption{}
+	var extra []opentracing.StartSpanOption
 	if ctx.Route != nil {
 		resource = ctx.Route.String()
 		extra = append(extra, opentracing.Tag{Key: "http.route", Value: ctx.Route.String()})

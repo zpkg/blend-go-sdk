@@ -60,16 +60,30 @@ func (m *Meta) SetFrom(other *Meta) configutil.ResolveAction {
 	}
 }
 
+// ApplyTo applies a given meta to another meta.
+func (m *Meta) ApplyTo(other *Meta) configutil.ResolveAction {
+	return func(_ context.Context) error {
+		other.Region = m.Region
+		other.ServiceName = m.ServiceName
+		other.ProjectName = m.ProjectName
+		other.ServiceEnv = m.ServiceEnv
+		other.Hostname = m.Hostname
+		other.Version = m.Version
+		other.GitRef = m.GitRef
+		return nil
+	}
+}
+
 // Resolve implements configutil.Resolver
 func (m *Meta) Resolve(ctx context.Context) error {
 	return configutil.Resolve(ctx,
-		configutil.SetString(&m.Region, configutil.Env(env.VarRegion), configutil.String(m.Region), configutil.String(Region)),
-		configutil.SetString(&m.ServiceName, configutil.Env(env.VarServiceName), configutil.String(m.ServiceName), configutil.String(ServiceName)),
-		configutil.SetString(&m.ProjectName, configutil.Env(env.VarProjectName), configutil.String(m.ProjectName), configutil.String(ProjectName)),
+		configutil.SetString(&m.Region, configutil.Env(env.VarRegion), configutil.String(m.Region), configutil.LazyString(&Region)),
+		configutil.SetString(&m.ServiceName, configutil.Env(env.VarServiceName), configutil.String(m.ServiceName), configutil.LazyString(&ServiceName)),
+		configutil.SetString(&m.ProjectName, configutil.Env(env.VarProjectName), configutil.String(m.ProjectName), configutil.LazyString(&ProjectName)),
 		configutil.SetString(&m.ServiceEnv, configutil.Env(env.VarServiceEnv), configutil.String(m.ServiceEnv), configutil.String(env.ServiceEnvDev)),
 		configutil.SetString(&m.Hostname, configutil.Env(env.VarHostname), configutil.String(m.Hostname)),
 		configutil.SetString(&m.Version, configutil.Env(env.VarVersion), configutil.String(m.Version), configutil.LazyString(&Version), configutil.String(DefaultVersion)),
-		configutil.SetString(&m.GitRef, configutil.Env(env.VarGitRef), configutil.String(m.GitRef), configutil.String(GitRef)),
+		configutil.SetString(&m.GitRef, configutil.Env(env.VarGitRef), configutil.String(m.GitRef), configutil.LazyString(&GitRef)),
 	)
 }
 

@@ -11,7 +11,8 @@ import (
 	"unicode/utf8"
 )
 
-func checkName(value string) (err error) {
+// CheckName checks the characters in a name but does not validate the length.
+func CheckName(value string) (err error) {
 	valueLen := len(value)
 	var state int
 	var ch rune

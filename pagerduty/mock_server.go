@@ -21,9 +21,9 @@ var (
 
 // MockAPI implements methods that can be called with the client.
 type MockAPI struct {
-	ListIncidents  func() ListIncidentsOutput
-	UpdateIncident func(string, UpdateIncidentInput) Incident
-	CreateIncident func(CreateIncidentInput) Incident
+	ListIncidents  func() (ListIncidentsOutput, error)
+	UpdateIncident func(string, UpdateIncidentInput) (Incident, error)
+	CreateIncident func(CreateIncidentInput) (Incident, error)
 }
 
 // Handler implements http.Handler.
@@ -31,7 +31,12 @@ func (ma MockAPI) ServeHTTP(rw http.ResponseWriter, req *http.Request) {
 	if req.Method == http.MethodGet {
 		if req.URL.Path == "/incidents" {
 			if ma.ListIncidents != nil {
-				_ = webutil.WriteJSON(rw, http.StatusOK, ma.ListIncidents())
+				output, err := ma.ListIncidents()
+				if err != nil {
+					_ = webutil.WriteJSON(rw, http.StatusInternalServerError, err.Error())
+					return
+				}
+				_ = webutil.WriteJSON(rw, http.StatusOK, output)
 				return
 			}
 		}
@@ -45,7 +50,11 @@ func (ma MockAPI) ServeHTTP(rw http.ResponseWriter, req *http.Request) {
 					http.Error(rw, err.Error(), http.StatusBadRequest)
 					return
 				}
-				incident := ma.UpdateIncident(incidentID, incidentBody.Incident)
+				incident, err := ma.UpdateIncident(incidentID, incidentBody.Incident)
+				if err != nil {
+					_ = webutil.WriteJSON(rw, http.StatusInternalServerError, err.Error())
+					return
+				}
 				_ = webutil.WriteJSON(rw, http.StatusOK, updateIncidentOutputWrapper{Incident: incident})
 				return
 			}
@@ -58,7 +67,11 @@ func (ma MockAPI) ServeHTTP(rw http.ResponseWriter, req *http.Request) {
 				http.Error(rw, err.Error(), http.StatusBadRequest)
 				return
 			}
-			incident := ma.CreateIncident(incidentBody.Incident)
+			incident, err := ma.CreateIncident(incidentBody.Incident)
+			if err != nil {
+				_ = webutil.WriteJSON(rw, http.StatusInternalServerError, err.Error())
+				return
+			}
 			_ = webutil.WriteJSON(rw, http.StatusOK, updateIncidentOutputWrapper{Incident: incident})
 			return
 		}

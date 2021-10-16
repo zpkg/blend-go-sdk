@@ -65,8 +65,16 @@ func (b *Batch) Process(ctx context.Context) {
 		return
 	}
 
-	allWorkers := make([]*Worker, b.Parallelism)
-	availableWorkers := make(chan *Worker, b.Parallelism)
+	effectiveParallelism := b.Parallelism
+	if effectiveParallelism == 0 {
+		effectiveParallelism = runtime.NumCPU()
+	}
+	if effectiveParallelism > len(b.Work) {
+		effectiveParallelism = len(b.Work)
+	}
+
+	allWorkers := make([]*Worker, effectiveParallelism)
+	availableWorkers := make(chan *Worker, effectiveParallelism)
 
 	// return worker is a local finalizer
 	// that grabs a reference to the workers set.
@@ -76,7 +84,7 @@ func (b *Batch) Process(ctx context.Context) {
 	}
 
 	// create and start workers.
-	for x := 0; x < b.Parallelism; x++ {
+	for x := 0; x < effectiveParallelism; x++ {
 		worker := NewWorker(b.Action)
 		worker.Context = ctx
 		worker.Errors = b.Errors

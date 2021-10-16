@@ -26,6 +26,7 @@ type Message struct {
 	IconEmoji       string              `json:"icon_emoji,omitempty"`
 	IconURL         string              `json:"icon_url,omitempty"`
 	ThreadTimestamp string              `json:"thread_ts,omitempty"`
+	AsUser          bool                `json:"as_user,omitempty"`
 	LinkNames       bool                `json:"link_names"`
 	Attachments     []MessageAttachment `json:"attachments"`
 

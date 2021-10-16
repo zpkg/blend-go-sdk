@@ -87,8 +87,6 @@ func errEvent(ctx context.Context, ee logger.ErrorEvent) *raven.Event {
 		}
 		if st := errStackTrace(innerErr); st != nil && len(st.Frames) > 0 {
 			rex.Stacktrace = st
-		} else {
-			rex.Stacktrace = &raven.Stacktrace{Frames: []raven.Frame{}}
 		}
 		exceptions = append(exceptions, rex)
 	}
@@ -224,7 +222,13 @@ func newRavenRequest(r *http.Request) *raven.Request {
 
 func errStackTrace(err error) *raven.Stacktrace {
 	if err != nil {
-		return &raven.Stacktrace{Frames: errFrames(err)}
+		frames := errFrames(err)
+		if len(frames) > 0 {
+			return &raven.Stacktrace{
+				Frames: errFrames(err),
+			}
+		}
+		return nil
 	}
 	return nil
 }
@@ -232,18 +236,18 @@ func errStackTrace(err error) *raven.Stacktrace {
 func errFrames(err error) []raven.Frame {
 	stacktrace := ex.ErrStackTrace(err)
 	if stacktrace == nil {
-		return []raven.Frame{}
+		return nil
 	}
 	pointers, ok := stacktrace.(ex.StackPointers)
 	if !ok {
-		return []raven.Frame{}
+		return nil
 	}
 
 	var output []raven.Frame
 	runtimeFrames := runtime.CallersFrames(pointers)
-
 	for {
 		callerFrame, more := runtimeFrames.Next()
+		// append in reverse order ...
 		output = append([]raven.Frame{
 			raven.NewFrame(callerFrame),
 		}, output...)
@@ -251,6 +255,5 @@ func errFrames(err error) []raven.Frame {
 			break
 		}
 	}
-
 	return output
 }

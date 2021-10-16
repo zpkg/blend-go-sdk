@@ -12,6 +12,10 @@ import (
 	"fmt"
 )
 
+const (
+	errExpectedNonEmptyKey = "expected non-empty key"
+)
+
 // Error is a hard alias to string.
 type Error string
 

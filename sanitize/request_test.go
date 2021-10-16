@@ -36,13 +36,14 @@ func TestSanitizeRequest(t *testing.T) {
 		},
 	}
 
-	output := Request(req,
+	sanitizer := NewRequestSanitizer(
 		OptRequestAddDisallowedHeaders("X-Secret-Token"),
 		OptRequestAddDisallowedQueryParams("sensitive"),
-		OptRequestValueSanitizer(func(key string, values ...string) []string {
+		OptRequestKeyValuesSanitizer(KeyValuesSanitizerFunc(func(key string, values ...string) []string {
 			return []string{"***"}
-		}),
+		})),
 	)
+	output := sanitizer.Sanitize(req)
 
 	it.NotNil(output)
 	it.Equal([]string{"application/json"}, req.Header["Accept"])

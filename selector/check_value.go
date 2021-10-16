@@ -12,5 +12,5 @@ func CheckValue(value string) error {
 	if len(value) > MaxLabelValueLen {
 		return ErrLabelValueTooLong
 	}
-	return checkName(value)
+	return CheckName(value)
 }

@@ -104,7 +104,7 @@ func main() {
 		os.Exit(1)
 	}
 	if len(tlsCert) > 0 && len(tlsKey) > 0 {
-		certFileWatcher, err := certutil.NewCertFileWatcher(tlsCert, tlsKey)
+		certFileWatcher, err := certutil.NewCertFileWatcher(certutil.KeyPair{CertPath: tlsCert, KeyPath: tlsKey})
 		if err != nil {
 			log.Fatal(err)
 			os.Exit(1)

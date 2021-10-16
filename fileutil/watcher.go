@@ -8,6 +8,7 @@ Use of this source code is governed by a MIT license that can be found in the LI
 package fileutil
 
 import (
+	"context"
 	"os"
 	"time"
 
@@ -27,12 +28,12 @@ const (
 // This function blocks, and you should probably call this with its own goroutine.
 // The action takes a direct file handle, and is _NOT_ responsible for closing
 // the file; the watcher will do that when the action has completed.
-func Watch(path string, action WatchAction) error {
+func Watch(ctx context.Context, path string, action WatchAction) error {
 	errors := make(chan error, 1)
 	w := NewWatcher(path, action)
 	w.Errors = errors
 	w.Starting()
-	w.Watch()
+	w.Watch(ctx)
 	if len(errors) > 0 {
 		return <-errors
 	}
@@ -77,7 +78,7 @@ func (w Watcher) PollIntervalOrDefault() time.Duration {
 }
 
 // Watch watches a given file.
-func (w Watcher) Watch() {
+func (w Watcher) Watch(ctx context.Context) {
 	stat, err := os.Stat(w.Path)
 	if err != nil {
 		w.handleError(ex.New(err))
@@ -90,6 +91,15 @@ func (w Watcher) Watch() {
 	defer ticker.Stop()
 
 	for {
+		select {
+		case <-w.NotifyStopping():
+			w.Stopped()
+			return
+		case <-ctx.Done():
+			w.Stopped()
+			return
+		default:
+		}
 		select {
 		case <-ticker.C:
 			stat, err = os.Stat(w.Path)
@@ -121,6 +131,9 @@ func (w Watcher) Watch() {
 				lastMod = stat.ModTime()
 			}
 		case <-w.NotifyStopping():
+			w.Stopped()
+			return
+		case <-ctx.Done():
 			w.Stopped()
 			return
 		}

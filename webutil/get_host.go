@@ -33,3 +33,18 @@ func GetHost(r *http.Request) string {
 	}
 	return r.Host
 }
+
+// GetHostStrict returns the request host, omitting the port if specified,
+// and does not consider `X-Forwarded-Host` headers.
+func GetHostStrict(r *http.Request) string {
+	if r == nil {
+		return ""
+	}
+	if r.Host != "" {
+		if strings.Contains(r.Host, ":") {
+			return strings.SplitN(r.Host, ":", 2)[0]
+		}
+		return r.Host
+	}
+	return ""
+}

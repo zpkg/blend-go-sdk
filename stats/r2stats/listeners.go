@@ -26,17 +26,19 @@ func AddListeners(log logger.FilterListenable, collector stats.Collector, opts .
 
 	options := stats.NewAddListenerOptions(opts...)
 
+	requestSanitizer := sanitize.NewRequestSanitizer(options.RequestSanitizeDefaults...)
+
 	log.Filter(r2.Flag,
 		stats.FilterNameSanitization,
 		r2.NewEventFilter(func(_ context.Context, r2e r2.Event) (r2.Event, bool) {
-			r2e.Request = sanitize.Request(r2e.Request, options.RequestSanitizeDefaults...)
+			r2e.Request = requestSanitizer.Sanitize(r2e.Request)
 			return r2e, false
 		}),
 	)
 	log.Filter(r2.FlagResponse,
 		stats.FilterNameSanitization,
 		r2.NewEventFilter(func(_ context.Context, r2e r2.Event) (r2.Event, bool) {
-			r2e.Request = sanitize.Request(r2e.Request, options.RequestSanitizeDefaults...)
+			r2e.Request = requestSanitizer.Sanitize(r2e.Request)
 			return r2e, false
 		}),
 	)

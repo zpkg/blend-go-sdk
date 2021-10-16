@@ -177,6 +177,8 @@ type Config struct {
 	MaxConnections int `json:"maxConnections,omitempty" yaml:"maxConnections,omitempty" env:"DB_MAX_CONNECTIONS"`
 	// MaxLifetime is the maximum time a connection can be open.
 	MaxLifetime time.Duration `json:"maxLifetime,omitempty" yaml:"maxLifetime,omitempty" env:"DB_MAX_LIFETIME"`
+	// MaxIdleTime is the maximum time a connection can be idle.
+	MaxIdleTime time.Duration `json:"maxIdleTime,omitempty" yaml:"maxIdleTime,omitempty" env:"DB_MAX_IDLE_TIME"`
 	// BufferPoolSize is the number of query composition buffers to maintain.
 	BufferPoolSize int `json:"bufferPoolSize,omitempty" yaml:"bufferPoolSize,omitempty" env:"DB_BUFFER_POOL_SIZE"`
 	// Dialect includes hints to tweak specific sql semantics by database connection.
@@ -207,6 +209,7 @@ func (c *Config) Resolve(ctx context.Context) error {
 		configutil.SetInt(&c.IdleConnections, configutil.Env(EnvVarDBIdleConnections), configutil.Int(c.IdleConnections), configutil.Int(DefaultIdleConnections)),
 		configutil.SetInt(&c.MaxConnections, configutil.Env(EnvVarDBMaxConnections), configutil.Int(c.MaxConnections), configutil.Int(DefaultMaxConnections)),
 		configutil.SetDuration(&c.MaxLifetime, configutil.Env(EnvVarDBMaxLifetime), configutil.Duration(c.MaxLifetime), configutil.Duration(DefaultMaxLifetime)),
+		configutil.SetDuration(&c.MaxIdleTime, configutil.Env(EnvVarDBMaxIdleTime), configutil.Duration(c.MaxIdleTime), configutil.Duration(DefaultMaxIdleTime)),
 		configutil.SetInt(&c.BufferPoolSize, configutil.Env(EnvVarDBBufferPoolSize), configutil.Int(c.BufferPoolSize), configutil.Int(DefaultBufferPoolSize)),
 		configutil.SetString(&c.Dialect, configutil.Env(EnvVarDBDialect), configutil.String(c.Dialect), configutil.String(DialectPostgres)),
 	)
@@ -300,6 +303,14 @@ func (c Config) MaxLifetimeOrDefault() time.Duration {
 		return c.MaxLifetime
 	}
 	return DefaultMaxLifetime
+}
+
+// MaxIdleTimeOrDefault returns the maximum idle time of a driver connection.
+func (c Config) MaxIdleTimeOrDefault() time.Duration {
+	if c.MaxIdleTime > 0 {
+		return c.MaxIdleTime
+	}
+	return DefaultMaxIdleTime
 }
 
 // BufferPoolSizeOrDefault returns the number of query buffers to maintain or a default.

@@ -34,7 +34,7 @@ func TestCertFileWatcher(t *testing.T) {
 	its.Nil(err)
 
 	w, err := NewCertFileWatcher(
-		tempCertPath, tempKeyPath,
+		KeyPair{CertPath: tempCertPath, KeyPath: tempKeyPath},
 	)
 	its.Nil(err)
 

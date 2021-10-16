@@ -9,6 +9,8 @@ package certutil
 
 import (
 	"crypto/tls"
+	"crypto/x509"
+	"fmt"
 	"io/ioutil"
 	"os"
 
@@ -108,4 +110,22 @@ func (kp KeyPair) TLSCertificate() (*tls.Certificate, error) {
 		return nil, ex.New(err)
 	}
 	return &cert, nil
+}
+
+// TLSCertificateWithLeaf returns the KeyPair as a tls.Certificate.
+func (kp KeyPair) TLSCertificateWithLeaf() (*tls.Certificate, error) {
+	cert, err := kp.TLSCertificate()
+	if err != nil {
+		return nil, err
+	}
+	if len(cert.Certificate) == 0 {
+		return nil, fmt.Errorf("invalid certificate; empty certificate list")
+	}
+	if cert.Leaf == nil {
+		cert.Leaf, err = x509.ParseCertificate(cert.Certificate[0])
+		if err != nil {
+			return nil, err
+		}
+	}
+	return cert, nil
 }

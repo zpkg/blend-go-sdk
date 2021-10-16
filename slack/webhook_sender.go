@@ -20,7 +20,7 @@ import (
 
 const (
 	// ErrNon200 is the exception class when a non-200 is returned from slack.
-	ErrNon200 = "slack; non-200 status code returned from remote"
+	ErrNon200 ex.Class = "slack; non-200 status code returned from remote"
 )
 
 var (

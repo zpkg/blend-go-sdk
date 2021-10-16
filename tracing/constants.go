@@ -97,6 +97,8 @@ const (
 	OperationSQLQuery = "sql.query"
 	// OperationJob is a job operation.
 	OperationJob = "job"
+	// OperationDial is a network jdial operation.
+	OperationDial = "dial"
 	// OperationGRPCClientUnary is an rpc operation.
 	OperationGRPCClientUnary = "grpc.client.unary"
 	// OperationGRPCClientStreaming is an rpc operation.
@@ -135,6 +137,8 @@ const (
 	SpanTypeMemcached = "memcached"
 	// SpanTypeMongoDB marks a span as a MongoDB operation.
 	SpanTypeMongoDB = "mongodb"
+	// SpanTypeNetwork is a span type used by network overhead tracking.
+	SpanTypeNetwork = "network"
 	// SpanTypeElasticSearch marks a span as an ElasticSearch operation.
 	// These spans may also have an "elasticsearch.body" tag.
 	SpanTypeElasticSearch = "elasticsearch"

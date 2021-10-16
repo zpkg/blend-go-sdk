@@ -125,6 +125,27 @@ func (cb CertBundle) WriteCertPem(w io.Writer) error {
 	return nil
 }
 
+// WriteCertChainPem writes the public key portion of the cert to a given writer.
+func (cb CertBundle) WriteCertChainPem(w io.Writer) error {
+	if len(cb.CertificateDERs) < 2 {
+		return nil
+	}
+	for _, der := range cb.CertificateDERs[1:] {
+		if err := pem.Encode(w, &pem.Block{Type: BlockTypeCertificate, Bytes: der}); err != nil {
+			return ex.New(err)
+		}
+	}
+	return nil
+}
+
+// WriteCertPartialPem writes the public key portion of the cert to a given writer.
+func (cb CertBundle) WriteCertPartialPem(w io.Writer) error {
+	if len(cb.CertificateDERs) == 0 {
+		return nil
+	}
+	return pem.Encode(w, &pem.Block{Type: BlockTypeCertificate, Bytes: cb.CertificateDERs[0]})
+}
+
 // CertPEM returns the cert portion of the certificate DERs as a byte array.
 func (cb CertBundle) CertPEM() ([]byte, error) {
 	buffer := new(bytes.Buffer)

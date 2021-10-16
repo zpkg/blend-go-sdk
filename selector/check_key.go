@@ -49,5 +49,5 @@ func CheckKey(key string) (err error) {
 	if len(working) > MaxLabelKeyLen {
 		return ErrLabelKeyTooLong
 	}
-	return checkName(string(working))
+	return CheckName(string(working))
 }
