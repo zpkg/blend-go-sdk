@@ -17,6 +17,7 @@ const (
 	MetricNameHTTPRequestElapsedLast string = MetricNameHTTPRequestElapsed + ".last"
 
 	TagRoute  string = "route"
+	TagProto  string = "proto"
 	TagMethod string = "method"
 	TagStatus string = "status"
 

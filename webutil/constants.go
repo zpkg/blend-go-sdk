@@ -30,15 +30,17 @@ const (
 )
 
 // HTTP Method constants (also referred to as 'verbs')
+//
+// They are aliases for the constants in net/http at this point.
 const (
-	MethodConnect = "CONNECT"
-	MethodGet     = "GET"
-	MethodDelete  = "DELETE"
-	MethodHead    = "HEAD"
-	MethodPatch   = "PATCH"
-	MethodPost    = "POST"
-	MethodPut     = "PUT"
-	MethodOptions = "OPTIONS"
+	MethodConnect = http.MethodConnect
+	MethodGet     = http.MethodGet
+	MethodDelete  = http.MethodDelete
+	MethodHead    = http.MethodHead
+	MethodPatch   = http.MethodPatch
+	MethodPost    = http.MethodPost
+	MethodPut     = http.MethodPut
+	MethodOptions = http.MethodOptions
 )
 
 // Header names in canonical form.

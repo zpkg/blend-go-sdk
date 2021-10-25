@@ -42,7 +42,7 @@ type RouteNode struct {
 }
 
 // GetPath returns the node for a path, parameter values, and if there is a trailing slash redirect
-// recommendation
+// recommendation.
 func (n *RouteNode) GetPath(path string) (route *Route, p RouteParameters, tsr bool) {
 	return n.getValue(path)
 }

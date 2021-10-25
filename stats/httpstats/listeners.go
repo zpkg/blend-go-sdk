@@ -45,10 +45,11 @@ func AddListeners(log logger.FilterListenable, collector stats.Collector, opts .
 				route = stats.Tag(TagRoute, RouteNotFound)
 			}
 
+			proto := stats.Tag(TagProto, wre.Request.Proto)
 			method := stats.Tag(TagMethod, wre.Request.Method)
 			status := stats.Tag(TagStatus, strconv.Itoa(wre.StatusCode))
 			tags := []string{
-				route, method, status,
+				proto, route, method, status,
 			}
 			tags = append(tags, options.GetLoggerLabelsAsTags(ctx)...)
 

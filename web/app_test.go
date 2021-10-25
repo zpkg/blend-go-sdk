@@ -706,62 +706,6 @@ func TestAppViewTracerError(t *testing.T) {
 	assert.True(hasViewError)
 }
 
-func TestAppAllowed(t *testing.T) {
-	assert := assert.New(t)
-
-	app, err := New()
-	assert.Nil(err)
-	app.GET("/test", nil)
-
-	allowed := strings.Split(app.allowed("*", ""), ", ")
-	assert.Len(allowed, 1)
-	assert.Equal("GET", allowed[0])
-
-	app.POST("/hello", nil)
-	allowed = strings.Split(app.allowed("*", ""), ", ")
-	assert.Len(allowed, 2)
-	assert.Any(allowed, func(i interface{}) bool {
-		s, ok := i.(string)
-		return ok && s == "GET"
-	})
-	assert.Any(allowed, func(i interface{}) bool {
-		s, ok := i.(string)
-		return ok && s == "POST"
-	})
-
-	app, err = New()
-	assert.Nil(err)
-
-	app.GET("/hello", controllerNoOp)
-	allowed = strings.Split(app.allowed("/hello", ""), ", ")
-	assert.Len(allowed, 2)
-	assert.Any(allowed, func(i interface{}) bool {
-		s, ok := i.(string)
-		return ok && s == "GET"
-	})
-	assert.Any(allowed, func(i interface{}) bool {
-		s, ok := i.(string)
-		return ok && s == "OPTIONS"
-	})
-	app.POST("/hello", controllerNoOp)
-	allowed = strings.Split(app.allowed("/hello", ""), ", ")
-	assert.Len(allowed, 3)
-
-	app.OPTIONS("/hello", controllerNoOp)
-	app.HEAD("/hello", controllerNoOp)
-	app.PUT("/hello", controllerNoOp)
-	app.DELETE("/hello", controllerNoOp)
-
-	app.PATCH("/hi", controllerNoOp)
-	app.PATCH("/there", controllerNoOp)
-	allowed = strings.Split(app.allowed("/hello", ""), ", ")
-	assert.Len(allowed, 6)
-
-	app.PATCH("/hello", controllerNoOp)
-	allowed = strings.Split(app.allowed("/hello", ""), ", ")
-	assert.Len(allowed, 7)
-}
-
 func TestAppNilLoggerPanic(t *testing.T) {
 	assert := assert.New(t)
 
