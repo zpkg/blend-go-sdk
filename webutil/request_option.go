@@ -12,11 +12,13 @@ import (
 	"context"
 	"encoding/json"
 	"encoding/xml"
+	"fmt"
 	"io"
-	"io/ioutil"
 	"mime/multipart"
 	"net/http"
+	"net/textproto"
 	"net/url"
+	"strings"
 )
 
 // RequestOption is an option for http.Request.
@@ -213,9 +215,9 @@ func OptBody(contents io.ReadCloser) RequestOption {
 func OptBodyBytes(body []byte) RequestOption {
 	return func(r *http.Request) error {
 		r.ContentLength = int64(len(body))
-		r.Body = ioutil.NopCloser(bytes.NewReader(body))
+		r.Body = io.NopCloser(bytes.NewReader(body))
 		r.GetBody = func() (io.ReadCloser, error) {
-			return ioutil.NopCloser(bytes.NewReader(body)), nil
+			return io.NopCloser(bytes.NewReader(body)), nil
 		}
 		r.ContentLength = int64(len(body))
 		return nil
@@ -243,9 +245,24 @@ func OptPostedFiles(files ...PostedFile) RequestOption {
 		}
 
 		for _, file := range files {
-			fw, err := w.CreateFormFile(file.Key, file.FileName)
-			if err != nil {
-				return err
+			// custom header since CreateFormFile uses application/octet-stream by default
+			var fw io.Writer
+			var err error
+			if file.ContentType != "" {
+				h := make(textproto.MIMEHeader)
+				h.Set("Content-Disposition",
+					fmt.Sprintf(`form-data; name="%s"; filename="%s"`,
+						escapeQuotes(file.Key), escapeQuotes(file.FileName)))
+				h.Set("Content-Type", file.ContentType)
+				fw, err = w.CreatePart(h)
+				if err != nil {
+					return err
+				}
+			} else {
+				fw, err = w.CreateFormFile(file.Key, file.FileName)
+				if err != nil {
+					return err
+				}
 			}
 			_, err = io.Copy(fw, bytes.NewBuffer(file.Contents))
 			if err != nil {
@@ -258,9 +275,9 @@ func OptPostedFiles(files ...PostedFile) RequestOption {
 		}
 
 		bb := b.Bytes()
-		r.Body = ioutil.NopCloser(bytes.NewReader(bb))
+		r.Body = io.NopCloser(bytes.NewReader(bb))
 		r.GetBody = func() (io.ReadCloser, error) {
-			return ioutil.NopCloser(bytes.NewReader(bb)), nil
+			return io.NopCloser(bytes.NewReader(bb)), nil
 		}
 		r.ContentLength = int64(len(bb))
 		return nil
@@ -274,10 +291,10 @@ func OptJSONBody(obj interface{}) RequestOption {
 		if err != nil {
 			return err
 		}
-		r.Body = ioutil.NopCloser(bytes.NewReader(contents))
+		r.Body = io.NopCloser(bytes.NewReader(contents))
 		r.GetBody = func() (io.ReadCloser, error) {
 			r := bytes.NewReader(contents)
-			return ioutil.NopCloser(r), nil
+			return io.NopCloser(r), nil
 		}
 		r.ContentLength = int64(len(contents))
 		if r.Header == nil {
@@ -295,10 +312,10 @@ func OptXMLBody(obj interface{}) RequestOption {
 		if err != nil {
 			return err
 		}
-		r.Body = ioutil.NopCloser(bytes.NewBuffer(contents))
+		r.Body = io.NopCloser(bytes.NewBuffer(contents))
 		r.GetBody = func() (io.ReadCloser, error) {
 			r := bytes.NewReader(contents)
-			return ioutil.NopCloser(r), nil
+			return io.NopCloser(r), nil
 		}
 		r.ContentLength = int64(len(contents))
 		if r.Header == nil {
@@ -315,4 +332,10 @@ func OptHTTPClientTrace(ht *HTTPTrace) RequestOption {
 		*r = *WithClientHTTPTrace(r, ht)
 		return nil
 	}
+}
+
+var quoteEscaper = strings.NewReplacer("\\", "\\\\", `"`, "\\\"")
+
+func escapeQuotes(s string) string {
+	return quoteEscaper.Replace(s)
 }

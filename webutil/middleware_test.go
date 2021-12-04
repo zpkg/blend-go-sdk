@@ -9,7 +9,7 @@ package webutil
 
 import (
 	"fmt"
-	"io/ioutil"
+	"io"
 	"net/http"
 	"net/http/httptest"
 	"testing"
@@ -55,7 +55,7 @@ func TestMiddelware(t *testing.T) {
 	<-twoDone
 	<-innerDone
 
-	contents, err := ioutil.ReadAll(res.Body)
+	contents, err := io.ReadAll(res.Body)
 	assert.Nil(err)
 	assert.Equal("OK!\nTwo\nOne\n", string(contents))
 }

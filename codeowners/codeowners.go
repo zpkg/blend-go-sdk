@@ -11,7 +11,6 @@ import (
 	"context"
 	"fmt"
 	"io"
-	"io/ioutil"
 	"os"
 	"path/filepath"
 	"strings"
@@ -167,7 +166,7 @@ func (c Codeowners) Validate(ctx context.Context, input io.Reader) error {
 // GetStdout returns standard out.
 func (c Codeowners) GetStdout() io.Writer {
 	if c.QuietOrDefault() {
-		return ioutil.Discard
+		return io.Discard
 	}
 	if c.Stdout != nil {
 		return c.Stdout
@@ -178,7 +177,7 @@ func (c Codeowners) GetStdout() io.Writer {
 // GetStderr returns standard error.
 func (c Codeowners) GetStderr() io.Writer {
 	if c.QuietOrDefault() {
-		return ioutil.Discard
+		return io.Discard
 	}
 	if c.Stderr != nil {
 		return c.Stderr

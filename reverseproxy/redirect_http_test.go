@@ -9,7 +9,7 @@ package reverseproxy
 
 import (
 	"fmt"
-	"io/ioutil"
+	"io"
 	"net/http"
 	"net/http/httptest"
 	"strings"
@@ -38,7 +38,7 @@ func TestRedirectHost(t *testing.T) {
 	assert.Nil(err)
 	defer res.Body.Close()
 
-	fullBody, err := ioutil.ReadAll(res.Body)
+	fullBody, err := io.ReadAll(res.Body)
 	assert.Nil(err)
 
 	mockedContents := string(fullBody)
@@ -71,7 +71,7 @@ func TestRedirect(t *testing.T) {
 		assert.Nil(err)
 		defer res.Body.Close()
 
-		fullBody, err := ioutil.ReadAll(res.Body)
+		fullBody, err := io.ReadAll(res.Body)
 		assert.Nil(err)
 
 		mockedContents := string(fullBody)

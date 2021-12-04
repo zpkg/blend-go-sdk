@@ -10,7 +10,7 @@ package vault
 import (
 	"bytes"
 	"fmt"
-	"io/ioutil"
+	"io"
 	"net/http"
 	"net/url"
 )
@@ -40,7 +40,7 @@ func (mh *MockHTTPClient) With(verb string, url *url.URL, response *http.Respons
 func (mh *MockHTTPClient) WithString(verb string, url *url.URL, contents string) *MockHTTPClient {
 	mh.contents[fmt.Sprintf("%s_%s", verb, url.String())] = &http.Response{
 		StatusCode: http.StatusOK,
-		Body:       ioutil.NopCloser(bytes.NewBuffer([]byte(contents))),
+		Body:       io.NopCloser(bytes.NewBuffer([]byte(contents))),
 	}
 	return mh
 }

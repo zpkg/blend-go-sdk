@@ -11,14 +11,13 @@ import (
 	"bufio"
 	"bytes"
 	"fmt"
-	"io/ioutil"
 	"log"
 	"os"
 	"strings"
 )
 
 func main() {
-	contents, err := ioutil.ReadFile("slant_letters.txt")
+	contents, err := os.ReadFile("slant_letters.txt")
 	if err != nil {
 		log.Fatal(err)
 	}

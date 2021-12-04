@@ -18,7 +18,6 @@ import (
 	"encoding/json"
 	"fmt"
 	"io"
-	"io/ioutil"
 	"math"
 	"net/url"
 	"os"
@@ -200,7 +199,7 @@ func (vf ViewFuncs) FileExists(path string) bool {
 
 // ReadFile reads the contents of a file path as a string.
 func (vf ViewFuncs) ReadFile(path string) (string, error) {
-	contents, err := ioutil.ReadFile(path)
+	contents, err := os.ReadFile(path)
 	return string(contents), err
 }
 

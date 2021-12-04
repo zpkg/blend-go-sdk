@@ -12,7 +12,6 @@ import (
 	"context"
 	"encoding/json"
 	"io"
-	"io/ioutil"
 	"net/http"
 	"net/http/httptest"
 	"net/url"
@@ -100,7 +99,7 @@ func MockPostJSON(app *App, path string, body interface{}, options ...r2.Option)
 	contents, _ := json.Marshal(body)
 	req := &http.Request{
 		Method: "POST",
-		Body:   ioutil.NopCloser(bytes.NewReader(contents)),
+		Body:   io.NopCloser(bytes.NewReader(contents)),
 		URL: &url.URL{
 			Path: path,
 		},

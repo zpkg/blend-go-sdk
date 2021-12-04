@@ -9,7 +9,7 @@ package crypto
 
 import (
 	"bytes"
-	"io/ioutil"
+	"io"
 	"testing"
 
 	"github.com/blend/go-sdk/assert"
@@ -32,7 +32,7 @@ func Test_Stream_EncrypterDecrypter(t *testing.T) {
 	its.Nil(err)
 	its.NotNil(se)
 
-	encrypted, err := ioutil.ReadAll(se)
+	encrypted, err := io.ReadAll(se)
 	its.Nil(err)
 	its.NotNil(encrypted)
 
@@ -40,7 +40,7 @@ func Test_Stream_EncrypterDecrypter(t *testing.T) {
 	its.Nil(err)
 	its.NotNil(sd)
 
-	decrypted, err := ioutil.ReadAll(sd)
+	decrypted, err := io.ReadAll(sd)
 	its.Nil(err)
 	its.Equal(plaintext, string(decrypted))
 

@@ -9,7 +9,6 @@ package sourceutil
 
 import (
 	"io"
-	"io/ioutil"
 	"os"
 	"path/filepath"
 
@@ -128,17 +127,22 @@ func dirCopy(destination, source string, sourceDirInfo os.FileInfo, opts CopyAll
 		}
 	}
 
-	var sourceDirContents []os.FileInfo
-	sourceDirContents, err = ioutil.ReadDir(source)
+	var sourceDirContents []os.DirEntry
+	sourceDirContents, err = os.ReadDir(source)
 	if err != nil {
 		return
 	}
 	for _, sourceDirItem := range sourceDirContents {
 		destinationName := filepath.Join(destination, sourceDirItem.Name())
 		sourceName := filepath.Join(source, sourceDirItem.Name())
+		var sourceDirItemInfo os.FileInfo
+		sourceDirItemInfo, err = sourceDirItem.Info()
+		if err != nil {
+			return
+		}
 
 		if _, statErr := os.Stat(destinationName); statErr != nil {
-			if err = copyAll(destinationName, sourceName, sourceDirItem, opts); err != nil {
+			if err = copyAll(destinationName, sourceName, sourceDirItemInfo, opts); err != nil {
 				return
 			}
 		}

@@ -11,9 +11,9 @@ import (
 	"context"
 	"crypto/tls"
 	"crypto/x509"
-	"io/ioutil"
 	"net/http"
 	"net/url"
+	"os"
 	"time"
 
 	"github.com/blend/go-sdk/env"
@@ -120,7 +120,7 @@ func OptRootCAs(rootCAs ...string) Option {
 			}
 
 			for _, caPath := range rootCAs {
-				contents, err := ioutil.ReadFile(caPath)
+				contents, err := os.ReadFile(caPath)
 				if err != nil {
 					return err
 				}

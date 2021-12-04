@@ -10,8 +10,6 @@ package certutil
 import (
 	"crypto/tls"
 	"crypto/x509"
-	"fmt"
-	"io/ioutil"
 	"os"
 
 	"github.com/blend/go-sdk/ex"
@@ -56,7 +54,7 @@ func (kp KeyPair) CertBytes() ([]byte, error) {
 	if kp.CertPath == "" {
 		return nil, ex.New("error loading cert; cert path unset")
 	}
-	contents, err := ioutil.ReadFile(os.ExpandEnv(kp.CertPath))
+	contents, err := os.ReadFile(os.ExpandEnv(kp.CertPath))
 	if err != nil {
 		return nil, ex.New("error loading cert from path", ex.OptInner(err), ex.OptMessage(kp.CertPath))
 	}
@@ -71,7 +69,7 @@ func (kp KeyPair) KeyBytes() ([]byte, error) {
 	if kp.KeyPath == "" {
 		return nil, ex.New("error loading key; key path unset")
 	}
-	contents, err := ioutil.ReadFile(os.ExpandEnv(kp.KeyPath))
+	contents, err := os.ReadFile(os.ExpandEnv(kp.KeyPath))
 	if err != nil {
 		return nil, ex.New("error loading key from path", ex.OptInner(err), ex.OptMessage(kp.KeyPath))
 	}
@@ -119,12 +117,12 @@ func (kp KeyPair) TLSCertificateWithLeaf() (*tls.Certificate, error) {
 		return nil, err
 	}
 	if len(cert.Certificate) == 0 {
-		return nil, fmt.Errorf("invalid certificate; empty certificate list")
+		return nil, ex.New("invalid certificate; empty certificate list")
 	}
 	if cert.Leaf == nil {
 		cert.Leaf, err = x509.ParseCertificate(cert.Certificate[0])
 		if err != nil {
-			return nil, err
+			return nil, ex.New(err)
 		}
 	}
 	return cert, nil

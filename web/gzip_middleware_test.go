@@ -10,7 +10,7 @@ package web
 import (
 	"bytes"
 	"compress/gzip"
-	"io/ioutil"
+	"io"
 	"testing"
 
 	"github.com/blend/go-sdk/assert"
@@ -51,7 +51,7 @@ func TestGZipMiddlewareCompressed(t *testing.T) {
 
 	decompressor, err := gzip.NewReader(bytes.NewBuffer(body))
 	assert.Nil(err)
-	decompressed, err := ioutil.ReadAll(decompressor)
+	decompressed, err := io.ReadAll(decompressor)
 	assert.Nil(err)
 
 	assert.Equal("\"OK!\"\n", string(decompressed))

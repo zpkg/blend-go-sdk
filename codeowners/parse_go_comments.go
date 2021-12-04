@@ -12,13 +12,13 @@ import (
 	"bytes"
 	"go/parser"
 	"go/token"
-	"io/ioutil"
+	"os"
 	"strings"
 )
 
 // ParseGoComments parses a files comments.
 func ParseGoComments(repoRoot, sourcePath, linePrefix string) (*Source, error) {
-	contents, err := ioutil.ReadFile(sourcePath)
+	contents, err := os.ReadFile(sourcePath)
 	if err != nil {
 		return nil, err
 	}

@@ -9,7 +9,7 @@ package dbstats
 
 import (
 	"context"
-	"io/ioutil"
+	"io"
 	"testing"
 	"time"
 
@@ -32,7 +32,7 @@ func TestAddListeners(t *testing.T) {
 func TestAddListenersStats(t *testing.T) {
 	assert := assert.New(t)
 
-	log := logger.All(logger.OptOutput(ioutil.Discard))
+	log := logger.All(logger.OptOutput(io.Discard))
 	defer log.Close()
 	collector := stats.NewMockCollector(32)
 

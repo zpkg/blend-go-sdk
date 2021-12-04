@@ -9,7 +9,7 @@ package webutil
 
 import (
 	"bytes"
-	"io/ioutil"
+	"io"
 	"net/http"
 	"net/url"
 
@@ -54,7 +54,7 @@ func (wh Webhook) Send() (*http.Response, error) {
 	}
 	req.Header = headers
 	if wh.Body != "" {
-		req.Body = ioutil.NopCloser(bytes.NewBufferString(wh.Body))
+		req.Body = io.NopCloser(bytes.NewBufferString(wh.Body))
 		req.ContentLength = int64(len(wh.Body))
 	}
 

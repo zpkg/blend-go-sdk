@@ -9,7 +9,7 @@ package web
 
 import (
 	"bytes"
-	"io/ioutil"
+	"io"
 	"net/http"
 	"os"
 	"regexp"
@@ -225,7 +225,7 @@ func (sc *StaticFileServer) ResolveCachedFile(filepath string) (*CachedStaticFil
 		return nil, nil
 	}
 
-	contents, err := ioutil.ReadAll(diskFile)
+	contents, err := io.ReadAll(diskFile)
 	if err != nil {
 		return nil, err
 	}

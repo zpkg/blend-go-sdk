@@ -90,82 +90,144 @@ func Test_RouteTree_Route(t *testing.T) {
 	rt.Handle(http.MethodPost, "/foo", handlerNoOp)
 	rt.Handle(http.MethodGet, "/bar", handlerNoOp)
 
-	// explicitly register a slash url here
+	// explicitly register a slash suffixed url here
 	rt.Handle(http.MethodGet, "/slash/", handlerNoOp)
 
-	route, params := rt.Route(&http.Request{
+	req := &http.Request{
 		Method: http.MethodGet,
 		URL: &url.URL{
 			Path: "/",
 		},
-	})
+	}
+	route, params := rt.Route(req)
 	its.NotNil(route)
 	its.Equal("/", route.Path)
 	its.Empty(params)
+	its.Equal("/", req.URL.Path)
 
-	route, params = rt.Route(&http.Request{
+	req = &http.Request{
 		Method: http.MethodGet,
 		URL: &url.URL{
 			Path: "/foo",
 		},
-	})
+	}
+	route, params = rt.Route(req)
 	its.NotNil(route)
 	its.Equal("/foo", route.Path)
 	its.Equal(http.MethodGet, route.Method)
 	its.Empty(params)
+	its.Equal("/foo", req.URL.Path)
 
-	route, params = rt.Route(&http.Request{
+	req = &http.Request{
 		Method: http.MethodPost,
 		URL: &url.URL{
 			Path: "/foo",
 		},
-	})
+	}
+	route, params = rt.Route(req)
 	its.NotNil(route)
 	its.Equal("/foo", route.Path)
 	its.Equal(http.MethodPost, route.Method)
 	its.Empty(params)
+	its.Equal("/foo", req.URL.Path)
 
 	// explicitly test matching with an extra slash
-	route, params = rt.Route(&http.Request{
+	req = &http.Request{
 		Method: http.MethodGet,
 		URL: &url.URL{
 			Path: "/foo/",
 		},
-	})
+	}
+	route, params = rt.Route(req)
 	its.NotNil(route)
 	its.Equal("/foo", route.Path)
 	its.Empty(params)
+	its.Equal("/foo/", req.URL.Path)
 
-	route, params = rt.Route(&http.Request{
+	req = &http.Request{
 		Method: http.MethodGet,
 		URL: &url.URL{
 			Path: "/foo/test",
 		},
-	})
+	}
+	route, params = rt.Route(req)
 	its.NotNil(route)
 	its.Equal("/foo/:id", route.Path)
 	its.NotEmpty(params)
 	its.Equal("test", params["id"])
+	its.Equal("/foo/test", req.URL.Path)
 
-	route, params = rt.Route(&http.Request{
+	req = &http.Request{
 		Method: http.MethodGet,
 		URL: &url.URL{
 			Path: "/bar",
 		},
-	})
+	}
+	route, params = rt.Route(req)
 	its.NotNil(route)
 	its.Equal("/bar", route.Path)
 	its.Empty(params)
+	its.Equal("/bar", req.URL.Path)
 
-	route, params = rt.Route(&http.Request{
+	req = &http.Request{
 		Method: http.MethodGet,
 		URL: &url.URL{
 			Path: "/slash",
 		},
-	})
+	}
+	route, params = rt.Route(req)
 	its.NotNil(route)
 	its.Equal("/slash/", route.Path)
 	its.Empty(params)
+	its.Equal("/slash", req.URL.Path)
+
+	req = &http.Request{
+		Method: http.MethodConnect,
+		URL: &url.URL{
+			Path: "/slash",
+		},
+	}
+	route, params = rt.Route(req)
+	its.Nil(route)
+	its.Empty(params)
+	its.Equal("/slash", req.URL.Path)
+
+	req = &http.Request{
+		Method: http.MethodGet,
+		URL: &url.URL{
+			Path: "/slash",
+		},
+	}
+	rt.SkipTrailingSlashRedirects = true
+	route, params = rt.Route(req)
+	its.Nil(route)
+	its.Empty(params)
+	its.Equal("/slash", req.URL.Path)
+}
+
+func Test_RouteTree_Route_slash(t *testing.T) {
+	its := assert.New(t)
+
+	rt := new(RouteTree)
+
+	req := &http.Request{
+		Method: http.MethodGet,
+		URL: &url.URL{
+			Path: "/",
+		},
+	}
+	route, params := rt.Route(req)
+	its.Nil(route)
+	its.Empty(params)
+	its.Equal("/", req.URL.Path)
+}
+
+func Test_RouteTree_withPathAlternateTrailingSlash(t *testing.T) {
+	its := assert.New(t)
+
+	its.Equal("/foo", new(RouteTree).withPathAlternateTrailingSlash("/foo/"))
+	its.Equal("/foo/", new(RouteTree).withPathAlternateTrailingSlash("/foo"))
+	its.Equal("", new(RouteTree).withPathAlternateTrailingSlash(""))
 }
 
 func routeExpectsPath(method, path string) Handler {

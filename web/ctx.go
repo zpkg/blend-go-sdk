@@ -13,7 +13,6 @@ import (
 	"encoding/json"
 	"encoding/xml"
 	"io"
-	"io/ioutil"
 	"net/http"
 	"net/url"
 	"time"
@@ -232,7 +231,7 @@ func (rc *Ctx) PostBody() ([]byte, error) {
 				return nil, ex.New(err)
 			}
 			defer reader.Close()
-			rc.Body, err = ioutil.ReadAll(reader)
+			rc.Body, err = io.ReadAll(reader)
 			if err != nil {
 				return nil, ex.New(err)
 			}
@@ -240,7 +239,7 @@ func (rc *Ctx) PostBody() ([]byte, error) {
 		if rc.Request != nil && rc.Request.Body != nil {
 			defer rc.Request.Body.Close()
 			var err error
-			rc.Body, err = ioutil.ReadAll(rc.Request.Body)
+			rc.Body, err = io.ReadAll(rc.Request.Body)
 			if err != nil {
 				return nil, ex.New(err)
 			}
@@ -377,7 +376,7 @@ func (rc *Ctx) EnsureForm() error {
 	r := &http.Request{
 		Method: rc.Request.Method,
 		Header: rc.Request.Header,
-		Body:   ioutil.NopCloser(bytes.NewBuffer(body)),
+		Body:   io.NopCloser(bytes.NewBuffer(body)),
 	}
 	if err := r.ParseForm(); err != nil {
 		return err

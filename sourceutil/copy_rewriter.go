@@ -15,7 +15,6 @@ import (
 	"go/printer"
 	"go/token"
 	"io"
-	"io/ioutil"
 	"os"
 	"path/filepath"
 	"strings"
@@ -48,7 +47,7 @@ func (cr CopyRewriter) Execute(ctx context.Context) error {
 	if _, err := os.Stat(cr.Source); err != nil {
 		return fmt.Errorf("source not found at %s", cr.Source)
 	}
-	tempDir, err := ioutil.TempDir("", "repoctl")
+	tempDir, err := os.MkdirTemp("", "repoctl")
 	if err != nil {
 		return err
 	}
@@ -130,13 +129,13 @@ func (cr CopyRewriter) Execute(ctx context.Context) error {
 
 // copyGoSourceFile rewrites the imports for a golang file at a given path
 func (cr CopyRewriter) copyGoSourceFile(ctx context.Context, destinationPath, sourcePath string) error {
-	contents, err := ioutil.ReadFile(sourcePath)
+	contents, err := os.ReadFile(sourcePath)
 	if err != nil {
 		return err
 	}
 	var writer io.WriteCloser
 	if cr.DryRun {
-		writer = nopWriteCloser{ioutil.Discard}
+		writer = nopWriteCloser{io.Discard}
 	} else {
 		writer, err = os.Create(destinationPath)
 		if err != nil {
@@ -186,7 +185,7 @@ func (cr CopyRewriter) rewriteContents(ctx context.Context, sourcePath string) e
 		return err
 	}
 
-	contents, err := ioutil.ReadFile(sourcePath)
+	contents, err := os.ReadFile(sourcePath)
 	if err != nil {
 		return err
 	}
@@ -204,7 +203,7 @@ func (cr CopyRewriter) rewriteContents(ctx context.Context, sourcePath string) e
 		return nil
 	}
 	cr.Debugf("rewriting file %s", sourcePath)
-	return ioutil.WriteFile(sourcePath, contents, stat.Mode())
+	return os.WriteFile(sourcePath, contents, stat.Mode())
 }
 
 // QuietOrDefault returns a value or a default.
@@ -234,7 +233,7 @@ func (cr CopyRewriter) DebugOrDefault() bool {
 // GetStdout returns standard out.
 func (cr CopyRewriter) GetStdout() io.Writer {
 	if cr.QuietOrDefault() {
-		return ioutil.Discard
+		return io.Discard
 	}
 	if cr.Stdout != nil {
 		return cr.Stdout
@@ -245,7 +244,7 @@ func (cr CopyRewriter) GetStdout() io.Writer {
 // GetStderr returns standard error.
 func (cr CopyRewriter) GetStderr() io.Writer {
 	if cr.QuietOrDefault() {
-		return ioutil.Discard
+		return io.Discard
 	}
 	if cr.Stderr != nil {
 		return cr.Stderr

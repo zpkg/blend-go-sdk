@@ -8,7 +8,7 @@ Use of this source code is governed by a MIT license that can be found in the LI
 package certutil
 
 import (
-	"io/ioutil"
+	"os"
 	"testing"
 
 	"github.com/blend/go-sdk/assert"
@@ -28,14 +28,14 @@ func TestKeyPairCertBytes(t *testing.T) {
 	assert := assert.New(t)
 
 	assert.Equal("foo", MustBytes(KeyPair{Cert: "foo"}.CertBytes()))
-	assert.Equal(MustBytes(ioutil.ReadFile("testdata/client.cert.pem")), MustBytes(KeyPair{CertPath: "testdata/client.cert.pem"}.CertBytes()))
+	assert.Equal(MustBytes(os.ReadFile("testdata/client.cert.pem")), MustBytes(KeyPair{CertPath: "testdata/client.cert.pem"}.CertBytes()))
 }
 
 func TestKeyPairKeyBytes(t *testing.T) {
 	assert := assert.New(t)
 
 	assert.Equal("foo", MustBytes(KeyPair{Key: "foo"}.KeyBytes()))
-	assert.Equal(MustBytes(ioutil.ReadFile("testdata/client.key.pem")), MustBytes(KeyPair{KeyPath: "testdata/client.key.pem"}.KeyBytes()))
+	assert.Equal(MustBytes(os.ReadFile("testdata/client.key.pem")), MustBytes(KeyPair{KeyPath: "testdata/client.key.pem"}.KeyBytes()))
 }
 
 func TestKeyPairString(t *testing.T) {

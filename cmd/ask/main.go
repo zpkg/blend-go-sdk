@@ -11,7 +11,6 @@ import (
 	"bytes"
 	"flag"
 	"fmt"
-	"io/ioutil"
 	"os"
 	"strings"
 
@@ -99,7 +98,7 @@ func main() {
 	}
 
 	if *output != "" {
-		if err := ioutil.WriteFile(*output, buffer.Bytes(), 0644); err != nil {
+		if err := os.WriteFile(*output, buffer.Bytes(), 0644); err != nil {
 			fmt.Fprintf(os.Stderr, "%v", err)
 			os.Exit(1)
 		}

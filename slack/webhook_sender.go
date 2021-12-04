@@ -10,7 +10,7 @@ package slack
 import (
 	"context"
 	"encoding/json"
-	"io/ioutil"
+	"io"
 	"net/http"
 
 	"github.com/blend/go-sdk/ex"
@@ -72,7 +72,7 @@ func (whs WebhookSender) Send(ctx context.Context, message Message) error {
 	defer res.Body.Close()
 
 	if statusCode := res.StatusCode; statusCode < http.StatusOK || statusCode > 299 {
-		contents, _ := ioutil.ReadAll(res.Body)
+		contents, _ := io.ReadAll(res.Body)
 		return ex.New(ErrNon200, ex.OptMessage(string(contents)))
 	}
 	return nil

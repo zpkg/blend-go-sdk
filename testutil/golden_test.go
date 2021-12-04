@@ -10,7 +10,6 @@ package testutil_test
 import (
 	"flag"
 	"fmt"
-	"io/ioutil"
 	"os"
 	"path/filepath"
 	"strings"
@@ -58,7 +57,7 @@ func TestAssertGoldenFile_Update(t *testing.T) {
 	it := assert.New(t)
 
 	// Generate a test fixtures directory we control.
-	tempDir, err := ioutil.TempDir("", "")
+	tempDir, err := os.MkdirTemp("", "")
 	it.Nil(err)
 	t.Cleanup(func() {
 		os.RemoveAll(tempDir)

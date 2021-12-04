@@ -9,7 +9,7 @@ package webutil
 
 import (
 	"fmt"
-	"io/ioutil"
+	"io"
 	"net/http"
 	"net/http/httptest"
 	"sort"
@@ -85,7 +85,7 @@ func Test_PostedFiles(t *testing.T) {
 	res, err := http.DefaultClient.Do(r)
 	its.Nil(err)
 	defer res.Body.Close()
-	bodyContents, _ := ioutil.ReadAll(res.Body)
+	bodyContents, _ := io.ReadAll(res.Body)
 	its.Equal(http.StatusOK, res.StatusCode, string(bodyContents))
 }
 
@@ -129,7 +129,7 @@ func Test_PostedFiles_onlyParseForm(t *testing.T) {
 	res, err := http.DefaultClient.Do(r)
 	its.Nil(err)
 	defer res.Body.Close()
-	contents, err := ioutil.ReadAll(res.Body)
+	contents, err := io.ReadAll(res.Body)
 	its.Nil(err)
 	its.Equal(http.StatusOK, res.StatusCode, string(contents))
 }
@@ -175,7 +175,7 @@ func Test_PostedFiles_maxMemory(t *testing.T) {
 	res, err := http.DefaultClient.Do(r)
 	its.Nil(err)
 	defer res.Body.Close()
-	contents, err := ioutil.ReadAll(res.Body)
+	contents, err := io.ReadAll(res.Body)
 	its.Nil(err)
 	its.Equal(http.StatusOK, res.StatusCode, string(contents))
 }

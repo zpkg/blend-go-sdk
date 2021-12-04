@@ -12,7 +12,6 @@ import (
 	"crypto/x509"
 	"encoding/json"
 	"io"
-	"io/ioutil"
 	"net/http"
 	"net/url"
 	"path/filepath"
@@ -344,7 +343,7 @@ func (c *APIClient) discard(res io.ReadCloser, err error) error {
 		return err
 	}
 	defer res.Close()
-	if _, err = io.Copy(ioutil.Discard, res); err != nil {
+	if _, err = io.Copy(io.Discard, res); err != nil {
 		return err
 	}
 	return nil

@@ -10,7 +10,7 @@ package envoyutil
 import (
 	"context"
 	"fmt"
-	"io/ioutil"
+	"io"
 	"net/http"
 	"strings"
 	"sync/atomic"
@@ -91,7 +91,7 @@ func (wfa *WaitForAdmin) IsReady() bool {
 	}
 
 	defer resp.Body.Close()
-	body, err := ioutil.ReadAll(resp.Body)
+	body, err := io.ReadAll(resp.Body)
 	if err != nil {
 		logger.MaybeDebug(wfa.Log, "Envoy is not ready; failed to read response body")
 		return false

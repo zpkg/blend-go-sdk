@@ -10,7 +10,7 @@ package r2
 import (
 	"encoding/json"
 	"fmt"
-	"io/ioutil"
+	"io"
 	"net/http"
 	"net/http/httptest"
 	"testing"
@@ -30,7 +30,7 @@ func TestOptJSONBody(t *testing.T) {
 
 	assert.NotNil(req.Request.Body)
 
-	contents, err := ioutil.ReadAll(req.Request.Body)
+	contents, err := io.ReadAll(req.Request.Body)
 	assert.Nil(err)
 	assert.Equal(`{"foo":"bar"}`, string(contents))
 

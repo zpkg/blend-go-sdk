@@ -10,7 +10,7 @@ package template
 import (
 	"bytes"
 	"io"
-	"io/ioutil"
+	"os"
 	texttemplate "text/template"
 
 	"github.com/blend/go-sdk/env"
@@ -31,7 +31,7 @@ func New() *Template {
 
 // NewFromFile creates a new template from a file.
 func NewFromFile(filepath string) (*Template, error) {
-	contents, err := ioutil.ReadFile(filepath)
+	contents, err := os.ReadFile(filepath)
 	if err != nil {
 		return nil, ex.New(err)
 	}

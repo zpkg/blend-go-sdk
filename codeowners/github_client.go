@@ -12,7 +12,7 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
-	"io/ioutil"
+	"io"
 	"net/http"
 	"net/url"
 	"strings"
@@ -44,7 +44,7 @@ func (ghc GithubClient) Do(req *http.Request) (*http.Response, error) {
 	}
 	if statusCode := res.StatusCode; statusCode < http.StatusOK || statusCode > 299 {
 		defer func() { _ = res.Body.Close() }()
-		contents, _ := ioutil.ReadAll(res.Body)
+		contents, _ := io.ReadAll(res.Body)
 		return nil, fmt.Errorf("non-200 returned from remote; %s", string(contents))
 	}
 	return res, nil

@@ -12,7 +12,6 @@ import (
 	"context"
 	"fmt"
 	"io"
-	"io/ioutil"
 	"net/http"
 	"net/http/httptest"
 	"net/url"
@@ -103,7 +102,7 @@ func TestWaitForAdminExecute(t *testing.T) {
 		SwitchAfter: 3,
 		SwitchResponse: &http.Response{
 			StatusCode: http.StatusOK,
-			Body:       ioutil.NopCloser(bytes.NewReader([]byte(envoyutil.EnumStateLive + "\n"))),
+			Body:       io.NopCloser(bytes.NewReader([]byte(envoyutil.EnumStateLive + "\n"))),
 		},
 	}
 	wfa = envoyutil.WaitForAdmin{Log: log, HTTPClient: mhgc, Sleep: time.Nanosecond}

@@ -9,7 +9,7 @@ package configutil
 
 import (
 	"context"
-	"io/ioutil"
+	"os"
 	"strings"
 )
 
@@ -18,7 +18,7 @@ type File string
 
 // String returns the string contents of a file.
 func (f File) String(ctx context.Context) (*string, error) {
-	contents, err := ioutil.ReadFile(string(f))
+	contents, err := os.ReadFile(string(f))
 	if err != nil {
 		return nil, nil
 	}

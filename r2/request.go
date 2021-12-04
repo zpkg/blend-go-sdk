@@ -13,7 +13,6 @@ import (
 	"encoding/json"
 	"encoding/xml"
 	"io"
-	"io/ioutil"
 	"net/http"
 	"net/url"
 	"time"
@@ -92,12 +91,12 @@ func (r Request) Do() (*http.Response, error) {
 		body := r.Request.PostForm.Encode()
 		buffer := bytes.NewBufferString(body)
 		r.Request.ContentLength = int64(buffer.Len())
-		r.Request.Body = ioutil.NopCloser(buffer)
+		r.Request.Body = io.NopCloser(buffer)
 	}
 
 	if r.Request.Body == nil {
 		r.Request.Body = http.NoBody
-		r.Request.GetBody = func() (io.ReadCloser, error) { return ioutil.NopCloser(http.NoBody), nil }
+		r.Request.GetBody = func() (io.ReadCloser, error) { return io.NopCloser(http.NoBody), nil }
 	}
 
 	started := time.Now().UTC()
@@ -155,7 +154,7 @@ func (r Request) Discard() (res *http.Response, err error) {
 		return
 	}
 	defer res.Body.Close()
-	_, err = io.Copy(ioutil.Discard, res.Body)
+	_, err = io.Copy(io.Discard, res.Body)
 	if err != nil {
 		err = ex.New(err)
 		return
@@ -202,7 +201,7 @@ func (r Request) Bytes() (contents []byte, res *http.Response, err error) {
 	defer func() {
 		err = ex.Append(err, res.Body.Close())
 	}()
-	contents, err = ioutil.ReadAll(res.Body)
+	contents, err = io.ReadAll(res.Body)
 	if err != nil {
 		err = ex.New(err)
 		return
@@ -262,7 +261,7 @@ func (r Request) JSONBytes(dst interface{}) (body []byte, res *http.Response, er
 		err = ex.New(ErrNoContentJSON)
 		return
 	}
-	body, err = ioutil.ReadAll(res.Body)
+	body, err = io.ReadAll(res.Body)
 	if err != nil {
 		err = ex.New(err)
 		return

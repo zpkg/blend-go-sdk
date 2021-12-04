@@ -12,7 +12,6 @@ import (
 	"context"
 	"flag"
 	"fmt"
-	"io/ioutil"
 	"os"
 	"strings"
 	"time"
@@ -252,7 +251,7 @@ func (fs *flagStrings) Set(flagValue string) error {
 }
 
 func tryReadFile(path string) string {
-	contents, err := ioutil.ReadFile(path)
+	contents, err := os.ReadFile(path)
 	if err != nil {
 		return path
 	}

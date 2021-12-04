@@ -11,7 +11,7 @@ import (
 	"bytes"
 	"encoding/json"
 	"fmt"
-	"io/ioutil"
+	"io"
 	"net"
 	"net/http"
 	"testing"
@@ -136,6 +136,6 @@ func TestDeserializeReaderAsJSON(t *testing.T) {
 
 	output := make(map[string]interface{})
 
-	assert.Nil(DeserializeReaderAsJSON(&output, ioutil.NopCloser(bytes.NewBuffer(contents))))
+	assert.Nil(DeserializeReaderAsJSON(&output, io.NopCloser(bytes.NewBuffer(contents))))
 	assert.Equal("bar", output["foo"])
 }

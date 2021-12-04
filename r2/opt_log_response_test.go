@@ -10,7 +10,7 @@ package r2
 import (
 	"context"
 	"fmt"
-	"io/ioutil"
+	"io"
 	"net/http"
 	"net/http/httptest"
 	"testing"
@@ -75,7 +75,7 @@ func logResponseHelper(a *assert.Assertions, ml *mockLogger, opt Option, body st
 	a.Nil(err)
 	a.NotNil(res)
 	a.Equal(res.StatusCode, http.StatusOK)
-	bodyBytes, err := ioutil.ReadAll(res.Body)
+	bodyBytes, err := io.ReadAll(res.Body)
 	a.Nil(err)
 	a.Equal(bodyBytes, []byte(body))
 

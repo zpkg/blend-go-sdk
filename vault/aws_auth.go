@@ -13,7 +13,6 @@ import (
 	"encoding/base64"
 	"encoding/json"
 	"io"
-	"io/ioutil"
 	"net/http"
 	"net/url"
 
@@ -148,12 +147,12 @@ func createVaultLoginRequest(roleName string, baseURL url.URL, request *http.Req
 	req := &http.Request{
 		URL:    &baseURL,
 		Method: MethodPost,
-		Body:   ioutil.NopCloser(bytes.NewReader(contents)),
+		Body:   io.NopCloser(bytes.NewReader(contents)),
 	}
 
 	req.GetBody = func() (io.ReadCloser, error) {
 		r := bytes.NewReader(contents)
-		return ioutil.NopCloser(r), nil
+		return io.NopCloser(r), nil
 	}
 
 	req.ContentLength = int64(len(contents))

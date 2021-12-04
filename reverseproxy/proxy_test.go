@@ -12,7 +12,6 @@ import (
 	"context"
 	"fmt"
 	"io"
-	"io/ioutil"
 	"net/http"
 	"net/http/httptest"
 	"net/url"
@@ -60,7 +59,7 @@ func Test_Proxy(t *testing.T) {
 	its.Empty(res.Header.Get("x-forwarded-proto"))
 	its.Empty(res.Header.Get("x-forwarded-port"))
 
-	fullBody, err := ioutil.ReadAll(res.Body)
+	fullBody, err := io.ReadAll(res.Body)
 	its.Nil(err)
 
 	mockedContents := string(fullBody)

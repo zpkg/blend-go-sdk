@@ -74,7 +74,7 @@ func (gc GoCalls) Check(filename string, contents []byte) RuleResult {
 					}
 				}
 				return false
-			case *ast.Ident:
+			case *ast.Ident: // check package local functions and built-ins
 				for _, fn := range gc {
 					if fn.Package == "" {
 						if isIdent(ft, fn.Func) {

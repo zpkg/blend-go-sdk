@@ -9,7 +9,7 @@ package web
 
 import (
 	"context"
-	"io/ioutil"
+	"io"
 	"log"
 	"net"
 	"testing"
@@ -102,7 +102,7 @@ func TestOptServerOptions(t *testing.T) {
 	app, err := New(
 		OptBindAddr("127.0.0.1:0"),
 		OptServerOptions(
-			webutil.OptHTTPServerErrorLog(log.New(ioutil.Discard, "", log.LstdFlags)),
+			webutil.OptHTTPServerErrorLog(log.New(io.Discard, "", log.LstdFlags)),
 		),
 	)
 	assert.Nil(err)

@@ -17,7 +17,7 @@ To send a request, simply:
 		// handle error
 	}
 	defer resp.Body.Close()
-	body, err := ioutil.ReadAll(resp.Body)
+	body, err := io.ReadAll(resp.Body)
 	// ...
 
 You can specify additional options as a variadic list of `Opt...` functions:

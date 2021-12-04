@@ -85,12 +85,12 @@ func (rt *RouteTree) Route(req *http.Request) (*Route, RouteParameters) {
 	methodRoot := rt.Routes[req.Method]
 	if methodRoot != nil {
 		route, params, shouldRedirectTrailingSlash := methodRoot.getValue(path)
-		if shouldRedirectTrailingSlash {
-			return rt.Route(rt.withTrailingSlash(req))
+		if req.Method != http.MethodConnect && path != "/" {
+			if shouldRedirectTrailingSlash && !rt.SkipTrailingSlashRedirects {
+				route, params, _ = methodRoot.getValue(rt.withPathAlternateTrailingSlash(path))
+			}
 		}
-		if route != nil {
-			return route, params
-		}
+		return route, params
 	}
 	return nil, nil
 }
@@ -148,15 +148,18 @@ func (rt *RouteTree) ServeHTTP(w http.ResponseWriter, req *http.Request) {
 // internal helpers
 //
 
-// withTrailingSlash returns the request with a `/` suffix on the url path.
-func (rt *RouteTree) withTrailingSlash(req *http.Request) *http.Request {
-	path := req.URL.Path
+// withPathAlternateTrailingSlash returns the request with a `/` suffix on the url path.
+func (rt *RouteTree) withPathAlternateTrailingSlash(path string) string {
+	// if the path has a slash already, try removing it
 	if len(path) > 1 && path[len(path)-1] == '/' {
-		req.URL.Path = path[:len(path)-1]
-	} else {
-		req.URL.Path = path + "/"
+		// try removing the slash
+		return path[:len(path)-1]
 	}
-	return req
+	if len(path) > 0 {
+		// try adding the slash
+		return path + "/"
+	}
+	return path
 }
 
 // redirectTrailingSlash redirects the request if a suffix trailing
@@ -166,7 +169,7 @@ func (rt *RouteTree) redirectTrailingSlash(w http.ResponseWriter, req *http.Requ
 	if req.Method != http.MethodGet {
 		code = http.StatusTemporaryRedirect // 307
 	}
-	req = rt.withTrailingSlash(req)
+	req.URL.Path = rt.withPathAlternateTrailingSlash(req.URL.Path)
 	http.Redirect(w, req, req.URL.String(), code)
 	return
 }

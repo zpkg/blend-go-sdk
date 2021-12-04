@@ -8,7 +8,6 @@ Use of this source code is governed by a MIT license that can be found in the LI
 package fileutil
 
 import (
-	"io/ioutil"
 	"os"
 	"sync"
 
@@ -17,7 +16,7 @@ import (
 
 // NewTemp creates a new temp file with given contents.
 func NewTemp(contents []byte) (*Temp, error) {
-	f, err := ioutil.TempFile("", "")
+	f, err := os.CreateTemp("", "")
 	if err != nil {
 		return nil, ex.New(err)
 	}

@@ -9,7 +9,7 @@ package web
 
 import (
 	"bytes"
-	"io/ioutil"
+	"io"
 	"net/http"
 	"os"
 	"time"
@@ -32,7 +32,7 @@ func NewCachedStaticFile(path string) (*CachedStaticFile, error) {
 		return nil, ex.New(err)
 	}
 
-	contents, err := ioutil.ReadAll(f)
+	contents, err := io.ReadAll(f)
 	if err != nil {
 		return nil, ex.New(err)
 	}

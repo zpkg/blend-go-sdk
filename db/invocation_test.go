@@ -11,7 +11,7 @@ import (
 	"bytes"
 	"context"
 	"fmt"
-	"io/ioutil"
+	"io"
 	"strings"
 	"sync"
 	"testing"
@@ -1072,7 +1072,7 @@ func Test_Invocation_metrics(t *testing.T) {
 	t.Parallel()
 	its := assert.New(t)
 
-	log := logger.All(logger.OptOutput(ioutil.Discard))
+	log := logger.All(logger.OptOutput(io.Discard))
 	defer log.Close()
 
 	done := make(chan struct{})

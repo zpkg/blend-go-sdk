@@ -10,7 +10,6 @@ package profanity
 import (
 	"fmt"
 	"io"
-	"io/ioutil"
 	"os"
 	"path/filepath"
 	"strings"
@@ -87,7 +86,7 @@ func (p *Profanity) Walk(path string, rules ...RuleSpec) error {
 
 		fullFilePath = filepath.Join(path, file.Name())
 		if p.Config.Files.Allow(fullFilePath) {
-			contents, err := ioutil.ReadFile(fullFilePath)
+			contents, err := os.ReadFile(fullFilePath)
 			if err != nil {
 				return err
 			}

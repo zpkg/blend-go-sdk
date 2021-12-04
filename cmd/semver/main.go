@@ -9,7 +9,7 @@ package main
 
 import (
 	"fmt"
-	"io/ioutil"
+	"io"
 	"os"
 	"strings"
 
@@ -52,9 +52,9 @@ func main() {
 
 func readContents(path string) (contents []byte, err error) {
 	if strings.TrimSpace(path) == "-" {
-		contents, err = ioutil.ReadAll(os.Stdin)
+		contents, err = io.ReadAll(os.Stdin)
 	} else {
-		contents, err = ioutil.ReadFile(path)
+		contents, err = os.ReadFile(path)
 	}
 	return
 }

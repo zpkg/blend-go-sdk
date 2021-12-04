@@ -10,7 +10,6 @@ package certutil
 import (
 	"crypto/x509"
 	"io"
-	"io/ioutil"
 	"os"
 	"path/filepath"
 	"testing"
@@ -21,7 +20,7 @@ import (
 func TestCertFileWatcher(t *testing.T) {
 	its := assert.New(t)
 
-	tempDir, err := ioutil.TempDir("", "")
+	tempDir, err := os.MkdirTemp("", "")
 	its.Nil(err)
 	defer func() { _ = os.RemoveAll(tempDir) }()
 

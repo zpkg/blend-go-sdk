@@ -8,7 +8,7 @@ Use of this source code is governed by a MIT license that can be found in the LI
 package webutil
 
 import (
-	"io/ioutil"
+	"io"
 	"net/http"
 
 	"github.com/blend/go-sdk/ex"
@@ -21,9 +21,10 @@ const (
 
 // PostedFile is a file that has been posted to an hc endpoint.
 type PostedFile struct {
-	Key      string
-	FileName string
-	Contents []byte
+	Key         string
+	FileName    string
+	Contents    []byte
+	ContentType string
 }
 
 // PostedFilesOptions are options for the PostedFiles function.
@@ -100,7 +101,7 @@ func readPostedFile(r *http.Request, key string) (*PostedFile, error) {
 		return nil, ex.New(err)
 	}
 	defer fileReader.Close()
-	fileContents, err := ioutil.ReadAll(fileReader)
+	fileContents, err := io.ReadAll(fileReader)
 	if err != nil {
 		return nil, ex.New(err)
 	}

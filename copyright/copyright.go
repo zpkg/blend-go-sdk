@@ -12,7 +12,6 @@ import (
 	"context"
 	"fmt"
 	"io"
-	"io/ioutil"
 	"os"
 	"path/filepath"
 	"regexp"
@@ -145,7 +144,7 @@ func (c Copyright) Walk(ctx context.Context, action Action, root string) error {
 // GetStdout returns standard out.
 func (c Copyright) GetStdout() io.Writer {
 	if c.QuietOrDefault() {
-		return ioutil.Discard
+		return io.Discard
 	}
 	if c.Stdout != nil {
 		return c.Stdout
@@ -156,7 +155,7 @@ func (c Copyright) GetStdout() io.Writer {
 // GetStderr returns standard error.
 func (c Copyright) GetStderr() io.Writer {
 	if c.QuietOrDefault() {
-		return ioutil.Discard
+		return io.Discard
 	}
 	if c.Stderr != nil {
 		return c.Stderr
@@ -194,7 +193,7 @@ func (c Copyright) inject(path string, info os.FileInfo, file, notice []byte) er
 	if injectedContents == nil {
 		return nil
 	}
-	return ioutil.WriteFile(path, injectedContents, info.Mode().Perm())
+	return os.WriteFile(path, injectedContents, info.Mode().Perm())
 }
 
 func (c Copyright) remove(path string, info os.FileInfo, file, notice []byte) error {
@@ -202,7 +201,7 @@ func (c Copyright) remove(path string, info os.FileInfo, file, notice []byte) er
 	if removedContents == nil {
 		return nil
 	}
-	return ioutil.WriteFile(path, removedContents, info.Mode().Perm())
+	return os.WriteFile(path, removedContents, info.Mode().Perm())
 }
 
 func (c Copyright) verify(path string, _ os.FileInfo, file, notice []byte) error {
@@ -284,7 +283,7 @@ func (c Copyright) processFile(action Action, noticeBody, path string, info os.F
 	if err != nil {
 		return err
 	}
-	fileContents, err := ioutil.ReadFile(path)
+	fileContents, err := os.ReadFile(path)
 	if err != nil {
 		return err
 	}

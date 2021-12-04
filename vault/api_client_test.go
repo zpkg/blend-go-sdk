@@ -12,7 +12,7 @@ import (
 	"context"
 	"encoding/base64"
 	"fmt"
-	"io/ioutil"
+	"io"
 	"net/http"
 	"net/http/httptest"
 	"net/url"
@@ -99,7 +99,7 @@ func TestVaultClientJSONBody(t *testing.T) {
 	assert.Nil(err)
 	defer output.Close()
 
-	contents, err := ioutil.ReadAll(output)
+	contents, err := io.ReadAll(output)
 	assert.Nil(err)
 	assert.Equal("{\"foo\":\"bar\"}\n", string(contents))
 }
@@ -158,7 +158,7 @@ func TestVaultCreateTransitKey(t *testing.T) {
 			mustURLf("%s/v1/transit/keys/%s", client.Remote.String(), key),
 			&http.Response{
 				StatusCode: http.StatusNoContent,
-				Body:       ioutil.NopCloser(bytes.NewBuffer([]byte{})),
+				Body:       io.NopCloser(bytes.NewBuffer([]byte{})),
 			},
 		)
 	client.Client = m
@@ -182,7 +182,7 @@ func TestVaultConfigureTransitKey(t *testing.T) {
 			mustURLf("%s/v1/transit/keys/%s/config", client.Remote.String(), key),
 			&http.Response{
 				StatusCode: http.StatusNoContent,
-				Body:       ioutil.NopCloser(bytes.NewBuffer([]byte{})),
+				Body:       io.NopCloser(bytes.NewBuffer([]byte{})),
 			},
 		)
 	client.Client = m
@@ -224,7 +224,7 @@ func TestVaultDeleteTransitKey(t *testing.T) {
 			mustURLf("%s/v1/transit/keys/%s", client.Remote.String(), key),
 			&http.Response{
 				StatusCode: http.StatusNoContent,
-				Body:       ioutil.NopCloser(bytes.NewBuffer([]byte{})),
+				Body:       io.NopCloser(bytes.NewBuffer([]byte{})),
 			},
 		)
 	client.Client = m
@@ -262,7 +262,7 @@ func TestVaultHandleRedirects(t *testing.T) {
 	defer res.Body.Close()
 	assert.Equal(http.StatusOK, res.StatusCode)
 
-	contents, err := ioutil.ReadAll(res.Body)
+	contents, err := io.ReadAll(res.Body)
 	assert.Nil(err)
 	assert.Equal(rawResponse, string(contents))
 }
@@ -330,14 +330,14 @@ func TestVaultBatchEncryptDecrypt_Happy(t *testing.T) {
 			mustURLf("%s/v1/transit/encrypt/%s", client.Remote.String(), key),
 			&http.Response{
 				StatusCode: http.StatusOK,
-				Body:       ioutil.NopCloser(bytes.NewBuffer(batchEncryptResultBytes)),
+				Body:       io.NopCloser(bytes.NewBuffer(batchEncryptResultBytes)),
 			},
 		).With(
 		"POST",
 		mustURLf("%s/v1/transit/decrypt/%s", client.Remote.String(), key),
 		&http.Response{
 			StatusCode: http.StatusOK,
-			Body:       ioutil.NopCloser(bytes.NewBuffer(batchDecryptResultBytes)),
+			Body:       io.NopCloser(bytes.NewBuffer(batchDecryptResultBytes)),
 		},
 	)
 	client.Client = m
@@ -379,14 +379,14 @@ func TestVaultBatchEncryptDecrypt_EmptyInput(t *testing.T) {
 			mustURLf("%s/v1/transit/encrypt/%s", client.Remote.String(), key),
 			&http.Response{
 				StatusCode: http.StatusBadRequest,
-				Body:       ioutil.NopCloser(bytes.NewBuffer(errorResultBytes)),
+				Body:       io.NopCloser(bytes.NewBuffer(errorResultBytes)),
 			},
 		).With(
 		"POST",
 		mustURLf("%s/v1/transit/decrypt/%s", client.Remote.String(), key),
 		&http.Response{
 			StatusCode: http.StatusBadRequest,
-			Body:       ioutil.NopCloser(bytes.NewBuffer(errorResultBytes)),
+			Body:       io.NopCloser(bytes.NewBuffer(errorResultBytes)),
 		},
 	)
 	client.Client = m
@@ -447,7 +447,7 @@ func TestVaultBatchEncrypt_Error(t *testing.T) {
 			mustURLf("%s/v1/transit/encrypt/%s", client.Remote.String(), key),
 			&http.Response{
 				StatusCode: http.StatusOK,
-				Body:       ioutil.NopCloser(bytes.NewBuffer(batchEncryptResultBytes)),
+				Body:       io.NopCloser(bytes.NewBuffer(batchEncryptResultBytes)),
 			},
 		)
 	client.Client = m
@@ -506,7 +506,7 @@ func TestVaultBatchDecrypt_Error(t *testing.T) {
 			mustURLf("%s/v1/transit/decrypt/%s", client.Remote.String(), key),
 			&http.Response{
 				StatusCode: http.StatusOK,
-				Body:       ioutil.NopCloser(bytes.NewBuffer(batchDecryptResultBytes)),
+				Body:       io.NopCloser(bytes.NewBuffer(batchDecryptResultBytes)),
 			},
 		)
 	client.Client = m
@@ -534,7 +534,7 @@ func TestVaultHmac(t *testing.T) {
 			mustURLf("%s/v1/transit/hmac/%s/sha2-256", client.Remote.String(), key),
 			&http.Response{
 				StatusCode: http.StatusOK,
-				Body:       ioutil.NopCloser(bytes.NewBuffer([]byte(result))),
+				Body:       io.NopCloser(bytes.NewBuffer([]byte(result))),
 			},
 		)
 	client.Client = m
@@ -561,7 +561,7 @@ func TestVaultHmacError(t *testing.T) {
 			mustURLf("%s/v1/transit/hmac/%s/sha2-256", client.Remote.String(), key),
 			&http.Response{
 				StatusCode: http.StatusOK,
-				Body:       ioutil.NopCloser(bytes.NewBuffer([]byte(result))),
+				Body:       io.NopCloser(bytes.NewBuffer([]byte(result))),
 			},
 		)
 	client.Client = m

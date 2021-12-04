@@ -10,7 +10,6 @@ package r2
 import (
 	"bytes"
 	"io"
-	"io/ioutil"
 	"net/http"
 	"time"
 
@@ -50,7 +49,7 @@ func OptLogResponseWithBody(log logger.Triggerable) Option {
 			return err
 		}
 		// set the body to the read contents
-		res.Body = ioutil.NopCloser(bytes.NewReader(buffer.Bytes()))
+		res.Body = io.NopCloser(bytes.NewReader(buffer.Bytes()))
 
 		event := NewEvent(FlagResponse,
 			OptEventRequest(req),

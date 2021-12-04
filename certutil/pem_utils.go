@@ -11,7 +11,7 @@ import (
 	"crypto/rsa"
 	"crypto/x509"
 	"encoding/pem"
-	"io/ioutil"
+	"os"
 
 	"github.com/blend/go-sdk/ex"
 )
@@ -54,7 +54,7 @@ func ParseCertPEM(certPem []byte) (output []*x509.Certificate, err error) {
 
 // ReadPrivateKeyPEMFromPath reads a private key pem from a given path.
 func ReadPrivateKeyPEMFromPath(keyPath string) (*rsa.PrivateKey, error) {
-	contents, err := ioutil.ReadFile(keyPath)
+	contents, err := os.ReadFile(keyPath)
 	if err != nil {
 		return nil, ex.New(err, ex.OptMessagef("key path: %s", keyPath))
 	}

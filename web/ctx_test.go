@@ -9,7 +9,7 @@ package web
 
 import (
 	"bytes"
-	"io/ioutil"
+	"io"
 	"net/url"
 	"testing"
 	"time"
@@ -202,7 +202,7 @@ func TestCtxPostBodyAsForm(t *testing.T) {
 
 	ctx := MockCtx("POST", "/")
 	ctx.Request.Header.Set(webutil.HeaderContentType, webutil.ContentTypeApplicationFormEncoded)
-	ctx.Request.Body = ioutil.NopCloser(bytes.NewReader(postBody))
+	ctx.Request.Body = io.NopCloser(bytes.NewReader(postBody))
 
 	var p PostFormTest
 	assert.Nil(ctx.PostBodyAsForm(&p))

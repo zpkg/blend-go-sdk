@@ -10,7 +10,7 @@ package cron
 import (
 	"context"
 	"fmt"
-	"io/ioutil"
+	"io"
 	"sync"
 	"testing"
 	"time"
@@ -121,7 +121,7 @@ func Test_JobManager_onError(t *testing.T) {
 	t.Parallel()
 	its := assert.New(t)
 
-	agent := logger.All(logger.OptOutput(ioutil.Discard))
+	agent := logger.All(logger.OptOutput(io.Discard))
 	defer agent.Close()
 
 	manager := New(

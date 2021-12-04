@@ -13,7 +13,6 @@ import (
 	"fmt"
 	"io"
 	"io/fs"
-	"io/ioutil"
 	"os"
 	"path/filepath"
 	"strings"
@@ -453,7 +452,7 @@ const (
 func createTestFS(its *assert.Assertions) (tempDir string, revert func()) {
 	// create a temp dir
 	var err error
-	tempDir, err = ioutil.TempDir("", "copyright_test")
+	tempDir, err = os.MkdirTemp("", "copyright_test")
 	its.Nil(err)
 	revert = func() {
 		os.RemoveAll(tempDir)
@@ -468,40 +467,40 @@ func createTestFS(its *assert.Assertions) (tempDir string, revert func()) {
 	err = os.MkdirAll(filepath.Join(tempDir, "not-bar", "not-foo"), 0755)
 	its.Nil(err)
 
-	err = ioutil.WriteFile(filepath.Join(tempDir, "file0.py"), []byte(pyFile0), 0644)
+	err = os.WriteFile(filepath.Join(tempDir, "file0.py"), []byte(pyFile0), 0644)
 	its.Nil(err)
 
-	err = ioutil.WriteFile(filepath.Join(tempDir, "file0.ts"), []byte(tsFile0), 0644)
+	err = os.WriteFile(filepath.Join(tempDir, "file0.ts"), []byte(tsFile0), 0644)
 	its.Nil(err)
 
-	err = ioutil.WriteFile(filepath.Join(tempDir, "file0.go"), []byte(goFile0), 0644)
+	err = os.WriteFile(filepath.Join(tempDir, "file0.go"), []byte(goFile0), 0644)
 	its.Nil(err)
 
-	err = ioutil.WriteFile(filepath.Join(tempDir, "foo", "bar", "file0.py"), []byte(pyFile0), 0644)
+	err = os.WriteFile(filepath.Join(tempDir, "foo", "bar", "file0.py"), []byte(pyFile0), 0644)
 	its.Nil(err)
 
-	err = ioutil.WriteFile(filepath.Join(tempDir, "foo", "bar", "file0.ts"), []byte(tsFile0), 0644)
+	err = os.WriteFile(filepath.Join(tempDir, "foo", "bar", "file0.ts"), []byte(tsFile0), 0644)
 	its.Nil(err)
 
-	err = ioutil.WriteFile(filepath.Join(tempDir, "foo", "bar", "file0.go"), []byte(goFile0), 0644)
+	err = os.WriteFile(filepath.Join(tempDir, "foo", "bar", "file0.go"), []byte(goFile0), 0644)
 	its.Nil(err)
 
-	err = ioutil.WriteFile(filepath.Join(tempDir, "bar", "foo", "file0.py"), []byte(pyFile0), 0644)
+	err = os.WriteFile(filepath.Join(tempDir, "bar", "foo", "file0.py"), []byte(pyFile0), 0644)
 	its.Nil(err)
 
-	err = ioutil.WriteFile(filepath.Join(tempDir, "bar", "foo", "file0.ts"), []byte(tsFile0), 0644)
+	err = os.WriteFile(filepath.Join(tempDir, "bar", "foo", "file0.ts"), []byte(tsFile0), 0644)
 	its.Nil(err)
 
-	err = ioutil.WriteFile(filepath.Join(tempDir, "bar", "foo", "file0.go"), []byte(goFile0), 0644)
+	err = os.WriteFile(filepath.Join(tempDir, "bar", "foo", "file0.go"), []byte(goFile0), 0644)
 	its.Nil(err)
 
-	err = ioutil.WriteFile(filepath.Join(tempDir, "not-bar", "not-foo", "file0.py"), []byte(pyFile0), 0644)
+	err = os.WriteFile(filepath.Join(tempDir, "not-bar", "not-foo", "file0.py"), []byte(pyFile0), 0644)
 	its.Nil(err)
 
-	err = ioutil.WriteFile(filepath.Join(tempDir, "not-bar", "not-foo", "file0.ts"), []byte(tsFile0), 0644)
+	err = os.WriteFile(filepath.Join(tempDir, "not-bar", "not-foo", "file0.ts"), []byte(tsFile0), 0644)
 	its.Nil(err)
 
-	err = ioutil.WriteFile(filepath.Join(tempDir, "not-bar", "not-foo", "file0.go"), []byte(goFile0), 0644)
+	err = os.WriteFile(filepath.Join(tempDir, "not-bar", "not-foo", "file0.go"), []byte(goFile0), 0644)
 	its.Nil(err)
 	return
 }
@@ -610,11 +609,11 @@ func Test_Copyright_Inject(t *testing.T) {
 	err := c.Inject(context.TODO(), tempDir)
 	its.Nil(err)
 
-	contents, err := ioutil.ReadFile(filepath.Join(tempDir, "bar", "foo", "file0.py"))
+	contents, err := os.ReadFile(filepath.Join(tempDir, "bar", "foo", "file0.py"))
 	its.Nil(err)
 	its.HasPrefix(string(contents), "#\n# Copyright")
 
-	contents, err = ioutil.ReadFile(filepath.Join(tempDir, "bar", "foo", "file0.ts"))
+	contents, err = os.ReadFile(filepath.Join(tempDir, "bar", "foo", "file0.ts"))
 	its.Nil(err)
 	its.HasPrefix(string(contents), "/**\n * Copyright")
 }
@@ -623,7 +622,7 @@ func Test_Copyright_Inject_Shebang(t *testing.T) {
 	t.Parallel()
 	its := assert.New(t)
 
-	tempDir, err := ioutil.TempDir("", "copyright_test")
+	tempDir, err := os.MkdirTemp("", "copyright_test")
 	its.Nil(err)
 	t.Cleanup(func() { os.RemoveAll(tempDir) })
 
@@ -641,7 +640,7 @@ func Test_Copyright_Inject_Shebang(t *testing.T) {
 		"",
 	}, "\n")
 	filename := filepath.Join(tempDir, "shift.py")
-	err = ioutil.WriteFile(filename, []byte(contents), 0755)
+	err = os.WriteFile(filename, []byte(contents), 0755)
 	its.Nil(err)
 
 	// Actually inject
@@ -650,7 +649,7 @@ func Test_Copyright_Inject_Shebang(t *testing.T) {
 	its.Nil(err)
 
 	// Verify injected contents are as expected
-	contentInjected, err := ioutil.ReadFile(filename)
+	contentInjected, err := os.ReadFile(filename)
 	its.Nil(err)
 	expected := strings.Join([]string{
 		"\r\t",
@@ -674,7 +673,7 @@ func Test_Copyright_Inject_Shebang(t *testing.T) {
 	// Verify no-op if notice header is already present
 	err = c.Inject(context.TODO(), tempDir)
 	its.Nil(err)
-	contentInjected, err = ioutil.ReadFile(filename)
+	contentInjected, err = os.ReadFile(filename)
 	its.Nil(err)
 	its.Equal(expected, string(contentInjected))
 }
@@ -707,7 +706,7 @@ func Test_Copyright_Verify_Shebang(t *testing.T) {
 	t.Parallel()
 	its := assert.New(t)
 
-	tempDir, err := ioutil.TempDir("", "copyright_test")
+	tempDir, err := os.MkdirTemp("", "copyright_test")
 	its.Nil(err)
 	t.Cleanup(func() { os.RemoveAll(tempDir) })
 
@@ -729,7 +728,7 @@ func Test_Copyright_Verify_Shebang(t *testing.T) {
 		"",
 	}, "\n")
 	filename := filepath.Join(tempDir, "shift.py")
-	err = ioutil.WriteFile(filename, []byte(contents), 0755)
+	err = os.WriteFile(filename, []byte(contents), 0755)
 	its.Nil(err)
 
 	// Verify present
@@ -753,7 +752,7 @@ func Test_Copyright_Verify_Shebang(t *testing.T) {
 		"    main()",
 		"",
 	}, "\n")
-	err = ioutil.WriteFile(filename, []byte(contents), 0755)
+	err = os.WriteFile(filename, []byte(contents), 0755)
 	its.Nil(err)
 	err = c.Verify(context.TODO(), tempDir)
 	its.Equal("failure; one or more steps failed", fmt.Sprintf("%v", err))
@@ -789,7 +788,7 @@ func Test_Copyright_Remove_Shebang(t *testing.T) {
 	t.Parallel()
 	its := assert.New(t)
 
-	tempDir, err := ioutil.TempDir("", "copyright_test")
+	tempDir, err := os.MkdirTemp("", "copyright_test")
 	its.Nil(err)
 	t.Cleanup(func() { os.RemoveAll(tempDir) })
 
@@ -811,7 +810,7 @@ func Test_Copyright_Remove_Shebang(t *testing.T) {
 		"",
 	}, "\n")
 	filename := filepath.Join(tempDir, "shift.py")
-	err = ioutil.WriteFile(filename, []byte(contents), 0755)
+	err = os.WriteFile(filename, []byte(contents), 0755)
 	its.Nil(err)
 
 	// Actually remove
@@ -820,7 +819,7 @@ func Test_Copyright_Remove_Shebang(t *testing.T) {
 	its.Nil(err)
 
 	// Verify removed contents are as expected
-	contentRemoved, err := ioutil.ReadFile(filename)
+	contentRemoved, err := os.ReadFile(filename)
 	its.Nil(err)
 	expected := strings.Join([]string{
 		"#!/usr/bin/env python",
@@ -837,7 +836,7 @@ func Test_Copyright_Remove_Shebang(t *testing.T) {
 	// Verify no-op if notice header is already removed
 	err = c.Remove(context.TODO(), tempDir)
 	its.Nil(err)
-	contentRemoved, err = ioutil.ReadFile(filename)
+	contentRemoved, err = os.ReadFile(filename)
 	its.Nil(err)
 	its.Equal(expected, string(contentRemoved))
 }
