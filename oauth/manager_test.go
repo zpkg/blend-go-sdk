@@ -1,6 +1,6 @@
 /*
 
-Copyright (c) 2021 - Present. Blend Labs, Inc. All rights reserved
+Copyright (c) 2022 - Present. Blend Labs, Inc. All rights reserved
 Use of this source code is governed by a MIT license that can be found in the LICENSE file.
 
 */
@@ -19,9 +19,11 @@ import (
 
 	"golang.org/x/oauth2"
 
+	"github.com/golang-jwt/jwt"
+
 	"github.com/blend/go-sdk/assert"
 	"github.com/blend/go-sdk/crypto"
-	"github.com/blend/go-sdk/jwt"
+	"github.com/blend/go-sdk/jwk"
 	"github.com/blend/go-sdk/r2"
 	"github.com/blend/go-sdk/uuid"
 	"github.com/blend/go-sdk/webutil"
@@ -34,7 +36,7 @@ func Test_Manager_Finish(t *testing.T) {
 	it.Nil(err)
 	pk1, err := jwt.ParseRSAPrivateKeyFromPEM([]byte(pk1pem))
 	it.Nil(err)
-	keys := []jwt.JWK{
+	keys := []jwk.JWK{
 		createJWK(pk0),
 		createJWK(pk1),
 	}
@@ -45,7 +47,7 @@ func Test_Manager_Finish(t *testing.T) {
 		rw.Header().Set("Date", time.Now().UTC().Format(http.TimeFormat))                        // set date
 		rw.WriteHeader(200)
 		_ = json.NewEncoder(rw).Encode(struct {
-			Keys []jwt.JWK `json:"keys"`
+			Keys []jwk.JWK `json:"keys"`
 		}{
 			Keys: keys,
 		})
@@ -126,7 +128,7 @@ func Test_Manager_Finish_disallowedDomain(t *testing.T) {
 	it.Nil(err)
 	pk1, err := jwt.ParseRSAPrivateKeyFromPEM([]byte(pk1pem))
 	it.Nil(err)
-	keys := []jwt.JWK{
+	keys := []jwk.JWK{
 		createJWK(pk0),
 		createJWK(pk1),
 	}
@@ -137,7 +139,7 @@ func Test_Manager_Finish_disallowedDomain(t *testing.T) {
 		rw.Header().Set("Date", time.Now().UTC().Format(http.TimeFormat))                        // set date
 		rw.WriteHeader(200)
 		_ = json.NewEncoder(rw).Encode(struct {
-			Keys []jwt.JWK `json:"keys"`
+			Keys []jwk.JWK `json:"keys"`
 		}{
 			Keys: keys,
 		})
@@ -214,7 +216,7 @@ func Test_Manager_Finish_failsAudience(t *testing.T) {
 	it.Nil(err)
 	pk1, err := jwt.ParseRSAPrivateKeyFromPEM([]byte(pk1pem))
 	it.Nil(err)
-	keys := []jwt.JWK{
+	keys := []jwk.JWK{
 		createJWK(pk0),
 		createJWK(pk1),
 	}
@@ -225,7 +227,7 @@ func Test_Manager_Finish_failsAudience(t *testing.T) {
 		rw.Header().Set("Date", time.Now().UTC().Format(http.TimeFormat))                        // set date
 		rw.WriteHeader(200)
 		_ = json.NewEncoder(rw).Encode(struct {
-			Keys []jwt.JWK `json:"keys"`
+			Keys []jwk.JWK `json:"keys"`
 		}{
 			Keys: keys,
 		})
@@ -279,7 +281,7 @@ func Test_Manager_Finish_failsVerification(t *testing.T) {
 	it.Nil(err)
 	pk2, err := jwt.ParseRSAPrivateKeyFromPEM([]byte(pk2pem))
 	it.Nil(err)
-	keys := []jwt.JWK{
+	keys := []jwk.JWK{
 		createJWK(pk0),
 		createJWK(pk1),
 	}
@@ -290,7 +292,7 @@ func Test_Manager_Finish_failsVerification(t *testing.T) {
 		rw.Header().Set("Date", time.Now().UTC().Format(http.TimeFormat))                        // set date
 		rw.WriteHeader(200)
 		_ = json.NewEncoder(rw).Encode(struct {
-			Keys []jwt.JWK `json:"keys"`
+			Keys []jwk.JWK `json:"keys"`
 		}{
 			Keys: keys,
 		})

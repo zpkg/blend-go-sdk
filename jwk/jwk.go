@@ -5,7 +5,7 @@ Use of this source code is governed by a MIT license that can be found in the LI
 
 */
 
-package jwt
+package jwk
 
 import (
 	"crypto/rsa"
@@ -14,8 +14,8 @@ import (
 )
 
 type (
-	// JWKSet represents a set of JWKs as defined by https://tools.ietf.org/html/rfc7517#section-5
-	JWKSet struct {
+	// Set represents a set of JWKs as defined by https://tools.ietf.org/html/rfc7517#section-5
+	Set struct {
 		Keys []JWK `json:"keys"`
 	}
 

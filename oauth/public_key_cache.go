@@ -1,6 +1,6 @@
 /*
 
-Copyright (c) 2021 - Present. Blend Labs, Inc. All rights reserved
+Copyright (c) 2022 - Present. Blend Labs, Inc. All rights reserved
 Use of this source code is governed by a MIT license that can be found in the LICENSE file.
 
 */
@@ -14,8 +14,10 @@ import (
 	"sync"
 	"time"
 
+	"github.com/golang-jwt/jwt"
+
 	"github.com/blend/go-sdk/ex"
-	"github.com/blend/go-sdk/jwt"
+	"github.com/blend/go-sdk/jwk"
 	"github.com/blend/go-sdk/r2"
 )
 
@@ -46,7 +48,7 @@ func (pkc *PublicKeyCache) Keyfunc(ctx context.Context) jwt.Keyfunc {
 
 // Get gets a cert by id.
 func (pkc *PublicKeyCache) Get(ctx context.Context, id string) (*rsa.PublicKey, error) {
-	var jwk jwt.JWK
+	var jwk jwk.JWK
 	var ok bool
 	pkc.mu.RLock()
 	if pkc.current != nil && !pkc.current.IsExpired() {
@@ -110,12 +112,12 @@ func (pkc *PublicKeyCache) FetchPublicKeys(ctx context.Context, opts ...r2.Optio
 }
 
 type fetchPublicKeysResponse struct {
-	Keys []jwt.JWK `json:"keys"`
+	Keys []jwk.JWK `json:"keys"`
 }
 
 // jwkLookup creates a jwk lookup.
-func jwkLookup(jwks []jwt.JWK) map[string]jwt.JWK {
-	output := make(map[string]jwt.JWK)
+func jwkLookup(jwks []jwk.JWK) map[string]jwk.JWK {
+	output := make(map[string]jwk.JWK)
 	for _, jwk := range jwks {
 		// We don't check that `jwk.KID` collides with an existing key. We trust that
 		// the public certs URL (e.g. the one from Google) does not include duplicates.
@@ -128,7 +130,7 @@ func jwkLookup(jwks []jwt.JWK) map[string]jwt.JWK {
 type PublicKeysResponse struct {
 	CacheControl string
 	Expires      time.Time
-	Keys         map[string]jwt.JWK
+	Keys         map[string]jwk.JWK
 }
 
 // IsExpired returns if the cert response is expired.

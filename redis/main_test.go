@@ -1,6 +1,6 @@
 /*
 
-Copyright (c) 2021 - Present. Blend Labs, Inc. All rights reserved
+Copyright (c) 2022 - Present. Blend Labs, Inc. All rights reserved
 Use of this source code is governed by a MIT license that can be found in the LICENSE file.
 
 */
@@ -10,7 +10,7 @@ package redis_test
 import (
 	"context"
 
-	"github.com/mediocregopher/radix/v4"
+	radix "github.com/mediocregopher/radix/v4"
 )
 
 // MockRadixClient implements radix.Client for testing.

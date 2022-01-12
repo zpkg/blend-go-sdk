@@ -1,6 +1,6 @@
 /*
 
-Copyright (c) 2021 - Present. Blend Labs, Inc. All rights reserved
+Copyright (c) 2022 - Present. Blend Labs, Inc. All rights reserved
 Use of this source code is governed by a MIT license that can be found in the LICENSE file.
 
 */
@@ -11,8 +11,9 @@ import (
 	"context"
 	"time"
 
+	"github.com/golang-jwt/jwt"
+
 	"github.com/blend/go-sdk/ex"
-	"github.com/blend/go-sdk/jwt"
 )
 
 const (
@@ -52,7 +53,7 @@ func (jwtm JWTManager) SerializeHandler(_ context.Context, session *Session) (ou
 		return
 	}
 
-	token := jwt.NewWithClaims(jwt.SigningMethodHMAC512, jwtm.Claims(session))
+	token := jwt.NewWithClaims(jwt.SigningMethodHS512, jwtm.Claims(session))
 	output, err = token.SignedString(key)
 	return
 }
@@ -76,7 +77,7 @@ func (jwtm JWTManager) FetchHandler(_ context.Context, sessionValue string) (*Se
 // Claims returns the sesion as a JWT standard claims object.
 func (jwtm JWTManager) Claims(session *Session) *jwt.StandardClaims {
 	return &jwt.StandardClaims{
-		ID:        session.SessionID,
+		Id:        session.SessionID,
 		Audience:  session.BaseURL,
 		Issuer:    "go-web",
 		Subject:   session.UserID,
@@ -88,7 +89,7 @@ func (jwtm JWTManager) Claims(session *Session) *jwt.StandardClaims {
 // FromClaims returns a session from a given claims set.
 func (jwtm JWTManager) FromClaims(claims *jwt.StandardClaims) *Session {
 	return &Session{
-		SessionID:  claims.ID,
+		SessionID:  claims.Id,
 		BaseURL:    claims.Audience,
 		UserID:     claims.Subject,
 		CreatedUTC: time.Unix(claims.IssuedAt, 0).In(time.UTC),
