@@ -143,7 +143,7 @@ func (e Event) WriteText(tf logger.TextFormatter, wr io.Writer) {
 	}
 	if len(e.Args) > 0 {
 		fmt.Fprint(wr, logger.Space)
-		fmt.Fprintf(wr, "%s", tf.Colorize(strings.Join(e.Args, ", "), ansi.ColorLightWhite))
+		fmt.Fprintf(wr, "%s", strings.Join(e.Args, ", "))
 	}
 
 	fmt.Fprint(wr, logger.Space)

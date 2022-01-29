@@ -9,8 +9,8 @@ package stringutil
 
 import "strings"
 
-// Glob constants
 const (
+	// GlobStar is the "match anything" constant.
 	GlobStar = "*"
 )
 

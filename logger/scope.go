@@ -231,7 +231,7 @@ func (sc Scope) FatalContext(ctx context.Context, err error, opts ...ErrorEventO
 // and append them to values already on the scope.
 func (sc Scope) FromContext(ctx context.Context) Scope {
 	return NewScope(sc.Logger,
-		OptScopePath(append(sc.Path, GetPath(ctx)...)...),
+		OptScopePath(append(GetPath(ctx), sc.Path...)...),
 		OptScopeLabels(sc.Labels, GetLabels(ctx)),
 		OptScopeAnnotations(sc.Annotations, GetAnnotations(ctx)),
 	)
@@ -239,7 +239,7 @@ func (sc Scope) FromContext(ctx context.Context) Scope {
 
 // ApplyContext applies the scope fields to a given context.
 func (sc Scope) ApplyContext(ctx context.Context) context.Context {
-	ctx = WithPath(ctx, append(sc.Path, GetPath(ctx)...)...)
+	ctx = WithPath(ctx, append(GetPath(ctx), sc.Path...)...)
 	ctx = WithLabels(ctx, sc.Labels) // treated specially because maps are references
 	ctx = WithAnnotations(ctx, CombineAnnotations(sc.Annotations, GetAnnotations(ctx)))
 	return ctx

@@ -66,9 +66,18 @@ func GetTimestamp(ctx context.Context) time.Time {
 
 type pathKey struct{}
 
-// WithPath returns a new context with a given additional path segment(s).
+// WithPath returns a new context with a given path segment(s).
+//
+// NOTE: This overwrites any _existing_ path context values.
+//
+// If you want to _append_ path segments, use `logger.WithPathAppend(...)`.
 func WithPath(ctx context.Context, path ...string) context.Context {
 	return context.WithValue(ctx, pathKey{}, path)
+}
+
+// WithPathAppend appends a given path segment to a context.
+func WithPathAppend(ctx context.Context, path ...string) context.Context {
+	return context.WithValue(ctx, pathKey{}, append(GetPath(ctx), path...))
 }
 
 // GetPath gets a path off a context.

@@ -75,6 +75,14 @@ func (srb *SyncRingBuffer) Dequeue() (val interface{}) {
 	return
 }
 
+// DequeueBack removes the last (newest) element from the RingBuffer.
+func (srb *SyncRingBuffer) DequeueBack() (val interface{}) {
+	srb.syncRoot.Lock()
+	val = srb.innerBuffer.DequeueBack()
+	srb.syncRoot.Unlock()
+	return
+}
+
 // Peek returns but does not remove the first element.
 func (srb *SyncRingBuffer) Peek() (val interface{}) {
 	srb.syncRoot.Lock()

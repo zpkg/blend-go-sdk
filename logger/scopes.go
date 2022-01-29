@@ -154,8 +154,8 @@ func (s Scopes) Scopes() []string {
 // isScopeEnabled returns if a scopePath is enabled strictly by
 // a lookup to the underlying scopes map.
 func (s Scopes) isScopeEnabled(scopePath string) bool {
-	for expected, enabled := range s.scopes {
-		if s.matches(expected, scopePath) {
+	for pattern, enabled := range s.scopes {
+		if s.matches(scopePath, pattern) {
 			return enabled
 		}
 	}
@@ -167,9 +167,9 @@ func (s Scopes) isScopeEnabled(scopePath string) bool {
 // that is, has a matching glob in the scopes map that is set to false.
 //
 // it is differentiated from `isScopeEnabled`
-func (s Scopes) isScopeExplicitlyDisabled(scopePath string) bool {
-	for expected, enabled := range s.scopes {
-		if !enabled && s.matches(expected, scopePath) {
+func (s Scopes) isScopeExplicitlyDisabled(subj string) bool {
+	for pattern, enabled := range s.scopes {
+		if !enabled && s.matches(subj, pattern) {
 			return true
 		}
 	}
@@ -177,6 +177,7 @@ func (s Scopes) isScopeExplicitlyDisabled(scopePath string) bool {
 	return false
 }
 
-func (s Scopes) matches(expected, actual string) bool {
-	return stringutil.Glob(actual, expected)
+func (s Scopes) matches(subj, pattern string) (output bool) {
+	output = stringutil.Glob(subj, pattern)
+	return
 }

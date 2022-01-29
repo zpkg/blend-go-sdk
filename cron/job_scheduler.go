@@ -252,8 +252,6 @@ func (js *JobScheduler) Cancel() error {
 // It can be aborted with the scheduler's async.Latch, or calling `.Stop()`.
 // If this function exits for any reason, it will mark the scheduler as stopped.
 func (js *JobScheduler) RunLoop() {
-	ctx := js.withBaseContext(js.Background())
-
 	js.Latch.Started()
 	defer func() {
 		js.Latch.Stopped()
@@ -281,8 +279,8 @@ func (js *JobScheduler) RunLoop() {
 		select {
 		case <-runAt:
 			if js.CanBeScheduled() {
-				if _, _, err := js.RunAsyncContext(ctx); err != nil {
-					_ = js.error(ctx, err)
+				if _, _, err := js.RunAsyncContext(js.Background()); err != nil {
+					_ = js.error(js.Background(), err)
 				}
 			}
 
@@ -472,7 +470,7 @@ func (js *JobScheduler) withBaseContext(ctx context.Context) context.Context {
 	if typed, ok := js.Job.(BackgroundProvider); ok {
 		ctx = typed.Background(ctx)
 	}
-	ctx = logger.WithPath(ctx, js.Name())
+	ctx = logger.WithPathAppend(ctx, js.Name())
 	ctx = WithJobScheduler(ctx, js)
 	return ctx
 }
@@ -487,8 +485,7 @@ func (js *JobScheduler) withTimeoutOrCancel(ctx context.Context, timeout time.Du
 func (js *JobScheduler) withInvocationContext(ctx context.Context) (context.Context, *JobInvocation) {
 	ji := NewJobInvocation(js.Name())
 	ji.Parameters = MergeJobParameterValues(js.Config().ParameterValues, GetJobParameterValues(ctx))
-
-	ctx = logger.WithPath(ctx, ji.ID)
+	ctx = logger.WithPathAppend(ctx, ji.ID)
 	ctx, ji.Cancel = js.withTimeoutOrCancel(ctx, js.Config().TimeoutOrDefault())
 	ctx = WithJobInvocation(ctx, ji)
 	ctx = WithJobParameterValues(ctx, ji.Parameters)

@@ -8,6 +8,7 @@ Use of this source code is governed by a MIT license that can be found in the LI
 package status
 
 import (
+	"net/http"
 	"time"
 
 	"github.com/blend/go-sdk/async"
@@ -53,6 +54,13 @@ func OptTimeout(timeout time.Duration) ControllerOption {
 	}
 }
 
+// OptUseBareMethods returns an option that sets if we should use bare methods.
+func OptUseBareMethods(useBareMethods bool) ControllerOption {
+	return func(c *Controller) {
+		c.UseBareMethods = useBareMethods
+	}
+}
+
 // OptCheck adds an sla check for a given service.
 func OptCheck(serviceName string, check Checker) ControllerOption {
 	return func(c *Controller) {
@@ -81,13 +89,20 @@ type Controller struct {
 	Checks         *Freeform
 	TrackedActions *TrackedActionAggregator
 	Middleware     []web.Middleware
+	UseBareMethods bool
 }
 
 // Register adds the controller's routes to the app.
 func (c Controller) Register(app *web.App) {
-	app.GET("/status", c.getStatus, c.Middleware...)
-	app.GET("/status/sla", c.getStatusSLA, c.Middleware...)
-	app.GET("/status/details", c.getStatusDetails, c.Middleware...)
+	if c.UseBareMethods {
+		app.MethodBare(http.MethodGet, "/status", c.getStatus, c.Middleware...)
+		app.MethodBare(http.MethodGet, "/status/sla", c.getStatusSLA, c.Middleware...)
+		app.MethodBare(http.MethodGet, "/status/details", c.getStatusDetails, c.Middleware...)
+	} else {
+		app.GET("/status", c.getStatus, c.Middleware...)
+		app.GET("/status/sla", c.getStatusSLA, c.Middleware...)
+		app.GET("/status/details", c.getStatusDetails, c.Middleware...)
+	}
 }
 
 // Interceptor returns a new interceptor for a given serviceName.

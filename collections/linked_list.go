@@ -13,9 +13,18 @@ type listNode struct {
 	Value    interface{}
 }
 
-// NewLinkedList returns a new Queue instance.
+// NewLinkedList returns a new linked list instance.
 func NewLinkedList() *LinkedList {
 	return &LinkedList{}
+}
+
+// NewLinkedListFromValues creates a linked list out of a slice.
+func NewLinkedListFromValues(values []interface{}) *LinkedList {
+	list := new(LinkedList)
+	for _, v := range values {
+		list.Enqueue(v)
+	}
+	return list
 }
 
 // LinkedList is an implementation of a fifo buffer using nodes and poitners.
@@ -67,6 +76,27 @@ func (q *LinkedList) Dequeue() interface{} {
 
 	q.length--
 	return headValue
+}
+
+// DequeueBack pops the _last_ element off the linked list.
+func (q *LinkedList) DequeueBack() interface{} {
+	if q.tail == nil {
+		return nil
+	}
+	tailValue := q.tail.Value
+
+	if q.length == 1 {
+		q.head = nil
+		q.tail = nil
+	} else {
+		q.tail = q.tail.Next
+		if q.tail != nil {
+			q.tail.Previous = nil
+		}
+	}
+
+	q.length--
+	return tailValue
 }
 
 // Peek returns the first element of the queue but does not remove it.

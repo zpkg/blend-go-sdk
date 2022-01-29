@@ -28,6 +28,13 @@ func Test_Glob(t *testing.T) {
 		{"", "*", true},
 		{"foo", "*", true},
 		{"bar", "*", true},
+
+		{"bar/foo", "bar/*", true},
+		{"foo/bar", "bar/*", false},
+
+		{"bar/loo/foo", "bar/*", true},
+		{"foo/bar/loo", "bar/*", false},
+
 		{"foo/bar/baz/buzz", "*/bar/*", true},
 		{"/foo/bar/baz/buzz", "*/bar/*", true},
 		{"foo/bar/baz/buzz", "*/foo/*", false},

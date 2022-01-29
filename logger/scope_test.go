@@ -113,7 +113,7 @@ func TestScopeFromContext(t *testing.T) {
 	ctx = WithPath(ctx, "three", "four")
 
 	final := sc.FromContext(ctx)
-	assert.Equal([]string{"one", "two", "three", "four"}, final.Path)
+	assert.Equal([]string{"three", "four", "one", "two"}, final.Path)
 	assert.Equal("bar", final.Labels["foo"])
 	assert.Equal("loo", final.Labels["moo"])
 }
@@ -129,7 +129,7 @@ func TestScopeApply(t *testing.T) {
 	ctx = WithPath(ctx, "three", "four")
 
 	final := sc.ApplyContext(ctx)
-	assert.Equal([]string{"one", "two", "three", "four"}, GetPath(final))
+	assert.Equal([]string{"three", "four", "one", "two"}, GetPath(final))
 	assert.Equal("bar", GetLabels(final)["foo"])
 	assert.Equal("loo", GetLabels(final)["moo"])
 }

@@ -27,7 +27,6 @@ var (
 )
 
 func Test_JobManager_New(t *testing.T) {
-	t.Parallel()
 	its := assert.New(t)
 
 	jm := New(
@@ -39,7 +38,6 @@ func Test_JobManager_New(t *testing.T) {
 }
 
 func Test_JobManager_Start(t *testing.T) {
-	t.Parallel()
 	its := assert.New(t)
 
 	jm := New(
@@ -62,7 +60,6 @@ func Test_JobManager_Start(t *testing.T) {
 }
 
 func Test_JobManager_DisableJobs(t *testing.T) {
-	t.Parallel()
 	its := assert.New(t)
 
 	jm := New()
@@ -74,7 +71,6 @@ func Test_JobManager_DisableJobs(t *testing.T) {
 }
 
 func Test_JobManager_handleJobPanics(t *testing.T) {
-	t.Parallel()
 	its := assert.New(t)
 
 	manager := New()
@@ -93,7 +89,6 @@ func Test_JobManager_handleJobPanics(t *testing.T) {
 }
 
 func Test_JobManager_jobConfigProvider_disabled(t *testing.T) {
-	t.Parallel()
 	its := assert.New(t)
 
 	manager := New()
@@ -118,7 +113,6 @@ func Test_JobManager_jobConfigProvider_disabled(t *testing.T) {
 }
 
 func Test_JobManager_onError(t *testing.T) {
-	t.Parallel()
 	its := assert.New(t)
 
 	agent := logger.All(logger.OptOutput(io.Discard))
@@ -161,7 +155,6 @@ func Test_JobManager_onError(t *testing.T) {
 }
 
 func Test_JobManager_Tracer(t *testing.T) {
-	t.Parallel()
 	its := assert.New(t)
 
 	wg := sync.WaitGroup{}
@@ -193,7 +186,6 @@ func Test_JobManager_Tracer(t *testing.T) {
 }
 
 func Test_JobManager_JobLifecycle(t *testing.T) {
-	t.Parallel()
 	its := assert.New(t)
 
 	jm := New()
@@ -237,7 +229,6 @@ func Test_JobManager_JobLifecycle(t *testing.T) {
 }
 
 func Test_JobManager_Job(t *testing.T) {
-	t.Parallel()
 	its := assert.New(t)
 
 	jm := New()
@@ -256,7 +247,6 @@ func Test_JobManager_Job(t *testing.T) {
 }
 
 func Test_JobManager_LoadJobs(t *testing.T) {
-	t.Parallel()
 	its := assert.New(t)
 
 	jm := New()
@@ -283,7 +273,6 @@ func Test_JobManager_LoadJobs(t *testing.T) {
 }
 
 func Test_JobManager_IsRunning(t *testing.T) {
-	t.Parallel()
 	its := assert.New(t)
 
 	jm := New()
@@ -305,7 +294,6 @@ func Test_JobManager_IsRunning(t *testing.T) {
 }
 
 func Test_JobManager_CancelJob(t *testing.T) {
-	t.Parallel()
 	its := assert.New(t)
 
 	started := make(chan struct{})
@@ -334,7 +322,6 @@ func Test_JobManager_CancelJob(t *testing.T) {
 }
 
 func Test_JobManager_EnableDisableJob(t *testing.T) {
-	t.Parallel()
 	its := assert.New(t)
 
 	name := "enable-disable-test"
@@ -357,7 +344,6 @@ func Test_JobManager_EnableDisableJob(t *testing.T) {
 }
 
 func Test_JobManager_LoadJobs_lifecycle(t *testing.T) {
-	t.Parallel()
 	its := assert.New(t)
 
 	baseContext := context.WithValue(context.Background(), testContextKey{}, "load-jobs-lifecycle")
@@ -385,7 +371,6 @@ func Test_JobManager_LoadJobs_lifecycle(t *testing.T) {
 }
 
 func Test_JobManager_UnloadJobs_lifecycle(t *testing.T) {
-	t.Parallel()
 	its := assert.New(t)
 
 	baseContext := context.WithValue(context.Background(), testContextKey{}, "load-jobs-lifecycle")
@@ -429,4 +414,19 @@ func Test_JobManager_UnloadJobs_lifecycle(t *testing.T) {
 
 	err = jm.UnloadJobs(uuid.V4().String())
 	its.NotNil(err)
+}
+
+func Test_JobManager_Background(t *testing.T) {
+	its := assert.New(t)
+
+	jm := New()
+	its.Equal(jm.Background(), context.Background())
+
+	type contextKey struct{}
+	jm = New(
+		OptBaseContext(context.WithValue(context.Background(), contextKey{}, "test-value")),
+	)
+
+	ctx := jm.Background()
+	its.Equal("test-value", ctx.Value(contextKey{}))
 }
