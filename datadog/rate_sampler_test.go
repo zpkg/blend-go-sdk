@@ -8,6 +8,7 @@ Use of this source code is governed by a MIT license that can be found in the LI
 package datadog
 
 import (
+	"fmt"
 	"testing"
 
 	"github.com/blend/go-sdk/assert"
@@ -25,7 +26,7 @@ func Test_RateSampler(t *testing.T) {
 		}
 	}
 	assert.True(passed > 240)
-	assert.True(passed < 270)
+	assert.True(passed < 270, fmt.Sprint(passed))
 }
 
 func Test_RateSampler_FullOn(t *testing.T) {

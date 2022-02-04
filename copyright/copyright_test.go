@@ -156,12 +156,12 @@ baz
 func Test_Copyright_goBuildTagsMatch(t *testing.T) {
 	its := assert.New(t)
 
-	file := []byte(buildTags1) // testutil.GetTestFixture(its, "buildtags1.go")
+	file := []byte(goBuildTags1) // testutil.GetTestFixture(its, "buildtags1.go")
 	its.True(goBuildTagMatch.Match(file))
 	found := goBuildTagMatch.Find(file)
 	its.Equal("//go:build tag1\n// +build tag1\n\n", string(found))
 
-	file2 := []byte(buildTags2) // testutil.GetTestFixture(its, "buildtags2.go")
+	file2 := []byte(goBuildTags2) // testutil.GetTestFixture(its, "buildtags2.go")
 	its.True(goBuildTagMatch.Match(file2))
 	found2 := goBuildTagMatch.Find(file2)
 
@@ -173,7 +173,7 @@ func Test_Copyright_goBuildTagsMatch(t *testing.T) {
 `
 	its.Equal(expected, string(found2))
 
-	file3 := []byte(buildTags3) // testutil.GetTestFixture(its, "buildtags3.go")
+	file3 := []byte(goBuildTags3) // testutil.GetTestFixture(its, "buildtags3.go")
 	its.True(goBuildTagMatch.Match(file3))
 	found3 := goBuildTagMatch.Find(file3)
 	its.Equal("//go:build tag1 & tag2\n\n", string(found3))
@@ -221,7 +221,7 @@ baz
 	its.Empty(outputRepeat, "inject notice functions should return an empty slice if the header already exists")
 }
 
-func Test_Copyright_goInjectNotice_buildTags(t *testing.T) {
+func Test_Copyright_goInjectNotice_goBuildTags(t *testing.T) {
 	t.Parallel()
 
 	type testCase struct {
@@ -233,18 +233,18 @@ func Test_Copyright_goInjectNotice_buildTags(t *testing.T) {
 	cases := []testCase{
 		{
 			Name:   "standard build tags",
-			Input:  buildTags1, // "buildtags1.go",
-			Expect: goldenBuildTags1,
+			Input:  goBuildTags1, // "buildtags1.go",
+			Expect: goldenGoBuildTags1,
 		},
 		{
 			Name:   "multiple build tags",
-			Input:  buildTags2, // "buildtags2.go",
-			Expect: goldenBuildTags2,
+			Input:  goBuildTags2, // "buildtags2.go",
+			Expect: goldenGoBuildTags2,
 		},
 		{
 			Name:   "build tags split across file",
-			Input:  buildTags3, // "buildtags3.go",
-			Expect: goldenBuildTags3,
+			Input:  goBuildTags3, // "buildtags3.go",
+			Expect: goldenGoBuildTags3,
 		},
 	}
 
@@ -266,6 +266,51 @@ func Test_Copyright_goInjectNotice_buildTags(t *testing.T) {
 	}
 }
 
+func Test_Copyright_tsInjectNotice_tsReferenceTags(t *testing.T) {
+	t.Parallel()
+
+	type testCase struct {
+		Name   string
+		Input  string
+		Expect string
+	}
+
+	cases := []testCase{
+		{
+			Name:   "single reference tag",
+			Input:  tsReferenceTag,
+			Expect: goldenTsReferenceTag,
+		},
+		{
+			Name:   "multiple reference tags",
+			Input:  tsReferenceTags,
+			Expect: goldenTsReferenceTags,
+		},
+		{
+			Name:   "no reference tags",
+			Input:  tsTest, // "buildtags3.go",
+			Expect: goldenTs,
+		},
+	}
+
+	for _, tc := range cases {
+		tc := tc
+		t.Run(tc.Name, func(t *testing.T) {
+			it := assert.New(t)
+			c := Copyright{}
+
+			notice, err := generateTypescriptNotice(OptYear(2022))
+			it.Nil(err)
+
+			output := c.tsInjectNotice("foo.ts", []byte(tc.Input), notice)
+			it.Equal(tc.Expect, string(output))
+
+			outputRepeat := c.tsInjectNotice("foo.ts", output, notice)
+			it.Empty(outputRepeat)
+		})
+	}
+}
+
 func Test_Copyright_injectNotice_typescript(t *testing.T) {
 	its := assert.New(t)
 
@@ -275,6 +320,24 @@ func Test_Copyright_injectNotice_typescript(t *testing.T) {
 bar
 baz
 `)
+
+	notice, err := generateTypescriptNotice(OptYear(2001))
+	its.Nil(err)
+
+	output := c.injectNotice("foo.ts", file, notice)
+	its.Contains(string(output), "Copyright (c) 2001")
+	its.HasSuffix(string(output), string(file))
+
+	outputRepeat := c.injectNotice("foo.ts", output, notice)
+	its.Empty(outputRepeat, "inject notice functions should return an empty slice if the header already exists")
+}
+
+func Test_Copyright_injectNotice_typescript_referenceTags(t *testing.T) {
+	its := assert.New(t)
+
+	c := Copyright{}
+
+	file := []byte(tsReferenceTags)
 
 	notice, err := generateTypescriptNotice(OptYear(2001))
 	its.Nil(err)
@@ -417,6 +480,15 @@ func Test_Copyright_includeOrExclude(t *testing.T) {
 
 const (
 	tsFile0 = `import * as axios from 'axios';`
+	tsFile1 = `/// <reference path="../types/testing.d.ts" />
+/// <reference path="../types/something.d.ts" />
+/// <reference path="../types/somethingElse.d.ts" />
+/// <reference path="../types/somethingMore.d.ts" />
+/// <reference path="../types/somethingLess.d.ts" />
+
+	import * as axios from 'axios';
+`
+
 	pyFile0 = `from __future__ import print_function
 	
 		import logging
@@ -473,6 +545,9 @@ func createTestFS(its *assert.Assertions) (tempDir string, revert func()) {
 	err = os.WriteFile(filepath.Join(tempDir, "file0.ts"), []byte(tsFile0), 0644)
 	its.Nil(err)
 
+	err = os.WriteFile(filepath.Join(tempDir, "file1.ts"), []byte(tsFile1), 0644)
+	its.Nil(err)
+
 	err = os.WriteFile(filepath.Join(tempDir, "file0.go"), []byte(goFile0), 0644)
 	its.Nil(err)
 
@@ -480,6 +555,9 @@ func createTestFS(its *assert.Assertions) (tempDir string, revert func()) {
 	its.Nil(err)
 
 	err = os.WriteFile(filepath.Join(tempDir, "foo", "bar", "file0.ts"), []byte(tsFile0), 0644)
+	its.Nil(err)
+
+	err = os.WriteFile(filepath.Join(tempDir, "foo", "bar", "file1.ts"), []byte(tsFile1), 0644)
 	its.Nil(err)
 
 	err = os.WriteFile(filepath.Join(tempDir, "foo", "bar", "file0.go"), []byte(goFile0), 0644)
@@ -491,6 +569,9 @@ func createTestFS(its *assert.Assertions) (tempDir string, revert func()) {
 	err = os.WriteFile(filepath.Join(tempDir, "bar", "foo", "file0.ts"), []byte(tsFile0), 0644)
 	its.Nil(err)
 
+	err = os.WriteFile(filepath.Join(tempDir, "bar", "foo", "file1.ts"), []byte(tsFile1), 0644)
+	its.Nil(err)
+
 	err = os.WriteFile(filepath.Join(tempDir, "bar", "foo", "file0.go"), []byte(goFile0), 0644)
 	its.Nil(err)
 
@@ -498,6 +579,9 @@ func createTestFS(its *assert.Assertions) (tempDir string, revert func()) {
 	its.Nil(err)
 
 	err = os.WriteFile(filepath.Join(tempDir, "not-bar", "not-foo", "file0.ts"), []byte(tsFile0), 0644)
+	its.Nil(err)
+
+	err = os.WriteFile(filepath.Join(tempDir, "not-bar", "not-foo", "file1.ts"), []byte(tsFile1), 0644)
 	its.Nil(err)
 
 	err = os.WriteFile(filepath.Join(tempDir, "not-bar", "not-foo", "file0.go"), []byte(goFile0), 0644)
@@ -526,10 +610,13 @@ func Test_Copyright_Walk(t *testing.T) {
 	expected := []string{
 		filepath.Join(tempDir, "bar", "foo", "file0.py"),
 		filepath.Join(tempDir, "bar", "foo", "file0.ts"),
+		filepath.Join(tempDir, "bar", "foo", "file1.ts"),
 		filepath.Join(tempDir, "file0.py"),
 		filepath.Join(tempDir, "file0.ts"),
+		filepath.Join(tempDir, "file1.ts"),
 		filepath.Join(tempDir, "foo", "bar", "file0.py"),
 		filepath.Join(tempDir, "foo", "bar", "file0.ts"),
+		filepath.Join(tempDir, "foo", "bar", "file1.ts"),
 	}
 	its.Equal(expected, seen)
 }
@@ -559,10 +646,13 @@ func Test_Copyright_Walk_noExitFirst(t *testing.T) {
 	expected := []string{
 		filepath.Join(tempDir, "bar", "foo", "file0.py"),
 		filepath.Join(tempDir, "bar", "foo", "file0.ts"),
+		filepath.Join(tempDir, "bar", "foo", "file1.ts"),
 		filepath.Join(tempDir, "file0.py"),
 		filepath.Join(tempDir, "file0.ts"),
+		filepath.Join(tempDir, "file1.ts"),
 		filepath.Join(tempDir, "foo", "bar", "file0.py"),
 		filepath.Join(tempDir, "foo", "bar", "file0.ts"),
+		filepath.Join(tempDir, "foo", "bar", "file1.ts"),
 	}
 	its.Equal(expected, seen)
 }

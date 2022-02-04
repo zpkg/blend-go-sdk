@@ -39,3 +39,11 @@ func Test_KnownExtensions_includeFiles(t *testing.T) {
 		its.True(ok, fmt.Sprintf("%s should be in the included files list", ext))
 	}
 }
+
+func Test_tsImportsTagMatch(t *testing.T) {
+	its := assert.New(t)
+
+	its.Matches(tsReferenceTagsExpr, goldenTsReferenceTags)
+	its.Matches(tsReferenceTagsExpr, tsReferenceTags)
+	its.NotMatches(tsReferenceTagsExpr, goldenTs)
+}

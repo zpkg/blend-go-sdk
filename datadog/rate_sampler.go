@@ -34,5 +34,6 @@ func (r RateSampler) Sample(spn ddtrace.Span) bool {
 	if r < 1 {
 		return rand.Float64() < float64(r)
 	}
+
 	return true
 }

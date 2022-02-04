@@ -211,6 +211,8 @@ func (c Copyright) verify(path string, _ os.FileInfo, file, notice []byte) error
 		err = c.shebangVerifyNotice(path, file, notice)
 	} else if fileExtension == ExtensionGo { // we have to treat go files specially because of build tags
 		err = c.goVerifyNotice(path, file, notice)
+	} else if fileExtension == ExtensionTS {
+		err = c.tsVerifyNotice(path, file, notice)
 	} else {
 		err = c.verifyNotice(path, file, notice)
 	}
@@ -319,8 +321,10 @@ func (c Copyright) injectedContents(path string, file, notice []byte) []byte {
 		return c.shebangInjectNotice(path, file, notice)
 	}
 
-	if fileExtension == ExtensionGo { // we have to treat go files specially because of build tags
+	if fileExtension == ExtensionGo {
 		return c.goInjectNotice(path, file, notice)
+	} else if fileExtension == ExtensionTS {
+		return c.tsInjectNotice(path, file, notice)
 	}
 
 	return c.injectNotice(path, file, notice)
@@ -338,6 +342,8 @@ func (c Copyright) removedContents(path string, file, notice []byte) []byte {
 
 	if fileExtension == ExtensionGo { // we have to treat go files specially because of build tags
 		return c.goRemoveNotice(path, file, notice)
+	} else if fileExtension == ExtensionTS {
+		return c.tsRemoveNotice(path, file, notice)
 	}
 
 	return c.removeNotice(path, file, notice)
@@ -374,6 +380,19 @@ func (c Copyright) goInjectNotice(path string, file, notice []byte) []byte {
 	return c.mergeFileSections(goBuildTag, notice, file)
 }
 
+// goInjectNotice handles ts files differently because they may contain build tags.
+func (c Copyright) tsInjectNotice(path string, file, notice []byte) []byte {
+	tsReferenceTags := tsReferenceTagsMatch.Find(file)
+	file = tsReferenceTagsMatch.ReplaceAll(file, nil)
+	if c.fileHasCopyrightHeader(file, notice) {
+		return nil
+	}
+
+	c.Verbosef("injecting notice: %s", path)
+	file = c.removeCopyrightHeader(file, notice)
+	return c.mergeFileSections(tsReferenceTags, notice, file)
+}
+
 func (c Copyright) injectNotice(path string, file, notice []byte) []byte {
 	if c.fileHasCopyrightHeader(file, notice) {
 		return nil
@@ -403,12 +422,22 @@ func (c Copyright) shebangRemoveNotice(path string, file, notice []byte) []byte 
 
 func (c Copyright) goRemoveNotice(path string, file, notice []byte) []byte {
 	goBuildTag := goBuildTagMatch.FindString(string(file))
-	file = goBuildTagMatch.ReplaceAll(file, []byte(""))
+	file = goBuildTagMatch.ReplaceAll(file, nil)
 	if !c.fileHasCopyrightHeader(file, notice) {
 		return nil
 	}
 	c.Verbosef("removing notice: %s", path)
 	return c.mergeFileSections([]byte(goBuildTag), c.removeCopyrightHeader(file, notice))
+}
+
+func (c Copyright) tsRemoveNotice(path string, file, notice []byte) []byte {
+	tsImportTags := tsReferenceTagsMatch.FindString(string(file))
+	file = tsReferenceTagsMatch.ReplaceAll(file, nil)
+	if !c.fileHasCopyrightHeader(file, notice) {
+		return nil
+	}
+	c.Verbosef("removing notice: %s", path)
+	return c.mergeFileSections([]byte(tsImportTags), c.removeCopyrightHeader(file, notice))
 }
 
 func (c Copyright) removeNotice(path string, file, notice []byte) []byte {
@@ -436,6 +465,15 @@ func (c Copyright) shebangVerifyNotice(path string, file, notice []byte) error {
 func (c Copyright) goVerifyNotice(path string, file, notice []byte) error {
 	c.Debugf("verifying (go): %s", path)
 	fileLessTags := goBuildTagMatch.ReplaceAll(file, nil)
+	if !c.fileHasCopyrightHeader(fileLessTags, notice) {
+		return fmt.Errorf(VerifyErrorFormat, path)
+	}
+	return nil
+}
+
+func (c Copyright) tsVerifyNotice(path string, file, notice []byte) error {
+	c.Debugf("verifying (ts): %s", path)
+	fileLessTags := tsReferenceTagsMatch.ReplaceAll(file, nil)
 	if !c.fileHasCopyrightHeader(fileLessTags, notice) {
 		return fmt.Errorf(VerifyErrorFormat, path)
 	}

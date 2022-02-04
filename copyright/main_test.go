@@ -23,7 +23,7 @@ func TestMain(m *testing.M) {
 	).Run()
 }
 
-const buildTags1 = `//go:build tag1
+const goBuildTags1 = `//go:build tag1
 // +build tag1
 
 package main
@@ -36,7 +36,7 @@ func main() {
 	fmt.Println("foo")
 }
 `
-const buildTags2 = `// +build tag5
+const goBuildTags2 = `// +build tag5
 //go:build tag1 && tag2 && tag3
 // +build tag1,tag2,tag3
 // +build tag6
@@ -54,7 +54,7 @@ func main() {
 // +bulid tag9000
 `
 
-const buildTags3 = `//go:build tag1 & tag2
+const goBuildTags3 = `//go:build tag1 & tag2
 
 package main
 
@@ -69,7 +69,7 @@ func main() {
 //go:build tag3
 `
 
-const goldenBuildTags1 = `//go:build tag1
+const goldenGoBuildTags1 = `//go:build tag1
 // +build tag1
 
 /*
@@ -90,7 +90,7 @@ func main() {
 }
 `
 
-const goldenBuildTags2 = `// +build tag5
+const goldenGoBuildTags2 = `// +build tag5
 //go:build tag1 && tag2 && tag3
 // +build tag1,tag2,tag3
 // +build tag6
@@ -115,7 +115,7 @@ func main() {
 // +bulid tag9000
 `
 
-const goldenBuildTags3 = `//go:build tag1 & tag2
+const goldenGoBuildTags3 = `//go:build tag1 & tag2
 
 /*
 
@@ -135,4 +135,48 @@ func main() {
 }
 
 //go:build tag3
+`
+
+const goldenTsReferenceTags = `/// <reference path="../types/testing.d.ts" />
+/// <reference path="../types/something.d.ts" />
+/// <reference path="../types/somethingElse.d.ts" />
+/// <reference path="../types/somethingMore.d.ts" />
+/// <reference path="../types/somethingLess.d.ts" />
+/**
+ * Copyright (c) 2022 - Present. Blend Labs, Inc. All rights reserved
+ * Blend Confidential - Restricted
+ */
+export * from '../types/goodOnes'
+`
+
+const tsReferenceTags = `/// <reference path="../types/testing.d.ts" />
+/// <reference path="../types/something.d.ts" />
+/// <reference path="../types/somethingElse.d.ts" />
+/// <reference path="../types/somethingMore.d.ts" />
+/// <reference path="../types/somethingLess.d.ts" />
+export * from '../types/goodOnes'
+`
+
+const goldenTsReferenceTag = `/// <reference path="../types/testing.d.ts" />
+/**
+ * Copyright (c) 2022 - Present. Blend Labs, Inc. All rights reserved
+ * Blend Confidential - Restricted
+ */
+
+export * from '../types/goodOnes'
+`
+
+const tsReferenceTag = `/// <reference path="../types/testing.d.ts" />
+
+export * from '../types/goodOnes'
+`
+
+const tsTest = `export * from '../types/goodOnes'
+`
+
+const goldenTs = `/**
+ * Copyright (c) 2022 - Present. Blend Labs, Inc. All rights reserved
+ * Blend Confidential - Restricted
+ */
+export * from '../types/goodOnes'
 `

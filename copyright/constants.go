@@ -198,13 +198,15 @@ const (
 )
 
 const (
-	goBuildTagExpr = `^(\/\/(go:build| \+build).*\n)+\n`
-	yearExpr       = `([0-9]{4,}?)`
-	shebangExpr    = `(?s)^(\s*)#!([^\n]+)\n`
+	goBuildTagExpr      = `^(\/\/(go:build| \+build).*\n)+\n`
+	tsReferenceTagsExpr = `^(\/\/\/ \<reference path=\"(.*)\" \/\>\n)+`
+	yearExpr            = `([0-9]{4,}?)`
+	shebangExpr         = `(?s)^(\s*)#!([^\n]+)\n`
 )
 
 var (
-	goBuildTagMatch = regexp.MustCompile(goBuildTagExpr)
-	yearMatch       = regexp.MustCompile(yearExpr)
-	shebangMatch    = regexp.MustCompile(shebangExpr)
+	goBuildTagMatch      = regexp.MustCompile(goBuildTagExpr)
+	tsReferenceTagsMatch = regexp.MustCompile(tsReferenceTagsExpr)
+	yearMatch            = regexp.MustCompile(yearExpr)
+	shebangMatch         = regexp.MustCompile(shebangExpr)
 )
