@@ -37,10 +37,10 @@ type Config struct {
 	// {{ .Notice }} that will insert the compiled `NoticyBodyTemplate`.
 	ExtensionNoticeTemplates map[string]string
 
-	// NoticeTemplate is a full notice template that will be used if there is no extension
+	// FallbackNoticeTemplate is a full notice template that will be used if there is no extension
 	// specific notice template.
 	// It can include the template variable {{ .Notice }} that will instert the compiled `NoticeBodyTemplate`.
-	NoticeTemplate string
+	FallbackNoticeTemplate string
 
 	// ExitFirst indicates if we should return after the first failure.
 	ExitFirst *bool `yaml:"exitFirst"`

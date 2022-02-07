@@ -304,9 +304,9 @@ func (c Copyright) noticeTemplateByExtension(fileExtension string) (noticeTempla
 		return
 	}
 
-	// check if we have a default notice template
-	if c.NoticeTemplate != "" {
-		noticeTemplate = c.NoticeTemplate
+	// check if we have a fallback notice template
+	if c.FallbackNoticeTemplate != "" {
+		noticeTemplate = c.FallbackNoticeTemplate
 		ok = true
 		return
 	}

@@ -21,7 +21,7 @@ import (
 )
 
 var (
-	flagNoticeTemplate           string
+	flagFallbackNoticeTemplate   string
 	flagExtensionNoticeTemplates flagStrings
 	flagNoticeBodyTemplate       string
 	flagCompany                  string
@@ -56,14 +56,13 @@ func init() {
 
 	flag.BoolVar(&flagExitFirst, "exit-first", false, "If the program should exit on the first verification error")
 
+	flag.StringVar(&flagNoticeBodyTemplate, "notice-body-template", copyright.DefaultNoticeBodyTemplate, "The notice body template; will try as a file path first, then used as a literal value. This is the template to inject into the filetype specific template for each file.")
+	flag.StringVar(&flagFallbackNoticeTemplate, "fallback-notice-template", "", "The fallback notice template; will try as a file path first, then used as a literal value. This is the full notice (i.e. filetype specific) to use if there is no built-in notice template for the filetype.")
+
 	flag.StringVar(&flagCompany, "company", "", "The company name to use in templates as {{ .Company }}")
 	flag.IntVar(&flagYear, "year", time.Now().UTC().Year(), "The year to use in templates as {{ .Year }}")
 	flag.StringVar(&flagLicense, "license", copyright.DefaultOpenSourceLicense, "The license to use in templates as {{ .License }}")
-
-	flag.StringVar(&flagNoticeTemplate, "notice-template", "", "The notice template; will try as a file path first, if -1 then as a string literal. This will serve as the fully formed template.")
-	flag.StringVar(&flagNoticeBodyTemplate, "notice-body-template", copyright.DefaultNoticeBodyTemplate, "The notice body template; will try as a file path first, if not found then as a string literal")
 	flag.StringVar(&flagRestrictions, "restrictions", copyright.DefaultRestrictionsInternal, "The restriction template to compile and insert in the notice body template as {{ .Restrictions }}")
-
 	flag.BoolVar(&flagRestrictionsOpenSource, "restrictions-open-source", false, fmt.Sprintf("The restrictions should be the open source defaults (i.e. %q)", copyright.DefaultRestrictionsOpenSource))
 	flag.BoolVar(&flagRestrictionsInternal, "restrictions-internal", false, fmt.Sprintf("The restrictions should be the internal defaults (i.e. %q)", copyright.DefaultRestrictionsInternal))
 
@@ -181,6 +180,8 @@ func main() {
 
 	engine := copyright.Copyright{
 		Config: copyright.Config{
+			FallbackNoticeTemplate:   tryReadFile(flagFallbackNoticeTemplate),
+			NoticeBodyTemplate:       tryReadFile(flagNoticeBodyTemplate),
 			Company:                  flagCompany,
 			Restrictions:             restrictions,
 			Year:                     flagYear,
@@ -255,7 +256,7 @@ func tryReadFile(path string) string {
 	if err != nil {
 		return path
 	}
-	return string(contents)
+	return strings.TrimSpace(string(contents))
 }
 
 func readExcludesFile(path string) ([]string, error) {

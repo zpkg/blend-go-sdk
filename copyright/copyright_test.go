@@ -426,7 +426,7 @@ func Test_Copyright_GetNoticeTemplate(t *testing.T) {
 
 	withDefault := Copyright{
 		Config: Config{
-			NoticeTemplate: "this is just a test",
+			FallbackNoticeTemplate: "this is just a test",
 		},
 	}
 
