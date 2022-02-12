@@ -25,8 +25,8 @@ func Test_RateSampler(t *testing.T) {
 			passed++
 		}
 	}
-	assert.True(passed > 240)
-	assert.True(passed < 270, fmt.Sprint(passed))
+	assert.True(passed > 225, fmt.Sprint(passed))
+	assert.True(passed < 280, fmt.Sprint(passed))
 }
 
 func Test_RateSampler_FullOn(t *testing.T) {

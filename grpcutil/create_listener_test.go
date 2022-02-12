@@ -9,6 +9,8 @@ package grpcutil
 
 import (
 	"fmt"
+	"os"
+	"path/filepath"
 	"testing"
 
 	"github.com/blend/go-sdk/assert"
@@ -24,7 +26,8 @@ func TestListener(t *testing.T) {
 	assert.Equal("tcp", tcpln.Addr().Network())
 	assert.Contains(tcpln.Addr().String(), "127.0.0.1:")
 
-	socketPath := fmt.Sprintf("/tmp/%s.sock", uuid.V4().String())
+	socketDir := os.TempDir()
+	socketPath := filepath.Join(socketDir, uuid.V4().String())
 	socketAddress := fmt.Sprintf("unix://" + socketPath)
 	unixln, err := CreateListener(socketAddress)
 	assert.Nil(err)
