@@ -22,6 +22,11 @@ const (
 	ErrTLSPathsUnset ex.Class = "tls cert or key path unset; cannot continue"
 )
 
+const (
+	// DefaultCertficicateFileWatcherPollInterval is the default poll interval when re-reading certs
+	DefaultCertficicateFileWatcherPollInterval = 500 * time.Millisecond
+)
+
 // NewCertFileWatcher creates a new CertReloader object with a reload delay
 func NewCertFileWatcher(keyPair KeyPair, opts ...CertFileWatcherOption) (*CertFileWatcher, error) {
 	if keyPair.CertPath == "" || keyPair.KeyPath == "" {
@@ -98,7 +103,7 @@ func (cw *CertFileWatcher) PollIntervalOrDefault() time.Duration {
 	if cw.pollInterval > 0 {
 		return cw.pollInterval
 	}
-	return 500 * time.Millisecond
+	return DefaultCertficicateFileWatcherPollInterval
 }
 
 // Reload forces the reload of the underlying certificate.

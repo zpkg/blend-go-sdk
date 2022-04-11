@@ -287,23 +287,18 @@ func (am AuthManager) Logout(ctx *Ctx) error {
 	if sessionValue == "" {
 		return nil
 	}
-
-	// issue the expiration cookies to the response
-	ctx.ExpireCookie(am.CookieDefaults.Name, am.CookieDefaults.Path)
+	// zero out the context session as a precaution
 	ctx.Session = nil
-
-	// call the remove handler if one has been provided
-	if am.RemoveHandler != nil {
-		return am.RemoveHandler(ctx.Context(), sessionValue)
-	}
-	return nil
+	// issue the expiration cookies to the response
+	// and call the remove handler
+	return am.expire(ctx, sessionValue)
 }
 
-// VerifyOrExpireSession reads a session value from a request and checks if it's valid.
-// It also handles updating a rolling expiry.
-func (am AuthManager) VerifyOrExpireSession(ctx *Ctx) (session *Session, err error) {
-	sessionValue := am.readSessionValue(ctx)
-	// validate the sessionValue isn't unset
+// VerifySession pulls the session cookie off the request, and validates
+// it represents a valid session.
+func (am AuthManager) VerifySession(ctx *Ctx) (sessionValue string, session *Session, err error) {
+	sessionValue = am.readSessionValue(ctx)
+	// validate the sessionValue is set
 	if len(sessionValue) == 0 {
 		return
 	}
@@ -331,8 +326,20 @@ func (am AuthManager) VerifyOrExpireSession(ctx *Ctx) (session *Session, err err
 	if am.ValidateHandler != nil {
 		err = am.ValidateHandler(ctx.Context(), session)
 		if err != nil {
-			return nil, err
+			session = nil
+			return
 		}
+	}
+	return
+}
+
+// VerifyOrExtendSession reads a session value from a request and checks if it's valid.
+// It also handles updating a rolling expiry.
+func (am AuthManager) VerifyOrExtendSession(ctx *Ctx) (session *Session, err error) {
+	var sessionValue string
+	sessionValue, session, err = am.VerifySession(ctx)
+	if session == nil || err != nil {
+		return
 	}
 
 	if am.SessionTimeoutProvider != nil {
@@ -349,6 +356,7 @@ func (am AuthManager) VerifyOrExpireSession(ctx *Ctx) (session *Session, err err
 					return nil, err
 				}
 			}
+
 			// inject the (updated) cookie
 			am.injectCookie(ctx, sessionValue, session.ExpiresUTC)
 		}
@@ -373,7 +381,8 @@ func (am AuthManager) LoginRedirect(ctx *Ctx) Result {
 // --------------------------------------------------------------------------------
 
 func (am AuthManager) expire(ctx *Ctx, sessionValue string) error {
-	ctx.ExpireCookie(am.CookieDefaults.Name, am.CookieDefaults.Path)
+	// issue the cookie expiration.
+	am.expireCookie(ctx)
 
 	// if we have a remove handler and the sessionID is set
 	if am.RemoveHandler != nil {
@@ -397,6 +406,23 @@ func (am AuthManager) injectCookie(ctx *Ctx, value string, expire time.Time) {
 		Secure:   am.CookieDefaults.Secure,
 		SameSite: am.CookieDefaults.SameSite,
 	})
+}
+
+// expireCookie expires the session cookie.
+func (am AuthManager) expireCookie(ctx *Ctx) {
+	http.SetCookie(ctx.Response, &http.Cookie{
+		Value: NewSessionID(),
+		// MaxAge<0 means delete cookie now, and is equivalent to
+		// the literal cookie header content 'Max-Age: 0'
+		MaxAge:   -1,
+		Name:     am.CookieDefaults.Name,
+		Path:     am.CookieDefaults.Path,
+		Domain:   am.CookieDefaults.Domain,
+		HttpOnly: am.CookieDefaults.HttpOnly,
+		Secure:   am.CookieDefaults.Secure,
+		SameSite: am.CookieDefaults.SameSite,
+	})
+
 }
 
 // cookieValue reads a param from a given request context from either the cookies or headers.

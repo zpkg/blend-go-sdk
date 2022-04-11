@@ -24,6 +24,8 @@ var (
 	ServiceName = ""
 	// ProjectName is the name of the project the service belongs to
 	ProjectName = ""
+	// ClusterName is the name of the cluster the service is deployed to
+	ClusterName = ""
 	// Region is the region the service is deployed to
 	Region = ""
 )
@@ -36,6 +38,8 @@ type Meta struct {
 	ServiceName string `json:"serviceName,omitempty" yaml:"serviceName,omitempty"`
 	// ProjectName is the project name injected by Deployinator.
 	ProjectName string `json:"projectName,omitempty" yaml:"projectName,omitempty"`
+	// ClusterName is the name of the cluster the service is deployed to
+	ClusterName string `json:"clusterName,omitempty" yaml:"clusterName,omitempty"`
 	// Environment is the environment of the cluster (sandbox, prod etc.)
 	ServiceEnv string `json:"serviceEnv,omitempty" yaml:"serviceEnv,omitempty"`
 	// Hostname is the environment of the cluster (sandbox, prod etc.)
@@ -52,6 +56,7 @@ func (m *Meta) SetFrom(other *Meta) configutil.ResolveAction {
 		m.Region = other.Region
 		m.ServiceName = other.ServiceName
 		m.ProjectName = other.ProjectName
+		m.ClusterName = other.ClusterName
 		m.ServiceEnv = other.ServiceEnv
 		m.Hostname = other.Hostname
 		m.Version = other.Version
@@ -66,6 +71,7 @@ func (m *Meta) ApplyTo(other *Meta) configutil.ResolveAction {
 		other.Region = m.Region
 		other.ServiceName = m.ServiceName
 		other.ProjectName = m.ProjectName
+		other.ClusterName = m.ClusterName
 		other.ServiceEnv = m.ServiceEnv
 		other.Hostname = m.Hostname
 		other.Version = m.Version
@@ -80,6 +86,7 @@ func (m *Meta) Resolve(ctx context.Context) error {
 		configutil.SetString(&m.Region, configutil.Env(env.VarRegion), configutil.String(m.Region), configutil.LazyString(&Region)),
 		configutil.SetString(&m.ServiceName, configutil.Env(env.VarServiceName), configutil.String(m.ServiceName), configutil.LazyString(&ServiceName)),
 		configutil.SetString(&m.ProjectName, configutil.Env(env.VarProjectName), configutil.String(m.ProjectName), configutil.LazyString(&ProjectName)),
+		configutil.SetString(&m.ClusterName, configutil.Env(env.VarClusterName), configutil.String(m.ClusterName), configutil.LazyString(&ClusterName)),
 		configutil.SetString(&m.ServiceEnv, configutil.Env(env.VarServiceEnv), configutil.String(m.ServiceEnv), configutil.String(env.ServiceEnvDev)),
 		configutil.SetString(&m.Hostname, configutil.Env(env.VarHostname), configutil.String(m.Hostname)),
 		configutil.SetString(&m.Version, configutil.Env(env.VarVersion), configutil.String(m.Version), configutil.LazyString(&Version), configutil.String(DefaultVersion)),
@@ -109,6 +116,14 @@ func (m Meta) ProjectNameOrDefault() string {
 		return m.ProjectName
 	}
 	return ProjectName
+}
+
+// ClusterNameOrDefault returns the cluster name or the default.
+func (m Meta) ClusterNameOrDefault() string {
+	if m.ClusterName != "" {
+		return m.ClusterName
+	}
+	return ClusterName
 }
 
 // ServiceEnvOrDefault returns the cluster environment.

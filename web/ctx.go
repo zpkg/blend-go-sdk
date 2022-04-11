@@ -345,6 +345,8 @@ func (rc *Ctx) ExpireCookie(name string, path string) {
 	}
 	c.Path = path
 	c.Value = NewSessionID()
+	// c.MaxAge<0 means delete cookie now, and is equivalent to
+	// the literal cookie header content 'Max-Age: 0'
 	c.MaxAge = -1
 	http.SetCookie(rc.Response, c)
 }

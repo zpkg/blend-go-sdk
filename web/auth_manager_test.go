@@ -344,7 +344,7 @@ func Test_AuthManager_Logout_removeHandlerUnset(t *testing.T) {
 	its.NotEmpty(cookies)
 }
 
-func Test_AuthManager_VerifyOrExpireSession(t *testing.T) {
+func Test_AuthManager_VerifyOrExtendSession(t *testing.T) {
 	its := assert.New(t)
 
 	am, err := NewLocalAuthManager()
@@ -378,14 +378,14 @@ func Test_AuthManager_VerifyOrExpireSession(t *testing.T) {
 	its.False(calledValidateHandler)
 
 	r = NewCtx(webutil.NewMockResponse(new(bytes.Buffer)), webutil.NewMockRequestWithCookie("GET", "/", am.CookieDefaults.Name, session.SessionID))
-	session, err = am.VerifyOrExpireSession(r)
+	session, err = am.VerifyOrExtendSession(r)
 	its.Nil(err)
 	its.NotNil(session)
 	its.True(calledRestoreHandler)
 	its.True(calledValidateHandler)
 }
 
-func Test_AuthManager_VerifyOrExpireSession_sessionUnset(t *testing.T) {
+func Test_AuthManager_VerifyOrExtendSession_sessionUnset(t *testing.T) {
 	its := assert.New(t)
 
 	am, err := NewLocalAuthManager()
@@ -412,14 +412,14 @@ func Test_AuthManager_VerifyOrExpireSession_sessionUnset(t *testing.T) {
 	}
 
 	r := NewCtx(webutil.NewMockResponse(new(bytes.Buffer)), webutil.NewMockRequest("GET", "/"))
-	session, err := am.VerifyOrExpireSession(r)
+	session, err := am.VerifyOrExtendSession(r)
 	its.Nil(err)
 	its.Nil(session)
 	its.False(calledRestoreHandler)
 	its.False(calledValidateHandler)
 }
 
-func Test_AuthManager_VerifyOrExpireSession_fetchHandlerUnset(t *testing.T) {
+func Test_AuthManager_VerifyOrExtendSession_fetchHandlerUnset(t *testing.T) {
 	its := assert.New(t)
 
 	am, err := NewLocalAuthManager()
@@ -427,12 +427,12 @@ func Test_AuthManager_VerifyOrExpireSession_fetchHandlerUnset(t *testing.T) {
 
 	r := NewCtx(webutil.NewMockResponse(new(bytes.Buffer)), webutil.NewMockRequest("GET", "/"))
 
-	session, err := am.VerifyOrExpireSession(r)
+	session, err := am.VerifyOrExtendSession(r)
 	its.Nil(err)
 	its.Nil(session)
 }
 
-func Test_AuthManager_VerifyOrExpireSession_fetchErrSessionInvalid(t *testing.T) {
+func Test_AuthManager_VerifyOrExtendSession_fetchErrSessionInvalid(t *testing.T) {
 	its := assert.New(t)
 
 	am, err := NewLocalAuthManager()
@@ -459,7 +459,7 @@ func Test_AuthManager_VerifyOrExpireSession_fetchErrSessionInvalid(t *testing.T)
 	its.False(calledValidateHandler)
 
 	r = NewCtx(webutil.NewMockResponse(new(bytes.Buffer)), webutil.NewMockRequestWithCookie("GET", "/", am.CookieDefaults.Name, session.SessionID))
-	session, err = am.VerifyOrExpireSession(r)
+	session, err = am.VerifyOrExtendSession(r)
 	its.NotNil(err)
 	its.Equal(ErrSessionIDEmpty, err)
 	its.Nil(session)
@@ -474,7 +474,7 @@ func Test_AuthManager_VerifyOrExpireSession_fetchErrSessionInvalid(t *testing.T)
 	its.True(time.Now().UTC().After(cookie.Expires))
 }
 
-func Test_AuthManager_VerifyOrExpireSession_sessionExpired(t *testing.T) {
+func Test_AuthManager_VerifyOrExtendSession_sessionExpired(t *testing.T) {
 	its := assert.New(t)
 
 	am, err := NewLocalAuthManager()
@@ -493,7 +493,7 @@ func Test_AuthManager_VerifyOrExpireSession_sessionExpired(t *testing.T) {
 
 	res := webutil.NewMockResponse(new(bytes.Buffer))
 	r := NewCtx(res, webutil.NewMockRequestWithCookie("GET", "/", am.CookieDefaults.Name, NewSessionID()))
-	session, err := am.VerifyOrExpireSession(r)
+	session, err := am.VerifyOrExtendSession(r)
 	its.Nil(err)
 	its.Nil(session)
 	its.False(calledValidateHandler)
@@ -508,7 +508,7 @@ func Test_AuthManager_VerifyOrExpireSession_sessionExpired(t *testing.T) {
 	its.True(cookie.Expires.Before(time.Now().UTC()), "the cookie should be expired")
 }
 
-func Test_AuthManager_VerifyOrExpireSession_sessionExpired_nil(t *testing.T) {
+func Test_AuthManager_VerifyOrExtendSession_sessionExpired_nil(t *testing.T) {
 	its := assert.New(t)
 
 	am, err := NewLocalAuthManager()
@@ -527,7 +527,7 @@ func Test_AuthManager_VerifyOrExpireSession_sessionExpired_nil(t *testing.T) {
 
 	res := webutil.NewMockResponse(new(bytes.Buffer))
 	r := NewCtx(res, webutil.NewMockRequestWithCookie("GET", "/", am.CookieDefaults.Name, NewSessionID()))
-	session, err := am.VerifyOrExpireSession(r)
+	session, err := am.VerifyOrExtendSession(r)
 	its.Nil(err)
 	its.Nil(session)
 	its.False(calledValidateHandler)
@@ -542,7 +542,7 @@ func Test_AuthManager_VerifyOrExpireSession_sessionExpired_nil(t *testing.T) {
 	its.True(cookie.Expires.Before(time.Now().UTC()), "the cookie should be expired")
 }
 
-func Test_AuthManager_VerifyOrExpireSession_sessionExpired_zero(t *testing.T) {
+func Test_AuthManager_VerifyOrExtendSession_sessionExpired_zero(t *testing.T) {
 	its := assert.New(t)
 
 	am, err := NewLocalAuthManager()
@@ -561,7 +561,7 @@ func Test_AuthManager_VerifyOrExpireSession_sessionExpired_zero(t *testing.T) {
 
 	res := webutil.NewMockResponse(new(bytes.Buffer))
 	r := NewCtx(res, webutil.NewMockRequestWithCookie("GET", "/", am.CookieDefaults.Name, NewSessionID()))
-	session, err := am.VerifyOrExpireSession(r)
+	session, err := am.VerifyOrExtendSession(r)
 	its.Nil(err)
 	its.Nil(session)
 	its.False(calledValidateHandler)
@@ -576,7 +576,7 @@ func Test_AuthManager_VerifyOrExpireSession_sessionExpired_zero(t *testing.T) {
 	its.True(cookie.Expires.Before(time.Now().UTC()), "the cookie should be expired")
 }
 
-func Test_AuthManager_VerifyOrExpireSession_failsValidation(t *testing.T) {
+func Test_AuthManager_VerifyOrExtendSession_failsValidation(t *testing.T) {
 	its := assert.New(t)
 
 	am, err := NewLocalAuthManager()
@@ -603,7 +603,7 @@ func Test_AuthManager_VerifyOrExpireSession_failsValidation(t *testing.T) {
 	its.False(calledValidateHandler)
 
 	r = NewCtx(webutil.NewMockResponse(new(bytes.Buffer)), webutil.NewMockRequestWithCookie("GET", "/", am.CookieDefaults.Name, session.SessionID))
-	session, err = am.VerifyOrExpireSession(r)
+	session, err = am.VerifyOrExtendSession(r)
 	its.NotNil(err)
 	its.Nil(session)
 	its.True(calledFetchHandler)
@@ -615,7 +615,7 @@ func Test_AuthManager_VerifyOrExpireSession_failsValidation(t *testing.T) {
 	its.Empty(cookies)
 }
 
-func Test_AuthManager_VerifyOrExpireSession_sessionTimeout_unchanged(t *testing.T) {
+func Test_AuthManager_VerifyOrExtendSession_sessionTimeout_unchanged(t *testing.T) {
 	its := assert.New(t)
 
 	am, err := NewLocalAuthManager()
@@ -659,7 +659,7 @@ func Test_AuthManager_VerifyOrExpireSession_sessionTimeout_unchanged(t *testing.
 	calledSessionTimeoutProvider = false
 
 	r = NewCtx(webutil.NewMockResponse(new(bytes.Buffer)), webutil.NewMockRequestWithCookie("GET", "/", am.CookieDefaults.Name, session.SessionID))
-	session, err = am.VerifyOrExpireSession(r)
+	session, err = am.VerifyOrExtendSession(r)
 	its.Nil(err)
 	its.NotNil(session)
 	its.True(calledFetchHandler)
@@ -668,7 +668,7 @@ func Test_AuthManager_VerifyOrExpireSession_sessionTimeout_unchanged(t *testing.
 	its.True(calledSessionTimeoutProvider)
 }
 
-func Test_AuthManager_VerifyOrExpireSession_sessionTimeout_changed(t *testing.T) {
+func Test_AuthManager_VerifyOrExtendSession_sessionTimeout_changed(t *testing.T) {
 	its := assert.New(t)
 
 	am, err := NewLocalAuthManager()
@@ -709,7 +709,7 @@ func Test_AuthManager_VerifyOrExpireSession_sessionTimeout_changed(t *testing.T)
 	}
 
 	r = NewCtx(webutil.NewMockResponse(new(bytes.Buffer)), webutil.NewMockRequestWithCookie("GET", "/", am.CookieDefaults.Name, session.SessionID))
-	session, err = am.VerifyOrExpireSession(r)
+	session, err = am.VerifyOrExtendSession(r)
 	its.Nil(err)
 	its.NotNil(session)
 	its.True(calledFetchHandler)
@@ -767,7 +767,7 @@ func Test_AuthManager_VerifyOrExpireSession_sessionTimeout_persistError(t *testi
 	}
 
 	r = NewCtx(webutil.NewMockResponse(new(bytes.Buffer)), webutil.NewMockRequestWithCookie("GET", "/", am.CookieDefaults.Name, session.SessionID))
-	session, err = am.VerifyOrExpireSession(r)
+	session, err = am.VerifyOrExtendSession(r)
 	its.NotNil(err)
 	its.Equal("this is just a test", err.Error())
 	its.Nil(session)

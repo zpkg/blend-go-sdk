@@ -17,6 +17,8 @@ const (
 	VarServiceName = "SERVICE_NAME"
 	// VarProjectName is a common env var name.
 	VarProjectName = "PROJECT_NAME"
+	// VarClusterName is a common env var name.
+	VarClusterName = "CLUSTER_NAME"
 	// VarServiceSecret is a common env var name.
 	VarServiceSecret = "SERVICE_SECRET"
 	// VarPort is a common env var name.

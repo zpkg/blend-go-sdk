@@ -12,6 +12,7 @@ import (
 	"fmt"
 	"net/http"
 	"testing"
+	"time"
 
 	"github.com/blend/go-sdk/assert"
 	"github.com/blend/go-sdk/r2"
@@ -26,14 +27,26 @@ func Test_SessionAware(t *testing.T) {
 
 	var didExecuteHandler bool
 	var sessionWasSet bool
+	var sessionExpirationWasChanged bool
 	var contextSessionWasSet bool
 
+	now := time.Time{}
 	app := MustNew(OptAuth(NewLocalAuthManager()))
-	its.Nil(app.Auth.PersistHandler(context.TODO(), &Session{SessionID: sessionID, UserID: "example-string"}))
+	app.Auth.SessionTimeoutProvider = func(s *Session) time.Time {
+		return now.Add(time.Hour)
+	}
+	err := app.Auth.PersistHandler(context.TODO(), &Session{SessionID: sessionID, UserID: "example-string"})
+	its.Nil(err)
+
+	_, _, err = app.Auth.VerifySession(MockCtx(http.MethodGet, "/"))
+	its.Nil(err)
 
 	app.GET("/", func(r *Ctx) Result {
 		didExecuteHandler = true
 		sessionWasSet = r.Session != nil
+		if r.Session != nil {
+			sessionExpirationWasChanged = r.Session.ExpiresUTC != now
+		}
 		contextSessionWasSet = GetSession(r.Context()) != nil
 		return Text.Result("COOL")
 	}, SessionAware)
@@ -42,6 +55,7 @@ func Test_SessionAware(t *testing.T) {
 	its.Nil(err)
 	its.Equal(http.StatusOK, unsetMeta.StatusCode)
 	its.False(sessionWasSet)
+	its.False(sessionExpirationWasChanged)
 	its.False(contextSessionWasSet)
 
 	meta, err := MockGet(app, "/", r2.OptCookieValue(app.Auth.CookieDefaults.Name, sessionID)).Discard()
@@ -50,6 +64,7 @@ func Test_SessionAware(t *testing.T) {
 	its.Equal(webutil.ContentTypeText, meta.Header.Get(webutil.HeaderContentType))
 	its.True(didExecuteHandler, "we should have triggered the hander")
 	its.True(sessionWasSet, "the session should have been set by the middleware")
+	its.True(sessionExpirationWasChanged, "the session should have had its expiration updated")
 	its.True(contextSessionWasSet, "the context session should have been set by the middleware")
 }
 
@@ -113,6 +128,95 @@ func Test_SessionAware_error(t *testing.T) {
 	its.Equal(http.StatusInternalServerError, meta.StatusCode)
 	its.False(didExecuteHandler, "we should have triggered the hander")
 	its.False(sessionWasSet, "the session should not have been set by the middleware")
+	its.False(contextSessionWasSet, "the context session should not have been set by the middleware")
+}
+
+func Test_SessionAwareForLogout(t *testing.T) {
+	its := assert.New(t)
+
+	sessionID := NewSessionID()
+
+	var didExecuteHandler bool
+	var sessionWasSet bool
+	var sessionExpirationWasChanged bool
+	var contextSessionWasSet bool
+
+	now := time.Time{}
+	app := MustNew(OptAuth(NewLocalAuthManager()))
+	app.Auth.SessionTimeoutProvider = func(s *Session) time.Time {
+		return now.Add(time.Hour)
+	}
+
+	its.Nil(app.Auth.PersistHandler(context.TODO(), &Session{SessionID: sessionID, UserID: "example-string"}))
+
+	app.GET("/", func(r *Ctx) Result {
+		didExecuteHandler = true
+		sessionWasSet = r.Session != nil
+		if r.Session != nil {
+			sessionExpirationWasChanged = r.Session.ExpiresUTC != now
+		}
+		contextSessionWasSet = GetSession(r.Context()) != nil
+		return Text.Result("COOL")
+	}, SessionAwareForLogout)
+
+	unsetMeta, err := MockGet(app, "/").Discard()
+	its.Nil(err)
+	its.Equal(http.StatusOK, unsetMeta.StatusCode)
+	its.False(sessionWasSet)
+	its.False(sessionExpirationWasChanged)
+	its.False(contextSessionWasSet)
+
+	meta, err := MockGet(app, "/", r2.OptCookieValue(app.Auth.CookieDefaults.Name, sessionID)).Discard()
+	its.Nil(err)
+	its.Equal(http.StatusOK, meta.StatusCode)
+	its.Equal(webutil.ContentTypeText, meta.Header.Get(webutil.HeaderContentType))
+	its.True(didExecuteHandler, "we should have triggered the hander")
+	its.True(sessionWasSet, "the session should have been set by the middleware")
+	its.False(sessionExpirationWasChanged, "we should _not_ have updated the session expiry")
+	its.True(contextSessionWasSet, "the context session should have been set by the middleware")
+}
+
+func Test_SessionAwareForLogout_error(t *testing.T) {
+	its := assert.New(t)
+
+	sessionID := NewSessionID()
+
+	var sessionWasSet bool
+	var sessionExpirationWasChanged bool
+	var contextSessionWasSet bool
+
+	now := time.Time{}
+	app := MustNew(OptAuth(NewLocalAuthManager()))
+	app.Auth.SessionTimeoutProvider = func(s *Session) time.Time {
+		return now.Add(time.Hour)
+	}
+	app.Auth.ValidateHandler = func(_ context.Context, _ *Session) error {
+		return fmt.Errorf("this is just a test")
+	}
+
+	its.Nil(app.Auth.PersistHandler(context.TODO(), &Session{SessionID: sessionID, UserID: "example-string"}))
+
+	app.GET("/", func(r *Ctx) Result {
+		sessionWasSet = r.Session != nil
+		if r.Session != nil {
+			sessionExpirationWasChanged = r.Session.ExpiresUTC != now
+		}
+		contextSessionWasSet = GetSession(r.Context()) != nil
+		return Text.Result("COOL")
+	}, SessionAwareForLogout)
+
+	unsetMeta, err := MockGet(app, "/").Discard()
+	its.Nil(err)
+	its.Equal(http.StatusOK, unsetMeta.StatusCode)
+	its.False(sessionWasSet)
+	its.False(sessionExpirationWasChanged)
+	its.False(contextSessionWasSet)
+
+	meta, err := MockGet(app, "/", r2.OptCookieValue(app.Auth.CookieDefaults.Name, sessionID)).Discard()
+	its.Nil(err)
+	its.Equal(http.StatusInternalServerError, meta.StatusCode)
+	its.False(sessionWasSet, "the session should not have been set by the middleware")
+	its.False(sessionExpirationWasChanged, "we should not have updated the session expiry")
 	its.False(contextSessionWasSet, "the context session should not have been set by the middleware")
 }
 
