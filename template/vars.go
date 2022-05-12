@@ -1,7 +1,7 @@
 /*
 
-Copyright (c) 2021 - Present. Blend Labs, Inc. All rights reserved
-Blend Confidential - Restricted
+Copyright (c) 2022 - Present. Blend Labs, Inc. All rights reserved
+Use of this source code is governed by a MIT license that can be found in the LICENSE file.
 
 */
 
@@ -9,7 +9,7 @@ package template
 
 import (
 	"encoding/json"
-	"io/ioutil"
+	"os"
 	"strings"
 
 	"gopkg.in/yaml.v3"
@@ -20,7 +20,7 @@ type Vars = map[string]interface{}
 
 // NewVarsFromPath returns a new vars file from a given path.
 func NewVarsFromPath(path string) (map[string]interface{}, error) {
-	contents, err := ioutil.ReadFile(path)
+	contents, err := os.ReadFile(path)
 	if err != nil {
 		return nil, err
 	}

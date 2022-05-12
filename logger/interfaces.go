@@ -1,7 +1,7 @@
 /*
 
-Copyright (c) 2021 - Present. Blend Labs, Inc. All rights reserved
-Blend Confidential - Restricted
+Copyright (c) 2022 - Present. Blend Labs, Inc. All rights reserved
+Use of this source code is governed by a MIT license that can be found in the LICENSE file.
 
 */
 
@@ -164,6 +164,11 @@ type Closer interface {
 	Close()
 }
 
+// Drainer is a type that can be drained
+type Drainer interface {
+	Drain()
+}
+
 // FatalCloser is a type that defines Fatal and Close.
 type FatalCloser interface {
 	FatalReceiver
@@ -188,6 +193,7 @@ type Log interface {
 // FullLog is a logger that implements the full suite of logging methods.
 type FullLog interface {
 	Closer
+	Drainer
 	Flagged
 	Listenable
 	Filterable

@@ -1,7 +1,7 @@
 /*
 
-Copyright (c) 2021 - Present. Blend Labs, Inc. All rights reserved
-Blend Confidential - Restricted
+Copyright (c) 2022 - Present. Blend Labs, Inc. All rights reserved
+Use of this source code is governed by a MIT license that can be found in the LICENSE file.
 
 */
 
@@ -20,4 +20,9 @@ type TransitClient interface {
 
 	Encrypt(ctx context.Context, key string, context, data []byte) (string, error)
 	Decrypt(ctx context.Context, key string, context []byte, ciphertext string) ([]byte, error)
+
+	TransitHMAC(ctx context.Context, key string, input []byte) ([]byte, error)
+
+	BatchEncrypt(ctx context.Context, key string, batchInput BatchTransitInput) ([]string, error)
+	BatchDecrypt(ctx context.Context, key string, batchInput BatchTransitInput) ([][]byte, error)
 }

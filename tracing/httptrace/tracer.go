@@ -1,7 +1,7 @@
 /*
 
-Copyright (c) 2021 - Present. Blend Labs, Inc. All rights reserved
-Blend Confidential - Restricted
+Copyright (c) 2022 - Present. Blend Labs, Inc. All rights reserved
+Use of this source code is governed by a MIT license that can be found in the LICENSE file.
 
 */
 
@@ -9,6 +9,7 @@ package httptrace
 
 import (
 	"context"
+	"fmt"
 	"net/http"
 	"time"
 
@@ -37,7 +38,7 @@ type httpTracer struct {
 func StartHTTPSpan(ctx context.Context, tracer opentracing.Tracer, req *http.Request, resource string, startTime time.Time, extra ...opentracing.StartSpanOption) (opentracing.Span, *http.Request) {
 	// set up basic start options (these are mostly tags).
 	startOptions := []opentracing.StartSpanOption{
-		opentracing.Tag{Key: tracing.TagKeyResourceName, Value: resource},
+		opentracing.Tag{Key: tracing.TagKeyResourceName, Value: fmt.Sprintf("%s %s", req.Method, resource)},
 		opentracing.Tag{Key: tracing.TagKeySpanType, Value: tracing.SpanTypeWeb},
 		opentracing.Tag{Key: tracing.TagKeyHTTPMethod, Value: req.Method},
 		opentracing.Tag{Key: tracing.TagKeyHTTPURL, Value: req.URL.Path},
@@ -52,10 +53,11 @@ func StartHTTPSpan(ctx context.Context, tracer opentracing.Tracer, req *http.Req
 	// try to extract an incoming span context
 	// this is typically done if we're a service being called in a chain from another (more ancestral)
 	// span context.
-	spanContext, _ := tracer.Extract(opentracing.HTTPHeaders, opentracing.HTTPHeadersCarrier(req.Header))
-	if spanContext != nil {
+	spanContext, err := tracer.Extract(opentracing.HTTPHeaders, opentracing.HTTPHeadersCarrier(req.Header))
+	if spanContext != nil && err == nil {
 		startOptions = append(startOptions, opentracing.ChildOf(spanContext))
 	}
+
 	// start the span.
 	span, spanCtx := tracing.StartSpanFromContext(ctx, tracer, tracing.OperationHTTPRequest, startOptions...)
 	// inject the new context
@@ -76,10 +78,11 @@ type httpTraceFinisher struct {
 	span opentracing.Span
 }
 
-func (htf httpTraceFinisher) Finish(err error) {
+func (htf httpTraceFinisher) Finish(statusCode int, err error) {
 	if htf.span == nil {
 		return
 	}
 	tracing.SpanError(htf.span, err)
+	htf.span.SetTag(tracing.TagKeyHTTPCode, fmt.Sprint(statusCode))
 	htf.span.Finish()
 }

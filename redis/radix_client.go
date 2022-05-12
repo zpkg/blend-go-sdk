@@ -1,7 +1,7 @@
 /*
 
-Copyright (c) 2021 - Present. Blend Labs, Inc. All rights reserved
-Blend Confidential - Restricted
+Copyright (c) 2022 - Present. Blend Labs, Inc. All rights reserved
+Use of this source code is governed by a MIT license that can be found in the LICENSE file.
 
 */
 
@@ -9,12 +9,21 @@ package redis
 
 import (
 	"context"
+	"crypto/tls"
+	"net"
 	"time"
 
-	"github.com/mediocregopher/radix/v4"
+	radix "github.com/mediocregopher/radix/v4"
 
+	"github.com/blend/go-sdk/async"
 	"github.com/blend/go-sdk/ex"
 	"github.com/blend/go-sdk/logger"
+	"github.com/blend/go-sdk/uuid"
+)
+
+var (
+	_ async.Checker = (*RadixClient)(nil)
+	_ Client        = (*RadixClient)(nil)
 )
 
 // New returns a new client.
@@ -31,13 +40,44 @@ func New(ctx context.Context, opts ...Option) (*RadixClient, error) {
 		ctx, cancel = context.WithTimeout(ctx, rc.Config.ConnectTimeout)
 		defer cancel()
 	}
-	rc.Client, err = (radix.PoolConfig{
-		Dialer: radix.Dialer{
-			SelectDB: rc.Config.DB,
-			AuthUser: rc.Config.AuthUser,
-			AuthPass: rc.Config.AuthPassword,
-		},
-	}).New(ctx, rc.Config.Network, rc.Config.Addr)
+
+	var dialer RadixNetDialer
+	if rc.Config.UseTLS {
+		dialer = new(tls.Dialer)
+	}
+
+	if len(rc.Config.SentinelAddrs) > 0 {
+		rc.Client, err = (radix.SentinelConfig{
+			PoolConfig: radix.PoolConfig{
+				Dialer: radix.Dialer{
+					SelectDB:  rc.Config.DB,
+					AuthUser:  rc.Config.AuthUser,
+					AuthPass:  rc.Config.AuthPassword,
+					NetDialer: dialer,
+				},
+			},
+		}).New(ctx, rc.Config.SentinelPrimaryName, rc.Config.SentinelAddrs)
+	} else if len(rc.Config.ClusterAddrs) > 0 {
+		rc.Client, err = (radix.ClusterConfig{
+			PoolConfig: radix.PoolConfig{
+				Dialer: radix.Dialer{
+					SelectDB:  rc.Config.DB,
+					AuthUser:  rc.Config.AuthUser,
+					AuthPass:  rc.Config.AuthPassword,
+					NetDialer: dialer,
+				},
+			},
+		}).New(ctx, rc.Config.ClusterAddrs)
+	} else {
+		rc.Client, err = (radix.PoolConfig{
+			Dialer: radix.Dialer{
+				SelectDB:  rc.Config.DB,
+				AuthUser:  rc.Config.AuthUser,
+				AuthPass:  rc.Config.AuthPassword,
+				NetDialer: dialer,
+			},
+		}).New(ctx, rc.Config.Network, rc.Config.Addr)
+	}
 	if err != nil {
 		return nil, ex.New(err)
 	}
@@ -49,12 +89,41 @@ var (
 	_ Client = (*RadixClient)(nil)
 )
 
+// RadixNetDialer is a dialer for radix connections.
+type RadixNetDialer interface {
+	DialContext(context.Context, string, string) (net.Conn, error)
+}
+
+// RadixDoCloser is an thin implementation of the radix client.
+type RadixDoCloser interface {
+	Do(context.Context, radix.Action) error
+	Close() error
+}
+
 // RadixClient is a wrapping client for the underling radix redis driver.
 type RadixClient struct {
 	Config Config
 	Log    logger.Triggerable
 	Tracer Tracer
-	Client radix.Client
+	Client RadixDoCloser
+}
+
+// Ping sends an echo to the server and validates the response.
+func (rc *RadixClient) Ping(ctx context.Context) error {
+	var actual string
+	expected := uuid.V4().String()
+	if err := rc.Client.Do(ctx, radix.Cmd(&actual, OpECHO, expected)); err != nil {
+		return ex.New(err)
+	}
+	if actual != expected {
+		return ex.New(ErrPingFailed)
+	}
+	return nil
+}
+
+// Check implements a status check.
+func (rc *RadixClient) Check(ctx context.Context) error {
+	return rc.Ping(ctx)
 }
 
 // Do runs a given command.

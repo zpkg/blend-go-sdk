@@ -1,7 +1,7 @@
 /*
 
-Copyright (c) 2021 - Present. Blend Labs, Inc. All rights reserved
-Blend Confidential - Restricted
+Copyright (c) 2022 - Present. Blend Labs, Inc. All rights reserved
+Use of this source code is governed by a MIT license that can be found in the LICENSE file.
 
 */
 
@@ -32,7 +32,8 @@ func TestParseCertPEM(t *testing.T) {
 	}, "\n"))
 	certs, err = ParseCertPEM(invalidCert)
 	assert.Nil(certs)
-	assert.Equal("asn1: syntax error: truncated tag or length", err.Error())
+	expected := "x509: malformed certificate"
+	assert.Equal(expected, err.Error())
 }
 
 func TestCommonNamesForCertPair(t *testing.T) {

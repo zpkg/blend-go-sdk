@@ -1,7 +1,7 @@
 /*
 
-Copyright (c) 2021 - Present. Blend Labs, Inc. All rights reserved
-Blend Confidential - Restricted
+Copyright (c) 2022 - Present. Blend Labs, Inc. All rights reserved
+Use of this source code is governed by a MIT license that can be found in the LICENSE file.
 
 */
 
@@ -15,8 +15,6 @@ import (
 )
 
 func TestNewCertBundleFromLiterals(t *testing.T) {
-	t.Parallel()
-
 	assert := assert.New(t)
 
 	bundle, err := NewCertBundle(KeyPair{
@@ -32,8 +30,6 @@ func TestNewCertBundleFromLiterals(t *testing.T) {
 }
 
 func TestNewCertBundleFromFiles(t *testing.T) {
-	t.Parallel()
-
 	assert := assert.New(t)
 
 	bundle, err := NewCertBundle(KeyPair{
@@ -48,8 +44,6 @@ func TestNewCertBundleFromFiles(t *testing.T) {
 }
 
 func TestCertBundleWriteCertPem(t *testing.T) {
-	t.Parallel()
-
 	assert := assert.New(t)
 
 	bundle, err := NewCertBundle(KeyPair{
@@ -64,8 +58,6 @@ func TestCertBundleWriteCertPem(t *testing.T) {
 }
 
 func TestCertBundleWriteKeyPem(t *testing.T) {
-	t.Parallel()
-
 	assert := assert.New(t)
 
 	bundle, err := NewCertBundle(KeyPair{
@@ -80,8 +72,6 @@ func TestCertBundleWriteKeyPem(t *testing.T) {
 }
 
 func TestCertBundleCommonNames(t *testing.T) {
-	t.Parallel()
-
 	assert := assert.New(t)
 
 	bundle, err := NewCertBundle(KeyPair{
@@ -93,4 +83,19 @@ func TestCertBundleCommonNames(t *testing.T) {
 	commonNames, err := bundle.CommonNames()
 	assert.Nil(err)
 	assert.Len(commonNames, 2)
+}
+
+func TestCertBundle_ServerConfig(t *testing.T) {
+	assert := assert.New(t)
+
+	bundle, err := NewCertBundle(KeyPair{
+		Cert: string(certLiteral),
+		Key:  string(keyLiteral),
+	})
+	assert.Nil(err)
+
+	cfg, err := bundle.ServerConfig()
+	assert.Nil(err)
+	assert.NotEmpty(cfg.Certificates)
+	assert.NotNil(cfg.RootCAs)
 }

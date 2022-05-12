@@ -1,7 +1,7 @@
 /*
 
-Copyright (c) 2021 - Present. Blend Labs, Inc. All rights reserved
-Blend Confidential - Restricted
+Copyright (c) 2022 - Present. Blend Labs, Inc. All rights reserved
+Use of this source code is governed by a MIT license that can be found in the LICENSE file.
 
 */
 
@@ -9,45 +9,51 @@ package crypto
 
 import (
 	"bytes"
-	"io/ioutil"
+	"io"
 	"testing"
 
 	"github.com/blend/go-sdk/assert"
 )
 
-func TestStreamEncrypterDecrypter(t *testing.T) {
-	assert := assert.New(t)
-	key, err := CreateKey(32)
-	assert.Nil(err)
+func Test_Stream_EncrypterDecrypter(t *testing.T) {
+	t.Parallel()
+	its := assert.New(t)
+
+	encKey, err := CreateKey(32)
+	its.Nil(err)
+	macKey, err := CreateKey(32)
+	its.Nil(err)
 	plaintext := "Eleven is the best person in all of Hawkins Indiana. Some more text"
 	pt := []byte(plaintext)
 
 	src := bytes.NewReader(pt)
 
-	se, err := NewStreamEncrypter(key, src)
-	assert.Nil(err)
-	assert.NotNil(se)
+	se, err := NewStreamEncrypter(encKey, macKey, src)
+	its.Nil(err)
+	its.NotNil(se)
 
-	encrypted, err := ioutil.ReadAll(se)
-	assert.Nil(err)
-	assert.NotNil(encrypted)
+	encrypted, err := io.ReadAll(se)
+	its.Nil(err)
+	its.NotNil(encrypted)
 
-	sd, err := NewStreamDecrypter(key, se.Meta(), bytes.NewReader(encrypted))
-	assert.Nil(err)
-	assert.NotNil(sd)
+	sd, err := NewStreamDecrypter(encKey, macKey, se.Meta(), bytes.NewReader(encrypted))
+	its.Nil(err)
+	its.NotNil(sd)
 
-	decrypted, err := ioutil.ReadAll(sd)
-	assert.Nil(err)
-	assert.Equal(plaintext, string(decrypted))
+	decrypted, err := io.ReadAll(sd)
+	its.Nil(err)
+	its.Equal(plaintext, string(decrypted))
 
-	assert.Nil(sd.Authenticate())
+	its.Nil(sd.Authenticate())
 }
 
-func TestCheckedWrite(t *testing.T) {
-	assert := assert.New(t)
+func Test_checkedWrite(t *testing.T) {
+	t.Parallel()
+	its := assert.New(t)
+
 	writer := bytes.NewBuffer(nil)
 	data := []byte{1, 1, 1}
 	v, err := checkedWrite(writer, data)
-	assert.Nil(err)
-	assert.Equal(len(data), v)
+	its.Nil(err)
+	its.Equal(len(data), v)
 }

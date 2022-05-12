@@ -1,7 +1,7 @@
 /*
 
-Copyright (c) 2021 - Present. Blend Labs, Inc. All rights reserved
-Blend Confidential - Restricted
+Copyright (c) 2022 - Present. Blend Labs, Inc. All rights reserved
+Use of this source code is governed by a MIT license that can be found in the LICENSE file.
 
 */
 
@@ -225,6 +225,20 @@ func TestTemplateViewFuncSince(t *testing.T) {
 	assert.NotEmpty(buffer.String())
 }
 
+func TestTemplateViewFuncTimeSub(t *testing.T) {
+	assert := assert.New(t)
+
+	test := `{{ time_sub ( .Var "ts1" ) ( .Var "ts2" ) }}`
+	temp := New().WithBody(test).
+		WithVar("ts1", time.Date(2018, 05, 20, 21, 00, 00, 00, time.UTC)).
+		WithVar("ts2", time.Date(2018, 05, 20, 21, 00, 00, int(500*time.Millisecond), time.UTC))
+
+	buffer := bytes.NewBuffer(nil)
+	err := temp.Process(buffer)
+	assert.Nil(err)
+	assert.Equal("-500ms", buffer.String())
+}
+
 func TestTemplateViewFuncSinceUTC(t *testing.T) {
 	assert := assert.New(t)
 
@@ -441,6 +455,18 @@ func TestTemplateViewFuncFormatPct(t *testing.T) {
 	err := temp.Process(buffer)
 	assert.Nil(err)
 	assert.Equal("24.00%", buffer.String())
+}
+
+func TestTemplateViewFuncFormatFileSize(t *testing.T) {
+	assert := assert.New(t)
+
+	test := `{{ .Var "foo" | parse_int | format_filesize }}`
+	temp := New().WithBody(test).WithVar("foo", 1<<20)
+
+	buffer := bytes.NewBuffer(nil)
+	err := temp.Process(buffer)
+	assert.Nil(err)
+	assert.Equal("1mB", buffer.String())
 }
 
 func TestTemplateViewFuncBase64(t *testing.T) {
@@ -781,6 +807,42 @@ func TestViewFuncTimeFormat(t *testing.T) {
 	buffer := new(bytes.Buffer)
 	assert.Nil(tmp.Process(buffer))
 	assert.Equal("2018-10-06", buffer.String())
+}
+
+func TestViewFuncTimeIsZero(t *testing.T) {
+	assert := assert.New(t)
+
+	tmp := New().WithBody(`{{ if .Var "ts1" | time_is_zero }}yep{{else}}nope{{end}}`).WithVar("ts1", time.Date(2018, 10, 06, 12, 0, 0, 0, time.UTC))
+	buffer := new(bytes.Buffer)
+	assert.Nil(tmp.Process(buffer))
+	assert.Equal("nope", buffer.String())
+
+	tmp.SetVar("ts1", time.Time{})
+
+	buffer = new(bytes.Buffer)
+	assert.Nil(tmp.Process(buffer))
+	assert.Equal("yep", buffer.String())
+}
+
+func TestViewFuncTimeIsEpoch(t *testing.T) {
+	assert := assert.New(t)
+
+	tmp := New().WithBody(`{{ if .Var "ts1" | time_is_epoch }}yep{{else}}nope{{end}}`).WithVar("ts1", time.Date(2018, 10, 06, 12, 0, 0, 0, time.UTC))
+	buffer := new(bytes.Buffer)
+	assert.Nil(tmp.Process(buffer))
+	assert.Equal("nope", buffer.String())
+
+	tmp.SetVar("ts1", time.Time{})
+
+	buffer = new(bytes.Buffer)
+	assert.Nil(tmp.Process(buffer))
+	assert.Equal("nope", buffer.String())
+
+	tmp.SetVar("ts1", time.Unix(0, 0))
+
+	buffer = new(bytes.Buffer)
+	assert.Nil(tmp.Process(buffer))
+	assert.Equal("yep", buffer.String())
 }
 
 func TestViewFuncRFC3339(t *testing.T) {

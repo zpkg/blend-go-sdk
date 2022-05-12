@@ -1,7 +1,7 @@
 /*
 
-Copyright (c) 2021 - Present. Blend Labs, Inc. All rights reserved
-Blend Confidential - Restricted
+Copyright (c) 2022 - Present. Blend Labs, Inc. All rights reserved
+Use of this source code is governed by a MIT license that can be found in the LICENSE file.
 
 */
 
@@ -12,86 +12,108 @@ import (
 	"strings"
 )
 
-// Request applies sanitization options to a given request.
+// Request sanitizes a given request.
 func Request(r *http.Request, opts ...RequestOption) *http.Request {
-	if r == nil {
-		return nil
-	}
-
-	options := RequestOptions{
-		DisallowedHeaders:     DefaultSanitizationDisallowedHeaders,
-		DisallowedQueryParams: DefaultSanitizationDisallowedQueryParams,
-		ValueSanitizer:        DefaultValueSanitizer,
-	}
-	for _, opt := range opts {
-		opt(&options)
-	}
-
-	copy := r.Clone(r.Context())
-	for header, values := range copy.Header {
-		if options.IsHeaderDisallowed(header) {
-			copy.Header[header] = options.ValueSanitizer(header, values...)
-		}
-	}
-
-	if copy.URL != nil {
-		queryParams := copy.URL.Query()
-		for queryParam, values := range queryParams {
-			if options.IsQueryParamDisallowed(queryParam) {
-				queryParams[queryParam] = options.ValueSanitizer(queryParam, values...)
-			}
-		}
-		copy.URL.RawQuery = queryParams.Encode()
-	}
-
-	return copy
+	return NewRequestSanitizer(opts...).Sanitize(r)
 }
 
-// OptRequestAddDisallowedHeaders adds disallowed headers, augmenting defaults.
+// NewRequestSanitizer creates a new request sanitizer.
+func NewRequestSanitizer(opts ...RequestOption) RequestSanitizer {
+	r := RequestSanitizer{
+		DisallowedHeaders:     DefaultSanitizationDisallowedHeaders,
+		DisallowedQueryParams: DefaultSanitizationDisallowedQueryParams,
+		KeyValuesSanitizer:    KeyValuesSanitizerFunc(DefaultKeyValuesSanitizerFunc),
+		PathSanitizer:         PathSanitizerFunc(DefaultPathSanitizerFunc),
+	}
+	for _, opt := range opts {
+		opt(&r)
+	}
+	return r
+}
+
+// RequestOption is a function that mutates sanitization options.
+type RequestOption func(*RequestSanitizer)
+
+// OptRequestAddDisallowedHeaders adds disallowed request headers, augmenting defaults.
 func OptRequestAddDisallowedHeaders(headers ...string) RequestOption {
-	return func(ro *RequestOptions) {
+	return func(ro *RequestSanitizer) {
 		ro.DisallowedHeaders = append(ro.DisallowedHeaders, headers...)
 	}
 }
 
-// OptRequestSetDisallowedHeaders sets the disallowed headers, overwriting defaults.
+// OptRequestSetDisallowedHeaders sets the disallowed request headers, overwriting defaults.
 func OptRequestSetDisallowedHeaders(headers ...string) RequestOption {
-	return func(ro *RequestOptions) {
+	return func(ro *RequestSanitizer) {
 		ro.DisallowedHeaders = headers
 	}
 }
 
-// OptRequestAddDisallowedQueryParams adds disallowed query params, augmenting defaults.
+// OptRequestAddDisallowedQueryParams adds disallowed request query params, augmenting defaults.
 func OptRequestAddDisallowedQueryParams(queryParams ...string) RequestOption {
-	return func(ro *RequestOptions) {
-		ro.DisallowedQueryParams = append(ro.DisallowedQueryParams, queryParams...)
+	return func(rs *RequestSanitizer) {
+		rs.DisallowedQueryParams = append(rs.DisallowedQueryParams, queryParams...)
 	}
 }
 
-// OptRequestSetDisallowedQueryParams sets the disallowed query params, overwriting defaults.
+// OptRequestSetDisallowedQueryParams sets the disallowed request query params, overwriting defaults.
 func OptRequestSetDisallowedQueryParams(queryParams ...string) RequestOption {
-	return func(ro *RequestOptions) {
-		ro.DisallowedQueryParams = queryParams
+	return func(rs *RequestSanitizer) {
+		rs.DisallowedQueryParams = queryParams
 	}
 }
 
-// OptRequestValueSanitizer sets the value sanitizer.
-func OptRequestValueSanitizer(valueSanitizer ValueSanitizer) RequestOption {
-	return func(ro *RequestOptions) {
-		ro.ValueSanitizer = valueSanitizer
+// OptRequestKeyValuesSanitizer sets the request key values sanitizer.
+func OptRequestKeyValuesSanitizer(valueSanitizer KeyValuesSanitizer) RequestOption {
+	return func(rs *RequestSanitizer) {
+		rs.KeyValuesSanitizer = valueSanitizer
 	}
 }
 
-// RequestOptions are options for sanitization of http requests.
-type RequestOptions struct {
+// OptRequestPathSanitizer sets the request path sanitizer.
+func OptRequestPathSanitizer(pathSanitizer PathSanitizer) RequestOption {
+	return func(rs *RequestSanitizer) {
+		rs.PathSanitizer = pathSanitizer
+	}
+}
+
+// RequestSanitizer are options for sanitization of http requests.
+type RequestSanitizer struct {
 	DisallowedHeaders     []string
 	DisallowedQueryParams []string
-	ValueSanitizer        ValueSanitizer
+	KeyValuesSanitizer    KeyValuesSanitizer
+	PathSanitizer         PathSanitizer
+}
+
+// Sanitize applies sanitization options to a given request.
+func (rs RequestSanitizer) Sanitize(r *http.Request) *http.Request {
+	if r == nil {
+		return nil
+	}
+
+	copy := r.Clone(r.Context())
+	for header, values := range copy.Header {
+		if rs.IsHeaderDisallowed(header) {
+			copy.Header[header] = rs.KeyValuesSanitizer.SanitizeKeyValues(header, values...)
+		}
+	}
+	if copy.URL != nil {
+		queryParams := copy.URL.Query()
+		for queryParam, values := range queryParams {
+			if rs.IsQueryParamDisallowed(queryParam) {
+				queryParams[queryParam] = rs.KeyValuesSanitizer.SanitizeKeyValues(queryParam, values...)
+			}
+		}
+		copy.URL.RawQuery = queryParams.Encode()
+
+		// also sanitize the path
+		copy.URL.Path = rs.PathSanitizer.SanitizePath(copy.URL.Path)
+	}
+	return copy
 }
 
 // IsHeaderDisallowed returns if a header is in the disallowed list.
-func (ro RequestOptions) IsHeaderDisallowed(header string) bool {
-	for _, disallowedHeader := range ro.DisallowedHeaders {
+func (rs RequestSanitizer) IsHeaderDisallowed(header string) bool {
+	for _, disallowedHeader := range rs.DisallowedHeaders {
 		if strings.EqualFold(disallowedHeader, header) {
 			return true
 		}
@@ -100,14 +122,11 @@ func (ro RequestOptions) IsHeaderDisallowed(header string) bool {
 }
 
 // IsQueryParamDisallowed returns if a query param is in the disallowed list.
-func (ro RequestOptions) IsQueryParamDisallowed(queryParam string) bool {
-	for _, disallowedQueryParam := range ro.DisallowedQueryParams {
+func (rs RequestSanitizer) IsQueryParamDisallowed(queryParam string) bool {
+	for _, disallowedQueryParam := range rs.DisallowedQueryParams {
 		if strings.EqualFold(disallowedQueryParam, queryParam) {
 			return true
 		}
 	}
 	return false
 }
-
-// RequestOption is a function that mutates sanitization options.
-type RequestOption func(*RequestOptions)

@@ -1,7 +1,7 @@
 /*
 
-Copyright (c) 2021 - Present. Blend Labs, Inc. All rights reserved
-Blend Confidential - Restricted
+Copyright (c) 2022 - Present. Blend Labs, Inc. All rights reserved
+Use of this source code is governed by a MIT license that can be found in the LICENSE file.
 
 */
 
@@ -9,7 +9,7 @@ package web
 
 import (
 	"bytes"
-	"io/ioutil"
+	"io"
 	"net/http"
 	"testing"
 
@@ -28,7 +28,7 @@ func Test_NewCachedStaticFile(t *testing.T) {
 	its.False(csf.ModTime.IsZero())
 	its.Equal("da9a836ffc32feea4b26a536d3d0eccc", csf.ETag)
 
-	contents, err := ioutil.ReadAll(csf.Contents)
+	contents, err := io.ReadAll(csf.Contents)
 	its.Nil(err)
 	its.Contains(string(contents), `<title>Test!</title>`)
 }

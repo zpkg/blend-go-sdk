@@ -1,7 +1,7 @@
 /*
 
-Copyright (c) 2021 - Present. Blend Labs, Inc. All rights reserved
-Blend Confidential - Restricted
+Copyright (c) 2022 - Present. Blend Labs, Inc. All rights reserved
+Use of this source code is governed by a MIT license that can be found in the LICENSE file.
 
 */
 
@@ -10,7 +10,6 @@ package r2
 import (
 	"bytes"
 	"io"
-	"io/ioutil"
 	"net/http"
 	"time"
 
@@ -21,7 +20,7 @@ import (
 func OptLogResponse(log logger.Triggerable) Option {
 	return OptOnResponse(func(req *http.Request, res *http.Response, startedUTC time.Time, err error) error {
 		if err != nil {
-			return err
+			return nil
 		}
 		event := NewEvent(FlagResponse,
 			OptEventRequest(req),
@@ -40,7 +39,7 @@ func OptLogResponse(log logger.Triggerable) Option {
 func OptLogResponseWithBody(log logger.Triggerable) Option {
 	return OptOnResponse(func(req *http.Request, res *http.Response, started time.Time, err error) error {
 		if err != nil {
-			return err
+			return nil
 		}
 		defer res.Body.Close()
 
@@ -50,7 +49,7 @@ func OptLogResponseWithBody(log logger.Triggerable) Option {
 			return err
 		}
 		// set the body to the read contents
-		res.Body = ioutil.NopCloser(bytes.NewReader(buffer.Bytes()))
+		res.Body = io.NopCloser(bytes.NewReader(buffer.Bytes()))
 
 		event := NewEvent(FlagResponse,
 			OptEventRequest(req),

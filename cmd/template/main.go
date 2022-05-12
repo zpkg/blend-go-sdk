@@ -1,7 +1,7 @@
 /*
 
-Copyright (c) 2021 - Present. Blend Labs, Inc. All rights reserved
-Blend Confidential - Restricted
+Copyright (c) 2022 - Present. Blend Labs, Inc. All rights reserved
+Use of this source code is governed by a MIT license that can be found in the LICENSE file.
 
 */
 
@@ -11,7 +11,7 @@ import (
 	"bytes"
 	"flag"
 	"fmt"
-	"io/ioutil"
+	"io"
 	"log"
 	"os"
 	"runtime"
@@ -126,7 +126,7 @@ func main() {
 		temp = template.New()
 
 		var contents []byte
-		contents, err = ioutil.ReadAll(os.Stdin)
+		contents, err = io.ReadAll(os.Stdin)
 		if err != nil {
 			log.Fatal(err)
 		}
@@ -144,7 +144,7 @@ func main() {
 	if len(includes) > 0 {
 		for _, include := range includes {
 			var contents []byte
-			contents, err = ioutil.ReadFile(include)
+			contents, err = os.ReadFile(include)
 			if err != nil {
 				log.Fatal(err)
 			}

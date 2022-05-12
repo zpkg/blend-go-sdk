@@ -1,7 +1,7 @@
 /*
 
-Copyright (c) 2021 - Present. Blend Labs, Inc. All rights reserved
-Blend Confidential - Restricted
+Copyright (c) 2022 - Present. Blend Labs, Inc. All rights reserved
+Use of this source code is governed by a MIT license that can be found in the LICENSE file.
 
 */
 
@@ -14,7 +14,9 @@ import (
 	"math/big"
 	"time"
 
-	"github.com/blend/go-sdk/jwt"
+	"github.com/golang-jwt/jwt"
+
+	"github.com/blend/go-sdk/jwk"
 	"github.com/blend/go-sdk/uuid"
 )
 
@@ -24,12 +26,12 @@ const (
 	pk2pem = "-----BEGIN RSA PRIVATE KEY-----\nMIIEpAIBAAKCAQEAw2dRbUsAtrbqaTWN9Ekt2Zq6fZfRU+YkOnxIDKt4USsdI8Gq\nm58lB+wJ4RXzR2YPTa+YFXALoDvE/iKu+BpJQSj3WPoV2zvLM7InXcUKUK2+qDmu\na2etu8otFjA92WwcIxMBuPI34rr99UzZiUO2Yf7E4zYSWunGmCuiUOkTjrldjqpk\nCDGt9BqHC8JdnKCBn7KnMX4DisVdOC1d4NtpQTarfUl1yCf1da737GEjzGjIjQkc\nSCXTaGOIEszEeBYp6Elu/H1Ay8u7RkRvU7ufRRn9sYrr+ek1R3CwKw/mT2Ot9cYe\nFZGabNS84UgeqeMtvlSmTv2/kWX7ITEn/p6lIQIDAQABAoIBAHIMXIdIznrWWgzc\nGCVrjNpEJ/Lj6GZqndyQ61CRyCC/5DsZbyVzhp6QEtgQArU6iVYTVdW1VuPH3tth\njPP8C6N/cJa7KIST6q8anUVqmvGp5uyy9e10Tv+bKiOYNpEvO2DxWAEFRr8L2uwQ\nVat7HPknRO1EgwQTDDmGxi8pSqPy4bsyLA8lW7uDlrVQdqCGau6uL9Tc/Jq71uP7\n5z+u/tOJZY5SQ2E16RKp89HpQYrOkFvckdpSJd78XdX0jhqiIeH+DQQIssJvCK8q\nslIcCVkoSuuvYzL465EZCqGGdzQv66ywEIVd3HaUkBZdybk4dghLGu5vuyrdJ/Bm\n7RHgYi0CgYEA580hQIxiHa5mloS9RSjdqWI8K6qp+KvDSVinmr255NsExXM5y3fX\n+NwsaAcaWFVlYGdYlJVdTR5I0X9BYUEuTLM+hf5M8QOG95KR3vXnHpfl745NfbDC\nVcDeOIc/XzWUAfCku+US2ijGfP1bgMX1UQnYHz1BUt9BC14N12Oi8IcCgYEA1812\nblT6MkuOiiTl5RRgm2xnd69MxI2wizQ503hTmEJmtaWQ14M6Yz9YvkbH8jwjMhuo\nZMwI3A4AvYH8sYfKlJI5gRNoAldHOf/nbQEB7d9QQel6/0QSQ05ZlO4FmG/kHLhO\nsPjll1nOeki3WXb8NZ5K8LxVZOUc/K6Xq3xr7xcCgYEAuRBhwuoRj4bkqrlRbvzg\nc9JVHbvEth9T66QXNAjTeG6QEaAb/WEyEaKe5XL+SpXrORtpcj8J3X8XPgMuTJpA\nf8X/XfUYsrdRMylWwr5qhldZoXdoULglf1dbU6BPLRFWmHHq44RRF9HEHpgcTOQ/\nJjMI1HAQTjyl7pBp1pPay9MCgYEAiNE8uqqpjWWV00OddWU78o4B80FyvFLQkRDl\ncIsjBK9kitmTQO9z/yRUUR5y+cLi1YvvcShinZFLKtrUqIFdEGC8kHcLRCCtiboS\nsWsoG/Wu3nr2fgxcP8vWw7M8XO7jgsnfKhhDB3fqjmC3zcLAGAZpoMLmqPcRL6pJ\ngnF5xLUCgYAI1rar19R1uNXXiH4JVtUk57c643sMRN/09J+nbyT7xkWtPtUujNeY\nxj3iakptk3j/mW7H5qDE9p3kvDAI7Xp3lg/0t6pOWIajuRZueI/36pMSUpkUqO8F\nBua3vojOESMkzFaI5oXLjzTZ1Om+BiqeOYgorA7FKjcYwFRyilcspg==\n-----END RSA PRIVATE KEY-----"
 )
 
-func createJWK(pk *rsa.PrivateKey) jwt.JWK {
+func createJWK(pk *rsa.PrivateKey) jwk.JWK {
 	eBytes := big.Int{}
 	eBytes.SetInt64(int64(pk.PublicKey.E))
 	e := base64.RawURLEncoding.EncodeToString(eBytes.Bytes())
 	n := base64.RawURLEncoding.EncodeToString(pk.PublicKey.N.Bytes())
-	return jwt.JWK{
+	return jwk.JWK{
 		KID: uuid.V4().String(),
 		ALG: "RS256",
 		KTY: "RSA",

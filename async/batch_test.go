@@ -1,7 +1,7 @@
 /*
 
-Copyright (c) 2021 - Present. Blend Labs, Inc. All rights reserved
-Blend Confidential - Restricted
+Copyright (c) 2022 - Present. Blend Labs, Inc. All rights reserved
+Use of this source code is governed by a MIT license that can be found in the LICENSE file.
 
 */
 
@@ -17,8 +17,9 @@ import (
 	"github.com/blend/go-sdk/assert"
 )
 
-func TestBatch(t *testing.T) {
-	assert := assert.New(t)
+func Test_Batch(t *testing.T) {
+	t.Parallel()
+	its := assert.New(t)
 
 	workItems := 32
 
@@ -41,12 +42,37 @@ func TestBatch(t *testing.T) {
 		OptBatchParallelism(4),
 	).Process(context.Background())
 
-	assert.Equal(workItems, processed)
-	assert.Equal(workItems, len(errors))
+	its.Equal(workItems, processed)
+	its.Equal(workItems, len(errors))
 }
 
-func TestBatchPanic(t *testing.T) {
-	assert := assert.New(t)
+func Test_Batch_empty(t *testing.T) {
+	t.Parallel()
+	its := assert.New(t)
+
+	items := make(chan interface{}, 32)
+
+	var processed int32
+	action := func(_ context.Context, v interface{}) error {
+		atomic.AddInt32(&processed, 1)
+		return fmt.Errorf("this is only a test")
+	}
+
+	errors := make(chan error, 32)
+	NewBatch(
+		items,
+		action,
+		OptBatchErrors(errors),
+		OptBatchParallelism(4),
+	).Process(context.Background())
+
+	its.Equal(0, processed)
+	its.Equal(0, len(errors))
+}
+
+func Test_Batch_panic(t *testing.T) {
+	t.Parallel()
+	its := assert.New(t)
 
 	workItems := 32
 
@@ -66,6 +92,6 @@ func TestBatchPanic(t *testing.T) {
 	errors := make(chan error, workItems)
 	NewBatch(items, action, OptBatchErrors(errors)).Process(context.Background())
 
-	assert.Equal(workItems, processed)
-	assert.Equal(1, len(errors))
+	its.Equal(workItems, processed)
+	its.Equal(1, len(errors))
 }

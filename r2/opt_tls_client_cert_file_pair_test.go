@@ -1,7 +1,7 @@
 /*
 
-Copyright (c) 2021 - Present. Blend Labs, Inc. All rights reserved
-Blend Confidential - Restricted
+Copyright (c) 2022 - Present. Blend Labs, Inc. All rights reserved
+Use of this source code is governed by a MIT license that can be found in the LICENSE file.
 
 */
 
@@ -10,7 +10,6 @@ package r2
 import (
 	"bytes"
 	"io"
-	"io/ioutil"
 	"net/http"
 	"os"
 	"testing"
@@ -43,7 +42,7 @@ func TestOptTLSClientCertFilePairErrors(t *testing.T) {
 }
 
 func writeTempFile(contents []byte) (string, error) {
-	tf, err := ioutil.TempFile("", "r2_opt_tls_client_cert_file_pair")
+	tf, err := os.CreateTemp("", "r2_opt_tls_client_cert_file_pair")
 	if err != nil {
 		return "", err
 	}

@@ -1,7 +1,7 @@
 /*
 
-Copyright (c) 2021 - Present. Blend Labs, Inc. All rights reserved
-Blend Confidential - Restricted
+Copyright (c) 2022 - Present. Blend Labs, Inc. All rights reserved
+Use of this source code is governed by a MIT license that can be found in the LICENSE file.
 
 */
 
@@ -30,5 +30,12 @@ func OptUpstreamDial(opts ...webutil.DialOption) UpstreamOption {
 			}
 			typed.DialContext = dialer.DialContext
 		}
+	}
+}
+
+// OptUpstreamModifyResponse sets the dial options for the upstream.
+func OptUpstreamModifyResponse(modifyResponse func(*http.Response) error) UpstreamOption {
+	return func(u *Upstream) {
+		u.ReverseProxy.ModifyResponse = modifyResponse
 	}
 }

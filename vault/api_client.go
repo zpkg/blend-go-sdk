@@ -1,7 +1,7 @@
 /*
 
-Copyright (c) 2021 - Present. Blend Labs, Inc. All rights reserved
-Blend Confidential - Restricted
+Copyright (c) 2022 - Present. Blend Labs, Inc. All rights reserved
+Use of this source code is governed by a MIT license that can be found in the LICENSE file.
 
 */
 
@@ -12,7 +12,6 @@ import (
 	"crypto/x509"
 	"encoding/json"
 	"io"
-	"io/ioutil"
 	"net/http"
 	"net/url"
 	"path/filepath"
@@ -47,6 +46,10 @@ func New(options ...Option) (*APIClient, error) {
 	client.KV1 = &KV1{Client: client}
 	client.KV2 = &KV2{Client: client}
 	client.Transit = &Transit{Client: client}
+	client.AWSAuth, err = NewAWSAuth()
+	if err != nil {
+		return nil, err
+	}
 
 	for _, option := range options {
 		if err = option(client); err != nil {
@@ -86,6 +89,7 @@ type APIClient struct {
 	Client     HTTPClient
 	CertPool   *x509.CertPool
 	Tracer     Tracer
+	AWSAuth    *AWSAuth
 }
 
 // Put puts a value.
@@ -183,6 +187,21 @@ func (c *APIClient) Encrypt(ctx context.Context, key string, context, data []byt
 // Decrypt decrypts a given set of data.
 func (c *APIClient) Decrypt(ctx context.Context, key string, context []byte, ciphertext string) ([]byte, error) {
 	return c.Transit.Decrypt(ctx, key, context, ciphertext)
+}
+
+// TransitHMAC decrypts a given set of data.
+func (c *APIClient) TransitHMAC(ctx context.Context, key string, input []byte) ([]byte, error) {
+	return c.Transit.TransitHMAC(ctx, key, input)
+}
+
+// BatchEncrypt batch encrypts a given set of data.
+func (c *APIClient) BatchEncrypt(ctx context.Context, key string, batchInput BatchTransitInput) ([]string, error) {
+	return c.Transit.BatchEncrypt(ctx, key, batchInput)
+}
+
+// BatchDecrypt batch decrypts a given set of data.
+func (c *APIClient) BatchDecrypt(ctx context.Context, key string, batchInput BatchTransitInput) ([][]byte, error) {
+	return c.Transit.BatchDecrypt(ctx, key, batchInput)
 }
 
 // --------------------------------------------------------------------------------
@@ -324,7 +343,7 @@ func (c *APIClient) discard(res io.ReadCloser, err error) error {
 		return err
 	}
 	defer res.Close()
-	if _, err = io.Copy(ioutil.Discard, res); err != nil {
+	if _, err = io.Copy(io.Discard, res); err != nil {
 		return err
 	}
 	return nil

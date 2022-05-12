@@ -1,7 +1,7 @@
 /*
 
-Copyright (c) 2021 - Present. Blend Labs, Inc. All rights reserved
-Blend Confidential - Restricted
+Copyright (c) 2022 - Present. Blend Labs, Inc. All rights reserved
+Use of this source code is governed by a MIT license that can be found in the LICENSE file.
 
 */
 
@@ -10,6 +10,7 @@ package main
 import (
 	"context"
 	"encoding/json"
+	"flag"
 	"fmt"
 	"math/rand"
 	"net/http"
@@ -28,9 +29,9 @@ type Result struct {
 	Name string `json:"name"`
 }
 
-func createCaller(url string, opts ...r2.Option) breaker.Action {
-	return func(ctx context.Context) (interface{}, error) {
-		res, err := r2.New(url, opts...).Do()
+func createUpstreamCaller(opts ...r2.Option) breaker.Actioner {
+	return breaker.ActionerFunc(func(ctx context.Context, args interface{}) (interface{}, error) {
+		res, err := r2.New(args.(string), opts...).Do()
 		if err != nil {
 			return nil, err
 		}
@@ -41,11 +42,18 @@ func createCaller(url string, opts ...r2.Option) breaker.Action {
 		var result Result
 		json.NewDecoder(res.Body).Decode(&result)
 		return result, nil
-	}
+	})
+}
+
+var (
+	flagNumCalls = flag.Int("num-calls", 1024, "The number of calls")
+)
+
+func init() {
+	flag.Parse()
 }
 
 func main() {
-
 	mockServer := httptest.NewServer(http.HandlerFunc(func(rw http.ResponseWriter, r *http.Request) {
 		if rand.Float64() > 0.5 {
 			http.Error(rw, "should fail", http.StatusInternalServerError)
@@ -55,19 +63,23 @@ func main() {
 	}))
 	defer mockServer.Close()
 
-	cb := breaker.MustNew(breaker.OptOpenExpiryInterval(5 * time.Second))
+	b := breaker.New(
+		breaker.OptOpenExpiryInterval(5 * time.Second),
+	)
+	cb := b.Intercept(createUpstreamCaller())
+
 	var err error
 	var res interface{}
-	for x := 0; x < 1024; x++ {
-		if res, err = cb.Do(context.Background(), createCaller(mockServer.URL)); err != nil {
-			fmt.Printf("(%v) circuit breaker error: %v\n", cb.EvaluateState(context.Background()), err)
+	for x := 0; x < *flagNumCalls; x++ {
+		if res, err = cb.Action(context.Background(), mockServer.URL); err != nil {
+			fmt.Printf("(%v) circuit breaker error: %v\n", b.EvaluateState(context.Background()), err)
 			if ex.Is(err, breaker.ErrOpenState) {
 				time.Sleep(5 * time.Second)
 			} else {
 				time.Sleep(100 * time.Millisecond)
 			}
 		} else {
-			fmt.Printf("(%v) result: %v\n", cb.EvaluateState(context.Background()), res)
+			fmt.Printf("(%v) result: %v\n", b.EvaluateState(context.Background()), res)
 			time.Sleep(100 * time.Millisecond)
 		}
 	}

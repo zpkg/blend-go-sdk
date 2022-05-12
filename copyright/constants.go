@@ -1,7 +1,7 @@
 /*
 
-Copyright (c) 2021 - Present. Blend Labs, Inc. All rights reserved
-Blend Confidential - Restricted
+Copyright (c) 2022 - Present. Blend Labs, Inc. All rights reserved
+Use of this source code is governed by a MIT license that can be found in the LICENSE file.
 
 */
 
@@ -28,21 +28,79 @@ const DefaultRestrictionsOpenSource = `Use of this source code is governed by a 
 const DefaultNoticeBodyTemplate = `Copyright (c) {{ .Year }} - Present. {{ .Company }}. All rights reserved
 {{ .Restrictions }}`
 
+// Extension
+const (
+	ExtensionUnknown = ""
+	ExtensionCSS     = ".css"
+	ExtensionGo      = ".go"
+	ExtensionHTML    = ".html"
+	ExtensionJS      = ".js"
+	ExtensionJSX     = ".jsx"
+	ExtensionPy      = ".py"
+	ExtensionSASS    = ".sass"
+	ExtensionSCSS    = ".scss"
+	ExtensionTS      = ".ts"
+	ExtensionTSX     = ".tsx"
+	ExtensionYAML    = ".yaml"
+	ExtensionYML     = ".yml"
+	ExtensionSQL     = ".sql"
+	ExtensionProto   = ".proto"
+)
+
 var (
+	// KnownExtensions is a list of all the known extensions.
+	KnownExtensions = []string{
+		ExtensionCSS,
+		ExtensionGo,
+		ExtensionHTML,
+		ExtensionJS,
+		ExtensionJSX,
+		ExtensionPy,
+		ExtensionSCSS,
+		ExtensionSASS,
+		ExtensionTS,
+		ExtensionTSX,
+		ExtensionYAML,
+		ExtensionYML,
+		ExtensionSQL,
+		ExtensionProto,
+	}
+
 	// DefaultExtensionNoticeTemplates is a mapping between file extension (including the prefix dot) to the notice templates.
 	DefaultExtensionNoticeTemplates = map[string]string{
-		".css":  cssNoticeTemplate,
-		".go":   goNoticeTemplate,
-		".html": htmlNoticeTemplate,
-		".js":   jsNoticeTemplate,
-		".jsx":  jsNoticeTemplate,
-		".py":   pythonNoticeTemplate,
-		".sass": sassNoticeTemplate,
-		".scss": scssNoticeTemplate,
-		".ts":   tsNoticeTemplate,
-		".tsx":  tsNoticeTemplate,
-		".yaml": yamlNoticeTemplate,
-		".yml":  yamlNoticeTemplate,
+		ExtensionCSS:   cssNoticeTemplate,
+		ExtensionGo:    goNoticeTemplate,
+		ExtensionHTML:  htmlNoticeTemplate,
+		ExtensionJS:    jsNoticeTemplate,
+		ExtensionJSX:   jsNoticeTemplate,
+		ExtensionPy:    pythonNoticeTemplate,
+		ExtensionSASS:  sassNoticeTemplate,
+		ExtensionSCSS:  scssNoticeTemplate,
+		ExtensionTS:    tsNoticeTemplate,
+		ExtensionTSX:   tsNoticeTemplate,
+		ExtensionYAML:  yamlNoticeTemplate,
+		ExtensionYML:   yamlNoticeTemplate,
+		ExtensionSQL:   sqlNoticeTemplate,
+		ExtensionProto: protoNoticeTemplate,
+	}
+
+	// DefaultExcludes is the default excluded directories.
+	DefaultExcludes = []string{
+		".git/*",
+		".github/*",
+		"*/_config",
+		"*/_config/*",
+		"*/dist/*",
+		"*/node_modules/*",
+		"*/testdata",
+		"*/testdata/*",
+		"*/vendor/*",
+		"node_modules/*",
+		"protogen/*",
+		"*.pb.go",
+		"vendor/*",
+		"venv/*",
+		"*/venv/*",
 	}
 
 	// DefaultIncludeFiles is the default included files list.
@@ -59,37 +117,20 @@ var (
 		"*.tsx",
 		"*.yaml",
 		"*.yml",
-	}
-
-	// DefaultIncludeDirs is the default included directories.
-	DefaultIncludeDirs = []string{
-		"*",
-	}
-
-	// DefaultExcludeFiles is the default excluded files list.
-	DefaultExcludeFiles = []string{}
-
-	// DefaultExcludeDirs is the default excluded directories.
-	DefaultExcludeDirs = []string{
-		".git/*",
-		".github/*",
-		"*/_config",
-		"*/_config/*",
-		"*/dist/*",
-		"*/node_modules/*",
-		"*/testdata",
-		"*/testdata/*",
-		"*/vendor/*",
-		"protogen/*",
-		"vendor/*",
-		"venv/*",
+		"*.sql",
+		"*.proto",
 	}
 )
 
-// Errors
+// Error Strings
 var (
-	verifyErrorFormat = "%s: file copyright header missing or invalid; please use `copyright --inject` to add it"
-	ErrFailure        = errors.New("failure; one or more steps failed")
+	VerifyErrorFormat = "%s: copyright header missing or invalid"
+)
+
+// Error sentinels
+var (
+	ErrWalkSkip = errors.New("walk skip; we should not process this file or path")
+	ErrFailure  = errors.New("failure; one or more steps failed")
 )
 
 const (
@@ -138,18 +179,34 @@ const (
  */
 `
 
-	pythonNoticeTemplate = `'''
-{{ .Notice }}
-'''
+	pythonNoticeTemplate = `#
+{{ .Notice | prefix "# " }}
+#
+
+`
+
+	sqlNoticeTemplate = `--
+{{ .Notice | prefix "-- " }}
+--
+`
+
+	protoNoticeTemplate = `//
+{{ .Notice | prefix "// " }}
+//
+
 `
 )
 
 const (
-	goBuildTagExpr = `(?s)^\/\/ \+build([^\n]+)(\n{2})`
-	yearExpr       = `([0-9]{4,}?)`
+	goBuildTagExpr      = `^(\/\/(go:build| \+build).*\n)+\n`
+	tsReferenceTagsExpr = `^(\/\/\/ \<reference path=\"(.*)\" \/\>\n)+`
+	yearExpr            = `([0-9]{4,}?)`
+	shebangExpr         = `(?s)^(\s*)#!([^\n]+)\n`
 )
 
 var (
-	goBuildTagMatch = regexp.MustCompile(goBuildTagExpr)
-	yearMatch       = regexp.MustCompile(yearExpr)
+	goBuildTagMatch      = regexp.MustCompile(goBuildTagExpr)
+	tsReferenceTagsMatch = regexp.MustCompile(tsReferenceTagsExpr)
+	yearMatch            = regexp.MustCompile(yearExpr)
+	shebangMatch         = regexp.MustCompile(shebangExpr)
 )

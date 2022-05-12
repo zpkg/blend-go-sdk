@@ -1,7 +1,7 @@
 /*
 
-Copyright (c) 2021 - Present. Blend Labs, Inc. All rights reserved
-Blend Confidential - Restricted
+Copyright (c) 2022 - Present. Blend Labs, Inc. All rights reserved
+Use of this source code is governed by a MIT license that can be found in the LICENSE file.
 
 */
 
@@ -11,14 +11,14 @@ import (
 	"context"
 	"database/sql"
 
+	"github.com/blend/go-sdk/async"
 	"github.com/blend/go-sdk/bufferutil"
 	"github.com/blend/go-sdk/ex"
 	"github.com/blend/go-sdk/logger"
 )
 
-const (
-	// ConnectionNilError is a common error
-	ConnectionNilError = "connection is nil"
+var (
+	_ async.Checker = (*Connection)(nil)
 )
 
 // --------------------------------------------------------------------------------
@@ -102,6 +102,7 @@ func (dbc *Connection) Open() error {
 
 	dbc.Connection = dbConn
 	dbc.Connection.SetConnMaxLifetime(dbc.Config.MaxLifetimeOrDefault())
+	dbc.Connection.SetConnMaxIdleTime(dbc.Config.MaxIdleTimeOrDefault())
 	dbc.Connection.SetMaxIdleConns(dbc.Config.IdleConnectionsOrDefault())
 	dbc.Connection.SetMaxOpenConns(dbc.Config.MaxConnectionsOrDefault())
 	return nil
@@ -153,13 +154,15 @@ func (dbc *Connection) PrepareContext(ctx context.Context, statement string, tx 
 // Invoke returns a new invocation.
 func (dbc *Connection) Invoke(options ...InvocationOption) *Invocation {
 	i := Invocation{
-		DB:                   dbc.Connection,
 		Config:               dbc.Config,
 		BufferPool:           dbc.BufferPool,
 		Context:              context.Background(),
 		Log:                  dbc.Log,
 		Tracer:               dbc.Tracer,
 		StatementInterceptor: dbc.StatementInterceptor,
+	}
+	if dbc.Connection != nil {
+		i.DB = dbc.Connection
 	}
 	for _, option := range options {
 		option(&i)
@@ -185,4 +188,10 @@ func (dbc *Connection) Query(statement string, args ...interface{}) *Query {
 // QueryContext is a helper stub for .Invoke(OptContext(ctx)).Query(...).
 func (dbc *Connection) QueryContext(ctx context.Context, statement string, args ...interface{}) *Query {
 	return dbc.Invoke(OptContext(ctx)).Query(statement, args...)
+}
+
+// Check implements a status check.
+func (dbc *Connection) Check(ctx context.Context) error {
+	_, err := dbc.QueryContext(ctx, "select 1").Any()
+	return err
 }

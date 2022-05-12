@@ -1,15 +1,16 @@
 /*
 
-Copyright (c) 2021 - Present. Blend Labs, Inc. All rights reserved
-Blend Confidential - Restricted
+Copyright (c) 2022 - Present. Blend Labs, Inc. All rights reserved
+Use of this source code is governed by a MIT license that can be found in the LICENSE file.
 
 */
 
 package web
 
 import (
+	"github.com/golang-jwt/jwt"
+
 	"github.com/blend/go-sdk/ex"
-	"github.com/blend/go-sdk/jwt"
 )
 
 const (
@@ -42,10 +43,15 @@ func IsErrSessionInvalid(err error) bool {
 	}
 	if ex.Is(err, ErrSessionIDEmpty) ||
 		ex.Is(err, ErrSecureSessionIDEmpty) ||
-		ex.Is(err, jwt.ErrValidation) {
+		isValidationError(err) {
 		return true
 	}
 	return false
+}
+
+func isValidationError(err error) bool {
+	_, ok := err.(*jwt.ValidationError)
+	return ok
 }
 
 // IsErrBadRequest returns if an error is a bad request triggering error.

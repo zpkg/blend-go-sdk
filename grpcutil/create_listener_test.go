@@ -1,7 +1,7 @@
 /*
 
-Copyright (c) 2021 - Present. Blend Labs, Inc. All rights reserved
-Blend Confidential - Restricted
+Copyright (c) 2022 - Present. Blend Labs, Inc. All rights reserved
+Use of this source code is governed by a MIT license that can be found in the LICENSE file.
 
 */
 
@@ -9,6 +9,8 @@ package grpcutil
 
 import (
 	"fmt"
+	"os"
+	"path/filepath"
 	"testing"
 
 	"github.com/blend/go-sdk/assert"
@@ -24,7 +26,8 @@ func TestListener(t *testing.T) {
 	assert.Equal("tcp", tcpln.Addr().Network())
 	assert.Contains(tcpln.Addr().String(), "127.0.0.1:")
 
-	socketPath := fmt.Sprintf("/tmp/%s.sock", uuid.V4().String())
+	socketDir := os.TempDir()
+	socketPath := filepath.Join(socketDir, uuid.V4().String())
 	socketAddress := fmt.Sprintf("unix://" + socketPath)
 	unixln, err := CreateListener(socketAddress)
 	assert.Nil(err)

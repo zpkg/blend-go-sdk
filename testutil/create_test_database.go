@@ -1,7 +1,7 @@
 /*
 
-Copyright (c) 2021 - Present. Blend Labs, Inc. All rights reserved
-Blend Confidential - Restricted
+Copyright (c) 2022 - Present. Blend Labs, Inc. All rights reserved
+Use of this source code is governed by a MIT license that can be found in the LICENSE file.
 
 */
 
@@ -28,6 +28,7 @@ func CreateTestDatabase(ctx context.Context, opts ...db.Option) (*db.Connection,
 		db.OptSSLMode("disable"),
 		db.OptConfigFromEnv(),
 		db.OptDatabase(databaseName),
+		db.OptDialect(db.DialectPostgres),
 	}
 	conn, err := db.New(
 		append(defaults, opts...)...,

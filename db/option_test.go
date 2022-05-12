@@ -1,13 +1,14 @@
 /*
 
-Copyright (c) 2021 - Present. Blend Labs, Inc. All rights reserved
-Blend Confidential - Restricted
+Copyright (c) 2022 - Present. Blend Labs, Inc. All rights reserved
+Use of this source code is governed by a MIT license that can be found in the LICENSE file.
 
 */
 
 package db
 
 import (
+	"context"
 	"database/sql"
 	"testing"
 
@@ -33,7 +34,7 @@ func TestOptions(t *testing.T) {
 	assert.NotNil(c.Tracer)
 
 	assert.Nil(c.StatementInterceptor)
-	assert.Nil(OptStatementInterceptor(func(label, statement string) string { return "ok!" })(c))
+	assert.Nil(OptStatementInterceptor(func(_ context.Context, label, statement string) (string, error) { return "ok!", nil })(c))
 	assert.NotNil(c.StatementInterceptor)
 
 	assert.Empty(c.Config.DSN)

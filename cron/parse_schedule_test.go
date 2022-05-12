@@ -1,7 +1,7 @@
 /*
 
-Copyright (c) 2021 - Present. Blend Labs, Inc. All rights reserved
-Blend Confidential - Restricted
+Copyright (c) 2022 - Present. Blend Labs, Inc. All rights reserved
+Use of this source code is governed by a MIT license that can be found in the LICENSE file.
 
 */
 
@@ -20,6 +20,7 @@ import (
 type stringScheduleTestCase struct {
 	Input       string
 	ExpectedErr error
+	ExpectedNow bool
 	Expected    time.Time
 	After       time.Time
 }
@@ -35,16 +36,21 @@ func TestParseSchedule(t *testing.T) {
 		{Input: "* 2 1 * * 1-6 *", After: time.Date(2019, 01, 01, 12, 0, 0, 0, time.UTC), Expected: time.Date(2019, 01, 02, 01, 02, 0, 0, time.UTC)},
 		{Input: "* 2 1 * * MON-FRI *", After: time.Date(2019, 01, 01, 12, 0, 0, 0, time.UTC), Expected: time.Date(2019, 01, 02, 01, 02, 0, 0, time.UTC)},
 		{Input: "* 9 10 * * SUN-TUE *", After: time.Date(2019, 01, 02, 12, 0, 0, 0, time.UTC), Expected: time.Date(2019, 01, 06, 10, 9, 0, 0, time.UTC)},
-		{Input: "0 0 0 * * 0 *", After: time.Date(2019, 01, 02, 12, 3, 4, 5, time.UTC), Expected: time.Date(2019, 01, 06, 0, 0, 0, 0, time.UTC)},                         // every week at midnight sat/sun
-		{Input: "0 0 0 * * 0 *", After: time.Date(2019, 01, 06, 0, 0, 0, 1, time.UTC), Expected: time.Date(2019, 01, 13, 0, 0, 0, 0, time.UTC)},                          // every week at midnight sat/sun (on almost exactly the same time)
-		{Input: "0 0 0 * * * *", After: time.Date(2019, 01, 02, 12, 3, 4, 5, time.UTC), Expected: time.Date(2019, 01, 03, 0, 0, 0, 0, time.UTC)},                         // every day at midnight
-		{Input: "0 0 * * * * *", After: time.Date(2019, 01, 02, 12, 3, 4, 5, time.UTC), Expected: time.Date(2019, 01, 02, 13, 0, 0, 0, time.UTC)},                        // every hour on the hour
-		{Input: "0 * * * *", After: time.Date(2019, 01, 02, 12, 3, 4, 5, time.UTC), Expected: time.Date(2019, 01, 02, 13, 0, 0, 0, time.UTC)},                            // every hour on the hour (5 field)
-		{Input: "0 0 * * * *", After: time.Date(2019, 01, 02, 12, 3, 4, 5, time.UTC), Expected: time.Date(2019, 01, 02, 13, 0, 0, 0, time.UTC)},                          // every hour on the hour (6 field)
-		{Input: "@daily", After: time.Date(2019, 01, 02, 12, 3, 4, 5, time.UTC), Expected: time.Date(2019, 01, 03, 0, 0, 0, 0, time.UTC)},                                // daily shorthand
-		{Input: "@hourly", After: time.Date(2019, 01, 02, 12, 3, 4, 5, time.UTC), Expected: time.Date(2019, 01, 02, 13, 0, 0, 0, time.UTC)},                              // hourly shorthand
-		{Input: "@every not-a-value", ExpectedErr: ErrStringScheduleInvalid},                                                                                             // every
-		{Input: "@every 500ms", After: time.Date(2019, 01, 02, 12, 3, 4, 0, time.UTC), Expected: time.Date(2019, 01, 02, 12, 3, 4, int(500*time.Millisecond), time.UTC)}, // every
+		{Input: "0 0 0 * * 0 *", After: time.Date(2019, 01, 02, 12, 3, 4, 5, time.UTC), Expected: time.Date(2019, 01, 06, 0, 0, 0, 0, time.UTC)},                                                  // every week at midnight sat/sun
+		{Input: "0 0 0 * * 0 *", After: time.Date(2019, 01, 06, 0, 0, 0, 1, time.UTC), Expected: time.Date(2019, 01, 13, 0, 0, 0, 0, time.UTC)},                                                   // every week at midnight sat/sun (on almost exactly the same time)
+		{Input: "0 0 0 * * * *", After: time.Date(2019, 01, 02, 12, 3, 4, 5, time.UTC), Expected: time.Date(2019, 01, 03, 0, 0, 0, 0, time.UTC)},                                                  // every day at midnight
+		{Input: "0 0 * * * * *", After: time.Date(2019, 01, 02, 12, 3, 4, 5, time.UTC), Expected: time.Date(2019, 01, 02, 13, 0, 0, 0, time.UTC)},                                                 // every hour on the hour
+		{Input: "0 * * * *", After: time.Date(2019, 01, 02, 12, 3, 4, 5, time.UTC), Expected: time.Date(2019, 01, 02, 13, 0, 0, 0, time.UTC)},                                                     // every hour on the hour (5 field)
+		{Input: "0 0 * * * *", After: time.Date(2019, 01, 02, 12, 3, 4, 5, time.UTC), Expected: time.Date(2019, 01, 02, 13, 0, 0, 0, time.UTC)},                                                   // every hour on the hour (6 field)
+		{Input: "@never", After: time.Date(2019, 01, 02, 12, 3, 4, 5, time.UTC), Expected: time.Time{}},                                                                                           // never shorthand
+		{Input: "@daily", After: time.Date(2019, 01, 02, 12, 3, 4, 5, time.UTC), Expected: time.Date(2019, 01, 03, 0, 0, 0, 0, time.UTC)},                                                         // daily shorthand
+		{Input: "@hourly", After: time.Date(2019, 01, 02, 12, 3, 4, 5, time.UTC), Expected: time.Date(2019, 01, 02, 13, 0, 0, 0, time.UTC)},                                                       // hourly shorthand
+		{Input: "@every not-a-value", ExpectedErr: ErrStringScheduleInvalid},                                                                                                                      // every
+		{Input: "@every 500ms", After: time.Date(2019, 01, 02, 12, 3, 4, 0, time.UTC), Expected: time.Date(2019, 01, 02, 12, 3, 4, int(500*time.Millisecond), time.UTC)},                          // every
+		{Input: "@once-at not-a-value", ExpectedErr: ErrStringScheduleInvalid},                                                                                                                    // every
+		{Input: "@once-at 2019-01-02T13:14:15.555Z", After: time.Date(2019, 01, 02, 13, 14, 14, 0, time.UTC), Expected: time.Date(2019, 01, 02, 13, 14, 15, int(555*time.Millisecond), time.UTC)}, // every
+		{Input: "@immediately", After: time.Date(2019, 01, 02, 12, 3, 4, 0, time.UTC), ExpectedNow: true},                                                                                         // immediately then every
+		{Input: "@immediately-then @every 500ms", After: time.Date(2019, 01, 02, 12, 3, 4, 0, time.UTC), ExpectedNow: true},                                                                       // immediately then every
 	}
 
 	for _, tc := range testCases {
@@ -52,6 +58,10 @@ func TestParseSchedule(t *testing.T) {
 		if tc.ExpectedErr != nil {
 			assert.NotNil(err)
 			assert.True(ex.Is(err, tc.ExpectedErr))
+		} else if tc.ExpectedNow {
+			assert.Nil(err)
+			next := parsed.Next(tc.After)
+			assert.InTimeDelta(Now(), next, time.Second, fmt.Sprintf("%s parsed as %v\nexpected to be near-ish to now", tc.Input, parsed))
 		} else {
 			assert.Nil(err)
 			next := parsed.Next(tc.After)

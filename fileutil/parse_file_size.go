@@ -1,7 +1,7 @@
 /*
 
-Copyright (c) 2021 - Present. Blend Labs, Inc. All rights reserved
-Blend Confidential - Restricted
+Copyright (c) 2022 - Present. Blend Labs, Inc. All rights reserved
+Use of this source code is governed by a MIT license that can be found in the LICENSE file.
 
 */
 
@@ -33,7 +33,7 @@ func ParseFileSize(fileSizeValue string) (int64, error) {
 	}
 	switch units {
 	case "tb":
-		return value * Terrabyte, nil
+		return value * Terabyte, nil
 	case "gb":
 		return value * Gigabyte, nil
 	case "mb":

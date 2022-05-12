@@ -1,7 +1,7 @@
 /*
 
-Copyright (c) 2021 - Present. Blend Labs, Inc. All rights reserved
-Blend Confidential - Restricted
+Copyright (c) 2022 - Present. Blend Labs, Inc. All rights reserved
+Use of this source code is governed by a MIT license that can be found in the LICENSE file.
 
 */
 
@@ -11,9 +11,6 @@ import "time"
 
 // Config holds the runtime configuration option for the copyright engine.
 type Config struct {
-	// Root is the starting directory for the file walk.
-	Root string `yaml:"root"`
-
 	// NoticeBodyTemplate is the notice body template that will be processed and
 	// injected to the relevant extension specific notice template.
 	NoticeBodyTemplate string `yaml:"noticeBodyTemplate"`
@@ -28,24 +25,22 @@ type Config struct {
 	// visibility modifiers, which is available in the `NoticeBodyTemplate` as `{{ .Restrictions }}`
 	Restrictions string `yaml:"restrictionTemplate"`
 
-	// IncludeFiles are a list of file globs to include.
+	// Excludes are a list of globs to exclude, they can
+	// match both files and directories.
+	// This can be populated with `.gitignore` and the like.
+	Excludes []string `yaml:"excludes"`
+	// IncludeFiles are a list of globs to match files to include.
 	IncludeFiles []string `yaml:"includeFiles"`
-	// ExcludeFiles are a list of file globs to exclude.
-	ExcludeFiles []string `yaml:"excludeFiles"`
-	// IncludeDirs are a list of directory globs to include.
-	IncludeDirs []string `yaml:"includeDirs"`
-	// ExcludeDirs are a list of directory globs to exclude.
-	ExcludeDirs []string `yaml:"excludeDirs"`
 
 	// ExtensionNoticeTemplates is a map between file extension (including dot prefix)
 	// to the relevant full notice template for the file. It can include a template variable
 	// {{ .Notice }} that will insert the compiled `NoticyBodyTemplate`.
 	ExtensionNoticeTemplates map[string]string
 
-	// NoticeTemplate is a full notice template that will be used if there is no extension
+	// FallbackNoticeTemplate is a full notice template that will be used if there is no extension
 	// specific notice template.
 	// It can include the template variable {{ .Notice }} that will instert the compiled `NoticeBodyTemplate`.
-	NoticeTemplate string
+	FallbackNoticeTemplate string
 
 	// ExitFirst indicates if we should return after the first failure.
 	ExitFirst *bool `yaml:"exitFirst"`
@@ -55,14 +50,9 @@ type Config struct {
 	Verbose *bool `yaml:"verbose"`
 	// Debug controls whether debug output is shown.
 	Debug *bool `yaml:"debug"`
-}
 
-// RootOrDefault returns the walk root or a default.
-func (c Config) RootOrDefault() string {
-	if c.Root != "" {
-		return c.Root
-	}
-	return "."
+	// ShowDiff shows shows the diffs on verification failues.
+	ShowDiff *bool `yaml:"verifyDiff"`
 }
 
 // NoticeBodyTemplateOrDefault returns the notice body template or a default.
@@ -105,38 +95,6 @@ func (c Config) RestrictionsOrDefault() string {
 	return DefaultRestrictionsInternal
 }
 
-// IncludeFilesOrDefault returns a glob list or a default.
-func (c Config) IncludeFilesOrDefault() []string {
-	if c.IncludeFiles != nil {
-		return c.IncludeFiles
-	}
-	return DefaultIncludeFiles
-}
-
-// IncludeDirsOrDefault returns a glob list or a default.
-func (c Config) IncludeDirsOrDefault() []string {
-	if c.IncludeDirs != nil {
-		return c.IncludeDirs
-	}
-	return DefaultIncludeDirs
-}
-
-// ExcludeFilesOrDefault returns a glob list or a default.
-func (c Config) ExcludeFilesOrDefault() []string {
-	if c.ExcludeFiles != nil {
-		return c.ExcludeFiles
-	}
-	return DefaultExcludeFiles
-}
-
-// ExcludeDirsOrDefault returns a glob list or a default.
-func (c Config) ExcludeDirsOrDefault() []string {
-	if c.ExcludeDirs != nil {
-		return c.ExcludeDirs
-	}
-	return DefaultExcludeDirs
-}
-
 // ExtensionNoticeTemplatesOrDefault returns mapping between file extensions (including dot) to
 // the notice templates (i.e. how the template should be fully formatted per file type).
 func (c Config) ExtensionNoticeTemplatesOrDefault() map[string]string {
@@ -176,4 +134,12 @@ func (c Config) DebugOrDefault() bool {
 		return *c.Debug
 	}
 	return false
+}
+
+// ShowDiffOrDefault returns a value or a default.
+func (c Config) ShowDiffOrDefault() bool {
+	if c.ShowDiff != nil {
+		return *c.ShowDiff
+	}
+	return true
 }

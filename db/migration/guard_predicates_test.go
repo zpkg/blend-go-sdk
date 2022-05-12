@@ -1,7 +1,7 @@
 /*
 
-Copyright (c) 2021 - Present. Blend Labs, Inc. All rights reserved
-Blend Confidential - Restricted
+Copyright (c) 2022 - Present. Blend Labs, Inc. All rights reserved
+Use of this source code is governed by a MIT license that can be found in the LICENSE file.
 
 */
 
@@ -28,10 +28,10 @@ func TestGuardPredicatesReal(t *testing.T) {
 	iName := "index_foo"
 
 	var didRun bool
-	action := Actions(func(ctx context.Context, c *db.Connection, itx *sql.Tx) error {
+	action := Actions(ActionFunc(func(ctx context.Context, c *db.Connection, itx *sql.Tx) error {
 		didRun = true
 		return nil
-	})
+	}))
 
 	err = SchemaExists("public")(context.Background(), defaultDB(), tx, action)
 	assert.Nil(err)
@@ -126,10 +126,10 @@ func TestGuardPredicatsRealSchema(t *testing.T) {
 	assert.Nil(err)
 
 	var didRun bool
-	action := Actions(func(ctx context.Context, c *db.Connection, itx *sql.Tx) error {
+	action := Actions(ActionFunc(func(ctx context.Context, c *db.Connection, itx *sql.Tx) error {
 		didRun = true
 		return nil
-	})
+	}))
 
 	err = TableExistsInSchema(sName, tName)(context.Background(), defaultDB(), tx, action)
 	assert.Nil(err)

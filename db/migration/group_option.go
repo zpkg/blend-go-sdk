@@ -1,7 +1,7 @@
 /*
 
-Copyright (c) 2021 - Present. Blend Labs, Inc. All rights reserved
-Blend Confidential - Restricted
+Copyright (c) 2022 - Present. Blend Labs, Inc. All rights reserved
+Use of this source code is governed by a MIT license that can be found in the LICENSE file.
 
 */
 
@@ -14,7 +14,7 @@ type GroupOption func(g *Group)
 
 // OptGroupActions allows you to add actions to the NewGroup. If you want, multiple OptActions can be applied to the same NewGroup.
 // They are additive.
-func OptGroupActions(actions ...Actionable) GroupOption {
+func OptGroupActions(actions ...Action) GroupOption {
 	return func(g *Group) {
 		if len(g.Actions) == 0 {
 			g.Actions = actions

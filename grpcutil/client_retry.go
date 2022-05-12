@@ -1,7 +1,7 @@
 /*
 
-Copyright (c) 2021 - Present. Blend Labs, Inc. All rights reserved
-Blend Confidential - Restricted
+Copyright (c) 2022 - Present. Blend Labs, Inc. All rights reserved
+Use of this source code is governed by a MIT license that can be found in the LICENSE file.
 
 */
 
@@ -45,7 +45,7 @@ const (
 	MetadataKeyAttempt = "x-retry-attempty"
 )
 
-// WithRetriesDisabled disables the retry behaviour on this call, or this interceptor.
+// WithRetriesDisabled disables the retry behavior on this call, or this interceptor.
 //
 // Its semantically the same to `WithMax`
 func WithRetriesDisabled() CallOption {
@@ -84,7 +84,7 @@ func WithClientRetryBackoffContext(bf BackoffFuncContext) CallOption {
 //
 // Please *use with care*, as you may be retrying non-idempotent calls.
 //
-// You cannot automatically retry on Cancelled and Deadline, please use `WithPerRetryTimeout` for these.
+// You cannot automatically retry on Canceled and Deadline, please use `WithPerRetryTimeout` for these.
 func WithClientRetryCodes(retryCodes ...codes.Code) CallOption {
 	return CallOption{applyFunc: func(o *retryOptions) {
 		o.codes = retryCodes
@@ -149,7 +149,7 @@ func filterCallOptions(callOptions []grpc.CallOption) (grpcOptions []grpc.CallOp
 
 // RetryUnaryClientInterceptor returns a new retrying unary client interceptor.
 //
-// The default configuration of the interceptor is to not retry *at all*. This behaviour can be
+// The default configuration of the interceptor is to not retry *at all*. This behavior can be
 // changed through options (e.g. WithMax) on creation of the interceptor or on call (through grpc.CallOptions).
 func RetryUnaryClientInterceptor(optFuncs ...CallOption) grpc.UnaryClientInterceptor {
 	intOpts := reuseOrNewWithCallOptions(defaultRetryOptions, optFuncs)
@@ -192,7 +192,7 @@ func RetryUnaryClientInterceptor(optFuncs ...CallOption) grpc.UnaryClientInterce
 
 // RetryStreamClientInterceptor returns a new retrying stream client interceptor for server side streaming calls.
 //
-// The default configuration of the interceptor is to not retry *at all*. This behaviour can be
+// The default configuration of the interceptor is to not retry *at all*. This behavior can be
 // changed through options (e.g. WithMax) on creation of the interceptor or on call (through grpc.CallOptions).
 //
 // Retry logic is available *only for ServerStreams*, i.e. 1:n streams, as the internal logic needs

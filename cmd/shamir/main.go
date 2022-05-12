@@ -1,7 +1,7 @@
 /*
 
-Copyright (c) 2021 - Present. Blend Labs, Inc. All rights reserved
-Blend Confidential - Restricted
+Copyright (c) 2022 - Present. Blend Labs, Inc. All rights reserved
+Use of this source code is governed by a MIT license that can be found in the LICENSE file.
 
 */
 
@@ -10,7 +10,7 @@ package main
 import (
 	"encoding/hex"
 	"fmt"
-	"io/ioutil"
+	"io"
 	"os"
 	"strings"
 
@@ -47,9 +47,9 @@ func NewSplitCommand() *cobra.Command {
 			if len(*secret) > 0 {
 				contents = []byte(strings.TrimSpace(*secret))
 			} else if strings.TrimSpace(*inputFile) == "-" {
-				contents, err = ioutil.ReadAll(os.Stdin)
+				contents, err = io.ReadAll(os.Stdin)
 			} else {
-				contents, err = ioutil.ReadFile(strings.TrimSpace(*inputFile))
+				contents, err = os.ReadFile(strings.TrimSpace(*inputFile))
 			}
 			if err != nil {
 				fmt.Fprintln(os.Stderr, err)
@@ -94,9 +94,9 @@ func NewCombineCommand() *cobra.Command {
 				var contents []byte
 				var err error
 				if strings.TrimSpace(*input) == "-" {
-					contents, err = ioutil.ReadAll(os.Stdin)
+					contents, err = io.ReadAll(os.Stdin)
 				} else {
-					contents, err = ioutil.ReadFile(strings.TrimSpace(*input))
+					contents, err = os.ReadFile(strings.TrimSpace(*input))
 				}
 				if err != nil {
 					fmt.Fprintln(os.Stderr, err)

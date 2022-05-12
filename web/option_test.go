@@ -1,15 +1,17 @@
 /*
 
-Copyright (c) 2021 - Present. Blend Labs, Inc. All rights reserved
-Blend Confidential - Restricted
+Copyright (c) 2022 - Present. Blend Labs, Inc. All rights reserved
+Use of this source code is governed by a MIT license that can be found in the LICENSE file.
 
 */
 
 package web
 
 import (
-	"io/ioutil"
+	"context"
+	"io"
 	"log"
+	"net"
 	"testing"
 	"time"
 
@@ -51,6 +53,35 @@ func TestOptPort(t *testing.T) {
 	assert.Equal(9999, app.Config.Port)
 }
 
+func TestOptBaseContext(t *testing.T) {
+	t.Parallel()
+	it := assert.New(t)
+
+	ctx := context.TODO()
+	opt := OptBaseContext(ctx)
+	a := App{}
+	err := opt(&a)
+	it.Nil(err)
+	root := a.BaseContext(nil)
+	it.ReferenceEqual(ctx, root)
+}
+
+func TestOptBaseContextFunc(t *testing.T) {
+	t.Parallel()
+	it := assert.New(t)
+
+	ctx := context.TODO()
+	bc := func(_ net.Listener) context.Context {
+		return ctx
+	}
+	opt := OptBaseContextFunc(bc)
+	a := App{}
+	err := opt(&a)
+	it.Nil(err)
+	root := a.BaseContext(nil)
+	it.ReferenceEqual(ctx, root)
+}
+
 func TestOptLog(t *testing.T) {
 	assert := assert.New(t)
 
@@ -60,8 +91,6 @@ func TestOptLog(t *testing.T) {
 }
 
 func TestOptServerOptions(t *testing.T) {
-	t.Skip()
-
 	assert := assert.New(t)
 
 	baseline, baselineErr := New()
@@ -71,8 +100,9 @@ func TestOptServerOptions(t *testing.T) {
 	assert.Nil(baseline.Server.ErrorLog)
 
 	app, err := New(
+		OptBindAddr("127.0.0.1:0"),
 		OptServerOptions(
-			webutil.OptHTTPServerErrorLog(log.New(ioutil.Discard, "", log.LstdFlags)),
+			webutil.OptHTTPServerErrorLog(log.New(io.Discard, "", log.LstdFlags)),
 		),
 	)
 	assert.Nil(err)
@@ -128,4 +158,13 @@ func TestOptMaxHeaderBytes(t *testing.T) {
 	assert.Zero(app.Config.MaxHeaderBytes)
 	assert.Nil(OptMaxHeaderBytes(100)(&app))
 	assert.Equal(100, app.Config.MaxHeaderBytes)
+}
+
+func TestOptBaseURL(t *testing.T) {
+	assert := assert.New(t)
+
+	var app App
+	assert.Empty(app.Config.BaseURL)
+	assert.Nil(OptBaseURL("https://example.local")(&app))
+	assert.Equal("https://example.local", app.Config.BaseURL)
 }

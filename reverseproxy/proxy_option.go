@@ -1,7 +1,7 @@
 /*
 
-Copyright (c) 2021 - Present. Blend Labs, Inc. All rights reserved
-Blend Confidential - Restricted
+Copyright (c) 2022 - Present. Blend Labs, Inc. All rights reserved
+Use of this source code is governed by a MIT license that can be found in the LICENSE file.
 
 */
 
@@ -25,6 +25,14 @@ func OptProxyLog(log logger.Log) ProxyOption {
 		for _, us := range p.Upstreams {
 			us.Log = log
 		}
+		return nil
+	}
+}
+
+// OptProxyResolver sets the proxy resolver.
+func OptProxyResolver(resolver Resolver) ProxyOption {
+	return func(p *Proxy) error {
+		p.Resolver = resolver
 		return nil
 	}
 }

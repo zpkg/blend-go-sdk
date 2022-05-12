@@ -1,7 +1,7 @@
 /*
 
-Copyright (c) 2021 - Present. Blend Labs, Inc. All rights reserved
-Blend Confidential - Restricted
+Copyright (c) 2022 - Present. Blend Labs, Inc. All rights reserved
+Use of this source code is governed by a MIT license that can be found in the LICENSE file.
 
 */
 
@@ -9,7 +9,7 @@ package dbstats
 
 import (
 	"context"
-	"io/ioutil"
+	"io"
 	"testing"
 	"time"
 
@@ -32,7 +32,7 @@ func TestAddListeners(t *testing.T) {
 func TestAddListenersStats(t *testing.T) {
 	assert := assert.New(t)
 
-	log := logger.All(logger.OptOutput(ioutil.Discard))
+	log := logger.All(logger.OptOutput(io.Discard))
 	defer log.Close()
 	collector := stats.NewMockCollector(32)
 
@@ -46,12 +46,12 @@ func TestAddListenersStats(t *testing.T) {
 	assert.NotEmpty(qm.Tags)
 
 	qm = <-collector.Metrics
-	assert.Equal(MetricNameDBQueryElapsed, qm.Name)
+	assert.Equal(MetricNameDBQueryElapsedLast, qm.Name)
 	assert.Equal(1000, qm.Gauge)
 	assert.NotEmpty(qm.Tags)
 
 	qm = <-collector.Metrics
 	assert.Equal(MetricNameDBQueryElapsed, qm.Name)
-	assert.Equal(1000, qm.TimeInMilliseconds)
+	assert.Equal(1000, qm.Histogram)
 	assert.NotEmpty(qm.Tags)
 }

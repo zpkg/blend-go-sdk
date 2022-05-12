@@ -1,7 +1,7 @@
 /*
 
-Copyright (c) 2021 - Present. Blend Labs, Inc. All rights reserved
-Blend Confidential - Restricted
+Copyright (c) 2022 - Present. Blend Labs, Inc. All rights reserved
+Use of this source code is governed by a MIT license that can be found in the LICENSE file.
 
 */
 
@@ -12,8 +12,9 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
-	"io/ioutil"
+	"io"
 	"net/http"
+	"net/http/httptest"
 	"net/url"
 	"strings"
 	"testing"
@@ -99,16 +100,16 @@ func TestRequestOptions(t *testing.T) {
 	assert.Equal("another value", c.Value)
 
 	assert.Nil(req.Body)
-	assert.Nil(OptBody(ioutil.NopCloser(bytes.NewReader([]byte("foo bar"))))(req))
+	assert.Nil(OptBody(io.NopCloser(bytes.NewReader([]byte("foo bar"))))(req))
 	assert.NotNil(req.Body)
-	read, err := ioutil.ReadAll(req.Body)
+	read, err := io.ReadAll(req.Body)
 	assert.Nil(err)
 	assert.Equal([]byte("foo bar"), read)
 
 	req.Body = nil
 	assert.Nil(OptBodyBytes([]byte("bar foo"))(req))
 	assert.NotNil(req.Body)
-	read, err = ioutil.ReadAll(req.Body)
+	read, err = io.ReadAll(req.Body)
 	assert.Nil(err)
 	assert.Equal([]byte("bar foo"), read)
 
@@ -144,7 +145,7 @@ func TestOptBodyBytes(t *testing.T) {
 	err := opt(r)
 	assert.Nil(err)
 
-	bodyBytes, err := ioutil.ReadAll(r.Body)
+	bodyBytes, err := io.ReadAll(r.Body)
 	assert.Nil(err)
 	assert.Equal(body, bodyBytes)
 	assert.Equal(r.ContentLength, 6)
@@ -155,7 +156,8 @@ func TestOptPostedFiles(t *testing.T) {
 	assert := assert.New(t)
 	file1 := PostedFile{Key: "a", FileName: "b.txt", Contents: []byte("hey")}
 	file2 := PostedFile{Key: "c", FileName: "d.txt", Contents: []byte("bye")}
-	opt := OptPostedFiles(file1, file2)
+	file3 := PostedFile{Key: "d", FileName: "e.txt", Contents: []byte("bytes"), ContentType: "application/pdf"}
+	opt := OptPostedFiles(file1, file2, file3)
 
 	r := &http.Request{}
 	err := opt(r)
@@ -164,14 +166,16 @@ func TestOptPostedFiles(t *testing.T) {
 	boundary := getBoundary(assert, r.Header)
 	ct := fmt.Sprintf("multipart/form-data; boundary=%s", boundary)
 	assert.Equal(r.Header, http.Header{HeaderContentType: []string{ct}})
-	bodyBytes, err := ioutil.ReadAll(r.Body)
+	bodyBytes, err := io.ReadAll(r.Body)
 	defer r.Body.Close()
 	assert.Nil(err)
 	expected := fmt.Sprintf(
 		"--%[1]s\r\nContent-Disposition: form-data; name=%[2]q; filename=%[3]q\r\n"+
 			"Content-Type: application/octet-stream\r\n\r\n%[4]s\r\n"+
 			"--%[1]s\r\nContent-Disposition: form-data; name=%[5]q; filename=%[6]q\r\n"+
-			"Content-Type: application/octet-stream\r\n\r\n%[7]s\r\n--%[1]s--\r\n",
+			"Content-Type: application/octet-stream\r\n\r\n%[7]s\r\n"+
+			"--%[1]s\r\nContent-Disposition: form-data; name=%[8]q; filename=%[9]q\r\n"+
+			"Content-Type: %[10]s\r\n\r\n%[11]s\r\n--%[1]s--\r\n",
 		boundary,
 		file1.Key,
 		file1.FileName,
@@ -179,10 +183,69 @@ func TestOptPostedFiles(t *testing.T) {
 		file2.Key,
 		file2.FileName,
 		file2.Contents,
+		file3.Key,
+		file3.FileName,
+		file3.ContentType,
+		file3.Contents,
 	)
-	assert.Equal([]byte(expected), bodyBytes)
+	assert.Equal(expected, string(bodyBytes))
 	assert.Equal(r.ContentLength, len(expected))
 	validateRequestGetBody(assert, r, []byte(expected))
+}
+
+func TestOptPostedFiles_postForm(t *testing.T) {
+	assert := assert.New(t)
+
+	testServer := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, req *http.Request) {
+		if err := req.ParseMultipartForm(1 << 20); err != nil {
+			http.Error(w, err.Error(), http.StatusBadRequest)
+			return
+		}
+		if req.FormValue("foo") != "foo-value" {
+			http.Error(w, "post form value `foo` missing or incorrect", http.StatusBadRequest)
+			return
+		}
+		if req.FormValue("bar") != "bar-value" {
+			http.Error(w, "post form value `bar` missing or incorrect", http.StatusBadRequest)
+			return
+		}
+
+		files, err := PostedFiles(req)
+		if err != nil {
+			http.Error(w, err.Error(), http.StatusBadRequest)
+			return
+		}
+		if len(files) < 2 {
+			http.Error(w, "posted files missing", http.StatusBadRequest)
+			return
+		}
+
+		w.WriteHeader(http.StatusOK)
+		fmt.Fprintf(w, "OK!")
+	}))
+	defer testServer.Close()
+
+	file1 := PostedFile{Key: "a", FileName: "b.txt", Contents: []byte("hey")}
+	file2 := PostedFile{Key: "c", FileName: "d.txt", Contents: []byte("bye")}
+
+	postFormOpt0 := OptPostFormValue("foo", "foo-value")
+	postFormOpt1 := OptPostFormValue("bar", "bar-value")
+	opt := OptPostedFiles(file1, file2)
+
+	r, err := http.NewRequest(http.MethodPost, testServer.URL, nil)
+	assert.Nil(err)
+	err = postFormOpt0(r)
+	assert.Nil(err)
+	err = postFormOpt1(r)
+	assert.Nil(err)
+	err = opt(r)
+	assert.Nil(err)
+
+	res, err := http.DefaultClient.Do(r)
+	assert.Nil(err)
+	defer res.Body.Close()
+	message, _ := io.ReadAll(res.Body)
+	assert.Equal(http.StatusOK, res.StatusCode, string(message))
 }
 
 func TestOptJSONBody(t *testing.T) {
@@ -198,7 +261,7 @@ func TestOptJSONBody(t *testing.T) {
 	assert.NotNil(r.GetBody)
 
 	assert.Equal(r.Header, http.Header{HeaderContentType: []string{ContentTypeApplicationJSON}})
-	bodyBytes, err := ioutil.ReadAll(r.Body)
+	bodyBytes, err := io.ReadAll(r.Body)
 	defer r.Body.Close()
 	assert.Nil(err)
 	expected := []byte(`{"x":1.25,"y":-5.75}`)
@@ -223,7 +286,7 @@ func TestOptXMLBody(t *testing.T) {
 	assert.Nil(err)
 
 	assert.Equal(r.Header, http.Header{HeaderContentType: []string{ContentTypeApplicationXML}})
-	bodyBytes, err := ioutil.ReadAll(r.Body)
+	bodyBytes, err := io.ReadAll(r.Body)
 	assert.Nil(err)
 	expected := []byte("<xmlBody><x>hello</x><y>goodbye</y></xmlBody>")
 	assert.Equal(expected, bodyBytes)
@@ -243,7 +306,7 @@ func validateRequestGetBody(assert *assert.Assertions, r *http.Request, expected
 	bodyRC, err := r.GetBody()
 	assert.Nil(err)
 	defer bodyRC.Close()
-	bodyBytes, err := ioutil.ReadAll(bodyRC)
+	bodyBytes, err := io.ReadAll(bodyRC)
 	assert.Nil(err)
 	assert.Equal(expected, bodyBytes)
 }

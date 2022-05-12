@@ -1,7 +1,7 @@
 /*
 
-Copyright (c) 2021 - Present. Blend Labs, Inc. All rights reserved
-Blend Confidential - Restricted
+Copyright (c) 2022 - Present. Blend Labs, Inc. All rights reserved
+Use of this source code is governed by a MIT license that can be found in the LICENSE file.
 
 */
 
@@ -28,6 +28,13 @@ func Test_Glob(t *testing.T) {
 		{"", "*", true},
 		{"foo", "*", true},
 		{"bar", "*", true},
+
+		{"bar/foo", "bar/*", true},
+		{"foo/bar", "bar/*", false},
+
+		{"bar/loo/foo", "bar/*", true},
+		{"foo/bar/loo", "bar/*", false},
+
 		{"foo/bar/baz/buzz", "*/bar/*", true},
 		{"/foo/bar/baz/buzz", "*/bar/*", true},
 		{"foo/bar/baz/buzz", "*/foo/*", false},

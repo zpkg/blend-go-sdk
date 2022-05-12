@@ -1,7 +1,7 @@
 /*
 
-Copyright (c) 2021 - Present. Blend Labs, Inc. All rights reserved
-Blend Confidential - Restricted
+Copyright (c) 2022 - Present. Blend Labs, Inc. All rights reserved
+Use of this source code is governed by a MIT license that can be found in the LICENSE file.
 
 */
 
@@ -33,8 +33,8 @@ func (v *Int) String() string {
 }
 
 // Add adds to the value.
-func (v *Int) Add(delta int64) {
-	atomic.AddInt64(&v.i, delta)
+func (v *Int) Add(delta int64) int64 {
+	return atomic.AddInt64(&v.i, delta)
 }
 
 // Set sets the value

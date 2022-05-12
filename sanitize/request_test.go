@@ -1,7 +1,7 @@
 /*
 
-Copyright (c) 2021 - Present. Blend Labs, Inc. All rights reserved
-Blend Confidential - Restricted
+Copyright (c) 2022 - Present. Blend Labs, Inc. All rights reserved
+Use of this source code is governed by a MIT license that can be found in the LICENSE file.
 
 */
 
@@ -36,13 +36,14 @@ func TestSanitizeRequest(t *testing.T) {
 		},
 	}
 
-	output := Request(req,
+	sanitizer := NewRequestSanitizer(
 		OptRequestAddDisallowedHeaders("X-Secret-Token"),
 		OptRequestAddDisallowedQueryParams("sensitive"),
-		OptRequestValueSanitizer(func(key string, values ...string) []string {
+		OptRequestKeyValuesSanitizer(KeyValuesSanitizerFunc(func(key string, values ...string) []string {
 			return []string{"***"}
-		}),
+		})),
 	)
+	output := sanitizer.Sanitize(req)
 
 	it.NotNil(output)
 	it.Equal([]string{"application/json"}, req.Header["Accept"])

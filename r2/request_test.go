@@ -1,7 +1,7 @@
 /*
 
-Copyright (c) 2021 - Present. Blend Labs, Inc. All rights reserved
-Blend Confidential - Restricted
+Copyright (c) 2022 - Present. Blend Labs, Inc. All rights reserved
+Use of this source code is governed by a MIT license that can be found in the LICENSE file.
 
 */
 
@@ -202,6 +202,36 @@ func TestRequestNoContentJSON(t *testing.T) {
 	res, err := New(server.URL).JSON(&deserialized)
 	assert.True(ex.Is(err, ErrNoContentJSON))
 	assert.Equal(http.StatusNoContent, res.StatusCode)
+}
+
+func TestRequestJSONBytes(t *testing.T) {
+	assert := assert.New(t)
+	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		w.WriteHeader(http.StatusOK)
+		fmt.Fprintf(w, "{\"status\":\"ok!\"}\n")
+	}))
+	defer server.Close()
+
+	var deserialized map[string]interface{}
+	contents, res, err := New(server.URL).JSONBytes(&deserialized)
+	assert.Nil(err)
+	assert.Equal("{\"status\":\"ok!\"}\n", string(contents))
+	assert.Equal(http.StatusOK, res.StatusCode)
+	assert.Equal("ok!", deserialized["status"])
+}
+
+func TestRequestNoContentJSONBytes(t *testing.T) {
+	assert := assert.New(t)
+	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		w.WriteHeader(http.StatusNoContent)
+	}))
+	defer server.Close()
+
+	var deserialized map[string]interface{}
+	contents, res, err := New(server.URL).JSONBytes(&deserialized)
+	assert.True(ex.Is(err, ErrNoContentJSON))
+	assert.Equal(http.StatusNoContent, res.StatusCode)
+	assert.Empty(contents)
 }
 
 type xmlTestCase struct {

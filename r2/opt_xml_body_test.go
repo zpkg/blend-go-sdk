@@ -1,7 +1,7 @@
 /*
 
-Copyright (c) 2021 - Present. Blend Labs, Inc. All rights reserved
-Blend Confidential - Restricted
+Copyright (c) 2022 - Present. Blend Labs, Inc. All rights reserved
+Use of this source code is governed by a MIT license that can be found in the LICENSE file.
 
 */
 
@@ -10,7 +10,7 @@ package r2
 import (
 	"encoding/xml"
 	"fmt"
-	"io/ioutil"
+	"io"
 	"net/http"
 	"net/http/httptest"
 	"testing"
@@ -24,7 +24,7 @@ func TestOptXMLBody(t *testing.T) {
 	r := New(TestURL, OptXMLBody(xmlTestCase{Status: "OK!"}))
 	assert.NotNil(r.Request.Body)
 
-	contents, err := ioutil.ReadAll(r.Request.Body)
+	contents, err := io.ReadAll(r.Request.Body)
 	assert.Nil(err)
 	assert.Equal(47, r.Request.ContentLength)
 	assert.NotNil(r.Request.GetBody)

@@ -1,7 +1,7 @@
 /*
 
-Copyright (c) 2021 - Present. Blend Labs, Inc. All rights reserved
-Blend Confidential - Restricted
+Copyright (c) 2022 - Present. Blend Labs, Inc. All rights reserved
+Use of this source code is governed by a MIT license that can be found in the LICENSE file.
 
 */
 
@@ -22,21 +22,13 @@ import (
 
 // Invocation is a specific operation against a context.
 type Invocation struct {
-	DB DB
-
-	/* invocation state */
-	Label string
-
-	/* context */
-	Context context.Context
-	Cancel  func()
-
-	/* dependencies */
-	Config     Config
-	Log        logger.Triggerable
-	BufferPool *bufferutil.Pool
-
-	/* logging hooks */
+	DB                   DB
+	Label                string
+	Context              context.Context
+	Cancel               func()
+	Config               Config
+	Log                  logger.Triggerable
+	BufferPool           *bufferutil.Pool
 	StatementInterceptor StatementInterceptor
 	Tracer               Tracer
 	StartTime            time.Time
@@ -45,7 +37,10 @@ type Invocation struct {
 
 // Exec executes a sql statement with a given set of arguments and returns the rows affected.
 func (i *Invocation) Exec(statement string, args ...interface{}) (res sql.Result, err error) {
-	statement = i.start(statement)
+	statement, err = i.start(statement)
+	if err != nil {
+		return
+	}
 	defer func() { err = i.finish(statement, recover(), res, err) }()
 
 	res, err = i.DB.ExecContext(i.Context, statement, args...)
@@ -58,11 +53,19 @@ func (i *Invocation) Exec(statement string, args ...interface{}) (res sql.Result
 
 // Query returns a new query object for a given sql query and arguments.
 func (i *Invocation) Query(statement string, args ...interface{}) *Query {
-	return &Query{
+	q := &Query{
 		Invocation: i,
-		Statement:  i.start(statement),
 		Args:       args,
 	}
+	q.Statement, q.Err = i.start(statement)
+	return q
+}
+
+func (i *Invocation) maybeSetLabel(label string) {
+	if i.Label != "" {
+		return
+	}
+	i.Label = label
 }
 
 // Get returns a given object based on a group of primary key ids within a transaction.
@@ -72,31 +75,36 @@ func (i *Invocation) Get(object DatabaseMapped, ids ...interface{}) (found bool,
 		return
 	}
 
-	var queryBody string
-	if i.Label, queryBody, err = i.generateGet(object); err != nil {
+	var queryBody, label string
+	if label, queryBody, err = i.generateGet(object); err != nil {
 		err = Error(err)
 		return
 	}
+	i.maybeSetLabel(label)
 	return i.Query(queryBody, ids...).Out(object)
 }
 
 // All returns all rows of an object mapped table wrapped in a transaction.
 func (i *Invocation) All(collection interface{}) (err error) {
-	var queryBody string
-	i.Label, queryBody = i.generateGetAll(collection)
+	label, queryBody := i.generateGetAll(collection)
+	i.maybeSetLabel(label)
 	return i.Query(queryBody).OutMany(collection)
 }
 
 // Create writes an object to the database within a transaction.
 func (i *Invocation) Create(object DatabaseMapped) (err error) {
-	var queryBody string
+	var queryBody, label string
 	var insertCols, autos *ColumnCollection
 	var res sql.Result
 	defer func() { err = i.finish(queryBody, recover(), res, err) }()
 
-	i.Label, queryBody, insertCols, autos = i.generateCreate(object)
+	label, queryBody, insertCols, autos = i.generateCreate(object)
+	i.maybeSetLabel(label)
 
-	queryBody = i.start(queryBody)
+	queryBody, err = i.start(queryBody)
+	if err != nil {
+		return
+	}
 	if autos.Len() == 0 {
 		if res, err = i.DB.ExecContext(i.Context, queryBody, insertCols.ColumnValues(object)...); err != nil {
 			err = Error(err)
@@ -122,14 +130,18 @@ func (i *Invocation) Create(object DatabaseMapped) (err error) {
 // This will _ignore_ auto columns, as they will always invalidate the assertion that there already exists
 // a row with a given primary key set.
 func (i *Invocation) CreateIfNotExists(object DatabaseMapped) (err error) {
-	var queryBody string
+	var queryBody, label string
 	var insertCols *ColumnCollection
 	var res sql.Result
 	defer func() { err = i.finish(queryBody, recover(), res, err) }()
 
-	i.Label, queryBody, insertCols = i.generateCreateIfNotExists(object)
+	label, queryBody, insertCols = i.generateCreateIfNotExists(object)
+	i.maybeSetLabel(label)
 
-	queryBody = i.start(queryBody)
+	queryBody, err = i.start(queryBody)
+	if err != nil {
+		return
+	}
 	if res, err = i.DB.ExecContext(i.Context, queryBody, insertCols.ColumnValues(object)...); err != nil {
 		err = Error(err)
 	}
@@ -164,7 +176,10 @@ func (i *Invocation) insertOrUpsertMany(objects interface{}, overwrite bool) (er
 		return
 	}
 
-	queryBody = i.start(queryBody)
+	queryBody, err = i.start(queryBody)
+	if err != nil {
+		return
+	}
 	var colValues []interface{}
 	for row := 0; row < sliceValue.Len(); row++ {
 		colValues = append(colValues, insertCols.ColumnValues(sliceValue.Index(row).Interface())...)
@@ -183,14 +198,18 @@ func (i *Invocation) insertOrUpsertMany(objects interface{}, overwrite bool) (er
 // the Update HAS BEEN APPLIED. Its on the developer using UPDATE to ensure his tags are correct and/or execute it in a
 // transaction and roll back on this error
 func (i *Invocation) Update(object DatabaseMapped) (updated bool, err error) {
-	var queryBody string
+	var queryBody, label string
 	var pks, updateCols *ColumnCollection
 	var res sql.Result
 	defer func() { err = i.finish(queryBody, recover(), res, err) }()
 
-	i.Label, queryBody, pks, updateCols = i.generateUpdate(object)
+	label, queryBody, pks, updateCols = i.generateUpdate(object)
+	i.maybeSetLabel(label)
 
-	queryBody = i.start(queryBody)
+	queryBody, err = i.start(queryBody)
+	if err != nil {
+		return
+	}
 	res, err = i.DB.ExecContext(
 		i.Context,
 		queryBody,
@@ -219,15 +238,19 @@ func (i *Invocation) Update(object DatabaseMapped) (updated bool, err error) {
 // Upsert inserts the object if it doesn't exist already (as defined by its primary keys) or updates it atomically.
 // It returns `found` as true if the effect was an upsert, i.e. the pk was found.
 func (i *Invocation) Upsert(object DatabaseMapped) (err error) {
-	var queryBody string
+	var queryBody, label string
 	var autos, upsertCols *ColumnCollection
 	defer func() { err = i.finish(queryBody, recover(), nil, err) }()
 
 	i.Label, queryBody, autos, upsertCols = i.generateUpsert(object)
+	i.maybeSetLabel(label)
 
-	queryBody = i.start(queryBody)
+	queryBody, err = i.start(queryBody)
+	if err != nil {
+		return
+	}
 	if autos.Len() == 0 {
-		if _, err = i.Exec(queryBody, upsertCols.ColumnValues(object)...); err != nil {
+		if _, err = i.DB.ExecContext(i.Context, queryBody, upsertCols.ColumnValues(object)...); err != nil {
 			return
 		}
 		return
@@ -247,15 +270,19 @@ func (i *Invocation) Upsert(object DatabaseMapped) (err error) {
 
 // Exists returns a bool if a given object exists (utilizing the primary key columns if they exist) wrapped in a transaction.
 func (i *Invocation) Exists(object DatabaseMapped) (exists bool, err error) {
-	var queryBody string
+	var queryBody, label string
 	var pks *ColumnCollection
 	defer func() { err = i.finish(queryBody, recover(), nil, err) }()
 
-	if i.Label, queryBody, pks, err = i.generateExists(object); err != nil {
+	if label, queryBody, pks, err = i.generateExists(object); err != nil {
 		err = Error(err)
 		return
 	}
-	queryBody = i.start(queryBody)
+	i.maybeSetLabel(label)
+	queryBody, err = i.start(queryBody)
+	if err != nil {
+		return
+	}
 	var value int
 	if queryErr := i.DB.QueryRowContext(i.Context, queryBody, pks.ColumnValues(object)...).Scan(&value); queryErr != nil && !ex.Is(queryErr, sql.ErrNoRows) {
 		err = Error(queryErr)
@@ -270,16 +297,20 @@ func (i *Invocation) Exists(object DatabaseMapped) (exists bool, err error) {
 // https://github.com/golang/go/issues/7898, the Delete HAS BEEN APPLIED on the current transaction. Its on the
 // developer using Delete to ensure their tags are correct and/or ensure theit Tx rolls back on this error.
 func (i *Invocation) Delete(object DatabaseMapped) (deleted bool, err error) {
-	var queryBody string
+	var queryBody, label string
 	var pks *ColumnCollection
 	var res sql.Result
 	defer func() { err = i.finish(queryBody, recover(), res, err) }()
 
-	if i.Label, queryBody, pks, err = i.generateDelete(object); err != nil {
+	if label, queryBody, pks, err = i.generateDelete(object); err != nil {
 		return
 	}
 
-	queryBody = i.start(queryBody)
+	i.maybeSetLabel(label)
+	queryBody, err = i.start(queryBody)
+	if err != nil {
+		return
+	}
 	res, err = i.DB.ExecContext(i.Context, queryBody, pks.ColumnValues(object)...)
 	if err != nil {
 		err = Error(err)
@@ -568,20 +599,33 @@ func (i *Invocation) generateUpdate(object DatabaseMapped) (statementLabel, quer
 	return
 }
 
-func (i *Invocation) generateUpsert(object DatabaseMapped) (statementLabel, queryBody string, autos, insertCols *ColumnCollection) {
+func (i *Invocation) generateUpsert(object DatabaseMapped) (statementLabel, queryBody string, autos, insertsWithAutos *ColumnCollection) {
 	tableName := TableName(object)
 	cols := Columns(object)
 	updates := cols.UpdateColumns()
 	updateCols := updates.Columns()
 
-	// these should be not auto columns, and columns that are auto and are set
-	insertCols = cols.InsertColumns().ConcatWith(cols.Autos().NotZero(object))
+	// We add in all the autos columns to start
+	insertsWithAutos = cols.InsertColumns().ConcatWith(cols.Autos())
+	pks := insertsWithAutos.PrimaryKeys()
 
-	insertColNames := insertCols.ColumnNames()
+	// But we exclude auto primary keys that are not set. Auto primary keys that ARE set must be included in the insert
+	// clause so that there is a collision. But keys that are not set must be excluded from insertsWithAutos so that
+	// they are not passed as an extra parameter to ExecInContext later and are properly auto-generated
+	for _, col := range pks.Columns() {
+		if col.IsAuto && !cols.NotZero(object).HasColumn(col.ColumnName) {
+			insertsWithAutos.Remove(col.ColumnName)
+		}
+	}
+
+	insertCols := insertsWithAutos.Columns()
+	tokenMap := map[string]string{}
+	for i, col := range insertCols {
+		tokenMap[col.ColumnName] = "$" + strconv.Itoa(i+1)
+	}
 
 	// autos are read out on insert (but only if unset)
 	autos = cols.Autos().Zero(object)
-	pks := cols.PrimaryKeys()
 	pkNames := pks.ColumnNames()
 
 	queryBodyBuffer := i.BufferPool.Get()
@@ -590,30 +634,33 @@ func (i *Invocation) generateUpsert(object DatabaseMapped) (statementLabel, quer
 	queryBodyBuffer.WriteString("INSERT INTO ")
 	queryBodyBuffer.WriteString(tableName)
 	queryBodyBuffer.WriteString(" (")
-	for i, name := range insertColNames {
-		queryBodyBuffer.WriteString(name)
-		if i < len(insertColNames)-1 {
-			queryBodyBuffer.WriteRune(',')
+
+	skipComma := true
+	for _, col := range insertCols {
+		if !col.IsAuto || cols.NotZero(object).HasColumn(col.ColumnName) {
+			if !skipComma {
+				queryBodyBuffer.WriteRune(',')
+			}
+			skipComma = false
+			queryBodyBuffer.WriteString(col.ColumnName)
 		}
 	}
 
 	queryBodyBuffer.WriteString(") VALUES (")
-
-	for x := 0; x < insertCols.Len(); x++ {
-		queryBodyBuffer.WriteString("$" + strconv.Itoa(x+1))
-		if x < (insertCols.Len() - 1) {
-			queryBodyBuffer.WriteRune(',')
+	skipComma = true
+	for _, col := range insertsWithAutos.Columns() {
+		if !col.IsAuto || cols.NotZero(object).HasColumn(col.ColumnName) {
+			if !skipComma {
+				queryBodyBuffer.WriteRune(',')
+			}
+			skipComma = false
+			queryBodyBuffer.WriteString(tokenMap[col.ColumnName])
 		}
 	}
 
 	queryBodyBuffer.WriteString(")")
 
 	if pks.Len() > 0 {
-		tokenMap := map[string]string{}
-		for i, col := range insertCols.Columns() {
-			tokenMap[col.ColumnName] = "$" + strconv.Itoa(i+1)
-		}
-
 		queryBodyBuffer.WriteString(" ON CONFLICT (")
 
 		for i, name := range pkNames {
@@ -721,15 +768,30 @@ func (i *Invocation) setAutos(object DatabaseMapped, autos *ColumnCollection, au
 }
 
 // start runs on start steps.
-func (i *Invocation) start(statement string) string {
+func (i *Invocation) start(statement string) (string, error) {
+	if i.DB == nil {
+		return "", ex.New(ErrConnectionClosed)
+	}
 	i.StartTime = time.Now()
 	if i.StatementInterceptor != nil {
-		statement = i.StatementInterceptor(i.Label, statement)
+		var err error
+		statement, err = i.StatementInterceptor(i.Context, i.Label, statement)
+		if err != nil {
+			return statement, err
+		}
+	}
+	if i.Log != nil && !IsSkipQueryLogging(i.Context) {
+		qse := NewQueryStartEvent(statement)
+		qse.Username = i.Config.Username
+		qse.Database = i.Config.DatabaseOrDefault()
+		qse.Label = i.Label
+		qse.Engine = i.Config.EngineOrDefault()
+		i.Log.TriggerContext(i.Context, qse)
 	}
 	if i.Tracer != nil && !IsSkipQueryLogging(i.Context) {
 		i.TraceFinisher = i.Tracer.Query(i.Context, i.Config, i.Label, statement)
 	}
-	return statement
+	return statement, nil
 }
 
 // finish runs on complete steps.

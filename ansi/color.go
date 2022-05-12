@@ -1,7 +1,7 @@
 /*
 
-Copyright (c) 2021 - Present. Blend Labs, Inc. All rights reserved
-Blend Confidential - Restricted
+Copyright (c) 2022 - Present. Blend Labs, Inc. All rights reserved
+Use of this source code is governed by a MIT license that can be found in the LICENSE file.
 
 */
 
@@ -132,14 +132,15 @@ const (
 
 // Color codes
 const (
-	ColorBlack  Color = "30m"
-	ColorRed    Color = "31m"
-	ColorGreen  Color = "32m"
-	ColorYellow Color = "33m"
-	ColorBlue   Color = "34m"
-	ColorPurple Color = "35m"
-	ColorCyan   Color = "36m"
-	ColorWhite  Color = "37m"
+	ColorDefault Color = "39m"
+	ColorBlack   Color = "30m"
+	ColorRed     Color = "31m"
+	ColorGreen   Color = "32m"
+	ColorYellow  Color = "33m"
+	ColorBlue    Color = "34m"
+	ColorPurple  Color = "35m"
+	ColorCyan    Color = "36m"
+	ColorWhite   Color = "37m"
 )
 
 // BrightColorCodes

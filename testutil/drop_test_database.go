@@ -1,7 +1,7 @@
 /*
 
-Copyright (c) 2021 - Present. Blend Labs, Inc. All rights reserved
-Blend Confidential - Restricted
+Copyright (c) 2022 - Present. Blend Labs, Inc. All rights reserved
+Use of this source code is governed by a MIT license that can be found in the LICENSE file.
 
 */
 
@@ -17,16 +17,22 @@ import (
 )
 
 // DropTestDatabase drops a database.
-func DropTestDatabase(ctx context.Context, conn *db.Connection, opts ...db.Option) error {
+func DropTestDatabase(ctx context.Context, conn *db.Connection, opts ...db.Option) (err error) {
+	var mgmt *db.Connection
+	defer func() {
+		err = db.PoolCloseFinalizer(mgmt, err)
+	}()
+
 	config, err := conn.Config.Reparse()
 	if err != nil {
-		return err
+		return
 	}
 
-	mgmt, err := dbutil.OpenManagementConnection(opts...)
+	mgmt, err = dbutil.OpenManagementConnection(opts...)
 	if err != nil {
-		return err
+		return
 	}
-	_, err = mgmt.ExecContext(ctx, fmt.Sprintf("DROP DATABASE %s ", config.Database))
-	return err
+
+	_, err = mgmt.ExecContext(ctx, fmt.Sprintf("DROP DATABASE %s", config.Database))
+	return
 }

@@ -1,7 +1,7 @@
 /*
 
-Copyright (c) 2021 - Present. Blend Labs, Inc. All rights reserved
-Blend Confidential - Restricted
+Copyright (c) 2022 - Present. Blend Labs, Inc. All rights reserved
+Use of this source code is governed by a MIT license that can be found in the LICENSE file.
 
 */
 
@@ -67,8 +67,8 @@ func (c *Config) Resolve(ctx context.Context) error {
 		configutil.SetString(&c.BindAddr, configutil.Env("BIND_ADDR"), configutil.String(c.BindAddr)),
 		configutil.SetString(&c.BaseURL, configutil.Env("BASE_URL"), configutil.String(c.BaseURL)),
 		configutil.SetDuration(&c.SessionTimeout, configutil.Env("SESSION_TIMEOUT"), configutil.Duration(c.SessionTimeout)),
-		configutil.SetBool(&c.CookieSecure, configutil.Env("COOKIE_SECURE"), configutil.Bool(c.CookieSecure), configutil.BoolFunc(c.ResolveCookieSecure)),
-		configutil.SetBool(&c.CookieHTTPOnly, configutil.Env("COOKIE_HTTP_ONLY"), configutil.Bool(c.CookieHTTPOnly)),
+		configutil.SetBoolPtr(&c.CookieSecure, configutil.Env("COOKIE_SECURE"), configutil.Bool(c.CookieSecure), configutil.BoolFunc(c.ResolveCookieSecure)),
+		configutil.SetBoolPtr(&c.CookieHTTPOnly, configutil.Env("COOKIE_HTTP_ONLY"), configutil.Bool(c.CookieHTTPOnly)),
 		configutil.SetString(&c.CookieSameSite, configutil.Env("COOKIE_SAME_SITE"), configutil.String(c.CookieSameSite)),
 		configutil.SetString(&c.CookieName, configutil.Env("COOKIE_NAME"), configutil.String(c.CookieName)),
 		configutil.SetString(&c.CookiePath, configutil.Env("COOKIE_PATH"), configutil.String(c.CookiePath)),
@@ -79,7 +79,7 @@ func (c *Config) Resolve(ctx context.Context) error {
 		configutil.SetDuration(&c.WriteTimeout, configutil.Env("WRITE_TIMEOUT"), configutil.Duration(c.WriteTimeout)),
 		configutil.SetDuration(&c.IdleTimeout, configutil.Env("IDLE_TIMEOUT"), configutil.Duration(c.IdleTimeout)),
 		configutil.SetDuration(&c.ShutdownGracePeriod, configutil.Env("SHUTDOWN_GRACE_PERIOD"), configutil.Duration(c.ShutdownGracePeriod)),
-		configutil.SetBool(&c.KeepAlive, configutil.Env("KEEP_ALIVE"), configutil.Bool(c.KeepAlive)),
+		configutil.SetBoolPtr(&c.KeepAlive, configutil.Env("KEEP_ALIVE"), configutil.Bool(c.KeepAlive)),
 		configutil.SetDuration(&c.KeepAlivePeriod, configutil.Env("KEEP_ALIVE_PERIOD"), configutil.Duration(c.KeepAlivePeriod)),
 	)
 }

@@ -1,7 +1,7 @@
 /*
 
-Copyright (c) 2021 - Present. Blend Labs, Inc. All rights reserved
-Blend Confidential - Restricted
+Copyright (c) 2022 - Present. Blend Labs, Inc. All rights reserved
+Use of this source code is governed by a MIT license that can be found in the LICENSE file.
 
 */
 
@@ -60,6 +60,23 @@ func (mc *MockCollector) GetCount(metricName string) (count int) {
 			count++
 		}
 		mc.Metrics <- metric
+	}
+	return
+}
+
+// GetTagCount returns the number of events logged for a given metric name & tag name.
+func (mc *MockCollector) GetTagCount(metricName string, tagName string) (count int) {
+	metrics := mc.AllMetrics()
+	metricCount := len(metrics)
+	for x := 0; x < metricCount; x++ {
+		metric := metrics[x]
+		if metric.Name == metricName {
+			for i := 0; i < len(metric.Tags); i++ {
+				if tagName == metric.Tags[i] {
+					count++
+				}
+			}
+		}
 	}
 	return
 }

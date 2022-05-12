@@ -1,7 +1,7 @@
 /*
 
-Copyright (c) 2021 - Present. Blend Labs, Inc. All rights reserved
-Blend Confidential - Restricted
+Copyright (c) 2022 - Present. Blend Labs, Inc. All rights reserved
+Use of this source code is governed by a MIT license that can be found in the LICENSE file.
 
 */
 
@@ -13,7 +13,6 @@ import (
 	"encoding/json"
 	"encoding/xml"
 	"io"
-	"io/ioutil"
 	"net/http"
 	"net/url"
 	"time"
@@ -88,16 +87,16 @@ func (r Request) Do() (*http.Response, error) {
 		return nil, ex.New(ErrInvalidMethod, ex.OptMessagef("method: %q", r.Request.Method))
 	}
 
-	// reconcile post form values
 	if len(r.Request.PostForm) > 0 && r.Request.Body == nil {
 		body := r.Request.PostForm.Encode()
 		buffer := bytes.NewBufferString(body)
 		r.Request.ContentLength = int64(buffer.Len())
-		r.Request.Body = ioutil.NopCloser(buffer)
+		r.Request.Body = io.NopCloser(buffer)
 	}
+
 	if r.Request.Body == nil {
 		r.Request.Body = http.NoBody
-		r.Request.GetBody = func() (io.ReadCloser, error) { return ioutil.NopCloser(http.NoBody), nil }
+		r.Request.GetBody = func() (io.ReadCloser, error) { return io.NopCloser(http.NoBody), nil }
 	}
 
 	started := time.Now().UTC()
@@ -155,7 +154,7 @@ func (r Request) Discard() (res *http.Response, err error) {
 		return
 	}
 	defer res.Body.Close()
-	_, err = io.Copy(ioutil.Discard, res.Body)
+	_, err = io.Copy(io.Discard, res.Body)
 	if err != nil {
 		err = ex.New(err)
 		return
@@ -202,7 +201,7 @@ func (r Request) Bytes() (contents []byte, res *http.Response, err error) {
 	defer func() {
 		err = ex.Append(err, res.Body.Close())
 	}()
-	contents, err = ioutil.ReadAll(res.Body)
+	contents, err = io.ReadAll(res.Body)
 	if err != nil {
 		err = ex.New(err)
 		return
@@ -232,6 +231,42 @@ func (r Request) JSON(dst interface{}) (res *http.Response, err error) {
 		return
 	}
 	if err = json.NewDecoder(res.Body).Decode(dst); err != nil {
+		err = ex.New(err)
+		return
+	}
+	return
+}
+
+// JSONBytes reads the response as json into a given object
+// and returns the response bytes as well as the response metadata.
+//
+// This method is useful for debugging responses.
+func (r Request) JSONBytes(dst interface{}) (body []byte, res *http.Response, err error) {
+	defer func() {
+		if closeErr := r.Close(); closeErr != nil {
+			err = ex.Append(err, closeErr)
+		}
+	}()
+
+	res, err = r.Do()
+	if err != nil {
+		res = nil
+		err = ex.New(err)
+		return
+	}
+	defer func() {
+		err = ex.Append(err, res.Body.Close())
+	}()
+	if res.StatusCode == http.StatusNoContent {
+		err = ex.New(ErrNoContentJSON)
+		return
+	}
+	body, err = io.ReadAll(res.Body)
+	if err != nil {
+		err = ex.New(err)
+		return
+	}
+	if err = json.Unmarshal(body, dst); err != nil {
 		err = ex.New(err)
 		return
 	}

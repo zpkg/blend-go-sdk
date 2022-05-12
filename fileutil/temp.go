@@ -1,14 +1,13 @@
 /*
 
-Copyright (c) 2021 - Present. Blend Labs, Inc. All rights reserved
-Blend Confidential - Restricted
+Copyright (c) 2022 - Present. Blend Labs, Inc. All rights reserved
+Use of this source code is governed by a MIT license that can be found in the LICENSE file.
 
 */
 
 package fileutil
 
 import (
-	"io/ioutil"
 	"os"
 	"sync"
 
@@ -17,7 +16,7 @@ import (
 
 // NewTemp creates a new temp file with given contents.
 func NewTemp(contents []byte) (*Temp, error) {
-	f, err := ioutil.TempFile("", "")
+	f, err := os.CreateTemp("", "")
 	if err != nil {
 		return nil, ex.New(err)
 	}

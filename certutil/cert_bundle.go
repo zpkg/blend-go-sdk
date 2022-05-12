@@ -1,7 +1,7 @@
 /*
 
-Copyright (c) 2021 - Present. Blend Labs, Inc. All rights reserved
-Blend Confidential - Restricted
+Copyright (c) 2022 - Present. Blend Labs, Inc. All rights reserved
+Use of this source code is governed by a MIT license that can be found in the LICENSE file.
 
 */
 
@@ -125,6 +125,27 @@ func (cb CertBundle) WriteCertPem(w io.Writer) error {
 	return nil
 }
 
+// WriteCertChainPem writes the public key portion of the cert to a given writer.
+func (cb CertBundle) WriteCertChainPem(w io.Writer) error {
+	if len(cb.CertificateDERs) < 2 {
+		return nil
+	}
+	for _, der := range cb.CertificateDERs[1:] {
+		if err := pem.Encode(w, &pem.Block{Type: BlockTypeCertificate, Bytes: der}); err != nil {
+			return ex.New(err)
+		}
+	}
+	return nil
+}
+
+// WriteCertPartialPem writes the public key portion of the cert to a given writer.
+func (cb CertBundle) WriteCertPartialPem(w io.Writer) error {
+	if len(cb.CertificateDERs) == 0 {
+		return nil
+	}
+	return pem.Encode(w, &pem.Block{Type: BlockTypeCertificate, Bytes: cb.CertificateDERs[0]})
+}
+
 // CertPEM returns the cert portion of the certificate DERs as a byte array.
 func (cb CertBundle) CertPEM() ([]byte, error) {
 	buffer := new(bytes.Buffer)
@@ -172,4 +193,36 @@ func (cb CertBundle) CertPool() (*x509.CertPool, error) {
 		systemPool.AddCert(&cb.Certificates[index])
 	}
 	return systemPool, nil
+}
+
+// ServerConfig returns a tls.Config for this bundle as a server certificate.
+func (cb CertBundle) ServerConfig() (*tls.Config, error) {
+	keyPair, err := cb.GenerateKeyPair()
+	if err != nil {
+		return nil, err
+	}
+
+	serverCert, err := keyPair.CertBytes()
+	if err != nil {
+		return nil, err
+	}
+	serverKey, err := keyPair.KeyBytes()
+	if err != nil {
+		return nil, err
+	}
+
+	serverCertificate, err := tls.X509KeyPair(serverCert, serverKey)
+	if err != nil {
+		return nil, err
+	}
+
+	certPool, err := cb.CertPool()
+	if err != nil {
+		return nil, err
+	}
+
+	config := new(tls.Config)
+	config.Certificates = []tls.Certificate{serverCertificate}
+	config.RootCAs = certPool
+	return config, nil
 }

@@ -1,7 +1,7 @@
 /*
 
-Copyright (c) 2021 - Present. Blend Labs, Inc. All rights reserved
-Blend Confidential - Restricted
+Copyright (c) 2022 - Present. Blend Labs, Inc. All rights reserved
+Use of this source code is governed by a MIT license that can be found in the LICENSE file.
 
 */
 
@@ -66,9 +66,18 @@ func GetTimestamp(ctx context.Context) time.Time {
 
 type pathKey struct{}
 
-// WithPath returns a new context with a given additional path segment(s).
+// WithPath returns a new context with a given path segment(s).
+//
+// NOTE: This overwrites any _existing_ path context values.
+//
+// If you want to _append_ path segments, use `logger.WithPathAppend(...)`.
 func WithPath(ctx context.Context, path ...string) context.Context {
 	return context.WithValue(ctx, pathKey{}, path)
+}
+
+// WithPathAppend appends a given path segment to a context.
+func WithPathAppend(ctx context.Context, path ...string) context.Context {
+	return context.WithValue(ctx, pathKey{}, append(GetPath(ctx), path...))
 }
 
 // GetPath gets a path off a context.
@@ -146,11 +155,8 @@ func WithAnnotations(ctx context.Context, annotations Annotations) context.Conte
 }
 
 // WithAnnotation returns a new context with a given additional annotation.
-func WithAnnotation(ctx context.Context, key, value string) context.Context {
+func WithAnnotation(ctx context.Context, key string, value interface{}) context.Context {
 	existing := GetAnnotations(ctx)
-	if existing == nil {
-		existing = make(Annotations)
-	}
 	existing[key] = value
 	return context.WithValue(ctx, annotationsKey{}, existing)
 }

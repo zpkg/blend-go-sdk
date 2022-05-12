@@ -1,7 +1,7 @@
 /*
 
-Copyright (c) 2021 - Present. Blend Labs, Inc. All rights reserved
-Blend Confidential - Restricted
+Copyright (c) 2022 - Present. Blend Labs, Inc. All rights reserved
+Use of this source code is governed by a MIT license that can be found in the LICENSE file.
 
 */
 
@@ -13,7 +13,7 @@ import (
 
 	"github.com/blend/go-sdk/ref"
 
-	"github.com/DataDog/datadog-go/statsd"
+	"github.com/DataDog/datadog-go/v5/statsd"
 
 	"github.com/blend/go-sdk/assert"
 	"github.com/blend/go-sdk/stats"
@@ -93,7 +93,6 @@ func TestCollectorNew(t *testing.T) {
 	assert.Nil(err)
 	assert.NotNil(c)
 	assert.NotNil(c.client)
-	assert.Equal("hello.", c.client.Namespace)
 
 	cfg.BufferDepth = 10
 	cfg.Buffered = ref.Bool(true)
@@ -102,5 +101,4 @@ func TestCollectorNew(t *testing.T) {
 	assert.Nil(err)
 	assert.NotNil(c)
 	assert.NotNil(c.client)
-	assert.Equal("hello.", c.client.Namespace)
 }

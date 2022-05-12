@@ -1,7 +1,7 @@
 /*
 
-Copyright (c) 2021 - Present. Blend Labs, Inc. All rights reserved
-Blend Confidential - Restricted
+Copyright (c) 2022 - Present. Blend Labs, Inc. All rights reserved
+Use of this source code is governed by a MIT license that can be found in the LICENSE file.
 
 */
 
@@ -52,31 +52,27 @@ type Proxy struct {
 func (p *Proxy) ServeHTTP(rw http.ResponseWriter, req *http.Request) {
 	var err error
 	var tf webutil.HTTPTraceFinisher
+	srw := webutil.NewStatusResponseWriter(rw)
+
 	defer func() {
 		// NOTE: This uses the outer scope's `err` by design. This way updates
 		//       to `err` will be reflected on (deferred) exit.
 		r := recover()
 
-		// Wrap the error with the reason for the panic.
-		if rErr, ok := r.(error); ok {
-			err = ex.Nest(err, rErr)
-		} else {
+		// see: https://golang.org/pkg/net/http/#ErrAbortHandler
+		if r != nil && r != http.ErrAbortHandler {
+			// Wrap the error with the reason for the panic.
 			err = ex.Nest(err, ex.New(r))
 		}
-
-		// Finish the span, if open
 		if tf != nil {
-			tf.Finish(err)
+			tf.Finish(srw.StatusCode(), err)
 		}
-
-		// Log or print the cause of the panic.
-		if r == nil {
-			return
-		}
-		if p.Log != nil {
-			p.Log.Fatalf("%v", r)
-		} else {
-			fmt.Fprintf(os.Stderr, "%v\n", r)
+		if err != nil {
+			if p.Log != nil {
+				p.Log.Fatalf("%v", r)
+			} else {
+				fmt.Fprintf(os.Stderr, "%v\n", r)
+			}
 		}
 	}()
 
@@ -90,15 +86,14 @@ func (p *Proxy) ServeHTTP(rw http.ResponseWriter, req *http.Request) {
 	}
 
 	upstream, err := p.Resolver(req, p.Upstreams)
-
 	if err != nil {
 		logger.MaybeError(p.Log, err)
-		rw.WriteHeader(http.StatusBadGateway)
+		srw.WriteHeader(http.StatusBadGateway)
 		return
 	}
 
 	if upstream == nil {
-		rw.WriteHeader(http.StatusBadGateway)
+		srw.WriteHeader(http.StatusBadGateway)
 		return
 	}
 
@@ -121,6 +116,5 @@ func (p *Proxy) ServeHTTP(rw http.ResponseWriter, req *http.Request) {
 	if p.TransformRequest != nil {
 		p.TransformRequest(req)
 	}
-
-	upstream.ServeHTTP(rw, req)
+	upstream.ServeHTTP(srw, req)
 }

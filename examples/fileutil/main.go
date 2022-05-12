@@ -1,13 +1,14 @@
 /*
 
-Copyright (c) 2021 - Present. Blend Labs, Inc. All rights reserved
-Blend Confidential - Restricted
+Copyright (c) 2022 - Present. Blend Labs, Inc. All rights reserved
+Use of this source code is governed by a MIT license that can be found in the LICENSE file.
 
 */
 
 package main
 
 import (
+	"context"
 	"fmt"
 	"os"
 
@@ -15,7 +16,7 @@ import (
 )
 
 func main() {
-	go fileutil.Watch("file.yml", func(f *os.File) error {
+	go fileutil.Watch(context.Background(), "file.yml", func(f *os.File) error {
 		defer f.Close()
 		fmt.Printf("file changed\n")
 		return nil

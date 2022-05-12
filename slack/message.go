@@ -1,7 +1,7 @@
 /*
 
-Copyright (c) 2021 - Present. Blend Labs, Inc. All rights reserved
-Blend Confidential - Restricted
+Copyright (c) 2022 - Present. Blend Labs, Inc. All rights reserved
+Use of this source code is governed by a MIT license that can be found in the LICENSE file.
 
 */
 
@@ -26,6 +26,8 @@ type Message struct {
 	IconEmoji       string              `json:"icon_emoji,omitempty"`
 	IconURL         string              `json:"icon_url,omitempty"`
 	ThreadTimestamp string              `json:"thread_ts,omitempty"`
+	AsUser          bool                `json:"as_user,omitempty"`
+	LinkNames       bool                `json:"link_names"`
 	Attachments     []MessageAttachment `json:"attachments"`
 
 	// Response-specific fields

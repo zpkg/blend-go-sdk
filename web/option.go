@@ -1,15 +1,17 @@
 /*
 
-Copyright (c) 2021 - Present. Blend Labs, Inc. All rights reserved
-Blend Confidential - Restricted
+Copyright (c) 2022 - Present. Blend Labs, Inc. All rights reserved
+Use of this source code is governed by a MIT license that can be found in the LICENSE file.
 
 */
 
 package web
 
 import (
+	"context"
 	"crypto/tls"
 	"fmt"
+	"net"
 	"net/http"
 	"time"
 
@@ -47,7 +49,7 @@ func OptConfigFromEnv() Option {
 	}
 }
 
-// OptBindAddr sets the config bind address
+// OptBindAddr sets the config bind address.
 func OptBindAddr(bindAddr string) Option {
 	return func(a *App) error {
 		a.Config.BindAddr = bindAddr
@@ -55,11 +57,28 @@ func OptBindAddr(bindAddr string) Option {
 	}
 }
 
-// OptPort sets the config bind address
+// OptPort sets the config bind address.
 func OptPort(port int32) Option {
 	return func(a *App) error {
 		a.Config.Port = port
 		a.Config.BindAddr = fmt.Sprintf(":%v", port)
+		return nil
+	}
+}
+
+// OptBaseContext sets a base context on an `App`; this is a context that
+// is always used via the `BaseContext` function, independent of the listener.
+func OptBaseContext(ctx context.Context) Option {
+	return OptBaseContextFunc(func(_ net.Listener) context.Context {
+		return ctx
+	})
+}
+
+// OptBaseContextFunc sets a base context function on an `App`; this
+// context function will propagated from the `App` to `http.Server.BaseContext`.
+func OptBaseContextFunc(bc func(net.Listener) context.Context) Option {
+	return func(a *App) error {
+		a.BaseContext = bc
 		return nil
 	}
 }
@@ -269,6 +288,14 @@ func OptIdleTimeout(d time.Duration) Option {
 func OptMaxHeaderBytes(maxHeaderBytes int) Option {
 	return func(a *App) error {
 		a.Config.MaxHeaderBytes = maxHeaderBytes
+		return nil
+	}
+}
+
+// OptBaseURL sets the config base url.
+func OptBaseURL(baseURL string) Option {
+	return func(a *App) error {
+		a.Config.BaseURL = baseURL
 		return nil
 	}
 }

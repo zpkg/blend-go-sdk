@@ -1,7 +1,7 @@
 /*
 
-Copyright (c) 2021 - Present. Blend Labs, Inc. All rights reserved
-Blend Confidential - Restricted
+Copyright (c) 2022 - Present. Blend Labs, Inc. All rights reserved
+Use of this source code is governed by a MIT license that can be found in the LICENSE file.
 
 */
 
@@ -11,7 +11,8 @@ import (
 	"unicode/utf8"
 )
 
-func checkName(value string) (err error) {
+// CheckName checks the characters in a name but does not validate the length.
+func CheckName(value string) (err error) {
 	valueLen := len(value)
 	var state int
 	var ch rune

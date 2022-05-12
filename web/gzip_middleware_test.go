@@ -1,7 +1,7 @@
 /*
 
-Copyright (c) 2021 - Present. Blend Labs, Inc. All rights reserved
-Blend Confidential - Restricted
+Copyright (c) 2022 - Present. Blend Labs, Inc. All rights reserved
+Use of this source code is governed by a MIT license that can be found in the LICENSE file.
 
 */
 
@@ -10,7 +10,7 @@ package web
 import (
 	"bytes"
 	"compress/gzip"
-	"io/ioutil"
+	"io"
 	"testing"
 
 	"github.com/blend/go-sdk/assert"
@@ -51,7 +51,7 @@ func TestGZipMiddlewareCompressed(t *testing.T) {
 
 	decompressor, err := gzip.NewReader(bytes.NewBuffer(body))
 	assert.Nil(err)
-	decompressed, err := ioutil.ReadAll(decompressor)
+	decompressed, err := io.ReadAll(decompressor)
 	assert.Nil(err)
 
 	assert.Equal("\"OK!\"\n", string(decompressed))

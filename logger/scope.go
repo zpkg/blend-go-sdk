@@ -1,7 +1,7 @@
 /*
 
-Copyright (c) 2021 - Present. Blend Labs, Inc. All rights reserved
-Blend Confidential - Restricted
+Copyright (c) 2022 - Present. Blend Labs, Inc. All rights reserved
+Use of this source code is governed by a MIT license that can be found in the LICENSE file.
 
 */
 
@@ -35,7 +35,7 @@ func NewScope(log *Logger, options ...ScopeOption) Scope {
 The key fields:
 - "Path" is a set of names that denote a hierarchy or tree of calls.
 - "Labels" are string pairs that will appear with written log messages for easier searching later.
-- "Annoations" are string pairs taht will not appear with written log messages, but can be used to add extra data to events.
+- "Annoations" are string pairs that will not appear with written log messages, but can be used to add extra data to events.
 */
 type Scope struct {
 	// Path is a series of descriptive labels that shows the origin of the scope.
@@ -106,8 +106,8 @@ func (sc Scope) WithAnnotations(annotations Annotations) Scope {
 // --------------------------------------------------------------------------------
 
 // Trigger triggers an event in the subcontext.
-// The provided context is ammended with fields from the scope.
-// The provided context is also ammended with a TriggerTimestamp, which can be retrieved with `GetTriggerTimestamp(ctx)` in listeners.
+// The provided context is amended with fields from the scope.
+// The provided context is also amended with a TriggerTimestamp, which can be retrieved with `GetTriggerTimestamp(ctx)` in listeners.
 func (sc Scope) Trigger(event Event) {
 	sc.TriggerContext(context.Background(), event)
 }
@@ -231,7 +231,7 @@ func (sc Scope) FatalContext(ctx context.Context, err error, opts ...ErrorEventO
 // and append them to values already on the scope.
 func (sc Scope) FromContext(ctx context.Context) Scope {
 	return NewScope(sc.Logger,
-		OptScopePath(append(sc.Path, GetPath(ctx)...)...),
+		OptScopePath(append(GetPath(ctx), sc.Path...)...),
 		OptScopeLabels(sc.Labels, GetLabels(ctx)),
 		OptScopeAnnotations(sc.Annotations, GetAnnotations(ctx)),
 	)
@@ -239,7 +239,7 @@ func (sc Scope) FromContext(ctx context.Context) Scope {
 
 // ApplyContext applies the scope fields to a given context.
 func (sc Scope) ApplyContext(ctx context.Context) context.Context {
-	ctx = WithPath(ctx, append(sc.Path, GetPath(ctx)...)...)
+	ctx = WithPath(ctx, append(GetPath(ctx), sc.Path...)...)
 	ctx = WithLabels(ctx, sc.Labels) // treated specially because maps are references
 	ctx = WithAnnotations(ctx, CombineAnnotations(sc.Annotations, GetAnnotations(ctx)))
 	return ctx

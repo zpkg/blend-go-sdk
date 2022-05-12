@@ -1,7 +1,7 @@
 /*
 
-Copyright (c) 2021 - Present. Blend Labs, Inc. All rights reserved
-Blend Confidential - Restricted
+Copyright (c) 2022 - Present. Blend Labs, Inc. All rights reserved
+Use of this source code is governed by a MIT license that can be found in the LICENSE file.
 
 */
 
@@ -17,6 +17,8 @@ const (
 	VarServiceName = "SERVICE_NAME"
 	// VarProjectName is a common env var name.
 	VarProjectName = "PROJECT_NAME"
+	// VarClusterName is a common env var name.
+	VarClusterName = "CLUSTER_NAME"
 	// VarServiceSecret is a common env var name.
 	VarServiceSecret = "SERVICE_SECRET"
 	// VarPort is a common env var name.

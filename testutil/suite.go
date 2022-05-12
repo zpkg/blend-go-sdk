@@ -1,7 +1,7 @@
 /*
 
-Copyright (c) 2021 - Present. Blend Labs, Inc. All rights reserved
-Blend Confidential - Restricted
+Copyright (c) 2022 - Present. Blend Labs, Inc. All rights reserved
+Use of this source code is governed by a MIT license that can be found in the LICENSE file.
 
 */
 
@@ -12,6 +12,7 @@ import (
 	"os"
 	"testing"
 
+	"github.com/blend/go-sdk/ex"
 	"github.com/blend/go-sdk/logger"
 )
 
@@ -47,19 +48,22 @@ type Suite struct {
 	After  []SuiteAction
 }
 
-// Run runs tests and returns the exit code.
+// Run runs tests and calls os.Exit(...) with the exit code.
 func (s Suite) Run() {
-	var code int
-	defer func() {
-		os.Exit(code)
-	}()
+	os.Exit(s.RunCode())
+}
+
+// RunCode runs the suite and returns an exit code.
+//
+// It is used by `.Run()`, which will os.Exit(...) this code.
+func (s Suite) RunCode() (code int) {
 	ctx := context.Background()
 	if s.Log != nil {
 		ctx = logger.WithLogger(ctx, s.Log)
 	}
 	var err error
 	for _, before := range s.Before {
-		if err = before(ctx); err != nil {
+		if err = executeSafe(ctx, before); err != nil {
 			logger.MaybeFatalf(s.Log, "error during setup steps: %+v", err)
 			code = SuiteFailureBefore
 			return
@@ -67,12 +71,25 @@ func (s Suite) Run() {
 	}
 	defer func() {
 		for _, after := range s.After {
-			if err = after(ctx); err != nil {
+			if err = executeSafe(ctx, after); err != nil {
 				logger.MaybeFatalf(s.Log, "error during cleanup steps: %+v", err)
 				code = SuiteFailureAfter
 				return
 			}
 		}
 	}()
-	code = s.M.Run()
+	if s.M != nil {
+		code = s.M.Run()
+	}
+	return
+}
+
+func executeSafe(ctx context.Context, action func(context.Context) error) (err error) {
+	defer func() {
+		if r := recover(); r != nil {
+			err = ex.New(r)
+		}
+	}()
+	err = action(ctx)
+	return
 }

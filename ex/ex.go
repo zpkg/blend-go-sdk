@@ -1,7 +1,7 @@
 /*
 
-Copyright (c) 2021 - Present. Blend Labs, Inc. All rights reserved
-Blend Confidential - Restricted
+Copyright (c) 2022 - Present. Blend Labs, Inc. All rights reserved
+Use of this source code is governed by a MIT license that can be found in the LICENSE file.
 
 */
 
@@ -10,6 +10,7 @@ package ex
 import (
 	"bytes"
 	"encoding/json"
+	"errors"
 	"fmt"
 )
 
@@ -44,8 +45,10 @@ func NewWithStackDepth(class interface{}, startDepth int, options ...Option) Exc
 		if typed == nil {
 			return nil
 		}
+
 		ex = &Ex{
 			Class:      typed,
+			Inner:      errors.Unwrap(typed),
 			StackTrace: Callers(startDepth),
 		}
 	case string:
@@ -150,7 +153,7 @@ func (e *Ex) Error() string {
 	return e.Class.Error()
 }
 
-// Decompose breaks the exception down to be marshalled into an intermediate format.
+// Decompose breaks the exception down to be marshaled into an intermediate format.
 func (e *Ex) Decompose() map[string]interface{} {
 	values := map[string]interface{}{}
 	values["Class"] = e.Class.Error()
@@ -237,4 +240,23 @@ func (e *Ex) String() string {
 		fmt.Fprint(s, " "+e.StackTrace.String())
 	}
 	return s.String()
+}
+
+// Unwrap returns the inner error if it exists.
+// Enables error chaining and calling errors.Is/As to
+// match on inner errors.
+func (e *Ex) Unwrap() error {
+	return e.Inner
+}
+
+// Is returns true if the target error matches the Ex.
+// Enables errors.Is on Ex classes when an error
+// is wrapped using Ex.
+func (e *Ex) Is(target error) bool {
+	return Is(e, target)
+}
+
+// As delegates to the errors.As to match on the Ex class.
+func (e *Ex) As(target interface{}) bool {
+	return errors.As(e.Class, target)
 }

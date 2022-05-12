@@ -1,7 +1,7 @@
 /*
 
-Copyright (c) 2021 - Present. Blend Labs, Inc. All rights reserved
-Blend Confidential - Restricted
+Copyright (c) 2022 - Present. Blend Labs, Inc. All rights reserved
+Use of this source code is governed by a MIT license that can be found in the LICENSE file.
 
 */
 
@@ -209,11 +209,43 @@ type MountConfigInput struct {
 	PassthroughRequestHeaders []string          `json:"passthrough_request_headers,omitempty" mapstructure:"passthrough_request_headers"`
 }
 
+// BatchTransitInput is the structure of batch encrypt / decrypt requests
+type BatchTransitInput struct {
+	BatchTransitInputItems []BatchTransitInputItem `json:"batch_input"`
+}
+
+// BatchTransitInputItem is a single item in a batch encrypt / decrypt request
+type BatchTransitInputItem struct {
+	Context    []byte `json:"context,omitempty"`
+	Ciphertext string `json:"ciphertext,omitempty"`
+	Plaintext  []byte `json:"plaintext,omitempty"`
+}
+
+// BatchTransitResult is the structure returned by vault for batch transit requests
+type BatchTransitResult struct {
+	Data struct {
+		BatchTransitResult []struct {
+			// Error, if set represents a failure encountered while encrypting/decrypting a
+			// corresponding batch request item
+			Error      string `json:"error"`
+			Ciphertext string `json:"ciphertext"`
+			Plaintext  string `json:"plaintext"`
+		} `json:"batch_results"`
+	} `json:"data"`
+}
+
 // TransitResult is the structure returned by vault for transit requests
 type TransitResult struct {
 	Data struct {
 		Ciphertext string `json:"ciphertext"`
 		Plaintext  string `json:"plaintext"`
+	} `json:"data"`
+}
+
+// TransitHmacResult is the structure returned by vault for transit hmac requests
+type TransitHmacResult struct {
+	Data struct {
+		Hmac string `json:"hmac"`
 	} `json:"data"`
 }
 
@@ -237,7 +269,7 @@ type CreateTransitKeyConfig struct {
 	//      convergent encryption)
 	//   chacha20-poly1305 – ChaCha20-Poly1305 AEAD (symmetric, supports derivation and convergent encryption)
 	//   ed25519 – ED25519 (asymmetric, supports derivation). When using derivation, a sign operation with the same
-	//      context will derive the same key and signature; this is a signing analogue to convergent_encryption.
+	//      context will derive the same key and signature; this is a signing analog to convergent_encryption.
 	//   ecdsa-p256 – ECDSA using the P-256 elliptic curve (asymmetric)
 	//   rsa-2048 - RSA with bit size of 2048 (asymmetric)
 	//   rsa-4096 - RSA with bit size of 4096 (asymmetric)
@@ -265,8 +297,8 @@ type UpdateTransitKeyConfig struct {
 	AllowPlaintextBackup bool `json:"allow_plaintext_backup,omitempty"`
 }
 
-// GithubAuthResponse is a response for github auth.
-type GithubAuthResponse struct {
+// GitHubAuthResponse is a response for github auth.
+type GitHubAuthResponse struct {
 	LeaseID       string                 `json:"lease_id,omitempty"`
 	Renewable     bool                   `json:"renewable,omitempty"`
 	LeaseDuration int64                  `json:"lease_duration,omitempty"`
@@ -281,4 +313,26 @@ type GithubAuthResponse struct {
 			Org      string `json:"org,omitempty"`
 		} `json:"metadata"`
 	} `json:"auth"`
+}
+
+// AWSAuthResponse is a response for github auth.
+type AWSAuthResponse struct {
+	LeaseID       string                 `json:"lease_id,omitempty"`
+	Renewable     bool                   `json:"renewable,omitempty"`
+	LeaseDuration int64                  `json:"lease_duration,omitempty"`
+	Data          map[string]interface{} `json:"data,omitempty"`
+	Warnings      map[string]interface{} `json:"warnings,omitempty"`
+	Auth          struct {
+		ClientToken string   `json:"client_token,omitempty"`
+		Accessor    string   `json:"accessor,omitempty"`
+		Policies    []string `json:"policies,omitempty"`
+		Metadata    struct {
+			RoleTagMaxTTL string `json:"role_tag_max_ttl,omitempty"`
+			InstanceID    string `json:"instance_id,omitempty"`
+			AMIID         string `json:"ami_id,omitempty"`
+			Role          string `json:"role,omitempty"`
+			AuthType      string `json:"auth_type,omitempty"`
+		} `json:"metadata"`
+	} `json:"auth"`
+	Errors []string `json:"errors,omitempty"`
 }

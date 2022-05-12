@@ -1,7 +1,7 @@
 /*
 
-Copyright (c) 2021 - Present. Blend Labs, Inc. All rights reserved
-Blend Confidential - Restricted
+Copyright (c) 2022 - Present. Blend Labs, Inc. All rights reserved
+Use of this source code is governed by a MIT license that can be found in the LICENSE file.
 
 */
 
@@ -40,7 +40,7 @@ type JobConfig struct {
 // Resolve implements configutil.Resolver.
 func (jc *JobConfig) Resolve(ctx context.Context) error {
 	return configutil.Resolve(ctx,
-		configutil.SetBool(&jc.Disabled, configutil.Bool(jc.Disabled), configutil.Bool(ref.Bool(DefaultDisabled))),
+		configutil.SetBoolPtr(&jc.Disabled, configutil.Bool(jc.Disabled), configutil.Bool(ref.Bool(DefaultDisabled))),
 		configutil.SetDuration(&jc.Timeout, configutil.Duration(jc.Timeout), configutil.Duration(DefaultTimeout)),
 		configutil.SetDuration(&jc.ShutdownGracePeriod, configutil.Duration(jc.ShutdownGracePeriod), configutil.Duration(DefaultShutdownGracePeriod)),
 	)

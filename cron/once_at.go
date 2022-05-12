@@ -1,7 +1,7 @@
 /*
 
-Copyright (c) 2021 - Present. Blend Labs, Inc. All rights reserved
-Blend Confidential - Restricted
+Copyright (c) 2022 - Present. Blend Labs, Inc. All rights reserved
+Use of this source code is governed by a MIT license that can be found in the LICENSE file.
 
 */
 
@@ -20,7 +20,7 @@ var (
 
 // OnceAtUTC returns a schedule that fires once at a given time.
 // It will never fire again unless reloaded.
-func OnceAtUTC(t time.Time) Schedule {
+func OnceAtUTC(t time.Time) OnceAtUTCSchedule {
 	return OnceAtUTCSchedule{Time: t}
 }
 
@@ -31,7 +31,7 @@ type OnceAtUTCSchedule struct {
 
 // String returns a string representation of the schedule.
 func (oa OnceAtUTCSchedule) String() string {
-	return fmt.Sprintf("once at %s", oa.Time.Format(time.RFC3339))
+	return fmt.Sprintf("%s %s", StringScheduleOnceAt, oa.Time.Format(time.RFC3339))
 }
 
 // Next returns the next runtime.

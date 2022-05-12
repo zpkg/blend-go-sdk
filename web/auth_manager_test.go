@@ -1,7 +1,7 @@
 /*
 
-Copyright (c) 2021 - Present. Blend Labs, Inc. All rights reserved
-Blend Confidential - Restricted
+Copyright (c) 2022 - Present. Blend Labs, Inc. All rights reserved
+Use of this source code is governed by a MIT license that can be found in the LICENSE file.
 
 */
 
@@ -10,6 +10,7 @@ package web
 import (
 	"bytes"
 	"context"
+	"fmt"
 	"net/http"
 	"net/url"
 	"testing"
@@ -20,16 +21,36 @@ import (
 	"github.com/blend/go-sdk/webutil"
 )
 
-func TestNewAuthManager(t *testing.T) {
-	assert := assert.New(t)
+func Test_MustNewAuthManager(t *testing.T) {
+	its := assert.New(t)
+
+	am := MustNewAuthManager(OptAuthManagerCookieName("X-FOO"))
+	its.Equal("X-FOO", am.CookieDefaults.Name)
+
+	// test panics
+	var recovered interface{}
+	func() {
+		defer func() {
+			r := recover()
+			if r != nil {
+				recovered = r
+			}
+		}()
+		am = MustNewAuthManager(func(_ *AuthManager) error { return fmt.Errorf("this is just a test") })
+	}()
+	its.NotNil(recovered)
+}
+
+func Test_NewAuthManager(t *testing.T) {
+	its := assert.New(t)
 
 	am, err := NewAuthManager()
-	assert.Nil(err)
-	assert.Equal(DefaultCookieName, am.CookieDefaults.Name)
-	assert.Equal(DefaultCookiePath, am.CookieDefaults.Path)
-	assert.Equal(DefaultCookieHTTPOnly, am.CookieDefaults.HttpOnly)
-	assert.Equal(DefaultCookieSecure, am.CookieDefaults.Secure)
-	assert.Equal(DefaultCookieSameSiteMode, am.CookieDefaults.SameSite)
+	its.Nil(err)
+	its.Equal(DefaultCookieName, am.CookieDefaults.Name)
+	its.Equal(DefaultCookiePath, am.CookieDefaults.Path)
+	its.Equal(DefaultCookieHTTPOnly, am.CookieDefaults.HttpOnly)
+	its.Equal(DefaultCookieSecure, am.CookieDefaults.Secure)
+	its.Equal(DefaultCookieSameSiteMode, am.CookieDefaults.SameSite)
 
 	am, err = NewAuthManager(OptAuthManagerCookieDefaults(http.Cookie{
 		Name:     "_FOO_AUTH_",
@@ -38,93 +59,100 @@ func TestNewAuthManager(t *testing.T) {
 		Secure:   true,
 		SameSite: http.SameSiteLaxMode,
 	}))
-	assert.Nil(err)
-	assert.Equal("_FOO_AUTH_", am.CookieDefaults.Name)
-	assert.Equal("/admin", am.CookieDefaults.Path)
-	assert.Equal(true, am.CookieDefaults.HttpOnly)
-	assert.Equal(true, am.CookieDefaults.Secure)
-	assert.Equal(http.SameSiteLaxMode, am.CookieDefaults.SameSite)
+	its.Nil(err)
+	its.Equal("_FOO_AUTH_", am.CookieDefaults.Name)
+	its.Equal("/admin", am.CookieDefaults.Path)
+	its.Equal(true, am.CookieDefaults.HttpOnly)
+	its.Equal(true, am.CookieDefaults.Secure)
+	its.Equal(http.SameSiteLaxMode, am.CookieDefaults.SameSite)
 
 	am, err = NewAuthManager(OptAuthManagerCookieName("X-FOO"))
-	assert.Nil(err)
-	assert.Equal("X-FOO", am.CookieDefaults.Name)
+	its.Nil(err)
+	its.Equal("X-FOO", am.CookieDefaults.Name)
 
 	am, err = NewAuthManager(OptAuthManagerCookiePath("/foo"))
-	assert.Nil(err)
-	assert.Equal("/foo", am.CookieDefaults.Path)
+	its.Nil(err)
+	its.Equal("/foo", am.CookieDefaults.Path)
 
 	am, err = NewAuthManager(OptAuthManagerCookieHTTPOnly(true))
-	assert.Nil(err)
-	assert.Equal(true, am.CookieDefaults.HttpOnly)
+	its.Nil(err)
+	its.Equal(true, am.CookieDefaults.HttpOnly)
 
 	am, err = NewAuthManager(OptAuthManagerCookieSecure(true))
-	assert.Nil(err)
-	assert.Equal(true, am.CookieDefaults.Secure)
+	its.Nil(err)
+	its.Equal(true, am.CookieDefaults.Secure)
 
 	am, err = NewAuthManager(OptAuthManagerCookieSameSite(http.SameSiteLaxMode))
-	assert.Nil(err)
-	assert.Equal(http.SameSiteLaxMode, am.CookieDefaults.SameSite)
+	its.Nil(err)
+	its.Equal(http.SameSiteLaxMode, am.CookieDefaults.SameSite)
 
-	am, err = NewAuthManager(OptAuthManagerSerializeSessionValueHandler(func(context.Context, *Session) (string, error) {
+	am, err = NewAuthManager(OptAuthManagerSerializeHandler(func(context.Context, *Session) (string, error) {
 		return "blabla", nil
 	}))
-	assert.Nil(err)
-	assert.NotNil(am.SerializeSessionValueHandler)
-
-	am, err = NewAuthManager(OptAuthManagerParseSessionValueHandler(func(context.Context, string) (*Session, error) {
-		return &Session{SessionID: "blabla"}, nil
-	}))
-	assert.Nil(err)
-	assert.NotNil(am.ParseSessionValueHandler)
+	its.Nil(err)
+	its.NotNil(am.SerializeHandler)
 
 	am, err = NewAuthManager(OptAuthManagerPersistHandler(func(context.Context, *Session) error {
 		return nil
 	}))
-	assert.Nil(err)
-	assert.NotNil(am.PersistHandler)
+	its.Nil(err)
+	its.NotNil(am.PersistHandler)
 
 	am, err = NewAuthManager(OptAuthManagerFetchHandler(func(context.Context, string) (*Session, error) {
 		return &Session{SessionID: "blabla"}, nil
 	}))
-	assert.Nil(err)
-	assert.NotNil(am.FetchHandler)
+	its.Nil(err)
+	its.NotNil(am.FetchHandler)
 
 	am, err = NewAuthManager(OptAuthManagerRemoveHandler(func(context.Context, string) error {
 		return nil
 	}))
-	assert.Nil(err)
-	assert.NotNil(am.RemoveHandler)
+	its.Nil(err)
+	its.NotNil(am.RemoveHandler)
 
 	am, err = NewAuthManager(OptAuthManagerValidateHandler(func(context.Context, *Session) error {
 		return nil
 	}))
-	assert.Nil(err)
-	assert.NotNil(am.ValidateHandler)
+	its.Nil(err)
+	its.NotNil(am.ValidateHandler)
 
 	am, err = NewAuthManager(OptAuthManagerSessionTimeoutProvider(func(*Session) time.Time {
 		return time.Now().UTC()
 	}))
-	assert.Nil(err)
-	assert.NotNil(am.SessionTimeoutProvider)
+	its.Nil(err)
+	its.NotNil(am.SessionTimeoutProvider)
 
 	am, err = NewAuthManager(OptAuthManagerLoginRedirectHandler(func(*Ctx) *url.URL {
 		return nil
 	}))
-	assert.Nil(err)
-	assert.NotNil(am.LoginRedirectHandler)
-
-	am, err = NewAuthManager(OptAuthManagerPostLoginRedirectHandler(func(*Ctx) *url.URL {
-		return nil
-	}))
-	assert.Nil(err)
-	assert.NotNil(am.PostLoginRedirectHandler)
+	its.Nil(err)
+	its.NotNil(am.LoginRedirectHandler)
 }
 
-func TestAuthManagerLogin(t *testing.T) {
-	assert := assert.New(t)
+func Test_NewLocalManagerFromCache(t *testing.T) {
+	its := assert.New(t)
+
+	lc := NewLocalSessionCache()
+	am, err := NewLocalAuthManagerFromCache(lc, OptAuthManagerCookieName("X-FOO"))
+	its.Nil(err)
+	its.Equal("X-FOO", am.CookieDefaults.Name)
+
+	am, err = NewLocalAuthManagerFromCache(lc, func(_ *AuthManager) error { return fmt.Errorf("this is just a test") })
+	its.NotNil(err)
+}
+
+func Test_AuthManager_Login(t *testing.T) {
+	its := assert.New(t)
 
 	am, err := NewLocalAuthManager()
-	assert.Nil(err)
+	its.Nil(err)
+
+	sessionExpiresUTC := time.Date(2021, 03, 04, 05, 06, 07, 8, time.UTC)
+	var calledSessionTimeoutProvider bool
+	am.SessionTimeoutProvider = func(session *Session) time.Time {
+		calledSessionTimeoutProvider = true
+		return sessionExpiresUTC
+	}
 
 	var calledPersistHandler bool
 	persistHandler := am.PersistHandler
@@ -137,8 +165,8 @@ func TestAuthManagerLogin(t *testing.T) {
 	}
 
 	var calledSerializeHandler bool
-	serializeHandler := am.SerializeSessionValueHandler
-	am.SerializeSessionValueHandler = func(ctx context.Context, session *Session) (string, error) {
+	serializeHandler := am.SerializeHandler
+	am.SerializeHandler = func(ctx context.Context, session *Session) (string, error) {
 		calledSerializeHandler = true
 		if serializeHandler == nil {
 			return session.SessionID, nil
@@ -160,30 +188,92 @@ func TestAuthManagerLogin(t *testing.T) {
 	r := NewCtx(res, webutil.NewMockRequest("GET", "/"))
 
 	session, err := am.Login("example-string@blend.com", r)
-	assert.Nil(err)
-	assert.NotNil(session)
-	assert.NotEmpty(session.SessionID)
-	assert.NotEmpty(session.RemoteAddr)
-	assert.NotEmpty(session.UserAgent)
-	assert.Equal("example-string@blend.com", session.UserID)
-	assert.True(session.ExpiresUTC.IsZero())
-	assert.True(calledPersistHandler)
-	assert.True(calledSerializeHandler)
-	assert.False(calledRemoveHandler)
+	its.Nil(err)
+	its.NotNil(session)
+	its.NotEmpty(session.SessionID)
+	its.NotEmpty(session.RemoteAddr)
+	its.NotEmpty(session.UserAgent)
+	its.Equal("example-string@blend.com", session.UserID)
+	its.False(session.ExpiresUTC.IsZero())
+	its.Equal(sessionExpiresUTC, session.ExpiresUTC)
+	its.True(calledPersistHandler)
+	its.True(calledSessionTimeoutProvider)
+	its.True(calledSerializeHandler)
+	its.False(calledRemoveHandler)
 
 	cookies := ReadSetCookies(res.Header())
-	assert.NotEmpty(cookies)
+	its.NotEmpty(cookies)
 	cookie := cookies[0]
-	assert.Equal(am.CookieDefaults.Name, cookie.Name)
-	assert.Equal(am.CookieDefaults.Path, cookie.Path)
-	assert.Equal(session.SessionID, cookie.Value)
+	its.Equal(am.CookieDefaults.Name, cookie.Name)
+	its.Equal(am.CookieDefaults.Path, cookie.Path)
+	its.Equal(session.SessionID, cookie.Value)
 }
 
-func TestAuthManagerLogout(t *testing.T) {
-	assert := assert.New(t)
+func Test_AuthManager_Login_persistError(t *testing.T) {
+	its := assert.New(t)
 
 	am, err := NewLocalAuthManager()
-	assert.Nil(err)
+	its.Nil(err)
+
+	var calledPersistHandler bool
+	am.PersistHandler = func(ctx context.Context, session *Session) error {
+		calledPersistHandler = true
+		return fmt.Errorf("this is just a test")
+	}
+	res := webutil.NewMockResponse(new(bytes.Buffer))
+	r := NewCtx(res, webutil.NewMockRequest("GET", "/"))
+
+	session, err := am.Login("example-string@blend.com", r)
+	its.NotNil(err)
+	its.True(calledPersistHandler)
+	its.Equal("this is just a test", err.Error())
+	its.Nil(session)
+
+	cookies := ReadSetCookies(res.Header())
+	its.Empty(cookies)
+}
+
+func Test_AuthManager_Login_serializeError(t *testing.T) {
+	its := assert.New(t)
+
+	am, err := NewLocalAuthManager()
+	its.Nil(err)
+
+	var calledPersistHandler bool
+	persistHandler := am.PersistHandler
+	am.PersistHandler = func(ctx context.Context, session *Session) error {
+		calledPersistHandler = true
+		if persistHandler == nil {
+			return nil
+		}
+		return persistHandler(ctx, session)
+	}
+
+	var calledSerializeHandler bool
+	am.SerializeHandler = func(ctx context.Context, session *Session) (string, error) {
+		calledSerializeHandler = true
+		return "", fmt.Errorf("this is a serialize error")
+	}
+
+	res := webutil.NewMockResponse(new(bytes.Buffer))
+	r := NewCtx(res, webutil.NewMockRequest("GET", "/"))
+
+	session, err := am.Login("example-string@blend.com", r)
+	its.NotNil(err)
+	its.True(calledPersistHandler)
+	its.True(calledSerializeHandler)
+	its.Equal("this is a serialize error", err.Error())
+	its.Nil(session)
+
+	cookies := ReadSetCookies(res.Header())
+	its.Empty(cookies)
+}
+
+func Test_AuthManager_Logout(t *testing.T) {
+	its := assert.New(t)
+
+	am, err := NewLocalAuthManager()
+	its.Nil(err)
 
 	var calledRemoveHandler bool
 	removeHandler := am.RemoveHandler
@@ -199,72 +289,75 @@ func TestAuthManagerLogout(t *testing.T) {
 	r := NewCtx(res, webutil.NewMockRequest("GET", "/"))
 
 	session, err := am.Login("example-string@blend.com", r)
-	assert.Nil(err)
-	assert.NotNil(session)
+	its.Nil(err)
+	its.NotNil(session)
 
 	res = webutil.NewMockResponse(new(bytes.Buffer))
 	r = NewCtx(res, webutil.NewMockRequestWithCookie("GET", "/", am.CookieDefaults.Name, session.SessionID))
 
-	assert.Nil(am.Logout(r))
-	assert.True(calledRemoveHandler)
+	its.Nil(am.Logout(r))
+	its.True(calledRemoveHandler)
 
 	cookies := ReadSetCookies(res.Header())
-	assert.NotEmpty(cookies)
+	its.NotEmpty(cookies)
 	cookie := cookies[0]
-	assert.Equal(am.CookieDefaults.Name, cookie.Name)
-	assert.Equal(am.CookieDefaults.Path, cookie.Path)
-	assert.NotEqual(session.SessionID, cookie.Value, "we should randomize the session cookie on logout")
-	assert.True(time.Now().UTC().After(cookie.Expires))
+	its.Equal(am.CookieDefaults.Name, cookie.Name)
+	its.Equal(am.CookieDefaults.Path, cookie.Path)
+	its.NotEqual(session.SessionID, cookie.Value, "we should randomize the session cookie on logout")
+	its.True(time.Now().UTC().After(cookie.Expires))
 }
 
-func TestAuthManagerVerifySessionParsed(t *testing.T) {
-	assert := assert.New(t)
+func Test_AuthManager_Logout_sessionValueUnset(t *testing.T) {
+	its := assert.New(t)
 
 	am, err := NewLocalAuthManager()
-	assert.Nil(err)
+	its.Nil(err)
 
-	var calledParseHandler bool
-	am.ParseSessionValueHandler = func(ctx context.Context, sessionID string) (*Session, error) {
-		calledParseHandler = true
-		return &Session{UserID: uuid.V4().String(), SessionID: sessionID}, nil
-	}
+	res := webutil.NewMockResponse(new(bytes.Buffer))
+	r := NewCtx(res, webutil.NewMockRequest("GET", "/"))
+	its.Nil(am.Logout(r))
 
-	var calledFetchHandler bool
-	am.FetchHandler = func(ctx context.Context, sessionID string) (*Session, error) {
-		calledFetchHandler = true
-		return nil, nil
-	}
-
-	var calledValidateHandler bool
-	am.ValidateHandler = func(ctx context.Context, session *Session) error {
-		calledValidateHandler = true
-		return nil
-	}
-
-	r := NewCtx(webutil.NewMockResponse(new(bytes.Buffer)), webutil.NewMockRequestWithCookie("GET", "/", am.CookieDefaults.Name, NewSessionID()))
-	session, err := am.VerifyOrExpireSession(r)
-	assert.Nil(err)
-	assert.NotNil(session)
-	assert.True(session.ExpiresUTC.IsZero())
-	assert.True(calledParseHandler)
-	assert.False(calledFetchHandler)
-	assert.True(calledValidateHandler)
+	cookies := ReadSetCookies(res.Header())
+	its.Empty(cookies)
 }
 
-func TestAuthManagerVerifySessionFetched(t *testing.T) {
-	assert := assert.New(t)
+func Test_AuthManager_Logout_removeHandlerUnset(t *testing.T) {
+	its := assert.New(t)
 
 	am, err := NewLocalAuthManager()
-	assert.Nil(err)
+	am.RemoveHandler = nil
+	its.Nil(err)
 
-	var calledFetchHandler bool
-	fetchHandler := am.FetchHandler
+	res := webutil.NewMockResponse(new(bytes.Buffer))
+	r := NewCtx(res, webutil.NewMockRequest("GET", "/"))
+
+	session, err := am.Login("example-string@blend.com", r)
+	its.Nil(err)
+	its.NotNil(session)
+
+	res = webutil.NewMockResponse(new(bytes.Buffer))
+	r = NewCtx(res, webutil.NewMockRequestWithCookie("GET", "/", am.CookieDefaults.Name, session.SessionID))
+
+	its.Nil(am.Logout(r))
+
+	cookies := ReadSetCookies(res.Header())
+	its.NotEmpty(cookies)
+}
+
+func Test_AuthManager_VerifyOrExtendSession(t *testing.T) {
+	its := assert.New(t)
+
+	am, err := NewLocalAuthManager()
+	its.Nil(err)
+
+	var calledRestoreHandler bool
+	restoreHandler := am.FetchHandler
 	am.FetchHandler = func(ctx context.Context, sessionID string) (*Session, error) {
-		calledFetchHandler = true
-		if fetchHandler == nil {
+		calledRestoreHandler = true
+		if restoreHandler == nil {
 			return nil, nil
 		}
-		return fetchHandler(ctx, sessionID)
+		return restoreHandler(ctx, sessionID)
 	}
 
 	var calledValidateHandler bool
@@ -279,40 +372,116 @@ func TestAuthManagerVerifySessionFetched(t *testing.T) {
 
 	r := NewCtx(webutil.NewMockResponse(new(bytes.Buffer)), webutil.NewMockRequest("GET", "/"))
 	session, err := am.Login("example-string@blend.com", r)
-	assert.Nil(err)
-	assert.NotNil(session)
-	assert.False(calledFetchHandler)
-	assert.False(calledValidateHandler)
+	its.Nil(err)
+	its.NotNil(session)
+	its.False(calledRestoreHandler)
+	its.False(calledValidateHandler)
 
 	r = NewCtx(webutil.NewMockResponse(new(bytes.Buffer)), webutil.NewMockRequestWithCookie("GET", "/", am.CookieDefaults.Name, session.SessionID))
-	session, err = am.VerifyOrExpireSession(r)
-	assert.Nil(err)
-	assert.NotNil(session)
-	assert.True(calledFetchHandler)
-	assert.True(calledValidateHandler)
+	session, err = am.VerifyOrExtendSession(r)
+	its.Nil(err)
+	its.NotNil(session)
+	its.True(calledRestoreHandler)
+	its.True(calledValidateHandler)
 }
 
-func TestAuthManagerVerifySessionUnset(t *testing.T) {
-	assert := assert.New(t)
+func Test_AuthManager_VerifyOrExtendSession_sessionUnset(t *testing.T) {
+	its := assert.New(t)
 
 	am, err := NewLocalAuthManager()
-	assert.Nil(err)
+	its.Nil(err)
+
+	var calledRestoreHandler bool
+	restoreHandler := am.FetchHandler
+	am.FetchHandler = func(ctx context.Context, sessionID string) (*Session, error) {
+		calledRestoreHandler = true
+		if restoreHandler == nil {
+			return nil, nil
+		}
+		return restoreHandler(ctx, sessionID)
+	}
+
+	var calledValidateHandler bool
+	validateHandler := am.ValidateHandler
+	am.ValidateHandler = func(ctx context.Context, session *Session) error {
+		calledValidateHandler = true
+		if validateHandler == nil {
+			return nil
+		}
+		return validateHandler(ctx, session)
+	}
+
+	r := NewCtx(webutil.NewMockResponse(new(bytes.Buffer)), webutil.NewMockRequest("GET", "/"))
+	session, err := am.VerifyOrExtendSession(r)
+	its.Nil(err)
+	its.Nil(session)
+	its.False(calledRestoreHandler)
+	its.False(calledValidateHandler)
+}
+
+func Test_AuthManager_VerifyOrExtendSession_fetchHandlerUnset(t *testing.T) {
+	its := assert.New(t)
+
+	am, err := NewLocalAuthManager()
+	its.Nil(err)
 
 	r := NewCtx(webutil.NewMockResponse(new(bytes.Buffer)), webutil.NewMockRequest("GET", "/"))
 
-	session, err := am.VerifyOrExpireSession(r)
-	assert.Nil(err)
-	assert.Nil(session)
+	session, err := am.VerifyOrExtendSession(r)
+	its.Nil(err)
+	its.Nil(session)
 }
 
-func TestAuthManagerVerifySessionExpired(t *testing.T) {
-	assert := assert.New(t)
+func Test_AuthManager_VerifyOrExtendSession_fetchErrSessionInvalid(t *testing.T) {
+	its := assert.New(t)
 
 	am, err := NewLocalAuthManager()
-	assert.Nil(err)
+	its.Nil(err)
+
+	var calledFetchHandler bool
+	am.FetchHandler = func(ctx context.Context, sessionID string) (*Session, error) {
+		calledFetchHandler = true
+		return nil, ErrSessionIDEmpty
+	}
+
+	var calledValidateHandler bool
+	validateHandler := am.ValidateHandler
+	am.ValidateHandler = func(ctx context.Context, session *Session) error {
+		calledValidateHandler = true
+		return validateHandler(ctx, session)
+	}
+
+	r := NewCtx(webutil.NewMockResponse(new(bytes.Buffer)), webutil.NewMockRequest("GET", "/"))
+	session, err := am.Login("example-string@blend.com", r)
+	its.Nil(err)
+	its.NotNil(session)
+	its.False(calledFetchHandler)
+	its.False(calledValidateHandler)
+
+	r = NewCtx(webutil.NewMockResponse(new(bytes.Buffer)), webutil.NewMockRequestWithCookie("GET", "/", am.CookieDefaults.Name, session.SessionID))
+	session, err = am.VerifyOrExtendSession(r)
+	its.NotNil(err)
+	its.Equal(ErrSessionIDEmpty, err)
+	its.Nil(session)
+	its.True(calledFetchHandler)
+	its.False(calledValidateHandler)
+
+	cookies := ReadSetCookies(r.Response.Header())
+	its.NotEmpty(cookies)
+	cookie := cookies[0]
+	its.Equal(am.CookieDefaults.Name, cookie.Name)
+	its.Equal(am.CookieDefaults.Path, cookie.Path)
+	its.True(time.Now().UTC().After(cookie.Expires))
+}
+
+func Test_AuthManager_VerifyOrExtendSession_sessionExpired(t *testing.T) {
+	its := assert.New(t)
+
+	am, err := NewLocalAuthManager()
+	its.Nil(err)
 
 	am.SessionTimeoutProvider = nil
-	am.ParseSessionValueHandler = func(ctx context.Context, sessionID string) (*Session, error) {
+	am.FetchHandler = func(ctx context.Context, sessionID string) (*Session, error) {
 		return &Session{UserID: uuid.V4().String(), SessionID: sessionID, ExpiresUTC: time.Now().UTC().Add(-time.Hour)}, nil
 	}
 
@@ -324,17 +493,375 @@ func TestAuthManagerVerifySessionExpired(t *testing.T) {
 
 	res := webutil.NewMockResponse(new(bytes.Buffer))
 	r := NewCtx(res, webutil.NewMockRequestWithCookie("GET", "/", am.CookieDefaults.Name, NewSessionID()))
-	session, err := am.VerifyOrExpireSession(r)
-	assert.Nil(err)
-	assert.Nil(session)
-	assert.False(calledValidateHandler)
+	session, err := am.VerifyOrExtendSession(r)
+	its.Nil(err)
+	its.Nil(session)
+	its.False(calledValidateHandler)
 
 	// assert the cookie is expired ...
 	cookies := ReadSetCookies(res.Header())
-	assert.NotEmpty(cookies)
+	its.NotEmpty(cookies)
 
 	cookie := cookies[0]
-	assert.Equal(am.CookieDefaults.Name, cookie.Name)
-	assert.Equal(am.CookieDefaults.Path, cookie.Path)
-	assert.True(cookie.Expires.Before(time.Now().UTC()), "the cookie should be expired")
+	its.Equal(am.CookieDefaults.Name, cookie.Name)
+	its.Equal(am.CookieDefaults.Path, cookie.Path)
+	its.True(cookie.Expires.Before(time.Now().UTC()), "the cookie should be expired")
+}
+
+func Test_AuthManager_VerifyOrExtendSession_sessionExpired_nil(t *testing.T) {
+	its := assert.New(t)
+
+	am, err := NewLocalAuthManager()
+	its.Nil(err)
+
+	am.SessionTimeoutProvider = nil
+	am.FetchHandler = func(ctx context.Context, sessionID string) (*Session, error) {
+		return nil, nil
+	}
+
+	var calledValidateHandler bool
+	am.ValidateHandler = func(ctx context.Context, session *Session) error {
+		calledValidateHandler = true
+		return nil
+	}
+
+	res := webutil.NewMockResponse(new(bytes.Buffer))
+	r := NewCtx(res, webutil.NewMockRequestWithCookie("GET", "/", am.CookieDefaults.Name, NewSessionID()))
+	session, err := am.VerifyOrExtendSession(r)
+	its.Nil(err)
+	its.Nil(session)
+	its.False(calledValidateHandler)
+
+	// assert the cookie is expired ...
+	cookies := ReadSetCookies(res.Header())
+	its.NotEmpty(cookies)
+
+	cookie := cookies[0]
+	its.Equal(am.CookieDefaults.Name, cookie.Name)
+	its.Equal(am.CookieDefaults.Path, cookie.Path)
+	its.True(cookie.Expires.Before(time.Now().UTC()), "the cookie should be expired")
+}
+
+func Test_AuthManager_VerifyOrExtendSession_sessionExpired_zero(t *testing.T) {
+	its := assert.New(t)
+
+	am, err := NewLocalAuthManager()
+	its.Nil(err)
+
+	am.SessionTimeoutProvider = nil
+	am.FetchHandler = func(ctx context.Context, sessionID string) (*Session, error) {
+		return &Session{}, nil
+	}
+
+	var calledValidateHandler bool
+	am.ValidateHandler = func(ctx context.Context, session *Session) error {
+		calledValidateHandler = true
+		return nil
+	}
+
+	res := webutil.NewMockResponse(new(bytes.Buffer))
+	r := NewCtx(res, webutil.NewMockRequestWithCookie("GET", "/", am.CookieDefaults.Name, NewSessionID()))
+	session, err := am.VerifyOrExtendSession(r)
+	its.Nil(err)
+	its.Nil(session)
+	its.False(calledValidateHandler)
+
+	// assert the cookie is expired ...
+	cookies := ReadSetCookies(res.Header())
+	its.NotEmpty(cookies)
+
+	cookie := cookies[0]
+	its.Equal(am.CookieDefaults.Name, cookie.Name)
+	its.Equal(am.CookieDefaults.Path, cookie.Path)
+	its.True(cookie.Expires.Before(time.Now().UTC()), "the cookie should be expired")
+}
+
+func Test_AuthManager_VerifyOrExtendSession_failsValidation(t *testing.T) {
+	its := assert.New(t)
+
+	am, err := NewLocalAuthManager()
+	its.Nil(err)
+
+	var calledFetchHandler bool
+	fetchHandler := am.FetchHandler
+	am.FetchHandler = func(ctx context.Context, sessionID string) (*Session, error) {
+		calledFetchHandler = true
+		return fetchHandler(ctx, sessionID)
+	}
+
+	var calledValidateHandler bool
+	am.ValidateHandler = func(ctx context.Context, session *Session) error {
+		calledValidateHandler = true
+		return fmt.Errorf("this is just a test")
+	}
+
+	r := NewCtx(webutil.NewMockResponse(new(bytes.Buffer)), webutil.NewMockRequest("GET", "/"))
+	session, err := am.Login("example-string@blend.com", r)
+	its.Nil(err)
+	its.NotNil(session)
+	its.False(calledFetchHandler)
+	its.False(calledValidateHandler)
+
+	r = NewCtx(webutil.NewMockResponse(new(bytes.Buffer)), webutil.NewMockRequestWithCookie("GET", "/", am.CookieDefaults.Name, session.SessionID))
+	session, err = am.VerifyOrExtendSession(r)
+	its.NotNil(err)
+	its.Nil(session)
+	its.True(calledFetchHandler)
+	its.True(calledValidateHandler)
+
+	// assert the cookie is expired ...
+	cookies := ReadSetCookies(r.Response.Header())
+	// for now, we should not expire the cookie on a validatin failure
+	its.Empty(cookies)
+}
+
+func Test_AuthManager_VerifyOrExtendSession_sessionTimeout_unchanged(t *testing.T) {
+	its := assert.New(t)
+
+	am, err := NewLocalAuthManager()
+	its.Nil(err)
+
+	var calledPersistHandler bool
+	persistHandler := am.PersistHandler
+	am.PersistHandler = func(ctx context.Context, session *Session) error {
+		calledPersistHandler = true
+		return persistHandler(ctx, session)
+	}
+
+	var calledFetchHandler bool
+	fetchHandler := am.FetchHandler
+	am.FetchHandler = func(ctx context.Context, sessionID string) (*Session, error) {
+		calledFetchHandler = true
+		return fetchHandler(ctx, sessionID)
+	}
+
+	var calledValidateHandler bool
+	am.ValidateHandler = func(ctx context.Context, session *Session) error {
+		calledValidateHandler = true
+		return nil
+	}
+	var calledSessionTimeoutProvider bool
+	am.SessionTimeoutProvider = func(session *Session) time.Time {
+		calledSessionTimeoutProvider = true
+		return session.ExpiresUTC
+	}
+
+	r := NewCtx(webutil.NewMockResponse(new(bytes.Buffer)), webutil.NewMockRequest("GET", "/"))
+	session, err := am.Login("example-string@blend.com", r)
+	its.Nil(err)
+	its.NotNil(session)
+	its.False(calledFetchHandler)
+	its.False(calledValidateHandler)
+	its.True(calledPersistHandler)
+	its.True(calledSessionTimeoutProvider)
+
+	calledPersistHandler = false
+	calledSessionTimeoutProvider = false
+
+	r = NewCtx(webutil.NewMockResponse(new(bytes.Buffer)), webutil.NewMockRequestWithCookie("GET", "/", am.CookieDefaults.Name, session.SessionID))
+	session, err = am.VerifyOrExtendSession(r)
+	its.Nil(err)
+	its.NotNil(session)
+	its.True(calledFetchHandler)
+	its.True(calledValidateHandler)
+	its.False(calledPersistHandler)
+	its.True(calledSessionTimeoutProvider)
+}
+
+func Test_AuthManager_VerifyOrExtendSession_sessionTimeout_changed(t *testing.T) {
+	its := assert.New(t)
+
+	am, err := NewLocalAuthManager()
+	its.Nil(err)
+
+	var calledFetchHandler bool
+	fetchHandler := am.FetchHandler
+	am.FetchHandler = func(ctx context.Context, sessionID string) (*Session, error) {
+		calledFetchHandler = true
+		return fetchHandler(ctx, sessionID)
+	}
+
+	var calledValidateHandler bool
+	am.ValidateHandler = func(ctx context.Context, session *Session) error {
+		calledValidateHandler = true
+		return nil
+	}
+
+	r := NewCtx(webutil.NewMockResponse(new(bytes.Buffer)), webutil.NewMockRequest("GET", "/"))
+	session, err := am.Login("example-string@blend.com", r)
+	its.Nil(err)
+	its.NotNil(session)
+	its.False(calledFetchHandler)
+	its.False(calledValidateHandler)
+
+	var calledPersistHandler bool
+	persistHandler := am.PersistHandler
+	am.PersistHandler = func(ctx context.Context, session *Session) error {
+		calledPersistHandler = true
+		return persistHandler(ctx, session)
+	}
+
+	expiresUTC := time.Now().UTC()
+	var calledSessionTimeoutProvider bool
+	am.SessionTimeoutProvider = func(session *Session) time.Time {
+		calledSessionTimeoutProvider = true
+		return expiresUTC
+	}
+
+	r = NewCtx(webutil.NewMockResponse(new(bytes.Buffer)), webutil.NewMockRequestWithCookie("GET", "/", am.CookieDefaults.Name, session.SessionID))
+	session, err = am.VerifyOrExtendSession(r)
+	its.Nil(err)
+	its.NotNil(session)
+	its.True(calledFetchHandler)
+	its.True(calledValidateHandler)
+	its.True(calledPersistHandler)
+	its.True(calledSessionTimeoutProvider)
+
+	// assert the cookie is expired ...
+	cookies := ReadSetCookies(r.Response.Header())
+	its.NotEmpty(cookies)
+
+	cookie := cookies[0]
+	its.Equal(am.CookieDefaults.Name, cookie.Name)
+	its.Equal(am.CookieDefaults.Path, cookie.Path)
+	its.InTimeDelta(expiresUTC, cookie.Expires, time.Second, "the cookie have an expiration")
+}
+
+func Test_AuthManager_VerifyOrExpireSession_sessionTimeout_persistError(t *testing.T) {
+	its := assert.New(t)
+
+	am, err := NewLocalAuthManager()
+	its.Nil(err)
+
+	var calledFetchHandler bool
+	fetchHandler := am.FetchHandler
+	am.FetchHandler = func(ctx context.Context, sessionID string) (*Session, error) {
+		calledFetchHandler = true
+		return fetchHandler(ctx, sessionID)
+	}
+
+	var calledValidateHandler bool
+	am.ValidateHandler = func(ctx context.Context, session *Session) error {
+		calledValidateHandler = true
+		return nil
+	}
+
+	r := NewCtx(webutil.NewMockResponse(new(bytes.Buffer)), webutil.NewMockRequest("GET", "/"))
+	session, err := am.Login("example-string@blend.com", r)
+	its.Nil(err)
+	its.NotNil(session)
+	its.False(calledFetchHandler)
+	its.False(calledValidateHandler)
+
+	var calledPersistHandler bool
+	am.PersistHandler = func(ctx context.Context, session *Session) error {
+		calledPersistHandler = true
+		return fmt.Errorf("this is just a test")
+	}
+
+	expiresUTC := time.Now().UTC()
+	var calledSessionTimeoutProvider bool
+	am.SessionTimeoutProvider = func(session *Session) time.Time {
+		calledSessionTimeoutProvider = true
+		return expiresUTC
+	}
+
+	r = NewCtx(webutil.NewMockResponse(new(bytes.Buffer)), webutil.NewMockRequestWithCookie("GET", "/", am.CookieDefaults.Name, session.SessionID))
+	session, err = am.VerifyOrExtendSession(r)
+	its.NotNil(err)
+	its.Equal("this is just a test", err.Error())
+	its.Nil(session)
+	its.True(calledFetchHandler)
+	its.True(calledValidateHandler)
+	its.True(calledSessionTimeoutProvider)
+	its.True(calledPersistHandler)
+
+	// assert the cookie is expired ...
+	cookies := ReadSetCookies(r.Response.Header())
+	its.Empty(cookies)
+}
+
+func Test_AuthManager_LoginRedirect_loginRedirectHandlerUnset(t *testing.T) {
+	its := assert.New(t)
+
+	am := AuthManager{}
+	ctx := MockCtx(http.MethodGet, "/api/foo/bar", OptCtxDefaultProvider(Text))
+	res := am.LoginRedirect(ctx)
+	its.NotNil(res)
+	typed, ok := res.(*RawResult)
+	its.True(ok)
+	its.Equal(http.StatusUnauthorized, typed.StatusCode)
+}
+
+func Test_AuthManager_LoginRedirect_loginRedirectHandler(t *testing.T) {
+	its := assert.New(t)
+
+	am := AuthManager{
+		LoginRedirectHandler: func(r *Ctx) *url.URL {
+			return &url.URL{
+				Path: "/foo",
+			}
+		},
+	}
+	ctx := MockCtx(http.MethodGet, "/api/foo/bar", OptCtxDefaultProvider(Text))
+	res := am.LoginRedirect(ctx)
+	its.NotNil(res)
+	typed, ok := res.(*RedirectResult)
+	its.True(ok)
+	its.Empty(typed.Method)
+	its.Equal("/foo", typed.RedirectURI)
+}
+
+func Test_AuthManager_expire(t *testing.T) {
+	its := assert.New(t)
+
+	expectedSessionID := uuid.V4().String()
+	cookieName := "my-auth-cookie"
+
+	var didCallRemoveHandler, sessionIDCorrect bool
+	am := AuthManager{
+		CookieDefaults: http.Cookie{
+			Name: cookieName,
+		},
+		RemoveHandler: func(c context.Context, sessionID string) error {
+			didCallRemoveHandler = true
+			sessionIDCorrect = sessionID == expectedSessionID
+			return nil
+		},
+	}
+	ctx := MockCtx(http.MethodGet, "/api/foo/bar", OptCtxDefaultProvider(Text), OptCtxCookieValue(cookieName, expectedSessionID))
+	err := am.expire(ctx, expectedSessionID)
+	its.Nil(err)
+	its.True(didCallRemoveHandler)
+	its.True(sessionIDCorrect)
+
+	// assert the cookie is expired ...
+	cookies := ReadSetCookies(ctx.Response.Header())
+	its.NotEmpty(cookies)
+
+	cookie := cookies[0]
+	its.Equal(am.CookieDefaults.Name, cookie.Name)
+	its.Equal(am.CookieDefaults.Path, cookie.Path)
+	its.True(cookie.Expires.Before(time.Now().UTC()), "the cookie should be expired")
+}
+
+func Test_AuthManager_expire_removeError(t *testing.T) {
+	its := assert.New(t)
+
+	var didCallRemoveHandler bool
+	am := AuthManager{
+		RemoveHandler: func(c context.Context, sessionID string) error {
+			didCallRemoveHandler = true
+			return fmt.Errorf("this is just a test")
+		},
+	}
+	ctx := MockCtx(http.MethodGet, "/api/foo/bar", OptCtxDefaultProvider(Text))
+	err := am.expire(ctx, uuid.V4().String())
+	its.NotNil(err)
+	its.Equal("this is just a test", err.Error())
+	its.True(didCallRemoveHandler)
+
+	// assert the cookie is expired ...
+	cookies := ReadSetCookies(ctx.Response.Header())
+	its.Empty(cookies)
 }

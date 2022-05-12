@@ -1,7 +1,7 @@
 /*
 
-Copyright (c) 2021 - Present. Blend Labs, Inc. All rights reserved
-Blend Confidential - Restricted
+Copyright (c) 2022 - Present. Blend Labs, Inc. All rights reserved
+Use of this source code is governed by a MIT license that can be found in the LICENSE file.
 
 */
 
@@ -120,9 +120,9 @@ func TestJSONMarshalFormat(t *testing.T) {
 
 	id := V4()
 
-	marshalled, err := id.MarshalJSON()
+	marshaled, err := id.MarshalJSON()
 	assert.Nil(err)
-	assert.Equal(fmt.Sprintf("%q", id.ToFullString()), string(marshalled))
+	assert.Equal(fmt.Sprintf("%q", id.ToFullString()), string(marshaled))
 }
 
 func TestYAMLMarshalers(t *testing.T) {

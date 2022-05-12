@@ -1,7 +1,7 @@
 /*
 
-Copyright (c) 2021 - Present. Blend Labs, Inc. All rights reserved
-Blend Confidential - Restricted
+Copyright (c) 2022 - Present. Blend Labs, Inc. All rights reserved
+Use of this source code is governed by a MIT license that can be found in the LICENSE file.
 
 */
 
@@ -97,6 +97,8 @@ const (
 	OperationSQLQuery = "sql.query"
 	// OperationJob is a job operation.
 	OperationJob = "job"
+	// OperationDial is a network jdial operation.
+	OperationDial = "dial"
 	// OperationGRPCClientUnary is an rpc operation.
 	OperationGRPCClientUnary = "grpc.client.unary"
 	// OperationGRPCClientStreaming is an rpc operation.
@@ -113,7 +115,7 @@ const (
 	OperationRedisCommand = "redis.command"
 )
 
-// Span types have similar behaviour to "app types" and help categorize
+// Span types have similar behavior to "app types" and help categorize
 // traces in the Datadog application. They can also help fine grain agent
 // level bahviours such as obfuscation and quantization, when these are
 // enabled in the agent's configuration.
@@ -135,6 +137,8 @@ const (
 	SpanTypeMemcached = "memcached"
 	// SpanTypeMongoDB marks a span as a MongoDB operation.
 	SpanTypeMongoDB = "mongodb"
+	// SpanTypeNetwork is a span type used by network overhead tracking.
+	SpanTypeNetwork = "network"
 	// SpanTypeElasticSearch marks a span as an ElasticSearch operation.
 	// These spans may also have an "elasticsearch.body" tag.
 	SpanTypeElasticSearch = "elasticsearch"

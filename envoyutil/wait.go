@@ -1,7 +1,7 @@
 /*
 
-Copyright (c) 2021 - Present. Blend Labs, Inc. All rights reserved
-Blend Confidential - Restricted
+Copyright (c) 2022 - Present. Blend Labs, Inc. All rights reserved
+Use of this source code is governed by a MIT license that can be found in the LICENSE file.
 
 */
 
@@ -10,7 +10,7 @@ package envoyutil
 import (
 	"context"
 	"fmt"
-	"io/ioutil"
+	"io"
 	"net/http"
 	"strings"
 	"sync/atomic"
@@ -26,8 +26,8 @@ import (
 //       - `http.Client` satisfies `HTTPGetClient`
 //       - `WaitForAdmin.executeOnce` satisfies `retry.Action`
 var (
-	_ HTTPGetClient = (*http.Client)(nil)
-	_ retry.Action  = (*WaitForAdmin)(nil).executeOnce
+	_ HTTPGetClient      = (*http.Client)(nil)
+	_ retry.ActionerFunc = (*WaitForAdmin)(nil).executeOnce
 )
 
 var (
@@ -91,7 +91,7 @@ func (wfa *WaitForAdmin) IsReady() bool {
 	}
 
 	defer resp.Body.Close()
-	body, err := ioutil.ReadAll(resp.Body)
+	body, err := io.ReadAll(resp.Body)
 	if err != nil {
 		logger.MaybeDebug(wfa.Log, "Envoy is not ready; failed to read response body")
 		return false
@@ -110,7 +110,7 @@ func (wfa *WaitForAdmin) IsReady() bool {
 	return true
 }
 
-func (wfa *WaitForAdmin) executeOnce(_ context.Context) (interface{}, error) {
+func (wfa *WaitForAdmin) executeOnce(_ context.Context, _ interface{}) (interface{}, error) {
 	attempt := atomic.AddUint32(&wfa.Attempt, 1)
 	logger.MaybeDebugf(wfa.Log, "Checking if Envoy is ready, attempt %d", attempt)
 	if wfa.IsReady() {
@@ -123,27 +123,26 @@ func (wfa *WaitForAdmin) executeOnce(_ context.Context) (interface{}, error) {
 }
 
 // Execute will communicate with the Envoy admin port running on `localhost`,
-// which defaults to 15000 but can be overriden with `ENVOY_ADMIN_PORT`. It
+// which defaults to 15000 but can be overridden with `ENVOY_ADMIN_PORT`. It
 // will send `GET /ready` up to 10 times, sleeping for `wfa.Sleep` in between
 // if the response is not 200 OK with a body of `LIVE\n`.
 func (wfa *WaitForAdmin) Execute(ctx context.Context) error {
 	_, err := retry.Retry(
 		ctx,
-		wfa.executeOnce,
+		retry.ActionerFunc(wfa.executeOnce),
+		nil,
 		retry.OptConstantDelay(wfa.Sleep),
 		retry.OptMaxAttempts(10),
 	)
-
 	if ex.Is(err, ErrFailedAttempt) {
 		return ex.New(ErrTimedOut)
 	}
-
 	return err
 }
 
 // MaybeWaitForAdmin will check if Envoy is running if the `WAIT_FOR_ENVOY`
 // environment variable is set. This will communicate with the Envoy admin
-// port running on `localhost`, which defaults to 15000 but can be overriden
+// port running on `localhost`, which defaults to 15000 but can be overridden
 // with `ENVOY_ADMIN_PORT`. It will send `GET /ready` up to 10 times, sleeping
 // for 1 second in between if the response is not 200 OK with a body of
 // `LIVE\n`.

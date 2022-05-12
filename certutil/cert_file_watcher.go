@@ -1,7 +1,7 @@
 /*
 
-Copyright (c) 2021 - Present. Blend Labs, Inc. All rights reserved
-Blend Confidential - Restricted
+Copyright (c) 2022 - Present. Blend Labs, Inc. All rights reserved
+Use of this source code is governed by a MIT license that can be found in the LICENSE file.
 
 */
 
@@ -10,6 +10,7 @@ package certutil
 import (
 	"crypto/tls"
 	"os"
+	"sync"
 	"time"
 
 	"github.com/blend/go-sdk/async"
@@ -21,40 +22,53 @@ const (
 	ErrTLSPathsUnset ex.Class = "tls cert or key path unset; cannot continue"
 )
 
+const (
+	// DefaultCertficicateFileWatcherPollInterval is the default poll interval when re-reading certs
+	DefaultCertficicateFileWatcherPollInterval = 500 * time.Millisecond
+)
+
 // NewCertFileWatcher creates a new CertReloader object with a reload delay
-func NewCertFileWatcher(certPath, keyPath string, opts ...CertFileWatcherOption) (*CertFileWatcher, error) {
-	if certPath == "" || keyPath == "" {
+func NewCertFileWatcher(keyPair KeyPair, opts ...CertFileWatcherOption) (*CertFileWatcher, error) {
+	if keyPair.CertPath == "" || keyPair.KeyPath == "" {
 		return nil, ex.New(ErrTLSPathsUnset)
 	}
-
 	cw := &CertFileWatcher{
-		Latch:    async.NewLatch(),
-		CertPath: certPath,
-		KeyPath:  keyPath,
+		latch:   async.NewLatch(),
+		keyPair: keyPair,
 	}
-
 	for _, opt := range opts {
 		if err := opt(cw); err != nil {
 			return nil, err
 		}
 	}
-
-	// load cert to make sure the current key pair is valid
-	if err := cw.Reload(); err != nil {
+	cert, err := tls.LoadX509KeyPair(cw.keyPair.CertPath, cw.keyPair.KeyPath)
+	if err != nil {
 		return nil, err
 	}
+	cw.certificate = &cert
 	return cw, nil
 }
 
 // CertFileWatcherOption is an option for a cert watcher.
 type CertFileWatcherOption func(*CertFileWatcher) error
 
+// CertFileWatcherOnReloadAction is the on reload action for a cert file watcher.
+type CertFileWatcherOnReloadAction func(*CertFileWatcher) error
+
 // OptCertFileWatcherOnReload sets the on reload handler.
 // If you need to capture *every* reload of the cert, including the initial one in the constructor
 // you must use this option.
-func OptCertFileWatcherOnReload(handler func(*CertFileWatcher, error)) CertFileWatcherOption {
+func OptCertFileWatcherOnReload(handler CertFileWatcherOnReloadAction) CertFileWatcherOption {
 	return func(cfw *CertFileWatcher) error {
-		cfw.OnReload = handler
+		cfw.onReload = handler
+		return nil
+	}
+}
+
+// OptCertFileWatcherNotifyReload sets the notify reload channel.
+func OptCertFileWatcherNotifyReload(notifyReload chan struct{}) CertFileWatcherOption {
+	return func(cfw *CertFileWatcher) error {
+		cfw.notifyReload = notifyReload
 		return nil
 	}
 }
@@ -62,67 +76,109 @@ func OptCertFileWatcherOnReload(handler func(*CertFileWatcher, error)) CertFileW
 // OptCertFileWatcherPollInterval sets the poll interval .
 func OptCertFileWatcherPollInterval(d time.Duration) CertFileWatcherOption {
 	return func(cfw *CertFileWatcher) error {
-		cfw.PollInterval = d
+		cfw.pollInterval = d
 		return nil
 	}
 }
 
 // CertFileWatcher reloads a cert key pair when there is a change, e.g. cert renewal
 type CertFileWatcher struct {
-	*async.Latch
-
-	Certificate *tls.Certificate
-
-	CertPath     string
-	KeyPath      string
-	PollInterval time.Duration
-
-	OnReload func(*CertFileWatcher, error)
+	latch         *async.Latch
+	certificateMu sync.RWMutex
+	certificate   *tls.Certificate
+	keyPair       KeyPair
+	pollInterval  time.Duration
+	notifyReload  chan struct{}
+	onReload      CertFileWatcherOnReloadAction
 }
+
+// CertPath returns the cert path.
+func (cw *CertFileWatcher) CertPath() string { return cw.keyPair.CertPath }
+
+// KeyPath returns the cert path.
+func (cw *CertFileWatcher) KeyPath() string { return cw.keyPair.KeyPath }
 
 // PollIntervalOrDefault returns the polling interval or a default.
 func (cw *CertFileWatcher) PollIntervalOrDefault() time.Duration {
-	if cw.PollInterval > 0 {
-		return cw.PollInterval
+	if cw.pollInterval > 0 {
+		return cw.pollInterval
 	}
-	return 500 * time.Millisecond
+	return DefaultCertficicateFileWatcherPollInterval
 }
 
 // Reload forces the reload of the underlying certificate.
 func (cw *CertFileWatcher) Reload() (err error) {
 	defer func() {
-		if cw.OnReload != nil {
-			cw.OnReload(cw, err)
+		if cw.notifyReload != nil {
+			cw.notifyReload <- struct{}{}
+		}
+		if cw.onReload != nil && err == nil {
+			err = cw.onReload(cw)
 		}
 	}()
 
-	cert, loadErr := tls.LoadX509KeyPair(cw.CertPath, cw.KeyPath)
+	cert, loadErr := tls.LoadX509KeyPair(cw.keyPair.CertPath, cw.keyPair.KeyPath)
 	if loadErr != nil {
 		err = ex.New(loadErr)
 		return
 	}
-	cw.Certificate = &cert
+	cw.certificateMu.Lock()
+	cw.certificate = &cert
+	cw.certificateMu.Unlock()
 	return
 }
 
-// GetCertificate gets the cached certificate, it blocks when the `cert` field is being updated
+// Certificate gets the underlying certificate, it blocks when the `cert` field is being updated
+func (cw *CertFileWatcher) Certificate() *tls.Certificate {
+	cw.certificateMu.RLock()
+	defer cw.certificateMu.RUnlock()
+	return cw.certificate
+}
+
+// GetCertificate gets the underlying certificate in the form that tls config expects.
 func (cw *CertFileWatcher) GetCertificate(_ *tls.ClientHelloInfo) (*tls.Certificate, error) {
-	return cw.Certificate, nil
+	cw.certificateMu.RLock()
+	defer cw.certificateMu.RUnlock()
+	return cw.certificate, nil
+}
+
+// IsStarted returns if the underlying latch is started.
+func (cw *CertFileWatcher) IsStarted() bool { return cw.latch.IsStarted() }
+
+// IsStopped returns if the underlying latch is stopped.
+func (cw *CertFileWatcher) IsStopped() bool { return cw.latch.IsStopped() }
+
+// NotifyStarted returns the notify started channel.
+func (cw *CertFileWatcher) NotifyStarted() <-chan struct{} {
+	return cw.latch.NotifyStarted()
+}
+
+// NotifyStopped returns the notify stopped channel.
+func (cw *CertFileWatcher) NotifyStopped() <-chan struct{} {
+	return cw.latch.NotifyStopped()
+}
+
+// NotifyReload the notify reload channel.
+//
+// You must supply this channel as an option in the constructor.
+func (cw *CertFileWatcher) NotifyReload() <-chan struct{} {
+	return cw.notifyReload
 }
 
 // Start watches the cert and triggers a reload on change
 func (cw *CertFileWatcher) Start() error {
-	cw.Starting()
+	cw.latch.Starting()
 
 	certLastMod, keyLastMod, err := cw.keyPairLastModified()
 	if err != nil {
+		cw.latch.Stopped()
 		return err
 	}
 
 	ticker := time.NewTicker(cw.PollIntervalOrDefault())
 	defer ticker.Stop()
 
-	cw.Started()
+	cw.latch.Started()
 	var certMod, keyMod time.Time
 	for {
 		select {
@@ -131,15 +187,16 @@ func (cw *CertFileWatcher) Start() error {
 			if err != nil {
 				return err
 			}
-			if keyMod.After(keyLastMod) || certMod.After(certLastMod) {
+			// wait for both to update
+			if keyMod.After(keyLastMod) && certMod.After(certLastMod) {
 				if err = cw.Reload(); err != nil {
 					return err
 				}
 				keyLastMod = keyMod
 				certLastMod = certMod
 			}
-		case <-cw.NotifyStopping():
-			cw.Stopped()
+		case <-cw.latch.NotifyStopping():
+			cw.latch.Stopped()
 			return nil
 		}
 	}
@@ -147,26 +204,24 @@ func (cw *CertFileWatcher) Start() error {
 
 // Stop stops the watcher.
 func (cw *CertFileWatcher) Stop() error {
-	if !cw.CanStop() {
+	if !cw.latch.CanStop() {
 		return async.ErrCannotStop
 	}
-
-	cw.Stopping()
-	<-cw.NotifyStopped()
+	cw.latch.WaitStopped()
+	cw.latch.Reset()
 	return nil
 }
 
 func (cw *CertFileWatcher) keyPairLastModified() (cert time.Time, key time.Time, err error) {
 	var certStat, keyStat os.FileInfo
-	keyStat, err = os.Stat(cw.KeyPath)
+	certStat, err = os.Stat(cw.keyPair.CertPath)
 	if err != nil {
 		return
 	}
-	certStat, err = os.Stat(cw.CertPath)
+	keyStat, err = os.Stat(cw.keyPair.KeyPath)
 	if err != nil {
 		return
 	}
-
 	cert = certStat.ModTime()
 	key = keyStat.ModTime()
 	return

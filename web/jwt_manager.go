@@ -1,7 +1,7 @@
 /*
 
-Copyright (c) 2021 - Present. Blend Labs, Inc. All rights reserved
-Blend Confidential - Restricted
+Copyright (c) 2022 - Present. Blend Labs, Inc. All rights reserved
+Use of this source code is governed by a MIT license that can be found in the LICENSE file.
 
 */
 
@@ -11,8 +11,9 @@ import (
 	"context"
 	"time"
 
+	"github.com/golang-jwt/jwt"
+
 	"github.com/blend/go-sdk/ex"
-	"github.com/blend/go-sdk/jwt"
 )
 
 const (
@@ -36,14 +37,47 @@ type JWTManager struct {
 
 // Apply applies the jwtm to the given auth manager.
 func (jwtm JWTManager) Apply(am *AuthManager) {
-	am.SerializeSessionValueHandler = jwtm.SerializeSessionValueHandler
-	am.ParseSessionValueHandler = jwtm.ParseSessionValueHandler
+	am.SerializeHandler = jwtm.SerializeHandler
+	am.FetchHandler = jwtm.FetchHandler
 }
+
+//
+// auth manager hooks
+//
+
+// SerializeHandler is a shim to the auth manager.
+func (jwtm JWTManager) SerializeHandler(_ context.Context, session *Session) (output string, err error) {
+	var key []byte
+	key, err = jwtm.KeyProvider(session)
+	if err != nil {
+		return
+	}
+
+	token := jwt.NewWithClaims(jwt.SigningMethodHS512, jwtm.Claims(session))
+	output, err = token.SignedString(key)
+	return
+}
+
+// FetchHandler is a shim to the auth manager.
+func (jwtm JWTManager) FetchHandler(_ context.Context, sessionValue string) (*Session, error) {
+	var claims jwt.StandardClaims
+	_, err := jwt.ParseWithClaims(sessionValue, &claims, jwtm.KeyFunc)
+	if err != nil {
+		return nil, err
+	}
+
+	// do we check if the token is valid ???
+	return jwtm.FromClaims(&claims), nil
+}
+
+//
+// utility functions
+//
 
 // Claims returns the sesion as a JWT standard claims object.
 func (jwtm JWTManager) Claims(session *Session) *jwt.StandardClaims {
 	return &jwt.StandardClaims{
-		ID:        session.SessionID,
+		Id:        session.SessionID,
 		Audience:  session.BaseURL,
 		Issuer:    "go-web",
 		Subject:   session.UserID,
@@ -55,7 +89,7 @@ func (jwtm JWTManager) Claims(session *Session) *jwt.StandardClaims {
 // FromClaims returns a session from a given claims set.
 func (jwtm JWTManager) FromClaims(claims *jwt.StandardClaims) *Session {
 	return &Session{
-		SessionID:  claims.ID,
+		SessionID:  claims.Id,
 		BaseURL:    claims.Audience,
 		UserID:     claims.Subject,
 		CreatedUTC: time.Unix(claims.IssuedAt, 0).In(time.UTC),
@@ -70,29 +104,4 @@ func (jwtm JWTManager) KeyFunc(token *jwt.Token) (interface{}, error) {
 		return nil, ErrJWTNonstandardClaims
 	}
 	return jwtm.KeyProvider(jwtm.FromClaims(typed))
-}
-
-// SerializeSessionValueHandler is a shim to the auth manager.
-func (jwtm JWTManager) SerializeSessionValueHandler(_ context.Context, session *Session) (output string, err error) {
-	var key []byte
-	key, err = jwtm.KeyProvider(session)
-	if err != nil {
-		return
-	}
-
-	token := jwt.NewWithClaims(jwt.SigningMethodHMAC512, jwtm.Claims(session))
-	output, err = token.SignedString(key)
-	return
-}
-
-// ParseSessionValueHandler is a shim to the auth manager.
-func (jwtm JWTManager) ParseSessionValueHandler(_ context.Context, sessionValue string) (*Session, error) {
-	var claims jwt.StandardClaims
-	_, err := jwt.ParseWithClaims(sessionValue, &claims, jwtm.KeyFunc)
-	if err != nil {
-		return nil, err
-	}
-
-	// do we check if the token is valid ???
-	return jwtm.FromClaims(&claims), nil
 }
