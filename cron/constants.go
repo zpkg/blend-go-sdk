@@ -1,7 +1,7 @@
 /*
 
-Copyright (c) 2022 - Present. Blend Labs, Inc. All rights reserved
-Use of this source code is governed by a MIT license that can be found in the LICENSE file.
+Copyright (c) 2021 - Present. Blend Labs, Inc. All rights reserved
+Blend Confidential - Restricted
 
 */
 
@@ -36,8 +36,8 @@ const (
 	FlagSuccess = "cron.success"
 	// FlagErrored is an event flag.
 	FlagErrored = "cron.errored"
-	// FlagCanceled is an event flag.
-	FlagCanceled = "cron.canceled"
+	// FlagCancelled is an event flag.
+	FlagCancelled = "cron.cancelled"
 	// FlagBroken is an event flag.
 	FlagBroken = "cron.broken"
 	// FlagFixed is an event flag.
@@ -73,9 +73,9 @@ type JobInvocationStatus string
 
 // JobInvocationState values.
 const (
-	JobInvocationStatusIdle     JobInvocationStatus = "idle"
-	JobInvocationStatusRunning  JobInvocationStatus = "running"
-	JobInvocationStatusCanceled JobInvocationStatus = "canceled"
-	JobInvocationStatusErrored  JobInvocationStatus = "errored"
-	JobInvocationStatusSuccess  JobInvocationStatus = "success"
+	JobInvocationStatusIdle      JobInvocationStatus = "idle"
+	JobInvocationStatusRunning   JobInvocationStatus = "running"
+	JobInvocationStatusCancelled JobInvocationStatus = "cancelled"
+	JobInvocationStatusErrored   JobInvocationStatus = "errored"
+	JobInvocationStatusSuccess   JobInvocationStatus = "success"
 )

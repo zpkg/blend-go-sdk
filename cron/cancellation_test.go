@@ -1,7 +1,7 @@
 /*
 
-Copyright (c) 2022 - Present. Blend Labs, Inc. All rights reserved
-Use of this source code is governed by a MIT license that can be found in the LICENSE file.
+Copyright (c) 2021 - Present. Blend Labs, Inc. All rights reserved
+Blend Confidential - Restricted
 
 */
 
@@ -19,13 +19,13 @@ func TestIsContextCanceled(t *testing.T) {
 	assert := assert.New(t)
 
 	ctx, cancel := context.WithCancel(context.Background())
-	assert.False(IsContextCanceled(ctx))
+	assert.False(IsContextCancelled(ctx))
 
 	wg := sync.WaitGroup{}
 	wg.Add(1)
 	go func() {
 		defer wg.Done()
-		assert.True(IsContextCanceled(ctx))
+		assert.True(IsContextCancelled(ctx))
 	}()
 	cancel()
 	wg.Wait()

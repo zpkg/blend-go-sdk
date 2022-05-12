@@ -1,7 +1,7 @@
 /*
 
-Copyright (c) 2022 - Present. Blend Labs, Inc. All rights reserved
-Use of this source code is governed by a MIT license that can be found in the LICENSE file.
+Copyright (c) 2021 - Present. Blend Labs, Inc. All rights reserved
+Blend Confidential - Restricted
 
 */
 
@@ -11,20 +11,19 @@ import (
 	"context"
 
 	"github.com/blend/go-sdk/db"
+	"github.com/blend/go-sdk/ex"
 	"github.com/blend/go-sdk/logger"
 	"github.com/blend/go-sdk/stats"
 	"github.com/blend/go-sdk/timeutil"
 )
 
 // AddListeners adds db listeners.
-func AddListeners(log logger.Listenable, collector stats.Collector, opts ...stats.AddListenerOption) {
+func AddListeners(log logger.Listenable, collector stats.Collector) {
 	if log == nil || collector == nil {
 		return
 	}
 
-	options := stats.NewAddListenerOptions(opts...)
-
-	log.Listen(db.QueryFlag, stats.ListenerNameStats, db.NewQueryEventListener(func(ctx context.Context, qe db.QueryEvent) {
+	log.Listen(db.QueryFlag, stats.ListenerNameStats, db.NewQueryEventListener(func(_ context.Context, qe db.QueryEvent) {
 		engine := stats.Tag(TagEngine, qe.Engine)
 		database := stats.Tag(TagDatabase, qe.Database)
 
@@ -35,13 +34,15 @@ func AddListeners(log logger.Listenable, collector stats.Collector, opts ...stat
 			tags = append(tags, stats.Tag(TagQuery, qe.Label))
 		}
 		if qe.Err != nil {
+			if ex := ex.As(qe.Err); ex != nil && ex.Class != nil {
+				tags = append(tags, stats.Tag(stats.TagClass, ex.Class.Error()))
+			}
 			tags = append(tags, stats.TagError)
 		}
 
-		tags = append(tags, options.GetLoggerLabelsAsTags(ctx)...)
-
 		_ = collector.Increment(MetricNameDBQuery, tags...)
-		_ = collector.Gauge(MetricNameDBQueryElapsedLast, timeutil.Milliseconds(qe.Elapsed), tags...)
-		_ = collector.Histogram(MetricNameDBQueryElapsed, timeutil.Milliseconds(qe.Elapsed), tags...)
+		_ = collector.Gauge(MetricNameDBQueryElapsed, timeutil.Milliseconds(qe.Elapsed), tags...)
+		_ = collector.TimeInMilliseconds(MetricNameDBQueryElapsed, qe.Elapsed, tags...)
+		_ = collector.Distribution(MetricNameDBQueryElapsed, timeutil.Milliseconds(qe.Elapsed), tags...)
 	}))
 }

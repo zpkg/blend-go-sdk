@@ -1,7 +1,7 @@
 /*
 
-Copyright (c) 2022 - Present. Blend Labs, Inc. All rights reserved
-Use of this source code is governed by a MIT license that can be found in the LICENSE file.
+Copyright (c) 2021 - Present. Blend Labs, Inc. All rights reserved
+Blend Confidential - Restricted
 
 */
 
@@ -143,7 +143,7 @@ func (e Event) WriteText(tf logger.TextFormatter, wr io.Writer) {
 	}
 	if len(e.Args) > 0 {
 		fmt.Fprint(wr, logger.Space)
-		fmt.Fprintf(wr, "%s", strings.Join(e.Args, ", "))
+		fmt.Fprintf(wr, "%s", tf.Colorize(strings.Join(e.Args, ", "), ansi.ColorLightWhite))
 	}
 
 	fmt.Fprint(wr, logger.Space)

@@ -1,7 +1,7 @@
 /*
 
-Copyright (c) 2022 - Present. Blend Labs, Inc. All rights reserved
-Use of this source code is governed by a MIT license that can be found in the LICENSE file.
+Copyright (c) 2021 - Present. Blend Labs, Inc. All rights reserved
+Blend Confidential - Restricted
 
 */
 
@@ -13,6 +13,7 @@ import (
 	"flag"
 	"fmt"
 	"go/build"
+	"io/ioutil"
 	"os"
 	"os/exec"
 	"path/filepath"
@@ -321,7 +322,7 @@ func enforceCoverage(path, actualCoverage string) error {
 		return err
 	}
 
-	contents, err := os.ReadFile(filepath.Join(path, "COVERAGE"))
+	contents, err := ioutil.ReadFile(filepath.Join(path, "COVERAGE"))
 	if err != nil {
 		return err
 	}
@@ -355,7 +356,7 @@ func extractCoverage(corpus string) string {
 }
 
 func writeCoverage(path, coverage string) error {
-	return os.WriteFile(filepath.Join(path, "COVERAGE"), []byte(strings.TrimSpace(coverage)), defaultFileFlags)
+	return ioutil.WriteFile(filepath.Join(path, "COVERAGE"), []byte(strings.TrimSpace(coverage)), defaultFileFlags)
 }
 
 func dirHasGlob(path, glob string) bool {
@@ -395,7 +396,7 @@ func execCoverageReportCompile() error {
 }
 
 func mergeCoverageOutput(temp string, outFile *os.File) error {
-	contents, err := os.ReadFile(temp)
+	contents, err := ioutil.ReadFile(temp)
 	if err != nil {
 		return err
 	}

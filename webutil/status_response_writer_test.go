@@ -1,7 +1,7 @@
 /*
 
-Copyright (c) 2022 - Present. Blend Labs, Inc. All rights reserved
-Use of this source code is governed by a MIT license that can be found in the LICENSE file.
+Copyright (c) 2021 - Present. Blend Labs, Inc. All rights reserved
+Blend Confidential - Restricted
 
 */
 
@@ -37,7 +37,7 @@ func (mrw mockResponseWriter) Write(contents []byte) (int, error) {
 	return mrw.Output.Write(contents)
 }
 
-func Test_StatusResponseWriter(t *testing.T) {
+func TestResponseWriter(t *testing.T) {
 	assert := assert.New(t)
 
 	output := bytes.NewBuffer(nil)
@@ -46,23 +46,6 @@ func Test_StatusResponseWriter(t *testing.T) {
 	rw.Header().Set("foo", "bar")
 	rw.WriteHeader(http.StatusOK)
 	_, err := rw.Write([]byte("this is a test"))
-	assert.Nil(err)
-
-	assert.Equal(http.StatusOK, rw.StatusCode())
-	assert.Equal("this is a test", output.String())
-}
-
-func Test_StatusResponseWriter_self(t *testing.T) {
-	assert := assert.New(t)
-
-	output := bytes.NewBuffer(nil)
-	rw := NewStatusResponseWriter(mockResponseWriter{Output: output, Headers: http.Header{}})
-
-	srw := NewStatusResponseWriter(rw)
-
-	srw.Header().Set("foo", "bar")
-	srw.WriteHeader(http.StatusOK)
-	_, err := srw.Write([]byte("this is a test"))
 	assert.Nil(err)
 
 	assert.Equal(http.StatusOK, rw.StatusCode())

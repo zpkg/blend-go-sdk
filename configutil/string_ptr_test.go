@@ -1,7 +1,7 @@
 /*
 
-Copyright (c) 2022 - Present. Blend Labs, Inc. All rights reserved
-Use of this source code is governed by a MIT license that can be found in the LICENSE file.
+Copyright (c) 2021 - Present. Blend Labs, Inc. All rights reserved
+Blend Confidential - Restricted
 
 */
 
@@ -27,8 +27,5 @@ func TestStringPtr(t *testing.T) {
 
 	var setValue string
 	assert.Nil(SetString(&setValue, isNil, isEmpty, hasValue, hasValue2)(context.TODO()))
-	assert.Equal("", setValue)
-
-	assert.Nil(SetString(&setValue, isNil, hasValue, hasValue2)(context.TODO()))
-	assert.Equal(value, setValue)
+	assert.Equal("foo", setValue)
 }

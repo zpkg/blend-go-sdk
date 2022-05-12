@@ -1,7 +1,7 @@
 /*
 
-Copyright (c) 2022 - Present. Blend Labs, Inc. All rights reserved
-Use of this source code is governed by a MIT license that can be found in the LICENSE file.
+Copyright (c) 2021 - Present. Blend Labs, Inc. All rights reserved
+Blend Confidential - Restricted
 
 */
 
@@ -183,22 +183,4 @@ func Test_Scopes_String(t *testing.T) {
 	its.Equal("*", ScopesAll().String())
 	its.Equal("*", NewScopes(ScopeAll, "foo/bar/*", "test/testo").String())
 	its.Equal("*, -test/testo", NewScopes(ScopeAll, "foo/bar/*", "-test/testo").String())
-}
-
-func Test_Scopes_isExplicitlyDisabled(t *testing.T) {
-	its := assert.New(t)
-
-	s := NewScopes("*", "-foo/*")
-
-	its.False(s.isScopeExplicitlyDisabled("bar"))
-	its.False(s.isScopeExplicitlyDisabled("foo"))
-	its.False(s.isScopeExplicitlyDisabled("bar/foo"))
-	its.True(s.isScopeExplicitlyDisabled("foo/bar"))
-}
-
-func Test_Scopes_matches(t *testing.T) {
-	its := assert.New(t)
-
-	its.True(NewScopes("*").matches("foo/bar", "foo/*"))
-	its.False(NewScopes("*").matches("foo/*", "foo/bar"))
 }

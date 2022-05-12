@@ -1,7 +1,7 @@
 /*
 
-Copyright (c) 2022 - Present. Blend Labs, Inc. All rights reserved
-Use of this source code is governed by a MIT license that can be found in the LICENSE file.
+Copyright (c) 2021 - Present. Blend Labs, Inc. All rights reserved
+Blend Confidential - Restricted
 
 */
 
@@ -16,20 +16,14 @@ import (
 )
 
 // AddErrorListeners adds error listeners.
-func AddErrorListeners(log logger.Listenable, stats Collector, opts ...AddListenerOption) {
+func AddErrorListeners(log logger.Listenable, stats Collector) {
 	if log == nil || stats == nil {
 		return
 	}
 
-	options := NewAddListenerOptions(opts...)
-
-	listener := logger.NewErrorEventListener(func(ctx context.Context, ee logger.ErrorEvent) {
-		tags := []string{
-			Tag(TagSeverity, string(ee.GetFlag())),
-		}
-		tags = append(tags, options.GetLoggerLabelsAsTags(ctx)...)
+	listener := logger.NewErrorEventListener(func(_ context.Context, ee logger.ErrorEvent) {
 		_ = stats.Increment(MetricNameError,
-			tags...,
+			Tag(TagSeverity, string(ee.GetFlag())),
 		)
 	})
 	log.Listen(logger.Warning, ListenerNameStats, listener)
@@ -43,21 +37,15 @@ func AddErrorListeners(log logger.Listenable, stats Collector, opts ...AddListen
 // that is, if you put variable data in the exception class.
 // If there is any doubt which of these to use (AddErrorListeners or AddErrorListenersByClass)
 // use the version that does not add the class information (AddErrorListeners).
-func AddErrorListenersByClass(log logger.Listenable, stats Collector, opts ...AddListenerOption) {
+func AddErrorListenersByClass(log logger.Listenable, stats Collector) {
 	if log == nil || stats == nil {
 		return
 	}
 
-	options := NewAddListenerOptions(opts...)
-
-	listener := logger.NewErrorEventListener(func(ctx context.Context, ee logger.ErrorEvent) {
-		tags := []string{
+	listener := logger.NewErrorEventListener(func(_ context.Context, ee logger.ErrorEvent) {
+		_ = stats.Increment(MetricNameError,
 			Tag(TagSeverity, string(ee.GetFlag())),
 			Tag(TagClass, fmt.Sprintf("%v", ex.ErrClass(ee.Err))),
-		}
-		tags = append(tags, options.GetLoggerLabelsAsTags(ctx)...)
-		_ = stats.Increment(MetricNameError,
-			tags...,
 		)
 	})
 	log.Listen(logger.Warning, ListenerNameStats, listener)

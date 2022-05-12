@@ -1,7 +1,7 @@
 /*
 
-Copyright (c) 2022 - Present. Blend Labs, Inc. All rights reserved
-Use of this source code is governed by a MIT license that can be found in the LICENSE file.
+Copyright (c) 2021 - Present. Blend Labs, Inc. All rights reserved
+Blend Confidential - Restricted
 
 */
 
@@ -83,29 +83,6 @@ func TestStartWithParentSpan(t *testing.T) {
 
 	mockParentSpan := parentSpan.(*mocktracer.MockSpan)
 	assert.Equal(mockSpan.ParentID, mockParentSpan.SpanContext.SpanID)
-}
-
-func TestStartParameterizedPath(t *testing.T) {
-	assert := assert.New(t)
-	mockTracer := mocktracer.New()
-	reqTracer := Tracer(mockTracer)
-
-	req := r2.New("https://foo.com/", r2.OptHeader(make(http.Header)), r2.OptPathParameterized("bar/:bar_id", map[string]string{"bar_id": "123"}))
-	rtf := reqTracer.Start(req.Request)
-
-	spanContext, err := mockTracer.Extract(opentracing.HTTPHeaders, opentracing.HTTPHeadersCarrier(req.Request.Header))
-	assert.Nil(err)
-	mockSpanContext := spanContext.(mocktracer.MockSpanContext)
-
-	span := rtf.(r2TraceFinisher).span
-	mockSpan := span.(*mocktracer.MockSpan)
-	assert.Equal(mockSpanContext.SpanID, mockSpan.SpanContext.SpanID)
-	assert.Equal(tracing.OperationHTTPRequest, mockSpan.OperationName)
-
-	assert.Len(mockSpan.Tags(), 5)
-	assert.Equal(tracing.SpanTypeHTTP, mockSpan.Tags()[tracing.TagKeySpanType])
-	assert.Equal("https://foo.com/bar/:bar_id", mockSpan.Tags()[tracing.TagKeyResourceName])
-	assert.True(mockSpan.FinishTime.IsZero())
 }
 
 func TestFinish(t *testing.T) {

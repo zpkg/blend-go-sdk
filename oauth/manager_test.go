@@ -1,7 +1,7 @@
 /*
 
-Copyright (c) 2022 - Present. Blend Labs, Inc. All rights reserved
-Use of this source code is governed by a MIT license that can be found in the LICENSE file.
+Copyright (c) 2021 - Present. Blend Labs, Inc. All rights reserved
+Blend Confidential - Restricted
 
 */
 
@@ -19,11 +19,9 @@ import (
 
 	"golang.org/x/oauth2"
 
-	"github.com/golang-jwt/jwt"
-
 	"github.com/blend/go-sdk/assert"
 	"github.com/blend/go-sdk/crypto"
-	"github.com/blend/go-sdk/jwk"
+	"github.com/blend/go-sdk/jwt"
 	"github.com/blend/go-sdk/r2"
 	"github.com/blend/go-sdk/uuid"
 	"github.com/blend/go-sdk/webutil"
@@ -36,7 +34,7 @@ func Test_Manager_Finish(t *testing.T) {
 	it.Nil(err)
 	pk1, err := jwt.ParseRSAPrivateKeyFromPEM([]byte(pk1pem))
 	it.Nil(err)
-	keys := []jwk.JWK{
+	keys := []jwt.JWK{
 		createJWK(pk0),
 		createJWK(pk1),
 	}
@@ -47,7 +45,7 @@ func Test_Manager_Finish(t *testing.T) {
 		rw.Header().Set("Date", time.Now().UTC().Format(http.TimeFormat))                        // set date
 		rw.WriteHeader(200)
 		_ = json.NewEncoder(rw).Encode(struct {
-			Keys []jwk.JWK `json:"keys"`
+			Keys []jwt.JWK `json:"keys"`
 		}{
 			Keys: keys,
 		})
@@ -121,14 +119,14 @@ func Test_Manager_Finish(t *testing.T) {
 	it.Equal("https://example.com/example-string.jpg", res.Profile.PictureURL)
 }
 
-func Test_Manager_Finish_disallowedDomain(t *testing.T) {
+func Test_Manager_Finish_DisallowedDomain(t *testing.T) {
 	it := assert.New(t)
 
 	pk0, err := jwt.ParseRSAPrivateKeyFromPEM([]byte(pk0pem))
 	it.Nil(err)
 	pk1, err := jwt.ParseRSAPrivateKeyFromPEM([]byte(pk1pem))
 	it.Nil(err)
-	keys := []jwk.JWK{
+	keys := []jwt.JWK{
 		createJWK(pk0),
 		createJWK(pk1),
 	}
@@ -139,7 +137,7 @@ func Test_Manager_Finish_disallowedDomain(t *testing.T) {
 		rw.Header().Set("Date", time.Now().UTC().Format(http.TimeFormat))                        // set date
 		rw.WriteHeader(200)
 		_ = json.NewEncoder(rw).Encode(struct {
-			Keys []jwk.JWK `json:"keys"`
+			Keys []jwt.JWK `json:"keys"`
 		}{
 			Keys: keys,
 		})
@@ -209,14 +207,14 @@ func Test_Manager_Finish_disallowedDomain(t *testing.T) {
 	it.Empty(res.Profile.Email)
 }
 
-func Test_Manager_Finish_failsAudience(t *testing.T) {
+func Test_Manager_Finish_FailsAudience(t *testing.T) {
 	it := assert.New(t)
 
 	pk0, err := jwt.ParseRSAPrivateKeyFromPEM([]byte(pk0pem))
 	it.Nil(err)
 	pk1, err := jwt.ParseRSAPrivateKeyFromPEM([]byte(pk1pem))
 	it.Nil(err)
-	keys := []jwk.JWK{
+	keys := []jwt.JWK{
 		createJWK(pk0),
 		createJWK(pk1),
 	}
@@ -227,7 +225,7 @@ func Test_Manager_Finish_failsAudience(t *testing.T) {
 		rw.Header().Set("Date", time.Now().UTC().Format(http.TimeFormat))                        // set date
 		rw.WriteHeader(200)
 		_ = json.NewEncoder(rw).Encode(struct {
-			Keys []jwk.JWK `json:"keys"`
+			Keys []jwt.JWK `json:"keys"`
 		}{
 			Keys: keys,
 		})
@@ -272,7 +270,7 @@ func Test_Manager_Finish_failsAudience(t *testing.T) {
 	it.Empty(res.Profile.Email)
 }
 
-func Test_Manager_Finish_failsVerification(t *testing.T) {
+func Test_Manager_Finish_FailsVerification(t *testing.T) {
 	it := assert.New(t)
 
 	pk0, err := jwt.ParseRSAPrivateKeyFromPEM([]byte(pk0pem))
@@ -281,7 +279,7 @@ func Test_Manager_Finish_failsVerification(t *testing.T) {
 	it.Nil(err)
 	pk2, err := jwt.ParseRSAPrivateKeyFromPEM([]byte(pk2pem))
 	it.Nil(err)
-	keys := []jwk.JWK{
+	keys := []jwt.JWK{
 		createJWK(pk0),
 		createJWK(pk1),
 	}
@@ -292,7 +290,7 @@ func Test_Manager_Finish_failsVerification(t *testing.T) {
 		rw.Header().Set("Date", time.Now().UTC().Format(http.TimeFormat))                        // set date
 		rw.WriteHeader(200)
 		_ = json.NewEncoder(rw).Encode(struct {
-			Keys []jwk.JWK `json:"keys"`
+			Keys []jwt.JWK `json:"keys"`
 		}{
 			Keys: keys,
 		})
@@ -412,7 +410,6 @@ func Test_Manager_OAuthURL_FullyQualifiedRedirectURI(t *testing.T) {
 
 	parsed, err := url.Parse(oauthURL)
 	assert.Nil(err)
-	assert.Equal("test_client_id", parsed.Query().Get("client_id"))
 	assert.Equal("test.blend.com", parsed.Query().Get("hd"), "we should set the hosted domain if it's configured")
 }
 

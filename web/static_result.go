@@ -1,7 +1,7 @@
 /*
 
-Copyright (c) 2022 - Present. Blend Labs, Inc. All rights reserved
-Use of this source code is governed by a MIT license that can be found in the LICENSE file.
+Copyright (c) 2021 - Present. Blend Labs, Inc. All rights reserved
+Blend Confidential - Restricted
 
 */
 
@@ -9,7 +9,6 @@ package web
 
 import (
 	"net/http"
-	"os"
 	"path"
 )
 
@@ -47,10 +46,7 @@ func (sr StaticResult) Render(ctx *Ctx) error {
 	}
 
 	f, err := sr.FileSystem.Open(sr.FilePath)
-	if err != nil && os.IsNotExist(err) {
-		http.NotFound(ctx.Response, ctx.Request)
-		return nil
-	} else if err != nil {
+	if err != nil {
 		return err
 	}
 	defer f.Close()

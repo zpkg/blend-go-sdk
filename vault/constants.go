@@ -1,7 +1,7 @@
 /*
 
-Copyright (c) 2022 - Present. Blend Labs, Inc. All rights reserved
-Use of this source code is governed by a MIT license that can be found in the LICENSE file.
+Copyright (c) 2021 - Present. Blend Labs, Inc. All rights reserved
+Blend Confidential - Restricted
 
 */
 
@@ -27,9 +27,6 @@ const (
 	EnvVarVaultToken = "VAULT_TOKEN"
 	// EnvVarVaultCertAuthorityPath is the environment variable for the vault certificate authority.
 	EnvVarVaultCertAuthorityPath = "VAULT_CACERT"
-	// EnvVarVaultTimeout is the environment variable for how long to wait for vault to timeout. The values here
-	// are parsed by time.ParseDuration. Examples (5s = five seconds, 100ms = 100 milliseconds, etc.)
-	EnvVarVaultTimeout = "VAULT_TIMEOUT"
 )
 
 const (
@@ -71,18 +68,4 @@ const (
 	TypeECDSAP256        = "ecdsa-p256"
 	TypeRSA2048          = "rsa-2048"
 	TypeRSA4096          = "rsa-4096"
-)
-
-// These constants are used to sign the get identity request
-const (
-	// STSURL is the url of the sts call
-	STSURL = "https://sts.amazonaws.com"
-	// STSGetIdentityBody is the body of the post request
-	STSGetIdentityBody = "Action=GetCallerIdentity&Version=2011-06-15"
-)
-
-// constants required for login /v1/auth/aws/login
-const (
-	// AWSAuthLoginPath is the login path for aws iam auth
-	AWSAuthLoginPath = "/v1/auth/aws/login"
 )

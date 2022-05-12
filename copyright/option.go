@@ -1,7 +1,7 @@
 /*
 
-Copyright (c) 2022 - Present. Blend Labs, Inc. All rights reserved
-Use of this source code is governed by a MIT license that can be found in the LICENSE file.
+Copyright (c) 2021 - Present. Blend Labs, Inc. All rights reserved
+Blend Confidential - Restricted
 
 */
 
@@ -31,17 +31,38 @@ func OptExitFirst(exitFirst bool) Option {
 	}
 }
 
-// OptExcludes sets the exclude glob filters.
-func OptExcludes(excludeGlobs ...string) Option {
+// OptRoot sets the root directory to start the profanity check.
+func OptRoot(root string) Option {
 	return func(p *Copyright) {
-		p.Config.Excludes = excludeGlobs
+		p.Config.Root = root
 	}
 }
 
-// OptIncludeFiles sets the include file glob filters.
+// OptIncludeFiles sets the include glob filter for files.
 func OptIncludeFiles(includeGlobs ...string) Option {
 	return func(p *Copyright) {
 		p.Config.IncludeFiles = includeGlobs
+	}
+}
+
+// OptExcludeFiles sets the exclude glob filter for files.
+func OptExcludeFiles(excludeGlobs ...string) Option {
+	return func(p *Copyright) {
+		p.Config.ExcludeFiles = excludeGlobs
+	}
+}
+
+// OptIncludeDirs sets the include glob filter for files.
+func OptIncludeDirs(includeGlobs ...string) Option {
+	return func(p *Copyright) {
+		p.Config.IncludeDirs = includeGlobs
+	}
+}
+
+// OptExcludeDirs sets the exclude glob filter for directories.
+func OptExcludeDirs(excludeGlobs ...string) Option {
+	return func(p *Copyright) {
+		p.Config.ExcludeDirs = excludeGlobs
 	}
 }
 

@@ -1,7 +1,7 @@
 /*
 
-Copyright (c) 2022 - Present. Blend Labs, Inc. All rights reserved
-Use of this source code is governed by a MIT license that can be found in the LICENSE file.
+Copyright (c) 2021 - Present. Blend Labs, Inc. All rights reserved
+Blend Confidential - Restricted
 
 */
 
@@ -16,10 +16,8 @@ import (
 	"testing"
 	"time"
 
-	"github.com/golang-jwt/jwt"
-
 	"github.com/blend/go-sdk/assert"
-	"github.com/blend/go-sdk/jwk"
+	"github.com/blend/go-sdk/jwt"
 	"github.com/blend/go-sdk/r2"
 	"github.com/blend/go-sdk/uuid"
 )
@@ -31,7 +29,7 @@ func Test_PublicKeyCache_Keyfunc(t *testing.T) {
 	it.Nil(err)
 	pk1, err := jwt.ParseRSAPrivateKeyFromPEM([]byte(pk1pem))
 	it.Nil(err)
-	keys := []jwk.JWK{
+	keys := []jwt.JWK{
 		createJWK(pk0),
 		createJWK(pk1),
 	}
@@ -99,7 +97,7 @@ func Test_PublicKeyCache_Get(t *testing.T) {
 	it.Nil(err)
 	pk1, err := jwt.ParseRSAPrivateKeyFromPEM([]byte(pk1pem))
 	it.Nil(err)
-	keys := []jwk.JWK{
+	keys := []jwt.JWK{
 		createJWK(pk0),
 		createJWK(pk1),
 	}
@@ -112,7 +110,7 @@ func Test_PublicKeyCache_Get(t *testing.T) {
 		rw.Header().Set("Date", time.Now().UTC().Format(http.TimeFormat))                        // set date
 		rw.WriteHeader(http.StatusOK)
 		_ = json.NewEncoder(rw).Encode(struct {
-			Keys []jwk.JWK `json:"keys"`
+			Keys []jwt.JWK `json:"keys"`
 		}{
 			Keys: keys,
 		})
@@ -146,7 +144,7 @@ func Test_PublicKeyCache_Get_NoRefresh(t *testing.T) {
 	it.Nil(err)
 	pk1, err := jwt.ParseRSAPrivateKeyFromPEM([]byte(pk1pem))
 	it.Nil(err)
-	keys := []jwk.JWK{
+	keys := []jwt.JWK{
 		createJWK(pk0),
 		createJWK(pk1),
 	}
@@ -180,7 +178,7 @@ func Test_PublicKeyCache_Get_Refresh(t *testing.T) {
 	it.Nil(err)
 	pk1, err := jwt.ParseRSAPrivateKeyFromPEM([]byte(pk1pem))
 	it.Nil(err)
-	keys := []jwk.JWK{
+	keys := []jwt.JWK{
 		createJWK(pk0),
 		createJWK(pk1),
 	}
@@ -193,7 +191,7 @@ func Test_PublicKeyCache_Get_Refresh(t *testing.T) {
 		rw.Header().Set("Date", time.Now().UTC().Format(http.TimeFormat))                        // set date
 		rw.WriteHeader(200)
 		_ = json.NewEncoder(rw).Encode(struct {
-			Keys []jwk.JWK `json:"keys"`
+			Keys []jwt.JWK `json:"keys"`
 		}{
 			Keys: keys,
 		})
@@ -224,7 +222,7 @@ func Test_PublicKeyCache_Get_RefreshOnMiss(t *testing.T) {
 	it.Nil(err)
 	pk1, err := jwt.ParseRSAPrivateKeyFromPEM([]byte(pk1pem))
 	it.Nil(err)
-	keys := []jwk.JWK{
+	keys := []jwt.JWK{
 		createJWK(pk0),
 		createJWK(pk1),
 	}
@@ -237,7 +235,7 @@ func Test_PublicKeyCache_Get_RefreshOnMiss(t *testing.T) {
 		rw.Header().Set("Date", time.Now().UTC().Format(http.TimeFormat))                        // set date
 		rw.WriteHeader(200)
 		_ = json.NewEncoder(rw).Encode(struct {
-			Keys []jwk.JWK `json:"keys"`
+			Keys []jwt.JWK `json:"keys"`
 		}{
 			Keys: keys,
 		})

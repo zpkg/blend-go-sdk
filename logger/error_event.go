@@ -1,7 +1,7 @@
 /*
 
-Copyright (c) 2022 - Present. Blend Labs, Inc. All rights reserved
-Use of this source code is governed by a MIT license that can be found in the LICENSE file.
+Copyright (c) 2021 - Present. Blend Labs, Inc. All rights reserved
+Blend Confidential - Restricted
 
 */
 
@@ -38,18 +38,6 @@ func NewErrorEventListener(listener func(context.Context, ErrorEvent)) Listener 
 	return func(ctx context.Context, e Event) {
 		if typed, isTyped := e.(ErrorEvent); isTyped {
 			listener(ctx, typed)
-		}
-	}
-}
-
-// NewScopedErrorEventListener returns a new error event listener that listens
-// to specified scopes
-func NewScopedErrorEventListener(listener func(context.Context, ErrorEvent), scopes *Scopes) Listener {
-	return func(ctx context.Context, e Event) {
-		if typed, isTyped := e.(ErrorEvent); isTyped {
-			if scopes.IsEnabled(GetPath(ctx)...) {
-				listener(ctx, typed)
-			}
 		}
 	}
 }

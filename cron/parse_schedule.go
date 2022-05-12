@@ -1,7 +1,7 @@
 /*
 
-Copyright (c) 2022 - Present. Blend Labs, Inc. All rights reserved
-Use of this source code is governed by a MIT license that can be found in the LICENSE file.
+Copyright (c) 2021 - Present. Blend Labs, Inc. All rights reserved
+Blend Confidential - Restricted
 
 */
 
@@ -53,47 +53,16 @@ You can also use shorthands:
 	"@hourly" is equivalent to "0 0 * * * * *"
 	"@every 500ms" is equivalent to "cron.Every(500 * time.Millisecond)""
 	"@immediately-then @every 500ms" is equivalent to "cron.Immediately().Then(cron.Every(500*time.Millisecond))"
-	"@once-at 2021-06-05 13:04" is "cron.OnceAtUTC(time.Date(...))"
-	"@never" is equivalent to an unset schedule (i.e., only on demand) to avoid defaults
 
 */
-func ParseSchedule(cronString string) (schedule Schedule, err error) {
+func ParseSchedule(cronString string) (Schedule, error) {
 	cronString = strings.TrimSpace(cronString)
 
-	// check for "@never"
-	if cronString == StringScheduleNever {
-		schedule = Never()
-		return
+	// escape shorthands.
+	if shorthand, ok := StringScheduleShorthands[cronString]; ok {
+		cronString = shorthand
 	}
 
-	// check for "@immediately"
-	if cronString == StringScheduleImmediately {
-		schedule = Immediately()
-		return
-	}
-
-	// check for "@once-at"
-	if strings.HasPrefix(cronString, StringScheduleOnceAt) {
-		cronString = strings.TrimPrefix(cronString, StringScheduleOnceAt)
-		cronString = strings.TrimSpace(cronString)
-
-		onceAtUTC, errOnceAtUTC := time.Parse(time.RFC3339, cronString)
-		if errOnceAtUTC != nil {
-			err = ex.New(ErrStringScheduleInvalid, ex.OptInner(errOnceAtUTC))
-			return
-		}
-		schedule = OnceAtUTC(onceAtUTC.UTC())
-		return
-	}
-
-	// here we assume the rest of the schedule is either
-	// 	@immediately-then ...
-	//  @delay ...
-	// 	@immediately-then @delay ...
-	// etc.
-
-	// pull the @immediately-then off the beginning of
-	// the schedule if it's present
 	var immediately bool
 	if strings.HasPrefix(cronString, StringScheduleImmediatelyThen) {
 		immediately = true
@@ -101,62 +70,17 @@ func ParseSchedule(cronString string) (schedule Schedule, err error) {
 		cronString = strings.TrimSpace(cronString)
 	}
 
-	var delay time.Duration
-	if strings.HasPrefix(cronString, StringScheduleDelay) {
-		cronString = strings.TrimPrefix(cronString, StringScheduleDelay)
-		cronString = strings.TrimSpace(cronString)
-
-		remainingFields := strings.Fields(cronString)
-		if len(remainingFields) < 2 {
-			err = ex.New(ErrStringScheduleInvalid, ex.OptInner(ex.Class("@delay must be in the form `@delay <DURATION> <THEN>`")))
-			return
-		}
-		durationPart := remainingFields[0]
-		cronString = strings.TrimPrefix(cronString, durationPart)
-		cronString = strings.TrimSpace(cronString)
-		delay, err = time.ParseDuration(durationPart)
-		if err != nil {
-			err = ex.New(ErrStringScheduleInvalid, ex.OptInner(err))
-			return
-		}
-	}
-
-	// DEFER / FINALLY BLOCK
-	// we add the optional immediately or delay
-	// directives into the final schedule.
-	defer func() {
-		if schedule != nil {
-			if delay > 0 {
-				schedule = Delay(delay, schedule)
-			}
-			if immediately {
-				schedule = Immediately().Then(schedule)
-			}
-		}
-	}()
-
-	// at this point, the rest of the cron string is considered
-	// a complete, single representation of a schedule
-
-	// handle the specific @every string representation
 	if strings.HasPrefix(cronString, StringScheduleEvery) {
 		cronString = strings.TrimPrefix(cronString, StringScheduleEvery)
 		cronString = strings.TrimSpace(cronString)
-		duration, durationErr := time.ParseDuration(cronString)
-		if durationErr != nil {
-			err = ex.New(ErrStringScheduleInvalid, ex.OptInner(durationErr))
-			return
+		duration, err := time.ParseDuration(cronString)
+		if err != nil {
+			return nil, ex.New(ErrStringScheduleInvalid, ex.OptInner(err))
 		}
-		schedule = Every(duration)
-		return
-	}
-
-	// we now assume the string is a 'cron-like' string
-	// that is in the form "* * * * *" etc.
-
-	// check for shorthands, replace the shorthand with a proper cron-like string
-	if shorthand, ok := StringScheduleShorthands[cronString]; ok {
-		cronString = shorthand
+		if immediately {
+			return Immediately().Then(Every(duration)), nil
+		}
+		return Every(duration), nil
 	}
 
 	parts := strings.Fields(cronString)
@@ -206,7 +130,7 @@ func ParseSchedule(cronString string) (schedule Schedule, err error) {
 		return nil, ex.New(ErrStringScheduleInvalid, ex.OptInner(err), ex.OptMessage("years invalid"))
 	}
 
-	schedule = &StringSchedule{
+	schedule := &StringSchedule{
 		Original:    cronString,
 		Seconds:     seconds,
 		Minutes:     minutes,
@@ -216,7 +140,11 @@ func ParseSchedule(cronString string) (schedule Schedule, err error) {
 		DaysOfWeek:  daysOfWeek,
 		Years:       years,
 	}
-	return
+
+	if immediately {
+		return Immediately().Then(schedule), nil
+	}
+	return schedule, nil
 }
 
 // Error Constants
@@ -229,12 +157,8 @@ const (
 
 // String schedule constants
 const (
-	StringScheduleImmediately     = "@immediately"
-	StringScheduleDelay           = "@delay"
 	StringScheduleImmediatelyThen = "@immediately-then"
 	StringScheduleEvery           = "@every"
-	StringScheduleOnceAt          = "@once-at"
-	StringScheduleNever           = "@never"
 )
 
 // String schedule shorthands labels

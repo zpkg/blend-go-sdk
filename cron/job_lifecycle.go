@@ -1,7 +1,7 @@
 /*
 
-Copyright (c) 2022 - Present. Blend Labs, Inc. All rights reserved
-Use of this source code is governed by a MIT license that can be found in the LICENSE file.
+Copyright (c) 2021 - Present. Blend Labs, Inc. All rights reserved
+Blend Confidential - Restricted
 
 */
 
@@ -23,7 +23,7 @@ type JobLifecycle struct {
 	// OnComplete fires whenever a job finishes, regardless of status.
 	OnComplete func(context.Context)
 
-	// OnCancellation is called if the job is canceled explicitly
+	// OnCancellation is called if the job is cancelled explicitly
 	// or it sets a timeout in the .Config() and exceeds that timeout.
 	OnCancellation func(context.Context)
 	// OnError is called if the job returns an error or panics during

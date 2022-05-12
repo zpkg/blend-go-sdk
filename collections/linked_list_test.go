@@ -1,7 +1,7 @@
 /*
 
-Copyright (c) 2022 - Present. Blend Labs, Inc. All rights reserved
-Use of this source code is governed by a MIT license that can be found in the LICENSE file.
+Copyright (c) 2021 - Present. Blend Labs, Inc. All rights reserved
+Blend Confidential - Restricted
 
 */
 
@@ -13,7 +13,7 @@ import (
 	"github.com/blend/go-sdk/assert"
 )
 
-func Test_LinkedList(t *testing.T) {
+func TestQueue(t *testing.T) {
 	a := assert.New(t)
 
 	q := NewLinkedList()
@@ -30,7 +30,6 @@ func Test_LinkedList(t *testing.T) {
 	a.NotNil(q.head)
 	a.Nil(q.head.Previous)
 	a.NotNil(q.tail)
-	a.Nil(q.tail.Previous)
 	a.Equal(q.head, q.tail)
 	a.Equal(1, q.Len())
 	a.Equal("foo", q.Peek())
@@ -42,7 +41,6 @@ func Test_LinkedList(t *testing.T) {
 	a.Nil(q.head.Previous.Previous)
 	a.Equal(q.head.Previous, q.tail)
 	a.NotNil(q.tail)
-	a.NotNil(q.tail.Next)
 	a.NotEqual(q.head, q.tail)
 	a.Equal(2, q.Len())
 	a.Equal("foo", q.Peek())
@@ -162,32 +160,4 @@ func Test_LinkedList(t *testing.T) {
 	contents := q.Drain()
 	a.Len(contents, 3)
 	a.Equal(0, q.Len())
-}
-
-func Test_LinkedList_DequeueBack(t *testing.T) {
-	a := assert.New(t)
-
-	q := NewLinkedList()
-	q.Enqueue(1)
-	q.Enqueue(2)
-	q.Enqueue(3)
-	q.Enqueue(4)
-
-	a.Equal(4, q.DequeueBack())
-	a.Equal(3, q.DequeueBack())
-	a.Equal(2, q.DequeueBack())
-	a.Equal(1, q.DequeueBack())
-	a.Nil(q.DequeueBack())
-	a.Nil(q.DequeueBack())
-
-	q.Enqueue(1)
-	q.Enqueue(2)
-	q.Enqueue(3)
-	q.Enqueue(4)
-
-	a.Equal(4, q.DequeueBack())
-	a.Equal(3, q.DequeueBack())
-	a.Equal(2, q.DequeueBack())
-	a.Equal(1, q.DequeueBack())
-	a.Nil(q.DequeueBack())
 }

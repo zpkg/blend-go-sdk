@@ -1,7 +1,7 @@
 /*
 
-Copyright (c) 2022 - Present. Blend Labs, Inc. All rights reserved
-Use of this source code is governed by a MIT license that can be found in the LICENSE file.
+Copyright (c) 2021 - Present. Blend Labs, Inc. All rights reserved
+Blend Confidential - Restricted
 
 */
 
@@ -12,9 +12,6 @@ import (
 	"fmt"
 	"io"
 	"time"
-
-	"google.golang.org/grpc/codes"
-	"google.golang.org/grpc/status"
 
 	"github.com/blend/go-sdk/ansi"
 	"github.com/blend/go-sdk/logger"
@@ -158,21 +155,12 @@ func (e RPCEvent) WriteText(tf logger.TextFormatter, wr io.Writer) {
 
 	if e.Err != nil {
 		fmt.Fprint(wr, logger.Space)
-
-		if s, ok := status.FromError(e.Err); ok {
-			fmt.Fprint(wr, tf.Colorize(fmt.Sprintf("failed (%[1]d - %[1]v)", s.Code()), ansi.ColorRed))
-		} else {
-			fmt.Fprint(wr, tf.Colorize("failed", ansi.ColorRed))
-		}
+		fmt.Fprint(wr, tf.Colorize("failed", ansi.ColorRed))
 	}
 }
 
 // Decompose implements JSONWritable.
 func (e RPCEvent) Decompose() map[string]interface{} {
-	var code codes.Code
-	if s, ok := status.FromError(e.Err); ok {
-		code = s.Code()
-	}
 	return map[string]interface{}{
 		"engine":      e.Engine,
 		"peer":        e.Peer,
@@ -182,6 +170,5 @@ func (e RPCEvent) Decompose() map[string]interface{} {
 		"contentType": e.ContentType,
 		"elapsed":     timeutil.Milliseconds(e.Elapsed),
 		"err":         e.Err,
-		"code":        code,
 	}
 }

@@ -1,7 +1,7 @@
 /*
 
-Copyright (c) 2022 - Present. Blend Labs, Inc. All rights reserved
-Use of this source code is governed by a MIT license that can be found in the LICENSE file.
+Copyright (c) 2021 - Present. Blend Labs, Inc. All rights reserved
+Blend Confidential - Restricted
 
 */
 
@@ -12,11 +12,10 @@ import (
 	"testing"
 	"time"
 
-	"github.com/golang-jwt/jwt"
-
 	"github.com/blend/go-sdk/assert"
 	"github.com/blend/go-sdk/crypto"
 	"github.com/blend/go-sdk/ex"
+	"github.com/blend/go-sdk/jwt"
 	"github.com/blend/go-sdk/uuid"
 )
 
@@ -47,7 +46,7 @@ func TestNewJWTManagerClaims(t *testing.T) {
 	}
 
 	claims := m.Claims(session)
-	assert.Equal(session.SessionID, claims.Id)
+	assert.Equal(session.SessionID, claims.ID)
 	assert.Equal(session.BaseURL, claims.Audience)
 	assert.Equal("go-web", claims.Issuer)
 	assert.Equal(session.UserID, claims.Subject)
@@ -62,7 +61,7 @@ func TestNewJWTManagerFromClaims(t *testing.T) {
 	m := NewJWTManager(key)
 
 	claims := &jwt.StandardClaims{
-		Id:        uuid.V4().String(),
+		ID:        uuid.V4().String(),
 		Audience:  uuid.V4().String(),
 		Issuer:    "go-web",
 		Subject:   uuid.V4().String(),
@@ -71,7 +70,7 @@ func TestNewJWTManagerFromClaims(t *testing.T) {
 	}
 
 	session := m.FromClaims(claims)
-	assert.Equal(session.SessionID, claims.Id)
+	assert.Equal(session.SessionID, claims.ID)
 	assert.Equal(session.BaseURL, claims.Audience)
 	assert.Equal(session.UserID, claims.Subject)
 	assert.Equal(session.CreatedUTC, time.Unix(claims.IssuedAt, 0).In(time.UTC))
@@ -91,7 +90,7 @@ func TestNewJWTManagerKeyFunc(t *testing.T) {
 	assert.True(ex.Is(ErrJWTNonstandardClaims, err))
 
 	claims := &jwt.StandardClaims{
-		Id:        uuid.V4().String(),
+		ID:        uuid.V4().String(),
 		Audience:  uuid.V4().String(),
 		Issuer:    "go-web",
 		Subject:   uuid.V4().String(),
@@ -119,11 +118,11 @@ func TestNewJWTManagerSerialization(t *testing.T) {
 		ExpiresUTC: time.Now().UTC().Add(time.Hour),
 	}
 
-	output, err := m.SerializeHandler(context.TODO(), session)
+	output, err := m.SerializeSessionValueHandler(context.TODO(), session)
 	assert.Nil(err)
 	assert.NotEmpty(output)
 
-	parsed, err := m.FetchHandler(context.TODO(), output)
+	parsed, err := m.ParseSessionValueHandler(context.TODO(), output)
 	assert.Nil(err)
 	assert.Equal(parsed.SessionID, session.SessionID)
 	assert.Equal(parsed.BaseURL, session.BaseURL)

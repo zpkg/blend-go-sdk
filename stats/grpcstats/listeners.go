@@ -1,7 +1,7 @@
 /*
 
-Copyright (c) 2022 - Present. Blend Labs, Inc. All rights reserved
-Use of this source code is governed by a MIT license that can be found in the LICENSE file.
+Copyright (c) 2021 - Present. Blend Labs, Inc. All rights reserved
+Blend Confidential - Restricted
 
 */
 
@@ -19,13 +19,19 @@ import (
 	"github.com/blend/go-sdk/timeutil"
 )
 
+func getErrorTag(err error) string {
+	if e, ok := status.FromError(err); ok {
+		code := e.Code()
+		return stats.Tag(stats.TagError, strconv.Itoa(int(code)))
+	}
+	return stats.TagError
+}
+
 // AddListeners adds grpc listeners.
-func AddListeners(log logger.Listenable, collector stats.Collector, opts ...stats.AddListenerOption) {
+func AddListeners(log logger.Listenable, collector stats.Collector) {
 	if log == nil || collector == nil {
 		return
 	}
-
-	options := stats.NewAddListenerOptions(opts...)
 
 	log.Listen(grpcutil.FlagRPC, stats.ListenerNameStats, grpcutil.NewRPCEventListener(func(ctx context.Context, re grpcutil.RPCEvent) {
 		var tags []string
@@ -51,12 +57,10 @@ func AddListeners(log logger.Listenable, collector stats.Collector, opts ...stat
 		if re.Err != nil {
 			tags = append(tags, getErrorTag(re.Err))
 		}
-
-		tags = append(tags, options.GetLoggerLabelsAsTags(ctx)...)
-
 		_ = collector.Increment(MetricNameRPC, tags...)
-		_ = collector.Gauge(MetricNameRPCElapsedLast, timeutil.Milliseconds(re.Elapsed), tags...)
-		_ = collector.Histogram(MetricNameRPCElapsed, timeutil.Milliseconds(re.Elapsed), tags...)
+		_ = collector.Gauge(MetricNameRPCElapsed, timeutil.Milliseconds(re.Elapsed), tags...)
+		_ = collector.TimeInMilliseconds(MetricNameRPCElapsed, re.Elapsed, tags...)
+		_ = collector.Distribution(MetricNameRPCElapsed, timeutil.Milliseconds(re.Elapsed), tags...)
 	}))
 
 	log.Listen(grpcutil.FlagRPCStreamMessage, stats.ListenerNameStats, grpcutil.NewRPCStreamMessageEventListener(func(ctx context.Context, re grpcutil.RPCStreamMessageEvent) {
@@ -86,19 +90,9 @@ func AddListeners(log logger.Listenable, collector stats.Collector, opts ...stat
 		if re.Err != nil {
 			tags = append(tags, getErrorTag(re.Err))
 		}
-
-		tags = append(tags, options.GetLoggerLabelsAsTags(ctx)...)
-
 		_ = collector.Increment(MetricNameRPCStreamMessage, tags...)
-		_ = collector.Gauge(MetricNameRPCStreamMessageElapsedLast, timeutil.Milliseconds(re.Elapsed), tags...)
-		_ = collector.Histogram(MetricNameRPCStreamMessageElapsed, timeutil.Milliseconds(re.Elapsed), tags...)
+		_ = collector.Gauge(MetricNameRPCStreamMessageElapsed, timeutil.Milliseconds(re.Elapsed), tags...)
+		_ = collector.TimeInMilliseconds(MetricNameRPCStreamMessageElapsed, re.Elapsed, tags...)
+		_ = collector.Distribution(MetricNameRPCStreamMessageElapsed, timeutil.Milliseconds(re.Elapsed), tags...)
 	}))
-}
-
-func getErrorTag(err error) string {
-	if e, ok := status.FromError(err); ok {
-		code := e.Code()
-		return stats.Tag(stats.TagError, strconv.Itoa(int(code)))
-	}
-	return stats.TagError
 }

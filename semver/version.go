@@ -1,7 +1,7 @@
 /*
 
-Copyright (c) 2022 - Present. Blend Labs, Inc. All rights reserved
-Use of this source code is governed by a MIT license that can be found in the LICENSE file.
+Copyright (c) 2021 - Present. Blend Labs, Inc. All rights reserved
+Blend Confidential - Restricted
 
 */
 
@@ -217,7 +217,7 @@ func comparePrereleases(v string, other string) int {
 		return 0
 	}
 
-	// split both pre releases for analyze their parts
+	// split both pre releases for analyse their parts
 	selfPreReleaseMeta := strings.Split(v, ".")
 	otherPreReleaseMeta := strings.Split(other, ".")
 
@@ -346,7 +346,7 @@ func (v *Version) Minor() (minor int64) {
 	return
 }
 
-// Patch returns the Patch segment, or the third highest order segment.
+// Patch returns the Patch segment, or the thrid highest order segment.
 func (v *Version) Patch() (patch int64) {
 	if len(v.segments) < 3 {
 		return

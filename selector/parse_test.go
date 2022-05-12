@@ -1,7 +1,7 @@
 /*
 
-Copyright (c) 2022 - Present. Blend Labs, Inc. All rights reserved
-Use of this source code is governed by a MIT license that can be found in the LICENSE file.
+Copyright (c) 2021 - Present. Blend Labs, Inc. All rights reserved
+Blend Confidential - Restricted
 
 */
 
@@ -61,39 +61,13 @@ func TestParseSemiValid(t *testing.T) {
 		"",
 		"x=a,y=b,z=c",
 		"x!=a,y=b",
-		"x",
 		"!x",
-		"!x,y",
-		"!x,y,z",
-		"!x,y,!z",
-		"!x,y,z,a",
-		"!x,y,z,!a",
 	}
 
 	var err error
 	for _, str := range testGoodStrings {
 		_, err = Parse(str)
 		assert.Nil(err, str)
-	}
-}
-
-func TestParseTrailingComma(t *testing.T) {
-	assert := assert.New(t)
-
-	testBadStrings := []string{
-		",",
-		"x,",
-		"!x,",
-		"foo==bar,",
-		"foo!=bar,",
-		"foo in (bar,baz),",
-		"foo not in (bar,baz),",
-	}
-
-	var err error
-	for _, str := range testBadStrings {
-		_, err = Parse(str)
-		assert.NotNil(err, str)
 	}
 }
 
@@ -162,7 +136,7 @@ func TestParseIn(t *testing.T) {
 	assert.Nil(err)
 	assert.True(selector.Matches(valid), selector.String())
 	assert.True(selector.Matches(valid2))
-	assert.False(selector.Matches(invalidMissing))
+	assert.True(selector.Matches(invalidMissing))
 	assert.False(selector.Matches(invalid), selector.String())
 }
 
@@ -217,7 +191,6 @@ func TestParseDocsExample(t *testing.T) {
 }
 
 func TestParseSubdomainKey(t *testing.T) {
-
 	assert := assert.New(t)
 	sel, err := Parse("example.com/failure-domain == primary")
 	assert.Nil(err)
@@ -262,23 +235,7 @@ func TestParseRegressionCSVSymbols(t *testing.T) {
 	assert := assert.New(t)
 
 	sel, err := Parse("foo in (bar-bar, baz.baz, buzz_buzz), moo=boo")
-	assert.Nil(err, "regression is csv values can have '-', '.' and '_' in them")
-	assert.NotEmpty(sel.String())
-}
-
-func TestParseRegressionCSVEarlyTermination(t *testing.T) {
-	assert := assert.New(t)
-
-	sel, err := Parse("foo in (bar,), moo=boo")
-	assert.Nil(err)
-	assert.NotEmpty(sel.String())
-}
-
-func TestParseRegressionCSVMultipleSpaces(t *testing.T) {
-	assert := assert.New(t)
-
-	sel, err := Parse("foo in (bar,  foo), moo=boo")
-	assert.Nil(err)
+	assert.Nil(err, "regression is values can have '-' in them")
 	assert.NotEmpty(sel.String())
 }
 
@@ -363,27 +320,4 @@ func TestParse_FuzzRegressions(t *testing.T) {
 		_, err = Parse(sel.String())
 		assert.Nil(err)
 	}
-}
-
-func TestParse_InRegression(t *testing.T) {
-	its := assert.New(t)
-
-	good0 := Labels{
-		"role": "job",
-		"team": "internal-engineering",
-	}
-	good1 := Labels{
-		"role": "job-worker",
-		"team": "internal-engineering",
-	}
-	bad0 := Labels{
-		"role": "not-job",
-	}
-
-	sel, err := Parse("role in (job, job-worker),team=internal-engineering")
-	its.Nil(err)
-
-	its.True(sel.Matches(good0))
-	its.True(sel.Matches(good1))
-	its.False(sel.Matches(bad0))
 }

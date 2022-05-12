@@ -1,7 +1,7 @@
 /*
 
-Copyright (c) 2022 - Present. Blend Labs, Inc. All rights reserved
-Use of this source code is governed by a MIT license that can be found in the LICENSE file.
+Copyright (c) 2021 - Present. Blend Labs, Inc. All rights reserved
+Blend Confidential - Restricted
 
 */
 
@@ -9,7 +9,7 @@ package reverseproxy
 
 import (
 	"net/http"
-	"sync/atomic"
+	"sync"
 )
 
 // Resolver is a function that takes a request and produces a destination `url.URL`.
@@ -33,10 +33,15 @@ func RoundRobinResolver(upstreams []*Upstream) Resolver {
 }
 
 func manyRoundRobinResolver(upstreams []*Upstream) Resolver {
-	var index int32
-	total := int32(len(upstreams))
+	l := sync.Mutex{}
+	index := 0
+	total := len(upstreams)
+
 	return func(req *http.Request, upstreams []*Upstream) (*Upstream, error) {
-		newIndex := int(atomic.AddInt32(&index, 1) % total)
-		return upstreams[newIndex], nil
+		l.Lock()
+		upstream := upstreams[index]
+		index = (index + 1) % total
+		l.Unlock()
+		return upstream, nil
 	}
 }

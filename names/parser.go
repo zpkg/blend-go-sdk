@@ -1,7 +1,7 @@
 /*
 
-Copyright (c) 2022 - Present. Blend Labs, Inc. All rights reserved
-Use of this source code is governed by a MIT license that can be found in the LICENSE file.
+Copyright (c) 2021 - Present. Blend Labs, Inc. All rights reserved
+Blend Confidential - Restricted
 
 */
 
@@ -129,9 +129,9 @@ func isMiddleName(input string) bool {
 	return len(word) == 1
 }
 
-func uppercaseFirstAll(input string, separator string) string {
+func uppercaseFirstAll(input string, seperator string) string {
 	words := []string{}
-	parts := strings.Split(input, separator)
+	parts := strings.Split(input, seperator)
 	for _, thisWord := range parts {
 		toAppend := ""
 		switch {
@@ -151,7 +151,7 @@ func uppercaseFirstAll(input string, separator string) string {
 		}
 		words = append(words, toAppend)
 	}
-	return strings.Join(words, separator)
+	return strings.Join(words, seperator)
 }
 
 func upperCaseFirst(input string) string {

@@ -1,7 +1,7 @@
 /*
 
-Copyright (c) 2022 - Present. Blend Labs, Inc. All rights reserved
-Use of this source code is governed by a MIT license that can be found in the LICENSE file.
+Copyright (c) 2021 - Present. Blend Labs, Inc. All rights reserved
+Blend Confidential - Restricted
 
 */
 
@@ -25,13 +25,8 @@ const (
 
 // Zero is the empty UUID.
 var (
-	Zero UUID = Empty()
+	Zero UUID = makeEmpty()
 )
-
-// Empty returns an empty uuid.
-func Empty() UUID {
-	return UUID(make([]byte, 16))
-}
 
 // UUID represents a unique identifier conforming to the RFC 4122 standard.
 // UUIDs are a fixed 128bit (16 byte) binary blob.
@@ -134,7 +129,7 @@ func (uuid *UUID) Unmarshal(data []byte) error {
 	if len(data) == 0 {
 		return nil
 	}
-	var id UUID = Empty()
+	var id UUID = makeEmpty()
 	copy(id, data)
 	*uuid = id
 	return nil
@@ -159,7 +154,7 @@ func (uuid UUID) MarshalJSON() ([]byte, error) {
 // UnmarshalJSON unmarshals a uuid from json.
 func (uuid *UUID) UnmarshalJSON(corpus []byte) error {
 	if len(*uuid) == 0 {
-		(*uuid) = Empty()
+		(*uuid) = makeEmpty()
 	}
 	raw := strings.TrimSpace(string(corpus))
 	raw = strings.TrimPrefix(raw, "\"")
@@ -175,7 +170,7 @@ func (uuid UUID) MarshalYAML() (interface{}, error) {
 // UnmarshalYAML unmarshals a uuid from yaml.
 func (uuid *UUID) UnmarshalYAML(unmarshaler func(interface{}) error) error {
 	if len(*uuid) == 0 {
-		(*uuid) = Empty()
+		(*uuid) = makeEmpty()
 	}
 
 	var corpus string
@@ -192,7 +187,7 @@ func (uuid *UUID) UnmarshalYAML(unmarshaler func(interface{}) error) error {
 // Scan scans a uuid from a db value.
 func (uuid *UUID) Scan(src interface{}) error {
 	if len(*uuid) == 0 {
-		(*uuid) = Empty()
+		(*uuid) = makeEmpty()
 	}
 	switch v := src.(type) {
 	case string:
@@ -210,4 +205,8 @@ func (uuid UUID) Value() (driver.Value, error) {
 		return nil, nil
 	}
 	return uuid.String(), nil
+}
+
+func makeEmpty() []byte {
+	return make([]byte, 16)
 }

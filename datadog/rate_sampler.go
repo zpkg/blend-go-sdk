@@ -1,7 +1,7 @@
 /*
 
-Copyright (c) 2022 - Present. Blend Labs, Inc. All rights reserved
-Use of this source code is governed by a MIT license that can be found in the LICENSE file.
+Copyright (c) 2021 - Present. Blend Labs, Inc. All rights reserved
+Blend Confidential - Restricted
 
 */
 
@@ -34,6 +34,5 @@ func (r RateSampler) Sample(spn ddtrace.Span) bool {
 	if r < 1 {
 		return rand.Float64() < float64(r)
 	}
-
 	return true
 }

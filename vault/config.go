@@ -1,7 +1,7 @@
 /*
 
-Copyright (c) 2022 - Present. Blend Labs, Inc. All rights reserved
-Use of this source code is governed by a MIT license that can be found in the LICENSE file.
+Copyright (c) 2021 - Present. Blend Labs, Inc. All rights reserved
+Blend Confidential - Restricted
 
 */
 
@@ -23,7 +23,7 @@ type Config struct {
 	// Token is the authentication token used to talk to the secret store.
 	Token string `json:"token" yaml:"token" env:"VAULT_TOKEN"`
 	// Timeout is the dial timeout for requests to the secrets store.
-	Timeout time.Duration `json:"timeout" yaml:"timeout" env:"VAULT_TIMEOUT"`
+	Timeout time.Duration `json:"timeout" yaml:"timeout"`
 	// RootCAs is a list of certificate authority paths.
 	RootCAs []string `json:"rootCAs" yaml:"rootCAs" env:"VAULT_CA_CERT,csv"`
 }
@@ -40,7 +40,6 @@ func (c *Config) Resolve(ctx context.Context) error {
 		configutil.SetString(&c.Mount, configutil.String(c.Mount), configutil.Env(EnvVarVaultMount)),
 		configutil.SetString(&c.Token, configutil.String(c.Token), configutil.Env(EnvVarVaultToken)),
 		configutil.SetStrings(&c.RootCAs, configutil.Strings(c.RootCAs), configutil.Env(EnvVarVaultCertAuthorityPath)),
-		configutil.SetDuration(&c.Timeout, configutil.Duration(c.Timeout), configutil.Env(EnvVarVaultTimeout)),
 	)
 }
 

@@ -1,7 +1,7 @@
 /*
 
-Copyright (c) 2022 - Present. Blend Labs, Inc. All rights reserved
-Use of this source code is governed by a MIT license that can be found in the LICENSE file.
+Copyright (c) 2021 - Present. Blend Labs, Inc. All rights reserved
+Blend Confidential - Restricted
 
 */
 
@@ -12,6 +12,7 @@ import (
 	"context"
 	"encoding/json"
 	"io"
+	"io/ioutil"
 	"net/http"
 	"net/http/httptest"
 	"net/url"
@@ -47,10 +48,7 @@ func Mock(app *App, req *http.Request, options ...r2.Option) *MockResult {
 		result.Request.Request.URL = &url.URL{}
 	}
 
-	result.Server = httptest.NewUnstartedServer(app)
-	result.Server.Config.BaseContext = app.BaseContext
-	result.Server.Start()
-	result.Request.Closer = result.Close
+	result.Server = httptest.NewServer(app)
 
 	parsedServerURL := webutil.MustParseURL(result.Server.URL)
 	result.Request.Request.URL.Scheme = parsedServerURL.Scheme
@@ -99,7 +97,7 @@ func MockPostJSON(app *App, path string, body interface{}, options ...r2.Option)
 	contents, _ := json.Marshal(body)
 	req := &http.Request{
 		Method: "POST",
-		Body:   io.NopCloser(bytes.NewReader(contents)),
+		Body:   ioutil.NopCloser(bytes.NewReader(contents)),
 		URL: &url.URL{
 			Path: path,
 		},
@@ -132,13 +130,7 @@ func MockCtxWithBuffer(method, path string, buf io.Writer, options ...CtxOption)
 	return NewCtx(
 		webutil.NewMockResponse(buf),
 		webutil.NewMockRequest(method, path),
-		append(
-			[]CtxOption{
-				OptCtxApp(new(App)),
-				OptCtxDefaultProvider(Text),
-			},
-			options...,
-		)...,
+		append(options, OptCtxDefaultProvider(Text))...,
 	)
 }
 
@@ -148,9 +140,7 @@ func MockCtxWithBuffer(method, path string, buf io.Writer, options ...CtxOption)
 func MockSimulateLogin(ctx context.Context, app *App, userID string, opts ...r2.Option) []r2.Option {
 	sessionID := NewSessionID()
 	session := NewSession(userID, sessionID)
-	if app.Auth.PersistHandler != nil {
-		_ = app.Auth.PersistHandler(ctx, session)
-	}
+	_ = app.Auth.PersistHandler(ctx, session)
 	return append([]r2.Option{
 		r2.OptCookieValue(app.Auth.CookieDefaults.Name, sessionID),
 	}, opts...)

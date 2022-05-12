@@ -1,7 +1,7 @@
 /*
 
-Copyright (c) 2022 - Present. Blend Labs, Inc. All rights reserved
-Use of this source code is governed by a MIT license that can be found in the LICENSE file.
+Copyright (c) 2021 - Present. Blend Labs, Inc. All rights reserved
+Blend Confidential - Restricted
 
 */
 
@@ -11,9 +11,9 @@ import (
 	"context"
 	"crypto/tls"
 	"crypto/x509"
+	"io/ioutil"
 	"net/http"
 	"net/url"
-	"os"
 	"time"
 
 	"github.com/blend/go-sdk/env"
@@ -120,7 +120,7 @@ func OptRootCAs(rootCAs ...string) Option {
 			}
 
 			for _, caPath := range rootCAs {
-				contents, err := os.ReadFile(caPath)
+				contents, err := ioutil.ReadFile(caPath)
 				if err != nil {
 					return err
 				}

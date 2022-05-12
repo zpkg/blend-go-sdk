@@ -1,7 +1,7 @@
 /*
 
-Copyright (c) 2022 - Present. Blend Labs, Inc. All rights reserved
-Use of this source code is governed by a MIT license that can be found in the LICENSE file.
+Copyright (c) 2021 - Present. Blend Labs, Inc. All rights reserved
+Blend Confidential - Restricted
 
 */
 
@@ -30,17 +30,15 @@ const (
 )
 
 // HTTP Method constants (also referred to as 'verbs')
-//
-// They are aliases for the constants in net/http at this point.
 const (
-	MethodConnect = http.MethodConnect
-	MethodGet     = http.MethodGet
-	MethodDelete  = http.MethodDelete
-	MethodHead    = http.MethodHead
-	MethodPatch   = http.MethodPatch
-	MethodPost    = http.MethodPost
-	MethodPut     = http.MethodPut
-	MethodOptions = http.MethodOptions
+	MethodConnect = "CONNECT"
+	MethodGet     = "GET"
+	MethodDelete  = "DELETE"
+	MethodHead    = "HEAD"
+	MethodPatch   = "PATCH"
+	MethodPost    = "POST"
+	MethodPut     = "PUT"
+	MethodOptions = "OPTIONS"
 )
 
 // Header names in canonical form.
@@ -150,7 +148,4 @@ const (
 
 	// ContentEncodingGZIP is the gzip (compressed) content encoding.
 	ContentEncodingGZIP = "gzip"
-
-	// ConnectionClose is the connection value of "close"
-	ConnectionClose = "close"
 )

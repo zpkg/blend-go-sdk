@@ -1,7 +1,7 @@
 /*
 
-Copyright (c) 2022 - Present. Blend Labs, Inc. All rights reserved
-Use of this source code is governed by a MIT license that can be found in the LICENSE file.
+Copyright (c) 2021 - Present. Blend Labs, Inc. All rights reserved
+Blend Confidential - Restricted
 
 */
 
@@ -91,7 +91,6 @@ func Read(ref Any, options ...Option) (paths []string, err error) {
 	if typed, ok := ref.(Resolver); ok {
 		MaybeDebugf(configOptions.Log, "calling config resolver")
 		if resolveErr := typed.Resolve(configOptions.Background()); resolveErr != nil {
-			MaybeErrorf(configOptions.Log, "calling resolver error: %+v", resolveErr)
 			err = resolveErr
 			return
 		}

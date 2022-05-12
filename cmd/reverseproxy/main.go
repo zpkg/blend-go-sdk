@@ -1,7 +1,7 @@
 /*
 
-Copyright (c) 2022 - Present. Blend Labs, Inc. All rights reserved
-Use of this source code is governed by a MIT license that can be found in the LICENSE file.
+Copyright (c) 2021 - Present. Blend Labs, Inc. All rights reserved
+Blend Confidential - Restricted
 
 */
 
@@ -104,7 +104,7 @@ func main() {
 		os.Exit(1)
 	}
 	if len(tlsCert) > 0 && len(tlsKey) > 0 {
-		certFileWatcher, err := certutil.NewCertFileWatcher(certutil.KeyPair{CertPath: tlsCert, KeyPath: tlsKey})
+		certFileWatcher, err := certutil.NewCertFileWatcher(tlsCert, tlsKey)
 		if err != nil {
 			log.Fatal(err)
 			os.Exit(1)
@@ -127,7 +127,7 @@ func main() {
 		listenerOptions = append(listenerOptions, proxyprotocol.OptTLSConfig(proxyServerTLSConfig))
 	}
 
-	proxyServerListener, err := proxyprotocol.CreateListener("tcp", addr, listenerOptions...)
+	proxyServerListener, err := proxyprotocol.CreateListener(addr, listenerOptions...)
 	if err != nil {
 		log.Fatal(err)
 		os.Exit(1)

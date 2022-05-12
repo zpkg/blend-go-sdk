@@ -1,7 +1,7 @@
 /*
 
-Copyright (c) 2022 - Present. Blend Labs, Inc. All rights reserved
-Use of this source code is governed by a MIT license that can be found in the LICENSE file.
+Copyright (c) 2021 - Present. Blend Labs, Inc. All rights reserved
+Blend Confidential - Restricted
 
 */
 
@@ -19,7 +19,7 @@ import (
 func New(options ...Option) (*Logger, error) {
 	l := &Logger{
 		Formatter:      NewTextOutputFormatter(),
-		Output:         NopCloserWriter{NewInterlockedWriter(os.Stdout)},
+		Output:         NewInterlockedWriter(os.Stdout),
 		RecoverPanics:  DefaultRecoverPanics,
 		Flags:          NewFlags(DefaultFlags...),
 		Writable:       FlagsAll(),
@@ -138,7 +138,7 @@ func (l *Logger) HasListeners(flag string) bool {
 	return len(listeners) > 0
 }
 
-// HasListener returns if a specific listener is registered for a flag.
+// HasListener returns if a specific listener is registerd for a flag.
 func (l *Logger) HasListener(flag, listenerName string) bool {
 	l.Lock()
 	defer l.Unlock()

@@ -1,7 +1,7 @@
 /*
 
-Copyright (c) 2022 - Present. Blend Labs, Inc. All rights reserved
-Use of this source code is governed by a MIT license that can be found in the LICENSE file.
+Copyright (c) 2021 - Present. Blend Labs, Inc. All rights reserved
+Blend Confidential - Restricted
 
 */
 
@@ -22,9 +22,9 @@ func main() {
 		migration.NewGroup(migration.OptGroupActions(
 			migration.NewStep(
 				migration.Always(),
-				migration.ActionFunc(func(ctx context.Context, connection *db.Connection, tx *sql.Tx) error {
+				func(ctx context.Context, connection *db.Connection, tx *sql.Tx) error {
 					return db.IgnoreExecResult(connection.Invoke(db.OptTimeout(500 * time.Millisecond)).Exec("select pg_sleep(10);"))
-				}),
+				},
 			),
 		),
 		)))

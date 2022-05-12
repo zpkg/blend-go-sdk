@@ -1,7 +1,7 @@
 /*
 
-Copyright (c) 2022 - Present. Blend Labs, Inc. All rights reserved
-Use of this source code is governed by a MIT license that can be found in the LICENSE file.
+Copyright (c) 2021 - Present. Blend Labs, Inc. All rights reserved
+Blend Confidential - Restricted
 
 */
 
@@ -74,7 +74,7 @@ func (gc GoCalls) Check(filename string, contents []byte) RuleResult {
 					}
 				}
 				return false
-			case *ast.Ident: // check package local functions and built-ins
+			case *ast.Ident:
 				for _, fn := range gc {
 					if fn.Package == "" {
 						if isIdent(ft, fn.Func) {

@@ -1,7 +1,7 @@
 /*
 
-Copyright (c) 2022 - Present. Blend Labs, Inc. All rights reserved
-Use of this source code is governed by a MIT license that can be found in the LICENSE file.
+Copyright (c) 2021 - Present. Blend Labs, Inc. All rights reserved
+Blend Confidential - Restricted
 
 */
 
@@ -9,7 +9,7 @@ package reverseproxy
 
 import (
 	"fmt"
-	"io"
+	"io/ioutil"
 	"net/http"
 	"net/http/httptest"
 	"strings"
@@ -17,35 +17,6 @@ import (
 
 	"github.com/blend/go-sdk/assert"
 )
-
-func TestRedirectHost(t *testing.T) {
-	assert := assert.New(t)
-
-	redirect := HTTPRedirect{
-		RedirectScheme: "spdy",
-		RedirectHost:   "redirect-host",
-	}
-	mockedRedirect := httptest.NewServer(redirect)
-
-	client := &http.Client{
-		CheckRedirect: func(req *http.Request, via []*http.Request) error {
-			return http.ErrUseLastResponse
-		},
-	}
-
-	url := fmt.Sprintf("%s/foo", mockedRedirect.URL)
-	res, err := client.Get(url)
-	assert.Nil(err)
-	defer res.Body.Close()
-
-	fullBody, err := io.ReadAll(res.Body)
-	assert.Nil(err)
-
-	mockedContents := string(fullBody)
-	assert.Equal(http.StatusMovedPermanently, res.StatusCode)
-
-	assert.Contains(mockedContents, "spdy://redirect-host/foo")
-}
 
 func TestRedirect(t *testing.T) {
 	assert := assert.New(t)
@@ -71,7 +42,7 @@ func TestRedirect(t *testing.T) {
 		assert.Nil(err)
 		defer res.Body.Close()
 
-		fullBody, err := io.ReadAll(res.Body)
+		fullBody, err := ioutil.ReadAll(res.Body)
 		assert.Nil(err)
 
 		mockedContents := string(fullBody)

@@ -1,7 +1,7 @@
 /*
 
-Copyright (c) 2022 - Present. Blend Labs, Inc. All rights reserved
-Use of this source code is governed by a MIT license that can be found in the LICENSE file.
+Copyright (c) 2021 - Present. Blend Labs, Inc. All rights reserved
+Blend Confidential - Restricted
 
 */
 
@@ -13,7 +13,7 @@ import (
 	"github.com/blend/go-sdk/assert"
 )
 
-func Test_RingBuffer(t *testing.T) {
+func TestRingBuffer(t *testing.T) {
 	assert := assert.New(t)
 
 	buffer := NewRingBuffer()
@@ -288,32 +288,4 @@ func TestRingBufferConsume(t *testing.T) {
 
 	assert.Equal(16, called)
 	assert.Zero(buffer.Len())
-}
-
-func Test_Ringbuffer_DequeueBack(t *testing.T) {
-	a := assert.New(t)
-
-	q := NewRingBuffer()
-	q.Enqueue(1)
-	q.Enqueue(2)
-	q.Enqueue(3)
-	q.Enqueue(4)
-
-	a.Equal(4, q.DequeueBack())
-	a.Equal(3, q.DequeueBack())
-	a.Equal(2, q.DequeueBack())
-	a.Equal(1, q.DequeueBack())
-	a.Nil(q.DequeueBack())
-	a.Nil(q.DequeueBack())
-
-	q.Enqueue(1)
-	q.Enqueue(2)
-	q.Enqueue(3)
-	q.Enqueue(4)
-
-	a.Equal(4, q.DequeueBack())
-	a.Equal(3, q.DequeueBack())
-	a.Equal(2, q.DequeueBack())
-	a.Equal(1, q.DequeueBack())
-	a.Nil(q.DequeueBack())
 }

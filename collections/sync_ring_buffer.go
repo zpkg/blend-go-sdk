@@ -1,7 +1,7 @@
 /*
 
-Copyright (c) 2022 - Present. Blend Labs, Inc. All rights reserved
-Use of this source code is governed by a MIT license that can be found in the LICENSE file.
+Copyright (c) 2021 - Present. Blend Labs, Inc. All rights reserved
+Blend Confidential - Restricted
 
 */
 
@@ -71,14 +71,6 @@ func (srb *SyncRingBuffer) Enqueue(value interface{}) {
 func (srb *SyncRingBuffer) Dequeue() (val interface{}) {
 	srb.syncRoot.Lock()
 	val = srb.innerBuffer.Dequeue()
-	srb.syncRoot.Unlock()
-	return
-}
-
-// DequeueBack removes the last (newest) element from the RingBuffer.
-func (srb *SyncRingBuffer) DequeueBack() (val interface{}) {
-	srb.syncRoot.Lock()
-	val = srb.innerBuffer.DequeueBack()
 	srb.syncRoot.Unlock()
 	return
 }

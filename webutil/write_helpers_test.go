@@ -1,7 +1,7 @@
 /*
 
-Copyright (c) 2022 - Present. Blend Labs, Inc. All rights reserved
-Use of this source code is governed by a MIT license that can be found in the LICENSE file.
+Copyright (c) 2021 - Present. Blend Labs, Inc. All rights reserved
+Blend Confidential - Restricted
 
 */
 
@@ -11,7 +11,7 @@ import (
 	"bytes"
 	"encoding/json"
 	"fmt"
-	"io"
+	"io/ioutil"
 	"net"
 	"net/http"
 	"testing"
@@ -136,6 +136,6 @@ func TestDeserializeReaderAsJSON(t *testing.T) {
 
 	output := make(map[string]interface{})
 
-	assert.Nil(DeserializeReaderAsJSON(&output, io.NopCloser(bytes.NewBuffer(contents))))
+	assert.Nil(DeserializeReaderAsJSON(&output, ioutil.NopCloser(bytes.NewBuffer(contents))))
 	assert.Equal("bar", output["foo"])
 }

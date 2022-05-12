@@ -1,14 +1,13 @@
 /*
 
-Copyright (c) 2022 - Present. Blend Labs, Inc. All rights reserved
-Use of this source code is governed by a MIT license that can be found in the LICENSE file.
+Copyright (c) 2021 - Present. Blend Labs, Inc. All rights reserved
+Blend Confidential - Restricted
 
 */
 
 package datadog
 
 import (
-	"fmt"
 	"testing"
 
 	"github.com/blend/go-sdk/assert"
@@ -25,8 +24,8 @@ func Test_RateSampler(t *testing.T) {
 			passed++
 		}
 	}
-	assert.True(passed > 225, fmt.Sprint(passed))
-	assert.True(passed < 280, fmt.Sprint(passed))
+	assert.True(passed > 240)
+	assert.True(passed < 270)
 }
 
 func Test_RateSampler_FullOn(t *testing.T) {

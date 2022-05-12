@@ -1,7 +1,7 @@
 /*
 
-Copyright (c) 2022 - Present. Blend Labs, Inc. All rights reserved
-Use of this source code is governed by a MIT license that can be found in the LICENSE file.
+Copyright (c) 2021 - Present. Blend Labs, Inc. All rights reserved
+Blend Confidential - Restricted
 
 */
 
@@ -45,7 +45,7 @@ func TestStartHTTPSpan(t *testing.T) {
 
 	expectedTags := map[string]interface{}{
 		tracing.TagKeyMeasured:     1,
-		tracing.TagKeyResourceName: fmt.Sprintf("GET %s", resource),
+		tracing.TagKeyResourceName: resource,
 		tracing.TagKeySpanType:     tracing.SpanTypeWeb,
 		tracing.TagKeyHTTPMethod:   "GET",
 		tracing.TagKeyHTTPURL:      path,
@@ -74,7 +74,7 @@ func TestStart(t *testing.T) {
 
 	expectedTags := map[string]interface{}{
 		tracing.TagKeyMeasured:     1,
-		tracing.TagKeyResourceName: fmt.Sprintf("GET %s", path),
+		tracing.TagKeyResourceName: path,
 		tracing.TagKeySpanType:     tracing.SpanTypeWeb,
 		tracing.TagKeyHTTPMethod:   "GET",
 		tracing.TagKeyHTTPURL:      path,
@@ -122,7 +122,7 @@ func TestFinish(t *testing.T) {
 	req := webutil.NewMockRequest("GET", path)
 	tf, req := httpTracer.Start(req)
 
-	tf.Finish(http.StatusOK, nil)
+	tf.Finish(nil)
 
 	span := opentracing.SpanFromContext(req.Context())
 	mockSpan := span.(*mocktracer.MockSpan)
@@ -138,11 +138,10 @@ func TestFinishError(t *testing.T) {
 	req := webutil.NewMockRequest("GET", path)
 	tf, req := httpTracer.Start(req)
 
-	tf.Finish(http.StatusOK, fmt.Errorf("error"))
+	tf.Finish(fmt.Errorf("error"))
 
 	span := opentracing.SpanFromContext(req.Context())
 	mockSpan := span.(*mocktracer.MockSpan)
 	assert.Equal("error", mockSpan.Tags()[tracing.TagKeyError])
-	assert.Equal("200", mockSpan.Tags()[tracing.TagKeyHTTPCode])
 	assert.False(mockSpan.FinishTime.IsZero())
 }

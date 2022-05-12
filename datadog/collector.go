@@ -1,7 +1,7 @@
 /*
 
-Copyright (c) 2022 - Present. Blend Labs, Inc. All rights reserved
-Use of this source code is governed by a MIT license that can be found in the LICENSE file.
+Copyright (c) 2021 - Present. Blend Labs, Inc. All rights reserved
+Blend Confidential - Restricted
 
 */
 
@@ -11,7 +11,7 @@ import (
 	"strings"
 	"time"
 
-	dogstatsd "github.com/DataDog/datadog-go/v5/statsd"
+	dogstatsd "github.com/DataDog/datadog-go/statsd"
 
 	"github.com/blend/go-sdk/stats"
 	"github.com/blend/go-sdk/timeutil"
@@ -30,16 +30,13 @@ func New(cfg Config, opts ...dogstatsd.Option) (*Collector, error) {
 	if cfg.BufferedOrDefault() {
 		opts = append(opts, dogstatsd.WithMaxMessagesPerPayload(cfg.BufferDepthOrDefault()))
 	}
-
-	if len(cfg.Namespace) > 0 {
-		opts = append(opts, dogstatsd.WithNamespace(strings.ToLower(cfg.Namespace)+"."))
-	}
-
 	client, err = dogstatsd.New(cfg.GetAddress(), opts...)
 	if err != nil {
 		return nil, err
 	}
-
+	if len(cfg.Namespace) > 0 {
+		client.Namespace = strings.ToLower(cfg.Namespace) + "."
+	}
 	collector := &Collector{
 		client:      client,
 		defaultTags: cfg.DefaultTags,

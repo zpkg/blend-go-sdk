@@ -1,7 +1,7 @@
 /*
 
-Copyright (c) 2022 - Present. Blend Labs, Inc. All rights reserved
-Use of this source code is governed by a MIT license that can be found in the LICENSE file.
+Copyright (c) 2021 - Present. Blend Labs, Inc. All rights reserved
+Blend Confidential - Restricted
 
 */
 
@@ -36,13 +36,6 @@ func OptBatchErrors(errors chan error) BatchOption {
 	}
 }
 
-// OptBatchSkipRecoverPanics sets the batch worker to throw (or to recover) panics.
-func OptBatchSkipRecoverPanics(skipRecoverPanics bool) BatchOption {
-	return func(i *Batch) {
-		i.SkipRecoverPanics = skipRecoverPanics
-	}
-}
-
 // OptBatchParallelism sets the batch worker parallelism, or the number of workers to create.
 func OptBatchParallelism(parallelism int) BatchOption {
 	return func(i *Batch) {
@@ -52,29 +45,16 @@ func OptBatchParallelism(parallelism int) BatchOption {
 
 // Batch is a batch of work executed by a fixed count of workers.
 type Batch struct {
-	Action            WorkAction
-	SkipRecoverPanics bool
-	Parallelism       int
-	Work              chan interface{}
-	Errors            chan error
+	Action      WorkAction
+	Parallelism int
+	Work        chan interface{}
+	Errors      chan error
 }
 
 // Process executes the action for all the work items.
 func (b *Batch) Process(ctx context.Context) {
-	if len(b.Work) == 0 {
-		return
-	}
-
-	effectiveParallelism := b.Parallelism
-	if effectiveParallelism == 0 {
-		effectiveParallelism = runtime.NumCPU()
-	}
-	if effectiveParallelism > len(b.Work) {
-		effectiveParallelism = len(b.Work)
-	}
-
-	allWorkers := make([]*Worker, effectiveParallelism)
-	availableWorkers := make(chan *Worker, effectiveParallelism)
+	allWorkers := make([]*Worker, b.Parallelism)
+	availableWorkers := make(chan *Worker, b.Parallelism)
 
 	// return worker is a local finalizer
 	// that grabs a reference to the workers set.
@@ -84,12 +64,11 @@ func (b *Batch) Process(ctx context.Context) {
 	}
 
 	// create and start workers.
-	for x := 0; x < effectiveParallelism; x++ {
+	for x := 0; x < b.Parallelism; x++ {
 		worker := NewWorker(b.Action)
 		worker.Context = ctx
 		worker.Errors = b.Errors
 		worker.Finalizer = returnWorker
-		worker.SkipRecoverPanics = b.SkipRecoverPanics
 
 		workerStarted := worker.NotifyStarted()
 		go func() { _ = worker.Start() }()
@@ -118,11 +97,7 @@ func (b *Batch) Process(ctx context.Context) {
 		case workItem = <-b.Work:
 			select {
 			case worker = <-availableWorkers:
-				select {
-				case worker.Work <- workItem:
-				case <-ctx.Done():
-					return
-				}
+				worker.Enqueue(workItem)
 			case <-ctx.Done():
 				return
 			}
@@ -130,4 +105,5 @@ func (b *Batch) Process(ctx context.Context) {
 			return
 		}
 	}
+
 }

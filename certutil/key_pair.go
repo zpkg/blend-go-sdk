@@ -1,7 +1,7 @@
 /*
 
-Copyright (c) 2022 - Present. Blend Labs, Inc. All rights reserved
-Use of this source code is governed by a MIT license that can be found in the LICENSE file.
+Copyright (c) 2021 - Present. Blend Labs, Inc. All rights reserved
+Blend Confidential - Restricted
 
 */
 
@@ -9,7 +9,7 @@ package certutil
 
 import (
 	"crypto/tls"
-	"crypto/x509"
+	"io/ioutil"
 	"os"
 
 	"github.com/blend/go-sdk/ex"
@@ -54,7 +54,7 @@ func (kp KeyPair) CertBytes() ([]byte, error) {
 	if kp.CertPath == "" {
 		return nil, ex.New("error loading cert; cert path unset")
 	}
-	contents, err := os.ReadFile(os.ExpandEnv(kp.CertPath))
+	contents, err := ioutil.ReadFile(os.ExpandEnv(kp.CertPath))
 	if err != nil {
 		return nil, ex.New("error loading cert from path", ex.OptInner(err), ex.OptMessage(kp.CertPath))
 	}
@@ -69,7 +69,7 @@ func (kp KeyPair) KeyBytes() ([]byte, error) {
 	if kp.KeyPath == "" {
 		return nil, ex.New("error loading key; key path unset")
 	}
-	contents, err := os.ReadFile(os.ExpandEnv(kp.KeyPath))
+	contents, err := ioutil.ReadFile(os.ExpandEnv(kp.KeyPath))
 	if err != nil {
 		return nil, ex.New("error loading key from path", ex.OptInner(err), ex.OptMessage(kp.KeyPath))
 	}
@@ -108,22 +108,4 @@ func (kp KeyPair) TLSCertificate() (*tls.Certificate, error) {
 		return nil, ex.New(err)
 	}
 	return &cert, nil
-}
-
-// TLSCertificateWithLeaf returns the KeyPair as a tls.Certificate.
-func (kp KeyPair) TLSCertificateWithLeaf() (*tls.Certificate, error) {
-	cert, err := kp.TLSCertificate()
-	if err != nil {
-		return nil, err
-	}
-	if len(cert.Certificate) == 0 {
-		return nil, ex.New("invalid certificate; empty certificate list")
-	}
-	if cert.Leaf == nil {
-		cert.Leaf, err = x509.ParseCertificate(cert.Certificate[0])
-		if err != nil {
-			return nil, ex.New(err)
-		}
-	}
-	return cert, nil
 }

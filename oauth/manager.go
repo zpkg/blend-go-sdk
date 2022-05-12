@@ -1,7 +1,7 @@
 /*
 
-Copyright (c) 2022 - Present. Blend Labs, Inc. All rights reserved
-Use of this source code is governed by a MIT license that can be found in the LICENSE file.
+Copyright (c) 2021 - Present. Blend Labs, Inc. All rights reserved
+Blend Confidential - Restricted
 
 */
 
@@ -200,11 +200,11 @@ func (m *Manager) ValidateState(state State) error {
 
 // ValidateJWT returns if the jwt is valid or not.
 func (m *Manager) ValidateJWT(jwtClaims *GoogleClaims) error {
-	if !jwtClaims.StandardClaims.VerifyAudience(m.Config.ClientID, true) {
-		return ex.New(ErrInvalidJWTAudience, ex.OptMessagef("audience: %s", jwtClaims.StandardClaims.Audience))
+	if jwtClaims.Audience != m.ClientID {
+		return ex.New(ErrInvalidJWTAudience, ex.OptMessagef("audience: %s", jwtClaims.Audience))
 	}
-	if jwtClaims.StandardClaims.Issuer != GoogleIssuer && jwtClaims.StandardClaims.Issuer != GoogleIssuerAlternate {
-		return ex.New(ErrInvalidJWTIssuer, ex.OptMessagef("issuer: %s", jwtClaims.StandardClaims.Issuer))
+	if jwtClaims.Issuer != GoogleIssuer && jwtClaims.Issuer != GoogleIssuerAlternate {
+		return ex.New(ErrInvalidJWTIssuer, ex.OptMessagef("issuer: %s", jwtClaims.Issuer))
 	}
 	if len(m.AllowedDomains) > 0 {
 		if strings.TrimSpace(jwtClaims.HD) == "" {

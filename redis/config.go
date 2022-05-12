@@ -1,7 +1,7 @@
 /*
 
-Copyright (c) 2022 - Present. Blend Labs, Inc. All rights reserved
-Use of this source code is governed by a MIT license that can be found in the LICENSE file.
+Copyright (c) 2021 - Present. Blend Labs, Inc. All rights reserved
+Blend Confidential - Restricted
 
 */
 
@@ -16,17 +16,13 @@ import (
 
 // Config is the config type for the redis client.
 type Config struct {
-	Network             string        `yaml:"network"`
-	Addr                string        `yaml:"addr"`
-	SentinelAddrs       []string      `yaml:"sentinelAddrs"`
-	SentinelPrimaryName string        `yaml:"sentinelPrimaryName"`
-	ClusterAddrs        []string      `yaml:"clusterAddrs"`
-	AuthUser            string        `yaml:"authUser"`
-	AuthPassword        string        `yaml:"authPassword"`
-	DB                  string        `yaml:"db"`
-	ConnectTimeout      time.Duration `yaml:"connectTimeout"`
-	Timeout             time.Duration `yaml:"timeout"`
-	UseTLS              bool          `yaml:"useTLS"`
+	Network        string        `yaml:"network"`
+	Addr           string        `yaml:"addr"`
+	AuthUser       string        `yaml:"authUser"`
+	AuthPassword   string        `yaml:"authPassword"`
+	DB             string        `yaml:"db"`
+	ConnectTimeout time.Duration `yaml:"connectTimeout"`
+	Timeout        time.Duration `yaml:"timeout"`
 }
 
 // Resolve resolves the config.
@@ -39,6 +35,5 @@ func (c *Config) Resolve(ctx context.Context) error {
 		configutil.SetString(&c.AuthPassword, configutil.Env("REDIS_AUTH_PASS"), configutil.String(c.AuthPassword)),
 		configutil.SetDuration(&c.ConnectTimeout, configutil.Env("REDIS_CONNECT_TIMEOUT"), configutil.Duration(c.ConnectTimeout), configutil.Duration(DefaultConnectTimeout)),
 		configutil.SetDuration(&c.Timeout, configutil.Env("REDIS_TIMEOUT"), configutil.Duration(c.Timeout), configutil.Duration(DefaultTimeout)),
-		configutil.SetString(&c.SentinelPrimaryName, configutil.Env("REDIS_SENTINEL_PRIMARY_NAME"), configutil.String(c.SentinelPrimaryName), configutil.String("default")),
 	)
 }

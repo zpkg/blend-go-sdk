@@ -1,7 +1,7 @@
 /*
 
-Copyright (c) 2022 - Present. Blend Labs, Inc. All rights reserved
-Use of this source code is governed by a MIT license that can be found in the LICENSE file.
+Copyright (c) 2021 - Present. Blend Labs, Inc. All rights reserved
+Blend Confidential - Restricted
 
 */
 
@@ -42,7 +42,6 @@ func New(options ...Option) (*App, error) {
 		return nil, err
 	}
 	a := App{
-		RouteTree:       new(RouteTree),
 		Auth:            auth,
 		BaseContext:     func(_ net.Listener) context.Context { return context.Background() },
 		BaseHeaders:     BaseHeaders(),
@@ -65,7 +64,6 @@ func New(options ...Option) (*App, error) {
 // App is the server for the app.
 type App struct {
 	*async.Latch
-	*RouteTree
 
 	Config Config
 
@@ -84,11 +82,14 @@ type App struct {
 	Listener  net.Listener
 
 	Statics map[string]*StaticFileServer
+	Routes  map[string]*RouteNode
 
 	DefaultProvider ResultProvider
 	Views           *ViewCache
 
-	PanicAction PanicAction
+	NotFoundHandler         Handler
+	MethodNotAllowedHandler Handler
+	PanicAction             PanicAction
 }
 
 // Background returns a base context.
@@ -273,56 +274,76 @@ func (a *App) SetStaticHeader(route, key, value string) error {
 
 // GET registers a GET request route handler with the given middleware.
 func (a *App) GET(path string, action Action, middleware ...Middleware) {
-	a.Method(http.MethodGet, path, action, middleware...)
+	a.Method(webutil.MethodGet, path, action, middleware...)
 }
 
 // OPTIONS registers a OPTIONS request route handler the given middleware.
 func (a *App) OPTIONS(path string, action Action, middleware ...Middleware) {
-	a.Method(http.MethodOptions, path, action, middleware...)
+	a.Method(webutil.MethodOptions, path, action, middleware...)
 }
 
 // HEAD registers a HEAD request route handler with the given middleware.
 func (a *App) HEAD(path string, action Action, middleware ...Middleware) {
-	a.Method(http.MethodHead, path, action, middleware...)
+	a.Method(webutil.MethodHead, path, action, middleware...)
 }
 
 // PUT registers a PUT request route handler with the given middleware.
 func (a *App) PUT(path string, action Action, middleware ...Middleware) {
-	a.Method(http.MethodPut, path, action, middleware...)
+	a.Method(webutil.MethodPut, path, action, middleware...)
 }
 
 // PATCH registers a PATCH request route handler with the given middleware.
 func (a *App) PATCH(path string, action Action, middleware ...Middleware) {
-	a.Method(http.MethodPatch, path, action, middleware...)
+	a.Method(webutil.MethodPatch, path, action, middleware...)
 }
 
 // POST registers a POST request route handler with the given middleware.
 func (a *App) POST(path string, action Action, middleware ...Middleware) {
-	a.Method(http.MethodPost, path, action, middleware...)
+	a.Method(webutil.MethodPost, path, action, middleware...)
 }
 
 // DELETE registers a DELETE request route handler with the given middleware.
 func (a *App) DELETE(path string, action Action, middleware ...Middleware) {
-	a.Method(http.MethodDelete, path, action, middleware...)
+	a.Method(webutil.MethodDelete, path, action, middleware...)
 }
 
 // Method registers an action for a given method and path with the given middleware.
 func (a *App) Method(method string, path string, action Action, middleware ...Middleware) {
-	a.RouteTree.Handle(method, path, a.RenderAction(NestMiddleware(action, append(middleware, a.BaseMiddleware...)...)))
+	a.Handle(method, path, a.RenderAction(NestMiddleware(action, append(middleware, a.BaseMiddleware...)...)))
 }
 
 // MethodBare registers an action for a given method and path with the given middleware that omits logging and tracing.
 func (a *App) MethodBare(method string, path string, action Action, middleware ...Middleware) {
-	a.RouteTree.Handle(method, path, a.RenderActionBare(NestMiddleware(action, append(middleware, a.BaseMiddleware...)...)))
+	a.Handle(method, path, a.RenderActionBare(NestMiddleware(action, append(middleware, a.BaseMiddleware...)...)))
+}
+
+// Handle adds a raw handler at a given method and path.
+// It skips middleware, you must implement things like logging and tracing yourself in the handler.
+func (a *App) Handle(method, path string, handler Handler) {
+	if len(path) == 0 {
+		panic("path must not be empty")
+	}
+	if path[0] != '/' {
+		panic("path must begin with '/' in path '" + path + "'")
+	}
+	if a.Routes == nil {
+		a.Routes = make(map[string]*RouteNode)
+	}
+
+	root := a.Routes[method]
+	if root == nil {
+		root = new(RouteNode)
+		a.Routes[method] = root
+	}
+	root.addRoute(method, path, handler)
 }
 
 // Lookup finds the route data for a given method and path.
 func (a *App) Lookup(method, path string) (route *Route, params RouteParameters, skipSlashRedirect bool) {
-	if root := a.RouteTree.Routes[method]; root != nil {
-		route, params, skipSlashRedirect = root.getValue(path)
-		return
+	if root := a.Routes[method]; root != nil {
+		return root.getValue(path)
 	}
-	return
+	return nil, nil, false
 }
 
 // --------------------------------------------------------------------------------
@@ -335,8 +356,60 @@ func (a *App) ServeHTTP(w http.ResponseWriter, req *http.Request) {
 		defer a.recover(w, req)
 	}
 	// load the request start time onto the request.
-	req = req.WithContext(WithRequestStarted(req.Context(), time.Now().UTC()))
-	a.RouteTree.ServeHTTP(w, req)
+	*req = *req.WithContext(WithRequestStarted(req.Context(), time.Now().UTC()))
+
+	path := req.URL.Path
+	if root := a.Routes[req.Method]; root != nil {
+		if route, params, tsr := root.getValue(path); route != nil {
+			route.Handler(w, req, route, params)
+			return
+		} else if req.Method != webutil.MethodConnect && path != "/" {
+			code := http.StatusMovedPermanently // 301 // Permanent redirect, request with GET method
+			if req.Method != webutil.MethodGet {
+				code = http.StatusTemporaryRedirect // 307
+			}
+
+			if tsr && !a.Config.SkipRedirectTrailingSlash {
+				if len(path) > 1 && path[len(path)-1] == '/' {
+					req.URL.Path = path[:len(path)-1]
+				} else {
+					req.URL.Path = path + "/"
+				}
+				http.Redirect(w, req, req.URL.String(), code)
+				return
+			}
+		}
+	}
+
+	if req.Method == webutil.MethodOptions {
+		// Handle OPTIONS requests
+		if a.Config.HandleOptions {
+			if allow := a.allowed(path, req.Method); len(allow) > 0 {
+				w.Header().Set(webutil.HeaderAllow, allow)
+				return
+			}
+		}
+	} else {
+		// Handle 405
+		if a.Config.HandleMethodNotAllowed {
+			if allow := a.allowed(path, req.Method); len(allow) > 0 {
+				w.Header().Set(webutil.HeaderAllow, allow)
+				if a.MethodNotAllowedHandler != nil {
+					a.MethodNotAllowedHandler(w, req, nil, nil)
+				} else {
+					http.Error(w, http.StatusText(http.StatusMethodNotAllowed), http.StatusMethodNotAllowed)
+				}
+				return
+			}
+		}
+	}
+
+	// Handle 404
+	if a.NotFoundHandler != nil {
+		a.NotFoundHandler(w, req, nil, nil)
+	} else {
+		http.NotFound(w, req)
+	}
 }
 
 // RenderAction is the translation step from Action to Handler.
@@ -464,6 +537,44 @@ func (a *App) ctxOptions(ctx context.Context, route *Route, p RouteParameters) [
 		OptCtxTracer(a.Tracer),
 		OptCtxRequestStarted(GetRequestStarted(ctx)),
 	}
+}
+
+func (a *App) allowed(path, reqMethod string) (allow string) {
+	if path == "*" { // server-wide
+		for method := range a.Routes {
+			if method == "OPTIONS" {
+				continue
+			}
+
+			// add request method to list of allowed methods
+			if allow == "" {
+				allow = method
+			} else {
+				allow += ", " + method
+			}
+		}
+		return
+	}
+	for method := range a.Routes {
+		// Skip the requested method - we already tried this one
+		if method == reqMethod || method == "OPTIONS" {
+			continue
+		}
+
+		handle, _, _ := a.Routes[method].getValue(path)
+		if handle != nil {
+			// add request method to list of allowed methods
+			if allow == "" {
+				allow = method
+			} else {
+				allow += ", " + method
+			}
+		}
+	}
+	if allow != "" {
+		allow += ", OPTIONS"
+	}
+	return
 }
 
 func (a *App) recover(w http.ResponseWriter, req *http.Request) {

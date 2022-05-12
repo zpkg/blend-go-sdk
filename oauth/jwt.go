@@ -1,7 +1,7 @@
 /*
 
-Copyright (c) 2022 - Present. Blend Labs, Inc. All rights reserved
-Use of this source code is governed by a MIT license that can be found in the LICENSE file.
+Copyright (c) 2021 - Present. Blend Labs, Inc. All rights reserved
+Blend Confidential - Restricted
 
 */
 
@@ -10,9 +10,8 @@ package oauth
 import (
 	"golang.org/x/oauth2"
 
-	"github.com/golang-jwt/jwt"
-
 	"github.com/blend/go-sdk/ex"
+	"github.com/blend/go-sdk/jwt"
 )
 
 // ParseTokenJWT parses a jwt from a given oauth2 token.

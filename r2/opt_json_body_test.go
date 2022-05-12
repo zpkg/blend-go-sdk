@@ -1,7 +1,7 @@
 /*
 
-Copyright (c) 2022 - Present. Blend Labs, Inc. All rights reserved
-Use of this source code is governed by a MIT license that can be found in the LICENSE file.
+Copyright (c) 2021 - Present. Blend Labs, Inc. All rights reserved
+Blend Confidential - Restricted
 
 */
 
@@ -10,7 +10,7 @@ package r2
 import (
 	"encoding/json"
 	"fmt"
-	"io"
+	"io/ioutil"
 	"net/http"
 	"net/http/httptest"
 	"testing"
@@ -30,7 +30,7 @@ func TestOptJSONBody(t *testing.T) {
 
 	assert.NotNil(req.Request.Body)
 
-	contents, err := io.ReadAll(req.Request.Body)
+	contents, err := ioutil.ReadAll(req.Request.Body)
 	assert.Nil(err)
 	assert.Equal(`{"foo":"bar"}`, string(contents))
 

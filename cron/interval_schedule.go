@@ -1,7 +1,7 @@
 /*
 
-Copyright (c) 2022 - Present. Blend Labs, Inc. All rights reserved
-Use of this source code is governed by a MIT license that can be found in the LICENSE file.
+Copyright (c) 2021 - Present. Blend Labs, Inc. All rights reserved
+Blend Confidential - Restricted
 
 */
 
@@ -37,19 +37,32 @@ func Every(interval time.Duration) IntervalSchedule {
 	return IntervalSchedule{Every: interval}
 }
 
+// EveryDelayed returns a schedule that fires every given interval
+// with a start delay.
+func EveryDelayed(interval, delay time.Duration) IntervalSchedule {
+	return IntervalSchedule{Every: interval, StartDelay: delay}
+}
+
 // IntervalSchedule is as chedule that fires every given interval with an optional start delay.
 type IntervalSchedule struct {
-	Every time.Duration
+	Every      time.Duration
+	StartDelay time.Duration
 }
 
 // String returns a string representation of the schedule.
 func (i IntervalSchedule) String() string {
-	return fmt.Sprintf("%s %v", StringScheduleEvery, i.Every)
+	if i.StartDelay > 0 {
+		return fmt.Sprintf("every %v with an initial delay of %v", i.Every, i.StartDelay)
+	}
+	return fmt.Sprintf("every %v", i.Every)
 }
 
 // Next implements Schedule.
 func (i IntervalSchedule) Next(after time.Time) time.Time {
 	if after.IsZero() {
+		if i.StartDelay > 0 {
+			return Now().Add(i.StartDelay).Add(i.Every)
+		}
 		return Now().Add(i.Every)
 	}
 	return after.Add(i.Every)

@@ -1,7 +1,7 @@
 /*
 
-Copyright (c) 2022 - Present. Blend Labs, Inc. All rights reserved
-Use of this source code is governed by a MIT license that can be found in the LICENSE file.
+Copyright (c) 2021 - Present. Blend Labs, Inc. All rights reserved
+Blend Confidential - Restricted
 
 */
 
@@ -25,7 +25,7 @@ func TestInvocationOptions(t *testing.T) {
 	assert.Equal("label", i.Label)
 
 	assert.Nil(i.StatementInterceptor)
-	OptInvocationStatementInterceptor(func(_ context.Context, label, statement string) (string, error) { return "OK!", nil })(i)
+	OptInvocationStatementInterceptor(func(label, statement string) string { return "OK!" })(i)
 	assert.NotNil(i.StatementInterceptor)
 
 	assert.Nil(i.Context)
@@ -54,14 +54,10 @@ func TestInvocationOptions(t *testing.T) {
 	assert.NotNil(i.DB)
 
 	i.DB = nil
-	OptInvocationDB(defaultDB().Connection)(i)
+	OptDB(defaultDB().Connection)(i)
 	assert.NotNil(i.DB)
 
 	i.DB = nil
-	OptInvocationDB(tx)(i)
+	OptDB(tx)(i)
 	assert.NotNil(i.DB)
-
-	i.StatementInterceptor = nil
-	OptInvocationStatementInterceptor(failInterceptor)(i)
-	assert.NotNil(i.StatementInterceptor)
 }

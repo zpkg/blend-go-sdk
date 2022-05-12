@@ -1,7 +1,7 @@
 /*
 
-Copyright (c) 2022 - Present. Blend Labs, Inc. All rights reserved
-Use of this source code is governed by a MIT license that can be found in the LICENSE file.
+Copyright (c) 2021 - Present. Blend Labs, Inc. All rights reserved
+Blend Confidential - Restricted
 
 */
 
@@ -10,7 +10,7 @@ package template
 import (
 	"bytes"
 	"io"
-	"os"
+	"io/ioutil"
 	texttemplate "text/template"
 
 	"github.com/blend/go-sdk/env"
@@ -31,7 +31,7 @@ func New() *Template {
 
 // NewFromFile creates a new template from a file.
 func NewFromFile(filepath string) (*Template, error) {
-	contents, err := os.ReadFile(filepath)
+	contents, err := ioutil.ReadFile(filepath)
 	if err != nil {
 		return nil, ex.New(err)
 	}

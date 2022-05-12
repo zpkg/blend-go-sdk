@@ -1,7 +1,7 @@
 /*
 
-Copyright (c) 2022 - Present. Blend Labs, Inc. All rights reserved
-Use of this source code is governed by a MIT license that can be found in the LICENSE file.
+Copyright (c) 2021 - Present. Blend Labs, Inc. All rights reserved
+Blend Confidential - Restricted
 
 */
 
@@ -14,9 +14,7 @@ import (
 	"time"
 )
 
-func Test_Empty(t *testing.T) {
-	t.Parallel()
-
+func TestEmpty(t *testing.T) {
 	buf := bytes.NewBuffer(nil)
 	a := Empty(OptOutput(buf))
 
@@ -36,9 +34,7 @@ func Test_Empty(t *testing.T) {
 	}
 }
 
-func Test_isZero(t *testing.T) {
-	t.Parallel()
-
+func TestIsZero(t *testing.T) {
 	zeroShort := int16(0)
 	if !isZero(zeroShort) {
 		t.Error("isZero failed")
@@ -77,9 +73,7 @@ func Test_isZero(t *testing.T) {
 	}
 }
 
-func Test_getLength(t *testing.T) {
-	t.Parallel()
-
+func TestGetLength(t *testing.T) {
 	emptyString := ""
 	l := getLength(emptyString)
 	if l != 0 {
@@ -163,9 +157,7 @@ func createTestStruct() myTestStruct {
 	return testStruct
 }
 
-func Test_shouldBeEqual_nestedStructsAreEqual(t *testing.T) {
-	t.Parallel()
-
+func TestStructsAreEqual(t *testing.T) {
 	testStructA := createTestStruct()
 	testStructB := createTestStruct()
 	testStructB.Name = "not test struct"
@@ -181,9 +173,7 @@ func Test_shouldBeEqual_nestedStructsAreEqual(t *testing.T) {
 	}
 }
 
-func Test_shouldBeEqual(t *testing.T) {
-	t.Parallel()
-
+func TestShouldBeEqual(t *testing.T) {
 	byteA := byte('a')
 	byteB := byte('b')
 
@@ -252,9 +242,7 @@ func makesThings(shouldReturnNil bool) *myTestStruct {
 	return nil
 }
 
-func Test_shouldBeNil(t *testing.T) {
-	t.Parallel()
-
+func TestShouldBeNil(t *testing.T) {
 	assertsToNil := makesThings(true)
 	assertsToNotNil := makesThings(false)
 
@@ -271,9 +259,7 @@ func Test_shouldBeNil(t *testing.T) {
 	}
 }
 
-func Test_shouldNotBeNil(t *testing.T) {
-	t.Parallel()
-
+func TestShouldNotBeNil(t *testing.T) {
 	assertsToNil := makesThings(true)
 	assertsToNotNil := makesThings(false)
 
@@ -290,9 +276,7 @@ func Test_shouldNotBeNil(t *testing.T) {
 	}
 }
 
-func Test_shouldContain(t *testing.T) {
-	t.Parallel()
-
+func TestShouldContain(t *testing.T) {
 	shouldNotHaveFailed, _ := shouldContain("this is a test", "is a")
 	if shouldNotHaveFailed {
 		t.Errorf("shouldConatain failed.")
@@ -311,9 +295,7 @@ type anyTestObj struct {
 	Name string
 }
 
-func Test_shouldAny(t *testing.T) {
-	t.Parallel()
-
+func TestAny(t *testing.T) {
 	testObjs := []anyTestObj{{1, "Test"}, {2, "Test2"}, {3, "Foo"}}
 
 	didFail, _ := shouldAny(testObjs, func(obj interface{}) bool {
@@ -347,9 +329,7 @@ func Test_shouldAny(t *testing.T) {
 	}
 }
 
-func Test_shouldAll(t *testing.T) {
-	t.Parallel()
-
+func TestAll(t *testing.T) {
 	testObjs := []anyTestObj{{1, "Test"}, {2, "Test2"}, {3, "Foo"}}
 
 	didFail, _ := shouldAll(testObjs, func(obj interface{}) bool {
@@ -383,9 +363,7 @@ func Test_shouldAll(t *testing.T) {
 	}
 }
 
-func Test_shouldNone(t *testing.T) {
-	t.Parallel()
-
+func TestNone(t *testing.T) {
 	testObjs := []anyTestObj{{1, "Test"}, {2, "Test2"}, {3, "Foo"}}
 
 	didFail, _ := shouldNone(testObjs, func(obj interface{}) bool {
@@ -411,9 +389,7 @@ func Test_shouldNone(t *testing.T) {
 	}
 }
 
-func Test_shouldBeInTimeDelta(t *testing.T) {
-	t.Parallel()
-
+func TestInTimeDelta(t *testing.T) {
 	value1 := time.Date(2016, 1, 29, 9, 0, 0, 0, time.UTC)
 	value2 := time.Date(2016, 1, 29, 9, 0, 0, 1, time.UTC)
 	value3 := time.Date(2016, 1, 29, 8, 0, 0, 0, time.UTC)
@@ -438,43 +414,25 @@ func Test_shouldBeInTimeDelta(t *testing.T) {
 	}
 }
 
-func Test_New(t *testing.T) {
-	t.Parallel()
-
-	buffer := new(bytes.Buffer)
-	a := New(t,
-		OptOutput(buffer),
-	)
+func TestAssertNew(t *testing.T) {
+	a := New(t)
 
 	if a.T == nil {
 		t.Errorf("should pass t to the assertion helper")
 		t.Fail()
 	}
+}
+
+func TestAssertWithOutput(t *testing.T) {
+	buf := bytes.NewBuffer(nil)
+	a := New(t, OptOutput(buf))
 	if a.Output == nil {
-		t.Errorf("should run provided options")
-		t.Fail()
-	}
-	if a.OutputFormat != OutputFormatFromEnv() {
-		t.Errorf("should set the correct output format")
-		t.Fail()
-	}
-	if a.Context == nil {
-		t.Errorf("should set the context")
-		t.Fail()
-	}
-	if GetTestName(a.Context) != t.Name() {
-		t.Errorf("should set the context test name")
-		t.Fail()
-	}
-	if GetContextID(a.Context) == "" {
-		t.Errorf("should set the context id")
-		t.Fail()
+		t.Errorf("should set output")
+		t.FailNow()
 	}
 }
 
-func Test_Assert_NotFatal(t *testing.T) {
-	t.Parallel()
-
+func TestAssertNotFatal(t *testing.T) {
 	buf := bytes.NewBuffer(nil)
 	a := New(t, OptOutput(buf))
 	nf := a.NonFatal()
@@ -1235,26 +1193,6 @@ func TestAssertNoneOfString(t *testing.T) {
 	}
 }
 
-func TestAssertNotPanic(t *testing.T) {
-	err := safeExec(func() {
-		New(nil).NotPanic(func() {})
-	})
-	if err != nil {
-		t.Errorf("should not have produced a panic")
-		t.FailNow()
-	}
-
-	err = safeExec(func() {
-		New(nil).NotPanic(func() {
-			panic("i'm gonna panic")
-		})
-	})
-	if err == nil {
-		t.Errorf("should have produced a panic")
-		t.FailNow()
-	}
-}
-
 // -----
 // Optional / NotFatal
 // -----
@@ -1576,8 +1514,6 @@ func TestAssertNonFatalNotMatches(t *testing.T) {
 }
 
 func TestAssertNonFatalAny(t *testing.T) {
-	t.Parallel()
-
 	if !New(nil).NonFatal().Any([]int{1, 2, 3}, func(v interface{}) bool { return v.(int) == 2 }) { // should be ok {
 		t.Errorf("should not have failed")
 		t.FailNow()
@@ -1595,8 +1531,6 @@ func TestAssertNonFatalAny(t *testing.T) {
 }
 
 func TestAssertNonFatalAll(t *testing.T) {
-	t.Parallel()
-
 	if !New(nil).NonFatal().All([]int{1, 2, 3}, func(v interface{}) bool { return v.(int) > 0 }) { // should be ok {
 		t.Errorf("should not have failed")
 		t.FailNow()
@@ -1614,8 +1548,6 @@ func TestAssertNonFatalAll(t *testing.T) {
 }
 
 func TestAssertNonFatalNone(t *testing.T) {
-	t.Parallel()
-
 	if !New(nil).NonFatal().None([]int{1, 2, 3}, func(v interface{}) bool { return v.(int) > 3 }) { // should be ok {
 		t.Errorf("should not have failed")
 		t.FailNow()
@@ -1633,8 +1565,6 @@ func TestAssertNonFatalNone(t *testing.T) {
 }
 
 func TestAssertNonFatalPanicEqual(t *testing.T) {
-	t.Parallel()
-
 	if !New(nil).NonFatal().PanicEqual("this is only a test", func() {
 		panic("this is only a test")
 	}) {
@@ -1651,22 +1581,6 @@ func TestAssertNonFatalPanicEqual(t *testing.T) {
 		panic("not what we want")
 	}) {
 		t.Errorf("should have failed on a wrong panic result")
-		t.FailNow()
-	}
-}
-
-func TestAssertNonFatalNotPanic(t *testing.T) {
-	t.Parallel()
-
-	if !New(nil).NonFatal().NotPanic(func() {}) {
-		t.Errorf("should not have failed")
-		t.FailNow()
-	}
-
-	if New(nil).NonFatal().NotPanic(func() {
-		panic("i'm gonna panic")
-	}) {
-		t.Errorf("should have produced a panic")
 		t.FailNow()
 	}
 }

@@ -1,7 +1,7 @@
 /*
 
-Copyright (c) 2022 - Present. Blend Labs, Inc. All rights reserved
-Use of this source code is governed by a MIT license that can be found in the LICENSE file.
+Copyright (c) 2021 - Present. Blend Labs, Inc. All rights reserved
+Blend Confidential - Restricted
 
 */
 
@@ -91,7 +91,7 @@ func OptCertManagerClientCerts(client *x509.CertPool) CertManagerOption {
 
 // CertManager is a pool of client certs.
 type CertManager struct {
-	sync.RWMutex
+	sync.Mutex
 	TLSConfig   *tls.Config
 	ClientCerts map[string][]byte
 }
@@ -106,9 +106,9 @@ func (cm *CertManager) ClientCertUIDs() (output []string) {
 
 // HasClientCert returns if the manager has a client cert.
 func (cm *CertManager) HasClientCert(uid string) (has bool) {
-	cm.RLock()
+	cm.Lock()
 	_, has = cm.ClientCerts[uid]
-	cm.RUnlock()
+	cm.Unlock()
 	return
 }
 
@@ -159,8 +159,8 @@ func (cm *CertManager) RefreshClientCerts() error {
 
 // GetConfigForClient gets a tls config for a given client hello.
 func (cm *CertManager) GetConfigForClient(sni *tls.ClientHelloInfo) (config *tls.Config, _ error) {
-	cm.RLock()
+	cm.Lock()
 	config = cm.TLSConfig.Clone()
-	cm.RUnlock()
+	cm.Unlock()
 	return
 }

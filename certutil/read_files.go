@@ -1,14 +1,14 @@
 /*
 
-Copyright (c) 2022 - Present. Blend Labs, Inc. All rights reserved
-Use of this source code is governed by a MIT license that can be found in the LICENSE file.
+Copyright (c) 2021 - Present. Blend Labs, Inc. All rights reserved
+Blend Confidential - Restricted
 
 */
 
 package certutil
 
 import (
-	"os"
+	"io/ioutil"
 
 	"github.com/blend/go-sdk/ex"
 )
@@ -36,7 +36,7 @@ func BytesWithError(bytes []byte, err error) ([]byte, error) {
 func ReadFiles(files ...string) (data [][]byte, err error) {
 	var contents []byte
 	for _, path := range files {
-		contents, err = os.ReadFile(path)
+		contents, err = ioutil.ReadFile(path)
 		if err != nil {
 			return nil, ex.New(err)
 		}

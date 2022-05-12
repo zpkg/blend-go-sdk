@@ -1,7 +1,7 @@
 /*
 
-Copyright (c) 2022 - Present. Blend Labs, Inc. All rights reserved
-Use of this source code is governed by a MIT license that can be found in the LICENSE file.
+Copyright (c) 2021 - Present. Blend Labs, Inc. All rights reserved
+Blend Confidential - Restricted
 
 */
 
@@ -143,7 +143,7 @@ func TestErrEventFingerprintDefault(t *testing.T) {
 	assert.Equal([]string{"this is a test"}, event.Fingerprint)
 }
 
-func TestErrEventFingerprintIgnoresPath(t *testing.T) {
+func TestErrEventFingerprintPath(t *testing.T) {
 	assert := assert.New(t)
 
 	ctx := logger.WithPath(context.Background(), "foo", "bar")
@@ -161,7 +161,7 @@ func TestErrEventFingerprintIgnoresPath(t *testing.T) {
 
 	assert.NotNil(event)
 	assert.NotEmpty(event.Fingerprint)
-	assert.Equal([]string{"this is a test"}, event.Fingerprint)
+	assert.Equal([]string{"foo", "bar", "this is a test"}, event.Fingerprint)
 }
 
 func TestErrEventFingerprintOverride(t *testing.T) {

@@ -1,7 +1,7 @@
 /*
 
-Copyright (c) 2022 - Present. Blend Labs, Inc. All rights reserved
-Use of this source code is governed by a MIT license that can be found in the LICENSE file.
+Copyright (c) 2021 - Present. Blend Labs, Inc. All rights reserved
+Blend Confidential - Restricted
 
 */
 
@@ -9,7 +9,7 @@ package web
 
 import (
 	"bytes"
-	"io"
+	"io/ioutil"
 	"net/url"
 	"testing"
 	"time"
@@ -124,7 +124,7 @@ func TestCtxPostedFiles(t *testing.T) {
 
 	context := MockCtx("GET", "/")
 	postedFiles, err := webutil.PostedFiles(context.Request)
-	assert.NotNil(err, "we expect this to fail if the body isn't a multipart form")
+	assert.Nil(err)
 	assert.Empty(postedFiles)
 
 	context = MockCtx("GET", "/", OptCtxPostedFiles(webutil.PostedFile{
@@ -202,7 +202,7 @@ func TestCtxPostBodyAsForm(t *testing.T) {
 
 	ctx := MockCtx("POST", "/")
 	ctx.Request.Header.Set(webutil.HeaderContentType, webutil.ContentTypeApplicationFormEncoded)
-	ctx.Request.Body = io.NopCloser(bytes.NewReader(postBody))
+	ctx.Request.Body = ioutil.NopCloser(bytes.NewReader(postBody))
 
 	var p PostFormTest
 	assert.Nil(ctx.PostBodyAsForm(&p))

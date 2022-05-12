@@ -1,7 +1,7 @@
 /*
 
-Copyright (c) 2022 - Present. Blend Labs, Inc. All rights reserved
-Use of this source code is governed by a MIT license that can be found in the LICENSE file.
+Copyright (c) 2021 - Present. Blend Labs, Inc. All rights reserved
+Blend Confidential - Restricted
 
 */
 
@@ -44,14 +44,6 @@ type JobManager struct {
 	Jobs        map[string]*JobScheduler
 }
 
-// Background returns the BaseContext or context.Background().
-func (jm *JobManager) Background() context.Context {
-	if jm.BaseContext != nil {
-		return jm.BaseContext
-	}
-	return context.Background()
-}
-
 //
 // Life Cycle
 //
@@ -72,25 +64,25 @@ func (jm *JobManager) StartAsync() error {
 		return async.ErrCannotStart
 	}
 	jm.Latch.Starting()
-	jm.info("job manager starting")
-	for _, jobScheduler := range jm.Jobs {
+	logger.MaybeInfo(jm.Log, "job manager starting")
+	for _, job := range jm.Jobs {
 		errors := make(chan error)
 		go func() {
-			errors <- jobScheduler.Start()
+			errors <- job.Start()
 		}()
-		jm.debugf("job manager starting job %s", jobScheduler.Name())
+		logger.MaybeDebugf(jm.Log, "job manager starting job %s", job.Name())
 		select {
 		case err := <-errors:
-			jm.error(err)
-		case <-jobScheduler.NotifyStarted():
-			jm.debugf("job manager starting job %s complete", jobScheduler.Name())
+			logger.MaybeError(jm.Log, err)
+		case <-job.NotifyStarted():
+			logger.MaybeDebugf(jm.Log, "job manager starting job %s complete", job.Name())
 			continue
 		}
 	}
 
 	jm.Latch.Started()
 	jm.Started = time.Now().UTC()
-	jm.info("job manager started")
+	logger.MaybeInfo(jm.Log, "job manager started")
 	return nil
 }
 
@@ -100,19 +92,19 @@ func (jm *JobManager) Stop() error {
 		return async.ErrCannotStop
 	}
 	jm.Latch.Stopping()
-	jm.info("job manager stopping")
+	logger.MaybeInfo(jm.Log, "job manager stopping")
 	defer func() {
 		jm.Stopped = time.Now().UTC()
 		jm.Latch.Stopped()
 		jm.Latch.Reset()
-		jm.info("job manager stopping complete")
+		logger.MaybeInfo(jm.Log, "job manager stopping complete")
 	}()
 	for _, jobScheduler := range jm.Jobs {
-		if err := jobScheduler.OnUnload(jobScheduler.Background()); err != nil {
-			jm.error(err)
+		if err := jobScheduler.OnUnload(jm.BaseContext); err != nil {
+			logger.MaybeError(jm.Log, err)
 		}
 		if err := jobScheduler.Stop(); err != nil {
-			jm.error(err)
+			logger.MaybeError(jm.Log, err)
 		}
 	}
 	return nil
@@ -137,9 +129,9 @@ func (jm *JobManager) LoadJobs(jobs ...Job) error {
 			job,
 			OptJobSchedulerLog(jm.Log),
 			OptJobSchedulerTracer(jm.Tracer),
-			OptJobSchedulerBaseContext(jm.Background()),
+			OptJobSchedulerBaseContext(jm.BaseContext),
 		)
-		if err := jobScheduler.OnLoad(jobScheduler.Background()); err != nil {
+		if err := jobScheduler.OnLoad(jm.BaseContext); err != nil {
 			return err
 		}
 		jm.Jobs[jobName] = jobScheduler
@@ -154,11 +146,11 @@ func (jm *JobManager) UnloadJobs(jobNames ...string) error {
 
 	for _, jobName := range jobNames {
 		if jobScheduler, ok := jm.Jobs[jobName]; ok {
-			if err := jobScheduler.OnUnload(jobScheduler.Background()); err != nil {
+			if err := jobScheduler.OnUnload(context.Background()); err != nil {
 				return err
 			}
 			if err := jobScheduler.Stop(); err != nil {
-				jm.error(err)
+				return err
 			}
 			delete(jm.Jobs, jobName)
 		} else {
@@ -288,24 +280,4 @@ func (jm *JobManager) State() JobManagerState {
 		return JobManagerStateStopped
 	}
 	return JobManagerStateUnknown
-}
-
-func (jm *JobManager) info(message string) {
-	logger.MaybeInfoContext(jm.Background(), jm.Log, message)
-}
-
-func (jm *JobManager) infof(format string, args ...interface{}) {
-	logger.MaybeInfofContext(jm.Background(), jm.Log, format, args...)
-}
-
-func (jm *JobManager) debugf(format string, args ...interface{}) {
-	logger.MaybeDebugfContext(jm.Background(), jm.Log, format, args...)
-}
-
-func (jm *JobManager) warning(err error) {
-	logger.MaybeWarningContext(jm.Background(), jm.Log, err)
-}
-
-func (jm *JobManager) error(err error) {
-	logger.MaybeErrorContext(jm.Background(), jm.Log, err)
 }

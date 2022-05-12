@@ -1,7 +1,7 @@
 /*
 
-Copyright (c) 2022 - Present. Blend Labs, Inc. All rights reserved
-Use of this source code is governed by a MIT license that can be found in the LICENSE file.
+Copyright (c) 2021 - Present. Blend Labs, Inc. All rights reserved
+Blend Confidential - Restricted
 
 */
 
@@ -150,7 +150,7 @@ func TestXFCCElementDecodeCert(t *testing.T) {
 		{Cert: "%", Error: "Error Parsing X-Forwarded-Client-Cert\ninvalid URL escape \"%\""},
 		{
 			Cert:  "-----BEGIN CERTIFICATE-----\nnope\n-----END CERTIFICATE-----\n",
-			Error: "Error Parsing X-Forwarded-Client-Cert\nx509: malformed certificate",
+			Error: "Error Parsing X-Forwarded-Client-Cert\nasn1: syntax error: truncated tag or length",
 		},
 		{
 			Cert:  url.QueryEscape(xfccElementTestCert + "\n" + xfccElementTestCert),
@@ -161,7 +161,6 @@ func TestXFCCElementDecodeCert(t *testing.T) {
 			Error: "Error Parsing X-Forwarded-Client-Cert; Incorrect number of certificates; expected 1 got 0",
 		},
 	}
-
 	for _, tc := range testCases {
 		xe := envoyutil.XFCCElement{Cert: tc.Cert}
 		cert, err := xe.DecodeCert()
@@ -194,10 +193,9 @@ func TestXFCCElementDecodeChain(t *testing.T) {
 		{Chain: "%", Error: "Error Parsing X-Forwarded-Client-Cert\ninvalid URL escape \"%\""},
 		{
 			Chain: "-----BEGIN CERTIFICATE-----\nnope\n-----END CERTIFICATE-----\n",
-			Error: "Error Parsing X-Forwarded-Client-Cert\nx509: malformed certificate",
+			Error: "Error Parsing X-Forwarded-Client-Cert\nasn1: syntax error: truncated tag or length",
 		},
 	}
-
 	for _, tc := range testCases {
 		xe := envoyutil.XFCCElement{Chain: tc.Chain}
 		chain, err := xe.DecodeChain()

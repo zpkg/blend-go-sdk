@@ -1,7 +1,7 @@
 /*
 
-Copyright (c) 2022 - Present. Blend Labs, Inc. All rights reserved
-Use of this source code is governed by a MIT license that can be found in the LICENSE file.
+Copyright (c) 2021 - Present. Blend Labs, Inc. All rights reserved
+Blend Confidential - Restricted
 
 */
 
@@ -92,7 +92,6 @@ func NewConfigFromDSN(dsn string) (config Config, err error) {
 //  -  DB_MAX_CONNECTIONS   = MaxConnections
 //  -  DB_MAX_LIFETIME      = MaxLifetime
 //  -  DB_BUFFER_POOL_SIZE  = BufferPoolSize
-//  -  DB_DIALECT           = Dialect
 func NewConfigFromEnv() (config Config, err error) {
 	if err = (&config).Resolve(env.WithVars(context.Background(), env.Env())); err != nil {
 		return
@@ -177,12 +176,8 @@ type Config struct {
 	MaxConnections int `json:"maxConnections,omitempty" yaml:"maxConnections,omitempty" env:"DB_MAX_CONNECTIONS"`
 	// MaxLifetime is the maximum time a connection can be open.
 	MaxLifetime time.Duration `json:"maxLifetime,omitempty" yaml:"maxLifetime,omitempty" env:"DB_MAX_LIFETIME"`
-	// MaxIdleTime is the maximum time a connection can be idle.
-	MaxIdleTime time.Duration `json:"maxIdleTime,omitempty" yaml:"maxIdleTime,omitempty" env:"DB_MAX_IDLE_TIME"`
 	// BufferPoolSize is the number of query composition buffers to maintain.
 	BufferPoolSize int `json:"bufferPoolSize,omitempty" yaml:"bufferPoolSize,omitempty" env:"DB_BUFFER_POOL_SIZE"`
-	// Dialect includes hints to tweak specific sql semantics by database connection.
-	Dialect string `json:"dialect,omitempty" yaml:"dialect,omitempty" env:"DB_DIALECT"`
 }
 
 // IsZero returns if the config is unset.
@@ -193,41 +188,29 @@ func (c Config) IsZero() bool {
 // Resolve applies any external data sources to the config.
 func (c *Config) Resolve(ctx context.Context) error {
 	return configutil.Resolve(ctx,
-		configutil.SetString(&c.Engine, configutil.Env(EnvVarDBEngine), configutil.String(c.Engine), configutil.String(DefaultEngine)),
-		configutil.SetString(&c.DSN, configutil.Env(EnvVarDatabaseURL), configutil.String(c.DSN)),
-		configutil.SetString(&c.Host, configutil.Env(EnvVarDBHost), configutil.String(c.Host), configutil.String(DefaultHost)),
-		configutil.SetString(&c.Port, configutil.Env(EnvVarDBPort), configutil.String(c.Port), configutil.String(DefaultPort)),
-		configutil.SetString(&c.Database, configutil.Env(EnvVarDBName), configutil.String(c.Database), configutil.String(DefaultDatabase)),
-		configutil.SetString(&c.Schema, configutil.Env(EnvVarDBSchema), configutil.String(c.Schema)),
+		configutil.SetString(&c.Engine, configutil.Env("DB_ENGINE"), configutil.String(c.Engine), configutil.String(DefaultEngine)),
+		configutil.SetString(&c.DSN, configutil.Env("DATABASE_URL"), configutil.String(c.DSN)),
+		configutil.SetString(&c.Host, configutil.Env("DB_HOST"), configutil.String(c.Host), configutil.String(DefaultHost)),
+		configutil.SetString(&c.Port, configutil.Env("DB_PORT"), configutil.String(c.Port), configutil.String(DefaultPort)),
+		configutil.SetString(&c.Database, configutil.Env("DB_NAME"), configutil.String(c.Database), configutil.String(DefaultDatabase)),
+		configutil.SetString(&c.Schema, configutil.Env("DB_SCHEMA"), configutil.String(c.Schema)),
 		configutil.SetString(&c.ApplicationName, configutil.Env(EnvVarDBApplicationName), configutil.String(c.ApplicationName)),
-		configutil.SetString(&c.Username, configutil.Env(EnvVarDBUser), configutil.String(c.Username), configutil.Env("USER")),
-		configutil.SetString(&c.Password, configutil.Env(EnvVarDBPassword), configutil.String(c.Password)),
-		configutil.SetDuration(&c.ConnectTimeout, configutil.Env(EnvVarDBConnectTimeout), configutil.Duration(c.ConnectTimeout), configutil.Duration(DefaultConnectTimeout)),
-		configutil.SetDuration(&c.LockTimeout, configutil.Env(EnvVarDBLockTimeout), configutil.Duration(c.LockTimeout)),
-		configutil.SetDuration(&c.StatementTimeout, configutil.Env(EnvVarDBStatementTimeout), configutil.Duration(c.StatementTimeout)),
-		configutil.SetString(&c.SSLMode, configutil.Env(EnvVarDBSSLMode), configutil.String(c.SSLMode)),
-		configutil.SetInt(&c.IdleConnections, configutil.Env(EnvVarDBIdleConnections), configutil.Int(c.IdleConnections), configutil.Int(DefaultIdleConnections)),
-		configutil.SetInt(&c.MaxConnections, configutil.Env(EnvVarDBMaxConnections), configutil.Int(c.MaxConnections), configutil.Int(DefaultMaxConnections)),
-		configutil.SetDuration(&c.MaxLifetime, configutil.Env(EnvVarDBMaxLifetime), configutil.Duration(c.MaxLifetime), configutil.Duration(DefaultMaxLifetime)),
-		configutil.SetDuration(&c.MaxIdleTime, configutil.Env(EnvVarDBMaxIdleTime), configutil.Duration(c.MaxIdleTime), configutil.Duration(DefaultMaxIdleTime)),
-		configutil.SetInt(&c.BufferPoolSize, configutil.Env(EnvVarDBBufferPoolSize), configutil.Int(c.BufferPoolSize), configutil.Int(DefaultBufferPoolSize)),
-		configutil.SetString(&c.Dialect, configutil.Env(EnvVarDBDialect), configutil.String(c.Dialect), configutil.String(DialectPostgres)),
+		configutil.SetString(&c.Username, configutil.Env("DB_USER"), configutil.String(c.Username), configutil.Env("USER")),
+		configutil.SetString(&c.Password, configutil.Env("DB_PASSWORD"), configutil.String(c.Password)),
+		configutil.SetDuration(&c.ConnectTimeout, configutil.Env("DB_CONNECT_TIMEOUT"), configutil.Duration(c.ConnectTimeout), configutil.Duration(DefaultConnectTimeout)),
+		configutil.SetDuration(&c.LockTimeout, configutil.Env("DB_LOCK_TIMEOUT"), configutil.Duration(c.LockTimeout)),
+		configutil.SetDuration(&c.StatementTimeout, configutil.Env("DB_STATEMENT_TIMEOUT"), configutil.Duration(c.StatementTimeout)),
+		configutil.SetString(&c.SSLMode, configutil.Env("DB_SSLMODE"), configutil.String(c.SSLMode)),
+		configutil.SetInt(&c.IdleConnections, configutil.Env("DB_IDLE_CONNECTIONS"), configutil.Int(c.IdleConnections), configutil.Int(DefaultIdleConnections)),
+		configutil.SetInt(&c.MaxConnections, configutil.Env("DB_MAX_CONNECTIONS"), configutil.Int(c.MaxConnections), configutil.Int(DefaultMaxConnections)),
+		configutil.SetDuration(&c.MaxLifetime, configutil.Env("DB_MAX_LIFETIME"), configutil.Duration(c.MaxLifetime), configutil.Duration(DefaultMaxLifetime)),
+		configutil.SetInt(&c.BufferPoolSize, configutil.Env("DB_BUFFER_POOL_SIZE"), configutil.Int(c.BufferPoolSize), configutil.Int(DefaultBufferPoolSize)),
 	)
 }
 
 // Reparse creates a DSN and reparses it, in case some values need to be coalesced.
 func (c Config) Reparse() (Config, error) {
-	cfg, err := NewConfigFromDSN(c.CreateDSN())
-	if err != nil {
-		return Config{}, err
-	}
-
-	cfg.IdleConnections = c.IdleConnections
-	cfg.MaxConnections = c.MaxConnections
-	cfg.BufferPoolSize = c.BufferPoolSize
-	cfg.MaxLifetime = c.MaxLifetime
-
-	return cfg, nil
+	return NewConfigFromDSN(c.CreateDSN())
 }
 
 // MustReparse creates a DSN and reparses it, in case some values need to be coalesced,
@@ -305,28 +288,12 @@ func (c Config) MaxLifetimeOrDefault() time.Duration {
 	return DefaultMaxLifetime
 }
 
-// MaxIdleTimeOrDefault returns the maximum idle time of a driver connection.
-func (c Config) MaxIdleTimeOrDefault() time.Duration {
-	if c.MaxIdleTime > 0 {
-		return c.MaxIdleTime
-	}
-	return DefaultMaxIdleTime
-}
-
 // BufferPoolSizeOrDefault returns the number of query buffers to maintain or a default.
 func (c Config) BufferPoolSizeOrDefault() int {
 	if c.BufferPoolSize > 0 {
 		return c.BufferPoolSize
 	}
 	return DefaultBufferPoolSize
-}
-
-// DialectOrDefault returns the sql dialect or a default.
-func (c Config) DialectOrDefault() Dialect {
-	if c.Dialect != "" {
-		return Dialect(c.Dialect)
-	}
-	return DialectPostgres
 }
 
 // CreateDSN creates a postgres connection string from the config.
@@ -381,18 +348,40 @@ func (c Config) CreateDSN() string {
 // CreateLoggingDSN creates a postgres connection string from the config suitable for logging.
 // It will not include the password.
 func (c Config) CreateLoggingDSN() string {
-	if c.DSN != "" {
-		nc, err := NewConfigFromDSN(c.DSN)
-		if err != nil {
-			return "Failed to parse DSN: see DATABASE_URL environment variable"
-		}
-		return nc.CreateLoggingDSN()
+	host := c.HostOrDefault()
+	if c.PortOrDefault() != "" {
+		host = host + ":" + c.PortOrDefault()
 	}
 
-	// NOTE: Since `c` is a value receiver, we can modify it without
-	//       mutating the actual value.
-	c.Password = ""
-	return c.CreateDSN()
+	dsn := &url.URL{
+		Scheme: "postgres",
+		Host:   host,
+		Path:   c.DatabaseOrDefault(),
+	}
+
+	if len(c.Username) > 0 {
+		dsn.User = url.User(c.Username)
+	}
+
+	queryArgs := url.Values{}
+	if len(c.SSLMode) > 0 {
+		queryArgs.Add("sslmode", c.SSLMode)
+	}
+	if c.ConnectTimeout > 0 {
+		setTimeoutSeconds(queryArgs, "connect_timeout", c.ConnectTimeout)
+	}
+	if c.LockTimeout > 0 {
+		setTimeoutMilliseconds(queryArgs, "lock_timeout", c.LockTimeout)
+	}
+	if c.StatementTimeout > 0 {
+		setTimeoutMilliseconds(queryArgs, "statement_timeout", c.StatementTimeout)
+	}
+	if c.Schema != "" {
+		queryArgs.Add("search_path", c.Schema)
+	}
+
+	dsn.RawQuery = queryArgs.Encode()
+	return dsn.String()
 }
 
 // Validate validates that user-provided values are valid, e.g. that timeouts

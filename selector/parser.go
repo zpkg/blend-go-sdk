@@ -1,7 +1,7 @@
 /*
 
-Copyright (c) 2022 - Present. Blend Labs, Inc. All rights reserved
-Use of this source code is governed by a MIT license that can be found in the LICENSE file.
+Copyright (c) 2021 - Present. Blend Labs, Inc. All rights reserved
+Blend Confidential - Restricted
 
 */
 
@@ -65,7 +65,6 @@ func (p *Parser) Parse() (Selector, error) {
 				return nil, p.parseError("consecutive not has key terms")
 			}
 
-			p.advance()
 			continue
 		}
 
@@ -76,27 +75,21 @@ func (p *Parser) Parse() (Selector, error) {
 			return nil, err
 		}
 
-		p.mark() // mark to revert if the sniff for the `KEY` form fails
+		p.mark() // mark to revert if the sniff fails
 
 		// sniff if the next character after the word is a comma
 		// this indicates it's a "key" form, or existence check on a key
 		b = p.skipToNonWhitespace() // the comma is not whitespace
-		if b == Comma || p.done() {
+		if b == Comma || p.isTerminator(b) || p.done() {
 			selector = p.addAnd(selector, p.hasKey(word))
 
-			if b == Comma {
-				// this is largely a no-op unless we hit a comma
-				p.advance()
-				// we _have_ to eat the next whitespace
-				_ = p.skipToNonWhitespace()
-				if p.done() {
-					return nil, p.parseError()
-				}
-			}
+			p.advance()
 			if p.done() {
 				break
 			}
+			p.skipToNonWhitespace()
 			continue
+
 		} else {
 			p.popMark()
 		}
@@ -127,13 +120,14 @@ func (p *Parser) Parse() (Selector, error) {
 		if b == Comma {
 			p.advance()
 			if p.done() {
-				return nil, p.parseError(errExpectedNonEmptyKey)
+				break
 			}
 			p.skipToNonWhitespace()
 			continue
 		}
 
-		if p.done() {
+		// these two are effectively the same
+		if p.isTerminator(b) || p.done() {
 			break
 		}
 
@@ -376,9 +370,8 @@ func (p *Parser) readWord() (string, error) {
 		word = append(word, ch)
 		p.advance()
 	}
-
 	if len(word) == 0 {
-		return "", p.parseError(errExpectedNonEmptyKey)
+		return "", p.parseError("expected non-empty key")
 	}
 
 	return string(word), nil
@@ -392,11 +385,10 @@ func (p *Parser) readCSV() (results []string, err error) {
 	p.skipWhiteSpace()
 
 	const (
-		stateBeforeParens              = 0
-		stateWord                      = 1
-		stateWhitespaceAfterOpenParens = 2
-		stateWhitespaceAfterComma      = 3
-		stateWhitespaceAfterWord       = 4
+		stateBeforeParens          = 0
+		stateWord                  = 1
+		stateWhitespaceAfterSymbol = 2
+		stateWhitespaceAfterWord   = 3
 	)
 
 	var word []rune
@@ -406,8 +398,7 @@ func (p *Parser) readCSV() (results []string, err error) {
 	for {
 		if p.done() {
 			results = nil
-			err = p.parseError("csv; expects close parenthesis")
-			// err = ErrInvalidSelector
+			err = ErrInvalidSelector
 			return
 		}
 
@@ -416,12 +407,13 @@ func (p *Parser) readCSV() (results []string, err error) {
 		switch state {
 		case stateBeforeParens:
 			if ch == OpenParens {
-				state = stateWhitespaceAfterOpenParens
+				state = stateWhitespaceAfterSymbol
 				p.advance()
 				continue
 			}
 
 			// not open parens, bail
+
 			err = p.parseError("csv; expects open parenthesis")
 			results = nil
 			return
@@ -435,7 +427,7 @@ func (p *Parser) readCSV() (results []string, err error) {
 				}
 
 				// the symbol is the comma
-				state = stateWhitespaceAfterComma
+				state = stateWhitespaceAfterSymbol
 				p.advance()
 				continue
 			}
@@ -469,29 +461,27 @@ func (p *Parser) readCSV() (results []string, err error) {
 			p.advance()
 			continue
 
-		case stateWhitespaceAfterOpenParens, stateWhitespaceAfterComma:
+		case stateWhitespaceAfterSymbol:
 			if p.isWhitespace(ch) {
 				p.advance()
 				continue
 			}
+
+			if ch == Comma {
+				p.advance()
+				continue
+			}
+
 			if isAlpha(ch) {
 				state = stateWord
 				continue
 			}
-			if ch == Comma {
-				p.advance()
-				state = stateWhitespaceAfterComma
-				continue
-			}
+
 			if ch == CloseParens {
 				p.advance()
-				return // exit reading the csv
-			}
-
-			if state == stateWhitespaceAfterOpenParens {
-				err = p.parseError("csv; invalid characters after '('")
 				return
 			}
+
 			err = p.parseError("csv; invalid characters after ','")
 			return
 
@@ -511,7 +501,7 @@ func (p *Parser) readCSV() (results []string, err error) {
 			}
 
 			if ch == Comma {
-				state = stateWhitespaceAfterComma
+				state = stateWhitespaceAfterSymbol
 				p.advance()
 				continue
 			}
@@ -543,7 +533,10 @@ func (p *Parser) skipToNonWhitespace() (ch rune) {
 			return
 		}
 		ch = p.current()
-		if ch == Comma || !p.isWhitespace(ch) {
+		if ch == Comma {
+			return
+		}
+		if !p.isWhitespace(ch) {
 			return
 		}
 		p.advance()
@@ -553,6 +546,11 @@ func (p *Parser) skipToNonWhitespace() (ch rune) {
 // isWhitespace returns true if the rune is a space, tab, or newline.
 func (p *Parser) isWhitespace(ch rune) bool {
 	return ch == Space || ch == Tab || ch == CarriageReturn || ch == NewLine
+}
+
+// isTerminator returns if we've reached the end of the string
+func (p *Parser) isTerminator(ch rune) bool {
+	return ch == 0
 }
 
 func (p *Parser) isValidValue(ch rune) bool {

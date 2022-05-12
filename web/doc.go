@@ -1,7 +1,7 @@
 /*
 
-Copyright (c) 2022 - Present. Blend Labs, Inc. All rights reserved
-Use of this source code is governed by a MIT license that can be found in the LICENSE file.
+Copyright (c) 2021 - Present. Blend Labs, Inc. All rights reserved
+Blend Confidential - Restricted
 
 */
 
@@ -30,7 +30,7 @@ To create a web server:
 
 This will start a web server with a trivial endpoint mounted at the path "/" for the HTTP Verb "GET".
 This example will also start the server and listen for SIGINT and SIGTERM os signals,
-and close the server gracefully if they're received, letting requests finish.
+and close the server gracefully if they're recieved, letting requests finish.
 
 There are many more examples in the github.com/blend/go-sdk/examples/web directory.
 */

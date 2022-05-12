@@ -1,7 +1,7 @@
 /*
 
-Copyright (c) 2022 - Present. Blend Labs, Inc. All rights reserved
-Use of this source code is governed by a MIT license that can be found in the LICENSE file.
+Copyright (c) 2021 - Present. Blend Labs, Inc. All rights reserved
+Blend Confidential - Restricted
 
 */
 
@@ -41,7 +41,7 @@ type config struct {
 // Resolve resolves the config.
 func (c *config) Resolve(ctx context.Context) error {
 	return configutil.Resolve(ctx,
-		configutil.SetBoolPtr(&c.ExitFirst, configutil.Bool(flagExitFirst), configutil.Bool(c.ExitFirst), configutil.Bool(ref.Bool(false))),
+		configutil.SetBool(&c.ExitFirst, configutil.Bool(flagExitFirst), configutil.Bool(c.ExitFirst), configutil.Bool(ref.Bool(false))),
 		configutil.SetString(&c.RulesFile, configutil.String(*flagRulesFile), configutil.String(c.RulesFile), configutil.String(profanity.DefaultRulesFile)),
 		configutil.SetStrings(&c.Rules.Include, configutil.Strings(*flagRulesInclude), configutil.Strings(c.Rules.Include)),
 		configutil.SetStrings(&c.Rules.Exclude, configutil.Strings(*flagRulesExclude), configutil.Strings(c.Rules.Exclude)),
@@ -49,8 +49,8 @@ func (c *config) Resolve(ctx context.Context) error {
 		configutil.SetStrings(&c.Files.Exclude, configutil.Strings(*flagFilesExclude), configutil.Strings(c.Files.Exclude)),
 		configutil.SetStrings(&c.Dirs.Include, configutil.Strings(*flagDirsInclude), configutil.Strings(c.Dirs.Include)),
 		configutil.SetStrings(&c.Dirs.Exclude, configutil.Strings(*flagDirsExclude), configutil.Strings(c.Dirs.Exclude)),
-		configutil.SetBoolPtr(&c.Verbose, configutil.Bool(flagVerbose), configutil.Bool(c.Verbose), configutil.Bool(ref.Bool(false))),
-		configutil.SetBoolPtr(&c.Debug, configutil.Bool(flagDebug), configutil.Bool(c.Debug), configutil.Bool(ref.Bool(false))),
+		configutil.SetBool(&c.Verbose, configutil.Bool(flagVerbose), configutil.Bool(c.Verbose), configutil.Bool(ref.Bool(false))),
+		configutil.SetBool(&c.Debug, configutil.Bool(flagDebug), configutil.Bool(c.Debug), configutil.Bool(ref.Bool(false))),
 	)
 }
 

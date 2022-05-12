@@ -1,7 +1,7 @@
 /*
 
-Copyright (c) 2022 - Present. Blend Labs, Inc. All rights reserved
-Use of this source code is governed by a MIT license that can be found in the LICENSE file.
+Copyright (c) 2021 - Present. Blend Labs, Inc. All rights reserved
+Blend Confidential - Restricted
 
 */
 
@@ -10,7 +10,7 @@ package slack
 import (
 	"context"
 	"encoding/json"
-	"io"
+	"io/ioutil"
 	"net/http"
 
 	"github.com/blend/go-sdk/ex"
@@ -20,7 +20,7 @@ import (
 
 const (
 	// ErrNon200 is the exception class when a non-200 is returned from slack.
-	ErrNon200 ex.Class = "slack; non-200 status code returned from remote"
+	ErrNon200 = "slack; non-200 status code returned from remote"
 )
 
 var (
@@ -72,7 +72,7 @@ func (whs WebhookSender) Send(ctx context.Context, message Message) error {
 	defer res.Body.Close()
 
 	if statusCode := res.StatusCode; statusCode < http.StatusOK || statusCode > 299 {
-		contents, _ := io.ReadAll(res.Body)
+		contents, _ := ioutil.ReadAll(res.Body)
 		return ex.New(ErrNon200, ex.OptMessage(string(contents)))
 	}
 	return nil

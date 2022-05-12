@@ -1,7 +1,7 @@
 /*
 
-Copyright (c) 2022 - Present. Blend Labs, Inc. All rights reserved
-Use of this source code is governed by a MIT license that can be found in the LICENSE file.
+Copyright (c) 2021 - Present. Blend Labs, Inc. All rights reserved
+Blend Confidential - Restricted
 
 */
 
@@ -38,7 +38,7 @@ func NewRingBufferWithCapacity(capacity int) *RingBuffer {
 	}
 }
 
-// NewRingBufferFromValues creates a new ring buffer out of a slice.
+// NewRingBufferFromValues creates a  ring buffer out of a slice.
 func NewRingBufferFromValues(values []interface{}) *RingBuffer {
 	return &RingBuffer{
 		array: values,
@@ -47,10 +47,6 @@ func NewRingBufferFromValues(values []interface{}) *RingBuffer {
 		size:  len(values),
 	}
 }
-
-var (
-	_ Queue = (*RingBuffer)(nil)
-)
 
 // RingBuffer is a fifo buffer that is backed by a pre-allocated array, instead of allocating
 // a whole new node object for each element (which saves GC churn).
@@ -112,25 +108,6 @@ func (rb *RingBuffer) Dequeue() interface{} {
 	rb.head = (rb.head + 1) % len(rb.array)
 	rb.size--
 
-	return removed
-}
-
-// DequeueBack removes the last (newest) element from the RingBuffer.
-func (rb *RingBuffer) DequeueBack() interface{} {
-	if rb.size == 0 {
-		return nil
-	}
-
-	// tail is the
-	var removed interface{}
-	if rb.tail == 0 {
-		removed = rb.array[len(rb.array)-1]
-		rb.tail = len(rb.array) - 1
-	} else {
-		removed = rb.array[rb.tail-1]
-		rb.tail = rb.tail - 1
-	}
-	rb.size--
 	return removed
 }
 

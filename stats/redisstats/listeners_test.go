@@ -1,7 +1,7 @@
 /*
 
-Copyright (c) 2022 - Present. Blend Labs, Inc. All rights reserved
-Use of this source code is governed by a MIT license that can be found in the LICENSE file.
+Copyright (c) 2021 - Present. Blend Labs, Inc. All rights reserved
+Blend Confidential - Restricted
 
 */
 
@@ -9,7 +9,7 @@ package redisstats
 
 import (
 	"context"
-	"io"
+	"io/ioutil"
 	"testing"
 	"time"
 
@@ -32,7 +32,7 @@ func TestAddListeners(t *testing.T) {
 func TestAddListenersStats(t *testing.T) {
 	assert := assert.New(t)
 
-	log := logger.All(logger.OptOutput(io.Discard))
+	log := logger.All(logger.OptOutput(ioutil.Discard))
 	defer log.Close()
 	collector := stats.NewMockCollector(32)
 
@@ -50,12 +50,12 @@ func TestAddListenersStats(t *testing.T) {
 	assert.NotEmpty(m.Tags)
 
 	m = <-collector.Metrics
-	assert.Equal(MetricNameElapsedLast, m.Name)
+	assert.Equal(MetricNameElapsed, m.Name)
 	assert.Equal(250, m.Gauge)
 	assert.NotEmpty(m.Tags)
 
 	m = <-collector.Metrics
 	assert.Equal(MetricNameElapsed, m.Name)
-	assert.Equal(250, m.Histogram)
+	assert.Equal(250, m.TimeInMilliseconds)
 	assert.NotEmpty(m.Tags)
 }

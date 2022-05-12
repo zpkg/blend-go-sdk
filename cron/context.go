@@ -1,7 +1,7 @@
 /*
 
-Copyright (c) 2022 - Present. Blend Labs, Inc. All rights reserved
-Use of this source code is governed by a MIT license that can be found in the LICENSE file.
+Copyright (c) 2021 - Present. Blend Labs, Inc. All rights reserved
+Blend Confidential - Restricted
 
 */
 
@@ -20,23 +20,6 @@ func WithJobManager(ctx context.Context, jm *JobManager) context.Context {
 func GetJobManager(ctx context.Context) *JobManager {
 	if value := ctx.Value(jobManagerKey{}); value != nil {
 		if typed, ok := value.(*JobManager); ok {
-			return typed
-		}
-	}
-	return nil
-}
-
-type jobSchedulerKey struct{}
-
-// WithJobScheduler adds a job scheduler to a context.
-func WithJobScheduler(ctx context.Context, js *JobScheduler) context.Context {
-	return context.WithValue(ctx, jobSchedulerKey{}, js)
-}
-
-// GetJobScheduler gets a JobScheduler off a context.
-func GetJobScheduler(ctx context.Context) *JobScheduler {
-	if value := ctx.Value(jobSchedulerKey{}); value != nil {
-		if typed, ok := value.(*JobScheduler); ok {
 			return typed
 		}
 	}

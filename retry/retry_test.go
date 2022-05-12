@@ -1,7 +1,7 @@
 /*
 
-Copyright (c) 2022 - Present. Blend Labs, Inc. All rights reserved
-Use of this source code is governed by a MIT license that can be found in the LICENSE file.
+Copyright (c) 2021 - Present. Blend Labs, Inc. All rights reserved
+Blend Confidential - Restricted
 
 */
 
@@ -16,16 +16,15 @@ import (
 	"github.com/blend/go-sdk/assert"
 )
 
-func Test_Retry(t *testing.T) {
-	its := assert.New(t)
+func TestRetry(t *testing.T) {
+	assert := assert.New(t)
 
-	passedArgs := make(chan interface{}, 5)
 	results := make(chan interface{}, 5)
 
 	var internalAttempt int
-	action := ActionerFunc(func(ctx context.Context, args interface{}) (interface{}, error) {
+	action := Action(func(ctx context.Context) (interface{}, error) {
 		defer func() { internalAttempt++ }()
-		passedArgs <- args
+
 		if internalAttempt < 4 {
 			err := fmt.Errorf("attempt %d", internalAttempt)
 			results <- err
@@ -36,33 +35,25 @@ func Test_Retry(t *testing.T) {
 		return result, nil
 	})
 
-	result, err := New(OptConstantDelay(time.Millisecond)).Intercept(action).Action(its.Background(), "args")
-	its.Nil(err)
-	its.Equal("OK!", result)
-	its.Len(passedArgs, 5)
-	its.Equal("args", <-passedArgs)
-	its.Equal("args", <-passedArgs)
-	its.Equal("args", <-passedArgs)
-	its.Equal("args", <-passedArgs)
-	its.Equal("args", <-passedArgs)
-	its.Len(results, 5)
-	its.Equal(fmt.Errorf("attempt 0"), <-results)
-	its.Equal(fmt.Errorf("attempt 1"), <-results)
-	its.Equal(fmt.Errorf("attempt 2"), <-results)
-	its.Equal(fmt.Errorf("attempt 3"), <-results)
-	its.Equal("OK!", <-results)
+	result, err := Retry(context.Background(), action, OptConstantDelay(time.Millisecond))
+	assert.Nil(err)
+	assert.Equal("OK!", result)
+	assert.Len(results, 5)
+	assert.Equal(fmt.Errorf("attempt 0"), <-results)
+	assert.Equal(fmt.Errorf("attempt 1"), <-results)
+	assert.Equal(fmt.Errorf("attempt 2"), <-results)
+	assert.Equal(fmt.Errorf("attempt 3"), <-results)
+	assert.Equal("OK!", <-results)
 }
 
-func Test_Retry_ShouldRetryProvider(t *testing.T) {
-	its := assert.New(t)
+func TestRetry_ShouldRetryProvider(t *testing.T) {
+	assert := assert.New(t)
 
-	passedArgs := make(chan interface{}, 5)
 	results := make(chan interface{}, 5)
 
 	var internalAttempt int
-	action := ActionerFunc(func(ctx context.Context, args interface{}) (interface{}, error) {
+	action := Action(func(ctx context.Context) (interface{}, error) {
 		defer func() { internalAttempt++ }()
-		passedArgs <- args
 
 		if internalAttempt < 4 {
 			err := fmt.Errorf("attempt %d", internalAttempt)
@@ -74,22 +65,19 @@ func Test_Retry_ShouldRetryProvider(t *testing.T) {
 		return result, nil
 	})
 
-	result, err := New(
+	result, err := Retry(
+		context.Background(),
+		action,
 		OptConstantDelay(time.Millisecond),
 		OptShouldRetryProvider(func(err error) bool {
 			return err.Error() != "attempt 3"
 		}),
-	).Intercept(action).Action(its.Background(), "args")
-	its.NotNil(err)
-	its.Empty(result)
-	its.Len(passedArgs, 4)
-	its.Equal("args", <-passedArgs)
-	its.Equal("args", <-passedArgs)
-	its.Equal("args", <-passedArgs)
-	its.Equal("args", <-passedArgs)
-	its.Len(results, 4)
-	its.Equal(fmt.Errorf("attempt 0"), <-results)
-	its.Equal(fmt.Errorf("attempt 1"), <-results)
-	its.Equal(fmt.Errorf("attempt 2"), <-results)
-	its.Equal(fmt.Errorf("attempt 3"), <-results)
+	)
+	assert.NotNil(err)
+	assert.Empty(result)
+	assert.Len(results, 4)
+	assert.Equal(fmt.Errorf("attempt 0"), <-results)
+	assert.Equal(fmt.Errorf("attempt 1"), <-results)
+	assert.Equal(fmt.Errorf("attempt 2"), <-results)
+	assert.Equal(fmt.Errorf("attempt 3"), <-results)
 }

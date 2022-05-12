@@ -1,7 +1,7 @@
 /*
 
-Copyright (c) 2022 - Present. Blend Labs, Inc. All rights reserved
-Use of this source code is governed by a MIT license that can be found in the LICENSE file.
+Copyright (c) 2021 - Present. Blend Labs, Inc. All rights reserved
+Blend Confidential - Restricted
 
 */
 
@@ -33,9 +33,8 @@ type Worker struct {
 	Action    WorkAction
 	Finalizer WorkerFinalizer
 
-	SkipRecoverPanics bool
-	Errors            chan error
-	Work              chan interface{}
+	Errors chan error
+	Work   chan interface{}
 }
 
 // Background returns the queue worker background context.
@@ -103,10 +102,8 @@ func (w *Worker) Dispatch() {
 // Execute invokes the action and recovers panics.
 func (w *Worker) Execute(ctx context.Context, workItem interface{}) {
 	defer func() {
-		if !w.SkipRecoverPanics {
-			if r := recover(); r != nil {
-				w.HandleError(ex.New(r))
-			}
+		if r := recover(); r != nil {
+			w.HandleError(ex.New(r))
 		}
 		if w.Finalizer != nil {
 			w.HandleError(w.Finalizer(ctx, w))
@@ -117,10 +114,8 @@ func (w *Worker) Execute(ctx context.Context, workItem interface{}) {
 	}
 }
 
-// Stop stops the worker.
-//
-// If there is an item left in the work channel
-// it will be processed synchronously.
+// Stop stop the worker.
+// The work left in the queue will remain.
 func (w *Worker) Stop() error {
 	if !w.Latch.CanStop() {
 		return ex.New(ErrCannotStop)

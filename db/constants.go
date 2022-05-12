@@ -1,7 +1,7 @@
 /*
 
-Copyright (c) 2022 - Present. Blend Labs, Inc. All rights reserved
-Use of this source code is governed by a MIT license that can be found in the LICENSE file.
+Copyright (c) 2021 - Present. Blend Labs, Inc. All rights reserved
+Blend Confidential - Restricted
 
 */
 
@@ -15,65 +15,14 @@ const (
 	// DefaultEngine is the default database engine.
 	DefaultEngine = "pgx" // "postgres"
 
-	// EnvVarDBEngine is the environment variable used to set the Go `sql` driver.
-	EnvVarDBEngine = "DB_ENGINE"
-	// EnvVarDatabaseURL is the environment variable used to set the entire
-	// database connection string.
+	// EnvVarDatabaseURL is an environment variable.
 	EnvVarDatabaseURL = "DATABASE_URL"
-	// EnvVarDBHost is the environment variable used to set the host in a
-	// database connection string.
-	EnvVarDBHost = "DB_HOST"
-	// EnvVarDBPort is the environment variable used to set the port in a
-	// database connection string.
-	EnvVarDBPort = "DB_PORT"
-	// EnvVarDBName is the environment variable used to set the database name
-	// in a database connection string.
-	EnvVarDBName = "DB_NAME"
-	// EnvVarDBSchema is the environment variable used to set the database
-	// schema in a database connection string.
-	EnvVarDBSchema = "DB_SCHEMA"
 	// EnvVarDBApplicationName is the environment variable used to set the
 	// `application_name` configuration parameter in a `lib/pq` connection
 	// string.
 	//
 	// See: https://www.postgresql.org/docs/12/runtime-config-logging.html#GUC-APPLICATION-NAME
 	EnvVarDBApplicationName = "DB_APPLICATION_NAME"
-	// EnvVarDBUser is the environment variable used to set the user in a
-	// database connection string.
-	EnvVarDBUser = "DB_USER"
-	// EnvVarDBPassword is the environment variable used to set the password
-	// in a database connection string.
-	EnvVarDBPassword = "DB_PASSWORD"
-	// EnvVarDBConnectTimeout is is the environment variable used to set the
-	// connect timeout in a database connection string.
-	EnvVarDBConnectTimeout = "DB_CONNECT_TIMEOUT"
-	// EnvVarDBLockTimeout is is the environment variable used to set the lock
-	// timeout on a database config.
-	EnvVarDBLockTimeout = "DB_LOCK_TIMEOUT"
-	// EnvVarDBStatementTimeout is is the environment variable used to set the
-	// statement timeout on a database config.
-	EnvVarDBStatementTimeout = "DB_STATEMENT_TIMEOUT"
-	// EnvVarDBSSLMode is the environment variable used to set the SSL mode in
-	// a database connection string.
-	EnvVarDBSSLMode = "DB_SSLMODE"
-	// EnvVarDBIdleConnections is the environment variable used to set the
-	// maximum number of idle connections allowed in a connection pool.
-	EnvVarDBIdleConnections = "DB_IDLE_CONNECTIONS"
-	// EnvVarDBMaxConnections is the environment variable used to set the
-	// maximum number of connections allowed in a connection pool.
-	EnvVarDBMaxConnections = "DB_MAX_CONNECTIONS"
-	// EnvVarDBMaxLifetime is the environment variable used to set the maximum
-	// lifetime of a connection in a connection pool.
-	EnvVarDBMaxLifetime = "DB_MAX_LIFETIME"
-	// EnvVarDBMaxIdleTime is the environment variable used to set the maximum
-	// time a connection can be idle.
-	EnvVarDBMaxIdleTime = "DB_MAX_IDLE_TIME"
-	// EnvVarDBBufferPoolSize is the environment variable used to set the buffer
-	// pool size on a connection in a connection pool.
-	EnvVarDBBufferPoolSize = "DB_BUFFER_POOL_SIZE"
-	// EnvVarDBDialect is the environment variable used to set the dialect
-	// on a connection configuration (e.g. `postgres` or `cockroachdb`).
-	EnvVarDBDialect = "DB_DIALECT"
 
 	// DefaultHost is the default database hostname, typically used
 	// when developing locally.
@@ -115,8 +64,6 @@ const (
 	DefaultMaxConnections = 32
 	// DefaultMaxLifetime is the default maximum lifetime of driver connections.
 	DefaultMaxLifetime = time.Duration(0)
-	// DefaultMaxIdleTime is the default maximum idle time of driver connections.
-	DefaultMaxIdleTime = time.Duration(0)
 	// DefaultBufferPoolSize is the default number of buffer pool entries to maintain.
 	DefaultBufferPoolSize = 1024
 )

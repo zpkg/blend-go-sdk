@@ -1,30 +1,16 @@
 /*
 
-Copyright (c) 2022 - Present. Blend Labs, Inc. All rights reserved
-Use of this source code is governed by a MIT license that can be found in the LICENSE file.
+Copyright (c) 2021 - Present. Blend Labs, Inc. All rights reserved
+Blend Confidential - Restricted
 
 */
 
 package web
 
-// SessionAware is an action that injects the session into the context.
+// SessionAware is an action that injects the session into the context, it acquires a read lock on session.
 func SessionAware(action Action) Action {
 	return func(ctx *Ctx) Result {
-		session, err := ctx.App.Auth.VerifyOrExtendSession(ctx)
-		if err != nil && !IsErrSessionInvalid(err) {
-			return ctx.DefaultProvider.InternalError(err)
-		}
-		ctx.Session = session
-		ctx.WithContext(WithSession(ctx.Context(), session))
-		return action(ctx)
-	}
-}
-
-// SessionAwareForLogout is an action that injects the session into the context, but does
-// not extend it if there is a session lifetime handler on the auth manager.
-func SessionAwareForLogout(action Action) Action {
-	return func(ctx *Ctx) Result {
-		_, session, err := ctx.App.Auth.VerifySession(ctx)
+		session, err := ctx.App.Auth.VerifyOrExpireSession(ctx)
 		if err != nil && !IsErrSessionInvalid(err) {
 			return ctx.DefaultProvider.InternalError(err)
 		}
@@ -35,10 +21,10 @@ func SessionAwareForLogout(action Action) Action {
 }
 
 // SessionRequired is an action that requires a session to be present
-// or identified in some form on the request.
+// or identified in some form on the request, and acquires a read lock on session.
 func SessionRequired(action Action) Action {
 	return func(ctx *Ctx) Result {
-		session, err := ctx.App.Auth.VerifyOrExtendSession(ctx)
+		session, err := ctx.App.Auth.VerifyOrExpireSession(ctx)
 		if err != nil && !IsErrSessionInvalid(err) {
 			return ctx.DefaultProvider.InternalError(err)
 		}
@@ -55,7 +41,7 @@ func SessionRequired(action Action) Action {
 func SessionMiddleware(notAuthorized Action) Middleware {
 	return func(action Action) Action {
 		return func(ctx *Ctx) Result {
-			session, err := ctx.App.Auth.VerifyOrExtendSession(ctx)
+			session, err := ctx.App.Auth.VerifyOrExpireSession(ctx)
 			if err != nil && !IsErrSessionInvalid(err) {
 				return ctx.DefaultProvider.InternalError(err)
 			}

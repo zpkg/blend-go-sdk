@@ -1,7 +1,7 @@
 /*
 
-Copyright (c) 2022 - Present. Blend Labs, Inc. All rights reserved
-Use of this source code is governed by a MIT license that can be found in the LICENSE file.
+Copyright (c) 2021 - Present. Blend Labs, Inc. All rights reserved
+Blend Confidential - Restricted
 
 */
 
@@ -60,22 +60,8 @@ func TestSetBool(t *testing.T) {
 	fv := false
 	hasValue2 := Bool(&fv)
 
-	var value bool
-	assert.Nil(SetBool(&value, empty, hasValue, hasValue2)(context.TODO()))
-	assert.Equal(true, value)
-}
-
-func TestSetBoolPtr(t *testing.T) {
-	assert := assert.New(t)
-
-	empty := Bool(nil)
-	tv := true
-	hasValue := Bool(&tv)
-	fv := false
-	hasValue2 := Bool(&fv)
-
 	var value *bool
-	assert.Nil(SetBoolPtr(&value, empty, hasValue, hasValue2)(context.TODO()))
+	assert.Nil(SetBool(&value, empty, hasValue, hasValue2)(context.TODO()))
 	assert.Equal(true, *value)
 }
 

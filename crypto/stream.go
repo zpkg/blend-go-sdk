@@ -1,7 +1,7 @@
 /*
 
-Copyright (c) 2022 - Present. Blend Labs, Inc. All rights reserved
-Use of this source code is governed by a MIT license that can be found in the LICENSE file.
+Copyright (c) 2021 - Present. Blend Labs, Inc. All rights reserved
+Blend Confidential - Restricted
 
 */
 
@@ -20,8 +20,8 @@ import (
 )
 
 // NewStreamEncrypter creates a new stream encrypter
-func NewStreamEncrypter(encKey, macKey []byte, plainText io.Reader) (*StreamEncrypter, error) {
-	block, err := aes.NewCipher(encKey)
+func NewStreamEncrypter(key []byte, plainText io.Reader) (*StreamEncrypter, error) {
+	block, err := aes.NewCipher(key)
 	if err != nil {
 		return nil, ex.New(err)
 	}
@@ -31,7 +31,7 @@ func NewStreamEncrypter(encKey, macKey []byte, plainText io.Reader) (*StreamEncr
 		return nil, ex.New(err)
 	}
 	stream := cipher.NewCTR(block, iv)
-	mac := hmac.New(sha256.New, macKey)
+	mac := hmac.New(sha256.New, key)
 	return &StreamEncrypter{
 		Source: plainText,
 		Block:  block,
@@ -42,13 +42,13 @@ func NewStreamEncrypter(encKey, macKey []byte, plainText io.Reader) (*StreamEncr
 }
 
 // NewStreamDecrypter creates a new stream decrypter
-func NewStreamDecrypter(encKey, macKey []byte, meta StreamMeta, cipherText io.Reader) (*StreamDecrypter, error) {
-	block, err := aes.NewCipher(encKey)
+func NewStreamDecrypter(key []byte, meta StreamMeta, cipherText io.Reader) (*StreamDecrypter, error) {
+	block, err := aes.NewCipher(key)
 	if err != nil {
 		return nil, ex.New(err)
 	}
 	stream := cipher.NewCTR(block, meta.IV)
-	mac := hmac.New(sha256.New, macKey)
+	mac := hmac.New(sha256.New, key)
 	return &StreamDecrypter{
 		Source: cipherText,
 		Block:  block,

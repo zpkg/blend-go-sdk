@@ -1,7 +1,7 @@
 /*
 
-Copyright (c) 2022 - Present. Blend Labs, Inc. All rights reserved
-Use of this source code is governed by a MIT license that can be found in the LICENSE file.
+Copyright (c) 2021 - Present. Blend Labs, Inc. All rights reserved
+Blend Confidential - Restricted
 
 */
 
@@ -10,6 +10,7 @@ package r2
 import (
 	"fmt"
 	"io"
+	"io/ioutil"
 	"net/http"
 	"net/http/httptest"
 	"time"
@@ -40,7 +41,7 @@ func (mtf MockTraceFinisher) Finish(req *http.Request, res *http.Response, t tim
 }
 
 func readString(r io.Reader) string {
-	contents, _ := io.ReadAll(r)
+	contents, _ := ioutil.ReadAll(r)
 	return string(contents)
 }
 

@@ -1,7 +1,7 @@
 /*
 
-Copyright (c) 2022 - Present. Blend Labs, Inc. All rights reserved
-Use of this source code is governed by a MIT license that can be found in the LICENSE file.
+Copyright (c) 2021 - Present. Blend Labs, Inc. All rights reserved
+Blend Confidential - Restricted
 
 */
 
@@ -30,8 +30,7 @@ func Times(times int, schedule Schedule) *TimesSchedule {
 }
 
 // TimesSchedule is a schedule that only returns
-// a certain number of schedule "Next" results
-// after which it returns time.Time{} for the next runtime.
+// a certain number of results.
 type TimesSchedule struct {
 	sync.Mutex
 

@@ -1,7 +1,7 @@
 /*
 
-Copyright (c) 2022 - Present. Blend Labs, Inc. All rights reserved
-Use of this source code is governed by a MIT license that can be found in the LICENSE file.
+Copyright (c) 2021 - Present. Blend Labs, Inc. All rights reserved
+Blend Confidential - Restricted
 
 */
 
@@ -9,7 +9,7 @@ package webutil
 
 import (
 	"fmt"
-	"io"
+	"io/ioutil"
 	"net/http"
 	"net/http/httptest"
 	"testing"
@@ -55,7 +55,7 @@ func TestMiddelware(t *testing.T) {
 	<-twoDone
 	<-innerDone
 
-	contents, err := io.ReadAll(res.Body)
+	contents, err := ioutil.ReadAll(res.Body)
 	assert.Nil(err)
 	assert.Equal("OK!\nTwo\nOne\n", string(contents))
 }

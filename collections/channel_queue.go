@@ -1,7 +1,7 @@
 /*
 
-Copyright (c) 2022 - Present. Blend Labs, Inc. All rights reserved
-Use of this source code is governed by a MIT license that can be found in the LICENSE file.
+Copyright (c) 2021 - Present. Blend Labs, Inc. All rights reserved
+Blend Confidential - Restricted
 
 */
 
@@ -9,19 +9,9 @@ package collections
 
 import "sync"
 
-// NewChannelQueueWithCapacity returns a new ChannelQueue instance.
+// NewChannelQueueWithCapacity returns a new ConcurrentQueue instance.
 func NewChannelQueueWithCapacity(capacity int) *ChannelQueue {
 	return &ChannelQueue{Capacity: capacity, storage: make(chan interface{}, capacity), latch: sync.Mutex{}}
-}
-
-// NewChannelQueueFromValues returns a new ChannelQueue from a given slice of values.
-func NewChannelQueueFromValues(values []interface{}) *ChannelQueue {
-	capacity := len(values)
-	cq := &ChannelQueue{Capacity: capacity, storage: make(chan interface{}, capacity), latch: sync.Mutex{}}
-	for _, v := range values {
-		cq.storage <- v
-	}
-	return cq
 }
 
 // ChannelQueue is a threadsafe queue.
@@ -47,25 +37,6 @@ func (cq *ChannelQueue) Dequeue() interface{} {
 		return <-cq.storage
 	}
 	return nil
-}
-
-// DequeueBack iterates over the queue, removing the last element and returning it
-func (cq *ChannelQueue) DequeueBack() interface{} {
-	values := []interface{}{}
-	storageLen := len(cq.storage)
-	for x := 0; x < storageLen; x++ {
-		v := <-cq.storage
-		values = append(values, v)
-	}
-	var output interface{}
-	for index, v := range values {
-		if index == len(values)-1 {
-			output = v
-		} else {
-			cq.storage <- v
-		}
-	}
-	return output
 }
 
 // Peek returns (but does not remove) the first element of the queue.
@@ -139,8 +110,7 @@ func (cq *ChannelQueue) ReverseEachUntil(consumer func(value interface{}) bool) 
 // Contents iterates over the queue and returns an array of its contents.
 func (cq *ChannelQueue) Contents() []interface{} {
 	values := []interface{}{}
-	storageLen := len(cq.storage)
-	for x := 0; x < storageLen; x++ {
+	for len(cq.storage) != 0 {
 		v := <-cq.storage
 		values = append(values, v)
 	}

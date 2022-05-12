@@ -1,7 +1,7 @@
 /*
 
-Copyright (c) 2022 - Present. Blend Labs, Inc. All rights reserved
-Use of this source code is governed by a MIT license that can be found in the LICENSE file.
+Copyright (c) 2021 - Present. Blend Labs, Inc. All rights reserved
+Blend Confidential - Restricted
 
 */
 
@@ -15,7 +15,6 @@ import (
 
 	"github.com/blend/go-sdk/async"
 	"github.com/blend/go-sdk/ex"
-	"github.com/blend/go-sdk/logger"
 )
 
 // NewGracefulHTTPServer returns a new graceful http server wrapper.
@@ -43,14 +42,8 @@ func OptGracefulHTTPServerListener(listener net.Listener) GracefulHTTPServerOpti
 	return func(g *GracefulHTTPServer) { g.Listener = listener }
 }
 
-// OptGracefulHTTPServerLog sets the logger.
-func OptGracefulHTTPServerLog(log logger.Log) GracefulHTTPServerOption {
-	return func(g *GracefulHTTPServer) { g.Log = log }
-}
-
 // GracefulHTTPServer is a wrapper for an http server that implements the graceful interface.
 type GracefulHTTPServer struct {
-	Log                 logger.Log
 	Latch               *async.Latch
 	Server              *http.Server
 	ShutdownGracePeriod time.Duration
@@ -70,10 +63,8 @@ func (gs *GracefulHTTPServer) Start() (err error) {
 
 	var shutdownErr error
 	if gs.Listener != nil {
-		logger.MaybeInfof(gs.Log, "http server listening on %s", gs.Listener.Addr().String())
 		shutdownErr = gs.Server.Serve(gs.Listener)
 	} else {
-		logger.MaybeInfof(gs.Log, "http server listening on %s", gs.Server.Addr)
 		shutdownErr = gs.Server.ListenAndServe()
 	}
 	if shutdownErr != nil && shutdownErr != http.ErrServerClosed {

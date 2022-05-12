@@ -1,7 +1,7 @@
 /*
 
-Copyright (c) 2022 - Present. Blend Labs, Inc. All rights reserved
-Use of this source code is governed by a MIT license that can be found in the LICENSE file.
+Copyright (c) 2021 - Present. Blend Labs, Inc. All rights reserved
+Blend Confidential - Restricted
 
 */
 
@@ -9,7 +9,7 @@ package web
 
 import (
 	"bytes"
-	"io"
+	"io/ioutil"
 	"net/http"
 	"os"
 	"regexp"
@@ -225,7 +225,7 @@ func (sc *StaticFileServer) ResolveCachedFile(filepath string) (*CachedStaticFil
 		return nil, nil
 	}
 
-	contents, err := io.ReadAll(diskFile)
+	contents, err := ioutil.ReadAll(diskFile)
 	if err != nil {
 		return nil, err
 	}

@@ -1,7 +1,7 @@
 /*
 
-Copyright (c) 2022 - Present. Blend Labs, Inc. All rights reserved
-Use of this source code is governed by a MIT license that can be found in the LICENSE file.
+Copyright (c) 2021 - Present. Blend Labs, Inc. All rights reserved
+Blend Confidential - Restricted
 
 */
 
@@ -53,10 +53,10 @@ func TestContextWithAnnotation(t *testing.T) {
 	expectedAnnotations := Annotations{"one": "two"}
 	assert.Equal(expectedAnnotations, GetAnnotations(ctx))
 
-	ctx = WithAnnotation(ctx, "two", 3)
+	ctx = WithAnnotation(ctx, "two", "three")
 	expectedAnnotations = Annotations{
 		"one": "two",
-		"two": 3,
+		"two": "three",
 	}
 	assert.Equal(expectedAnnotations, GetAnnotations(ctx))
 }

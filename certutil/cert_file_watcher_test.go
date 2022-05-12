@@ -1,82 +1,50 @@
 /*
 
-Copyright (c) 2022 - Present. Blend Labs, Inc. All rights reserved
-Use of this source code is governed by a MIT license that can be found in the LICENSE file.
+Copyright (c) 2021 - Present. Blend Labs, Inc. All rights reserved
+Blend Confidential - Restricted
 
 */
 
 package certutil
 
 import (
-	"crypto/x509"
-	"io"
+	"io/ioutil"
 	"os"
-	"path/filepath"
 	"testing"
 
 	"github.com/blend/go-sdk/assert"
 )
 
 func TestCertFileWatcher(t *testing.T) {
-	its := assert.New(t)
+	t.Parallel()
 
-	tempDir, err := os.MkdirTemp("", "")
-	its.Nil(err)
-	defer func() { _ = os.RemoveAll(tempDir) }()
+	assert := assert.New(t)
 
-	tempCertPath := filepath.Join(tempDir, "tls.crt")
-	tempKeyPath := filepath.Join(tempDir, "tls.key")
+	tempKey, err := ioutil.TempFile("", "")
+	assert.Nil(err)
+	defer func() {
+		os.Remove(tempKey.Name())
+	}()
 
-	err = copyFile("testdata/server.cert.pem", tempCertPath)
-	its.Nil(err)
-	err = copyFile("testdata/server.key.pem", tempKeyPath)
-	its.Nil(err)
+	tempCert, err := ioutil.TempFile("", "")
+	assert.Nil(err)
+	defer func() {
+		os.Remove(tempCert.Name())
+	}()
 
-	w, err := NewCertFileWatcher(
-		KeyPair{CertPath: tempCertPath, KeyPath: tempKeyPath},
-	)
-	its.Nil(err)
+	_, err = tempKey.Write(keyLiteral)
+	assert.Nil(err)
 
-	its.Equal(tempCertPath, w.CertPath())
-	its.Equal(tempKeyPath, w.KeyPath())
+	_, err = tempCert.Write(certLiteral)
+	assert.Nil(err)
 
-	cert := w.Certificate()
-	its.NotNil(cert)
+	assert.Nil(tempKey.Close())
+	assert.Nil(tempCert.Close())
 
-	err = copyFile("testdata/alt-server.cert.pem", tempCertPath)
-	its.Nil(err)
-	err = copyFile("testdata/alt-server.key.pem", tempKeyPath)
-	its.Nil(err)
+	w, err := NewCertFileWatcher(tempCert.Name(), tempKey.Name())
+	assert.Nil(err)
+	assert.NotNil(w.Certificate)
 
-	err = w.Reload()
-	its.Nil(err)
-
-	newCert := w.Certificate()
-	its.NotNil(newCert)
-
-	cert.Leaf, err = x509.ParseCertificate(cert.Certificate[0])
-	its.Nil(err)
-	newCert.Leaf, err = x509.ParseCertificate(newCert.Certificate[0])
-	its.Nil(err)
-
-	its.NotEqual(cert.Leaf.SerialNumber.String(), newCert.Leaf.SerialNumber.String())
-}
-
-func copyFile(src, dst string) error {
-	srcFile, err := os.Open(src)
-	if err != nil {
-		return err
-	}
-	defer srcFile.Close()
-
-	dstFile, err := os.Create(dst)
-	if err != nil {
-		return err
-	}
-	defer dstFile.Close()
-	_, err = io.Copy(dstFile, srcFile)
-	if err != nil {
-		return err
-	}
-	return nil
+	assert.Nil(w.Reload())
+	assert.NotNil(w.Certificate)
 }

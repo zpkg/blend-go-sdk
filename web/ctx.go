@@ -1,7 +1,7 @@
 /*
 
-Copyright (c) 2022 - Present. Blend Labs, Inc. All rights reserved
-Use of this source code is governed by a MIT license that can be found in the LICENSE file.
+Copyright (c) 2021 - Present. Blend Labs, Inc. All rights reserved
+Blend Confidential - Restricted
 
 */
 
@@ -13,6 +13,7 @@ import (
 	"encoding/json"
 	"encoding/xml"
 	"io"
+	"io/ioutil"
 	"net/http"
 	"net/url"
 	"time"
@@ -69,7 +70,7 @@ type Ctx struct {
 	State State
 	// Session is the current auth session
 	Session *Session
-	// Route is the matching route for the request if relevant.
+	// Route is the maching route for the request if relevant.
 	Route *Route
 	// RouteParams is a cache of parameters or variables
 	// within the route and their values.
@@ -231,7 +232,7 @@ func (rc *Ctx) PostBody() ([]byte, error) {
 				return nil, ex.New(err)
 			}
 			defer reader.Close()
-			rc.Body, err = io.ReadAll(reader)
+			rc.Body, err = ioutil.ReadAll(reader)
 			if err != nil {
 				return nil, ex.New(err)
 			}
@@ -239,7 +240,7 @@ func (rc *Ctx) PostBody() ([]byte, error) {
 		if rc.Request != nil && rc.Request.Body != nil {
 			defer rc.Request.Body.Close()
 			var err error
-			rc.Body, err = io.ReadAll(rc.Request.Body)
+			rc.Body, err = ioutil.ReadAll(rc.Request.Body)
 			if err != nil {
 				return nil, ex.New(err)
 			}
@@ -345,8 +346,6 @@ func (rc *Ctx) ExpireCookie(name string, path string) {
 	}
 	c.Path = path
 	c.Value = NewSessionID()
-	// c.MaxAge<0 means delete cookie now, and is equivalent to
-	// the literal cookie header content 'Max-Age: 0'
 	c.MaxAge = -1
 	http.SetCookie(rc.Response, c)
 }
@@ -378,7 +377,7 @@ func (rc *Ctx) EnsureForm() error {
 	r := &http.Request{
 		Method: rc.Request.Method,
 		Header: rc.Request.Header,
-		Body:   io.NopCloser(bytes.NewBuffer(body)),
+		Body:   ioutil.NopCloser(bytes.NewBuffer(body)),
 	}
 	if err := r.ParseForm(); err != nil {
 		return err

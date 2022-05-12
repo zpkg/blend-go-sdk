@@ -1,14 +1,13 @@
 /*
 
-Copyright (c) 2022 - Present. Blend Labs, Inc. All rights reserved
-Use of this source code is governed by a MIT license that can be found in the LICENSE file.
+Copyright (c) 2021 - Present. Blend Labs, Inc. All rights reserved
+Blend Confidential - Restricted
 
 */
 
 package fileutil
 
 import (
-	"context"
 	"os"
 	"time"
 
@@ -28,12 +27,12 @@ const (
 // This function blocks, and you should probably call this with its own goroutine.
 // The action takes a direct file handle, and is _NOT_ responsible for closing
 // the file; the watcher will do that when the action has completed.
-func Watch(ctx context.Context, path string, action WatchAction) error {
+func Watch(path string, action WatchAction) error {
 	errors := make(chan error, 1)
 	w := NewWatcher(path, action)
 	w.Errors = errors
 	w.Starting()
-	w.Watch(ctx)
+	w.Watch()
 	if len(errors) > 0 {
 		return <-errors
 	}
@@ -78,10 +77,10 @@ func (w Watcher) PollIntervalOrDefault() time.Duration {
 }
 
 // Watch watches a given file.
-func (w Watcher) Watch(ctx context.Context) {
+func (w Watcher) Watch() {
 	stat, err := os.Stat(w.Path)
 	if err != nil {
-		w.handleError(ex.New(err))
+		w.handleError(err)
 		return
 	}
 
@@ -92,15 +91,6 @@ func (w Watcher) Watch(ctx context.Context) {
 
 	for {
 		select {
-		case <-w.NotifyStopping():
-			w.Stopped()
-			return
-		case <-ctx.Done():
-			w.Stopped()
-			return
-		default:
-		}
-		select {
 		case <-ticker.C:
 			stat, err = os.Stat(w.Path)
 			if err != nil {
@@ -110,7 +100,7 @@ func (w Watcher) Watch(ctx context.Context) {
 			if stat.ModTime().After(lastMod) {
 				file, err := os.Open(w.Path)
 				if err != nil {
-					w.handleError(ex.New(err))
+					w.handleError(err)
 					return
 				}
 
@@ -131,9 +121,6 @@ func (w Watcher) Watch(ctx context.Context) {
 				lastMod = stat.ModTime()
 			}
 		case <-w.NotifyStopping():
-			w.Stopped()
-			return
-		case <-ctx.Done():
 			w.Stopped()
 			return
 		}

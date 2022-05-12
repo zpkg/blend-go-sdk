@@ -1,7 +1,7 @@
 /*
 
-Copyright (c) 2022 - Present. Blend Labs, Inc. All rights reserved
-Use of this source code is governed by a MIT license that can be found in the LICENSE file.
+Copyright (c) 2021 - Present. Blend Labs, Inc. All rights reserved
+Blend Confidential - Restricted
 
 */
 
@@ -26,7 +26,7 @@ var (
 type ValidationError struct {
 	// Cause is the error class that connotes the type of failure.
 	Cause error
-	// Message is variable or contextaul data to add meaning to the cause.
+	// Message is variable or contextful data to add meaning to the cause.
 	Message string
 	// Value is the offending value, it can be unset, and is meant to be a common piece of context.
 	Value interface{}

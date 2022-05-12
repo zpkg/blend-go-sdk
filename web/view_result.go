@@ -1,7 +1,7 @@
 /*
 
-Copyright (c) 2022 - Present. Blend Labs, Inc. All rights reserved
-Use of this source code is governed by a MIT license that can be found in the LICENSE file.
+Copyright (c) 2021 - Present. Blend Labs, Inc. All rights reserved
+Blend Confidential - Restricted
 
 */
 
@@ -16,7 +16,6 @@ import (
 
 	"github.com/blend/go-sdk/env"
 	"github.com/blend/go-sdk/ex"
-	"github.com/blend/go-sdk/logger"
 	"github.com/blend/go-sdk/webutil"
 )
 
@@ -68,9 +67,6 @@ func (vr *ViewResult) Render(ctx *Ctx) (err error) {
 	})
 	if err != nil {
 		err = ex.New(err)
-		if ctx.App != nil {
-			logger.MaybeErrorContext(ctx.Context(), ctx.App.Log, err)
-		}
 		ctx.Response.WriteHeader(http.StatusInternalServerError)
 		_, _ = ctx.Response.Write([]byte(fmt.Sprintf("%+v\n", err)))
 		return

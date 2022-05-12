@@ -1,7 +1,7 @@
 /*
 
-Copyright (c) 2022 - Present. Blend Labs, Inc. All rights reserved
-Use of this source code is governed by a MIT license that can be found in the LICENSE file.
+Copyright (c) 2021 - Present. Blend Labs, Inc. All rights reserved
+Blend Confidential - Restricted
 
 */
 
@@ -32,7 +32,7 @@ func TestStart(t *testing.T) {
 	assert.Equal(tracing.OperationHTTPRequest, mockSpan.OperationName)
 
 	assert.Len(mockSpan.Tags(), 8)
-	assert.Equal("GET /test-resource", mockSpan.Tags()[tracing.TagKeyResourceName])
+	assert.Equal("/test-resource", mockSpan.Tags()[tracing.TagKeyResourceName])
 	assert.Equal(tracing.SpanTypeWeb, mockSpan.Tags()[tracing.TagKeySpanType])
 	assert.Equal("GET", mockSpan.Tags()[tracing.TagKeyHTTPMethod])
 	assert.Equal("/test-resource", mockSpan.Tags()[tracing.TagKeyHTTPURL])
@@ -58,7 +58,7 @@ func TestStartWithRoute(t *testing.T) {
 	assert.Equal(tracing.OperationHTTPRequest, mockSpan.OperationName)
 
 	assert.Len(mockSpan.Tags(), 9)
-	assert.Equal("GET /test-resource/:id", mockSpan.Tags()[tracing.TagKeyResourceName])
+	assert.Equal("/test-resource/:id", mockSpan.Tags()[tracing.TagKeyResourceName])
 	assert.Equal(tracing.SpanTypeWeb, mockSpan.Tags()[tracing.TagKeySpanType])
 	assert.Equal("GET", mockSpan.Tags()[tracing.TagKeyHTTPMethod])
 	assert.Equal("/test-resource/3", mockSpan.Tags()[tracing.TagKeyHTTPURL])

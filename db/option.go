@@ -1,7 +1,7 @@
 /*
 
-Copyright (c) 2022 - Present. Blend Labs, Inc. All rights reserved
-Use of this source code is governed by a MIT license that can be found in the LICENSE file.
+Copyright (c) 2021 - Present. Blend Labs, Inc. All rights reserved
+Blend Confidential - Restricted
 
 */
 
@@ -125,14 +125,6 @@ func OptSchema(schema string) Option {
 func OptSSLMode(mode string) Option {
 	return func(c *Connection) error {
 		c.Config.SSLMode = mode
-		return nil
-	}
-}
-
-// OptDialect sets the connection dialect.
-func OptDialect(dialect Dialect) Option {
-	return func(c *Connection) error {
-		c.Config.Dialect = string(dialect)
 		return nil
 	}
 }

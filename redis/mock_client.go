@@ -1,31 +1,13 @@
 /*
 
-Copyright (c) 2022 - Present. Blend Labs, Inc. All rights reserved
-Use of this source code is governed by a MIT license that can be found in the LICENSE file.
+Copyright (c) 2021 - Present. Blend Labs, Inc. All rights reserved
+Blend Confidential - Restricted
 
 */
 
 package redis
 
 import "context"
-
-// MockClientFunc is a function that implements Client.
-type MockClientFunc func(context.Context, interface{}, string, ...string) error
-
-// Do implements Client.Do.
-func (mcf MockClientFunc) Do(ctx context.Context, out interface{}, op string, args ...string) error {
-	return mcf(ctx, out, op, args...)
-}
-
-// Close is a no-op.
-func (mcf MockClientFunc) Close() error { return nil }
-
-// NewMockClient returns a new mock client with a given capacity.
-func NewMockClient(capacity int) *MockClient {
-	return &MockClient{
-		Ops: make(chan MockClientOp, capacity),
-	}
-}
 
 // Assert `MockClient` implements client.
 var (

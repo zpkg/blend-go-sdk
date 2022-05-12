@@ -1,7 +1,7 @@
 /*
 
-Copyright (c) 2022 - Present. Blend Labs, Inc. All rights reserved
-Use of this source code is governed by a MIT license that can be found in the LICENSE file.
+Copyright (c) 2021 - Present. Blend Labs, Inc. All rights reserved
+Blend Confidential - Restricted
 
 */
 
@@ -10,17 +10,15 @@ package slack
 import (
 	"context"
 	"encoding/json"
-	"fmt"
 	"net/http"
 	"net/http/httptest"
 	"testing"
 
 	"github.com/blend/go-sdk/assert"
-	"github.com/blend/go-sdk/ex"
 )
 
-func Test_WebhookSender_OK(t *testing.T) {
-	its := assert.New(t)
+func TestWebhookSender(t *testing.T) {
+	assert := assert.New(t)
 
 	ts := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		w.WriteHeader(http.StatusOK)
@@ -35,15 +33,14 @@ func Test_WebhookSender_OK(t *testing.T) {
 	err := sender.Send(context.TODO(), Message{
 		Text: "this is only a test",
 	})
-	its.Nil(err)
+	assert.Nil(err)
 }
 
-func Test_WebhookSender_BadStatusCode_ErrorMessage(t *testing.T) {
-	its := assert.New(t)
+func TestWebhookSenderStatusCode(t *testing.T) {
+	assert := assert.New(t)
 
 	ts := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		w.WriteHeader(http.StatusBadRequest)
-		fmt.Fprintf(w, "remote message here\n")
 	}))
 	defer ts.Close()
 
@@ -52,16 +49,13 @@ func Test_WebhookSender_BadStatusCode_ErrorMessage(t *testing.T) {
 	}
 
 	sender := New(config)
-	err := sender.Send(context.TODO(), Message{
+	assert.NotNil(sender.Send(context.TODO(), Message{
 		Text: "this is only a test",
-	})
-	its.NotNil(err)
-	its.True(ex.Is(err, ErrNon200))
-	its.Equal("remote message here\n", ex.ErrMessage(err))
+	}))
 }
 
-func Test_WebhookSender_Defaults(t *testing.T) {
-	its := assert.New(t)
+func TestWebhookSenderDefaults(t *testing.T) {
+	assert := assert.New(t)
 
 	config := Config{
 		Webhook:  "http://foo.com",
@@ -81,13 +75,13 @@ func Test_WebhookSender_Defaults(t *testing.T) {
 		option(&message)
 	}
 
-	its.Equal("this is only a test", message.Text)
-	its.Equal("#bot-test", message.Channel)
-	its.Equal("default-test", message.Username)
+	assert.Equal("this is only a test", message.Text)
+	assert.Equal("#bot-test", message.Channel)
+	assert.Equal("default-test", message.Username)
 }
 
-func Test_WebhookSend_DecodeResponse(t *testing.T) {
-	its := assert.New(t)
+func TestWebhookSendAndReadResponse(t *testing.T) {
+	assert := assert.New(t)
 
 	mockResponse := PostMessageResponse{
 		OK:        true,
@@ -121,12 +115,12 @@ func Test_WebhookSend_DecodeResponse(t *testing.T) {
 	response, err := sender.SendAndReadResponse(context.TODO(), Message{
 		Text: "this is only a test",
 	})
-	its.Nil(err)
-	its.Equal(mockResponse, *response)
+	assert.Nil(err)
+	assert.Equal(mockResponse, *response)
 }
 
-func Test_WebhookSender_ReadResponse_BadStatusCode(t *testing.T) {
-	its := assert.New(t)
+func TestWebhookSendAndReadResponseStatusCode(t *testing.T) {
+	assert := assert.New(t)
 
 	mockResponse := PostMessageResponse{
 		OK:    false,
@@ -147,12 +141,12 @@ func Test_WebhookSender_ReadResponse_BadStatusCode(t *testing.T) {
 	response, err := sender.SendAndReadResponse(context.TODO(), Message{
 		Text: "this is only a test",
 	})
-	its.NotNil(err)
-	its.Equal(mockResponse, *response)
+	assert.NotNil(err)
+	assert.Equal(mockResponse, *response)
 }
 
-func Test_WebhookSender_PostMessageAndReadResponse(t *testing.T) {
-	its := assert.New(t)
+func TestPostMessageAndReadResponse(t *testing.T) {
+	assert := assert.New(t)
 
 	mockResponse := PostMessageResponse{
 		OK:        true,
@@ -193,8 +187,8 @@ func Test_WebhookSender_PostMessageAndReadResponse(t *testing.T) {
 	// Test: Channel and text parameters should be passed along in the request
 	expectedChannel, expectedText := "#test-channel", "Test test"
 	response, err := sender.PostMessageAndReadResponse(expectedChannel, expectedText)
-	its.Nil(err)
-	its.Equal(true, response.OK)
-	its.Equal(expectedChannel, response.Channel)
-	its.Equal(expectedText, response.Message.Text)
+	assert.Nil(err)
+	assert.Equal(true, response.OK)
+	assert.Equal(expectedChannel, response.Channel)
+	assert.Equal(expectedText, response.Message.Text)
 }
