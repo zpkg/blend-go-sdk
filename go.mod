@@ -1,6 +1,6 @@
 module github.com/blend/go-sdk
 
-go 1.17
+go 1.18
 
 require (
 	github.com/DataDog/datadog-go/v5 v5.1.0
