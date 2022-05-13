@@ -42,7 +42,7 @@ func Test_PublicKeyCache_Keyfunc(t *testing.T) {
 	}))
 	defer keysResponder.Close()
 
-	cache := new(PublicKeyCache)
+	cache := NewPublicKeyCache(GoogleKeysURL)
 	cache.FetchPublicKeysDefaults = []r2.Option{
 		r2.OptURL(keysResponder.URL),
 	}
@@ -71,7 +71,7 @@ func Test_PublicKeyCache_Keyfunc(t *testing.T) {
 func Test_PublicKeyCache_Keyfunc_MissingKIDHeader(t *testing.T) {
 	it := assert.New(t)
 
-	cache := new(PublicKeyCache)
+	cache := NewPublicKeyCache(GoogleKeysURL)
 	keyfunc := cache.Keyfunc(context.TODO())
 	pub, err := keyfunc(&jwt.Token{})
 	it.NotNil(err)
@@ -81,7 +81,7 @@ func Test_PublicKeyCache_Keyfunc_MissingKIDHeader(t *testing.T) {
 func Test_PublicKeyCache_Keyfunc_InvalidKID(t *testing.T) {
 	it := assert.New(t)
 
-	cache := new(PublicKeyCache)
+	cache := NewPublicKeyCache(GoogleKeysURL)
 	keyfunc := cache.Keyfunc(context.TODO())
 	pub, err := keyfunc(&jwt.Token{
 		Header: map[string]interface{}{
@@ -119,7 +119,7 @@ func Test_PublicKeyCache_Get(t *testing.T) {
 	}))
 	defer keysResponder.Close()
 
-	cache := new(PublicKeyCache)
+	cache := NewPublicKeyCache(GoogleKeysURL)
 	cache.FetchPublicKeysDefaults = []r2.Option{
 		r2.OptURL(keysResponder.URL),
 	}
@@ -156,7 +156,7 @@ func Test_PublicKeyCache_Get_NoRefresh(t *testing.T) {
 	}))
 	defer keysResponder.Close()
 
-	cache := new(PublicKeyCache)
+	cache := NewPublicKeyCache(GoogleKeysURL)
 	cache.current = &PublicKeysResponse{
 		CacheControl: "public, max-age=23196, must-revalidate, no-transform",
 		Expires:      time.Now().UTC().AddDate(0, 0, 1),
@@ -200,7 +200,7 @@ func Test_PublicKeyCache_Get_Refresh(t *testing.T) {
 	}))
 	defer keysResponder.Close()
 
-	cache := new(PublicKeyCache)
+	cache := NewPublicKeyCache(GoogleKeysURL)
 	cache.current = &PublicKeysResponse{
 		CacheControl: "public, max-age=23196, must-revalidate, no-transform",
 		Expires:      time.Now().UTC().AddDate(0, 0, -1),
@@ -244,7 +244,7 @@ func Test_PublicKeyCache_Get_RefreshOnMiss(t *testing.T) {
 	}))
 	defer keysResponder.Close()
 
-	cache := new(PublicKeyCache)
+	cache := NewPublicKeyCache(GoogleKeysURL)
 	cache.current = &PublicKeysResponse{
 		CacheControl: "public, max-age=23196, must-revalidate, no-transform",
 		Expires:      time.Now().UTC().AddDate(0, 0, -1),

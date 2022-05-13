@@ -26,14 +26,20 @@ import (
 	"github.com/blend/go-sdk/webutil"
 )
 
-// New returns a new manager mutated by a given set of options.
+const (
+	googleIssuerURL = "https://www.googleapis.com/oauth2"
+)
+
+// New returns a new Google Auth manager if options do not
+// specify an endpoint, PublicKeyCache and Issuer
 func New(options ...Option) (*Manager, error) {
 	manager := &Manager{
 		Config: oauth2.Config{
 			Endpoint: google.Endpoint,
 			Scopes:   DefaultScopes,
 		},
-		PublicKeyCache: new(PublicKeyCache),
+		PublicKeyCache: NewPublicKeyCache(GoogleKeysURL),
+		Issuer:         googleIssuerURL,
 	}
 
 	for _, option := range options {
@@ -63,6 +69,10 @@ type Manager struct {
 
 	HostedDomain   string
 	AllowedDomains []string
+
+	Issuer string
+
+	ValidateJWT ValidateJWTFunc
 
 	FetchProfileDefaults []r2.Option
 	PublicKeyCache       *PublicKeyCache
@@ -117,7 +127,8 @@ func (m *Manager) Finish(r *http.Request) (result *Result, err error) {
 	}
 
 	// Handle the exchange code to initiate a transport.
-	tok, err := m.Exchange(r.Context(), code)
+	var tok *oauth2.Token
+	tok, err = m.Exchange(r.Context(), code)
 	if err != nil {
 		err = ex.New(ErrFailedCodeExchange, ex.OptInner(err))
 		return
@@ -128,7 +139,15 @@ func (m *Manager) Finish(r *http.Request) (result *Result, err error) {
 		err = ex.New(ErrInvalidJWT, ex.OptInner(err))
 		return
 	}
-	if err = m.ValidateJWT(jwtClaims); err != nil {
+
+	// define the JWT validate function handler
+	validateJWT := m.ValidateJWT
+	if validateJWT == nil {
+		validateJWT = ValidateJWTGoogle
+	}
+
+	// validate the JWT
+	if err = validateJWT(m, jwtClaims); err != nil {
 		return
 	}
 
@@ -149,7 +168,7 @@ func (m *Manager) Finish(r *http.Request) (result *Result, err error) {
 
 // FetchProfile gets a google profile for an access token.
 func (m *Manager) FetchProfile(ctx context.Context, accessToken string) (profile Profile, err error) {
-	res, err := r2.New("https://www.googleapis.com/oauth2/v1/userinfo", append([]r2.Option{
+	res, err := r2.New(m.Issuer+"/v1/userinfo", append([]r2.Option{
 		r2.OptGet(),
 		r2.OptContext(ctx),
 		r2.OptQueryValue("alt", "json"),
@@ -198,8 +217,8 @@ func (m *Manager) ValidateState(state State) error {
 	return nil
 }
 
-// ValidateJWT returns if the jwt is valid or not.
-func (m *Manager) ValidateJWT(jwtClaims *GoogleClaims) error {
+// ValidateJWTGoogle returns if the google issued jwt is valid or not.
+func ValidateJWTGoogle(m *Manager, jwtClaims *GoogleClaims) error {
 	if !jwtClaims.StandardClaims.VerifyAudience(m.Config.ClientID, true) {
 		return ex.New(ErrInvalidJWTAudience, ex.OptMessagef("audience: %s", jwtClaims.StandardClaims.Audience))
 	}
@@ -220,6 +239,14 @@ func (m *Manager) ValidateJWT(jwtClaims *GoogleClaims) error {
 		if !matchedDomain {
 			return ex.New(ErrInvalidJWTHostedDomain, ex.OptMessagef("hosted domain: %s", jwtClaims.HD))
 		}
+	}
+	return nil
+}
+
+// ValidateJWTOkta returns if the okta issued jwt is valid or not.
+func ValidateJWTOkta(m *Manager, jwtClaims *GoogleClaims) error {
+	if !jwtClaims.StandardClaims.VerifyAudience(m.Config.ClientID, true) {
+		return ex.New(ErrInvalidJWTAudience, ex.OptMessagef("audience: %s", jwtClaims.StandardClaims.Audience))
 	}
 	return nil
 }

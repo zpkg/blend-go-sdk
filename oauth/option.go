@@ -7,10 +7,15 @@ Use of this source code is governed by a MIT license that can be found in the LI
 
 package oauth
 
+import "golang.org/x/oauth2"
+
 // Option is an option for oauth managers.
 type Option func(*Manager) error
 
-// OptConfig sets a manager based on a config.
+// ValidateJWTFunc is a function type for function that validates a JWT token.
+type ValidateJWTFunc func(m *Manager, jwtClaims *GoogleClaims) error
+
+// OptConfig sets managers attributes from config values
 func OptConfig(cfg Config) Option {
 	return func(m *Manager) error {
 		secret, err := cfg.DecodeSecret()
@@ -88,6 +93,38 @@ func OptScopes(scopes ...string) Option {
 func OptTracer(tracer Tracer) Option {
 	return func(m *Manager) error {
 		m.Tracer = tracer
+		return nil
+	}
+}
+
+// OptIssuer sets the manager issuer url (for Okta Oauth variant).
+func OptIssuer(issuer string) Option {
+	return func(m *Manager) error {
+		m.Issuer = issuer
+		return nil
+	}
+}
+
+// OptValidateJWT sets the jwt token validator function.
+func OptValidateJWT(validateJWT ValidateJWTFunc) Option {
+	return func(m *Manager) error {
+		m.ValidateJWT = validateJWT
+		return nil
+	}
+}
+
+// OptPublicKeyCache sets the manager public cache.
+func OptPublicKeyCache(publicCache *PublicKeyCache) Option {
+	return func(m *Manager) error {
+		m.PublicKeyCache = publicCache
+		return nil
+	}
+}
+
+// OptEndpoint sets the manager public cache.
+func OptEndpoint(endpoint *oauth2.Endpoint) Option {
+	return func(m *Manager) error {
+		m.Endpoint = *endpoint
 		return nil
 	}
 }

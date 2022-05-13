@@ -53,7 +53,7 @@ func (w *Worker) NotifyStarted() <-chan struct{} {
 
 // NotifyStopped returns the underlying latch signal.
 func (w *Worker) NotifyStopped() <-chan struct{} {
-	return w.Latch.NotifyStarted()
+	return w.Latch.NotifyStopped()
 }
 
 // Enqueue adds an item to the work queue.

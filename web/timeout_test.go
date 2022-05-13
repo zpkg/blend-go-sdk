@@ -9,7 +9,7 @@ package web
 
 import (
 	"net/http"
-	"sync/atomic"
+	"net/http/httptest"
 	"testing"
 	"time"
 
@@ -17,43 +17,54 @@ import (
 )
 
 func TestTimeout(t *testing.T) {
-	t.Skip() // flaky
-	assert := assert.New(t)
+	for _, tc := range []struct {
+		Name    string
+		Timeout time.Duration
+		Action  Action
+		Status  int
+	}{
+		{
+			Name:    "panic",
+			Timeout: time.Minute,
+			Action: func(_ *Ctx) Result {
+				panic("test")
+			},
+			Status: http.StatusInternalServerError,
+		},
+		{
+			Name:    "long action",
+			Timeout: time.Microsecond,
+			Action: func(r *Ctx) Result {
+				<-r.Context().Done()
+				return NoContent
+			},
+			Status: http.StatusServiceUnavailable,
+		},
+		{
+			Name:    "short action",
+			Timeout: time.Minute,
+			Action: func(_ *Ctx) Result {
+				return NoContent
+			},
+			Status: http.StatusNoContent,
+		},
+	} {
+		t.Run(tc.Name, func(t *testing.T) {
+			assert := assert.New(t)
 
-	app := MustNew(
-		OptBindAddr(DefaultMockBindAddr),
-		OptUse(WithTimeout(1*time.Millisecond)),
-	)
+			app := MustNew(
+				OptBindAddr(DefaultMockBindAddr),
+				OptUse(WithTimeout(tc.Timeout)),
+			)
+			app.GET("/endpoint", tc.Action)
 
-	var didShortFinish, didLongFinish int32
-	app.GET("/panic", func(_ *Ctx) Result {
-		panic("test")
-	})
-	app.GET("/long", func(_ *Ctx) Result {
-		time.Sleep(5 * time.Millisecond)
-		atomic.StoreInt32(&didLongFinish, 1)
-		return NoContent
-	})
-	app.GET("/short", func(_ *Ctx) Result {
-		atomic.StoreInt32(&didShortFinish, 1)
-		return NoContent
-	})
+			ts := httptest.NewServer(app)
+			defer ts.Close()
 
-	go func() { _ = app.Start() }()
-	defer func() { _ = app.Stop() }()
-	<-app.NotifyStarted()
-
-	res, err := http.Get("http://" + app.Listener.Addr().String() + "/panic")
-	assert.Nil(err)
-	assert.Nil(res.Body.Close())
-
-	res, err = http.Get("http://" + app.Listener.Addr().String() + "/long")
-	assert.Nil(err)
-	assert.Nil(res.Body.Close())
-	assert.Zero(atomic.LoadInt32(&didLongFinish))
-
-	res, err = http.Get("http://" + app.Listener.Addr().String() + "/short")
-	assert.Nil(err)
-	assert.Nil(res.Body.Close())
-	assert.Equal(1, atomic.LoadInt32(&didShortFinish))
+			res, err := http.Get(ts.URL + "/endpoint")
+			assert.Nil(err)
+			assert.Nil(res.Body.Close())
+			assert.Equal(tc.Status, res.StatusCode)
+		})
+	}
 }

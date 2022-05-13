@@ -11,6 +11,8 @@ import (
 	"context"
 	"net/http"
 	"time"
+
+	"github.com/blend/go-sdk/logger"
 )
 
 // WithTimeout injects the context for a given action with a timeout context.
@@ -40,6 +42,7 @@ func WithTimeout(d time.Duration) Middleware {
 			case res := <-resultChan:
 				return res
 			case <-ctx.Done():
+				logger.MaybeWarningfContext(r.Context(), r.Log, "Web action timed out")
 				return r.DefaultProvider.Status(http.StatusServiceUnavailable, nil)
 			}
 		}

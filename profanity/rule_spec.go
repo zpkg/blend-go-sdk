@@ -81,6 +81,8 @@ type RuleSpecRules struct {
 	GoImports *GoImports `yaml:"goImports,omitempty"`
 	// GoCalls enforces that a given list of imports are used.
 	GoCalls *GoCalls `yaml:"goCalls,omitempty"`
+	// NoGenericDecls enforces that no generic declarations exist.
+	NoGenericDecls *NoGenericDecls `yaml:"noGenericDecls,omitempty"`
 }
 
 // Rules returns the rules from the spec.
@@ -95,6 +97,9 @@ func (r RuleSpecRules) Rules() (output []Rule) {
 	}
 	if r.GoCalls != nil {
 		output = append(output, r.GoCalls)
+	}
+	if r.NoGenericDecls != nil {
+		output = append(output, r.NoGenericDecls)
 	}
 	return
 }

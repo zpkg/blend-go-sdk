@@ -72,8 +72,6 @@ func (bl *BufferHandlers) Close() {
 	defer bl.Unlock()
 
 	for _, queue := range bl.Handlers {
-		stopped := queue.NotifyStopped()
-		_ = queue.Stop()
-		<-stopped
+		_ = queue.Stop() // blocks until stop signal received
 	}
 }

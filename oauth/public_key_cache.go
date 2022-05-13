@@ -26,6 +26,14 @@ type PublicKeyCache struct {
 	FetchPublicKeysDefaults []r2.Option
 	mu                      sync.RWMutex
 	current                 *PublicKeysResponse
+	keyURL                  string
+}
+
+// NewPublicKeyCache creates a new public key cache.
+func NewPublicKeyCache(keyURL string) *PublicKeyCache {
+	return &PublicKeyCache{
+		keyURL: keyURL,
+	}
 }
 
 // Keyfunc returns a jwt keyfunc for a specific exchange tied to context.
@@ -89,7 +97,7 @@ func (pkc *PublicKeyCache) Get(ctx context.Context, id string) (*rsa.PublicKey, 
 // FetchPublicKeys gets the google signing certs.
 func (pkc *PublicKeyCache) FetchPublicKeys(ctx context.Context, opts ...r2.Option) (*PublicKeysResponse, error) {
 	var jwks fetchPublicKeysResponse
-	meta, err := r2.New(GoogleKeysURL, opts...).JSON(&jwks)
+	meta, err := r2.New(pkc.keyURL, opts...).JSON(&jwks)
 	if err != nil {
 		return nil, err
 	}
