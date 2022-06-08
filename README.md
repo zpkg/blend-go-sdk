@@ -63,39 +63,28 @@ We currently don't accept PRs as this repository at this time, but feel free to 
 
 # Version Management
 
-Generally we follow semantic versioning. What that means in practice:
+We follow calendar versioning. What that means in practice:
 
-> [major].[minor].[patch]
+> [major].[year][month][day].[patch]
 
 Major version changes are changes that break backwards-compatibility. A breaking change is defined as a change that would cause code written against the current major version having a build failure of any type. That's even for a trivial find and replace. Once you merge a new api or name for an object after CR, that's it. Major changes are rolled up into a release, at most, once-per-year.
 
 Minor version changes are additions to exported types, values, or functions that don't cause break backwards compatibility. These types of changes are rolled into a new minor version at an approximate monthly cadence.
 
-Patch versions are bugfixes and improvements made without changing the current set of exports. They can be cut at any time.
+Patch versions is the used to distinguish different versions from the same calendar day.
 
 The current version is stored in the `VERSION` file at the root of the package.
 
-Currently we support 2 major version branches of the go-sdk.
+Currently we support 1 major version branches of the go-sdk.
 
-- v1.0 is scheduled for deprecation/end-of-support in Q4 2019
-- v2.0 is the current version and will be supported until at least May 2021
+- v1.xxxxxxxx.x
 
-Another version v3.0 is in development as the master branch and will likely be released in late Q2/early Q3 2019.
+All other major versions are deprecated. The previous semver scheme is deprecated.
+
 
 ## Version Release Cycle
 
-Our version release cycle has changed. Following v3.0's release later this year, we will not be releasing more than 1 major version in any calendar year, and major versions will recieve at least 2 years of support before being deprecated.
-
-## To increment the local version
-
-Patch:
-> make increment-patch
-
-Minor:
-> make increment-minor
-
-Major:
-> make increment-major
+We will not be releasing more than 1 major version in any calendar year, and major versions will recieve at least 2 years of support before being deprecated.
 
 # Bugs and Feature Requests
 
@@ -108,7 +97,5 @@ This repo is maintained by a core group of [Blend](https://blend.com) employees.
 This list includes (ordered alpha by username):
 - [@akarimcheese](https://github.com/akarimcheese)
 - [@alee101](https://github.co/alee101)
-- [@dhermes](https://github.co/dhermes)
 - [@gcarling](https://github.com/gcarling)
 - [@mat285](https://github.com/mat285)
-- [@wcharczuk](https://github.com/wcharczuk)
