@@ -13,10 +13,10 @@ import (
 	"io"
 	"time"
 
-	"github.com/blend/go-sdk/ansi"
-	"github.com/blend/go-sdk/logger"
-	"github.com/blend/go-sdk/stringutil"
-	"github.com/blend/go-sdk/timeutil"
+	"github.com/zpkg/blend-go-sdk/ansi"
+	"github.com/zpkg/blend-go-sdk/logger"
+	"github.com/zpkg/blend-go-sdk/stringutil"
+	"github.com/zpkg/blend-go-sdk/timeutil"
 )
 
 // Logger flags

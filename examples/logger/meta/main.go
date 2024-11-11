@@ -7,7 +7,7 @@ Use of this source code is governed by a MIT license that can be found in the LI
 
 package main
 
-import "github.com/blend/go-sdk/logger"
+import "github.com/zpkg/blend-go-sdk/logger"
 
 // L is a helper type alias.
 type L = logger.Labels

@@ -11,13 +11,13 @@ import (
 	"os"
 	"time"
 
-	"github.com/blend/go-sdk/cache"
-	"github.com/blend/go-sdk/ex"
-	"github.com/blend/go-sdk/graceful"
-	"github.com/blend/go-sdk/logger"
-	"github.com/blend/go-sdk/uuid"
-	"github.com/blend/go-sdk/web"
-	"github.com/blend/go-sdk/webutil"
+	"github.com/zpkg/blend-go-sdk/cache"
+	"github.com/zpkg/blend-go-sdk/ex"
+	"github.com/zpkg/blend-go-sdk/graceful"
+	"github.com/zpkg/blend-go-sdk/logger"
+	"github.com/zpkg/blend-go-sdk/uuid"
+	"github.com/zpkg/blend-go-sdk/web"
+	"github.com/zpkg/blend-go-sdk/webutil"
 )
 
 func getData() (interface{}, error) {

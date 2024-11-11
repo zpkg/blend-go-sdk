@@ -10,7 +10,7 @@ package certutil
 import (
 	"testing"
 
-	"github.com/blend/go-sdk/assert"
+	"github.com/zpkg/blend-go-sdk/assert"
 )
 
 func TestExtendSystemCertPool(t *testing.T) {

@@ -11,7 +11,7 @@ import (
 	"crypto/rand"
 	"crypto/x509"
 
-	"github.com/blend/go-sdk/ex"
+	"github.com/zpkg/blend-go-sdk/ex"
 )
 
 /*

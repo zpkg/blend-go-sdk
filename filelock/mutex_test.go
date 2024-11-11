@@ -12,9 +12,9 @@ import (
 	"path/filepath"
 	"testing"
 
-	"github.com/blend/go-sdk/assert"
-	"github.com/blend/go-sdk/filelock"
-	"github.com/blend/go-sdk/uuid"
+	"github.com/zpkg/blend-go-sdk/assert"
+	"github.com/zpkg/blend-go-sdk/filelock"
+	"github.com/zpkg/blend-go-sdk/uuid"
 )
 
 func Test_Mutex_RLock(t *testing.T) {

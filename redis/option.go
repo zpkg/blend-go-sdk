@@ -10,7 +10,7 @@ package redis
 import (
 	"time"
 
-	"github.com/blend/go-sdk/logger"
+	"github.com/zpkg/blend-go-sdk/logger"
 )
 
 // OptConfig sets the redis config.

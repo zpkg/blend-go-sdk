@@ -13,7 +13,7 @@ import (
 	"log"
 	"time"
 
-	"github.com/blend/go-sdk/certutil"
+	"github.com/zpkg/blend-go-sdk/certutil"
 )
 
 const testCertChain = `-----BEGIN CERTIFICATE-----

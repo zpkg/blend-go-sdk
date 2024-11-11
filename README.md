@@ -2,7 +2,7 @@ go-sdk
 ======
 
 [![Build Status](https://circleci.com/gh/blend/go-sdk.svg?style=shield)](https://circleci.com/gh/blend/go-sdk)
-[![GoDoc](https://godoc.org/github.com/blend/go-sdk?status.svg)](https://godoc.org/github.com/blend/go-sdk)
+[![GoDoc](https://godoc.org/github.com/zpkg/blend-go-sdk?status.svg)](https://godoc.org/github.com/zpkg/blend-go-sdk)
 
 `go-sdk` is our core library of packages. These packages can be composed to create anything from CLIs to fully featured web apps.
 
@@ -88,7 +88,7 @@ We will not be releasing more than 1 major version in any calendar year, and maj
 
 # Bugs and Feature Requests
 
-Please use the [issues page](https://github.com/blend/go-sdk/issues) to report any bugs or request new features be added to the SDK. We welcome contributions to any issue reported therein, including those you report. Please ping us on the issue itself for things like access requests.
+Please use the [issues page](https://github.com/zpkg/blend-go-sdk/issues) to report any bugs or request new features be added to the SDK. We welcome contributions to any issue reported therein, including those you report. Please ping us on the issue itself for things like access requests.
 
 # Maintainers
 

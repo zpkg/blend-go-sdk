@@ -14,8 +14,8 @@ import (
 
 	"google.golang.org/grpc/metadata"
 
-	"github.com/blend/go-sdk/assert"
-	v1 "github.com/blend/go-sdk/grpcutil/calculator/v1"
+	"github.com/zpkg/blend-go-sdk/assert"
+	v1 "github.com/zpkg/blend-go-sdk/grpcutil/calculator/v1"
 )
 
 func numberStream(values ...float64) *numberStreamServer {

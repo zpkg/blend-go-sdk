@@ -15,8 +15,8 @@ import (
 
 	"google.golang.org/grpc/metadata"
 
-	"github.com/blend/go-sdk/grpcutil"
-	"github.com/blend/go-sdk/tracing"
+	"github.com/zpkg/blend-go-sdk/grpcutil"
+	"github.com/zpkg/blend-go-sdk/tracing"
 )
 
 var (

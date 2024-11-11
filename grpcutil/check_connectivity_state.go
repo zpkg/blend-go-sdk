@@ -13,8 +13,8 @@ import (
 
 	"google.golang.org/grpc/connectivity"
 
-	"github.com/blend/go-sdk/async"
-	"github.com/blend/go-sdk/ex"
+	"github.com/zpkg/blend-go-sdk/async"
+	"github.com/zpkg/blend-go-sdk/ex"
 )
 
 // CheckConnectivityState returns an async checker for a client that provides a connection state.

@@ -21,7 +21,7 @@ ci: deps vet profanity copyright test
 new-install: deps dev-deps install-all
 
 list-deps:
-	@go list -f '{{ join .Imports "\n" }}' ./... | egrep "github.com|golang.org" | grep -v "github.com/blend/go-sdk" | sort | uniq
+	@go list -f '{{ join .Imports "\n" }}' ./... | egrep "github.com|golang.org" | grep -v "github.com/zpkg/blend-go-sdk" | sort | uniq
 
 deps:
 	@go get ./...
@@ -33,31 +33,31 @@ dev-deps:
 install-all: install-ask install-copyright install-coverage install-profanity install-reverseproxy install-recover install-semver install-shamir install-template
 
 install-ask:
-	@go install github.com/blend/go-sdk/cmd/ask
+	@go install github.com/zpkg/blend-go-sdk/cmd/ask
 
 install-copyright:
-	@go install github.com/blend/go-sdk/cmd/copyright
+	@go install github.com/zpkg/blend-go-sdk/cmd/copyright
 
 install-coverage:
-	@go install github.com/blend/go-sdk/cmd/coverage
+	@go install github.com/zpkg/blend-go-sdk/cmd/coverage
 
 install-profanity:
-	@go install github.com/blend/go-sdk/cmd/profanity
+	@go install github.com/zpkg/blend-go-sdk/cmd/profanity
 
 install-reverseproxy:
-	@go install github.com/blend/go-sdk/cmd/reverseproxy
+	@go install github.com/zpkg/blend-go-sdk/cmd/reverseproxy
 
 install-recover:
-	@go install github.com/blend/go-sdk/cmd/recover
+	@go install github.com/zpkg/blend-go-sdk/cmd/recover
 
 install-semver:
-	@go install github.com/blend/go-sdk/cmd/semver
+	@go install github.com/zpkg/blend-go-sdk/cmd/semver
 
 install-shamir:
-	@go install github.com/blend/go-sdk/cmd/shamir
+	@go install github.com/zpkg/blend-go-sdk/cmd/shamir
 
 install-template:
-	@go install github.com/blend/go-sdk/cmd/template
+	@go install github.com/zpkg/blend-go-sdk/cmd/template
 
 release-binaries: release-ask release-copyright release-coverage release-profanity release-reverseproxy release-recover release-semver release-shamir release-template
 

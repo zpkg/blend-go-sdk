@@ -13,9 +13,9 @@ import (
 	"sync"
 	"time"
 
-	"github.com/blend/go-sdk/ex"
-	"github.com/blend/go-sdk/logger"
-	"github.com/blend/go-sdk/web"
+	"github.com/zpkg/blend-go-sdk/ex"
+	"github.com/zpkg/blend-go-sdk/logger"
+	"github.com/zpkg/blend-go-sdk/web"
 )
 
 // NewFreeform returns a new freeform check aggregator.

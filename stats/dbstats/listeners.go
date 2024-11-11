@@ -10,10 +10,10 @@ package dbstats
 import (
 	"context"
 
-	"github.com/blend/go-sdk/db"
-	"github.com/blend/go-sdk/logger"
-	"github.com/blend/go-sdk/stats"
-	"github.com/blend/go-sdk/timeutil"
+	"github.com/zpkg/blend-go-sdk/db"
+	"github.com/zpkg/blend-go-sdk/logger"
+	"github.com/zpkg/blend-go-sdk/stats"
+	"github.com/zpkg/blend-go-sdk/timeutil"
 )
 
 // AddListeners adds db listeners.

@@ -7,7 +7,7 @@ Use of this source code is governed by a MIT license that can be found in the LI
 
 package sentry
 
-import "github.com/blend/go-sdk/logger"
+import "github.com/zpkg/blend-go-sdk/logger"
 
 // Constants
 const (

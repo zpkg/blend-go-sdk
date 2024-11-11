@@ -12,8 +12,8 @@ import (
 	"net/http"
 	"testing"
 
-	"github.com/blend/go-sdk/assert"
-	"github.com/blend/go-sdk/webutil"
+	"github.com/zpkg/blend-go-sdk/assert"
+	"github.com/zpkg/blend-go-sdk/webutil"
 )
 
 func TestJSONResultRender(t *testing.T) {

@@ -10,7 +10,7 @@ package main
 import (
 	"log"
 
-	"github.com/blend/go-sdk/ex"
+	"github.com/zpkg/blend-go-sdk/ex"
 )
 
 func displayError(err error) error {

@@ -11,8 +11,8 @@ import (
 	"context"
 	"testing"
 
-	"github.com/blend/go-sdk/assert"
-	"github.com/blend/go-sdk/env"
+	"github.com/zpkg/blend-go-sdk/assert"
+	"github.com/zpkg/blend-go-sdk/env"
 )
 
 func Test_Config_Resolve(t *testing.T) {

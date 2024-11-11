@@ -10,10 +10,10 @@ package main
 import (
 	"context"
 
-	"github.com/blend/go-sdk/graceful"
-	"github.com/blend/go-sdk/logger"
-	"github.com/blend/go-sdk/web"
-	"github.com/blend/go-sdk/webutil"
+	"github.com/zpkg/blend-go-sdk/graceful"
+	"github.com/zpkg/blend-go-sdk/logger"
+	"github.com/zpkg/blend-go-sdk/web"
+	"github.com/zpkg/blend-go-sdk/webutil"
 )
 
 func main() {

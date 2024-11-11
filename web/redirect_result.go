@@ -11,7 +11,7 @@ import (
 	"fmt"
 	"net/http"
 
-	"github.com/blend/go-sdk/logger"
+	"github.com/zpkg/blend-go-sdk/logger"
 )
 
 // Redirect returns a redirect result to a given destination.

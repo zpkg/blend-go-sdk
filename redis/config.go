@@ -11,7 +11,7 @@ import (
 	"context"
 	"time"
 
-	"github.com/blend/go-sdk/configutil"
+	"github.com/zpkg/blend-go-sdk/configutil"
 )
 
 // Config is the config type for the redis client.

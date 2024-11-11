@@ -15,9 +15,9 @@ import (
 	"net/http"
 	"time"
 
-	"github.com/blend/go-sdk/env"
-	"github.com/blend/go-sdk/logger"
-	"github.com/blend/go-sdk/webutil"
+	"github.com/zpkg/blend-go-sdk/env"
+	"github.com/zpkg/blend-go-sdk/logger"
+	"github.com/zpkg/blend-go-sdk/webutil"
 )
 
 // Option is an option for an app.

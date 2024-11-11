@@ -10,7 +10,7 @@ package webutil
 import (
 	"strings"
 
-	"github.com/blend/go-sdk/ex"
+	"github.com/zpkg/blend-go-sdk/ex"
 )
 
 // SplitColon splits a string on a **single** colon. For example, for a basic

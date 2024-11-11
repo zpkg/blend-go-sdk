@@ -10,11 +10,11 @@ package statsutil
 import (
 	"testing"
 
-	"github.com/blend/go-sdk/assert"
-	"github.com/blend/go-sdk/configmeta"
-	"github.com/blend/go-sdk/datadog"
-	"github.com/blend/go-sdk/logger"
-	"github.com/blend/go-sdk/stats"
+	"github.com/zpkg/blend-go-sdk/assert"
+	"github.com/zpkg/blend-go-sdk/configmeta"
+	"github.com/zpkg/blend-go-sdk/datadog"
+	"github.com/zpkg/blend-go-sdk/logger"
+	"github.com/zpkg/blend-go-sdk/stats"
 )
 
 func Test_NewMultiCollector(t *testing.T) {

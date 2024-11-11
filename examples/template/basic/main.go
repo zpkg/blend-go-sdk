@@ -10,7 +10,7 @@ package main
 import (
 	"fmt"
 
-	"github.com/blend/go-sdk/template"
+	"github.com/zpkg/blend-go-sdk/template"
 )
 
 func main() {

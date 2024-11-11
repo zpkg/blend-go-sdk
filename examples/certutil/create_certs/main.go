@@ -11,8 +11,8 @@ import (
 	"fmt"
 	"os"
 
-	"github.com/blend/go-sdk/certutil"
-	"github.com/blend/go-sdk/uuid"
+	"github.com/zpkg/blend-go-sdk/certutil"
+	"github.com/zpkg/blend-go-sdk/uuid"
 )
 
 func main() {

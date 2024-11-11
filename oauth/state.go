@@ -12,7 +12,7 @@ import (
 	"encoding/base64"
 	"encoding/gob"
 
-	"github.com/blend/go-sdk/ex"
+	"github.com/zpkg/blend-go-sdk/ex"
 )
 
 // State is the oauth state.

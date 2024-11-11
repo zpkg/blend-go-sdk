@@ -8,7 +8,7 @@ Use of this source code is governed by a MIT license that can be found in the LI
 package logger
 
 import (
-	"github.com/blend/go-sdk/ansi"
+	"github.com/zpkg/blend-go-sdk/ansi"
 )
 
 var (

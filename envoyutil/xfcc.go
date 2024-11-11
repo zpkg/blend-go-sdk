@@ -14,8 +14,8 @@ import (
 	"net/url"
 	"strings"
 
-	"github.com/blend/go-sdk/certutil"
-	"github.com/blend/go-sdk/ex"
+	"github.com/zpkg/blend-go-sdk/certutil"
+	"github.com/zpkg/blend-go-sdk/ex"
 )
 
 // XFCC represents a proxy header containing certificate information for the client

@@ -12,11 +12,11 @@ import (
 	"net/http"
 	"os"
 
-	"github.com/blend/go-sdk/graceful"
-	"github.com/blend/go-sdk/logger"
-	"github.com/blend/go-sdk/r2"
-	"github.com/blend/go-sdk/reverseproxy"
-	"github.com/blend/go-sdk/webutil"
+	"github.com/zpkg/blend-go-sdk/graceful"
+	"github.com/zpkg/blend-go-sdk/logger"
+	"github.com/zpkg/blend-go-sdk/r2"
+	"github.com/zpkg/blend-go-sdk/reverseproxy"
+	"github.com/zpkg/blend-go-sdk/webutil"
 )
 
 func main() {

@@ -19,9 +19,9 @@ import (
 
 	"golang.org/x/net/http2"
 
-	"github.com/blend/go-sdk/bufferutil"
-	"github.com/blend/go-sdk/ex"
-	"github.com/blend/go-sdk/logger"
+	"github.com/zpkg/blend-go-sdk/bufferutil"
+	"github.com/zpkg/blend-go-sdk/ex"
+	"github.com/zpkg/blend-go-sdk/logger"
 )
 
 // Assert APIClient implements Client

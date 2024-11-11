@@ -15,11 +15,11 @@ import (
 	"strings"
 	"time"
 
-	"github.com/blend/go-sdk/async"
-	"github.com/blend/go-sdk/ex"
-	"github.com/blend/go-sdk/logger"
-	"github.com/blend/go-sdk/proxyprotocol"
-	"github.com/blend/go-sdk/webutil"
+	"github.com/zpkg/blend-go-sdk/async"
+	"github.com/zpkg/blend-go-sdk/ex"
+	"github.com/zpkg/blend-go-sdk/logger"
+	"github.com/zpkg/blend-go-sdk/proxyprotocol"
+	"github.com/zpkg/blend-go-sdk/webutil"
 )
 
 // MustNew creates a new app and panics if there is an error.

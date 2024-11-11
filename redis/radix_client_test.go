@@ -15,9 +15,9 @@ import (
 
 	radix "github.com/mediocregopher/radix/v4"
 
-	"github.com/blend/go-sdk/assert"
-	"github.com/blend/go-sdk/logger"
-	"github.com/blend/go-sdk/redis"
+	"github.com/zpkg/blend-go-sdk/assert"
+	"github.com/zpkg/blend-go-sdk/logger"
+	"github.com/zpkg/blend-go-sdk/redis"
 )
 
 func Test_RadixClient_Do(t *testing.T) {

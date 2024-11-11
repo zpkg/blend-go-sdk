@@ -12,7 +12,7 @@ import (
 	"os"
 	"time"
 
-	"github.com/blend/go-sdk/certutil"
+	"github.com/zpkg/blend-go-sdk/certutil"
 )
 
 func main() {

@@ -8,7 +8,7 @@ Use of this source code is governed by a MIT license that can be found in the LI
 package r2
 
 import (
-	"github.com/blend/go-sdk/logger"
+	"github.com/zpkg/blend-go-sdk/logger"
 )
 
 // OptLog adds OnRequest and OnResponse listeners to log that a call was made.

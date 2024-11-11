@@ -7,7 +7,7 @@ Use of this source code is governed by a MIT license that can be found in the LI
 
 package validate
 
-import "github.com/blend/go-sdk/ex"
+import "github.com/zpkg/blend-go-sdk/ex"
 
 // Int32 errors
 const (

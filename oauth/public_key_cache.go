@@ -16,9 +16,9 @@ import (
 
 	"github.com/golang-jwt/jwt"
 
-	"github.com/blend/go-sdk/ex"
-	"github.com/blend/go-sdk/jwk"
-	"github.com/blend/go-sdk/r2"
+	"github.com/zpkg/blend-go-sdk/ex"
+	"github.com/zpkg/blend-go-sdk/jwk"
+	"github.com/zpkg/blend-go-sdk/r2"
 )
 
 // PublicKeyCache holds cached signing certs.

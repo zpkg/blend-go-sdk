@@ -10,7 +10,7 @@ package sentry
 import (
 	"context"
 
-	"github.com/blend/go-sdk/logger"
+	"github.com/zpkg/blend-go-sdk/logger"
 )
 
 // Sender is the type that the sentry client ascribes to.

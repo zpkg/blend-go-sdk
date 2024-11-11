@@ -10,7 +10,7 @@ package r2
 import (
 	"net/url"
 
-	"github.com/blend/go-sdk/webutil"
+	"github.com/zpkg/blend-go-sdk/webutil"
 )
 
 // OptPostForm sets the request post form and the content type.

@@ -7,7 +7,7 @@ Use of this source code is governed by a MIT license that can be found in the LI
 
 package r2
 
-import "github.com/blend/go-sdk/webutil"
+import "github.com/zpkg/blend-go-sdk/webutil"
 
 // OptJSONBody sets the post body on the request.
 func OptJSONBody(obj interface{}) Option {

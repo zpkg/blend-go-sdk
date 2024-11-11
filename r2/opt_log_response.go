@@ -13,7 +13,7 @@ import (
 	"net/http"
 	"time"
 
-	"github.com/blend/go-sdk/logger"
+	"github.com/zpkg/blend-go-sdk/logger"
 )
 
 // OptLogResponse adds an OnResponse listener to log the response of a call.

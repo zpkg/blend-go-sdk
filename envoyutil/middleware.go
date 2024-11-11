@@ -11,7 +11,7 @@ import (
 	"context"
 	"net/http"
 
-	"github.com/blend/go-sdk/web"
+	"github.com/zpkg/blend-go-sdk/web"
 )
 
 // clientIdentityKey is an unexported sentinel type used to set and get the

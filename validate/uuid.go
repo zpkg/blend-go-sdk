@@ -8,8 +8,8 @@ Use of this source code is governed by a MIT license that can be found in the LI
 package validate
 
 import (
-	"github.com/blend/go-sdk/ex"
-	"github.com/blend/go-sdk/uuid"
+	"github.com/zpkg/blend-go-sdk/ex"
+	"github.com/zpkg/blend-go-sdk/uuid"
 )
 
 // UUID errors

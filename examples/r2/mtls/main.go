@@ -10,12 +10,12 @@ package main
 import (
 	"os"
 
-	"github.com/blend/go-sdk/certutil"
-	"github.com/blend/go-sdk/graceful"
-	"github.com/blend/go-sdk/logger"
-	"github.com/blend/go-sdk/r2"
-	"github.com/blend/go-sdk/web"
-	"github.com/blend/go-sdk/webutil"
+	"github.com/zpkg/blend-go-sdk/certutil"
+	"github.com/zpkg/blend-go-sdk/graceful"
+	"github.com/zpkg/blend-go-sdk/logger"
+	"github.com/zpkg/blend-go-sdk/r2"
+	"github.com/zpkg/blend-go-sdk/web"
+	"github.com/zpkg/blend-go-sdk/webutil"
 )
 
 func fatal(log logger.FatalReceiver, err error) {

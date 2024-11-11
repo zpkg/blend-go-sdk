@@ -16,8 +16,8 @@ import (
 
 	"gopkg.in/yaml.v3"
 
-	"github.com/blend/go-sdk/ansi"
-	"github.com/blend/go-sdk/ex"
+	"github.com/zpkg/blend-go-sdk/ansi"
+	"github.com/zpkg/blend-go-sdk/ex"
 )
 
 // New creates a new profanity engine with a given set of config options.

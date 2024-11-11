@@ -15,8 +15,8 @@ import (
 	"path/filepath"
 	"strings"
 
-	"github.com/blend/go-sdk/stringutil"
-	"github.com/blend/go-sdk/validate"
+	"github.com/zpkg/blend-go-sdk/stringutil"
+	"github.com/zpkg/blend-go-sdk/validate"
 )
 
 var (

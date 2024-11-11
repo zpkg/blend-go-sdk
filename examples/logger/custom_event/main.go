@@ -12,7 +12,7 @@ import (
 	"fmt"
 	"io"
 
-	"github.com/blend/go-sdk/logger"
+	"github.com/zpkg/blend-go-sdk/logger"
 )
 
 // NewCustomEvent returns a new custom event.

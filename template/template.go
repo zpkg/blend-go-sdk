@@ -13,8 +13,8 @@ import (
 	"os"
 	texttemplate "text/template"
 
-	"github.com/blend/go-sdk/env"
-	"github.com/blend/go-sdk/ex"
+	"github.com/zpkg/blend-go-sdk/env"
+	"github.com/zpkg/blend-go-sdk/ex"
 )
 
 // New creates a new template.

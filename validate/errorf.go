@@ -10,7 +10,7 @@ package validate
 import (
 	"fmt"
 
-	"github.com/blend/go-sdk/ex"
+	"github.com/zpkg/blend-go-sdk/ex"
 )
 
 // Errorf returns a new validation error.

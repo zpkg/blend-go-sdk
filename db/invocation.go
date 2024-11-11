@@ -15,9 +15,9 @@ import (
 	"strconv"
 	"time"
 
-	"github.com/blend/go-sdk/bufferutil"
-	"github.com/blend/go-sdk/ex"
-	"github.com/blend/go-sdk/logger"
+	"github.com/zpkg/blend-go-sdk/bufferutil"
+	"github.com/zpkg/blend-go-sdk/ex"
+	"github.com/zpkg/blend-go-sdk/logger"
 )
 
 // Invocation is a specific operation against a context.

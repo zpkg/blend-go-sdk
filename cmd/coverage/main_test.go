@@ -10,7 +10,7 @@ package main
 import (
 	"testing"
 
-	"github.com/blend/go-sdk/assert"
+	"github.com/zpkg/blend-go-sdk/assert"
 )
 
 type coverProfileTestCase struct {
@@ -44,9 +44,9 @@ func TestJoinCoverPath(t *testing.T) {
 			"/users/foo/bar/baz.go",
 		},
 		{
-			"/users/example-string/workspace/go/src/github.com/blend/go-sdk/",
-			"github.com/blend/go-sdk/assert/assert.go",
-			"/users/example-string/workspace/go/src/github.com/blend/go-sdk/assert/assert.go",
+			"/users/example-string/workspace/go/src/github.com/zpkg/blend-go-sdk/",
+			"github.com/zpkg/blend-go-sdk/assert/assert.go",
+			"/users/example-string/workspace/go/src/github.com/zpkg/blend-go-sdk/assert/assert.go",
 		},
 		{
 			"/go/src/git.blendlabs.com/blend/fees",

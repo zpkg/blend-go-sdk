@@ -13,11 +13,11 @@ import (
 	"net/http"
 	"testing"
 
-	sdkAssert "github.com/blend/go-sdk/assert"
-	"github.com/blend/go-sdk/r2"
-	"github.com/blend/go-sdk/web"
+	sdkAssert "github.com/zpkg/blend-go-sdk/assert"
+	"github.com/zpkg/blend-go-sdk/r2"
+	"github.com/zpkg/blend-go-sdk/web"
 
-	"github.com/blend/go-sdk/envoyutil"
+	"github.com/zpkg/blend-go-sdk/envoyutil"
 )
 
 func TestWithClientIdentity(t *testing.T) {

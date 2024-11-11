@@ -29,11 +29,11 @@ import (
 
 	"gopkg.in/yaml.v3"
 
-	"github.com/blend/go-sdk/mathutil"
-	"github.com/blend/go-sdk/semver"
-	"github.com/blend/go-sdk/stringutil"
-	"github.com/blend/go-sdk/uuid"
-	"github.com/blend/go-sdk/webutil"
+	"github.com/zpkg/blend-go-sdk/mathutil"
+	"github.com/zpkg/blend-go-sdk/semver"
+	"github.com/zpkg/blend-go-sdk/stringutil"
+	"github.com/zpkg/blend-go-sdk/uuid"
+	"github.com/zpkg/blend-go-sdk/webutil"
 )
 
 // DefaultViewFuncs is a singleton for viewfuncs.

@@ -11,7 +11,7 @@ import (
 	"testing"
 	"time"
 
-	"github.com/blend/go-sdk/assert"
+	"github.com/zpkg/blend-go-sdk/assert"
 )
 
 func Test_Metric_Float64(t *testing.T) {

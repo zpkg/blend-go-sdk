@@ -7,7 +7,7 @@ Use of this source code is governed by a MIT license that can be found in the LI
 
 package async
 
-import "github.com/blend/go-sdk/ex"
+import "github.com/zpkg/blend-go-sdk/ex"
 
 // Errors is a channel for errors
 type Errors chan error

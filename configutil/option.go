@@ -12,7 +12,7 @@ import (
 	"context"
 	"io"
 
-	"github.com/blend/go-sdk/env"
+	"github.com/zpkg/blend-go-sdk/env"
 )
 
 // Option is a modification of config options.

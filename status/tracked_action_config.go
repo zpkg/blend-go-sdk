@@ -11,7 +11,7 @@ import (
 	"context"
 	"time"
 
-	"github.com/blend/go-sdk/configutil"
+	"github.com/zpkg/blend-go-sdk/configutil"
 )
 
 // TrackedActionConfig is the configuration for the tracker.

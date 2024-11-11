@@ -12,10 +12,10 @@ import (
 	"flag"
 	"fmt"
 
-	"github.com/blend/go-sdk/configutil"
-	"github.com/blend/go-sdk/email"
-	"github.com/blend/go-sdk/logger"
-	"github.com/blend/go-sdk/stringutil"
+	"github.com/zpkg/blend-go-sdk/configutil"
+	"github.com/zpkg/blend-go-sdk/email"
+	"github.com/zpkg/blend-go-sdk/logger"
+	"github.com/zpkg/blend-go-sdk/stringutil"
 )
 
 type flagStrings []string

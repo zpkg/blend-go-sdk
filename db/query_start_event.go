@@ -12,9 +12,9 @@ import (
 	"fmt"
 	"io"
 
-	"github.com/blend/go-sdk/ansi"
-	"github.com/blend/go-sdk/logger"
-	"github.com/blend/go-sdk/stringutil"
+	"github.com/zpkg/blend-go-sdk/ansi"
+	"github.com/zpkg/blend-go-sdk/logger"
+	"github.com/zpkg/blend-go-sdk/stringutil"
 )
 
 // Logger flags

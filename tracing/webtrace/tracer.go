@@ -13,9 +13,9 @@ import (
 
 	opentracing "github.com/opentracing/opentracing-go"
 
-	"github.com/blend/go-sdk/tracing"
-	"github.com/blend/go-sdk/tracing/httptrace"
-	"github.com/blend/go-sdk/web"
+	"github.com/zpkg/blend-go-sdk/tracing"
+	"github.com/zpkg/blend-go-sdk/tracing/httptrace"
+	"github.com/zpkg/blend-go-sdk/web"
 )
 
 var (

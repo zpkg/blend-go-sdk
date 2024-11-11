@@ -11,10 +11,10 @@ import (
 	"context"
 	"os"
 
-	"github.com/blend/go-sdk/cron"
-	"github.com/blend/go-sdk/env"
-	"github.com/blend/go-sdk/graceful"
-	"github.com/blend/go-sdk/logger"
+	"github.com/zpkg/blend-go-sdk/cron"
+	"github.com/zpkg/blend-go-sdk/env"
+	"github.com/zpkg/blend-go-sdk/graceful"
+	"github.com/zpkg/blend-go-sdk/logger"
 )
 
 // NOTE: Ensure that

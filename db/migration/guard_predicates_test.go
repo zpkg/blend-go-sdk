@@ -12,8 +12,8 @@ import (
 	"database/sql"
 	"testing"
 
-	"github.com/blend/go-sdk/assert"
-	"github.com/blend/go-sdk/db"
+	"github.com/zpkg/blend-go-sdk/assert"
+	"github.com/zpkg/blend-go-sdk/db"
 )
 
 func TestGuardPredicatesReal(t *testing.T) {

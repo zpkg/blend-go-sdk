@@ -14,9 +14,9 @@ Basics
 
 To create a web server:
 
-	import "github.com/blend/go-sdk/graceful"
-	import "github.com/blend/go-sdk/logger"
-	import "github.com/blend/go-sdk/web"
+	import "github.com/zpkg/blend-go-sdk/graceful"
+	import "github.com/zpkg/blend-go-sdk/logger"
+	import "github.com/zpkg/blend-go-sdk/web"
 
 	...
 
@@ -32,6 +32,6 @@ This will start a web server with a trivial endpoint mounted at the path "/" for
 This example will also start the server and listen for SIGINT and SIGTERM os signals,
 and close the server gracefully if they're received, letting requests finish.
 
-There are many more examples in the github.com/blend/go-sdk/examples/web directory.
+There are many more examples in the github.com/zpkg/blend-go-sdk/examples/web directory.
 */
-package web // import "github.com/blend/go-sdk/web"
+package web // import "github.com/zpkg/blend-go-sdk/web"

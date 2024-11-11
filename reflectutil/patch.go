@@ -10,7 +10,7 @@ package reflectutil
 import (
 	"reflect"
 
-	"github.com/blend/go-sdk/ex"
+	"github.com/zpkg/blend-go-sdk/ex"
 )
 
 // Patcher describes an object that can be patched with raw values.

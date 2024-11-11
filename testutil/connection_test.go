@@ -15,11 +15,11 @@ import (
 	"testing"
 	"time"
 
-	"github.com/blend/go-sdk/assert"
-	"github.com/blend/go-sdk/db"
-	"github.com/blend/go-sdk/env"
-	"github.com/blend/go-sdk/testutil"
-	"github.com/blend/go-sdk/uuid"
+	"github.com/zpkg/blend-go-sdk/assert"
+	"github.com/zpkg/blend-go-sdk/db"
+	"github.com/zpkg/blend-go-sdk/env"
+	"github.com/zpkg/blend-go-sdk/testutil"
+	"github.com/zpkg/blend-go-sdk/uuid"
 )
 
 var (

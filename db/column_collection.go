@@ -12,7 +12,7 @@ import (
 	"strings"
 	"sync"
 
-	"github.com/blend/go-sdk/stringutil"
+	"github.com/zpkg/blend-go-sdk/stringutil"
 )
 
 var (

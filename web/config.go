@@ -14,10 +14,10 @@ import (
 	"net/url"
 	"time"
 
-	"github.com/blend/go-sdk/configutil"
-	"github.com/blend/go-sdk/ref"
+	"github.com/zpkg/blend-go-sdk/configutil"
+	"github.com/zpkg/blend-go-sdk/ref"
 
-	"github.com/blend/go-sdk/webutil"
+	"github.com/zpkg/blend-go-sdk/webutil"
 )
 
 // Config is an object used to set up a web app.

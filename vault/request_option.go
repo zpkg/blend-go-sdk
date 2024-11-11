@@ -10,7 +10,7 @@ package vault
 import (
 	"strconv"
 
-	"github.com/blend/go-sdk/webutil"
+	"github.com/zpkg/blend-go-sdk/webutil"
 )
 
 // CallOption a thing that we can do to modify a request.

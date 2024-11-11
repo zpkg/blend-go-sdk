@@ -16,8 +16,8 @@ import (
 
 	"github.com/spf13/cobra"
 
-	"github.com/blend/go-sdk/shamir"
-	"github.com/blend/go-sdk/stringutil"
+	"github.com/zpkg/blend-go-sdk/shamir"
+	"github.com/zpkg/blend-go-sdk/stringutil"
 )
 
 func main() {

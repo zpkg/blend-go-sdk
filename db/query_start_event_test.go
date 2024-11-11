@@ -13,8 +13,8 @@ import (
 	"encoding/json"
 	"testing"
 
-	"github.com/blend/go-sdk/assert"
-	"github.com/blend/go-sdk/logger"
+	"github.com/zpkg/blend-go-sdk/assert"
+	"github.com/zpkg/blend-go-sdk/logger"
 )
 
 func Test_NewQueryStartEvent(t *testing.T) {

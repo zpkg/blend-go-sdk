@@ -10,7 +10,7 @@ package fileutil
 import (
 	"os"
 
-	"github.com/blend/go-sdk/ex"
+	"github.com/zpkg/blend-go-sdk/ex"
 )
 
 // RemoveMany removes an array of files.

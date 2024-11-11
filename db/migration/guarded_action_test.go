@@ -10,7 +10,7 @@ package migration
 import (
 	"testing"
 
-	"github.com/blend/go-sdk/assert"
+	"github.com/zpkg/blend-go-sdk/assert"
 )
 
 func TestStep(t *testing.T) {

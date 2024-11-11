@@ -13,8 +13,8 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/blend/go-sdk/assert"
-	"github.com/blend/go-sdk/fileutil"
+	"github.com/zpkg/blend-go-sdk/assert"
+	"github.com/zpkg/blend-go-sdk/fileutil"
 )
 
 func TestFileExists(t *testing.T) {

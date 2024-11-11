@@ -12,7 +12,7 @@ import (
 	"fmt"
 	"runtime"
 
-	"github.com/blend/go-sdk/async"
+	"github.com/zpkg/blend-go-sdk/async"
 )
 
 // WorkSize is the amount of work to do.

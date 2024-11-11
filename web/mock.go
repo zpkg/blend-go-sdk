@@ -16,8 +16,8 @@ import (
 	"net/http/httptest"
 	"net/url"
 
-	"github.com/blend/go-sdk/r2"
-	"github.com/blend/go-sdk/webutil"
+	"github.com/zpkg/blend-go-sdk/r2"
+	"github.com/zpkg/blend-go-sdk/webutil"
 )
 
 // Mock sends a mock request to an app.

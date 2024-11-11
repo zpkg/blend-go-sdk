@@ -14,8 +14,8 @@ import (
 	"testing"
 	"time"
 
-	"github.com/blend/go-sdk/ansi"
-	"github.com/blend/go-sdk/assert"
+	"github.com/zpkg/blend-go-sdk/ansi"
+	"github.com/zpkg/blend-go-sdk/assert"
 )
 
 func TestTextOutputFormatter(t *testing.T) {

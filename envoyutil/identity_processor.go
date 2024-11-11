@@ -11,9 +11,9 @@ import (
 	"fmt"
 	"strings"
 
-	"github.com/blend/go-sdk/collections"
-	"github.com/blend/go-sdk/ex"
-	"github.com/blend/go-sdk/spiffeutil"
+	"github.com/zpkg/blend-go-sdk/collections"
+	"github.com/zpkg/blend-go-sdk/ex"
+	"github.com/zpkg/blend-go-sdk/spiffeutil"
 )
 
 // NOTE: Ensure that

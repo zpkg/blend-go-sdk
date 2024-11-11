@@ -11,7 +11,7 @@ import (
 	"net/http"
 	"time"
 
-	"github.com/blend/go-sdk/logger"
+	"github.com/zpkg/blend-go-sdk/logger"
 )
 
 // HTTPLogged returns a middleware that logs a request.

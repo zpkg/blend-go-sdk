@@ -10,7 +10,7 @@ package fileutil
 import (
 	"os"
 
-	"github.com/blend/go-sdk/ex"
+	"github.com/zpkg/blend-go-sdk/ex"
 )
 
 // pathInfo encapsulates two of the more salient outputs of `os.Stat()`

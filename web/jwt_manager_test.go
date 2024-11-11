@@ -14,10 +14,10 @@ import (
 
 	"github.com/golang-jwt/jwt"
 
-	"github.com/blend/go-sdk/assert"
-	"github.com/blend/go-sdk/crypto"
-	"github.com/blend/go-sdk/ex"
-	"github.com/blend/go-sdk/uuid"
+	"github.com/zpkg/blend-go-sdk/assert"
+	"github.com/zpkg/blend-go-sdk/crypto"
+	"github.com/zpkg/blend-go-sdk/ex"
+	"github.com/zpkg/blend-go-sdk/uuid"
 )
 
 func TestNewJWTManager(t *testing.T) {

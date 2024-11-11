@@ -13,10 +13,10 @@ import (
 	"testing"
 	"time"
 
-	"github.com/blend/go-sdk/assert"
-	"github.com/blend/go-sdk/db"
-	"github.com/blend/go-sdk/logger"
-	"github.com/blend/go-sdk/stats"
+	"github.com/zpkg/blend-go-sdk/assert"
+	"github.com/zpkg/blend-go-sdk/db"
+	"github.com/zpkg/blend-go-sdk/logger"
+	"github.com/zpkg/blend-go-sdk/stats"
 )
 
 func TestAddListeners(t *testing.T) {

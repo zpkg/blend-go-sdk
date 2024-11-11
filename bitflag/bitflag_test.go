@@ -10,7 +10,7 @@ package bitflag
 import (
 	"testing"
 
-	"github.com/blend/go-sdk/assert"
+	"github.com/zpkg/blend-go-sdk/assert"
 )
 
 func TestCombine(t *testing.T) {

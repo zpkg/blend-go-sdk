@@ -10,7 +10,7 @@ package certutil
 import (
 	"crypto/x509"
 
-	"github.com/blend/go-sdk/ex"
+	"github.com/zpkg/blend-go-sdk/ex"
 )
 
 // ExtendSystemCertPool extends the system ca pool with a given list of ca cert key pairs.

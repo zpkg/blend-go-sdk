@@ -7,7 +7,7 @@ Use of this source code is governed by a MIT license that can be found in the LI
 
 package r2stats
 
-import "github.com/blend/go-sdk/r2"
+import "github.com/zpkg/blend-go-sdk/r2"
 
 // HTTP stats constants
 const (

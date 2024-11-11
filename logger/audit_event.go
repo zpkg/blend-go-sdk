@@ -13,7 +13,7 @@ import (
 	"io"
 	"strings"
 
-	"github.com/blend/go-sdk/ansi"
+	"github.com/zpkg/blend-go-sdk/ansi"
 )
 
 // these are compile time assertions

@@ -13,8 +13,8 @@ import (
 	_ "net/http/pprof"
 	"os"
 
-	"github.com/blend/go-sdk/logger"
-	"github.com/blend/go-sdk/webutil"
+	"github.com/zpkg/blend-go-sdk/logger"
+	"github.com/zpkg/blend-go-sdk/webutil"
 )
 
 func indexHandler(res http.ResponseWriter, req *http.Request) {

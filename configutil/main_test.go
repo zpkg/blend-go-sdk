@@ -12,7 +12,7 @@ import (
 	"os"
 	"testing"
 
-	"github.com/blend/go-sdk/env"
+	"github.com/zpkg/blend-go-sdk/env"
 )
 
 // TestMain is the testing entrypoint.

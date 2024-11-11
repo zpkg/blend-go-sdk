@@ -12,8 +12,8 @@ import (
 	"encoding/json"
 	"net/http"
 
-	"github.com/blend/go-sdk/ex"
-	"github.com/blend/go-sdk/r2"
+	"github.com/zpkg/blend-go-sdk/ex"
+	"github.com/zpkg/blend-go-sdk/r2"
 )
 
 // CreateIncident creates an incident using the incident events api.

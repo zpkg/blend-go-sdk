@@ -10,7 +10,7 @@ package stats
 import (
 	"context"
 
-	"github.com/blend/go-sdk/logger"
+	"github.com/zpkg/blend-go-sdk/logger"
 )
 
 // GetLoggerLabelsAsTags reads the logger labels map off the context and

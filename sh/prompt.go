@@ -13,7 +13,7 @@ import (
 	"io"
 	"os"
 
-	"github.com/blend/go-sdk/ex"
+	"github.com/zpkg/blend-go-sdk/ex"
 )
 
 // ErrUnexpectedNewLine is returned from scan.go when you just hit enter with nothing in the prompt

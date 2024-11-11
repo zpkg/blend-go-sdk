@@ -10,7 +10,7 @@ package ratelimiter
 import (
 	"time"
 
-	"github.com/blend/go-sdk/collections"
+	"github.com/zpkg/blend-go-sdk/collections"
 )
 
 // NewQueue returns a new queue based rate limiter.

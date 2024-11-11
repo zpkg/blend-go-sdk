@@ -10,7 +10,7 @@ package vault
 import (
 	"net/http"
 
-	"github.com/blend/go-sdk/ex"
+	"github.com/zpkg/blend-go-sdk/ex"
 )
 
 // ErrClassForStatus returns the exception class for a given remote status code.

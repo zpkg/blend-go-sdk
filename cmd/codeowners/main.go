@@ -13,8 +13,8 @@ import (
 	"fmt"
 	"os"
 
-	"github.com/blend/go-sdk/ansi"
-	"github.com/blend/go-sdk/codeowners"
+	"github.com/zpkg/blend-go-sdk/ansi"
+	"github.com/zpkg/blend-go-sdk/codeowners"
 )
 
 var (

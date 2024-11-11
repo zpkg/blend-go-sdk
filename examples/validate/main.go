@@ -11,11 +11,11 @@ import (
 	"fmt"
 	"time"
 
-	"github.com/blend/go-sdk/ref"
-	"github.com/blend/go-sdk/uuid"
+	"github.com/zpkg/blend-go-sdk/ref"
+	"github.com/zpkg/blend-go-sdk/uuid"
 
 	// if you're feeling evil.
-	joi "github.com/blend/go-sdk/validate"
+	joi "github.com/zpkg/blend-go-sdk/validate"
 )
 
 // Validated is a validated object.

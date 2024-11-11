@@ -11,7 +11,7 @@ import (
 	"crypto/tls"
 	"crypto/x509"
 
-	"github.com/blend/go-sdk/ex"
+	"github.com/zpkg/blend-go-sdk/ex"
 )
 
 // TLSOption is an option for TLS configs.

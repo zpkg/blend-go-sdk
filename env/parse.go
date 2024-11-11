@@ -12,7 +12,7 @@ import (
 	"strings"
 	"unicode"
 
-	"github.com/blend/go-sdk/ex"
+	"github.com/zpkg/blend-go-sdk/ex"
 )
 
 // Parse uses a state machine to parse an input string into the `Vars` type.

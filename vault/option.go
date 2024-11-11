@@ -16,9 +16,9 @@ import (
 	"os"
 	"time"
 
-	"github.com/blend/go-sdk/env"
-	"github.com/blend/go-sdk/ex"
-	"github.com/blend/go-sdk/logger"
+	"github.com/zpkg/blend-go-sdk/env"
+	"github.com/zpkg/blend-go-sdk/ex"
+	"github.com/zpkg/blend-go-sdk/logger"
 )
 
 // Option is an option for a vault client.

@@ -10,7 +10,7 @@ package envoyutil_test
 import (
 	"testing"
 
-	"github.com/blend/go-sdk/envoyutil"
+	"github.com/zpkg/blend-go-sdk/envoyutil"
 )
 
 // BenchmarkParseXFCC tries to help determine a baseline of the speed for

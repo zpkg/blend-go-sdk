@@ -12,7 +12,7 @@ import (
 	"net/http"
 	"time"
 
-	"github.com/blend/go-sdk/logger"
+	"github.com/zpkg/blend-go-sdk/logger"
 )
 
 // WithTimeout injects the context for a given action with a timeout context.

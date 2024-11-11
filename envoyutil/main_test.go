@@ -10,7 +10,7 @@ package envoyutil_test
 import (
 	"bytes"
 
-	"github.com/blend/go-sdk/logger"
+	"github.com/zpkg/blend-go-sdk/logger"
 )
 
 // InMemoryLog creates a logger that logs to the in-memory buffer passed in.

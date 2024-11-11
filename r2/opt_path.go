@@ -12,8 +12,8 @@ import (
 	"net/url"
 	"strings"
 
-	"github.com/blend/go-sdk/ex"
-	"github.com/blend/go-sdk/stringutil"
+	"github.com/zpkg/blend-go-sdk/ex"
+	"github.com/zpkg/blend-go-sdk/stringutil"
 )
 
 // OptPath sets the url path.

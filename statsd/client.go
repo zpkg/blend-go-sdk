@@ -16,8 +16,8 @@ import (
 	"sync"
 	"time"
 
-	"github.com/blend/go-sdk/ex"
-	"github.com/blend/go-sdk/stats"
+	"github.com/zpkg/blend-go-sdk/ex"
+	"github.com/zpkg/blend-go-sdk/stats"
 )
 
 // Error classes.

@@ -12,7 +12,7 @@ import (
 	"encoding/base64"
 	"encoding/hex"
 
-	"github.com/blend/go-sdk/ex"
+	"github.com/zpkg/blend-go-sdk/ex"
 )
 
 // MustCreateKey creates a key, if an error is returned, it panics.

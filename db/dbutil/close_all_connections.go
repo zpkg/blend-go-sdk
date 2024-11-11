@@ -10,7 +10,7 @@ package dbutil
 import (
 	"context"
 
-	"github.com/blend/go-sdk/db"
+	"github.com/zpkg/blend-go-sdk/db"
 )
 
 // CloseAllConnections closes all other connections to a database.

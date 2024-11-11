@@ -7,7 +7,7 @@ Use of this source code is governed by a MIT license that can be found in the LI
 
 package testutil
 
-import "github.com/blend/go-sdk/db"
+import "github.com/zpkg/blend-go-sdk/db"
 
 var (
 	_defaultDB *db.Connection

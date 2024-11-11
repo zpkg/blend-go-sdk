@@ -12,7 +12,7 @@ import (
 	"net/http"
 	"strings"
 
-	"github.com/blend/go-sdk/webutil"
+	"github.com/zpkg/blend-go-sdk/webutil"
 )
 
 var (

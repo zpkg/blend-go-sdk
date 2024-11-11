@@ -8,7 +8,7 @@ Use of this source code is governed by a MIT license that can be found in the LI
 package sh
 
 import (
-	"github.com/blend/go-sdk/stringutil"
+	"github.com/zpkg/blend-go-sdk/stringutil"
 )
 
 // ParseCommand returns the bin and args for a given statement.

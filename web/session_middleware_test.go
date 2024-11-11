@@ -14,10 +14,10 @@ import (
 	"testing"
 	"time"
 
-	"github.com/blend/go-sdk/assert"
-	"github.com/blend/go-sdk/r2"
-	"github.com/blend/go-sdk/stringutil"
-	"github.com/blend/go-sdk/webutil"
+	"github.com/zpkg/blend-go-sdk/assert"
+	"github.com/zpkg/blend-go-sdk/r2"
+	"github.com/zpkg/blend-go-sdk/stringutil"
+	"github.com/zpkg/blend-go-sdk/webutil"
 )
 
 func Test_SessionAware(t *testing.T) {

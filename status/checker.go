@@ -7,7 +7,7 @@ Use of this source code is governed by a MIT license that can be found in the LI
 
 package status
 
-import "github.com/blend/go-sdk/async"
+import "github.com/zpkg/blend-go-sdk/async"
 
 type (
 	// Checker is an alias to async.Checker

@@ -10,8 +10,8 @@ package configmeta
 import (
 	"context"
 
-	"github.com/blend/go-sdk/configutil"
-	"github.com/blend/go-sdk/env"
+	"github.com/zpkg/blend-go-sdk/configutil"
+	"github.com/zpkg/blend-go-sdk/env"
 )
 
 // These are set with `-ldflags="-X` on `go install`

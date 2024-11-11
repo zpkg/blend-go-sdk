@@ -10,8 +10,8 @@ package main
 import (
 	"context"
 
-	"github.com/blend/go-sdk/logger"
-	"github.com/blend/go-sdk/vault"
+	"github.com/zpkg/blend-go-sdk/logger"
+	"github.com/zpkg/blend-go-sdk/vault"
 )
 
 func main() {

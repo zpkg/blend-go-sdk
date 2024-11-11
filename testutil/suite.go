@@ -12,8 +12,8 @@ import (
 	"os"
 	"testing"
 
-	"github.com/blend/go-sdk/ex"
-	"github.com/blend/go-sdk/logger"
+	"github.com/zpkg/blend-go-sdk/ex"
+	"github.com/zpkg/blend-go-sdk/logger"
 )
 
 // FailureCodes

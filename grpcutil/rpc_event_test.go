@@ -18,8 +18,8 @@ import (
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
 
-	"github.com/blend/go-sdk/assert"
-	"github.com/blend/go-sdk/logger"
+	"github.com/zpkg/blend-go-sdk/assert"
+	"github.com/zpkg/blend-go-sdk/logger"
 )
 
 func TestRPCEvent(t *testing.T) {

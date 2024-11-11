@@ -15,10 +15,10 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/blend/go-sdk/assert"
-	"github.com/blend/go-sdk/env"
-	"github.com/blend/go-sdk/ex"
-	"github.com/blend/go-sdk/webutil"
+	"github.com/zpkg/blend-go-sdk/assert"
+	"github.com/zpkg/blend-go-sdk/env"
+	"github.com/zpkg/blend-go-sdk/ex"
+	"github.com/zpkg/blend-go-sdk/webutil"
 )
 
 type testViewModel struct {

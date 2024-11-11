@@ -11,10 +11,10 @@ import (
 	"net/http"
 	"time"
 
-	"github.com/blend/go-sdk/async"
-	"github.com/blend/go-sdk/configmeta"
-	"github.com/blend/go-sdk/logger"
-	"github.com/blend/go-sdk/web"
+	"github.com/zpkg/blend-go-sdk/async"
+	"github.com/zpkg/blend-go-sdk/configmeta"
+	"github.com/zpkg/blend-go-sdk/logger"
+	"github.com/zpkg/blend-go-sdk/web"
 )
 
 // NewController returns a new controller

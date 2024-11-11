@@ -8,9 +8,9 @@ Use of this source code is governed by a MIT license that can be found in the LI
 package main
 
 import (
-	"github.com/blend/go-sdk/graceful"
-	"github.com/blend/go-sdk/logger"
-	"github.com/blend/go-sdk/web"
+	"github.com/zpkg/blend-go-sdk/graceful"
+	"github.com/zpkg/blend-go-sdk/logger"
+	"github.com/zpkg/blend-go-sdk/web"
 )
 
 // ShimTracer is a basic tracer.

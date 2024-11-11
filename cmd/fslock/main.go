@@ -14,7 +14,7 @@ import (
 	"os"
 	"time"
 
-	"github.com/blend/go-sdk/filelock"
+	"github.com/zpkg/blend-go-sdk/filelock"
 )
 
 var (

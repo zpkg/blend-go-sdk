@@ -10,9 +10,9 @@ package sentry
 import (
 	"testing"
 
-	"github.com/blend/go-sdk/assert"
-	"github.com/blend/go-sdk/configmeta"
-	"github.com/blend/go-sdk/logger"
+	"github.com/zpkg/blend-go-sdk/assert"
+	"github.com/zpkg/blend-go-sdk/configmeta"
+	"github.com/zpkg/blend-go-sdk/logger"
 )
 
 func TestAddListeners_Default(t *testing.T) {

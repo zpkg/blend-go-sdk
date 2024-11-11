@@ -8,12 +8,12 @@ Use of this source code is governed by a MIT license that can be found in the LI
 package statsutil
 
 import (
-	"github.com/blend/go-sdk/configmeta"
-	"github.com/blend/go-sdk/datadog"
-	"github.com/blend/go-sdk/env"
-	"github.com/blend/go-sdk/logger"
-	"github.com/blend/go-sdk/stats"
-	"github.com/blend/go-sdk/statsd"
+	"github.com/zpkg/blend-go-sdk/configmeta"
+	"github.com/zpkg/blend-go-sdk/datadog"
+	"github.com/zpkg/blend-go-sdk/env"
+	"github.com/zpkg/blend-go-sdk/logger"
+	"github.com/zpkg/blend-go-sdk/stats"
+	"github.com/zpkg/blend-go-sdk/statsd"
 )
 
 // MultiCollectorOptions are the options for the multi-collector.

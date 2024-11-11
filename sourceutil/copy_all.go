@@ -12,7 +12,7 @@ import (
 	"os"
 	"path/filepath"
 
-	"github.com/blend/go-sdk/stringutil"
+	"github.com/zpkg/blend-go-sdk/stringutil"
 )
 
 // CopyAll copies all files and directories from a source path to a destination path recurrsively.

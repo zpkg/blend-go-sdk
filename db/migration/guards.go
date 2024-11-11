@@ -11,7 +11,7 @@ import (
 	"context"
 	"database/sql"
 
-	"github.com/blend/go-sdk/db"
+	"github.com/zpkg/blend-go-sdk/db"
 )
 
 // GuardFunc is a control for migration steps.

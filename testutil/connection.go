@@ -16,9 +16,9 @@ import (
 
 	"github.com/jackc/pgconn"
 
-	"github.com/blend/go-sdk/db"
-	"github.com/blend/go-sdk/env"
-	"github.com/blend/go-sdk/ex"
+	"github.com/zpkg/blend-go-sdk/db"
+	"github.com/zpkg/blend-go-sdk/env"
+	"github.com/zpkg/blend-go-sdk/ex"
 )
 
 const (

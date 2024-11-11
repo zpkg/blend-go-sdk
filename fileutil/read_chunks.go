@@ -11,7 +11,7 @@ import (
 	"io"
 	"os"
 
-	"github.com/blend/go-sdk/ex"
+	"github.com/zpkg/blend-go-sdk/ex"
 )
 
 // ReadChunks reads a file in `chunkSize` pieces, dispatched to the handler.

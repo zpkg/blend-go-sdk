@@ -15,8 +15,8 @@ import (
 	"sync/atomic"
 	"time"
 
-	"github.com/blend/go-sdk/cron"
-	"github.com/blend/go-sdk/logger"
+	"github.com/zpkg/blend-go-sdk/cron"
+	"github.com/zpkg/blend-go-sdk/logger"
 )
 
 const (

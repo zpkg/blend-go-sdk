@@ -12,7 +12,7 @@ import (
 	"io"
 	"testing"
 
-	"github.com/blend/go-sdk/assert"
+	"github.com/zpkg/blend-go-sdk/assert"
 )
 
 func Test_Stream_EncrypterDecrypter(t *testing.T) {

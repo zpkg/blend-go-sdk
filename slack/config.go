@@ -10,7 +10,7 @@ package slack
 import (
 	"context"
 
-	"github.com/blend/go-sdk/env"
+	"github.com/zpkg/blend-go-sdk/env"
 )
 
 // Config represents the required fields for the config.

@@ -11,7 +11,7 @@ import (
 	"context"
 	"fmt"
 
-	"github.com/blend/go-sdk/db"
+	"github.com/zpkg/blend-go-sdk/db"
 )
 
 // CreateDatabase creates a database with a given name.

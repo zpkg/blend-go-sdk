@@ -11,8 +11,8 @@ import (
 	"context"
 	"sync"
 
-	"github.com/blend/go-sdk/db"
-	"github.com/blend/go-sdk/ex"
+	"github.com/zpkg/blend-go-sdk/db"
+	"github.com/zpkg/blend-go-sdk/ex"
 )
 
 // Shards handles communicating with many underlying databases at once.

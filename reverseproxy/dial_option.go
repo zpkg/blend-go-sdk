@@ -11,7 +11,7 @@ import (
 	"net"
 	"time"
 
-	"github.com/blend/go-sdk/webutil"
+	"github.com/zpkg/blend-go-sdk/webutil"
 )
 
 // DialOption is a mutator for a net.Dialer.

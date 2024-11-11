@@ -14,7 +14,7 @@ import (
 	"math/big"
 	"time"
 
-	"github.com/blend/go-sdk/ex"
+	"github.com/zpkg/blend-go-sdk/ex"
 )
 
 // CertOptions are required arguments when creating certificates.

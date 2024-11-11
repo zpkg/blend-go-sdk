@@ -11,7 +11,7 @@ import (
 	"database/sql"
 	"reflect"
 
-	"github.com/blend/go-sdk/ex"
+	"github.com/zpkg/blend-go-sdk/ex"
 )
 
 // PopulateByName sets the values of an object from the values of a sql.Rows object using column names.

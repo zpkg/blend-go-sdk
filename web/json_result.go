@@ -7,7 +7,7 @@ Use of this source code is governed by a MIT license that can be found in the LI
 
 package web
 
-import "github.com/blend/go-sdk/webutil"
+import "github.com/zpkg/blend-go-sdk/webutil"
 
 // JSONResult is a json result.
 type JSONResult struct {

@@ -12,9 +12,9 @@ import (
 	"database/sql"
 	"time"
 
-	"github.com/blend/go-sdk/db"
-	"github.com/blend/go-sdk/db/migration"
-	"github.com/blend/go-sdk/logger"
+	"github.com/zpkg/blend-go-sdk/db"
+	"github.com/zpkg/blend-go-sdk/db/migration"
+	"github.com/zpkg/blend-go-sdk/logger"
 )
 
 func main() {

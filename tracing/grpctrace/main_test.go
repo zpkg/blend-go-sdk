@@ -17,12 +17,12 @@ import (
 	"github.com/opentracing/opentracing-go/mocktracer"
 	"google.golang.org/grpc"
 
-	"github.com/blend/go-sdk/assert"
-	"github.com/blend/go-sdk/grpcutil"
-	"github.com/blend/go-sdk/grpcutil/calculator"
-	"github.com/blend/go-sdk/tracing"
+	"github.com/zpkg/blend-go-sdk/assert"
+	"github.com/zpkg/blend-go-sdk/grpcutil"
+	"github.com/zpkg/blend-go-sdk/grpcutil/calculator"
+	"github.com/zpkg/blend-go-sdk/tracing"
 
-	v1 "github.com/blend/go-sdk/grpcutil/calculator/v1"
+	v1 "github.com/zpkg/blend-go-sdk/grpcutil/calculator/v1"
 )
 
 func Test_Tracing_ServerUnary(t *testing.T) {

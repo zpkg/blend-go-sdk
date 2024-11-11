@@ -10,10 +10,10 @@ package spiffeutil_test
 import (
 	"testing"
 
-	sdkAssert "github.com/blend/go-sdk/assert"
-	"github.com/blend/go-sdk/ex"
+	sdkAssert "github.com/zpkg/blend-go-sdk/assert"
+	"github.com/zpkg/blend-go-sdk/ex"
 
-	"github.com/blend/go-sdk/spiffeutil"
+	"github.com/zpkg/blend-go-sdk/spiffeutil"
 )
 
 func TestParse(t *testing.T) {

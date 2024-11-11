@@ -10,7 +10,7 @@ package r2
 import (
 	"net/url"
 
-	"github.com/blend/go-sdk/ex"
+	"github.com/zpkg/blend-go-sdk/ex"
 )
 
 // OptScheme sets the url scheme.

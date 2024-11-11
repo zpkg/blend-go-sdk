@@ -11,7 +11,7 @@ import (
 	"context"
 	"io"
 
-	"github.com/blend/go-sdk/env"
+	"github.com/zpkg/blend-go-sdk/env"
 )
 
 // ConfigOptions are options built for reading configs.

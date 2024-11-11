@@ -14,10 +14,10 @@ import (
 
 	"github.com/spf13/cobra"
 
-	"github.com/blend/go-sdk/configutil"
-	"github.com/blend/go-sdk/logger"
-	"github.com/blend/go-sdk/profanity"
-	"github.com/blend/go-sdk/ref"
+	"github.com/zpkg/blend-go-sdk/configutil"
+	"github.com/zpkg/blend-go-sdk/logger"
+	"github.com/zpkg/blend-go-sdk/profanity"
+	"github.com/zpkg/blend-go-sdk/ref"
 )
 
 var (
@@ -65,7 +65,7 @@ EXCLUDES_EXAMPLE:
 
 IMPORTS_EXAMPLE: # you can assert a go AST doesnt contains a given import by glob
   description: "dont include command stuff"
-  goImports: { include: [ "github.com/blend/go-sdk/cmd/*" ] }
+  goImports: { include: [ "github.com/zpkg/blend-go-sdk/cmd/*" ] }
 `
 
 func command() *cobra.Command {

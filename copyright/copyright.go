@@ -19,8 +19,8 @@ import (
 	"text/template"
 	"unicode"
 
-	"github.com/blend/go-sdk/diff"
-	"github.com/blend/go-sdk/stringutil"
+	"github.com/zpkg/blend-go-sdk/diff"
+	"github.com/zpkg/blend-go-sdk/stringutil"
 )
 
 // New creates a new copyright engine with a given set of config options.

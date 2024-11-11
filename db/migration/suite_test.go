@@ -13,9 +13,9 @@ import (
 	"fmt"
 	"testing"
 
-	"github.com/blend/go-sdk/assert"
-	"github.com/blend/go-sdk/db"
-	"github.com/blend/go-sdk/logger"
+	"github.com/zpkg/blend-go-sdk/assert"
+	"github.com/zpkg/blend-go-sdk/db"
+	"github.com/zpkg/blend-go-sdk/logger"
 )
 
 func TestSuite_Apply(t *testing.T) {

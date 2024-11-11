@@ -10,7 +10,7 @@ package statsd
 import (
 	"testing"
 
-	"github.com/blend/go-sdk/assert"
+	"github.com/zpkg/blend-go-sdk/assert"
 )
 
 func Test_Tag(t *testing.T) {

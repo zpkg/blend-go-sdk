@@ -11,7 +11,7 @@ import (
 	"crypto/md5"
 	"encoding/hex"
 
-	"github.com/blend/go-sdk/ex"
+	"github.com/zpkg/blend-go-sdk/ex"
 )
 
 // ETag creates an etag for a given blob.

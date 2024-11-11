@@ -13,8 +13,8 @@ import (
 
 	opentracing "github.com/opentracing/opentracing-go"
 
-	"github.com/blend/go-sdk/cron"
-	"github.com/blend/go-sdk/tracing"
+	"github.com/zpkg/blend-go-sdk/cron"
+	"github.com/zpkg/blend-go-sdk/tracing"
 )
 
 // Tracer returns a opentracing cron tracer.

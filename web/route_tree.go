@@ -10,7 +10,7 @@ package web
 import (
 	"net/http"
 
-	"github.com/blend/go-sdk/webutil"
+	"github.com/zpkg/blend-go-sdk/webutil"
 )
 
 // RouteTree implements the basic logic of creating a route tree.

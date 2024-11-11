@@ -13,8 +13,8 @@ import (
 
 	"github.com/opentracing/opentracing-go"
 
-	"github.com/blend/go-sdk/autoflush"
-	"github.com/blend/go-sdk/tracing"
+	"github.com/zpkg/blend-go-sdk/autoflush"
+	"github.com/zpkg/blend-go-sdk/tracing"
 )
 
 var (

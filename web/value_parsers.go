@@ -13,7 +13,7 @@ import (
 	"strings"
 	"time"
 
-	"github.com/blend/go-sdk/uuid"
+	"github.com/zpkg/blend-go-sdk/uuid"
 )
 
 // Common errors

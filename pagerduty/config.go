@@ -10,7 +10,7 @@ package pagerduty
 import (
 	"context"
 
-	"github.com/blend/go-sdk/configutil"
+	"github.com/zpkg/blend-go-sdk/configutil"
 )
 
 // Config is the pagerduty config.

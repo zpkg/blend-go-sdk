@@ -15,8 +15,8 @@ import (
 	"regexp"
 	"sync"
 
-	"github.com/blend/go-sdk/logger"
-	"github.com/blend/go-sdk/webutil"
+	"github.com/zpkg/blend-go-sdk/logger"
+	"github.com/zpkg/blend-go-sdk/webutil"
 )
 
 // NewStaticFileServer returns a new static file cache.

@@ -11,9 +11,9 @@ import (
 	"context"
 	"testing"
 
-	"github.com/blend/go-sdk/db"
-	"github.com/blend/go-sdk/logger"
-	"github.com/blend/go-sdk/testutil"
+	"github.com/zpkg/blend-go-sdk/db"
+	"github.com/zpkg/blend-go-sdk/logger"
+	"github.com/zpkg/blend-go-sdk/testutil"
 )
 
 func TestMain(m *testing.M) {

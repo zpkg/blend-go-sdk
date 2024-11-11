@@ -7,7 +7,7 @@ Use of this source code is governed by a MIT license that can be found in the LI
 
 package selector
 
-import "github.com/blend/go-sdk/ex"
+import "github.com/zpkg/blend-go-sdk/ex"
 
 // CheckLabels validates all the keys and values for the label set.
 func CheckLabels(labels Labels) (err error) {

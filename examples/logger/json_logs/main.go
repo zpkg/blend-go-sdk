@@ -15,8 +15,8 @@ import (
 	"os"
 	"time"
 
-	"github.com/blend/go-sdk/logger"
-	"github.com/blend/go-sdk/webutil"
+	"github.com/zpkg/blend-go-sdk/logger"
+	"github.com/zpkg/blend-go-sdk/webutil"
 )
 
 func createRequestEvent(req *http.Request, rw webutil.ResponseWriter, start time.Time) webutil.HTTPRequestEvent {

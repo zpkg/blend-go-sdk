@@ -7,7 +7,7 @@ Use of this source code is governed by a MIT license that can be found in the LI
 
 package r2
 
-import "github.com/blend/go-sdk/webutil"
+import "github.com/zpkg/blend-go-sdk/webutil"
 
 const (
 	// TestURL can be used in tests for the URL passed to r2.New(...)

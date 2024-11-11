@@ -45,4 +45,4 @@ You can also fire and forget the request with the `.Discard()` method:
 
 
 */
-package r2 // import "github.com/blend/go-sdk/r2"
+package r2 // import "github.com/zpkg/blend-go-sdk/r2"

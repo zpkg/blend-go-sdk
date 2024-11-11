@@ -10,8 +10,8 @@ package r2
 import (
 	"testing"
 
-	"github.com/blend/go-sdk/assert"
-	"github.com/blend/go-sdk/webutil"
+	"github.com/zpkg/blend-go-sdk/assert"
+	"github.com/zpkg/blend-go-sdk/webutil"
 )
 
 func TestOptPostedFiles(t *testing.T) {

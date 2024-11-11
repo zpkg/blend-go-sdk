@@ -10,7 +10,7 @@ package testutil
 import (
 	"context"
 
-	"github.com/blend/go-sdk/db"
+	"github.com/zpkg/blend-go-sdk/db"
 )
 
 // OptWithStatementLabelRequired adds a defaultdb interceptor that enforces

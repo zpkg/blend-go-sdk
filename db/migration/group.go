@@ -11,8 +11,8 @@ import (
 	"context"
 	"database/sql"
 
-	"github.com/blend/go-sdk/db"
-	"github.com/blend/go-sdk/ex"
+	"github.com/zpkg/blend-go-sdk/db"
+	"github.com/zpkg/blend-go-sdk/ex"
 )
 
 // NewGroup creates a new Group from a given list of actionable.

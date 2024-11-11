@@ -10,8 +10,8 @@ package certutil
 import (
 	"testing"
 
-	"github.com/blend/go-sdk/assert"
-	"github.com/blend/go-sdk/uuid"
+	"github.com/zpkg/blend-go-sdk/assert"
+	"github.com/zpkg/blend-go-sdk/uuid"
 )
 
 func TestNewCertManagerWithKeyPairs(t *testing.T) {

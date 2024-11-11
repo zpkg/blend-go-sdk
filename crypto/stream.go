@@ -16,7 +16,7 @@ import (
 	"hash"
 	"io"
 
-	"github.com/blend/go-sdk/ex"
+	"github.com/zpkg/blend-go-sdk/ex"
 )
 
 // NewStreamEncrypter creates a new stream encrypter

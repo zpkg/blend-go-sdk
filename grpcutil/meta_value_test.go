@@ -12,7 +12,7 @@ import (
 
 	"google.golang.org/grpc/metadata"
 
-	"github.com/blend/go-sdk/assert"
+	"github.com/zpkg/blend-go-sdk/assert"
 )
 
 func TestMetaValue(t *testing.T) {

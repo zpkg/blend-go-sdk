@@ -13,7 +13,7 @@ import (
 	"sort"
 	"strings"
 
-	"github.com/blend/go-sdk/assert"
+	"github.com/zpkg/blend-go-sdk/assert"
 )
 
 func spew(v interface{}) string {

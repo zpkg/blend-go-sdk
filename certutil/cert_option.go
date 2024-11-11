@@ -14,7 +14,7 @@ import (
 	"os"
 	"time"
 
-	"github.com/blend/go-sdk/ex"
+	"github.com/zpkg/blend-go-sdk/ex"
 )
 
 // CertOption is an option for creating certs.

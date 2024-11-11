@@ -13,9 +13,9 @@ import (
 	"strings"
 	"sync"
 
-	"github.com/blend/go-sdk/stringutil"
+	"github.com/zpkg/blend-go-sdk/stringutil"
 
-	"github.com/blend/go-sdk/ex"
+	"github.com/zpkg/blend-go-sdk/ex"
 )
 
 // NewEventSource returns a new event source.

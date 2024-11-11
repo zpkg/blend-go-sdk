@@ -10,7 +10,7 @@ package r2
 import (
 	"testing"
 
-	"github.com/blend/go-sdk/assert"
+	"github.com/zpkg/blend-go-sdk/assert"
 )
 
 func TestOptPath(t *testing.T) {

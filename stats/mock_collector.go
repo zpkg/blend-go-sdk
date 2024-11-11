@@ -10,7 +10,7 @@ package stats
 import (
 	"time"
 
-	"github.com/blend/go-sdk/timeutil"
+	"github.com/zpkg/blend-go-sdk/timeutil"
 )
 
 // Assert that the mock collector implements Collector.

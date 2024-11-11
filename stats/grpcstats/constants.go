@@ -7,7 +7,7 @@ Use of this source code is governed by a MIT license that can be found in the LI
 
 package grpcstats
 
-import "github.com/blend/go-sdk/grpcutil"
+import "github.com/zpkg/blend-go-sdk/grpcutil"
 
 // Tag constants
 const (

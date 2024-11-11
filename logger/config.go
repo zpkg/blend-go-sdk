@@ -11,7 +11,7 @@ import (
 	"context"
 	"strings"
 
-	"github.com/blend/go-sdk/env"
+	"github.com/zpkg/blend-go-sdk/env"
 )
 
 // Config is the logger config.

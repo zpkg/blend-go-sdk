@@ -12,7 +12,7 @@ import (
 	"fmt"
 	"os"
 
-	"github.com/blend/go-sdk/fileutil"
+	"github.com/zpkg/blend-go-sdk/fileutil"
 )
 
 func main() {

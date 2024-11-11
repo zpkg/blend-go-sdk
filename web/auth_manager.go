@@ -15,7 +15,7 @@ import (
 	"net/url"
 	"time"
 
-	"github.com/blend/go-sdk/webutil"
+	"github.com/zpkg/blend-go-sdk/webutil"
 )
 
 // MustNewAuthManager returns a new auth manager with a given set of options but panics on error.

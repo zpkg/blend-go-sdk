@@ -12,7 +12,7 @@ import (
 
 	"github.com/golang-jwt/jwt"
 
-	"github.com/blend/go-sdk/ex"
+	"github.com/zpkg/blend-go-sdk/ex"
 )
 
 // ParseTokenJWT parses a jwt from a given oauth2 token.

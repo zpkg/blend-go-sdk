@@ -14,7 +14,7 @@ import (
 	"log"
 	"os"
 
-	"github.com/blend/go-sdk/datadog/traceserver"
+	"github.com/zpkg/blend-go-sdk/datadog/traceserver"
 )
 
 var (

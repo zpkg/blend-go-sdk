@@ -12,7 +12,7 @@ import (
 	"sort"
 	"strings"
 
-	"github.com/blend/go-sdk/ansi"
+	"github.com/zpkg/blend-go-sdk/ansi"
 )
 
 // FormatLabels formats the output of labels as a string.

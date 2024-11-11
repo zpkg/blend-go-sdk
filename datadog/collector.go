@@ -13,8 +13,8 @@ import (
 
 	dogstatsd "github.com/DataDog/datadog-go/v5/statsd"
 
-	"github.com/blend/go-sdk/stats"
-	"github.com/blend/go-sdk/timeutil"
+	"github.com/zpkg/blend-go-sdk/stats"
+	"github.com/zpkg/blend-go-sdk/timeutil"
 )
 
 // Assert that the datadog collector implements stats.Collector and stats.EventCollector.

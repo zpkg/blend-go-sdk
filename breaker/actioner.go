@@ -8,7 +8,7 @@ Use of this source code is governed by a MIT license that can be found in the LI
 package breaker
 
 import (
-	"github.com/blend/go-sdk/async"
+	"github.com/zpkg/blend-go-sdk/async"
 )
 
 type (

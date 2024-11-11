@@ -11,7 +11,7 @@ import (
 	"crypto/tls"
 	"crypto/x509"
 
-	"github.com/blend/go-sdk/ex"
+	"github.com/zpkg/blend-go-sdk/ex"
 )
 
 // NewClientTLSConfig returns a new client tls config.

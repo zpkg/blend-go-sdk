@@ -7,7 +7,7 @@ Use of this source code is governed by a MIT license that can be found in the LI
 
 package stats
 
-import "github.com/blend/go-sdk/env"
+import "github.com/zpkg/blend-go-sdk/env"
 
 // AddDefaultTagsFromEnv adds default tags to a collector from environment values.
 func AddDefaultTagsFromEnv(collector Collector) {

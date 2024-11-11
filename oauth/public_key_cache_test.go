@@ -18,10 +18,10 @@ import (
 
 	"github.com/golang-jwt/jwt"
 
-	"github.com/blend/go-sdk/assert"
-	"github.com/blend/go-sdk/jwk"
-	"github.com/blend/go-sdk/r2"
-	"github.com/blend/go-sdk/uuid"
+	"github.com/zpkg/blend-go-sdk/assert"
+	"github.com/zpkg/blend-go-sdk/jwk"
+	"github.com/zpkg/blend-go-sdk/r2"
+	"github.com/zpkg/blend-go-sdk/uuid"
 )
 
 func Test_PublicKeyCache_Keyfunc(t *testing.T) {

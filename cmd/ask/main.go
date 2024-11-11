@@ -16,7 +16,7 @@ import (
 
 	"gopkg.in/yaml.v3"
 
-	"github.com/blend/go-sdk/sh"
+	"github.com/zpkg/blend-go-sdk/sh"
 )
 
 type configVar struct {

@@ -13,7 +13,7 @@ import (
 	"log"
 	"os"
 
-	"github.com/blend/go-sdk/statsd"
+	"github.com/zpkg/blend-go-sdk/statsd"
 )
 
 var (

@@ -40,4 +40,4 @@ We can pass other options to the `ex.New(...)` constructor, such as setting an i
 		fmt.Printf("validation error: %v\n", ex.ErrInner(err))
 	}
 */
-package ex // import "github.com/blend/go-sdk/ex"
+package ex // import "github.com/zpkg/blend-go-sdk/ex"

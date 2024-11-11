@@ -12,8 +12,8 @@ import (
 	"io"
 	"strings"
 
-	"github.com/blend/go-sdk/ansi"
-	"github.com/blend/go-sdk/logger"
+	"github.com/zpkg/blend-go-sdk/ansi"
+	"github.com/zpkg/blend-go-sdk/logger"
 )
 
 var (

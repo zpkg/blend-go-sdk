@@ -7,7 +7,7 @@ Use of this source code is governed by a MIT license that can be found in the LI
 
 package grpcutil
 
-import "github.com/blend/go-sdk/graceful"
+import "github.com/zpkg/blend-go-sdk/graceful"
 
 // Validate the interface is satisfied.
 var (

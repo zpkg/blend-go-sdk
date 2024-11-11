@@ -13,8 +13,8 @@ import (
 
 	"github.com/opentracing/opentracing-go"
 
-	"github.com/blend/go-sdk/env"
-	"github.com/blend/go-sdk/logger"
+	"github.com/zpkg/blend-go-sdk/env"
+	"github.com/zpkg/blend-go-sdk/logger"
 
 	"gopkg.in/DataDog/dd-trace-go.v1/ddtrace"
 	ddopentracer "gopkg.in/DataDog/dd-trace-go.v1/ddtrace/opentracer"

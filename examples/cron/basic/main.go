@@ -16,9 +16,9 @@ import (
 	"net/http"
 	_ "net/http/pprof"
 
-	"github.com/blend/go-sdk/cron"
-	"github.com/blend/go-sdk/graceful"
-	"github.com/blend/go-sdk/logger"
+	"github.com/zpkg/blend-go-sdk/cron"
+	"github.com/zpkg/blend-go-sdk/graceful"
+	"github.com/zpkg/blend-go-sdk/logger"
 )
 
 // Variables

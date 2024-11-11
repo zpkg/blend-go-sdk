@@ -12,7 +12,7 @@ import (
 	"encoding/json"
 	"io"
 
-	"github.com/blend/go-sdk/bufferutil"
+	"github.com/zpkg/blend-go-sdk/bufferutil"
 )
 
 var (

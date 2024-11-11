@@ -11,8 +11,8 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/blend/go-sdk/assert"
-	"github.com/blend/go-sdk/ex"
+	"github.com/zpkg/blend-go-sdk/assert"
+	"github.com/zpkg/blend-go-sdk/ex"
 )
 
 func TestParserIsWhitespace(t *testing.T) {

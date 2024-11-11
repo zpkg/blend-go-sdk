@@ -40,4 +40,4 @@ Example setting the replicas:
 	worker := ch.Assignment("item-0") // will yield `worker-0` or `worker-1` etc.
 
 */
-package consistenthash // import "github.com/blend/go-sdk/consistenthash"
+package consistenthash // import "github.com/zpkg/blend-go-sdk/consistenthash"

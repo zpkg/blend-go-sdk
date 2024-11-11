@@ -10,7 +10,7 @@ package sanitize
 import (
 	"strings"
 
-	"github.com/blend/go-sdk/uuid"
+	"github.com/zpkg/blend-go-sdk/uuid"
 )
 
 var (

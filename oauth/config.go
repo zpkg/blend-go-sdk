@@ -11,7 +11,7 @@ import (
 	"context"
 	"encoding/base64"
 
-	"github.com/blend/go-sdk/env"
+	"github.com/zpkg/blend-go-sdk/env"
 )
 
 // Config is the config options.

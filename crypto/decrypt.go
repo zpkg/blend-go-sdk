@@ -11,7 +11,7 @@ import (
 	"crypto/aes"
 	"crypto/cipher"
 
-	"github.com/blend/go-sdk/ex"
+	"github.com/zpkg/blend-go-sdk/ex"
 )
 
 // Decrypt decrypts data with the given key.

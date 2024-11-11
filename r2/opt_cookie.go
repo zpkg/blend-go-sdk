@@ -10,7 +10,7 @@ package r2
 import (
 	"net/http"
 
-	"github.com/blend/go-sdk/webutil"
+	"github.com/zpkg/blend-go-sdk/webutil"
 )
 
 // OptCookie adds a cookie.

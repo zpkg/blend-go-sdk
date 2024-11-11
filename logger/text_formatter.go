@@ -7,7 +7,7 @@ Use of this source code is governed by a MIT license that can be found in the LI
 
 package logger
 
-import "github.com/blend/go-sdk/ansi"
+import "github.com/zpkg/blend-go-sdk/ansi"
 
 // TextFormatter is a type that can format text output.
 type TextFormatter interface {

@@ -12,7 +12,7 @@ import (
 	"crypto/x509"
 	"os"
 
-	"github.com/blend/go-sdk/ex"
+	"github.com/zpkg/blend-go-sdk/ex"
 )
 
 // NewKeyPairFromPaths returns a key pair from paths.

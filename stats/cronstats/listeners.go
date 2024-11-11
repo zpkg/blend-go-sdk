@@ -10,10 +10,10 @@ package cronstats
 import (
 	"context"
 
-	"github.com/blend/go-sdk/cron"
-	"github.com/blend/go-sdk/logger"
-	"github.com/blend/go-sdk/stats"
-	"github.com/blend/go-sdk/timeutil"
+	"github.com/zpkg/blend-go-sdk/cron"
+	"github.com/zpkg/blend-go-sdk/logger"
+	"github.com/zpkg/blend-go-sdk/stats"
+	"github.com/zpkg/blend-go-sdk/timeutil"
 )
 
 // AddListeners adds web listeners.

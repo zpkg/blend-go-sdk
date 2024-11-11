@@ -12,8 +12,8 @@ import (
 	"database/sql"
 	"testing"
 
-	"github.com/blend/go-sdk/assert"
-	"github.com/blend/go-sdk/ex"
+	"github.com/zpkg/blend-go-sdk/assert"
+	"github.com/zpkg/blend-go-sdk/ex"
 )
 
 // Test_Connection_useBeforeOpen tests if we can connect to the db, a.k.a., if the underlying driver works.

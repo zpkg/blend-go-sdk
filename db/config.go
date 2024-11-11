@@ -15,10 +15,10 @@ import (
 	"strings"
 	"time"
 
-	"github.com/blend/go-sdk/configutil"
-	"github.com/blend/go-sdk/env"
-	"github.com/blend/go-sdk/ex"
-	"github.com/blend/go-sdk/stringutil"
+	"github.com/zpkg/blend-go-sdk/configutil"
+	"github.com/zpkg/blend-go-sdk/env"
+	"github.com/zpkg/blend-go-sdk/ex"
+	"github.com/zpkg/blend-go-sdk/stringutil"
 )
 
 // NewConfigFromDSN creates a new config from a DSN.

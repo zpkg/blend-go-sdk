@@ -14,9 +14,9 @@ import (
 	"fmt"
 	"net/smtp"
 
-	"github.com/blend/go-sdk/configutil"
-	"github.com/blend/go-sdk/env"
-	"github.com/blend/go-sdk/ex"
+	"github.com/zpkg/blend-go-sdk/configutil"
+	"github.com/zpkg/blend-go-sdk/env"
+	"github.com/zpkg/blend-go-sdk/ex"
 )
 
 var (

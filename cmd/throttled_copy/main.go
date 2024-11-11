@@ -15,9 +15,9 @@ import (
 	"os"
 	"time"
 
-	"github.com/blend/go-sdk/fileutil"
-	"github.com/blend/go-sdk/graceful"
-	"github.com/blend/go-sdk/ratelimiter"
+	"github.com/zpkg/blend-go-sdk/fileutil"
+	"github.com/zpkg/blend-go-sdk/graceful"
+	"github.com/zpkg/blend-go-sdk/ratelimiter"
 )
 
 var (

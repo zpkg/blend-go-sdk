@@ -16,8 +16,8 @@ import (
 	"sync/atomic"
 	"testing"
 
-	"github.com/blend/go-sdk/assert"
-	"github.com/blend/go-sdk/webutil"
+	"github.com/zpkg/blend-go-sdk/assert"
+	"github.com/zpkg/blend-go-sdk/webutil"
 )
 
 func handlerNoOp(rw http.ResponseWriter, _ *http.Request, _ *Route, _ RouteParameters) {

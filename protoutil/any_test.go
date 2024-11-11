@@ -12,10 +12,10 @@ import (
 
 	"google.golang.org/protobuf/proto"
 
-	"github.com/blend/go-sdk/assert"
-	"github.com/blend/go-sdk/ex"
-	"github.com/blend/go-sdk/protoutil/testdata"
-	"github.com/blend/go-sdk/uuid"
+	"github.com/zpkg/blend-go-sdk/assert"
+	"github.com/zpkg/blend-go-sdk/ex"
+	"github.com/zpkg/blend-go-sdk/protoutil/testdata"
+	"github.com/zpkg/blend-go-sdk/uuid"
 )
 
 func Test_Any(t *testing.T) {

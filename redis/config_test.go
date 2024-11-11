@@ -11,8 +11,8 @@ import (
 	"context"
 	"testing"
 
-	"github.com/blend/go-sdk/assert"
-	"github.com/blend/go-sdk/redis"
+	"github.com/zpkg/blend-go-sdk/assert"
+	"github.com/zpkg/blend-go-sdk/redis"
 )
 
 func Test_Config_Resolve_bare(t *testing.T) {

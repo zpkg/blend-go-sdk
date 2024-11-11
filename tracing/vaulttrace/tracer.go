@@ -14,8 +14,8 @@ import (
 
 	"github.com/opentracing/opentracing-go"
 
-	"github.com/blend/go-sdk/tracing"
-	"github.com/blend/go-sdk/vault"
+	"github.com/zpkg/blend-go-sdk/tracing"
+	"github.com/zpkg/blend-go-sdk/vault"
 )
 
 // Tracer returns a request tracer that also injects span context into outgoing headers.

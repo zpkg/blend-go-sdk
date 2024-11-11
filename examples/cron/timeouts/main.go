@@ -12,8 +12,8 @@ import (
 	"math/rand"
 	"time"
 
-	"github.com/blend/go-sdk/cron"
-	"github.com/blend/go-sdk/logger"
+	"github.com/zpkg/blend-go-sdk/cron"
+	"github.com/zpkg/blend-go-sdk/logger"
 )
 
 type emptyJob struct {

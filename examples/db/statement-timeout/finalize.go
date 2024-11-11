@@ -11,7 +11,7 @@ import (
 	"database/sql"
 	"log"
 
-	"github.com/blend/go-sdk/db"
+	"github.com/zpkg/blend-go-sdk/db"
 )
 
 func ignoreConnDone(err error) error {

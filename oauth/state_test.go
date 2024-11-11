@@ -10,8 +10,8 @@ package oauth
 import (
 	"testing"
 
-	"github.com/blend/go-sdk/assert"
-	"github.com/blend/go-sdk/stringutil"
+	"github.com/zpkg/blend-go-sdk/assert"
+	"github.com/zpkg/blend-go-sdk/stringutil"
 )
 
 func TestSerializeState(t *testing.T) {

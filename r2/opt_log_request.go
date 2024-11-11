@@ -10,7 +10,7 @@ package r2
 import (
 	"net/http"
 
-	"github.com/blend/go-sdk/logger"
+	"github.com/zpkg/blend-go-sdk/logger"
 )
 
 // OptLogRequest adds OnRequest and OnResponse listeners to log that a call was made.

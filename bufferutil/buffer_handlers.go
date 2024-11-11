@@ -11,7 +11,7 @@ import (
 	"context"
 	"sync"
 
-	"github.com/blend/go-sdk/async"
+	"github.com/zpkg/blend-go-sdk/async"
 )
 
 // BufferHandlers is a synchronized map of listeners for new lines to a line buffer.

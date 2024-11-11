@@ -13,7 +13,7 @@ import (
 	"encoding/json"
 	"path/filepath"
 
-	"github.com/blend/go-sdk/ex"
+	"github.com/zpkg/blend-go-sdk/ex"
 )
 
 // Assert Transit implements TransitClient

@@ -13,7 +13,7 @@ import (
 	"os"
 	"strings"
 
-	"github.com/blend/go-sdk/semver"
+	"github.com/zpkg/blend-go-sdk/semver"
 )
 
 func usage() {

@@ -11,8 +11,8 @@ import (
 	"context"
 	"fmt"
 
-	"github.com/blend/go-sdk/ex"
-	"github.com/blend/go-sdk/logger"
+	"github.com/zpkg/blend-go-sdk/ex"
+	"github.com/zpkg/blend-go-sdk/logger"
 )
 
 // AddErrorListeners adds error listeners.

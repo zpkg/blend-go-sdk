@@ -11,7 +11,7 @@ import (
 	"os"
 	"sync"
 
-	"github.com/blend/go-sdk/ex"
+	"github.com/zpkg/blend-go-sdk/ex"
 )
 
 // NewTemp creates a new temp file with given contents.

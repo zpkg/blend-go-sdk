@@ -10,7 +10,7 @@ package async
 import (
 	"time"
 
-	"github.com/blend/go-sdk/ex"
+	"github.com/zpkg/blend-go-sdk/ex"
 )
 
 // Latch states

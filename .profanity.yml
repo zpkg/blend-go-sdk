@@ -30,7 +30,7 @@ GOLANG_ASSERT_NON_TEST:
     - "testutil/**"
   goImports:
     include:
-    - "github.com/blend/go-sdk/assert"
+    - "github.com/zpkg/blend-go-sdk/assert"
 
 GOLANG_YAML:
   description: "please use `gopkg.in/yaml.v3`"
@@ -67,7 +67,7 @@ GOLANG_CMD_IMPORTS:
   description: "please don't reference cmd packages"
   goImports:
     include:
-    - "github.com/blend/go-sdk/cmd*"
+    - "github.com/zpkg/blend-go-sdk/cmd*"
 
 GOLANG_EXAMPLES_IMPORTS:
   description: "please don't reference example packages"
@@ -76,7 +76,7 @@ GOLANG_EXAMPLES_IMPORTS:
     - "examples/*"
   goImports:
     include:
-    - "github.com/blend/go-sdk/example*"
+    - "github.com/zpkg/blend-go-sdk/example*"
 
 GOLANG_CONTEXT_SHADOWED:
   description: "you should not shadow the context package"

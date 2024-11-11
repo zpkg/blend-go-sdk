@@ -15,7 +15,7 @@ import (
 	"encoding/pem"
 	"io"
 
-	"github.com/blend/go-sdk/ex"
+	"github.com/zpkg/blend-go-sdk/ex"
 )
 
 // NewCertBundle returns a new cert bundle from a given key pair, which can denote the raw PEM encoded

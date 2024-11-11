@@ -10,8 +10,8 @@ package ansi_test
 import (
 	"testing"
 
-	"github.com/blend/go-sdk/ansi"
-	"github.com/blend/go-sdk/assert"
+	"github.com/zpkg/blend-go-sdk/ansi"
+	"github.com/zpkg/blend-go-sdk/assert"
 )
 
 func TestColor256_Apply(t *testing.T) {

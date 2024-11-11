@@ -11,8 +11,8 @@ import (
 	"fmt"
 	"strings"
 
-	"github.com/blend/go-sdk/ex"
-	"github.com/blend/go-sdk/validate"
+	"github.com/zpkg/blend-go-sdk/ex"
+	"github.com/zpkg/blend-go-sdk/validate"
 )
 
 var (

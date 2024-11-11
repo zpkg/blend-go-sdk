@@ -17,10 +17,10 @@ import (
 	opentracing "github.com/opentracing/opentracing-go"
 	"github.com/opentracing/opentracing-go/mocktracer"
 
-	"github.com/blend/go-sdk/assert"
-	"github.com/blend/go-sdk/tracing"
-	"github.com/blend/go-sdk/tracing/httptrace"
-	"github.com/blend/go-sdk/webutil"
+	"github.com/zpkg/blend-go-sdk/assert"
+	"github.com/zpkg/blend-go-sdk/tracing"
+	"github.com/zpkg/blend-go-sdk/tracing/httptrace"
+	"github.com/zpkg/blend-go-sdk/webutil"
 )
 
 func TestStartHTTPSpan(t *testing.T) {

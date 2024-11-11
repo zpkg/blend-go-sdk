@@ -10,7 +10,7 @@ package certutil
 import (
 	"crypto/x509"
 
-	"github.com/blend/go-sdk/ex"
+	"github.com/zpkg/blend-go-sdk/ex"
 )
 
 // CreateCertPool extends an empty pool with a given set of certs.

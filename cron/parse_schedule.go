@@ -14,7 +14,7 @@ import (
 	"strings"
 	"time"
 
-	"github.com/blend/go-sdk/ex"
+	"github.com/zpkg/blend-go-sdk/ex"
 )
 
 /*ParseSchedule parses a cron formatted string into a schedule.

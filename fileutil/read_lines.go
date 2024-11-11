@@ -11,7 +11,7 @@ import (
 	"bufio"
 	"os"
 
-	"github.com/blend/go-sdk/ex"
+	"github.com/zpkg/blend-go-sdk/ex"
 )
 
 // ReadLines reads a file and calls the handler for each line.

@@ -11,7 +11,7 @@ import (
 	"path/filepath"
 	"strings"
 
-	"github.com/blend/go-sdk/stringutil"
+	"github.com/zpkg/blend-go-sdk/stringutil"
 )
 
 // NewScopes yields a scope set from a list of scopes.

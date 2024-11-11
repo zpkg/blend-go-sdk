@@ -10,7 +10,7 @@ package vault
 import (
 	"context"
 
-	"github.com/blend/go-sdk/ex"
+	"github.com/zpkg/blend-go-sdk/ex"
 )
 
 const errNilConfig ex.Class = "config cannot be nil"

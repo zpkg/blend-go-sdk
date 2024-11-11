@@ -13,9 +13,9 @@ import (
 	"os"
 	"testing"
 
-	"github.com/blend/go-sdk/db"
-	"github.com/blend/go-sdk/logger"
-	"github.com/blend/go-sdk/stringutil"
+	"github.com/zpkg/blend-go-sdk/db"
+	"github.com/zpkg/blend-go-sdk/logger"
+	"github.com/zpkg/blend-go-sdk/stringutil"
 )
 
 func TestMain(m *testing.M) {

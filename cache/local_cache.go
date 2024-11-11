@@ -14,7 +14,7 @@ import (
 	"time"
 	"unsafe"
 
-	"github.com/blend/go-sdk/async"
+	"github.com/zpkg/blend-go-sdk/async"
 )
 
 var (

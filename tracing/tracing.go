@@ -13,7 +13,7 @@ import (
 
 	opentracing "github.com/opentracing/opentracing-go"
 
-	"github.com/blend/go-sdk/ex"
+	"github.com/zpkg/blend-go-sdk/ex"
 )
 
 // StartSpanFromContext creates a new span from a given context.

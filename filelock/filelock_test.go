@@ -19,7 +19,7 @@ import (
 	"testing"
 	"time"
 
-	"github.com/blend/go-sdk/filelock"
+	"github.com/zpkg/blend-go-sdk/filelock"
 )
 
 func lock(t *testing.T, f *os.File) {

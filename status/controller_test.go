@@ -14,9 +14,9 @@ import (
 	"sync/atomic"
 	"testing"
 
-	"github.com/blend/go-sdk/assert"
-	"github.com/blend/go-sdk/configmeta"
-	"github.com/blend/go-sdk/web"
+	"github.com/zpkg/blend-go-sdk/assert"
+	"github.com/zpkg/blend-go-sdk/configmeta"
+	"github.com/zpkg/blend-go-sdk/web"
 )
 
 func Test_Controller_getStatus(t *testing.T) {

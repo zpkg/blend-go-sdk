@@ -11,7 +11,7 @@ import (
 	"crypto/rand"
 	"testing"
 
-	"github.com/blend/go-sdk/assert"
+	"github.com/zpkg/blend-go-sdk/assert"
 )
 
 func TestFileReadByLines(t *testing.T) {

@@ -19,7 +19,7 @@ import (
 	"path/filepath"
 	"strings"
 
-	"github.com/blend/go-sdk/stringutil"
+	"github.com/zpkg/blend-go-sdk/stringutil"
 )
 
 // CopyRewriter copies a source to a destination, and applies rewrite rules to the file(s) it copies.

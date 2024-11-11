@@ -10,7 +10,7 @@ package dbutil
 import (
 	"context"
 
-	"github.com/blend/go-sdk/db"
+	"github.com/zpkg/blend-go-sdk/db"
 )
 
 // DatabaseExists returns if a database exists or not.

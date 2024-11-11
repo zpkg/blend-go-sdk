@@ -10,7 +10,7 @@ package r2
 import (
 	"net/http"
 
-	"github.com/blend/go-sdk/ex"
+	"github.com/zpkg/blend-go-sdk/ex"
 )
 
 // OptMaxRedirects tells the http client to only follow a given

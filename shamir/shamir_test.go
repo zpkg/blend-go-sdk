@@ -12,7 +12,7 @@ import (
 	"fmt"
 	"testing"
 
-	"github.com/blend/go-sdk/assert"
+	"github.com/zpkg/blend-go-sdk/assert"
 )
 
 func TestSplitInvalid(t *testing.T) {

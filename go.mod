@@ -1,4 +1,4 @@
-module github.com/blend/go-sdk
+module github.com/zpkg/blend-go-sdk
 
 go 1.18
 

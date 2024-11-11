@@ -11,8 +11,8 @@ import (
 	"context"
 	"time"
 
-	"github.com/blend/go-sdk/ref"
-	"github.com/blend/go-sdk/stringutil"
+	"github.com/zpkg/blend-go-sdk/ref"
+	"github.com/zpkg/blend-go-sdk/stringutil"
 )
 
 // Interface assertions.

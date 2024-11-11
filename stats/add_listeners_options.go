@@ -10,7 +10,7 @@ package stats
 import (
 	"context"
 
-	"github.com/blend/go-sdk/sanitize"
+	"github.com/zpkg/blend-go-sdk/sanitize"
 )
 
 // NewAddListenerOptions creates a new add listener options.

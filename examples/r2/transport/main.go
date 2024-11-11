@@ -13,7 +13,7 @@ import (
 	"os"
 	"time"
 
-	"github.com/blend/go-sdk/r2"
+	"github.com/zpkg/blend-go-sdk/r2"
 )
 
 func main() {

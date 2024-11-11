@@ -10,9 +10,9 @@ package dbutil
 import (
 	"context"
 
-	"github.com/blend/go-sdk/db"
-	"github.com/blend/go-sdk/env"
-	"github.com/blend/go-sdk/ex"
+	"github.com/zpkg/blend-go-sdk/db"
+	"github.com/zpkg/blend-go-sdk/env"
+	"github.com/zpkg/blend-go-sdk/ex"
 )
 
 // CreateDatabaseIfNotExists creates a databse if it doesn't exist.

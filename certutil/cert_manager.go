@@ -12,7 +12,7 @@ import (
 	"crypto/x509"
 	"sync"
 
-	"github.com/blend/go-sdk/ex"
+	"github.com/zpkg/blend-go-sdk/ex"
 )
 
 // NewCertManagerWithKeyPairs returns a new cert pool from key pairs.

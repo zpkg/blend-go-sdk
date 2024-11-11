@@ -15,9 +15,9 @@ import (
 
 	"golang.org/x/net/http2"
 
-	"github.com/blend/go-sdk/ex"
-	"github.com/blend/go-sdk/logger"
-	"github.com/blend/go-sdk/webutil"
+	"github.com/zpkg/blend-go-sdk/ex"
+	"github.com/zpkg/blend-go-sdk/logger"
+	"github.com/zpkg/blend-go-sdk/webutil"
 )
 
 // NewUpstream returns a new upstram.

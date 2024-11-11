@@ -12,9 +12,9 @@ import (
 	"net/http"
 	"sync"
 
-	"github.com/blend/go-sdk/bufferutil"
-	"github.com/blend/go-sdk/ex"
-	templatehelpers "github.com/blend/go-sdk/template"
+	"github.com/zpkg/blend-go-sdk/bufferutil"
+	"github.com/zpkg/blend-go-sdk/ex"
+	templatehelpers "github.com/zpkg/blend-go-sdk/template"
 )
 
 const (

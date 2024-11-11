@@ -11,8 +11,8 @@ import (
 	"context"
 	"time"
 
-	"github.com/blend/go-sdk/db"
-	"github.com/blend/go-sdk/ex"
+	"github.com/zpkg/blend-go-sdk/db"
+	"github.com/zpkg/blend-go-sdk/ex"
 )
 
 func verifyLockTimeout(ctx context.Context, pool *db.Connection) (time.Duration, error) {

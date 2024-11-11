@@ -11,7 +11,7 @@ import (
 	"context"
 	"database/sql"
 
-	"github.com/blend/go-sdk/logger"
+	"github.com/zpkg/blend-go-sdk/logger"
 )
 
 // Option is an option for database connections.

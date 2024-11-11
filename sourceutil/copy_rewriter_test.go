@@ -13,7 +13,7 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/blend/go-sdk/ref"
+	"github.com/zpkg/blend-go-sdk/ref"
 )
 
 func Test_CopyRewrite_rewriteGoAst(t *testing.T) {

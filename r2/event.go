@@ -15,9 +15,9 @@ import (
 	"strings"
 	"time"
 
-	"github.com/blend/go-sdk/logger"
-	"github.com/blend/go-sdk/timeutil"
-	"github.com/blend/go-sdk/webutil"
+	"github.com/zpkg/blend-go-sdk/logger"
+	"github.com/zpkg/blend-go-sdk/timeutil"
+	"github.com/zpkg/blend-go-sdk/webutil"
 )
 
 const (

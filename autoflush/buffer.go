@@ -14,12 +14,12 @@ import (
 	"sync"
 	"time"
 
-	"github.com/blend/go-sdk/async"
-	"github.com/blend/go-sdk/collections"
-	"github.com/blend/go-sdk/ex"
-	"github.com/blend/go-sdk/logger"
-	"github.com/blend/go-sdk/stats"
-	"github.com/blend/go-sdk/timeutil"
+	"github.com/zpkg/blend-go-sdk/async"
+	"github.com/zpkg/blend-go-sdk/collections"
+	"github.com/zpkg/blend-go-sdk/ex"
+	"github.com/zpkg/blend-go-sdk/logger"
+	"github.com/zpkg/blend-go-sdk/stats"
+	"github.com/zpkg/blend-go-sdk/timeutil"
 )
 
 // New creates a new  buffer.

@@ -10,8 +10,8 @@ package protoutil
 import (
 	"testing"
 
-	"github.com/blend/go-sdk/assert"
-	"github.com/blend/go-sdk/protoutil/testdata"
+	"github.com/zpkg/blend-go-sdk/assert"
+	"github.com/zpkg/blend-go-sdk/protoutil/testdata"
 )
 
 func Test_MessageTypeName(t *testing.T) {

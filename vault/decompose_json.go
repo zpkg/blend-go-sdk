@@ -12,8 +12,8 @@ import (
 	"reflect"
 	"strings"
 
-	"github.com/blend/go-sdk/ex"
-	"github.com/blend/go-sdk/reflectutil"
+	"github.com/zpkg/blend-go-sdk/ex"
+	"github.com/zpkg/blend-go-sdk/reflectutil"
 )
 
 // Constants

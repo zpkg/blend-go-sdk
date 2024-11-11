@@ -7,7 +7,7 @@ Use of this source code is governed by a MIT license that can be found in the LI
 
 package datadog
 
-import "github.com/blend/go-sdk/configutil"
+import "github.com/zpkg/blend-go-sdk/configutil"
 
 var (
 	_ configutil.Resolver = (*Config)(nil)

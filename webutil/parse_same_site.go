@@ -10,7 +10,7 @@ package webutil
 import (
 	"net/http"
 
-	"github.com/blend/go-sdk/ex"
+	"github.com/zpkg/blend-go-sdk/ex"
 )
 
 // MustParseSameSite parses a string value for same site and panics on error.

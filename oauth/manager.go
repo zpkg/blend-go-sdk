@@ -20,10 +20,10 @@ import (
 	"golang.org/x/oauth2"
 	"golang.org/x/oauth2/google"
 
-	"github.com/blend/go-sdk/ex"
-	"github.com/blend/go-sdk/r2"
-	"github.com/blend/go-sdk/uuid"
-	"github.com/blend/go-sdk/webutil"
+	"github.com/zpkg/blend-go-sdk/ex"
+	"github.com/zpkg/blend-go-sdk/r2"
+	"github.com/zpkg/blend-go-sdk/uuid"
+	"github.com/zpkg/blend-go-sdk/webutil"
 )
 
 const (

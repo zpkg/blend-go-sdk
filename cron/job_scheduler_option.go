@@ -10,7 +10,7 @@ package cron
 import (
 	"context"
 
-	"github.com/blend/go-sdk/logger"
+	"github.com/zpkg/blend-go-sdk/logger"
 )
 
 // JobSchedulerOption is an option for job schedulers.

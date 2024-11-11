@@ -10,7 +10,7 @@ package profanity
 import (
 	"testing"
 
-	"github.com/blend/go-sdk/assert"
+	"github.com/zpkg/blend-go-sdk/assert"
 )
 
 func Test_Profanity_ReadRuleSpecsFile(t *testing.T) {

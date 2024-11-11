@@ -16,8 +16,8 @@ import (
 
 	"github.com/golang-jwt/jwt"
 
-	"github.com/blend/go-sdk/jwk"
-	"github.com/blend/go-sdk/uuid"
+	"github.com/zpkg/blend-go-sdk/jwk"
+	"github.com/zpkg/blend-go-sdk/uuid"
 )
 
 const (

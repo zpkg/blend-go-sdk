@@ -10,7 +10,7 @@ package web
 import (
 	"net/http"
 
-	"github.com/blend/go-sdk/webutil"
+	"github.com/zpkg/blend-go-sdk/webutil"
 )
 
 // BaseHeaders are the default headers added by go-web.

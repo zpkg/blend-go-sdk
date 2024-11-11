@@ -39,7 +39,7 @@ brew:
   commit_author:
     name: baileydog
     email: baileydog@blend.com
-  homepage: "https://github.com/blend/go-sdk/tree/master/cmd/profanity/README.md"
+  homepage: "https://github.com/zpkg/blend-go-sdk/tree/master/cmd/profanity/README.md"
   description: "Apply profanity rules to a directory tree."
 
 dist: dist/profanity

@@ -14,8 +14,8 @@ import (
 	"strings"
 	"time"
 
-	"github.com/blend/go-sdk/ansi"
-	"github.com/blend/go-sdk/bufferutil"
+	"github.com/zpkg/blend-go-sdk/ansi"
+	"github.com/zpkg/blend-go-sdk/bufferutil"
 )
 
 var (

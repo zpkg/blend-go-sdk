@@ -17,7 +17,7 @@ import (
 	"runtime"
 	"strings"
 
-	"github.com/blend/go-sdk/template"
+	"github.com/zpkg/blend-go-sdk/template"
 )
 
 // linker metadata block
@@ -96,7 +96,7 @@ func main() {
 			version = "master"
 		}
 		fmt.Fprintf(os.Stderr, "%s version %s\n\n", os.Args[0], version)
-		fmt.Fprintf(os.Stderr, "Find more information at https://github.com/blend/go-sdk/tree/master/template\n\n")
+		fmt.Fprintf(os.Stderr, "Find more information at https://github.com/zpkg/blend-go-sdk/tree/master/template\n\n")
 		fmt.Fprintf(os.Stderr, "Usage:\n")
 		flag.PrintDefaults()
 		fmt.Fprintf(os.Stderr, "\nExample Usage:\n")

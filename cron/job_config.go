@@ -11,8 +11,8 @@ import (
 	"context"
 	"time"
 
-	"github.com/blend/go-sdk/configutil"
-	"github.com/blend/go-sdk/ref"
+	"github.com/zpkg/blend-go-sdk/configutil"
+	"github.com/zpkg/blend-go-sdk/ref"
 )
 
 var (

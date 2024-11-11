@@ -15,10 +15,10 @@ import (
 
 	radix "github.com/mediocregopher/radix/v4"
 
-	"github.com/blend/go-sdk/async"
-	"github.com/blend/go-sdk/ex"
-	"github.com/blend/go-sdk/logger"
-	"github.com/blend/go-sdk/uuid"
+	"github.com/zpkg/blend-go-sdk/async"
+	"github.com/zpkg/blend-go-sdk/ex"
+	"github.com/zpkg/blend-go-sdk/logger"
+	"github.com/zpkg/blend-go-sdk/uuid"
 )
 
 var (

@@ -10,7 +10,7 @@ package dbutil
 import (
 	"context"
 
-	"github.com/blend/go-sdk/db"
+	"github.com/zpkg/blend-go-sdk/db"
 )
 
 // NewBaseManager creates a new manager.

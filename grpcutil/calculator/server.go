@@ -11,7 +11,7 @@ import (
 	"context"
 	"io"
 
-	v1 "github.com/blend/go-sdk/grpcutil/calculator/v1"
+	v1 "github.com/zpkg/blend-go-sdk/grpcutil/calculator/v1"
 )
 
 // Server is the server for the calculator.

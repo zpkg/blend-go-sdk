@@ -10,8 +10,8 @@ package logger
 import (
 	"context"
 
-	"github.com/blend/go-sdk/async"
-	"github.com/blend/go-sdk/ex"
+	"github.com/zpkg/blend-go-sdk/async"
+	"github.com/zpkg/blend-go-sdk/ex"
 )
 
 // NewWorker returns a new worker.

@@ -14,9 +14,9 @@ import (
 	"github.com/opentracing/opentracing-go/mocktracer"
 	"golang.org/x/oauth2"
 
-	"github.com/blend/go-sdk/assert"
-	"github.com/blend/go-sdk/oauth"
-	"github.com/blend/go-sdk/tracing"
+	"github.com/zpkg/blend-go-sdk/assert"
+	"github.com/zpkg/blend-go-sdk/oauth"
+	"github.com/zpkg/blend-go-sdk/tracing"
 )
 
 func TestStart(t *testing.T) {

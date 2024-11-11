@@ -14,11 +14,11 @@ import (
 	"regexp"
 	"testing"
 
-	sdkAssert "github.com/blend/go-sdk/assert"
-	"github.com/blend/go-sdk/certutil"
-	"github.com/blend/go-sdk/ex"
+	sdkAssert "github.com/zpkg/blend-go-sdk/assert"
+	"github.com/zpkg/blend-go-sdk/certutil"
+	"github.com/zpkg/blend-go-sdk/ex"
 
-	"github.com/blend/go-sdk/envoyutil"
+	"github.com/zpkg/blend-go-sdk/envoyutil"
 )
 
 const (

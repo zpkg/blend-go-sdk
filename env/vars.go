@@ -15,9 +15,9 @@ import (
 	"strings"
 	"time"
 
-	"github.com/blend/go-sdk/ex"
-	"github.com/blend/go-sdk/reflectutil"
-	"github.com/blend/go-sdk/stringutil"
+	"github.com/zpkg/blend-go-sdk/ex"
+	"github.com/zpkg/blend-go-sdk/reflectutil"
+	"github.com/zpkg/blend-go-sdk/stringutil"
 )
 
 // New returns a new env var set.

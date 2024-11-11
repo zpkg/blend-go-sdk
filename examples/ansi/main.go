@@ -10,7 +10,7 @@ package main
 import (
 	"os"
 
-	"github.com/blend/go-sdk/ansi"
+	"github.com/zpkg/blend-go-sdk/ansi"
 )
 
 func main() {

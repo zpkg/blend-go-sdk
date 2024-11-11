@@ -13,7 +13,7 @@ import (
 	"encoding/pem"
 	"os"
 
-	"github.com/blend/go-sdk/ex"
+	"github.com/zpkg/blend-go-sdk/ex"
 )
 
 // CommonNamesForCertPEM returns the common names from a cert pair.

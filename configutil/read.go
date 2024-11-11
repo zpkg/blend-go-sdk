@@ -16,8 +16,8 @@ import (
 
 	"gopkg.in/yaml.v3"
 
-	"github.com/blend/go-sdk/env"
-	"github.com/blend/go-sdk/ex"
+	"github.com/zpkg/blend-go-sdk/env"
+	"github.com/zpkg/blend-go-sdk/ex"
 )
 
 // MustRead reads a config from optional path(s) and panics on error.

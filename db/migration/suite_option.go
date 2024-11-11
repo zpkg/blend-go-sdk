@@ -8,7 +8,7 @@ Use of this source code is governed by a MIT license that can be found in the LI
 package migration
 
 import (
-	"github.com/blend/go-sdk/logger"
+	"github.com/zpkg/blend-go-sdk/logger"
 )
 
 // SuiteOption is an option for migration Suites

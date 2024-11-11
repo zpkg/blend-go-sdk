@@ -11,7 +11,7 @@ import (
 	"fmt"
 	"log"
 
-	"github.com/blend/go-sdk/db"
+	"github.com/zpkg/blend-go-sdk/db"
 )
 
 func main() {

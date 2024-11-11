@@ -11,8 +11,8 @@ import (
 	"net"
 	"net/http"
 
-	"github.com/blend/go-sdk/ex"
-	"github.com/blend/go-sdk/webutil"
+	"github.com/zpkg/blend-go-sdk/ex"
+	"github.com/zpkg/blend-go-sdk/webutil"
 )
 
 // Raw returns a new raw result.

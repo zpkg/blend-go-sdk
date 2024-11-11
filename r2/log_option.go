@@ -7,7 +7,7 @@ Use of this source code is governed by a MIT license that can be found in the LI
 
 package r2
 
-import "github.com/blend/go-sdk/sanitize"
+import "github.com/zpkg/blend-go-sdk/sanitize"
 
 // LogOptions are options that govern the logging of requests.
 type LogOptions struct {

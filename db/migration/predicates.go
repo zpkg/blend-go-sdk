@@ -13,8 +13,8 @@ import (
 	"fmt"
 	"strings"
 
-	"github.com/blend/go-sdk/db"
-	"github.com/blend/go-sdk/stringutil"
+	"github.com/zpkg/blend-go-sdk/db"
+	"github.com/zpkg/blend-go-sdk/stringutil"
 )
 
 // PredicateTableExists returns if a table exists in the default schema of the given connection.

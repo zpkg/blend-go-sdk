@@ -12,8 +12,8 @@ import (
 
 	"google.golang.org/grpc"
 
-	"github.com/blend/go-sdk/async"
-	"github.com/blend/go-sdk/logger"
+	"github.com/zpkg/blend-go-sdk/async"
+	"github.com/zpkg/blend-go-sdk/logger"
 )
 
 // NewGraceful returns a new graceful host for a grpc server.

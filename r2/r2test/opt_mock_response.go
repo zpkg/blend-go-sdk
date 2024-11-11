@@ -13,7 +13,7 @@ import (
 	"net/http/httptest"
 	"net/url"
 
-	"github.com/blend/go-sdk/r2"
+	"github.com/zpkg/blend-go-sdk/r2"
 )
 
 // OptMockResponseString mocks a string response.

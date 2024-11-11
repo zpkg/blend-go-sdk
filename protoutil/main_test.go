@@ -11,8 +11,8 @@ import (
 	"math"
 	"time"
 
-	"github.com/blend/go-sdk/protoutil/testdata"
-	"github.com/blend/go-sdk/uuid"
+	"github.com/zpkg/blend-go-sdk/protoutil/testdata"
+	"github.com/zpkg/blend-go-sdk/uuid"
 )
 
 // newTestMessage creates a new test message.

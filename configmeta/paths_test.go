@@ -11,9 +11,9 @@ import (
 	"context"
 	"testing"
 
-	"github.com/blend/go-sdk/assert"
-	"github.com/blend/go-sdk/configutil"
-	"github.com/blend/go-sdk/env"
+	"github.com/zpkg/blend-go-sdk/assert"
+	"github.com/zpkg/blend-go-sdk/configutil"
+	"github.com/zpkg/blend-go-sdk/env"
 )
 
 func Test_Paths_fallbacks(t *testing.T) {

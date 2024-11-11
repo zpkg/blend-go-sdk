@@ -10,7 +10,7 @@ package db
 import (
 	"database/sql"
 
-	"github.com/blend/go-sdk/ex"
+	"github.com/zpkg/blend-go-sdk/ex"
 )
 
 // PoolCloseFinalizer is intended to be used in `defer` blocks with a named

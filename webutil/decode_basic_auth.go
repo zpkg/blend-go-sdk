@@ -12,7 +12,7 @@ import (
 	"net/http"
 	"strings"
 
-	"github.com/blend/go-sdk/ex"
+	"github.com/zpkg/blend-go-sdk/ex"
 )
 
 // DecodeBasicAuth pulls a basic auth header from a request and returns the
